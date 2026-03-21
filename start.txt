@@ -1,1 +1,4 @@
 python -m app.bot.main
+
+données de test :
+python -m app.infrastructure.db.seed_test_item

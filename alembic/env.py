@@ -10,6 +10,9 @@ from app.infrastructure.db.base import Base
 from app.infrastructure.db.models.player_model import PlayerModel
 from app.infrastructure.db.models.progression_model import PlayerProgressionModel
 from app.infrastructure.db.models.resource_model import PlayerResourceModel
+from app.infrastructure.db.models.item_model import ItemDefinitionModel
+from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel
+from app.infrastructure.db.models.equipment_model import PlayerEquipmentItemModel
 
 
 config = context.config
