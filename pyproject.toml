@@ -1,0 +1,25 @@
+[project]
+name = "lita-v2"
+version = "0.1.0"
+description = "Discord RPG bot rebuilt with a clean architecture"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "discord.py>=2.5.0",
+    "sqlalchemy>=2.0.0",
+    "alembic>=1.13.0",
+    "psycopg[binary]>=3.2.0",
+    "pydantic-settings>=2.0.0",
+    "pytest>=8.0.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.alembic]
+script_location = "alembic"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
