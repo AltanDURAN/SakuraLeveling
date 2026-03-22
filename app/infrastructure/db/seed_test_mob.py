@@ -17,6 +17,14 @@ def main() -> None:
                 defense=1,
                 xp_reward=10,
                 gold_reward=5,
+                loot_table=[
+                    {
+                        "item_code": "slime_gel",
+                        "drop_rate": 0.75,
+                        "min_quantity": 1,
+                        "max_quantity": 2,
+                    }
+                ],
             )
             print("Slime créé.")
         else:

@@ -28,6 +28,9 @@ class CombatService:
                     mob_remaining_hp=max(0, mob_hp),
                     xp_gained=mob.xp_reward,
                     gold_gained=mob.gold_reward,
+                    items_gained=[],
+                    leveled_up=False,
+                    new_level=None,
                     summary=(
                         f"Vous avez vaincu **{mob.name}** en {turns} tour(s)."
                     ),
@@ -42,6 +45,9 @@ class CombatService:
                     mob_remaining_hp=max(0, mob_hp),
                     xp_gained=0,
                     gold_gained=0,
+                    items_gained=[],
+                    leveled_up=False,
+                    new_level=None,
                     summary=(
                         f"Vous avez été vaincu par **{mob.name}** en {turns} tour(s)."
                     ),
@@ -54,5 +60,8 @@ class CombatService:
             mob_remaining_hp=max(0, mob_hp),
             xp_gained=0,
             gold_gained=0,
+            items_gained=[],
+            leveled_up=False,
+            new_level=None,
             summary="Le combat s'est terminé de manière inattendue.",
         )

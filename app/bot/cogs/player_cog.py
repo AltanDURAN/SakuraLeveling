@@ -14,6 +14,10 @@ from app.domain.services.stats_service import StatsService
 from app.application.use_cases.fight_mob import FightMobUseCase
 from app.domain.services.combat_service import CombatService
 from app.infrastructure.db.repositories.mob_repository import MobRepository
+from app.domain.services.loot_service import LootService
+from app.domain.services.progression_service import ProgressionService
+from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
+from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.session import get_db_session
 
 
@@ -186,13 +190,19 @@ class PlayerCog(commands.Cog):
             player_repository = PlayerRepository(session)
             equipment_repository = EquipmentRepository(session)
             mob_repository = MobRepository(session)
+            inventory_repository = InventoryRepository(session)
+            item_repository = ItemRepository(session)
 
             use_case = FightMobUseCase(
                 player_repository=player_repository,
                 equipment_repository=equipment_repository,
                 mob_repository=mob_repository,
+                inventory_repository=inventory_repository,
+                item_repository=item_repository,
                 stats_service=StatsService(),
                 combat_service=CombatService(),
+                loot_service=LootService(),
+                progression_service=ProgressionService(),
             )
 
             result = use_case.execute(
@@ -225,7 +235,14 @@ class PlayerCog(commands.Cog):
             embed.add_field(name="XP gagnée", value=str(result.xp_gained), inline=True)
             embed.add_field(name="Gold gagné", value=str(result.gold_gained), inline=True)
 
-        await interaction.response.send_message(embed=embed)
+            if result.items_gained:
+                loot_lines = [f"{item_code} x{quantity}" for item_code, quantity in result.items_gained]
+                embed.add_field(name="Loot", value="\n".join(loot_lines), inline=False)
 
+            if result.leveled_up and result.new_level is not None:
+                embed.add_field(name="🎉 Level up", value=f"Niveau {result.new_level}", inline=False)
+
+        await interaction.response.send_message(embed=embed)
+    
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(PlayerCog(bot))
