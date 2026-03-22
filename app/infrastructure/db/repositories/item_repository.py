@@ -30,6 +30,7 @@ class ItemRepository:
         sell_price: int = 0,
         buy_price: int | None = None,
         icon: str | None = None,
+        stat_bonuses: dict | None = None,
     ) -> ItemDefinition:
         model = ItemDefinitionModel(
             code=code,
@@ -42,6 +43,7 @@ class ItemRepository:
             sell_price=sell_price,
             buy_price=buy_price,
             icon=icon,
+            stat_bonuses_json=stat_bonuses,
         )
 
         self.session.add(model)
@@ -63,6 +65,7 @@ class ItemRepository:
             sell_price=model.sell_price,
             buy_price=model.buy_price,
             icon=model.icon,
+            stat_bonuses=model.stat_bonuses_json,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )

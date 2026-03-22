@@ -62,6 +62,7 @@ class EquipmentRepository:
             sell_price=item_model.sell_price,
             buy_price=item_model.buy_price,
             icon=item_model.icon,
+            stat_bonuses=item_model.stat_bonuses_json,
             created_at=item_model.created_at,
             updated_at=item_model.updated_at,
         )

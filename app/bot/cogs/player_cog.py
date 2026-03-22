@@ -9,6 +9,8 @@ from app.infrastructure.db.repositories.inventory_repository import InventoryRep
 from app.application.use_cases.equip_item import EquipItemUseCase
 from app.application.use_cases.get_player_equipment import GetPlayerEquipmentUseCase
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
+from app.application.use_cases.get_player_stats import GetPlayerStatsUseCase
+from app.domain.services.stats_service import StatsService
 from app.infrastructure.db.session import get_db_session
 
 
@@ -24,41 +26,44 @@ class PlayerCog(commands.Cog):
     async def profile(self, interaction: discord.Interaction) -> None:
         with get_db_session() as session:
             player_repository = PlayerRepository(session)
-            use_case = GetPlayerProfileUseCase(player_repository)
+            equipment_repository = EquipmentRepository(session)
 
-            profile = use_case.execute(
+            profile_use_case = GetPlayerProfileUseCase(player_repository)
+            stats_use_case = GetPlayerStatsUseCase(
+                player_repository=player_repository,
+                equipment_repository=equipment_repository,
+                stats_service=StatsService(),
+            )
+
+            profile = profile_use_case.execute(
                 discord_id=interaction.user.id,
                 username=interaction.user.name,
                 display_name=interaction.user.display_name,
             )
 
-            embed = discord.Embed(
+            stats = stats_use_case.execute(
+                discord_id=interaction.user.id,
+                username=interaction.user.name,
+                display_name=interaction.user.display_name,
+            )
+
+        embed = discord.Embed(
             title=f"👤 Profil de {profile.player.display_name}",
             color=discord.Color.blue(),
         )
 
-        embed.add_field(
-            name="🎯 Niveau",
-            value=str(profile.progression.level),
-            inline=True,
-        )
+        embed.add_field(name="🎯 Niveau", value=str(profile.progression.level), inline=True)
+        embed.add_field(name="✨ XP", value=str(profile.progression.xp), inline=True)
+        embed.add_field(name="💰 Gold", value=str(profile.resources.gold), inline=True)
 
-        embed.add_field(
-            name="✨ XP",
-            value=str(profile.progression.xp),
-            inline=True,
-        )
-
-        embed.add_field(
-            name="💰 Gold",
-            value=str(profile.resources.gold),
-            inline=True,
-        )
+        embed.add_field(name="❤️ PV", value=str(stats.max_hp), inline=True)
+        embed.add_field(name="⚔️ Attaque", value=str(stats.attack), inline=True)
+        embed.add_field(name="🛡️ Défense", value=str(stats.defense), inline=True)
 
         embed.set_footer(text=f"ID Discord : {profile.player.discord_id}")
 
         await interaction.response.send_message(embed=embed)
-
+    
     @app_commands.command(name="inventory", description="Afficher votre inventaire")
     async def inventory(self, interaction: discord.Interaction) -> None:
         with get_db_session() as session:

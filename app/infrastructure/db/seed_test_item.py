@@ -47,6 +47,7 @@ def main() -> None:
                 rarity="common",
                 stackable=False,
                 sell_price=5,
+                stat_bonuses={"attack": 5},
             )
 
         inventory_repository.add_item(
@@ -56,6 +57,27 @@ def main() -> None:
         )
 
         print("épée ajoutée à l'inventaire.")
+        
+        helmet = item_repository.get_by_code("leather_cap")
+        if helmet is None:
+            helmet = item_repository.create(
+                code="leather_cap",
+                name="Casque en cuir",
+                description="Un casque léger.",
+                category="helmet",
+                rarity="common",
+                stackable=False,
+                sell_price=4,
+                stat_bonuses={"defense": 2, "max_hp": 10},
+            )
+
+        inventory_repository.add_item(
+            player_id=profile.player.id,
+            item_definition_id=helmet.id,
+            quantity=1,
+        )
+        
+        print("Casque ajoutée à l'inventaire.")
 
 
 if __name__ == "__main__":

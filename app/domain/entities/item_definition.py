@@ -15,5 +15,6 @@ class ItemDefinition:
     sell_price: int
     buy_price: int | None
     icon: str | None
+    stat_bonuses: dict | None
     created_at: datetime
     updated_at: datetime
