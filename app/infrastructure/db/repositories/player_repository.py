@@ -85,6 +85,24 @@ class PlayerRepository:
             username=username,
             display_name=display_name,
         )
+        
+    def add_xp(self, player_id: int, xp: int) -> None:
+        progression = self.session.get(PlayerProgressionModel, player_id)
+        if progression is None:
+            return
+
+        progression.xp += xp
+        progression.updated_at = datetime.utcnow()
+        self.session.commit()
+
+    def add_gold(self, player_id: int, gold: int) -> None:
+        resources = self.session.get(PlayerResourceModel, player_id)
+        if resources is None:
+            return
+
+        resources.gold += gold
+        resources.updated_at = datetime.utcnow()
+        self.session.commit()
 
     def _update_identity_metadata(self, player_id: int, username: str, display_name: str) -> None:
         player_model = self.session.get(PlayerModel, player_id)

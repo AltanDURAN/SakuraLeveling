@@ -11,6 +11,9 @@ from app.application.use_cases.get_player_equipment import GetPlayerEquipmentUse
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.application.use_cases.get_player_stats import GetPlayerStatsUseCase
 from app.domain.services.stats_service import StatsService
+from app.application.use_cases.fight_mob import FightMobUseCase
+from app.domain.services.combat_service import CombatService
+from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.session import get_db_session
 
 
@@ -175,6 +178,54 @@ class PlayerCog(commands.Cog):
         await interaction.response.send_message(
             f"Item `{item_code}` équipé dans le slot `{slot}`."
         )
+
+    @app_commands.command(name="fight", description="Combattre un monstre")
+    @app_commands.describe(mob_code="Code technique du monstre")
+    async def fight(self, interaction: discord.Interaction, mob_code: str) -> None:
+        with get_db_session() as session:
+            player_repository = PlayerRepository(session)
+            equipment_repository = EquipmentRepository(session)
+            mob_repository = MobRepository(session)
+
+            use_case = FightMobUseCase(
+                player_repository=player_repository,
+                equipment_repository=equipment_repository,
+                mob_repository=mob_repository,
+                stats_service=StatsService(),
+                combat_service=CombatService(),
+            )
+
+            result = use_case.execute(
+                discord_id=interaction.user.id,
+                username=interaction.user.name,
+                display_name=interaction.user.display_name,
+                mob_code=mob_code,
+            )
+
+        if result is None:
+            await interaction.response.send_message(
+                "Monstre introuvable.",
+                ephemeral=True,
+            )
+            return
+
+        color = discord.Color.green() if result.victory else discord.Color.red()
+
+        embed = discord.Embed(
+            title="⚔️ Résultat du combat",
+            description=result.summary,
+            color=color,
+        )
+
+        embed.add_field(name="Tours", value=str(result.turns), inline=True)
+        embed.add_field(name="PV restants joueur", value=str(result.player_remaining_hp), inline=True)
+        embed.add_field(name="PV restants monstre", value=str(result.mob_remaining_hp), inline=True)
+
+        if result.victory:
+            embed.add_field(name="XP gagnée", value=str(result.xp_gained), inline=True)
+            embed.add_field(name="Gold gagné", value=str(result.gold_gained), inline=True)
+
+        await interaction.response.send_message(embed=embed)
 
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(PlayerCog(bot))
