@@ -38,6 +38,9 @@ from app.infrastructure.db.repositories.quest_repository import QuestRepository
 from app.domain.services.quest_service import QuestService
 from app.application.use_cases.get_player_quests import GetPlayerQuestsUseCase
 from app.application.use_cases.claim_quest_reward import ClaimQuestRewardUseCase
+from app.infrastructure.db.repositories.profession_repository import ProfessionRepository
+from app.domain.services.profession_service import ProfessionService
+from app.application.use_cases.gather_resource import GatherResourceUseCase
 
 
 class PlayerCog(commands.Cog):
@@ -408,6 +411,27 @@ class PlayerCog(commands.Cog):
                 username=interaction.user.name,
                 display_name=interaction.user.display_name,
                 quest_code=quest_code,
+            )
+
+        await interaction.response.send_message(message, ephemeral=not success)
+    
+    @app_commands.command(name="gather", description="Récolter des ressources")
+    @app_commands.describe(profession_code="Code du métier")
+    async def gather(self, interaction: discord.Interaction, profession_code: str):
+        with get_db_session() as session:
+            use_case = GatherResourceUseCase(
+                player_repository=PlayerRepository(session),
+                profession_repository=ProfessionRepository(session),
+                inventory_repository=InventoryRepository(session),
+                item_repository=ItemRepository(session),
+                profession_service=ProfessionService(),
+            )
+
+            success, message = use_case.execute(
+                interaction.user.id,
+                interaction.user.name,
+                interaction.user.display_name,
+                profession_code,
             )
 
         await interaction.response.send_message(message, ephemeral=not success)

@@ -6,6 +6,8 @@ from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.craft_repository import CraftRepository
 from app.infrastructure.db.repositories.quest_repository import QuestRepository
+from app.infrastructure.db.repositories.profession_repository import ProfessionRepository
+from app.infrastructure.db.models.profession_model import ProfessionDefinitionModel
 from app.infrastructure.db.session import get_db_session
 
 
@@ -157,12 +159,33 @@ def seed_quests() -> None:
 
     print("Quêtes seedées.")
 
+def seed_professions():
+    professions = load_json("professions.json")
+
+    with get_db_session() as session:
+        repo = ProfessionRepository(session)
+
+        for p in professions:
+            if repo.get_definition_by_code(p["code"]):
+                continue
+
+            session.add(
+                ProfessionDefinitionModel(
+                    code=p["code"],
+                    name=p["name"],
+                    description=p["description"],
+                )
+            )
+
+        session.commit()
+
 def main() -> None:
     seed_items()
     seed_mobs()
     seed_classes()
     seed_crafts()
     seed_quests()
+    seed_professions()
     print("Seed terminé.")
 
 

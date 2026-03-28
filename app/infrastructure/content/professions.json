@@ -1,0 +1,12 @@
+[
+  {
+    "code": "mining",
+    "name": "Mineur",
+    "description": "Extraction de minerais"
+  },
+  {
+    "code": "woodcutting",
+    "name": "Bûcheron",
+    "description": "Coupe de bois"
+  }
+]
