@@ -17,6 +17,7 @@ from app.infrastructure.db.models.mob_model import MobDefinitionModel
 from app.infrastructure.db.models.class_model import ClassDefinitionModel
 from app.infrastructure.db.models.player_class_state_model import PlayerClassStateModel
 from app.infrastructure.db.models.craft_model import CraftRecipeModel, CraftRecipeIngredientModel
+from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel
 
 
 config = context.config

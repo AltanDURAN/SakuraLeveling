@@ -16,7 +16,6 @@ from app.domain.services.combat_service import CombatService
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.domain.services.loot_service import LootService
 from app.domain.services.progression_service import ProgressionService
-from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.session import get_db_session
 from app.application.use_cases.change_player_class import ChangePlayerClassUseCase
@@ -26,6 +25,9 @@ from app.application.use_cases.craft_item import CraftItemUseCase
 from app.application.use_cases.get_available_crafts import GetAvailableCraftsUseCase
 from app.domain.services.craft_service import CraftService
 from app.infrastructure.db.repositories.craft_repository import CraftRepository
+from app.application.use_cases.claim_daily_reward import ClaimDailyRewardUseCase
+from app.domain.services.cooldown_service import CooldownService
+from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 
 
 class PlayerCog(commands.Cog):
@@ -385,6 +387,30 @@ class PlayerCog(commands.Cog):
         await interaction.response.send_message(
             f"Craft `{recipe_code}` réalisé avec succès."
         )
+    
+    @app_commands.command(name="daily", description="Récupérer votre récompense quotidienne")
+    async def daily(self, interaction: discord.Interaction) -> None:
+        with get_db_session() as session:
+            player_repository = PlayerRepository(session)
+            cooldown_repository = CooldownRepository(session)
+
+            use_case = ClaimDailyRewardUseCase(
+                player_repository=player_repository,
+                cooldown_repository=cooldown_repository,
+                cooldown_service=CooldownService(),
+                progression_service=ProgressionService(),
+            )
+
+            success, message = use_case.execute(
+                discord_id=interaction.user.id,
+                username=interaction.user.name,
+                display_name=interaction.user.display_name,
+            )
+
+        if success:
+            await interaction.response.send_message(message)
+        else:
+            await interaction.response.send_message(message, ephemeral=True)
     
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(PlayerCog(bot))
