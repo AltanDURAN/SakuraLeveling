@@ -33,6 +33,7 @@ from app.bot.embeds.class_embeds import build_player_class_embed
 from app.bot.embeds.craft_embeds import build_craft_list_embed
 from app.bot.embeds.inventory_embeds import build_inventory_embed
 from app.bot.embeds.player_embeds import build_player_profile_embed
+from app.shared.enums import EquipmentSlot
 
 
 class PlayerCog(commands.Cog):
@@ -133,7 +134,7 @@ class PlayerCog(commands.Cog):
         item_code: str,
         slot: str,
     ) -> None:
-        allowed_slots = {"helmet", "chest", "leggins", "boots", "weapon", "ring_1", "ring_2"}
+        allowed_slots = {slot.value for slot in EquipmentSlot}
 
         if slot not in allowed_slots:
             await interaction.response.send_message(

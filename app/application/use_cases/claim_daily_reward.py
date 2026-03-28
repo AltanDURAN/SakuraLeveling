@@ -4,10 +4,11 @@ from app.domain.services.cooldown_service import CooldownService
 from app.domain.services.progression_service import ProgressionService
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
+from app.shared.enums import CooldownAction
 
 
 class ClaimDailyRewardUseCase:
-    DAILY_ACTION_KEY = "daily"
+    DAILY_ACTION_KEY = CooldownAction.DAILY.value
     DAILY_GOLD_REWARD = 25
     DAILY_XP_REWARD = 10
 
