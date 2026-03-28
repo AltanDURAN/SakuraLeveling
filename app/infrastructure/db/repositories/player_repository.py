@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
@@ -34,7 +34,7 @@ class PlayerRepository:
         return self._to_domain(player_model)
 
     def create_player(self, discord_id: int, username: str, display_name: str) -> PlayerProfile:
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         player_model = PlayerModel(
             discord_id=discord_id,
@@ -92,7 +92,7 @@ class PlayerRepository:
             return
 
         progression.xp += xp
-        progression.updated_at = datetime.utcnow()
+        progression.updated_at = datetime.now(UTC)
         self.session.commit()
 
     def add_gold(self, player_id: int, gold: int) -> None:
@@ -101,7 +101,7 @@ class PlayerRepository:
             return
 
         resources.gold += gold
-        resources.updated_at = datetime.utcnow()
+        resources.updated_at = datetime.now(UTC)
         self.session.commit()
         
     def apply_progression(
@@ -118,7 +118,7 @@ class PlayerRepository:
         progression.level = new_level
         progression.xp = new_xp
         progression.skill_points = new_skill_points
-        progression.updated_at = datetime.utcnow()
+        progression.updated_at = datetime.now(UTC)
 
         self.session.commit()
 
@@ -129,8 +129,8 @@ class PlayerRepository:
 
         player_model.username = username
         player_model.display_name = display_name
-        player_model.last_seen_at = datetime.utcnow()
-        player_model.updated_at = datetime.utcnow()
+        player_model.last_seen_at = datetime.now(UTC)
+        player_model.updated_at = datetime.now(UTC)
 
         self.session.commit()
 

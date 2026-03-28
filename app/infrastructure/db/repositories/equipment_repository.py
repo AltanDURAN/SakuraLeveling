@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
@@ -30,7 +30,7 @@ class EquipmentRepository:
         )
 
         model = self.session.execute(stmt).scalar_one_or_none()
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         if model is None:
             model = PlayerEquipmentItemModel(

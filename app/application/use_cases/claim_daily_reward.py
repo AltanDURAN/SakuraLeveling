@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 
 from app.domain.services.cooldown_service import CooldownService
 from app.domain.services.progression_service import ProgressionService
@@ -36,7 +36,7 @@ class ClaimDailyRewardUseCase:
             display_name=display_name,
         )
 
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         cooldown = self.cooldown_repository.get_by_player_and_action(
             profile.player.id,
             self.DAILY_ACTION_KEY,
