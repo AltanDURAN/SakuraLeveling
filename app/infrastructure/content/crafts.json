@@ -1,0 +1,18 @@
+[
+  {
+    "code": "slime_blade_recipe",
+    "name": "Lame visqueuse",
+    "result_item_code": "slime_blade",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "slime_gel",
+        "quantity": 3
+      },
+      {
+        "item_code": "wood_sword",
+        "quantity": 1
+      }
+    ]
+  }
+]

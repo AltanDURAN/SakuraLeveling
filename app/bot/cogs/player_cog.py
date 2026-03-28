@@ -22,6 +22,10 @@ from app.infrastructure.db.session import get_db_session
 from app.application.use_cases.change_player_class import ChangePlayerClassUseCase
 from app.application.use_cases.get_player_class import GetPlayerClassUseCase
 from app.infrastructure.db.repositories.class_repository import ClassRepository
+from app.application.use_cases.craft_item import CraftItemUseCase
+from app.application.use_cases.get_available_crafts import GetAvailableCraftsUseCase
+from app.domain.services.craft_service import CraftService
+from app.infrastructure.db.repositories.craft_repository import CraftRepository
 
 
 class PlayerCog(commands.Cog):
@@ -313,6 +317,73 @@ class PlayerCog(commands.Cog):
 
         await interaction.response.send_message(
             f"Classe active définie sur `{class_code}`."
+        )
+    
+    @app_commands.command(name="craft_list", description="Afficher les recettes disponibles")
+    async def craft_list(self, interaction: discord.Interaction) -> None:
+        with get_db_session() as session:
+            craft_repository = CraftRepository(session)
+            use_case = GetAvailableCraftsUseCase(craft_repository)
+
+            recipes = use_case.execute()
+
+        embed = discord.Embed(
+            title="🛠️ Recettes disponibles",
+            color=discord.Color.orange(),
+        )
+
+        if not recipes:
+            embed.description = "Aucune recette disponible."
+        else:
+            lines = []
+            for recipe in recipes:
+                ingredients = ", ".join(
+                    f"{ingredient.item_code} x{ingredient.quantity}"
+                    for ingredient in recipe.ingredients
+                )
+                lines.append(
+                    f"**{recipe.code}** → {recipe.result_item_code} x{recipe.result_quantity}\n"
+                    f"Ingrédients : {ingredients}"
+                )
+
+            embed.description = "\n\n".join(lines)
+
+        await interaction.response.send_message(embed=embed)
+
+
+    @app_commands.command(name="craft", description="Fabriquer un objet")
+    @app_commands.describe(recipe_code="Code technique de la recette")
+    async def craft(self, interaction: discord.Interaction, recipe_code: str) -> None:
+        with get_db_session() as session:
+            player_repository = PlayerRepository(session)
+            craft_repository = CraftRepository(session)
+            inventory_repository = InventoryRepository(session)
+            item_repository = ItemRepository(session)
+
+            use_case = CraftItemUseCase(
+                player_repository=player_repository,
+                craft_repository=craft_repository,
+                inventory_repository=inventory_repository,
+                item_repository=item_repository,
+                craft_service=CraftService(),
+            )
+
+            success = use_case.execute(
+                discord_id=interaction.user.id,
+                username=interaction.user.name,
+                display_name=interaction.user.display_name,
+                recipe_code=recipe_code,
+            )
+
+        if not success:
+            await interaction.response.send_message(
+                "Craft impossible. Vérifiez la recette et vos ingrédients.",
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.send_message(
+            f"Craft `{recipe_code}` réalisé avec succès."
         )
     
 async def setup(bot: commands.Bot) -> None:

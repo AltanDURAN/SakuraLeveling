@@ -42,5 +42,20 @@
       "defense": 2,
       "max_hp": 10
     }
+  },
+  {
+    "code": "slime_blade",
+    "name": "Lame visqueuse",
+    "description": "Une épée recouverte d'une étrange matière gélatineuse.",
+    "category": "weapon",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 12,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 9
+    }
   }
 ]
