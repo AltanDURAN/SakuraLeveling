@@ -28,6 +28,11 @@ from app.infrastructure.db.repositories.craft_repository import CraftRepository
 from app.application.use_cases.claim_daily_reward import ClaimDailyRewardUseCase
 from app.domain.services.cooldown_service import CooldownService
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
+from app.bot.embeds.battle_embeds import build_battle_result_embed
+from app.bot.embeds.class_embeds import build_player_class_embed
+from app.bot.embeds.craft_embeds import build_craft_list_embed
+from app.bot.embeds.inventory_embeds import build_inventory_embed
+from app.bot.embeds.player_embeds import build_player_profile_embed
 
 
 class PlayerCog(commands.Cog):
@@ -65,21 +70,8 @@ class PlayerCog(commands.Cog):
                 display_name=interaction.user.display_name,
             )
 
-        embed = discord.Embed(
-            title=f"👤 Profil de {profile.player.display_name}",
-            color=discord.Color.blue(),
-        )
-
-        embed.add_field(name="🎯 Niveau", value=str(profile.progression.level), inline=True)
-        embed.add_field(name="✨ XP", value=str(profile.progression.xp), inline=True)
-        embed.add_field(name="💰 Gold", value=str(profile.resources.gold), inline=True)
-
-        embed.add_field(name="❤️ PV", value=str(stats.max_hp), inline=True)
-        embed.add_field(name="⚔️ Attaque", value=str(stats.attack), inline=True)
-        embed.add_field(name="🛡️ Défense", value=str(stats.defense), inline=True)
-
-        embed.set_footer(text=f"ID Discord : {profile.player.discord_id}")
-
+        active_class = class_repository.get_current_class_for_player(profile.player.id)
+        embed = build_player_profile_embed(profile, stats, active_class)
         await interaction.response.send_message(embed=embed)
     
     @app_commands.command(name="inventory", description="Afficher votre inventaire")
@@ -98,20 +90,7 @@ class PlayerCog(commands.Cog):
                 display_name=interaction.user.display_name,
             )
 
-        embed = discord.Embed(
-            title=f"🎒 Inventaire de {interaction.user.display_name}",
-            color=discord.Color.green(),
-        )
-
-        if not items:
-            embed.description = "Votre inventaire est vide."
-        else:
-            lines = [
-                f"{item.item_definition.name} x{item.quantity}"
-                for item in items
-            ]
-            embed.description = "\n".join(lines)
-
+        embed = build_inventory_embed(interaction.user.display_name, items)
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="equipment", description="Afficher votre équipement")
@@ -145,7 +124,6 @@ class PlayerCog(commands.Cog):
             embed.description = "\n".join(lines)
 
         await interaction.response.send_message(embed=embed)
-
 
     @app_commands.command(name="equip", description="Équiper un item depuis votre inventaire")
     @app_commands.describe(item_code="Code technique de l'item", slot="Slot d'équipement")
@@ -230,29 +208,7 @@ class PlayerCog(commands.Cog):
             )
             return
 
-        color = discord.Color.green() if result.victory else discord.Color.red()
-
-        embed = discord.Embed(
-            title="⚔️ Résultat du combat",
-            description=result.summary,
-            color=color,
-        )
-
-        embed.add_field(name="Tours", value=str(result.turns), inline=True)
-        embed.add_field(name="PV restants joueur", value=str(result.player_remaining_hp), inline=True)
-        embed.add_field(name="PV restants monstre", value=str(result.mob_remaining_hp), inline=True)
-
-        if result.victory:
-            embed.add_field(name="XP gagnée", value=str(result.xp_gained), inline=True)
-            embed.add_field(name="Gold gagné", value=str(result.gold_gained), inline=True)
-
-            if result.items_gained:
-                loot_lines = [f"{item_code} x{quantity}" for item_code, quantity in result.items_gained]
-                embed.add_field(name="Loot", value="\n".join(loot_lines), inline=False)
-
-            if result.leveled_up and result.new_level is not None:
-                embed.add_field(name="🎉 Level up", value=f"Niveau {result.new_level}", inline=False)
-
+        embed = build_battle_result_embed(result)
         await interaction.response.send_message(embed=embed)
     
     @app_commands.command(name="class", description="Afficher votre classe active")
@@ -272,24 +228,8 @@ class PlayerCog(commands.Cog):
                 display_name=interaction.user.display_name,
             )
 
-        embed = discord.Embed(
-            title=f"🧬 Classe de {interaction.user.display_name}",
-            color=discord.Color.gold(),
-        )
-
-        if active_class is None:
-            embed.description = "Aucune classe active."
-        else:
-            embed.add_field(name="Nom", value=active_class.name, inline=False)
-            embed.add_field(name="Description", value=active_class.description, inline=False)
-
-            bonuses = active_class.stat_bonuses or {}
-            if bonuses:
-                bonus_lines = [f"{key}: +{value}" for key, value in bonuses.items()]
-                embed.add_field(name="Bonus", value="\n".join(bonus_lines), inline=False)
-
+        embed = build_player_class_embed(interaction.user.display_name, active_class)
         await interaction.response.send_message(embed=embed)
-
 
     @app_commands.command(name="class_set", description="Définir votre classe active")
     @app_commands.describe(class_code="Code technique de la classe")
@@ -329,27 +269,7 @@ class PlayerCog(commands.Cog):
 
             recipes = use_case.execute()
 
-        embed = discord.Embed(
-            title="🛠️ Recettes disponibles",
-            color=discord.Color.orange(),
-        )
-
-        if not recipes:
-            embed.description = "Aucune recette disponible."
-        else:
-            lines = []
-            for recipe in recipes:
-                ingredients = ", ".join(
-                    f"{ingredient.item_code} x{ingredient.quantity}"
-                    for ingredient in recipe.ingredients
-                )
-                lines.append(
-                    f"**{recipe.code}** → {recipe.result_item_code} x{recipe.result_quantity}\n"
-                    f"Ingrédients : {ingredients}"
-                )
-
-            embed.description = "\n\n".join(lines)
-
+        embed = build_craft_list_embed(recipes)
         await interaction.response.send_message(embed=embed)
 
 
