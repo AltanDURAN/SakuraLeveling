@@ -1,0 +1,46 @@
+[
+  {
+    "code": "slime_gel",
+    "name": "Gelée de Slime",
+    "description": "Une matière gélatineuse récupérée sur un slime.",
+    "category": "resource",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 2,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": null
+  },
+  {
+    "code": "wood_sword",
+    "name": "Épée en bois",
+    "description": "Une arme basique pour débuter.",
+    "category": "weapon",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 5,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 5
+    }
+  },
+  {
+    "code": "leather_cap",
+    "name": "Casque en cuir",
+    "description": "Un casque léger.",
+    "category": "helmet",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 4,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 2,
+      "max_hp": 10
+    }
+  }
+]

@@ -1,4 +1,18 @@
-python -m app.bot.main
+#####################
+### Lancer le bot ###
+    python -m app.bot.main
+#####################
 
-données de test :
-python -m app.infrastructure.db.seed_test_item
+#################################################
+### Créer le données du jeu (item, mob, etc.) ###
+    python -m app.infrastructure.db.seeders.seed_content
+#################################################
+
+####################
+### Voir la base ###
+    sqlite3 lita_v2.db
+
+exemple :
+    SELECT id, code, name FROM mob_definitions;
+    DELETE FROM mob_definitions WHERE code = 'slime';
+####################

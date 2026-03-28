@@ -1,0 +1,29 @@
+[
+  {
+    "code": "warrior",
+    "name": "Guerrier",
+    "description": "Une classe robuste spécialisée dans le combat rapproché.",
+    "stat_bonuses": {
+      "max_hp": 20,
+      "attack": 3,
+      "defense": 2
+    }
+  },
+  {
+    "code": "rogue",
+    "name": "Voleur",
+    "description": "Une classe rapide et offensive.",
+    "stat_bonuses": {
+      "attack": 5
+    }
+  },
+  {
+    "code": "guardian",
+    "name": "Gardien",
+    "description": "Une classe défensive et résistante.",
+    "stat_bonuses": {
+      "max_hp": 30,
+      "defense": 4
+    }
+  }
+]

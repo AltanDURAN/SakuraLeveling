@@ -14,6 +14,8 @@ from app.infrastructure.db.models.item_model import ItemDefinitionModel
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel
 from app.infrastructure.db.models.equipment_model import PlayerEquipmentItemModel
 from app.infrastructure.db.models.mob_model import MobDefinitionModel
+from app.infrastructure.db.models.class_model import ClassDefinitionModel
+from app.infrastructure.db.models.player_class_state_model import PlayerClassStateModel
 
 
 config = context.config

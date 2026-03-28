@@ -19,6 +19,9 @@ from app.domain.services.progression_service import ProgressionService
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.session import get_db_session
+from app.application.use_cases.change_player_class import ChangePlayerClassUseCase
+from app.application.use_cases.get_player_class import GetPlayerClassUseCase
+from app.infrastructure.db.repositories.class_repository import ClassRepository
 
 
 class PlayerCog(commands.Cog):
@@ -34,11 +37,13 @@ class PlayerCog(commands.Cog):
         with get_db_session() as session:
             player_repository = PlayerRepository(session)
             equipment_repository = EquipmentRepository(session)
+            class_repository = ClassRepository(session)
 
             profile_use_case = GetPlayerProfileUseCase(player_repository)
             stats_use_case = GetPlayerStatsUseCase(
                 player_repository=player_repository,
                 equipment_repository=equipment_repository,
+                class_repository=class_repository,
                 stats_service=StatsService(),
             )
 
@@ -243,6 +248,72 @@ class PlayerCog(commands.Cog):
                 embed.add_field(name="🎉 Level up", value=f"Niveau {result.new_level}", inline=False)
 
         await interaction.response.send_message(embed=embed)
+    
+    @app_commands.command(name="class", description="Afficher votre classe active")
+    async def player_class(self, interaction: discord.Interaction) -> None:
+        with get_db_session() as session:
+            player_repository = PlayerRepository(session)
+            class_repository = ClassRepository(session)
+
+            use_case = GetPlayerClassUseCase(
+                player_repository=player_repository,
+                class_repository=class_repository,
+            )
+
+            active_class = use_case.execute(
+                discord_id=interaction.user.id,
+                username=interaction.user.name,
+                display_name=interaction.user.display_name,
+            )
+
+        embed = discord.Embed(
+            title=f"🧬 Classe de {interaction.user.display_name}",
+            color=discord.Color.gold(),
+        )
+
+        if active_class is None:
+            embed.description = "Aucune classe active."
+        else:
+            embed.add_field(name="Nom", value=active_class.name, inline=False)
+            embed.add_field(name="Description", value=active_class.description, inline=False)
+
+            bonuses = active_class.stat_bonuses or {}
+            if bonuses:
+                bonus_lines = [f"{key}: +{value}" for key, value in bonuses.items()]
+                embed.add_field(name="Bonus", value="\n".join(bonus_lines), inline=False)
+
+        await interaction.response.send_message(embed=embed)
+
+
+    @app_commands.command(name="class_set", description="Définir votre classe active")
+    @app_commands.describe(class_code="Code technique de la classe")
+    async def class_set(self, interaction: discord.Interaction, class_code: str) -> None:
+        with get_db_session() as session:
+            player_repository = PlayerRepository(session)
+            class_repository = ClassRepository(session)
+
+            use_case = ChangePlayerClassUseCase(
+                player_repository=player_repository,
+                class_repository=class_repository,
+            )
+
+            success = use_case.execute(
+                discord_id=interaction.user.id,
+                username=interaction.user.name,
+                display_name=interaction.user.display_name,
+                class_code=class_code,
+            )
+
+        if not success:
+            await interaction.response.send_message(
+                "Classe introuvable.",
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.send_message(
+            f"Classe active définie sur `{class_code}`."
+        )
     
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(PlayerCog(bot))
