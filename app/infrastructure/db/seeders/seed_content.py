@@ -5,6 +5,7 @@ from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.craft_repository import CraftRepository
+from app.infrastructure.db.repositories.quest_repository import QuestRepository
 from app.infrastructure.db.session import get_db_session
 
 
@@ -130,12 +131,38 @@ def seed_crafts() -> None:
             )
 
     print("Crafts seedés.")
+    
+def seed_quests() -> None:
+    quests = load_json("quests.json")
+
+    with get_db_session() as session:
+        quest_repository = QuestRepository(session)
+
+        for quest_data in quests:
+            existing = quest_repository.get_definition_by_code(quest_data["code"])
+            if existing is not None:
+                continue
+
+            quest_repository.create_definition(
+                code=quest_data["code"],
+                name=quest_data["name"],
+                description=quest_data["description"],
+                objective_type=quest_data["objective_type"],
+                target_code=quest_data["target_code"],
+                required_quantity=quest_data["required_quantity"],
+                reward_gold=quest_data["reward_gold"],
+                reward_xp=quest_data["reward_xp"],
+                reward_items=quest_data["reward_items"],
+            )
+
+    print("Quêtes seedées.")
 
 def main() -> None:
     seed_items()
     seed_mobs()
     seed_classes()
     seed_crafts()
+    seed_quests()
     print("Seed terminé.")
 
 

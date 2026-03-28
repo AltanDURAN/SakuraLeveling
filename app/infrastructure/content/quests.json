@@ -1,0 +1,24 @@
+[
+  {
+    "code": "kill_5_slimes",
+    "name": "Chasseur de slimes",
+    "description": "Vaincre 5 slimes.",
+    "objective_type": "kill_mob",
+    "target_code": "slime",
+    "required_quantity": 5,
+    "reward_gold": 20,
+    "reward_xp": 30,
+    "reward_items": null
+  },
+  {
+    "code": "collect_5_slime_gel",
+    "name": "Récolte gélatineuse",
+    "description": "Posséder 5 gelées de slime.",
+    "objective_type": "collect_item",
+    "target_code": "slime_gel",
+    "required_quantity": 5,
+    "reward_gold": 15,
+    "reward_xp": 20,
+    "reward_items": null
+  }
+]

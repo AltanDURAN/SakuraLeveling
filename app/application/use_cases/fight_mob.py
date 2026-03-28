@@ -1,13 +1,16 @@
 from app.domain.services.combat_service import CombatService
 from app.domain.services.loot_service import LootService
 from app.domain.services.progression_service import ProgressionService
+from app.domain.services.quest_service import QuestService
 from app.domain.services.stats_service import StatsService
 from app.domain.value_objects.battle_result import BattleResult
+from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
+from app.infrastructure.db.repositories.quest_repository import QuestRepository
 
 
 class FightMobUseCase:
@@ -18,20 +21,26 @@ class FightMobUseCase:
         mob_repository: MobRepository,
         inventory_repository: InventoryRepository,
         item_repository: ItemRepository,
+        quest_repository: QuestRepository,
         stats_service: StatsService,
         combat_service: CombatService,
         loot_service: LootService,
         progression_service: ProgressionService,
+        quest_service: QuestService,
+        class_repository: ClassRepository,
     ):
         self.player_repository = player_repository
         self.equipment_repository = equipment_repository
         self.mob_repository = mob_repository
         self.inventory_repository = inventory_repository
         self.item_repository = item_repository
+        self.quest_repository = quest_repository
         self.stats_service = stats_service
         self.combat_service = combat_service
         self.loot_service = loot_service
         self.progression_service = progression_service
+        self.quest_service = quest_service
+        self.class_repository = class_repository
 
     def execute(
         self,
@@ -51,7 +60,13 @@ class FightMobUseCase:
             return None
 
         equipped_items = self.equipment_repository.list_by_player_id(profile.player.id)
-        player_stats = self.stats_service.calculate_player_stats(profile, equipped_items)
+        active_class = self.class_repository.get_current_class_for_player(profile.player.id)
+
+        player_stats = self.stats_service.calculate_player_stats(
+            profile=profile,
+            equipped_items=equipped_items,
+            active_class=active_class,
+        )
 
         result = self.combat_service.fight_player_vs_mob(
             player_stats=player_stats,
@@ -90,6 +105,30 @@ class FightMobUseCase:
                 player_id=profile.player.id,
                 item_definition_id=item.id,
                 quantity=quantity,
+            )
+
+        player_quests = self.quest_repository.list_definitions()
+
+        for quest in player_quests:
+            if quest.objective_type != "kill_mob":
+                continue
+
+            state = self.quest_repository.get_or_create_player_quest_state(
+                profile.player.id,
+                quest.id,
+            )
+
+            progress, is_completed = self.quest_service.compute_progress_for_kill_quest(
+                quest=quest,
+                current_progress=state.progress_quantity,
+                killed_mob_code=mob.code,
+            )
+
+            self.quest_repository.update_progress(
+                profile.player.id,
+                quest.id,
+                progress,
+                is_completed,
             )
 
         result.items_gained = dropped_items

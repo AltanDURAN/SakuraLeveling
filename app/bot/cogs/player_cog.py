@@ -34,6 +34,10 @@ from app.bot.embeds.craft_embeds import build_craft_list_embed
 from app.bot.embeds.inventory_embeds import build_inventory_embed
 from app.bot.embeds.player_embeds import build_player_profile_embed
 from app.shared.enums import EquipmentSlot
+from app.infrastructure.db.repositories.quest_repository import QuestRepository
+from app.domain.services.quest_service import QuestService
+from app.application.use_cases.get_player_quests import GetPlayerQuestsUseCase
+from app.application.use_cases.claim_quest_reward import ClaimQuestRewardUseCase
 
 
 class PlayerCog(commands.Cog):
@@ -71,7 +75,8 @@ class PlayerCog(commands.Cog):
                 display_name=interaction.user.display_name,
             )
 
-        active_class = class_repository.get_current_class_for_player(profile.player.id)
+            active_class = class_repository.get_current_class_for_player(profile.player.id)
+
         embed = build_player_profile_embed(profile, stats, active_class)
         await interaction.response.send_message(embed=embed)
     
@@ -182,6 +187,8 @@ class PlayerCog(commands.Cog):
             mob_repository = MobRepository(session)
             inventory_repository = InventoryRepository(session)
             item_repository = ItemRepository(session)
+            quest_repository = QuestRepository(session)
+            class_repository = ClassRepository(session)
 
             use_case = FightMobUseCase(
                 player_repository=player_repository,
@@ -189,10 +196,13 @@ class PlayerCog(commands.Cog):
                 mob_repository=mob_repository,
                 inventory_repository=inventory_repository,
                 item_repository=item_repository,
+                quest_repository=quest_repository,
                 stats_service=StatsService(),
                 combat_service=CombatService(),
                 loot_service=LootService(),
                 progression_service=ProgressionService(),
+                quest_service=QuestService(),
+                class_repository=class_repository,
             )
 
             result = use_case.execute(
@@ -273,7 +283,6 @@ class PlayerCog(commands.Cog):
         embed = build_craft_list_embed(recipes)
         await interaction.response.send_message(embed=embed)
 
-
     @app_commands.command(name="craft", description="Fabriquer un objet")
     @app_commands.describe(recipe_code="Code technique de la recette")
     async def craft(self, interaction: discord.Interaction, recipe_code: str) -> None:
@@ -332,6 +341,76 @@ class PlayerCog(commands.Cog):
             await interaction.response.send_message(message)
         else:
             await interaction.response.send_message(message, ephemeral=True)
+    
+    @app_commands.command(name="quests", description="Afficher vos quêtes")
+    async def quests(self, interaction: discord.Interaction) -> None:
+        with get_db_session() as session:
+            player_repository = PlayerRepository(session)
+            quest_repository = QuestRepository(session)
+            inventory_repository = InventoryRepository(session)
+
+            use_case = GetPlayerQuestsUseCase(
+                player_repository=player_repository,
+                quest_repository=quest_repository,
+                inventory_repository=inventory_repository,
+                quest_service=QuestService(),
+            )
+
+            quest_entries = use_case.execute(
+                discord_id=interaction.user.id,
+                username=interaction.user.name,
+                display_name=interaction.user.display_name,
+            )
+
+        embed = discord.Embed(
+            title=f"📜 Quêtes de {interaction.user.display_name}",
+            color=discord.Color.teal(),
+        )
+
+        if not quest_entries:
+            embed.description = "Aucune quête disponible."
+        else:
+            lines = []
+            for entry in quest_entries:
+                quest = entry["quest"]
+                progress = entry["progress"]
+                is_completed = entry["is_completed"]
+                status = "✅ Terminée" if is_completed else "⏳ En cours"
+                lines.append(
+                    f"**{quest.code}** — {quest.name}\n"
+                    f"{quest.description}\n"
+                    f"Progression : {progress}/{quest.required_quantity} • {status}"
+                )
+
+            embed.description = "\n\n".join(lines)
+
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(name="quest_claim", description="Récupérer la récompense d'une quête")
+    @app_commands.describe(quest_code="Code technique de la quête")
+    async def quest_claim(self, interaction: discord.Interaction, quest_code: str) -> None:
+        with get_db_session() as session:
+            player_repository = PlayerRepository(session)
+            quest_repository = QuestRepository(session)
+            item_repository = ItemRepository(session)
+            inventory_repository = InventoryRepository(session)
+
+            use_case = ClaimQuestRewardUseCase(
+                player_repository=player_repository,
+                quest_repository=quest_repository,
+                item_repository=item_repository,
+                inventory_repository=inventory_repository,
+                progression_service=ProgressionService(),
+            )
+
+            success, message = use_case.execute(
+                discord_id=interaction.user.id,
+                username=interaction.user.name,
+                display_name=interaction.user.display_name,
+                quest_code=quest_code,
+            )
+
+        await interaction.response.send_message(message, ephemeral=not success)
     
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(PlayerCog(bot))
