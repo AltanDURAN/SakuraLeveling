@@ -44,6 +44,12 @@ from app.application.use_cases.gather_resource import GatherResourceUseCase
 from app.domain.services.class_service import ClassService
 from app.application.use_cases.get_available_classes import GetAvailableClassesUseCase
 
+import asyncio
+from app.bot.embeds.battle_embeds import (
+    build_battle_result_embed,
+    build_battle_turn_embed,
+)
+
 
 class PlayerCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -186,6 +192,8 @@ class PlayerCog(commands.Cog):
     @app_commands.command(name="fight", description="Combattre un monstre")
     @app_commands.describe(mob_code="Code technique du monstre")
     async def fight(self, interaction: discord.Interaction, mob_code: str) -> None:
+        await interaction.response.defer()
+
         with get_db_session() as session:
             player_repository = PlayerRepository(session)
             equipment_repository = EquipmentRepository(session)
@@ -218,14 +226,29 @@ class PlayerCog(commands.Cog):
             )
 
         if result is None:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "Monstre introuvable.",
                 ephemeral=True,
             )
             return
 
-        embed = build_battle_result_embed(result)
-        await interaction.response.send_message(embed=embed)
+        if not result.turn_logs:
+            embed = build_battle_result_embed(result)
+            await interaction.followup.send(embed=embed)
+            return
+
+        first_embed = build_battle_turn_embed(result, result.turn_logs[0])
+        message = await interaction.followup.send(embed=first_embed)
+
+        for turn_log in result.turn_logs[1:]:
+            await asyncio.sleep(1.2)
+            embed = build_battle_turn_embed(result, turn_log)
+            await message.edit(embed=embed)
+
+        await asyncio.sleep(1.2)
+        final_embed = build_battle_result_embed(result)
+        await message.edit(embed=final_embed)
+
     
     @app_commands.command(name="class", description="Afficher votre classe active")
     async def player_class(self, interaction: discord.Interaction) -> None:

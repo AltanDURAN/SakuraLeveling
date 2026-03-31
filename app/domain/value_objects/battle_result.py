@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from app.domain.value_objects.battle_turn_log import BattleTurnLog
+
 
 @dataclass
 class BattleResult:
@@ -13,3 +15,6 @@ class BattleResult:
     leveled_up: bool
     new_level: int | None
     summary: str
+    turn_logs: list[BattleTurnLog]
+    mob_name: str
+    mob_image_url: str | None

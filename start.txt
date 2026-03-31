@@ -16,3 +16,7 @@ exemple :
     SELECT id, code, name FROM mob_definitions;
     DELETE FROM mob_definitions WHERE code = 'slime';
 ####################
+
+rm lita_v2.db
+alembic revision --autogenerate -m "add mob image url"
+alembic upgrade head

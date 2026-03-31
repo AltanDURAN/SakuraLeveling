@@ -21,6 +21,7 @@ class MobDefinitionModel(Base):
     xp_reward: Mapped[int] = mapped_column(Integer, default=0)
     gold_reward: Mapped[int] = mapped_column(Integer, default=0)
     loot_table_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))

@@ -70,6 +70,7 @@ def seed_mobs() -> None:
                 xp_reward=mob_data["xp_reward"],
                 gold_reward=mob_data["gold_reward"],
                 loot_table=mob_data["loot_table"],
+                image_url=mob_data.get("image_url"),
             )
 
     print("Mobs seedés.")

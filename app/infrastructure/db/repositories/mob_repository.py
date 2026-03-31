@@ -29,6 +29,7 @@ class MobRepository:
         xp_reward: int,
         gold_reward: int,
         loot_table: list[dict] | None = None,
+        image_url: str | None = None,
     ) -> MobDefinition:
         model = MobDefinitionModel(
             code=code,
@@ -40,6 +41,7 @@ class MobRepository:
             xp_reward=xp_reward,
             gold_reward=gold_reward,
             loot_table_json=loot_table,
+            image_url=image_url,
         )
 
         self.session.add(model)
@@ -60,6 +62,7 @@ class MobRepository:
             xp_reward=model.xp_reward,
             gold_reward=model.gold_reward,
             loot_table=model.loot_table_json,
+            image_url=model.image_url,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )

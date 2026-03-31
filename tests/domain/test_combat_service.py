@@ -25,6 +25,7 @@ def build_mob(
         xp_reward=xp_reward,
         gold_reward=gold_reward,
         loot_table=None,
+        image_url="",
         created_at=now,
         updated_at=now,
     )
