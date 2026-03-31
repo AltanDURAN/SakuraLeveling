@@ -241,11 +241,11 @@ class PlayerCog(commands.Cog):
         message = await interaction.followup.send(embed=first_embed)
 
         for turn_log in result.turn_logs[1:]:
-            await asyncio.sleep(1.2)
+            await asyncio.sleep(1.5)
             embed = build_battle_turn_embed(result, turn_log)
             await message.edit(embed=embed)
 
-        await asyncio.sleep(1.2)
+        await asyncio.sleep(1.5)
         final_embed = build_battle_result_embed(result)
         await message.edit(embed=final_embed)
 
