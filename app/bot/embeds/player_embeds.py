@@ -23,6 +23,10 @@ def build_player_profile_embed(
     embed.add_field(name="⚔️ Attaque", value=str(stats.attack), inline=True)
     embed.add_field(name="🛡️ Défense", value=str(stats.defense), inline=True)
 
+    embed.add_field(name="🎯 Crit", value=f"{int(stats.crit_chance * 100)}%", inline=True)
+    embed.add_field(name="💥 Dégâts crit", value=f"{int(stats.crit_damage * 100)}%", inline=True)
+    embed.add_field(name="🌀 Esquive", value=f"{int(stats.dodge * 100)}%", inline=True)
+
     if active_class is None:
         embed.add_field(name="🧬 Classe", value="Aucune", inline=False)
     else:

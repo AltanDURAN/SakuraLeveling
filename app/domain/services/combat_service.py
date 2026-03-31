@@ -1,3 +1,5 @@
+import random
+
 from app.domain.entities.mob_definition import MobDefinition
 from app.domain.value_objects.battle_result import BattleResult
 from app.domain.value_objects.stats import Stats
@@ -13,11 +15,13 @@ class CombatService:
         mob_hp = mob.max_hp
         turns = 0
 
-        player_damage = max(1, player_stats.attack - mob.defense)
-        mob_damage = max(1, mob.attack - player_stats.defense)
-
         while player_hp > 0 and mob_hp > 0:
             turns += 1
+
+            player_damage = max(1, player_stats.attack - mob.defense)
+
+            if random.random() < player_stats.crit_chance:
+                player_damage = int(player_damage * player_stats.crit_damage)
 
             mob_hp -= player_damage
             if mob_hp <= 0:
@@ -31,10 +35,13 @@ class CombatService:
                     items_gained=[],
                     leveled_up=False,
                     new_level=None,
-                    summary=(
-                        f"Vous avez vaincu **{mob.name}** en {turns} tour(s)."
-                    ),
+                    summary=f"Vous avez vaincu **{mob.name}** en {turns} tour(s).",
                 )
+
+            if random.random() < player_stats.dodge:
+                mob_damage = 0
+            else:
+                mob_damage = max(1, mob.attack - player_stats.defense)
 
             player_hp -= mob_damage
             if player_hp <= 0:
@@ -48,9 +55,7 @@ class CombatService:
                     items_gained=[],
                     leveled_up=False,
                     new_level=None,
-                    summary=(
-                        f"Vous avez été vaincu par **{mob.name}** en {turns} tour(s)."
-                    ),
+                    summary=f"Vous avez été vaincu par **{mob.name}** en {turns} tour(s).",
                 )
 
         return BattleResult(

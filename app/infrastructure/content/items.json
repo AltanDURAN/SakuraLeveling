@@ -57,5 +57,21 @@
     "stat_bonuses": {
       "attack": 9
     }
+  },
+  {
+    "code": "hunter_dagger",
+    "name": "Dague du chasseur",
+    "description": "Une dague légère favorisant les coups précis.",
+    "category": "weapon",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 15,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 4,
+      "crit_chance": 0.10
+    }
   }
 ]

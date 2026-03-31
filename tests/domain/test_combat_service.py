@@ -37,6 +37,9 @@ def test_combat_service_player_wins_against_weaker_mob():
         max_hp=100,
         attack=10,
         defense=5,
+        crit_chance=0.0,
+        crit_damage=1.50,
+        dodge=0.0,
     )
 
     mob = build_mob(
@@ -63,6 +66,9 @@ def test_combat_service_player_loses_against_stronger_mob():
         max_hp=20,
         attack=5,
         defense=1,
+        crit_chance=0.0,
+        crit_damage=1.50,
+        dodge=0.0,
     )
 
     mob = build_mob(
@@ -86,6 +92,9 @@ def test_combat_service_damage_has_minimum_of_one():
         max_hp=10,
         attack=1,
         defense=999,
+        crit_chance=0.0,
+        crit_damage=1.50,
+        dodge=0.0,
     )
 
     mob = build_mob(
@@ -98,7 +107,6 @@ def test_combat_service_damage_has_minimum_of_one():
 
     result = service.fight_player_vs_mob(player_stats, mob)
 
-    # Chaque coup inflige au moins 1, donc le combat doit se terminer
     assert result.turns >= 1
     assert result.victory is True
 
@@ -110,6 +118,9 @@ def test_combat_service_turn_count_is_consistent():
         max_hp=100,
         attack=11,
         defense=5,
+        crit_chance=0.0,
+        crit_damage=1.50,
+        dodge=0.0,
     )
 
     mob = build_mob(
@@ -120,5 +131,4 @@ def test_combat_service_turn_count_is_consistent():
 
     result = service.fight_player_vs_mob(player_stats, mob)
 
-    # dégâts joueur = 10, donc 3 tours pour tuer 30 PV
     assert result.turns == 3

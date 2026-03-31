@@ -89,6 +89,7 @@ def build_class_definition(stat_bonuses: dict | None) -> ClassDefinition:
         name="Guerrier",
         description="",
         stat_bonuses=stat_bonuses,
+        unlock_requirements=None,
         created_at=now,
         updated_at=now,
     )
@@ -107,6 +108,9 @@ def test_stats_service_level_1_without_equipment_or_class():
     assert stats.max_hp == 100
     assert stats.attack == 10
     assert stats.defense == 5
+    assert stats.crit_chance == 0.05
+    assert stats.crit_damage == 1.50
+    assert stats.dodge == 0.00
 
 
 def test_stats_service_applies_equipment_bonuses():
@@ -175,3 +179,28 @@ def test_stats_service_applies_class_and_equipment_bonuses_together():
     assert stats.max_hp == 130
     assert stats.attack == 24
     assert stats.defense == 8
+    
+def test_stats_service_applies_advanced_bonuses():
+    profile = build_player_profile(level=1)
+    service = StatsService()
+
+    active_class = build_class_definition(
+        stat_bonuses={"crit_chance": 0.10, "dodge": 0.05}
+    )
+
+    sword = build_equipment_item(
+        code="hunter_dagger",
+        name="Dague du chasseur",
+        stat_bonuses={"attack": 4, "crit_chance": 0.10},
+    )
+
+    stats = service.calculate_player_stats(
+        profile=profile,
+        equipped_items=[sword],
+        active_class=active_class,
+    )
+
+    assert stats.attack == 14
+    assert stats.crit_chance == 0.25
+    assert stats.dodge == 0.05
+    assert stats.crit_damage == 1.50

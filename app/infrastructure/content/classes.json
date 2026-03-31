@@ -21,13 +21,15 @@
     "name": "Voleur",
     "description": "Une classe rapide et offensive.",
     "stat_bonuses": {
-      "attack": 5
+      "attack": 5,
+      "crit_chance": 0.10,
+      "dodge": 0.05
     },
     "unlock_requirements": [
       {
         "type": "profession_level",
         "profession_code": "woodcutting",
-        "level": 20
+        "level": 2
       }
     ]
   },
