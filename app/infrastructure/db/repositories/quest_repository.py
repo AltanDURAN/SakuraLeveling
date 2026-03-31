@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -68,7 +68,7 @@ class QuestRepository:
         model = self.session.execute(stmt).scalar_one_or_none()
 
         if model is None:
-            now = datetime.utcnow()
+            now = datetime.now(UTC)
             model = PlayerQuestStateModel(
                 player_id=player_id,
                 quest_definition_id=quest_definition_id,
@@ -108,7 +108,7 @@ class QuestRepository:
 
         model.progress_quantity = progress_quantity
         model.is_completed = is_completed
-        model.updated_at = datetime.utcnow()
+        model.updated_at = datetime.now(UTC)
         self.session.commit()
 
     def mark_claimed(self, player_id: int, quest_definition_id: int) -> None:
@@ -121,7 +121,7 @@ class QuestRepository:
             return
 
         model.is_claimed = True
-        model.updated_at = datetime.utcnow()
+        model.updated_at = datetime.now(UTC)
         self.session.commit()
 
     def _to_definition_domain(self, model: QuestDefinitionModel) -> QuestDefinition:

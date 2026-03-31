@@ -33,12 +33,14 @@ class ClassRepository:
         name: str,
         description: str,
         stat_bonuses: dict | None = None,
+        unlock_requirements: list[dict] | None = None,
     ) -> ClassDefinition:
         model = ClassDefinitionModel(
             code=code,
             name=name,
             description=description,
             stat_bonuses_json=stat_bonuses,
+            unlock_requirements_json=unlock_requirements,
         )
 
         self.session.add(model)
@@ -110,6 +112,7 @@ class ClassRepository:
             name=model.name,
             description=model.description,
             stat_bonuses=model.stat_bonuses_json,
+            unlock_requirements=model.unlock_requirements_json,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )

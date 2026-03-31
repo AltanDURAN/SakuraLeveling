@@ -7,7 +7,14 @@
       "max_hp": 20,
       "attack": 3,
       "defense": 2
-    }
+    },
+    "unlock_requirements": [
+      {
+        "type": "profession_level",
+        "profession_code": "mining",
+        "level": 2
+      }
+    ]
   },
   {
     "code": "rogue",
@@ -15,7 +22,14 @@
     "description": "Une classe rapide et offensive.",
     "stat_bonuses": {
       "attack": 5
-    }
+    },
+    "unlock_requirements": [
+      {
+        "type": "profession_level",
+        "profession_code": "woodcutting",
+        "level": 20
+      }
+    ]
   },
   {
     "code": "guardian",
@@ -24,6 +38,18 @@
     "stat_bonuses": {
       "max_hp": 30,
       "defense": 4
-    }
+    },
+    "unlock_requirements": [
+      {
+        "type": "profession_level",
+        "profession_code": "mining",
+        "level": 3
+      },
+      {
+        "type": "has_item",
+        "item_code": "slime_gel",
+        "quantity": 5
+      }
+    ]
   }
 ]

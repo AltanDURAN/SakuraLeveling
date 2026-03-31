@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 from sqlalchemy import select
 
 from app.domain.entities.profession_definition import ProfessionDefinition
@@ -53,7 +53,7 @@ class ProfessionRepository:
         ).scalar_one_or_none()
 
         if model is None:
-            now = datetime.utcnow()
+            now = datetime.now(UTC)
             model = PlayerProfessionModel(
                 player_id=player_id,
                 profession_definition_id=profession_id,
@@ -85,5 +85,40 @@ class ProfessionRepository:
 
         model.level = level
         model.xp = xp
-        model.updated_at = datetime.utcnow()
+        model.updated_at = datetime.now(UTC)
         self.session.commit()
+        
+    def list_player_professions_with_definitions(
+        self,
+        player_id: int,
+    ) -> list[tuple[str, PlayerProfession]]:
+        stmt = select(PlayerProfessionModel).where(
+            PlayerProfessionModel.player_id == player_id
+        )
+        player_profession_models = self.session.execute(stmt).scalars().all()
+
+        results: list[tuple[str, PlayerProfession]] = []
+
+        for model in player_profession_models:
+            profession_definition = self.session.get(
+                ProfessionDefinitionModel,
+                model.profession_definition_id,
+            )
+            if profession_definition is None:
+                continue
+
+            results.append(
+                (
+                    profession_definition.code,
+                    PlayerProfession(
+                        player_id=model.player_id,
+                        profession_definition_id=model.profession_definition_id,
+                        level=model.level,
+                        xp=model.xp,
+                        created_at=model.created_at,
+                        updated_at=model.updated_at,
+                    ),
+                )
+            )
+
+        return results

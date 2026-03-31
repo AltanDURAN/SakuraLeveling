@@ -41,6 +41,8 @@ from app.application.use_cases.claim_quest_reward import ClaimQuestRewardUseCase
 from app.infrastructure.db.repositories.profession_repository import ProfessionRepository
 from app.domain.services.profession_service import ProfessionService
 from app.application.use_cases.gather_resource import GatherResourceUseCase
+from app.domain.services.class_service import ClassService
+from app.application.use_cases.get_available_classes import GetAvailableClassesUseCase
 
 
 class PlayerCog(commands.Cog):
@@ -251,29 +253,25 @@ class PlayerCog(commands.Cog):
         with get_db_session() as session:
             player_repository = PlayerRepository(session)
             class_repository = ClassRepository(session)
+            profession_repository = ProfessionRepository(session)
+            inventory_repository = InventoryRepository(session)
 
             use_case = ChangePlayerClassUseCase(
                 player_repository=player_repository,
                 class_repository=class_repository,
+                profession_repository=profession_repository,
+                inventory_repository=inventory_repository,
+                class_service=ClassService(),
             )
 
-            success = use_case.execute(
+            success, message = use_case.execute(
                 discord_id=interaction.user.id,
                 username=interaction.user.name,
                 display_name=interaction.user.display_name,
                 class_code=class_code,
             )
 
-        if not success:
-            await interaction.response.send_message(
-                "Classe introuvable.",
-                ephemeral=True,
-            )
-            return
-
-        await interaction.response.send_message(
-            f"Classe active définie sur `{class_code}`."
-        )
+        await interaction.response.send_message(message, ephemeral=not success)
     
     @app_commands.command(name="craft_list", description="Afficher les recettes disponibles")
     async def craft_list(self, interaction: discord.Interaction) -> None:
@@ -435,6 +433,72 @@ class PlayerCog(commands.Cog):
             )
 
         await interaction.response.send_message(message, ephemeral=not success)
+    
+    @app_commands.command(name="classes", description="Afficher les classes disponibles et leur état")
+    async def classes(self, interaction: discord.Interaction) -> None:
+        with get_db_session() as session:
+            player_repository = PlayerRepository(session)
+            class_repository = ClassRepository(session)
+            profession_repository = ProfessionRepository(session)
+            inventory_repository = InventoryRepository(session)
+
+            use_case = GetAvailableClassesUseCase(
+                player_repository=player_repository,
+                class_repository=class_repository,
+                profession_repository=profession_repository,
+                inventory_repository=inventory_repository,
+                class_service=ClassService(),
+            )
+
+            class_entries = use_case.execute(
+                discord_id=interaction.user.id,
+                username=interaction.user.name,
+                display_name=interaction.user.display_name,
+            )
+
+        embed = discord.Embed(
+            title=f"🧬 Classes de {interaction.user.display_name}",
+            color=discord.Color.dark_gold(),
+        )
+
+        if not class_entries:
+            embed.description = "Aucune classe disponible."
+        else:
+            lines = []
+            for entry in class_entries:
+                class_definition = entry["class_definition"]
+                unlocked = entry["unlocked"]
+                status = "✅ Débloquée" if unlocked else "🔒 Verrouillée"
+
+                requirements = class_definition.unlock_requirements or []
+                if requirements:
+                    requirement_lines = []
+                    for requirement in requirements:
+                        requirement_type = requirement.get("type")
+
+                        if requirement_type == "profession_level":
+                            requirement_lines.append(
+                                f"Métier {requirement['profession_code']} niveau {requirement['level']}"
+                            )
+                        elif requirement_type == "has_item":
+                            requirement_lines.append(
+                                f"{requirement['item_code']} x{requirement['quantity']}"
+                            )
+
+                    requirement_text = " | ".join(requirement_lines)
+                else:
+                    requirement_text = "Aucune condition"
+
+                lines.append(
+                    f"**{class_definition.code}** — {class_definition.name}\n"
+                    f"{class_definition.description}\n"
+                    f"{status}\n"
+                    f"Conditions : {requirement_text}"
+                )
+
+            embed.description = "\n\n".join(lines)
+
+        await interaction.response.send_message(embed=embed)
     
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(PlayerCog(bot))

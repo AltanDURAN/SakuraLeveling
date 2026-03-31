@@ -9,5 +9,6 @@ class ClassDefinition:
     name: str
     description: str
     stat_bonuses: dict | None
+    unlock_requirements: list[dict] | None
     created_at: datetime
     updated_at: datetime

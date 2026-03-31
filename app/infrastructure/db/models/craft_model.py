@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 
 from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
@@ -19,8 +19,8 @@ class CraftRecipeModel(Base):
     )
     result_quantity: Mapped[int] = mapped_column(Integer, default=1)
 
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
 
 
 class CraftRecipeIngredientModel(Base):

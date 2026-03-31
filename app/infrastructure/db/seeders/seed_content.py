@@ -90,6 +90,7 @@ def seed_classes() -> None:
                 name=class_data["name"],
                 description=class_data["description"],
                 stat_bonuses=class_data["stat_bonuses"],
+                unlock_requirements=class_data.get("unlock_requirements"),
             )
 
     print("Classes seedées.")
