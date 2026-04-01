@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 from app.domain.entities.class_definition import ClassDefinition
 from app.domain.entities.item_definition import ItemDefinition
@@ -11,7 +11,7 @@ from app.domain.services.stats_service import StatsService
 
 
 def build_player_profile(level: int = 1) -> PlayerProfile:
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
 
     player = Player(
         id=1,
@@ -51,7 +51,7 @@ def build_equipment_item(
     name: str,
     stat_bonuses: dict | None,
 ) -> PlayerEquipmentItem:
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
 
     item_definition = ItemDefinition(
         id=1,
@@ -81,7 +81,7 @@ def build_equipment_item(
 
 
 def build_class_definition(stat_bonuses: dict | None) -> ClassDefinition:
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
 
     return ClassDefinition(
         id=1,

@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -35,7 +35,7 @@ class CooldownRepository:
             PlayerCooldownModel.action_key == action_key,
         )
         model = self.session.execute(stmt).scalar_one_or_none()
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
 
         if model is None:
             model = PlayerCooldownModel(

@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 from app.domain.entities.mob_definition import MobDefinition
 from app.domain.services.combat_service import CombatService
@@ -12,7 +12,7 @@ def build_mob(
     xp_reward: int = 10,
     gold_reward: int = 5,
 ) -> MobDefinition:
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
 
     return MobDefinition(
         id=1,

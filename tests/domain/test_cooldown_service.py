@@ -7,7 +7,7 @@ from app.domain.value_objects.cooldown import Cooldown
 def test_cooldown_is_available_when_none():
     service = CooldownService()
 
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
 
     assert service.is_available(None, now) is True
 
@@ -15,7 +15,7 @@ def test_cooldown_is_available_when_none():
 def test_cooldown_is_available_when_expired():
     service = CooldownService()
 
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
 
     cooldown = Cooldown(
         player_id=1,
@@ -30,7 +30,7 @@ def test_cooldown_is_available_when_expired():
 def test_cooldown_is_not_available_when_active():
     service = CooldownService()
 
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
 
     cooldown = Cooldown(
         player_id=1,
@@ -45,7 +45,7 @@ def test_cooldown_is_not_available_when_active():
 def test_build_next_daily_cooldown():
     service = CooldownService()
 
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
 
     last_used, next_available = service.build_next_daily_cooldown(now)
 

@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 from sqlalchemy import Boolean, Integer, String, JSON
 from sqlalchemy.orm import Mapped, mapped_column
@@ -22,5 +22,5 @@ class ItemDefinitionModel(Base):
     icon: Mapped[str | None] = mapped_column(String(255), nullable=True)
     stat_bonuses_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(default=datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.now(timezone.utc))

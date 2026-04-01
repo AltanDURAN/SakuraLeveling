@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 from sqlalchemy import Integer, String, JSON
 from sqlalchemy.orm import Mapped, mapped_column
@@ -23,5 +23,5 @@ class MobDefinitionModel(Base):
     loot_table_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(default=datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.now(timezone.utc))

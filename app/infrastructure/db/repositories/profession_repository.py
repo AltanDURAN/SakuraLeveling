@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from sqlalchemy import select
 
 from app.domain.entities.profession_definition import ProfessionDefinition
@@ -53,7 +53,7 @@ class ProfessionRepository:
         ).scalar_one_or_none()
 
         if model is None:
-            now = datetime.now(UTC)
+            now = datetime.now(timezone.utc)
             model = PlayerProfessionModel(
                 player_id=player_id,
                 profession_definition_id=profession_id,
@@ -85,7 +85,7 @@ class ProfessionRepository:
 
         model.level = level
         model.xp = xp
-        model.updated_at = datetime.now(UTC)
+        model.updated_at = datetime.now(timezone.utc)
         self.session.commit()
         
     def list_player_professions_with_definitions(

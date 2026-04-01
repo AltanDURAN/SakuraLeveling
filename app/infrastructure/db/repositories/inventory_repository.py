@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
@@ -31,7 +31,7 @@ class InventoryRepository:
         )
 
         model = self.session.execute(stmt).scalar_one_or_none()
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
 
         if model is None:
             model = PlayerInventoryItemModel(
@@ -60,7 +60,7 @@ class InventoryRepository:
             return False
 
         model.quantity -= quantity
-        model.updated_at = datetime.now(UTC)
+        model.updated_at = datetime.now(timezone.utc)
 
         if model.quantity == 0:
             self.session.delete(model)
