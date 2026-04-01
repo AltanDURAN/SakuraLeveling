@@ -14,6 +14,7 @@ from app.application.use_cases.get_available_classes import GetAvailableClassesU
 from app.application.use_cases.get_available_crafts import GetAvailableCraftsUseCase
 from app.application.use_cases.get_player_class import GetPlayerClassUseCase
 from app.application.use_cases.get_player_equipment import GetPlayerEquipmentUseCase
+from app.application.use_cases.equip_item import EquipItemUseCase
 from app.application.use_cases.get_player_inventory import GetPlayerInventoryUseCase
 from app.application.use_cases.get_player_profile import GetPlayerProfileUseCase
 from app.application.use_cases.get_player_quests import GetPlayerQuestsUseCase

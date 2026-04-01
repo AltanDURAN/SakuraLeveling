@@ -20,3 +20,10 @@ exemple :
 rm lita_v2.db
 alembic revision --autogenerate -m "add mob image url"
 alembic upgrade head
+
+###################
+Mettre à jour branche beta 
+git checkout beta
+git merge main
+git push
+git checkout main
