@@ -3,7 +3,7 @@ name = "lita-v2"
 version = "0.1.0"
 description = "Discord RPG bot rebuilt with a clean architecture"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dependencies = [
     "discord.py>=2.5.0",
     "sqlalchemy>=2.0.0",
