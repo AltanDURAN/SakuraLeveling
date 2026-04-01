@@ -1,60 +1,75 @@
+import asyncio
+
 import discord
 from discord import app_commands
 from discord.ext import commands
 
-from app.application.use_cases.get_player_profile import GetPlayerProfileUseCase
-from app.infrastructure.db.repositories.player_repository import PlayerRepository
-from app.application.use_cases.get_player_inventory import GetPlayerInventoryUseCase
-from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
-from app.application.use_cases.equip_item import EquipItemUseCase
-from app.application.use_cases.get_player_equipment import GetPlayerEquipmentUseCase
-from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
-from app.application.use_cases.get_player_stats import GetPlayerStatsUseCase
-from app.domain.services.stats_service import StatsService
-from app.application.use_cases.fight_mob import FightMobUseCase
-from app.domain.services.combat_service import CombatService
-from app.infrastructure.db.repositories.mob_repository import MobRepository
-from app.domain.services.loot_service import LootService
-from app.domain.services.progression_service import ProgressionService
-from app.infrastructure.db.repositories.item_repository import ItemRepository
-from app.infrastructure.db.session import get_db_session
 from app.application.use_cases.change_player_class import ChangePlayerClassUseCase
-from app.application.use_cases.get_player_class import GetPlayerClassUseCase
-from app.infrastructure.db.repositories.class_repository import ClassRepository
-from app.application.use_cases.craft_item import CraftItemUseCase
-from app.application.use_cases.get_available_crafts import GetAvailableCraftsUseCase
-from app.domain.services.craft_service import CraftService
-from app.infrastructure.db.repositories.craft_repository import CraftRepository
 from app.application.use_cases.claim_daily_reward import ClaimDailyRewardUseCase
-from app.domain.services.cooldown_service import CooldownService
-from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
-from app.bot.embeds.battle_embeds import build_battle_result_embed
-from app.bot.embeds.class_embeds import build_player_class_embed
-from app.bot.embeds.craft_embeds import build_craft_list_embed
-from app.bot.embeds.inventory_embeds import build_inventory_embed
-from app.bot.embeds.player_embeds import build_player_profile_embed
-from app.shared.enums import EquipmentSlot
-from app.infrastructure.db.repositories.quest_repository import QuestRepository
-from app.domain.services.quest_service import QuestService
-from app.application.use_cases.get_player_quests import GetPlayerQuestsUseCase
 from app.application.use_cases.claim_quest_reward import ClaimQuestRewardUseCase
-from app.infrastructure.db.repositories.profession_repository import ProfessionRepository
-from app.domain.services.profession_service import ProfessionService
+from app.application.use_cases.craft_item import CraftItemUseCase
+from app.application.use_cases.fight_mob import FightMobUseCase
 from app.application.use_cases.gather_resource import GatherResourceUseCase
-from app.domain.services.class_service import ClassService
 from app.application.use_cases.get_available_classes import GetAvailableClassesUseCase
-
-import asyncio
+from app.application.use_cases.get_available_crafts import GetAvailableCraftsUseCase
+from app.application.use_cases.get_player_class import GetPlayerClassUseCase
+from app.application.use_cases.get_player_equipment import GetPlayerEquipmentUseCase
+from app.application.use_cases.get_player_inventory import GetPlayerInventoryUseCase
+from app.application.use_cases.get_player_profile import GetPlayerProfileUseCase
+from app.application.use_cases.get_player_quests import GetPlayerQuestsUseCase
+from app.application.use_cases.get_player_stats import GetPlayerStatsUseCase
 from app.bot.embeds.battle_embeds import (
     build_battle_result_embed,
     build_battle_turn_embed,
 )
+from app.bot.embeds.class_embeds import build_player_class_embed
+from app.bot.embeds.craft_embeds import build_craft_list_embed
+from app.bot.embeds.inventory_embeds import build_inventory_embed
+from app.bot.embeds.player_embeds import build_player_profile_embed
+from app.domain.services.class_service import ClassService
+from app.domain.services.combat_service import CombatService
+from app.domain.services.cooldown_service import CooldownService
+from app.domain.services.craft_service import CraftService
+from app.domain.services.loot_service import LootService
+from app.domain.services.profession_service import ProfessionService
+from app.domain.services.progression_service import ProgressionService
+from app.domain.services.quest_service import QuestService
+from app.domain.services.stats_service import StatsService
+from app.infrastructure.config.settings import settings
+from app.infrastructure.db.repositories.class_repository import ClassRepository
+from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
+from app.infrastructure.db.repositories.craft_repository import CraftRepository
+from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
+from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
+from app.infrastructure.db.repositories.item_repository import ItemRepository
+from app.infrastructure.db.repositories.mob_repository import MobRepository
+from app.infrastructure.db.repositories.player_repository import PlayerRepository
+from app.infrastructure.db.repositories.profession_repository import ProfessionRepository
+from app.infrastructure.db.repositories.quest_repository import QuestRepository
+from app.infrastructure.db.session import get_db_session
+from app.shared.enums import EquipmentSlot
 
 
 class PlayerCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.channel_id != settings.beta_channel_id:
+            if interaction.response.is_done():
+                await interaction.followup.send(
+                    "🚧 Le bot est actuellement en phase de test.\nUtilisez le channel beta dédié.",
+                    ephemeral=True,
+                )
+            else:
+                await interaction.response.send_message(
+                    "🚧 Le bot est actuellement en phase de test.\nUtilisez le channel beta dédié.",
+                    ephemeral=True,
+                )
+            return False
+
+        return True
+
     @app_commands.command(name="ping", description="Vérifier si le bot fonctionne")
     async def ping(self, interaction: discord.Interaction) -> None:
         await interaction.response.send_message("🏓 Pong !")
@@ -90,7 +105,7 @@ class PlayerCog(commands.Cog):
 
         embed = build_player_profile_embed(profile, stats, active_class)
         await interaction.response.send_message(embed=embed)
-    
+
     @app_commands.command(name="inventory", description="Afficher votre inventaire")
     async def inventory(self, interaction: discord.Interaction) -> None:
         with get_db_session() as session:
@@ -249,7 +264,6 @@ class PlayerCog(commands.Cog):
         final_embed = build_battle_result_embed(result)
         await message.edit(embed=final_embed)
 
-    
     @app_commands.command(name="class", description="Afficher votre classe active")
     async def player_class(self, interaction: discord.Interaction) -> None:
         with get_db_session() as session:
@@ -295,7 +309,7 @@ class PlayerCog(commands.Cog):
             )
 
         await interaction.response.send_message(message, ephemeral=not success)
-    
+
     @app_commands.command(name="craft_list", description="Afficher les recettes disponibles")
     async def craft_list(self, interaction: discord.Interaction) -> None:
         with get_db_session() as session:
@@ -341,7 +355,7 @@ class PlayerCog(commands.Cog):
         await interaction.response.send_message(
             f"Craft `{recipe_code}` réalisé avec succès."
         )
-    
+
     @app_commands.command(name="daily", description="Récupérer votre récompense quotidienne")
     async def daily(self, interaction: discord.Interaction) -> None:
         with get_db_session() as session:
@@ -365,7 +379,7 @@ class PlayerCog(commands.Cog):
             await interaction.response.send_message(message)
         else:
             await interaction.response.send_message(message, ephemeral=True)
-    
+
     @app_commands.command(name="quests", description="Afficher vos quêtes")
     async def quests(self, interaction: discord.Interaction) -> None:
         with get_db_session() as session:
@@ -435,7 +449,7 @@ class PlayerCog(commands.Cog):
             )
 
         await interaction.response.send_message(message, ephemeral=not success)
-    
+
     @app_commands.command(name="gather", description="Récolter des ressources")
     @app_commands.describe(profession_code="Code du métier")
     async def gather(self, interaction: discord.Interaction, profession_code: str):
@@ -456,7 +470,7 @@ class PlayerCog(commands.Cog):
             )
 
         await interaction.response.send_message(message, ephemeral=not success)
-    
+
     @app_commands.command(name="classes", description="Afficher les classes disponibles et leur état")
     async def classes(self, interaction: discord.Interaction) -> None:
         with get_db_session() as session:
@@ -522,6 +536,7 @@ class PlayerCog(commands.Cog):
             embed.description = "\n\n".join(lines)
 
         await interaction.response.send_message(embed=embed)
-    
+
+
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(PlayerCog(bot))
