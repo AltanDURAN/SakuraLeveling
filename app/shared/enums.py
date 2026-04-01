@@ -1,7 +1,7 @@
-from enum import StrEnum
+from enum import Enum
 
 
-class EquipmentSlot(StrEnum):
+class EquipmentSlot(str, Enum):
     WEAPON = "weapon"
     HELMET = "helmet"
     CHEST = "chest"
@@ -10,7 +10,7 @@ class EquipmentSlot(StrEnum):
     RING_2 = "ring_2"
 
 
-class ItemCategory(StrEnum):
+class ItemCategory(str, Enum):
     RESOURCE = "resource"
     WEAPON = "weapon"
     HELMET = "helmet"
@@ -19,7 +19,7 @@ class ItemCategory(StrEnum):
     RING = "ring"
 
 
-class ItemRarity(StrEnum):
+class ItemRarity(str, Enum):
     COMMON = "common"
     UNCOMMON = "uncommon"
     RARE = "rare"
@@ -27,5 +27,5 @@ class ItemRarity(StrEnum):
     LEGENDARY = "legendary"
 
 
-class CooldownAction(StrEnum):
+class CooldownAction(str, Enum):
     DAILY = "daily"
