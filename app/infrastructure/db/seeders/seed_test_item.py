@@ -78,6 +78,26 @@ def main() -> None:
         )
         
         print("Casque ajoutée à l'inventaire.")
+        
+        item = item_repository.get_by_code("gobelin_tooth")
+        if item is None:
+            item = item_repository.create(
+                code="gobelin_tooth",
+                name="Dent de Gobelin",
+                description="Une dent récupérée sur un gobelin.",
+                category="resource",
+                rarity="common",
+                stackable=True,
+                sell_price=2,
+            )
+
+        inventory_repository.add_item(
+            player_id=profile.player.id,
+            item_definition_id=item.id,
+            quantity=5,
+        )
+        
+        print("Item Dent de Gobelin ajouté à l'inventaire.")
 
 
 if __name__ == "__main__":

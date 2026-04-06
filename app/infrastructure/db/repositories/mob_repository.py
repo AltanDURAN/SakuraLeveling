@@ -1,9 +1,9 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+import random
 
 from app.domain.entities.mob_definition import MobDefinition
 from app.infrastructure.db.models.mob_model import MobDefinitionModel
-
 
 class MobRepository:
     def __init__(self, session: Session):
@@ -28,6 +28,7 @@ class MobRepository:
         defense: int,
         xp_reward: int,
         gold_reward: int,
+        spawn_weight: int = 1,
         loot_table: list[dict] | None = None,
         image_url: str | None = None,
     ) -> MobDefinition:
@@ -40,6 +41,7 @@ class MobRepository:
             defense=defense,
             xp_reward=xp_reward,
             gold_reward=gold_reward,
+            spawn_weight=spawn_weight,
             loot_table_json=loot_table,
             image_url=image_url,
         )
@@ -61,8 +63,21 @@ class MobRepository:
             defense=model.defense,
             xp_reward=model.xp_reward,
             gold_reward=model.gold_reward,
+            spawn_weight=model.spawn_weight,
             loot_table=model.loot_table_json,
             image_url=model.image_url,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
+        
+    def get_random(self) -> MobDefinition | None:
+        stmt = select(MobDefinitionModel)
+        models = self.session.execute(stmt).scalars().all()
+
+        if not models:
+            return None
+
+        weights = [getattr(m, "spawn_weight", 1) for m in models]
+        model = random.choices(models, weights=weights, k=1)[0]
+
+        return self._to_domain(model)

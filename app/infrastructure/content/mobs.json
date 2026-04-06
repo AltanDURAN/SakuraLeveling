@@ -16,6 +16,27 @@
         "max_quantity": 2
       }
     ],
-    "image_url": "https://i.imgur.com/tLYX58K.jpeg"
+    "image_url": "https://i.imgur.com/tLYX58K.jpeg",
+    "spawn_weight": 80
+  },
+  {
+    "code": "gobelin",
+    "name": "Gobelin",
+    "description": "Une créature faible.",
+    "max_hp": 300,
+    "attack": 15,
+    "defense": 10,
+    "xp_reward": 10,
+    "gold_reward": 15,
+    "loot_table": [
+      {
+        "item_code": "gobelin_tooth",
+        "drop_rate": 0.75,
+        "min_quantity": 1,
+        "max_quantity": 2
+      }
+    ],
+    "image_url": "https://i.imgur.com/biWGKHv.jpeg",
+    "spawn_weight": 50
   }
 ]

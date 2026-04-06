@@ -46,7 +46,7 @@ class EncounterCog(commands.Cog):
 
         with get_db_session() as session:
             mob_repository = MobRepository(session)
-            mob = mob_repository.get_by_code("slime")
+            mob = mob_repository.get_random()
 
         if mob is None:
             return
