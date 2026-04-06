@@ -13,5 +13,4 @@ class EncounterView(discord.ui.View):
         button: discord.ui.Button,
     ) -> None:
         success, message = self.cog.register_participant(interaction.user.id)
-
         await interaction.response.send_message(message, ephemeral=True)

@@ -1,15 +1,9 @@
 import asyncio
-import random
-from datetime import datetime
 
 import discord
 from discord.ext import commands, tasks
 
-from app.bot.embeds.battle_embeds import build_battle_result_embed
-from app.bot.embeds.encounter_embeds import (
-    build_encounter_no_participants_embed,
-    build_encounter_spawn_embed,
-)
+from app.bot.embeds.encounter_embeds import build_encounter_embed
 from app.bot.runtime.active_encounter import ActiveEncounter
 from app.bot.views.encounter_view import EncounterView
 from app.domain.services.party_combat_service import PartyCombatService
@@ -34,13 +28,12 @@ class EncounterCog(commands.Cog):
     def register_participant(self, user_id: int) -> tuple[bool, str]:
         if self.active_encounter is None:
             return False, "Aucun combat à rejoindre."
-        if datetime.utcnow() >= self.active_encounter.ends_at:
-            return False, "Le recrutement est terminé."
+
         if user_id in self.active_encounter.participant_user_ids:
             return False, "Vous avez déjà rejoint le combat."
 
         self.active_encounter.participant_user_ids.add(user_id)
-        return True, "Vous avez rejoint le groupe d'aventuriers."
+        return True, "Vous avez rejoint le combat."
 
     @tasks.loop(minutes=5)
     async def encounter_loop(self):
@@ -58,15 +51,29 @@ class EncounterCog(commands.Cog):
         if mob is None:
             return
 
+        # URLs de test temporaires
         encounter = ActiveEncounter.create(
             mob_code=mob.code,
             mob_name=mob.name,
-            mob_image_url=mob.image_url,
+            spawn_image_url=mob.image_url,
+            turn_image_urls=[
+                "https://maisons-alfort.fr/wp-content/uploads/2019/01/TRAVAUX.jpg",
+                "https://www.guichenpontrean.fr/medias/sites/7/2015/10/Travaux-2.jpg",
+                "https://www.arpajon91.fr/Files/9/d/csm_Info_travaux_page-0001_97d7fe931e.jpg",
+            ],
+            victory_image_url="https://static1.millenium.org/article_old/images/contenu/actus/LOL/Rominnoux/Victory.png",
+            defeat_image_url="https://static1.millenium.org/article_old/images/contenu/actus/LOL/Rominnoux/Defeat.png",
+            flee_image_url="https://media.istockphoto.com/id/1225549108/fr/vectoriel/ex%C3%A9cuter-sport-illustration-dic%C3%B4ne-vectorielle-dexercice.jpg?s=612x612&w=0&k=20&c=GRCiH7FF_i-YicXcn1XbQwtEucJOwNd2zTgZQS_aY6U=",
             duration_minutes=5,
         )
 
-        embed = build_encounter_spawn_embed(encounter)
         view = EncounterView(self)
+        embed = build_encounter_embed(
+            mob_name=encounter.mob_name,
+            image_url=encounter.spawn_image_url,
+            participant_count=0,
+            state_text="Un monstre apparaît. Cliquez sur **Combattre** pour rejoindre l'expédition.",
+        )
 
         message = await channel.send(embed=embed, view=view)
         encounter.message_id = message.id
@@ -74,27 +81,68 @@ class EncounterCog(commands.Cog):
 
         await asyncio.sleep(300)
 
-        view.children[0].disabled = True
-        await message.edit(view=view)
+        # désactiver le bouton
+        for child in view.children:
+            child.disabled = True
 
         if self.active_encounter is None:
             return
 
+        # personne n'a rejoint
         if not self.active_encounter.participant_user_ids:
-            embed = build_encounter_no_participants_embed(self.active_encounter)
-            await message.edit(embed=embed, view=view)
+            flee_embed = build_encounter_embed(
+                mob_name=self.active_encounter.mob_name,
+                image_url=self.active_encounter.flee_image_url,
+                participant_count=0,
+                state_text="Le monstre s'est enfui...",
+            )
+            await message.edit(embed=flee_embed, view=view)
             self.active_encounter = None
             return
 
         result = self.resolve_active_encounter()
-
         if result is None:
             self.active_encounter = None
             return
 
-        final_embed = build_battle_result_embed_from_party(result)
-        await message.edit(embed=final_embed, view=view)
+        # animation par remplacement d'image
+        participant_count = len(self.active_encounter.participant_user_ids)
 
+        for index, _turn_log in enumerate(result.turn_logs):
+            image_url = None
+            if index < len(self.active_encounter.turn_image_urls):
+                image_url = self.active_encounter.turn_image_urls[index]
+
+            turn_embed = build_encounter_embed(
+                mob_name=self.active_encounter.mob_name,
+                image_url=image_url,
+                participant_count=participant_count,
+                state_text=f"⚔️ Combat en cours... Tour {index + 1}",
+            )
+
+            await message.edit(embed=turn_embed, view=view)
+            await asyncio.sleep(1.5)
+
+        final_image = (
+            self.active_encounter.victory_image_url
+            if result.victory
+            else self.active_encounter.defeat_image_url
+        )
+
+        final_text = (
+            f"🏆 Victoire en {result.turns} tour(s) !"
+            if result.victory
+            else f"💀 Défaite après {result.turns} tour(s)."
+        )
+
+        final_embed = build_encounter_embed(
+            mob_name=self.active_encounter.mob_name,
+            image_url=final_image,
+            participant_count=participant_count,
+            state_text=final_text,
+        )
+
+        await message.edit(embed=final_embed, view=view)
         self.active_encounter = None
 
     @encounter_loop.before_loop
@@ -124,6 +172,7 @@ class EncounterCog(commands.Cog):
 
                 equipped_items = equipment_repository.list_by_player_id(profile.player.id)
                 active_class = class_repository.get_current_class_for_player(profile.player.id)
+
                 stats = StatsService().calculate_player_stats(
                     profile=profile,
                     equipped_items=equipped_items,
@@ -139,55 +188,6 @@ class EncounterCog(commands.Cog):
             party=party,
             mob=mob,
         )
-
-
-def build_battle_result_embed_from_party(result):
-    color = discord.Color.green() if result.victory else discord.Color.red()
-
-    embed = discord.Embed(
-        title=f"⚔️ Résultat — {result.mob_name}",
-        description=result.summary,
-        color=color,
-    )
-
-    if result.mob_image_url:
-        embed.set_thumbnail(url=result.mob_image_url)
-
-    embed.add_field(name="🕒 Tours", value=str(result.turns), inline=True)
-    embed.add_field(name="👾 PV restants monstre", value=str(result.mob_remaining_hp), inline=True)
-    embed.add_field(name="🏆 Victoire", value="Oui" if result.victory else "Non", inline=True)
-
-    if result.surviving_players:
-        embed.add_field(
-            name="🧍 Survivants",
-            value="\n".join(result.surviving_players),
-            inline=False,
-        )
-
-    if result.defeated_players:
-        embed.add_field(
-            name="💀 Vaincus",
-            value="\n".join(result.defeated_players),
-            inline=False,
-        )
-
-    if result.victory:
-        embed.add_field(name="✨ XP gagnée", value=str(result.xp_gained), inline=True)
-        embed.add_field(name="💰 Gold gagné", value=str(result.gold_gained), inline=True)
-
-    if result.turn_logs:
-        last_turn = result.turn_logs[-1]
-        embed.add_field(
-            name="📜 Dernier tour",
-            value=(
-                f"Actions des joueurs :\n" + "\n".join(last_turn.player_actions) + "\n\n"
-                f"Action du monstre :\n{last_turn.mob_action}\n\n"
-                f"État du groupe :\n{last_turn.party_hp_summary}"
-            ),
-            inline=False,
-        )
-
-    return embed
 
 
 async def setup(bot: commands.Bot) -> None:
