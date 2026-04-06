@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Integer, String, JSON
+from sqlalchemy import Column, Integer, String, JSON
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.db.base import Base
@@ -20,6 +20,7 @@ class MobDefinitionModel(Base):
 
     xp_reward: Mapped[int] = mapped_column(Integer, default=0)
     gold_reward: Mapped[int] = mapped_column(Integer, default=0)
+    spawn_weight = Column(Integer, nullable=False, default=1)
     loot_table_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
 

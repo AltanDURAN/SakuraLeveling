@@ -13,6 +13,7 @@ class MobDefinition:
     defense: int
     xp_reward: int
     gold_reward: int
+    spawn_weight: int
     loot_table: list[dict] | None
     image_url: str | None
     created_at: datetime

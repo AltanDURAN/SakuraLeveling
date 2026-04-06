@@ -69,6 +69,7 @@ def seed_mobs() -> None:
                 defense=mob_data["defense"],
                 xp_reward=mob_data["xp_reward"],
                 gold_reward=mob_data["gold_reward"],
+                spawn_weight=mob_data.get("spawn_weight", 1),
                 loot_table=mob_data["loot_table"],
                 image_url=mob_data.get("image_url"),
             )

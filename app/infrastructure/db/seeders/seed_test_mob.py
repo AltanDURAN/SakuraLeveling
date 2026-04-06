@@ -17,6 +17,7 @@ def main() -> None:
                 defense=1,
                 xp_reward=10,
                 gold_reward=5,
+                spawn_weight=80,
                 loot_table=[
                     {
                         "item_code": "slime_gel",
