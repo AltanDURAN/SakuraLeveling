@@ -5,3 +5,5 @@ __pycache__/
 venv/
 .pytest_cache/
 alembic/versions/__pycache__/
+lita_v2.db
+*.db
