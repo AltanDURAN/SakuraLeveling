@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     env: str = "development"
     debug: bool = True
     beta_channel_id: int
+    encounter_channel_id: int
 
     model_config = SettingsConfigDict(
         env_file=".env",
