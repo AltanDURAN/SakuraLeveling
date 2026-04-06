@@ -205,8 +205,8 @@ def compose_players_banner(
 
     # Réglages d'apparence
     avatar_size = 100
-    outline_size = 5
-    bottom_margin = 252
+    outline_size = 3
+    bottom_margin = 63
 
     # Centres horizontaux
     centers_x = [int((i + 1) * bg_width / (count + 1)) for i in range(count)]
@@ -298,26 +298,6 @@ if __name__ == "__main__":
         {
             "picture": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
             "current_hp": 10,
-            "max_hp": 100,
-        },
-        {
-            "picture": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
-            "current_hp": 0,
-            "max_hp": 100,
-        },
-        {
-            "picture": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
-            "current_hp": 0,
-            "max_hp": 100,
-        },
-        {
-            "picture": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
-            "current_hp": 0,
-            "max_hp": 100,
-        },
-        {
-            "picture": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
-            "current_hp": 0,
             "max_hp": 100,
         },
         {
