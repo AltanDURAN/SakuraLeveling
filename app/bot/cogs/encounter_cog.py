@@ -2,6 +2,7 @@ import asyncio
 
 import discord
 from discord.ext import commands, tasks
+from pathlib import Path
 
 from app.bot.embeds.encounter_embeds import build_encounter_embed
 from app.bot.runtime.active_encounter import ActiveEncounter
@@ -14,25 +15,69 @@ from app.infrastructure.db.repositories.equipment_repository import EquipmentRep
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
+from app.bot.runtime.encounter_participant import EncounterParticipant
+from tests.sandbox.fight_scene import compose_players_banner
 
-
+BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
+print("=======================")
+print(BASE_DIR)
+print("=======================")
 class EncounterCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.active_encounter: ActiveEncounter | None = None
         self.encounter_loop.start()
+        self.generated_dir = Path("generated_encounters")
+        self.generated_dir.mkdir(exist_ok=True)
 
     def cog_unload(self):
         self.encounter_loop.cancel()
 
-    def register_participant(self, user_id: int) -> tuple[bool, str]:
+    async def register_participant(
+        self,
+        user_id: int,
+        display_name: str,
+        avatar_url: str,
+    ) -> tuple[bool, str]:
         if self.active_encounter is None:
             return False, "Aucun combat à rejoindre."
 
-        if user_id in self.active_encounter.participant_user_ids:
+        if user_id in self.active_encounter.participants:
             return False, "Vous avez déjà rejoint le combat."
 
-        self.active_encounter.participant_user_ids.add(user_id)
+        with get_db_session() as session:
+            player_repository = PlayerRepository(session)
+            equipment_repository = EquipmentRepository(session)
+            class_repository = ClassRepository(session)
+
+            profile = player_repository.get_by_discord_id(user_id)
+            if profile is None:
+                return False, "Votre profil joueur n'existe pas encore. Utilisez /profile d'abord."
+
+            equipped_items = equipment_repository.list_by_player_id(profile.player.id)
+            active_class = class_repository.get_current_class_for_player(profile.player.id)
+
+            stats = StatsService().calculate_player_stats(
+                profile=profile,
+                equipped_items=equipped_items,
+                active_class=active_class,
+            )
+
+        participant = EncounterParticipant(
+            user_id=user_id,
+            display_name=display_name,
+            avatar_url=avatar_url,
+            current_hp=stats.max_hp,  # temporairement full HP
+            max_hp=stats.max_hp,
+        )
+
+        self.active_encounter.participants[user_id] = participant
+
+        print(f"[ENCOUNTER] {display_name} a rejoint le combat.")
+        print(f"[AVATAR] {avatar_url}")
+
+        await self.refresh_encounter_scene()
+
         return True, "Vous avez rejoint le combat."
 
     @tasks.loop(minutes=5)
@@ -51,7 +96,6 @@ class EncounterCog(commands.Cog):
         if mob is None:
             return
 
-        # URLs de test temporaires
         encounter = ActiveEncounter.create(
             mob_code=mob.code,
             mob_name=mob.name,
@@ -71,7 +115,6 @@ class EncounterCog(commands.Cog):
         embed = build_encounter_embed(
             mob_name=encounter.mob_name,
             image_url=encounter.spawn_image_url,
-            participant_count=0,
             state_text="Un monstre apparaît. Cliquez sur **Combattre** pour rejoindre l'expédition.",
         )
 
@@ -81,19 +124,16 @@ class EncounterCog(commands.Cog):
 
         await asyncio.sleep(300)
 
-        # désactiver le bouton
         for child in view.children:
             child.disabled = True
 
         if self.active_encounter is None:
             return
 
-        # personne n'a rejoint
         if not self.active_encounter.participant_user_ids:
             flee_embed = build_encounter_embed(
                 mob_name=self.active_encounter.mob_name,
                 image_url=self.active_encounter.flee_image_url,
-                participant_count=0,
                 state_text="Le monstre s'est enfui...",
             )
             await message.edit(embed=flee_embed, view=view)
@@ -105,9 +145,6 @@ class EncounterCog(commands.Cog):
             self.active_encounter = None
             return
 
-        # animation par remplacement d'image
-        participant_count = len(self.active_encounter.participant_user_ids)
-
         for index, _turn_log in enumerate(result.turn_logs):
             image_url = None
             if index < len(self.active_encounter.turn_image_urls):
@@ -116,7 +153,6 @@ class EncounterCog(commands.Cog):
             turn_embed = build_encounter_embed(
                 mob_name=self.active_encounter.mob_name,
                 image_url=image_url,
-                participant_count=participant_count,
                 state_text=f"⚔️ Combat en cours... Tour {index + 1}",
             )
 
@@ -138,7 +174,6 @@ class EncounterCog(commands.Cog):
         final_embed = build_encounter_embed(
             mob_name=self.active_encounter.mob_name,
             image_url=final_image,
-            participant_count=participant_count,
             state_text=final_text,
         )
 
@@ -188,6 +223,54 @@ class EncounterCog(commands.Cog):
             party=party,
             mob=mob,
         )
+    
+    async def refresh_encounter_scene(self) -> None:
+        if self.active_encounter is None or self.active_encounter.message_id is None:
+            return
+
+        channel = self.bot.get_channel(settings.encounter_channel_id)
+        if channel is None:
+            return
+
+        try:
+            message = await channel.fetch_message(self.active_encounter.message_id)
+        except discord.NotFound:
+            return
+
+        players = [
+            {
+                "avatar_url": participant.avatar_url,
+                "current_hp": participant.current_hp,
+                "max_hp": participant.max_hp,
+            }
+            for participant in self.active_encounter.participants.values()
+        ]
+
+        if not players:
+            return
+
+        output_path = self.generated_dir / f"encounter_{self.active_encounter.message_id}.png"
+        background_path = BASE_DIR / "assets" / "landscapes" / "clairiere_sinistre.png"
+
+        compose_players_banner(
+            players=players,
+            output_path=str(output_path),
+            background_path=str(background_path),
+        )
+
+        filename = output_path.name
+        file = discord.File(output_path, filename=filename)
+
+        embed = build_encounter_embed(
+            mob_name=self.active_encounter.mob_name,
+            image_url=None,
+            state_text="Des aventuriers se rassemblent pour le combat...",
+            generated_image_name=filename,
+        )
+
+        view = EncounterView(self, timeout=300)
+
+        await message.edit(embed=embed, attachments=[file], view=view)
 
 
 async def setup(bot: commands.Bot) -> None:

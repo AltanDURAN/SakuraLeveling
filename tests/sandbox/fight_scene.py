@@ -184,18 +184,94 @@ def compose_players_banner(
     players: list[dict],
     output_path: str = "result.png",
     background_path: str | None = None,
+    mob: dict | None = None,
 ):
     """
     players = [
-        {"picture": "https://..."},
+        {
+            "avatar_url": "https://...",
+            "current_hp": 100,
+            "max_hp": 100,
+            "name": "Jean-Yves",  # optionnel
+        },
         ...
     ]
+
+    mob = {
+        "name": "Slime",
+        "image_url": "https://...",
+        "current_hp": 30,
+        "max_hp": 30,
+        "attack": 6,
+        "defense": 1,
+    }
     """
     background = load_background(background_path, size=(1024, 1536))
     result = background.copy()
     bg_width, bg_height = result.size
-    bg_width = 1024 - 80
 
+    draw = ImageDraw.Draw(result)
+
+    try:
+        title_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 42)
+        stat_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 36)
+        name_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 20)
+    except Exception:
+        title_font = ImageFont.load_default()
+        stat_font = ImageFont.load_default()
+        name_font = ImageFont.load_default()
+
+    # =========================
+    # Affichage du mob
+    # =========================
+    if mob is not None:
+        mob_name = mob.get("name", "Monstre")
+        mob_current_hp = mob.get("current_hp", 0)
+        mob_max_hp = mob.get("max_hp", 0)
+        mob_attack = mob.get("attack", 0)
+        mob_defense = mob.get("defense", 0)
+        mob_image_url = mob.get("image_url")
+
+        # Zone du mob
+        mob_avatar_size = 220
+        mob_x = (bg_width - mob_avatar_size) // 2
+        mob_y = 600
+
+        try:
+            raw_mob_image = download_image(mob_image_url) if mob_image_url else Image.new(
+                "RGBA", (mob_avatar_size, mob_avatar_size), (120, 120, 120, 255)
+            )
+        except Exception as e:
+            print(f"Erreur téléchargement image mob pour {mob_name} : {e}")
+            raw_mob_image = Image.new(
+                "RGBA", (mob_avatar_size, mob_avatar_size), (120, 120, 120, 255)
+            )
+
+        # Mise en forme image du mob
+        mob_img = raw_mob_image.convert("RGBA").resize((mob_avatar_size, mob_avatar_size))
+        result.alpha_composite(mob_img, (mob_x, mob_y))
+
+        # Position du rectangle
+        x1 = 92
+        y1 = 125
+        x2 = x1 + 825
+        y2 = y1 + 90
+        
+        #Calculer x2 en fonction des HP current
+
+        draw.rounded_rectangle(
+            [(x1, y1), (x2, y2)],
+            radius=20,                 # arrondi des coins
+            fill=(0, 200, 0, 255)      # vert (RGBA)
+        )
+
+        # Nom du mob
+        mob_test = f"{mob_name} - [203k]"
+        draw.text((130, 152), mob_test, font=title_font, fill=(255, 255, 255, 255))
+
+    # =========================
+    # Affichage des joueurs
+    # =========================
     if not players:
         result.save(output_path)
         print(f"Aucun player. Image sauvegardée : {output_path}")
@@ -203,112 +279,127 @@ def compose_players_banner(
 
     count = len(players)
 
-    # Réglages d'apparence
     avatar_size = 100
     outline_size = 3
     bottom_margin = 63
 
-    # Centres horizontaux
-    centers_x = [int((i + 1) * bg_width / (count + 1)) for i in range(count)]
+    usable_width = bg_width - 80
+    print(len(players))
+    if len(players) > 4 :
+        usable_width = usable_width - 120
+        
+    centers_x = [int((i + 1) * usable_width / (count + 1)) for i in range(count)]
 
-    # Zone basse
     avatar_y = bg_height - bottom_margin - avatar_size
 
     for player, center_x in zip(players, centers_x):
         try:
-            raw_avatar = download_image(player["picture"])
+            raw_avatar = download_image(player["avatar_url"])
         except Exception as e:
-            print(f"Erreur téléchargement avatar pour {player['name']} : {e}")
             raw_avatar = Image.new("RGBA", (avatar_size, avatar_size), (120, 120, 120, 255))
 
-        
-        # Ajout d'une teinte rouge semi-transparente
         hue = add_hp_hue(
             raw_avatar,
             current_hp=player["current_hp"],
             max_hp=player["max_hp"],
-            alpha=0.36
+            alpha=0.36,
         )
-        
-        # Crop circulaire
-        circle = crop_to_circle(hue, avatar_size)
 
+        circle = crop_to_circle(hue, avatar_size)
         avatar = add_outline(circle, outline_size=outline_size)
 
         aw, ah = avatar.size
+        avatar_x = center_x - aw // 2 + 31
 
-        # Avatar
-        avatar_x = center_x - aw // 2 + 40
-        
         result.alpha_composite(avatar, (avatar_x, avatar_y))
-
-        
+    
+    draw.text((850, 1400), "[100M]", font=stat_font, fill=(255, 255, 255, 255))
 
     result.save(output_path)
     print(f"Image créée : {output_path}")
 
-
 if __name__ == "__main__":
     players = [
         {
-            "picture": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
+            "avatar_url": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
             "current_hp": 100,
             "max_hp": 100,
+            "name": "Jean-Yves",
         },
         {
-            "picture": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
+            "avatar_url": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
             "current_hp": 90,
             "max_hp": 100,
+            "name": "Jean-Yves",
         },
         {
-            "picture": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
+            "avatar_url": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
             "current_hp": 80,
             "max_hp": 100,
+            "name": "Jean-Yves",
         },
         {
-            "picture": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
+            "avatar_url": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
             "current_hp": 70,
             "max_hp": 100,
+            "name": "Jean-Yves",
         },
         {
-            "picture": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
+            "avatar_url": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
             "current_hp": 60,
             "max_hp": 100,
+            "name": "Jean-Yves",
         },
         {
-            "picture": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
+            "avatar_url": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
             "current_hp": 50,
             "max_hp": 100,
+            "name": "Jean-Yves",
         },
         {
-            "picture": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
+            "avatar_url": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
             "current_hp": 40,
             "max_hp": 100,
+            "name": "Jean-Yves",
         },
         {
-            "picture": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
+            "avatar_url": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
             "current_hp": 30,
             "max_hp": 100,
+            "name": "Jean-Yves",
         },
         {
-            "picture": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
+            "avatar_url": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
             "current_hp": 20,
             "max_hp": 100,
+            "name": "Jean-Yves",
         },
         {
-            "picture": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
+            "avatar_url": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
             "current_hp": 10,
             "max_hp": 100,
+            "name": "Jean-Yves",
         },
         {
-            "picture": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
+            "avatar_url": "https://cdn.discordapp.com/avatars/770707625033203793/2aa967457d2dd49a389c2daf9bf77370.webp?size=1024",
             "current_hp": 0,
             "max_hp": 100,
+            "name": "Jean-Yves",
         }
     ]
+    
+    mob = {
+        "name": "Gobelin Combattant",
+        "image_url": "https://i.imgur.com/tLYX58K.jpeg",
+        "current_hp": 30,
+        "max_hp": 30,
+        "attack": 6,
+        "defense": 1,
+    }
 
     compose_players_banner(
         players=players,
+        mob=mob,
         output_path="players_banner.png",
         background_path="/home/machine/Desktop/SakuraLeveling/tests/sandbox/clairiere_sinistre.png",  # mets un chemin ici si tu veux ton propre fond
     )

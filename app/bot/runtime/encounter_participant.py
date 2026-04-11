@@ -1,0 +1,10 @@
+from dataclasses import dataclass
+
+
+@dataclass
+class EncounterParticipant:
+    user_id: int
+    display_name: str
+    avatar_url: str
+    current_hp: int
+    max_hp: int

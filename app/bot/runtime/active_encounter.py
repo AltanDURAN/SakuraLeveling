@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, UTC, timedelta
+
+from app.bot.runtime.encounter_participant import EncounterParticipant
 
 
 @dataclass
@@ -14,7 +16,7 @@ class ActiveEncounter:
     message_id: int | None
     started_at: datetime
     ends_at: datetime
-    participant_user_ids: set[int] = field(default_factory=set)
+    participants: dict[int, EncounterParticipant] = field(default_factory=dict)
 
     @classmethod
     def create(
@@ -28,7 +30,7 @@ class ActiveEncounter:
         flee_image_url: str | None,
         duration_minutes: int = 5,
     ) -> "ActiveEncounter":
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         return cls(
             mob_code=mob_code,
             mob_name=mob_name,
@@ -40,5 +42,5 @@ class ActiveEncounter:
             message_id=None,
             started_at=now,
             ends_at=now + timedelta(minutes=duration_minutes),
-            participant_user_ids=set(),
+            participants={},
         )

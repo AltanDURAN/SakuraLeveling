@@ -4,8 +4,8 @@ import discord
 def build_encounter_embed(
     mob_name: str,
     image_url: str | None,
-    participant_count: int,
     state_text: str,
+    generated_image_name: str | None = None,
 ) -> discord.Embed:
     embed = discord.Embed(
         title=f"👾 {mob_name}",
@@ -13,13 +13,9 @@ def build_encounter_embed(
         color=discord.Color.dark_red(),
     )
 
-    embed.add_field(
-        name="👥 Aventuriers",
-        value=str(participant_count),
-        inline=True,
-    )
-
-    if image_url:
+    if generated_image_name is not None:
+        embed.set_image(url=f"attachment://{generated_image_name}")
+    elif image_url:
         embed.set_image(url=image_url)
 
     return embed
