@@ -16,7 +16,8 @@ from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
 from app.bot.runtime.encounter_participant import EncounterParticipant
-from tests.sandbox.fight_scene import compose_players_banner
+from app.bot.rendering.fight_scene import compose_players_banner
+from app.shared.paths import GENERATED_ENCOUNTERS_DIR, LANDSCAPES_ASSETS_DIR
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 print("=======================")
@@ -27,7 +28,7 @@ class EncounterCog(commands.Cog):
         self.bot = bot
         self.active_encounter: ActiveEncounter | None = None
         self.encounter_loop.start()
-        self.generated_dir = Path("assets/generated_encounters")
+        self.generated_dir = GENERATED_ENCOUNTERS_DIR
         self.generated_dir.mkdir(exist_ok=True)
 
     def cog_unload(self):
@@ -247,7 +248,7 @@ class EncounterCog(commands.Cog):
 
         output = self.generated_dir / f"encounter_{self.active_encounter.message_id}.png"
         output_path = "generated_encounters/" + f"encounter_{self.active_encounter.message_id}.png"
-        background_path = BASE_DIR / "assets" / "landscapes" / "clairiere_sinistre.png"
+        background_path = LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
 
         with get_db_session() as session:
             mob_repository = MobRepository(session)
