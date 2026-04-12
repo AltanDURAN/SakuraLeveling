@@ -1,15 +1,13 @@
 from dataclasses import dataclass, field
-from datetime import datetime, UTC, timedelta
+from datetime import datetime, timezone, timedelta
 
+from app.bot.runtime.encounter_mob_state import EncounterMobState
 from app.bot.runtime.encounter_participant import EncounterParticipant
 
 
 @dataclass
 class ActiveEncounter:
-    mob_code: str
-    mob_name: str
-    spawn_image_name: str
-    turn_image_names: list[str]
+    mob_state: EncounterMobState
     victory_image_name: str
     defeat_image_name: str
     flee_image_name: str
@@ -21,21 +19,15 @@ class ActiveEncounter:
     @classmethod
     def create(
         cls,
-        mob_code: str,
-        mob_name: str,
-        spawn_image_name: str,
-        turn_image_names: list[str],
+        mob_state: EncounterMobState,
         victory_image_name: str,
         defeat_image_name: str,
         flee_image_name: str,
-        duration_minutes: int = 1,
+        duration_minutes: int = 5,
     ) -> "ActiveEncounter":
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         return cls(
-            mob_code=mob_code,
-            mob_name=mob_name,
-            spawn_image_name=spawn_image_name,
-            turn_image_names=turn_image_names,
+            mob_state=mob_state,
             victory_image_name=victory_image_name,
             defeat_image_name=defeat_image_name,
             flee_image_name=flee_image_name,

@@ -18,6 +18,7 @@ from app.infrastructure.db.session import get_db_session
 from app.bot.runtime.encounter_participant import EncounterParticipant
 from app.bot.rendering.fight_scene import compose_players_banner
 from app.shared.paths import GENERATED_ENCOUNTERS_DIR, LANDSCAPES_ASSETS_DIR
+from app.bot.runtime.encounter_mob_state import EncounterMobState
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 print("=======================")
@@ -95,15 +96,18 @@ class EncounterCog(commands.Cog):
         if mob is None:
             return
 
+        mob_state = EncounterMobState(
+            code=mob.code,
+            name=mob.name,
+            image_name=mob.image_name,
+            current_hp=mob.current_hp,
+            max_hp=mob.max_hp,
+            attack=mob.attack,
+            defense=mob.defense,
+        )
+
         encounter = ActiveEncounter.create(
-            mob_code=mob.code,
-            mob_name=mob.name,
-            spawn_image_name= "mobs/" + mob.image_name,
-            turn_image_names=[
-                "others/working_1.jpg",
-                "others/working_2.jpg",
-                "others/working_3.jpg",
-            ],
+            mob_state=mob_state,
             victory_image_name="others/victory.png",
             defeat_image_name="others/defeat.png",
             flee_image_name="others/flee.jpg",
@@ -112,8 +116,8 @@ class EncounterCog(commands.Cog):
 
         view = EncounterView(self)
         embed, file = build_encounter_embed(
-            mob_name=encounter.mob_name,
-            image_name=encounter.spawn_image_name,
+            mob_name=encounter.mob_state.name,
+            image_name="mobs/" + encounter.mob_state.image_name,
             state_text="Un monstre apparaît. Cliquez sur **Combattre** pour rejoindre l'expédition.",
         )
 
@@ -131,7 +135,7 @@ class EncounterCog(commands.Cog):
 
         if not self.active_encounter.participants:
             flee_embed, file = build_encounter_embed(
-                mob_name=self.active_encounter.mob_name,
+                mob_name=self.active_encounter.mob_state.name,
                 image_name=self.active_encounter.flee_image_name,
                 state_text="Le monstre s'est enfui...",
             )
@@ -148,7 +152,7 @@ class EncounterCog(commands.Cog):
             image_name = self.active_encounter.turn_image_names[index % (len(self.active_encounter.turn_image_names) - 1)]
 
             turn_embed, file = build_encounter_embed(
-                mob_name=self.active_encounter.mob_name,
+                mob_name=self.active_encounter.mob_state.name,
                 image_name=image_name,
                 state_text=f"⚔️ Combat en cours... Tour {index + 1}",
             )
@@ -169,7 +173,7 @@ class EncounterCog(commands.Cog):
         )
 
         final_embed, file = build_encounter_embed(
-            mob_name=self.active_encounter.mob_name,
+            mob_name=self.active_encounter.mob_state.name,
             image_name=final_image,
             state_text=final_text,
         )
@@ -191,7 +195,7 @@ class EncounterCog(commands.Cog):
             class_repository = ClassRepository(session)
             mob_repository = MobRepository(session)
 
-            mob = mob_repository.get_by_code(self.active_encounter.mob_code)
+            mob = mob_repository.get_by_code(self.active_encounter.mob_state.code)
             if mob is None:
                 return None
 
@@ -252,7 +256,7 @@ class EncounterCog(commands.Cog):
 
         with get_db_session() as session:
             mob_repository = MobRepository(session)
-            mob = mob_repository.get_by_code(self.active_encounter.mob_code)
+            mob = mob_repository.get_by_code(self.active_encounter.mob_state.code)
         
         print("###################")
         print(mob)
@@ -278,7 +282,7 @@ class EncounterCog(commands.Cog):
         )
 
         embed, file = build_encounter_embed(
-            mob_name=self.active_encounter.mob_name,
+            mob_name=self.active_encounter.mob_state.name,
             image_name=output_path,
             state_text="Des aventuriers se rassemblent pour le combat...",
         )
