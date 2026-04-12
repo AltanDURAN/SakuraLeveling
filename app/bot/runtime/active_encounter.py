@@ -8,11 +8,11 @@ from app.bot.runtime.encounter_participant import EncounterParticipant
 class ActiveEncounter:
     mob_code: str
     mob_name: str
-    spawn_image_url: str | None
-    turn_image_urls: list[str]
-    victory_image_url: str | None
-    defeat_image_url: str | None
-    flee_image_url: str | None
+    spawn_image_name: str
+    turn_image_names: list[str]
+    victory_image_name: str
+    defeat_image_name: str
+    flee_image_name: str
     message_id: int | None
     started_at: datetime
     ends_at: datetime
@@ -23,22 +23,22 @@ class ActiveEncounter:
         cls,
         mob_code: str,
         mob_name: str,
-        spawn_image_url: str | None,
-        turn_image_urls: list[str],
-        victory_image_url: str | None,
-        defeat_image_url: str | None,
-        flee_image_url: str | None,
-        duration_minutes: int = 5,
+        spawn_image_name: str,
+        turn_image_names: list[str],
+        victory_image_name: str,
+        defeat_image_name: str,
+        flee_image_name: str,
+        duration_minutes: int = 1,
     ) -> "ActiveEncounter":
         now = datetime.now(UTC)
         return cls(
             mob_code=mob_code,
             mob_name=mob_name,
-            spawn_image_url=spawn_image_url,
-            turn_image_urls=turn_image_urls,
-            victory_image_url=victory_image_url,
-            defeat_image_url=defeat_image_url,
-            flee_image_url=flee_image_url,
+            spawn_image_name=spawn_image_name,
+            turn_image_names=turn_image_names,
+            victory_image_name=victory_image_name,
+            defeat_image_name=defeat_image_name,
+            flee_image_name=flee_image_name,
             message_id=None,
             started_at=now,
             ends_at=now + timedelta(minutes=duration_minutes),

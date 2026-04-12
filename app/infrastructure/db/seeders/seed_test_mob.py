@@ -26,7 +26,7 @@ def main() -> None:
                         "max_quantity": 2,
                     }
                 ],
-                image_url="https://i.imgur.com/tLYX58K.jpeg"
+                image_name="slime.png"
             )
             print("Slime créé.")
         else:

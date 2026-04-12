@@ -18,6 +18,7 @@ exemple :
 ####################
 
 rm lita_v2.db
+alembic upgrade head
 alembic revision --autogenerate -m "add mob image url"
 alembic upgrade head
 

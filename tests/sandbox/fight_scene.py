@@ -4,6 +4,8 @@ import requests
 
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+print(BASE_DIR)
 
 def download_image(url: str) -> Image.Image:
     response = requests.get(url, timeout=15)
@@ -199,7 +201,7 @@ def compose_players_banner(
 
     mob = {
         "name": "Slime",
-        "image_url": "https://...",
+        "image_name": "slime.png",
         "current_hp": 30,
         "max_hp": 30,
         "attack": 6,
@@ -230,21 +232,33 @@ def compose_players_banner(
         mob_max_hp = mob.get("max_hp", 0)
         mob_attack = mob.get("attack", 0)
         mob_defense = mob.get("defense", 0)
-        mob_image_url = mob.get("image_url")
+        mob_image_name = mob.get("image_name")
+        print(mob_image_name)
 
         # Zone du mob
-        mob_avatar_size = 220
-        mob_x = (bg_width - mob_avatar_size) // 2
-        mob_y = 600
+        mob_avatar_size = 500
+        mob_x = (bg_width - mob_avatar_size) // 2 + 40
+        mob_y = 550
 
         try:
-            raw_mob_image = download_image(mob_image_url) if mob_image_url else Image.new(
-                "RGBA", (mob_avatar_size, mob_avatar_size), (120, 120, 120, 255)
-            )
+            if mob_image_name:
+                mob_image_full_path = BASE_DIR / "assets" / "mobs" / mob_image_name
+
+                raw_mob_image = Image.open(mob_image_full_path).convert("RGBA")
+            else:
+                raw_mob_image = Image.new(
+                    "RGBA",
+                    (mob_avatar_size, mob_avatar_size),
+                    (120, 120, 120, 255),
+                )
+
         except Exception as e:
-            print(f"Erreur téléchargement image mob pour {mob_name} : {e}")
+            print(f"Erreur chargement image mob pour {mob_name} : {e}")
+
             raw_mob_image = Image.new(
-                "RGBA", (mob_avatar_size, mob_avatar_size), (120, 120, 120, 255)
+                "RGBA",
+                (mob_avatar_size, mob_avatar_size),
+                (120, 120, 120, 255),
             )
 
         # Mise en forme image du mob
@@ -253,21 +267,33 @@ def compose_players_banner(
 
         # Position du rectangle
         x1 = 92
-        y1 = 125
+        y1 = 126
         x2 = x1 + 825
         y2 = y1 + 90
         
         #Calculer x2 en fonction des HP current
+        print(mob_current_hp)
+        print(mob_max_hp)
+        print(mob_current_hp / mob_max_hp)
+        
+        x2 = x1 + 825 * (mob_current_hp / mob_max_hp)
+        print(x1)
+        print(x2)
 
-        draw.rounded_rectangle(
-            [(x1, y1), (x2, y2)],
-            radius=20,                 # arrondi des coins
-            fill=(0, 200, 0, 255)      # vert (RGBA)
-        )
-
+        mob_power = "XXX"
         # Nom du mob
-        mob_test = f"{mob_name} - [203k]"
-        draw.text((130, 152), mob_test, font=title_font, fill=(255, 255, 255, 255))
+        mob_info = f"{mob_name} • [{mob_power}]"
+
+        if(mob_current_hp > 0) :
+            draw.rounded_rectangle(
+                [(x1, y1), (x2, y2)],
+                radius=20,                 # arrondi des coins
+                fill=(0, 200, 0, 255)      # vert (RGBA)
+            )
+        else:
+            mob_info = f"{mob_name} • [Mort]"
+
+        draw.text((130, 152), mob_info, font=title_font, fill=(255, 255, 255, 255))
 
     # =========================
     # Affichage des joueurs
@@ -313,7 +339,8 @@ def compose_players_banner(
 
         result.alpha_composite(avatar, (avatar_x, avatar_y))
     
-    draw.text((850, 1400), "[100M]", font=stat_font, fill=(255, 255, 255, 255))
+    players_power = "[XXX]"
+    draw.text((850, 1400), players_power, font=stat_font, fill=(255, 255, 255, 255))
 
     result.save(output_path)
     print(f"Image créée : {output_path}")
@@ -390,7 +417,7 @@ if __name__ == "__main__":
     
     mob = {
         "name": "Gobelin Combattant",
-        "image_url": "https://i.imgur.com/tLYX58K.jpeg",
+        "image_name": "gobelin.png",
         "current_hp": 30,
         "max_hp": 30,
         "attack": 6,

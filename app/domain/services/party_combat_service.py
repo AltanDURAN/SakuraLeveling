@@ -12,7 +12,7 @@ class PartyCombatService:
         party: list[tuple[str, Stats]],
         mob: MobDefinition,
     ) -> PartyBattleResult:
-        mob_hp = mob.max_hp
+        mob_hp = mob.current_hp
         turns = 0
         turn_logs: list[PartyBattleTurnLog] = []
 
@@ -94,7 +94,7 @@ class PartyCombatService:
             victory=victory,
             turns=turns,
             mob_name=mob.name,
-            mob_image_url=mob.image_url,
+            mob_image_name=mob.image_name,
             mob_remaining_hp=mob_hp,
             surviving_players=surviving_players,
             defeated_players=defeated_players,

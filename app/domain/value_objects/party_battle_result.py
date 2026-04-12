@@ -8,7 +8,7 @@ class PartyBattleResult:
     victory: bool
     turns: int
     mob_name: str
-    mob_image_url: str | None
+    mob_image_name: str
     mob_remaining_hp: int
     surviving_players: list[str]
     defeated_players: list[str]

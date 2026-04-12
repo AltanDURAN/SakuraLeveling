@@ -27,7 +27,7 @@ class EncounterCog(commands.Cog):
         self.bot = bot
         self.active_encounter: ActiveEncounter | None = None
         self.encounter_loop.start()
-        self.generated_dir = Path("generated_encounters")
+        self.generated_dir = Path("assets/generated_encounters")
         self.generated_dir.mkdir(exist_ok=True)
 
     def cog_unload(self):
@@ -67,7 +67,7 @@ class EncounterCog(commands.Cog):
             user_id=user_id,
             display_name=display_name,
             avatar_url=avatar_url,
-            current_hp=stats.max_hp,  # temporairement full HP
+            current_hp=stats.max_hp,
             max_hp=stats.max_hp,
         )
 
@@ -76,11 +76,9 @@ class EncounterCog(commands.Cog):
         print(f"[ENCOUNTER] {display_name} a rejoint le combat.")
         print(f"[AVATAR] {avatar_url}")
 
-        await self.refresh_encounter_scene()
-
         return True, "Vous avez rejoint le combat."
 
-    @tasks.loop(minutes=5)
+    @tasks.loop(minutes=1)
     async def encounter_loop(self):
         channel = self.bot.get_channel(settings.encounter_channel_id)
         if channel is None:
@@ -99,30 +97,30 @@ class EncounterCog(commands.Cog):
         encounter = ActiveEncounter.create(
             mob_code=mob.code,
             mob_name=mob.name,
-            spawn_image_url=mob.image_url,
-            turn_image_urls=[
-                "https://maisons-alfort.fr/wp-content/uploads/2019/01/TRAVAUX.jpg",
-                "https://www.guichenpontrean.fr/medias/sites/7/2015/10/Travaux-2.jpg",
-                "https://www.arpajon91.fr/Files/9/d/csm_Info_travaux_page-0001_97d7fe931e.jpg",
+            spawn_image_name= "mobs/" + mob.image_name,
+            turn_image_names=[
+                "others/working_1.jpg",
+                "others/working_2.jpg",
+                "others/working_3.jpg",
             ],
-            victory_image_url="https://static1.millenium.org/article_old/images/contenu/actus/LOL/Rominnoux/Victory.png",
-            defeat_image_url="https://static1.millenium.org/article_old/images/contenu/actus/LOL/Rominnoux/Defeat.png",
-            flee_image_url="https://media.istockphoto.com/id/1225549108/fr/vectoriel/ex%C3%A9cuter-sport-illustration-dic%C3%B4ne-vectorielle-dexercice.jpg?s=612x612&w=0&k=20&c=GRCiH7FF_i-YicXcn1XbQwtEucJOwNd2zTgZQS_aY6U=",
-            duration_minutes=5,
+            victory_image_name="others/victory.png",
+            defeat_image_name="others/defeat.png",
+            flee_image_name="others/flee.jpg",
+            duration_minutes=1,
         )
 
         view = EncounterView(self)
-        embed = build_encounter_embed(
+        embed, file = build_encounter_embed(
             mob_name=encounter.mob_name,
-            image_url=encounter.spawn_image_url,
+            image_name=encounter.spawn_image_name,
             state_text="Un monstre apparaît. Cliquez sur **Combattre** pour rejoindre l'expédition.",
         )
 
-        message = await channel.send(embed=embed, view=view)
+        message = await channel.send(embed=embed, view=view, file=file)
         encounter.message_id = message.id
         self.active_encounter = encounter
 
-        await asyncio.sleep(300)
+        await asyncio.sleep(60) #spawn_time
 
         for child in view.children:
             child.disabled = True
@@ -130,13 +128,13 @@ class EncounterCog(commands.Cog):
         if self.active_encounter is None:
             return
 
-        if not self.active_encounter.participant_user_ids:
-            flee_embed = build_encounter_embed(
+        if not self.active_encounter.participants:
+            flee_embed, file = build_encounter_embed(
                 mob_name=self.active_encounter.mob_name,
-                image_url=self.active_encounter.flee_image_url,
+                image_name=self.active_encounter.flee_image_name,
                 state_text="Le monstre s'est enfui...",
             )
-            await message.edit(embed=flee_embed, view=view)
+            await message.edit(embed=flee_embed, attachments=[file], view=view)
             self.active_encounter = None
             return
 
@@ -146,23 +144,21 @@ class EncounterCog(commands.Cog):
             return
 
         for index, _turn_log in enumerate(result.turn_logs):
-            image_url = None
-            if index < len(self.active_encounter.turn_image_urls):
-                image_url = self.active_encounter.turn_image_urls[index]
+            image_name = self.active_encounter.turn_image_names[index % (len(self.active_encounter.turn_image_names) - 1)]
 
-            turn_embed = build_encounter_embed(
+            turn_embed, file = build_encounter_embed(
                 mob_name=self.active_encounter.mob_name,
-                image_url=image_url,
+                image_name=image_name,
                 state_text=f"⚔️ Combat en cours... Tour {index + 1}",
             )
 
-            await message.edit(embed=turn_embed, view=view)
+            await message.edit(embed=turn_embed, attachments=[file], view=view)
             await asyncio.sleep(1.5)
 
         final_image = (
-            self.active_encounter.victory_image_url
+            self.active_encounter.victory_image_name
             if result.victory
-            else self.active_encounter.defeat_image_url
+            else self.active_encounter.defeat_image_name
         )
 
         final_text = (
@@ -171,13 +167,13 @@ class EncounterCog(commands.Cog):
             else f"💀 Défaite après {result.turns} tour(s)."
         )
 
-        final_embed = build_encounter_embed(
+        final_embed, file = build_encounter_embed(
             mob_name=self.active_encounter.mob_name,
-            image_url=final_image,
+            image_name=final_image,
             state_text=final_text,
         )
 
-        await message.edit(embed=final_embed, view=view)
+        await message.edit(embed=final_embed, attachments=[file], view=view)
         self.active_encounter = None
 
     @encounter_loop.before_loop
@@ -200,7 +196,7 @@ class EncounterCog(commands.Cog):
 
             party = []
 
-            for user_id in self.active_encounter.participant_user_ids:
+            for user_id in self.active_encounter.participants:
                 profile = player_repository.get_by_discord_id(user_id)
                 if profile is None:
                     continue
@@ -249,26 +245,44 @@ class EncounterCog(commands.Cog):
         if not players:
             return
 
-        output_path = self.generated_dir / f"encounter_{self.active_encounter.message_id}.png"
+        output = self.generated_dir / f"encounter_{self.active_encounter.message_id}.png"
+        output_path = "generated_encounters/" + f"encounter_{self.active_encounter.message_id}.png"
         background_path = BASE_DIR / "assets" / "landscapes" / "clairiere_sinistre.png"
+
+        with get_db_session() as session:
+            mob_repository = MobRepository(session)
+            mob = mob_repository.get_by_code(self.active_encounter.mob_code)
+        
+        print("###################")
+        print(mob)
+        print(mob.name)
+        print("###################")
+        
+        mob = {
+            "name": mob.name,
+            "image_name": mob.image_name,
+            "current_hp": mob.current_hp,
+            "max_hp": mob.max_hp,
+            "attack": mob.attack,
+            "defense": mob.defense,
+        }
+        
+        print(mob)
 
         compose_players_banner(
             players=players,
-            output_path=str(output_path),
+            mob=mob,
+            output_path="assets/" + output_path,
             background_path=str(background_path),
         )
 
-        filename = output_path.name
-        file = discord.File(output_path, filename=filename)
-
-        embed = build_encounter_embed(
+        embed, file = build_encounter_embed(
             mob_name=self.active_encounter.mob_name,
-            image_url=None,
+            image_name=output_path,
             state_text="Des aventuriers se rassemblent pour le combat...",
-            generated_image_name=filename,
         )
 
-        view = EncounterView(self, timeout=300)
+        view = EncounterView(self, timeout=60) #spawn_time
 
         await message.edit(embed=embed, attachments=[file], view=view)
 
