@@ -241,7 +241,15 @@ class EncounterCog(commands.Cog):
                     active_class=active_class,
                 )
 
-                party.append((participant.display_name, stats))
+                party.append(
+                    {
+                        "name": participant.display_name,
+                        "avatar_url": participant.avatar_url,
+                        "current_hp": participant.current_hp,
+                        "max_hp": participant.max_hp,
+                        "stats": stats,
+                    }
+                )
 
         if not party:
             return None
