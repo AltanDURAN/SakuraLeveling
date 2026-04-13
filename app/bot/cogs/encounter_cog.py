@@ -77,11 +77,38 @@ class EncounterCog(commands.Cog):
         )
 
         view = EncounterView(self)
+        
+        spawn_filename = "encounter_spawn.png"
+        if encounter.message_id is None:
+            # on n'a pas encore le vrai message_id, donc on peut utiliser un nom temporaire
+            spawn_filename = f"encounter_spawn_{encounter.mob_state.code}.png"
+
+        spawn_output_full = self.generated_dir / spawn_filename
+        spawn_output_relative = f"generated_encounters/{spawn_filename}"
+        background_path = LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
+
+        spawn_mob_payload = {
+            "name": encounter.mob_state.name,
+            "image_name": encounter.mob_state.image_name,
+            "current_hp": encounter.mob_state.current_hp,
+            "max_hp": encounter.mob_state.max_hp,
+            "attack": encounter.mob_state.attack,
+            "defense": encounter.mob_state.defense,
+        }
+
+        compose_players_banner(
+            players=[],
+            mob=spawn_mob_payload,
+            output_path=str(spawn_output_full),
+            background_path=str(background_path),
+        )
+
         embed, file = build_encounter_embed(
-            image_name=f"mobs/{encounter.mob_state.image_name}"
+            image_name=spawn_output_relative,
         )
 
         message = await channel.send(embed=embed, view=view, file=file)
+        
         encounter.message_id = message.id
         self.active_encounter = encounter
 
@@ -112,7 +139,7 @@ class EncounterCog(commands.Cog):
         background_path = LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
 
         for index, turn_log in enumerate(result.turn_logs):
-            filename = f"encounter_{self.active_encounter.message_id}_turn_{index + 1}.png"
+            filename = f"encounter_{self.active_encounter.message_id}_current.png"
             output_full = self.generated_dir / filename
             output_relative = f"generated_encounters/{filename}"
 
@@ -182,7 +209,7 @@ class EncounterCog(commands.Cog):
         if not players:
             return
 
-        filename = f"encounter_{self.active_encounter.message_id}.png"
+        filename = f"encounter_{self.active_encounter.message_id}_current.png"
         output_full = self.generated_dir / filename
         output_relative = f"generated_encounters/{filename}"
         background_path = LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
