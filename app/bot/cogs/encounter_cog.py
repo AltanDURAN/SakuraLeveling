@@ -3,6 +3,7 @@ import asyncio
 import discord
 from discord.ext import commands, tasks
 from pathlib import Path
+from datetime import datetime, timezone
 
 from app.bot.embeds.encounter_embeds import build_encounter_embed
 from app.bot.runtime.active_encounter import ActiveEncounter
@@ -20,6 +21,7 @@ from app.bot.rendering.fight_scene import compose_players_banner
 from app.shared.paths import GENERATED_ENCOUNTERS_DIR, LANDSCAPES_ASSETS_DIR
 from app.bot.runtime.encounter_mob_state import EncounterMobState
 from app.infrastructure.db.repositories.player_health_repository import PlayerHealthRepository
+from app.domain.services.health_regeneration_service import HealthRegenerationService
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 print("=======================")
@@ -72,12 +74,28 @@ class EncounterCog(commands.Cog):
                 default_current_hp=stats.max_hp,
             )
 
+            now = datetime.now(timezone.utc)
+
+            regenerated_current_hp = HealthRegenerationService().apply_out_of_combat_regeneration(
+                current_hp=health_state.current_hp,
+                max_hp=stats.max_hp,
+                hp_regeneration=stats.hp_regeneration,
+                last_updated_at=health_state.updated_at,
+                now=now,
+            )
+
+            print(f"[REGEN] old={health_state.current_hp} new={regenerated_current_hp} max={stats.max_hp} regen={stats.hp_regeneration}")
+            player_health_repository.update_current_hp(
+                player_id=profile.player.id,
+                current_hp=regenerated_current_hp,
+            )
+
         participant = EncounterParticipant(
             user_id=user_id,
             player_id=profile.player.id,
             display_name=display_name,
             avatar_url=avatar_url,
-            current_hp=min(health_state.current_hp, stats.max_hp),
+            current_hp=regenerated_current_hp,
             max_hp=stats.max_hp,
         )
 
