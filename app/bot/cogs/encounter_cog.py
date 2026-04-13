@@ -1,8 +1,8 @@
 import asyncio
+from datetime import datetime, timedelta, timezone
 
 import discord
 from discord.ext import commands, tasks
-from datetime import datetime, timedelta, timezone
 
 from app.application.services.encounter_service import EncounterService
 from app.bot.embeds.encounter_embeds import build_encounter_embed
@@ -21,7 +21,7 @@ class EncounterCog(commands.Cog):
         self.bot = bot
         self.active_encounter: ActiveEncounter | None = None
         self.encounter_service = EncounterService()
-        self.next_spawn_at = datetime.now(timezone.utc) + timedelta(minutes=1)
+        self.next_spawn_at: datetime | None = None
         self.encounter_loop.start()
         self.generated_dir = GENERATED_ENCOUNTERS_DIR
         self.generated_dir.mkdir(exist_ok=True)
@@ -41,7 +41,6 @@ class EncounterCog(commands.Cog):
             display_name=display_name,
             avatar_url=avatar_url,
         )
-
         return success, message
 
     @tasks.loop(seconds=10)
@@ -54,7 +53,6 @@ class EncounterCog(commands.Cog):
             return
 
         now = datetime.now(timezone.utc)
-
         if self.next_spawn_at is not None and now < self.next_spawn_at:
             return
 
@@ -83,13 +81,9 @@ class EncounterCog(commands.Cog):
             duration_minutes=5,
         )
 
-        view = EncounterView(self)
-        
-        spawn_filename = "encounter_spawn.png"
-        if encounter.message_id is None:
-            # on n'a pas encore le vrai message_id, donc on peut utiliser un nom temporaire
-            spawn_filename = f"encounter_spawn_{encounter.mob_state.code}.png"
+        view = EncounterView(self, timeout=300)
 
+        spawn_filename = f"encounter_spawn_{encounter.mob_state.code}.png"
         spawn_output_full = self.generated_dir / spawn_filename
         spawn_output_relative = f"generated_encounters/{spawn_filename}"
         background_path = LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
@@ -115,7 +109,6 @@ class EncounterCog(commands.Cog):
         )
 
         message = await channel.send(embed=embed, view=view, file=file)
-        
         encounter.message_id = message.id
         self.active_encounter = encounter
 
@@ -125,6 +118,7 @@ class EncounterCog(commands.Cog):
             child.disabled = True
 
         if self.active_encounter is None:
+            self.next_spawn_at = datetime.now(timezone.utc) + timedelta(minutes=1)
             return
 
         if not self.active_encounter.participants:
@@ -139,27 +133,27 @@ class EncounterCog(commands.Cog):
         result = self.resolve_active_encounter()
         if result is None:
             self.active_encounter = None
+            self.next_spawn_at = datetime.now(timezone.utc) + timedelta(minutes=1)
             return
 
         self.persist_final_players_hp(result)
         self.encounter_service.apply_rewards(self.active_encounter, result)
 
         background_path = LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
+        current_filename = f"encounter_{self.active_encounter.message_id}_current.png"
+        current_output_full = self.generated_dir / current_filename
+        current_output_relative = f"generated_encounters/{current_filename}"
 
         for index, turn_log in enumerate(result.turn_logs):
-            filename = f"encounter_{self.active_encounter.message_id}_current.png"
-            output_full = self.generated_dir / filename
-            output_relative = f"generated_encounters/{filename}"
-
             compose_players_banner(
                 players=turn_log.players_state,
                 mob=turn_log.mob_state,
-                output_path=str(output_full),
+                output_path=str(current_output_full),
                 background_path=str(background_path),
             )
 
             turn_embed, file = build_encounter_embed(
-                image_name=output_relative
+                image_name=current_output_relative,
             )
 
             await message.edit(embed=turn_embed, attachments=[file], view=view)
@@ -169,12 +163,6 @@ class EncounterCog(commands.Cog):
             self.active_encounter.victory_image_name
             if result.victory
             else self.active_encounter.defeat_image_name
-        )
-
-        final_text = (
-            f"🏆 Victoire en {result.turns} tour(s) !"
-            if result.victory
-            else f"💀 Défaite après {result.turns} tour(s)."
         )
 
         final_embed, file = build_encounter_embed(
@@ -188,6 +176,7 @@ class EncounterCog(commands.Cog):
     @encounter_loop.before_loop
     async def before_encounter_loop(self):
         await self.bot.wait_until_ready()
+        self.next_spawn_at = datetime.now(timezone.utc) + timedelta(minutes=1)
 
     def resolve_active_encounter(self):
         return self.encounter_service.resolve_active_encounter(self.active_encounter)
@@ -247,12 +236,10 @@ class EncounterCog(commands.Cog):
         )
 
         embed, file = build_encounter_embed(
-            image_name=output_relative
+            image_name=output_relative,
         )
 
-        view = EncounterView(self, timeout=60)  # spawn_time
-
-        await message.edit(embed=embed, attachments=[file], view=view)
+        await message.edit(embed=embed, attachments=[file])
 
     def persist_final_players_hp(self, result) -> None:
         self.encounter_service.persist_final_players_hp(result)
