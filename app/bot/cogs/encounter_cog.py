@@ -19,6 +19,7 @@ from app.bot.runtime.encounter_participant import EncounterParticipant
 from app.bot.rendering.fight_scene import compose_players_banner
 from app.shared.paths import GENERATED_ENCOUNTERS_DIR, LANDSCAPES_ASSETS_DIR
 from app.bot.runtime.encounter_mob_state import EncounterMobState
+from app.infrastructure.db.repositories.player_health_repository import PlayerHealthRepository
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 print("=======================")
@@ -51,6 +52,7 @@ class EncounterCog(commands.Cog):
             player_repository = PlayerRepository(session)
             equipment_repository = EquipmentRepository(session)
             class_repository = ClassRepository(session)
+            player_health_repository = PlayerHealthRepository(session)
 
             profile = player_repository.get_by_discord_id(user_id)
             if profile is None:
@@ -65,12 +67,17 @@ class EncounterCog(commands.Cog):
                 active_class=active_class,
             )
 
+            health_state = player_health_repository.get_or_create(
+                player_id=profile.player.id,
+                default_current_hp=stats.max_hp,
+            )
+
         participant = EncounterParticipant(
             user_id=user_id,
             player_id=profile.player.id,
             display_name=display_name,
             avatar_url=avatar_url,
-            current_hp=stats.max_hp,
+            current_hp=min(health_state.current_hp, stats.max_hp),
             max_hp=stats.max_hp,
         )
 
