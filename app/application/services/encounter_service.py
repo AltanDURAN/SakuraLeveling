@@ -179,12 +179,5 @@ class EncounterService:
                 if participant.display_name not in surviving_names:
                     continue
 
-                player_repository.add_gold(
-                    player_id=participant.player_id,
-                    amount=result.gold_gained,
-                )
-
-                player_repository.add_xp(
-                    player_id=participant.player_id,
-                    amount=result.xp_gained,
-                )
+                player_repository.add_gold(participant.player_id, result.gold_gained)
+                player_repository.add_xp(participant.player_id, result.xp_gained)
