@@ -5,7 +5,6 @@ import requests
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-print(BASE_DIR)
 
 def download_image(url: str) -> Image.Image:
     response = requests.get(url, timeout=15)
@@ -154,7 +153,7 @@ def add_hp_hue(image: Image.Image, current_hp: int, max_hp: int, alpha: float = 
     Applique automatiquement une teinte selon les HP du joueur.
     """
     hp_color = get_hp_color(current_hp, max_hp)
-    print(hp_color)
+
     if hp_color == (0, 0, 0) :
         alpha = 0.80
     return add_hue(image, color=hp_color, alpha=alpha)
@@ -233,7 +232,6 @@ def compose_players_banner(
         mob_attack = mob.get("attack", 0)
         mob_defense = mob.get("defense", 0)
         mob_image_name = mob.get("image_name")
-        print(mob_image_name)
 
         # Zone du mob
         mob_avatar_size = 500
@@ -272,13 +270,7 @@ def compose_players_banner(
         y2 = y1 + 90
         
         #Calculer x2 en fonction des HP current
-        print(mob_current_hp)
-        print(mob_max_hp)
-        print(mob_current_hp / mob_max_hp)
-        
         x2 = x1 + 825 * (mob_current_hp / mob_max_hp)
-        print(x1)
-        print(x2)
 
         mob_power = "XXX"
         # Nom du mob
@@ -310,7 +302,7 @@ def compose_players_banner(
     bottom_margin = 63
 
     usable_width = bg_width - 80
-    print(len(players))
+
     if len(players) > 4 :
         usable_width = usable_width - 120
         

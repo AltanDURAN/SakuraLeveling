@@ -16,9 +16,6 @@ from app.bot.runtime.encounter_mob_state import EncounterMobState
 from app.application.services.encounter_service import EncounterService
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
-print("=======================")
-print(BASE_DIR)
-print("=======================")
 class EncounterCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -43,10 +40,6 @@ class EncounterCog(commands.Cog):
             display_name=display_name,
             avatar_url=avatar_url,
         )
-
-        if success:
-            print(f"[ENCOUNTER] {display_name} a rejoint le combat.")
-            print(f"[AVATAR] {avatar_url}")
 
         return success, message
 
@@ -205,11 +198,6 @@ class EncounterCog(commands.Cog):
             mob_repository = MobRepository(session)
             mob = mob_repository.get_by_code(self.active_encounter.mob_state.code)
         
-        print("###################")
-        print(mob)
-        print(mob.name)
-        print("###################")
-        
         mob = {
             "name": mob.name,
             "image_name": mob.image_name,
@@ -218,8 +206,6 @@ class EncounterCog(commands.Cog):
             "attack": mob.attack,
             "defense": mob.defense,
         }
-        
-        print(mob)
 
         compose_players_banner(
             players=players,

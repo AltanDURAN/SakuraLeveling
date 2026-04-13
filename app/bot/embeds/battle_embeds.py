@@ -5,7 +5,6 @@ from app.domain.value_objects.battle_result import BattleResult
 from app.domain.value_objects.battle_turn_log import BattleTurnLog
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
-print(BASE_DIR)
 
 def build_battle_turn_embed(
     result: BattleResult,
