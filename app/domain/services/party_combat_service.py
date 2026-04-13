@@ -9,7 +9,7 @@ from app.domain.value_objects.stats import Stats
 class PartyCombatService:
     def fight_party_vs_mob(
         self,
-        party: list[tuple[str, Stats]],
+        party: list[dict],
         mob: MobDefinition,
     ) -> PartyBattleResult:
         mob_hp = mob.current_hp
@@ -18,11 +18,13 @@ class PartyCombatService:
 
         alive_party = [
             {
-                "name": player_name,
-                "stats": stats,
-                "hp": stats.max_hp,
+                "name": player["name"],
+                "avatar_url": player["avatar_url"],
+                "stats": player["stats"],
+                "hp": player["current_hp"],
+                "max_hp": player["max_hp"],
             }
-            for player_name, stats in party
+            for player in party
         ]
 
         while mob_hp > 0 and any(player["hp"] > 0 for player in alive_party):
@@ -58,8 +60,23 @@ class PartyCombatService:
                         turn_number=turns,
                         player_actions=player_actions,
                         mob_action=f"{mob.name} est vaincu.",
-                        party_hp_summary=self._build_party_hp_summary(alive_party),
-                        mob_hp_after=mob_hp,
+                        players_state=[
+                            {
+                                "name": player["name"],
+                                "avatar_url": player["avatar_url"],
+                                "current_hp": player["hp"],
+                                "max_hp": player["max_hp"],
+                            }
+                            for player in alive_party
+                        ],
+                        mob_state={
+                            "name": mob.name,
+                            "image_name": mob.image_name,
+                            "current_hp": mob_hp,
+                            "max_hp": mob.max_hp,
+                            "attack": mob.attack,
+                            "defense": mob.defense,
+                        },
                     )
                 )
                 break
@@ -81,8 +98,23 @@ class PartyCombatService:
                     turn_number=turns,
                     player_actions=player_actions,
                     mob_action=mob_action,
-                    party_hp_summary=self._build_party_hp_summary(alive_party),
-                    mob_hp_after=mob_hp,
+                    players_state=[
+                        {
+                            "name": player["name"],
+                            "avatar_url": player["avatar_url"],
+                            "current_hp": player["hp"],
+                            "max_hp": player["max_hp"],
+                        }
+                        for player in alive_party
+                    ],
+                    mob_state={
+                        "name": mob.name,
+                        "image_name": mob.image_name,
+                        "current_hp": mob_hp,
+                        "max_hp": mob.max_hp,
+                        "attack": mob.attack,
+                        "defense": mob.defense,
+                    },
                 )
             )
 
@@ -106,10 +138,4 @@ class PartyCombatService:
                 else f"Le groupe a été vaincu par {mob.name}."
             ),
             turn_logs=turn_logs,
-        )
-
-    def _build_party_hp_summary(self, alive_party: list[dict]) -> str:
-        return "\n".join(
-            f"{player['name']} : {player['hp']} PV"
-            for player in alive_party
         )
