@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 from app.domain.entities.mob_definition import MobDefinition
 from app.domain.services.combat_service import CombatService
@@ -19,13 +19,15 @@ def build_mob(
         code="slime",
         name="Slime",
         description="",
+        image_name="",
         max_hp=max_hp,
+        current_hp=max_hp,
         attack=attack,
         defense=defense,
         xp_reward=xp_reward,
         gold_reward=gold_reward,
+        spawn_weight=1,
         loot_table=None,
-        image_name="",
         created_at=now,
         updated_at=now,
     )
@@ -41,6 +43,7 @@ def test_combat_service_player_wins_against_weaker_mob():
         crit_chance=0.0,
         crit_damage=1.50,
         dodge=0.0,
+        hp_regeneration=0,
     )
 
     mob = build_mob(
@@ -70,6 +73,7 @@ def test_combat_service_player_loses_against_stronger_mob():
         crit_chance=0.0,
         crit_damage=1.50,
         dodge=0.0,
+        hp_regeneration=0,
     )
 
     mob = build_mob(
@@ -96,6 +100,7 @@ def test_combat_service_damage_has_minimum_of_one():
         crit_chance=0.0,
         crit_damage=1.50,
         dodge=0.0,
+        hp_regeneration=0,
     )
 
     mob = build_mob(
@@ -122,6 +127,7 @@ def test_combat_service_turn_count_is_consistent():
         crit_chance=0.0,
         crit_damage=1.50,
         dodge=0.0,
+        hp_regeneration=0,
     )
 
     mob = build_mob(
