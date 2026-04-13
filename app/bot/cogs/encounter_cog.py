@@ -78,9 +78,7 @@ class EncounterCog(commands.Cog):
 
         view = EncounterView(self)
         embed, file = build_encounter_embed(
-            mob_name=encounter.mob_state.name,
-            image_name=f"mobs/{encounter.mob_state.image_name}",
-            state_text="Un monstre apparaît. Cliquez sur **Combattre** pour rejoindre l'expédition.",
+            image_name=f"mobs/{encounter.mob_state.image_name}"
         )
 
         message = await channel.send(embed=embed, view=view, file=file)
@@ -97,9 +95,7 @@ class EncounterCog(commands.Cog):
 
         if not self.active_encounter.participants:
             flee_embed, file = build_encounter_embed(
-                mob_name=self.active_encounter.mob_state.name,
-                image_name=self.active_encounter.flee_image_name,
-                state_text="Le monstre s'est enfui...",
+                image_name=self.active_encounter.flee_image_name
             )
             await message.edit(embed=flee_embed, attachments=[file], view=view)
             self.active_encounter = None
@@ -128,9 +124,7 @@ class EncounterCog(commands.Cog):
             )
 
             turn_embed, file = build_encounter_embed(
-                mob_name=self.active_encounter.mob_state.name,
-                image_name=output_relative,
-                state_text=f"⚔️ Combat en cours... Tour {index + 1}",
+                image_name=output_relative
             )
 
             await message.edit(embed=turn_embed, attachments=[file], view=view)
@@ -149,9 +143,7 @@ class EncounterCog(commands.Cog):
         )
 
         final_embed, file = build_encounter_embed(
-            mob_name=self.active_encounter.mob_state.name,
             image_name=final_image,
-            state_text=final_text,
         )
 
         await message.edit(embed=final_embed, attachments=[file], view=view)
@@ -219,9 +211,7 @@ class EncounterCog(commands.Cog):
         )
 
         embed, file = build_encounter_embed(
-            mob_name=self.active_encounter.mob_state.name,
-            image_name=output_relative,
-            state_text="Des aventuriers se rassemblent pour le combat...",
+            image_name=output_relative
         )
 
         view = EncounterView(self, timeout=60)  # spawn_time
