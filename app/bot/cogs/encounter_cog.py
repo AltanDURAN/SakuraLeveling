@@ -22,6 +22,8 @@ from app.shared.paths import GENERATED_ENCOUNTERS_DIR, LANDSCAPES_ASSETS_DIR
 from app.bot.runtime.encounter_mob_state import EncounterMobState
 from app.infrastructure.db.repositories.player_health_repository import PlayerHealthRepository
 from app.domain.services.health_regeneration_service import HealthRegenerationService
+from app.shared.paths import GENERATED_ENCOUNTERS_DIR, LANDSCAPES_ASSETS_DIR
+from app.bot.rendering.fight_scene import compose_players_banner
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 print("=======================")
@@ -174,12 +176,22 @@ class EncounterCog(commands.Cog):
             self.active_encounter = None
             return
 
-        for index, _turn_log in enumerate(result.turn_logs):
-            image_name = self.active_encounter.turn_image_names[index % (len(self.active_encounter.turn_image_names) - 1)]
+        background_path = LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
+
+        for index, turn_log in enumerate(result.turn_logs):
+            output_relative = f"generated_encounters/encounter_{self.active_encounter.message_id}_turn_{index + 1}.png"
+            output_full = GENERATED_ENCOUNTERS_DIR / f"encounter_{self.active_encounter.message_id}_turn_{index + 1}.png"
+
+            compose_players_banner(
+                players=turn_log.players_state,
+                mob=turn_log.mob_state,
+                output_path=str(output_full),
+                background_path=str(background_path),
+            )
 
             turn_embed, file = build_encounter_embed(
                 mob_name=self.active_encounter.mob_state.name,
-                image_name=image_name,
+                image_name=output_relative,
                 state_text=f"⚔️ Combat en cours... Tour {index + 1}",
             )
 
