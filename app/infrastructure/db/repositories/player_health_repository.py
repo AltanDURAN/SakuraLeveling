@@ -62,3 +62,27 @@ class PlayerHealthRepository:
         model.current_hp = current_hp
         model.updated_at = datetime.utcnow()
         self.session.commit()
+        
+    def refresh_current_hp(
+        self,
+        player_id: int,
+        new_current_hp: int,
+    ) -> PlayerHealthState | None:
+        stmt = select(PlayerHealthStateModel).where(
+            PlayerHealthStateModel.player_id == player_id
+        )
+        model = self.session.execute(stmt).scalar_one_or_none()
+
+        if model is None:
+            return None
+
+        model.current_hp = new_current_hp
+        model.updated_at = datetime.utcnow()
+        self.session.commit()
+        self.session.refresh(model)
+
+        return PlayerHealthState(
+            player_id=model.player_id,
+            current_hp=model.current_hp,
+            updated_at=model.updated_at,
+        )

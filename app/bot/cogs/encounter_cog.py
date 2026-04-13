@@ -54,7 +54,6 @@ class EncounterCog(commands.Cog):
             player_repository = PlayerRepository(session)
             equipment_repository = EquipmentRepository(session)
             class_repository = ClassRepository(session)
-            player_health_repository = PlayerHealthRepository(session)
 
             profile = player_repository.get_by_discord_id(user_id)
             if profile is None:
@@ -68,27 +67,12 @@ class EncounterCog(commands.Cog):
                 equipped_items=equipped_items,
                 active_class=active_class,
             )
-
-            health_state = player_health_repository.get_or_create(
-                player_id=profile.player.id,
-                default_current_hp=stats.max_hp,
-            )
-
-            now = datetime.now(timezone.utc)
-
-            regenerated_current_hp = HealthRegenerationService().apply_out_of_combat_regeneration(
-                current_hp=health_state.current_hp,
-                max_hp=stats.max_hp,
-                hp_regeneration=stats.hp_regeneration,
-                last_updated_at=health_state.updated_at,
-                now=now,
-            )
-
-            print(f"[REGEN] old={health_state.current_hp} new={regenerated_current_hp} max={stats.max_hp} regen={stats.hp_regeneration}")
-            player_health_repository.update_current_hp(
-                player_id=profile.player.id,
-                current_hp=regenerated_current_hp,
-            )
+            
+        regenerated_current_hp = self.get_regenerated_player_hp(
+            player_id=profile.player.id,
+            max_hp=stats.max_hp,
+            hp_regeneration=stats.hp_regeneration,
+        )
 
         participant = EncounterParticipant(
             user_id=user_id,
@@ -365,6 +349,38 @@ class EncounterCog(commands.Cog):
                     player_id=participant.player_id,
                     current_hp=player_state["current_hp"],
                 )
+
+    def get_regenerated_player_hp(
+        self,
+        player_id: int,
+        max_hp: int,
+        hp_regeneration: int,
+    ) -> int:
+        with get_db_session() as session:
+            player_health_repository = PlayerHealthRepository(session)
+
+            health_state = player_health_repository.get_or_create(
+                player_id=player_id,
+                default_current_hp=max_hp,
+            )
+
+            now = datetime.now(timezone.utc)
+
+            regenerated_current_hp = HealthRegenerationService().apply_out_of_combat_regeneration(
+                current_hp=health_state.current_hp,
+                max_hp=max_hp,
+                hp_regeneration=hp_regeneration,
+                last_updated_at=health_state.updated_at,
+                now=now,
+            )
+
+            if regenerated_current_hp != health_state.current_hp:
+                player_health_repository.refresh_current_hp(
+                    player_id=player_id,
+                    new_current_hp=regenerated_current_hp,
+                )
+
+            return regenerated_current_hp
 
 
 async def setup(bot: commands.Bot) -> None:
