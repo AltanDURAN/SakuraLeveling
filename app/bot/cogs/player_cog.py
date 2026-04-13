@@ -3,6 +3,7 @@ import asyncio
 import discord
 from discord import app_commands
 from discord.ext import commands
+from datetime import datetime, UTC
 
 from app.application.use_cases.change_player_class import ChangePlayerClassUseCase
 from app.application.use_cases.claim_daily_reward import ClaimDailyRewardUseCase
@@ -49,6 +50,8 @@ from app.infrastructure.db.repositories.profession_repository import ProfessionR
 from app.infrastructure.db.repositories.quest_repository import QuestRepository
 from app.infrastructure.db.session import get_db_session
 from app.shared.enums import EquipmentSlot
+from app.domain.services.health_regeneration_service import HealthRegenerationService
+from app.infrastructure.db.repositories.player_health_repository import PlayerHealthRepository
 
 
 class PlayerCog(commands.Cog):
@@ -81,6 +84,7 @@ class PlayerCog(commands.Cog):
             player_repository = PlayerRepository(session)
             equipment_repository = EquipmentRepository(session)
             class_repository = ClassRepository(session)
+            player_health_repository = PlayerHealthRepository(session)
 
             profile_use_case = GetPlayerProfileUseCase(player_repository)
             stats_use_case = GetPlayerStatsUseCase(
@@ -104,7 +108,33 @@ class PlayerCog(commands.Cog):
 
             active_class = class_repository.get_current_class_for_player(profile.player.id)
 
-        embed = build_player_profile_embed(profile, stats, active_class)
+            health_state = player_health_repository.get_or_create(
+                player_id=profile.player.id,
+                default_current_hp=stats.max_hp,
+            )
+
+            now = datetime.now(UTC)
+
+            regenerated_current_hp = HealthRegenerationService().apply_out_of_combat_regeneration(
+                current_hp=health_state.current_hp,
+                max_hp=stats.max_hp,
+                hp_regeneration=stats.hp_regeneration,
+                last_updated_at=health_state.updated_at,
+                now=now,
+            )
+
+            if regenerated_current_hp != health_state.current_hp:
+                player_health_repository.refresh_current_hp(
+                    player_id=profile.player.id,
+                    new_current_hp=regenerated_current_hp,
+                )
+
+        embed = build_player_profile_embed(
+            profile=profile,
+            stats=stats,
+            active_class=active_class,
+            current_hp=regenerated_current_hp,
+        )
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="inventory", description="Afficher votre inventaire")

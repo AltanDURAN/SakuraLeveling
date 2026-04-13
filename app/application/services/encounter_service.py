@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 from app.bot.runtime.encounter_participant import EncounterParticipant
 from app.domain.services.health_regeneration_service import HealthRegenerationService
@@ -27,7 +27,7 @@ class EncounterService:
                 default_current_hp=max_hp,
             )
 
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
 
             regenerated_current_hp = HealthRegenerationService().apply_out_of_combat_regeneration(
                 current_hp=health_state.current_hp,

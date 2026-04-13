@@ -280,7 +280,7 @@ def compose_players_banner(
             draw.rounded_rectangle(
                 [(x1, y1), (x2, y2)],
                 radius=20,                 # arrondi des coins
-                fill=(0, 200, 0, 255)      # vert (RGBA)
+                fill=(0, 180, 50, 255)      # vert (RGBA)
             )
         else:
             mob_info = f"{mob_name} • [Mort]"

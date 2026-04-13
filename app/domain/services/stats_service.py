@@ -20,7 +20,9 @@ class StatsService:
         crit_chance = 0.05
         crit_damage = 1.50
         dodge = 0.00
-        hp_regeneration = 0
+        
+        base_hp_regeneration = 5
+        hp_regeneration = base_hp_regeneration
 
         if active_class is not None:
             bonuses = active_class.stat_bonuses or {}
