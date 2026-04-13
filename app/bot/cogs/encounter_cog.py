@@ -67,6 +67,7 @@ class EncounterCog(commands.Cog):
 
         participant = EncounterParticipant(
             user_id=user_id,
+            player_id=profile.player.id,
             display_name=display_name,
             avatar_url=avatar_url,
             current_hp=stats.max_hp,
@@ -201,13 +202,13 @@ class EncounterCog(commands.Cog):
 
             party = []
 
-            for user_id in self.active_encounter.participants:
-                profile = player_repository.get_by_discord_id(user_id)
+            for participant in self.active_encounter.participants.values():
+                profile = player_repository.get_by_discord_id(participant.user_id)
                 if profile is None:
                     continue
 
-                equipped_items = equipment_repository.list_by_player_id(profile.player.id)
-                active_class = class_repository.get_current_class_for_player(profile.player.id)
+                equipped_items = equipment_repository.list_by_player_id(participant.player_id)
+                active_class = class_repository.get_current_class_for_player(participant.player_id)
 
                 stats = StatsService().calculate_player_stats(
                     profile=profile,
@@ -215,7 +216,7 @@ class EncounterCog(commands.Cog):
                     active_class=active_class,
                 )
 
-                party.append((profile.player.display_name, stats))
+                party.append((participant.display_name, stats))
 
         if not party:
             return None
@@ -240,6 +241,7 @@ class EncounterCog(commands.Cog):
 
         players = [
             {
+                "name": participant.display_name,
                 "avatar_url": participant.avatar_url,
                 "current_hp": participant.current_hp,
                 "max_hp": participant.max_hp,
