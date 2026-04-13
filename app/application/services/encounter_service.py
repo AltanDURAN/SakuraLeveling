@@ -162,3 +162,29 @@ class EncounterService:
                     player_id=player_id,
                     current_hp=player_state["current_hp"],
                 )
+
+    def apply_rewards(self, encounter, result) -> None:
+        if encounter is None:
+            return
+
+        if not result.victory:
+            return
+
+        surviving_names = set(result.surviving_players)
+
+        with get_db_session() as session:
+            player_repository = PlayerRepository(session)
+
+            for participant in encounter.participants.values():
+                if participant.display_name not in surviving_names:
+                    continue
+
+                player_repository.add_gold(
+                    player_id=participant.player_id,
+                    amount=result.gold_gained,
+                )
+
+                player_repository.add_xp(
+                    player_id=participant.player_id,
+                    amount=result.xp_gained,
+                )

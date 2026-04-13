@@ -119,6 +119,7 @@ class EncounterCog(commands.Cog):
             return
 
         self.persist_final_players_hp(result)
+        self.encounter_service.apply_rewards(self.active_encounter, result)
 
         background_path = LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
 

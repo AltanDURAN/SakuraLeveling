@@ -86,13 +86,12 @@ class PlayerRepository:
             display_name=display_name,
         )
         
-    def add_xp(self, player_id: int, xp: int) -> None:
+    def add_xp(self, player_id: int, amount: int) -> None:
         progression = self.session.get(PlayerProgressionModel, player_id)
         if progression is None:
             return
 
-        progression.xp += xp
-        progression.updated_at = datetime.now(UTC)
+        progression.xp += amount
         self.session.commit()
 
     def add_gold(self, player_id: int, gold: int) -> None:
