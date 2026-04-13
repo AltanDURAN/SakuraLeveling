@@ -239,6 +239,8 @@ class EncounterCog(commands.Cog):
 
                 party.append(
                     {
+                        "player_id": participant.player_id,
+                        "user_id": participant.user_id,
                         "name": participant.display_name,
                         "avatar_url": participant.avatar_url,
                         "current_hp": participant.current_hp,
@@ -323,30 +325,20 @@ class EncounterCog(commands.Cog):
         await message.edit(embed=embed, attachments=[file], view=view)
         
     def persist_final_players_hp(self, result) -> None:
-        if self.active_encounter is None:
-            return
-
         if not result.turn_logs:
             return
 
         final_turn = result.turn_logs[-1]
         final_players_state = final_turn.players_state
 
-        participants_by_name = {
-            participant.display_name: participant
-            for participant in self.active_encounter.participants.values()
-        }
-
         with get_db_session() as session:
             player_health_repository = PlayerHealthRepository(session)
 
             for player_state in final_players_state:
-                participant = participants_by_name.get(player_state["name"])
-                if participant is None:
-                    continue
+                player_id = player_state["player_id"]
 
                 player_health_repository.update_current_hp(
-                    player_id=participant.player_id,
+                    player_id=player_id,
                     current_hp=player_state["current_hp"],
                 )
 

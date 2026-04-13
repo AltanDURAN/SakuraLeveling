@@ -18,6 +18,8 @@ class PartyCombatService:
 
         alive_party = [
             {
+                "player_id": player["player_id"],
+                "user_id": player["user_id"],
                 "name": player["name"],
                 "avatar_url": player["avatar_url"],
                 "stats": player["stats"],
@@ -62,6 +64,8 @@ class PartyCombatService:
                         mob_action=f"{mob.name} est vaincu.",
                         players_state=[
                             {
+                                "player_id": player["player_id"],
+                                "user_id": player["user_id"],
                                 "name": player["name"],
                                 "avatar_url": player["avatar_url"],
                                 "current_hp": player["hp"],
@@ -100,6 +104,8 @@ class PartyCombatService:
                     mob_action=mob_action,
                     players_state=[
                         {
+                            "player_id": player["player_id"],
+                            "user_id": player["user_id"],
                             "name": player["name"],
                             "avatar_url": player["avatar_url"],
                             "current_hp": player["hp"],

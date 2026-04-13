@@ -37,6 +37,8 @@ def test_party_combat_service_returns_turn_snapshots():
 
     party = [
         {
+            "player_id": 1,
+            "user_id": 101,
             "name": "Jean-Yves",
             "avatar_url": "https://example.com/avatar1.png",
             "current_hp": 100,
@@ -52,6 +54,8 @@ def test_party_combat_service_returns_turn_snapshots():
             ),
         },
         {
+            "player_id": 2,
+            "user_id": 102,
             "name": "Altan",
             "avatar_url": "https://example.com/avatar2.png",
             "current_hp": 100,
@@ -92,6 +96,8 @@ def test_party_combat_service_returns_turn_snapshots():
     assert first_turn.mob_state["image_name"] == "gobelin.png"
 
     for player_state in first_turn.players_state:
+        assert "player_id" in player_state
+        assert "user_id" in player_state
         assert "name" in player_state
         assert "avatar_url" in player_state
         assert "current_hp" in player_state
