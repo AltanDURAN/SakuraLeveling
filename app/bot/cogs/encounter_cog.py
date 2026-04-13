@@ -22,8 +22,6 @@ from app.shared.paths import GENERATED_ENCOUNTERS_DIR, LANDSCAPES_ASSETS_DIR
 from app.bot.runtime.encounter_mob_state import EncounterMobState
 from app.infrastructure.db.repositories.player_health_repository import PlayerHealthRepository
 from app.domain.services.health_regeneration_service import HealthRegenerationService
-from app.shared.paths import GENERATED_ENCOUNTERS_DIR, LANDSCAPES_ASSETS_DIR
-from app.bot.rendering.fight_scene import compose_players_banner
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 print("=======================")
@@ -175,6 +173,8 @@ class EncounterCog(commands.Cog):
         if result is None:
             self.active_encounter = None
             return
+
+        self.persist_final_players_hp(result)
 
         background_path = LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
 
@@ -337,6 +337,34 @@ class EncounterCog(commands.Cog):
         view = EncounterView(self, timeout=60) #spawn_time
 
         await message.edit(embed=embed, attachments=[file], view=view)
+        
+    def persist_final_players_hp(self, result) -> None:
+        if self.active_encounter is None:
+            return
+
+        if not result.turn_logs:
+            return
+
+        final_turn = result.turn_logs[-1]
+        final_players_state = final_turn.players_state
+
+        participants_by_name = {
+            participant.display_name: participant
+            for participant in self.active_encounter.participants.values()
+        }
+
+        with get_db_session() as session:
+            player_health_repository = PlayerHealthRepository(session)
+
+            for player_state in final_players_state:
+                participant = participants_by_name.get(player_state["name"])
+                if participant is None:
+                    continue
+
+                player_health_repository.update_current_hp(
+                    player_id=participant.player_id,
+                    current_hp=player_state["current_hp"],
+                )
 
 
 async def setup(bot: commands.Bot) -> None:
