@@ -2,6 +2,7 @@ import asyncio
 
 import discord
 from discord.ext import commands, tasks
+from datetime import datetime, timedelta, timezone
 
 from app.application.services.encounter_service import EncounterService
 from app.bot.embeds.encounter_embeds import build_encounter_embed
@@ -20,6 +21,7 @@ class EncounterCog(commands.Cog):
         self.bot = bot
         self.active_encounter: ActiveEncounter | None = None
         self.encounter_service = EncounterService()
+        self.next_spawn_at = datetime.now(timezone.utc) + timedelta(minutes=1)
         self.encounter_loop.start()
         self.generated_dir = GENERATED_ENCOUNTERS_DIR
         self.generated_dir.mkdir(exist_ok=True)
@@ -42,13 +44,18 @@ class EncounterCog(commands.Cog):
 
         return success, message
 
-    @tasks.loop(minutes=1)
+    @tasks.loop(seconds=10)
     async def encounter_loop(self):
         channel = self.bot.get_channel(settings.encounter_channel_id)
         if channel is None:
             return
 
         if self.active_encounter is not None:
+            return
+
+        now = datetime.now(timezone.utc)
+
+        if self.next_spawn_at is not None and now < self.next_spawn_at:
             return
 
         with get_db_session() as session:
@@ -73,7 +80,7 @@ class EncounterCog(commands.Cog):
             victory_image_name="others/victory.png",
             defeat_image_name="others/defeat.png",
             flee_image_name="others/flee.jpg",
-            duration_minutes=1,
+            duration_minutes=5,
         )
 
         view = EncounterView(self)
@@ -112,7 +119,7 @@ class EncounterCog(commands.Cog):
         encounter.message_id = message.id
         self.active_encounter = encounter
 
-        await asyncio.sleep(60)  # spawn_time
+        await asyncio.sleep(300)  # 5 minutes de recrutement
 
         for child in view.children:
             child.disabled = True
@@ -122,10 +129,11 @@ class EncounterCog(commands.Cog):
 
         if not self.active_encounter.participants:
             flee_embed, file = build_encounter_embed(
-                image_name=self.active_encounter.flee_image_name
+                image_name=self.active_encounter.flee_image_name,
             )
             await message.edit(embed=flee_embed, attachments=[file], view=view)
             self.active_encounter = None
+            self.next_spawn_at = datetime.now(timezone.utc) + timedelta(minutes=1)
             return
 
         result = self.resolve_active_encounter()
@@ -175,6 +183,7 @@ class EncounterCog(commands.Cog):
 
         await message.edit(embed=final_embed, attachments=[file], view=view)
         self.active_encounter = None
+        self.next_spawn_at = datetime.now(timezone.utc) + timedelta(minutes=1)
 
     @encounter_loop.before_loop
     async def before_encounter_loop(self):
