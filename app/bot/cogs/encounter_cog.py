@@ -2,20 +2,19 @@ import asyncio
 
 import discord
 from discord.ext import commands, tasks
-from pathlib import Path
 
+from app.application.services.encounter_service import EncounterService
 from app.bot.embeds.encounter_embeds import build_encounter_embed
+from app.bot.rendering.fight_scene import compose_players_banner
 from app.bot.runtime.active_encounter import ActiveEncounter
+from app.bot.runtime.encounter_mob_state import EncounterMobState
 from app.bot.views.encounter_view import EncounterView
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.session import get_db_session
-from app.bot.rendering.fight_scene import compose_players_banner
 from app.shared.paths import GENERATED_ENCOUNTERS_DIR, LANDSCAPES_ASSETS_DIR
-from app.bot.runtime.encounter_mob_state import EncounterMobState
-from app.application.services.encounter_service import EncounterService
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
+
 class EncounterCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -80,7 +79,7 @@ class EncounterCog(commands.Cog):
         view = EncounterView(self)
         embed, file = build_encounter_embed(
             mob_name=encounter.mob_state.name,
-            image_name="mobs/" + encounter.mob_state.image_name,
+            image_name=f"mobs/{encounter.mob_state.image_name}",
             state_text="Un monstre apparaît. Cliquez sur **Combattre** pour rejoindre l'expédition.",
         )
 
@@ -88,7 +87,7 @@ class EncounterCog(commands.Cog):
         encounter.message_id = message.id
         self.active_encounter = encounter
 
-        await asyncio.sleep(60) #spawn_time
+        await asyncio.sleep(60)  # spawn_time
 
         for child in view.children:
             child.disabled = True
@@ -117,8 +116,9 @@ class EncounterCog(commands.Cog):
         background_path = LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
 
         for index, turn_log in enumerate(result.turn_logs):
-            output_relative = f"generated_encounters/encounter_{self.active_encounter.message_id}_turn_{index + 1}.png"
-            output_full = GENERATED_ENCOUNTERS_DIR / f"encounter_{self.active_encounter.message_id}_turn_{index + 1}.png"
+            filename = f"encounter_{self.active_encounter.message_id}_turn_{index + 1}.png"
+            output_full = self.generated_dir / filename
+            output_relative = f"generated_encounters/{filename}"
 
             compose_players_banner(
                 players=turn_log.players_state,
@@ -163,7 +163,7 @@ class EncounterCog(commands.Cog):
 
     def resolve_active_encounter(self):
         return self.encounter_service.resolve_active_encounter(self.active_encounter)
-    
+
     async def refresh_encounter_scene(self) -> None:
         if self.active_encounter is None or self.active_encounter.message_id is None:
             return
@@ -190,15 +190,19 @@ class EncounterCog(commands.Cog):
         if not players:
             return
 
-        output = self.generated_dir / f"encounter_{self.active_encounter.message_id}.png"
-        output_path = "generated_encounters/" + f"encounter_{self.active_encounter.message_id}.png"
+        filename = f"encounter_{self.active_encounter.message_id}.png"
+        output_full = self.generated_dir / filename
+        output_relative = f"generated_encounters/{filename}"
         background_path = LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
 
         with get_db_session() as session:
             mob_repository = MobRepository(session)
             mob = mob_repository.get_by_code(self.active_encounter.mob_state.code)
-        
-        mob = {
+
+        if mob is None:
+            return
+
+        mob_payload = {
             "name": mob.name,
             "image_name": mob.image_name,
             "current_hp": mob.current_hp,
@@ -209,23 +213,24 @@ class EncounterCog(commands.Cog):
 
         compose_players_banner(
             players=players,
-            mob=mob,
-            output_path="assets/" + output_path,
+            mob=mob_payload,
+            output_path=str(output_full),
             background_path=str(background_path),
         )
 
         embed, file = build_encounter_embed(
             mob_name=self.active_encounter.mob_state.name,
-            image_name=output_path,
+            image_name=output_relative,
             state_text="Des aventuriers se rassemblent pour le combat...",
         )
 
-        view = EncounterView(self, timeout=60) #spawn_time
+        view = EncounterView(self, timeout=60)  # spawn_time
 
         await message.edit(embed=embed, attachments=[file], view=view)
-        
+
     def persist_final_players_hp(self, result) -> None:
         self.encounter_service.persist_final_players_hp(result)
+
 
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(EncounterCog(bot))
