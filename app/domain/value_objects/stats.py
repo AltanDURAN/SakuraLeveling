@@ -9,3 +9,4 @@ class Stats:
     crit_chance: float
     crit_damage: float
     dodge: float
+    hp_regeneration: int

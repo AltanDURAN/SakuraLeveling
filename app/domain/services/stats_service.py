@@ -20,6 +20,7 @@ class StatsService:
         crit_chance = 0.05
         crit_damage = 1.50
         dodge = 0.00
+        hp_regeneration = 0
 
         if active_class is not None:
             bonuses = active_class.stat_bonuses or {}
@@ -29,6 +30,7 @@ class StatsService:
             crit_chance += float(bonuses.get("crit_chance", 0.0))
             crit_damage += float(bonuses.get("crit_damage", 0.0))
             dodge += float(bonuses.get("dodge", 0.0))
+            hp_regeneration += int(bonuses.get("hp_regeneration", 0))
 
         for equipment_item in equipped_items:
             bonuses = equipment_item.item_definition.stat_bonuses or {}
@@ -38,10 +40,12 @@ class StatsService:
             crit_chance += float(bonuses.get("crit_chance", 0.0))
             crit_damage += float(bonuses.get("crit_damage", 0.0))
             dodge += float(bonuses.get("dodge", 0.0))
+            hp_regeneration += int(bonuses.get("hp_regeneration", 0))
 
         crit_chance = min(crit_chance, 0.75)
         dodge = min(dodge, 0.50)
         crit_damage = max(crit_damage, 1.0)
+        hp_regeneration = max(0, hp_regeneration)
 
         return Stats(
             max_hp=max_hp,
@@ -50,4 +54,5 @@ class StatsService:
             crit_chance=crit_chance,
             crit_damage=crit_damage,
             dodge=dodge,
+            hp_regeneration=hp_regeneration,
         )
