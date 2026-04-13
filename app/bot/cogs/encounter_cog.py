@@ -3,25 +3,17 @@ import asyncio
 import discord
 from discord.ext import commands, tasks
 from pathlib import Path
-from datetime import datetime, timezone
 
 from app.bot.embeds.encounter_embeds import build_encounter_embed
 from app.bot.runtime.active_encounter import ActiveEncounter
 from app.bot.views.encounter_view import EncounterView
-from app.domain.services.party_combat_service import PartyCombatService
-from app.domain.services.stats_service import StatsService
 from app.infrastructure.config.settings import settings
-from app.infrastructure.db.repositories.class_repository import ClassRepository
-from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
-from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
-from app.bot.runtime.encounter_participant import EncounterParticipant
 from app.bot.rendering.fight_scene import compose_players_banner
 from app.shared.paths import GENERATED_ENCOUNTERS_DIR, LANDSCAPES_ASSETS_DIR
 from app.bot.runtime.encounter_mob_state import EncounterMobState
-from app.infrastructure.db.repositories.player_health_repository import PlayerHealthRepository
-from app.domain.services.health_regeneration_service import HealthRegenerationService
+from app.application.services.encounter_service import EncounterService
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 print("=======================")
@@ -31,6 +23,7 @@ class EncounterCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.active_encounter: ActiveEncounter | None = None
+        self.encounter_service = EncounterService()
         self.encounter_loop.start()
         self.generated_dir = GENERATED_ENCOUNTERS_DIR
         self.generated_dir.mkdir(exist_ok=True)
@@ -44,51 +37,18 @@ class EncounterCog(commands.Cog):
         display_name: str,
         avatar_url: str,
     ) -> tuple[bool, str]:
-        if self.active_encounter is None:
-            return False, "Aucun combat à rejoindre."
-
-        if user_id in self.active_encounter.participants:
-            return False, "Vous avez déjà rejoint le combat."
-
-        with get_db_session() as session:
-            player_repository = PlayerRepository(session)
-            equipment_repository = EquipmentRepository(session)
-            class_repository = ClassRepository(session)
-
-            profile = player_repository.get_by_discord_id(user_id)
-            if profile is None:
-                return False, "Votre profil joueur n'existe pas encore. Utilisez /profile d'abord."
-
-            equipped_items = equipment_repository.list_by_player_id(profile.player.id)
-            active_class = class_repository.get_current_class_for_player(profile.player.id)
-
-            stats = StatsService().calculate_player_stats(
-                profile=profile,
-                equipped_items=equipped_items,
-                active_class=active_class,
-            )
-            
-        regenerated_current_hp = self.get_regenerated_player_hp(
-            player_id=profile.player.id,
-            max_hp=stats.max_hp,
-            hp_regeneration=stats.hp_regeneration,
-        )
-
-        participant = EncounterParticipant(
+        success, message = self.encounter_service.register_participant(
+            encounter=self.active_encounter,
             user_id=user_id,
-            player_id=profile.player.id,
             display_name=display_name,
             avatar_url=avatar_url,
-            current_hp=regenerated_current_hp,
-            max_hp=stats.max_hp,
         )
 
-        self.active_encounter.participants[user_id] = participant
+        if success:
+            print(f"[ENCOUNTER] {display_name} a rejoint le combat.")
+            print(f"[AVATAR] {avatar_url}")
 
-        print(f"[ENCOUNTER] {display_name} a rejoint le combat.")
-        print(f"[AVATAR] {avatar_url}")
-
-        return True, "Vous avez rejoint le combat."
+        return success, message
 
     @tasks.loop(minutes=1)
     async def encounter_loop(self):
@@ -208,54 +168,7 @@ class EncounterCog(commands.Cog):
         await self.bot.wait_until_ready()
 
     def resolve_active_encounter(self):
-        if self.active_encounter is None:
-            return None
-
-        with get_db_session() as session:
-            player_repository = PlayerRepository(session)
-            equipment_repository = EquipmentRepository(session)
-            class_repository = ClassRepository(session)
-            mob_repository = MobRepository(session)
-
-            mob = mob_repository.get_by_code(self.active_encounter.mob_state.code)
-            if mob is None:
-                return None
-
-            party = []
-
-            for participant in self.active_encounter.participants.values():
-                profile = player_repository.get_by_discord_id(participant.user_id)
-                if profile is None:
-                    continue
-
-                equipped_items = equipment_repository.list_by_player_id(participant.player_id)
-                active_class = class_repository.get_current_class_for_player(participant.player_id)
-
-                stats = StatsService().calculate_player_stats(
-                    profile=profile,
-                    equipped_items=equipped_items,
-                    active_class=active_class,
-                )
-
-                party.append(
-                    {
-                        "player_id": participant.player_id,
-                        "user_id": participant.user_id,
-                        "name": participant.display_name,
-                        "avatar_url": participant.avatar_url,
-                        "current_hp": participant.current_hp,
-                        "max_hp": participant.max_hp,
-                        "stats": stats,
-                    }
-                )
-
-        if not party:
-            return None
-
-        return PartyCombatService().fight_party_vs_mob(
-            party=party,
-            mob=mob,
-        )
+        return self.encounter_service.resolve_active_encounter(self.active_encounter)
     
     async def refresh_encounter_scene(self) -> None:
         if self.active_encounter is None or self.active_encounter.message_id is None:
@@ -325,55 +238,7 @@ class EncounterCog(commands.Cog):
         await message.edit(embed=embed, attachments=[file], view=view)
         
     def persist_final_players_hp(self, result) -> None:
-        if not result.turn_logs:
-            return
-
-        final_turn = result.turn_logs[-1]
-        final_players_state = final_turn.players_state
-
-        with get_db_session() as session:
-            player_health_repository = PlayerHealthRepository(session)
-
-            for player_state in final_players_state:
-                player_id = player_state["player_id"]
-
-                player_health_repository.update_current_hp(
-                    player_id=player_id,
-                    current_hp=player_state["current_hp"],
-                )
-
-    def get_regenerated_player_hp(
-        self,
-        player_id: int,
-        max_hp: int,
-        hp_regeneration: int,
-    ) -> int:
-        with get_db_session() as session:
-            player_health_repository = PlayerHealthRepository(session)
-
-            health_state = player_health_repository.get_or_create(
-                player_id=player_id,
-                default_current_hp=max_hp,
-            )
-
-            now = datetime.now(timezone.utc)
-
-            regenerated_current_hp = HealthRegenerationService().apply_out_of_combat_regeneration(
-                current_hp=health_state.current_hp,
-                max_hp=max_hp,
-                hp_regeneration=hp_regeneration,
-                last_updated_at=health_state.updated_at,
-                now=now,
-            )
-
-            if regenerated_current_hp != health_state.current_hp:
-                player_health_repository.refresh_current_hp(
-                    player_id=player_id,
-                    new_current_hp=regenerated_current_hp,
-                )
-
-            return regenerated_current_hp
-
+        self.encounter_service.persist_final_players_hp(result)
 
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(EncounterCog(bot))
