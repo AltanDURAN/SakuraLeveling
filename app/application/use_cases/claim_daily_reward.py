@@ -44,7 +44,7 @@ class ClaimDailyRewardUseCase:
 
         if not self.cooldown_service.is_available(cooldown, now):
             assert cooldown is not None and cooldown.next_available_at is not None
-            return False, f"Daily déjà récupéré. Prochain disponible : {cooldown.next_available_at} UTC"
+            return False, f"Daily déjà récupéré. Prochain disponible : {cooldown.next_available_at}"
 
         self.player_repository.add_gold(profile.player.id, self.DAILY_GOLD_REWARD)
 

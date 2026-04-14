@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 
 from app.domain.services.cooldown_service import CooldownService
 from app.domain.value_objects.cooldown import Cooldown
