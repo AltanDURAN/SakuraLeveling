@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import timezone, datetime
 
 from app.domain.entities.mob_definition import MobDefinition
 from app.domain.services.combat_service import CombatService
