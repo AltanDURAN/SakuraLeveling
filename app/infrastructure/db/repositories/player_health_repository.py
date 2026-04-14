@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -30,7 +30,7 @@ class PlayerHealthRepository:
         model = PlayerHealthStateModel(
             player_id=player_id,
             current_hp=current_hp,
-            updated_at=datetime.now(UTC),
+            updated_at=datetime.now(timezone.utc),
         )
 
         self.session.add(model)
@@ -60,7 +60,7 @@ class PlayerHealthRepository:
             return
 
         model.current_hp = current_hp
-        model.updated_at = datetime.now(UTC)
+        model.updated_at = datetime.now(timezone.utc)
         self.session.commit()
         
     def refresh_current_hp(
@@ -77,7 +77,7 @@ class PlayerHealthRepository:
             return None
 
         model.current_hp = new_current_hp
-        model.updated_at = datetime.now(UTC)
+        model.updated_at = datetime.now(timezone.utc)
         self.session.commit()
         self.session.refresh(model)
 

@@ -3,7 +3,7 @@ import asyncio
 import discord
 from discord import app_commands
 from discord.ext import commands
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 from app.application.use_cases.change_player_class import ChangePlayerClassUseCase
 from app.application.use_cases.claim_daily_reward import ClaimDailyRewardUseCase
@@ -113,7 +113,7 @@ class PlayerCog(commands.Cog):
                 default_current_hp=stats.max_hp,
             )
 
-            now = datetime.now(UTC)
+            now = datetime.now(timezone.utc)
 
             regenerated_current_hp = HealthRegenerationService().apply_out_of_combat_regeneration(
                 current_hp=health_state.current_hp,

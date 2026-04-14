@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 
 from app.domain.services.health_regeneration_service import HealthRegenerationService
 
@@ -6,7 +6,7 @@ from app.domain.services.health_regeneration_service import HealthRegenerationSe
 def test_no_regeneration_if_already_full_hp():
     service = HealthRegenerationService()
 
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     result = service.apply_out_of_combat_regeneration(
         current_hp=100,
         max_hp=100,
@@ -21,7 +21,7 @@ def test_no_regeneration_if_already_full_hp():
 def test_regeneration_applies_per_full_minute():
     service = HealthRegenerationService()
 
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     result = service.apply_out_of_combat_regeneration(
         current_hp=50,
         max_hp=100,
@@ -36,7 +36,7 @@ def test_regeneration_applies_per_full_minute():
 def test_regeneration_does_not_exceed_max_hp():
     service = HealthRegenerationService()
 
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     result = service.apply_out_of_combat_regeneration(
         current_hp=95,
         max_hp=100,
@@ -51,7 +51,7 @@ def test_regeneration_does_not_exceed_max_hp():
 def test_no_regeneration_if_less_than_one_full_minute_elapsed():
     service = HealthRegenerationService()
 
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     result = service.apply_out_of_combat_regeneration(
         current_hp=50,
         max_hp=100,
@@ -66,7 +66,7 @@ def test_no_regeneration_if_less_than_one_full_minute_elapsed():
 def test_no_regeneration_if_regeneration_stat_is_zero():
     service = HealthRegenerationService()
 
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     result = service.apply_out_of_combat_regeneration(
         current_hp=50,
         max_hp=100,
@@ -81,7 +81,7 @@ def test_no_regeneration_if_regeneration_stat_is_zero():
 def test_current_hp_is_clamped_if_above_max_hp():
     service = HealthRegenerationService()
 
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     result = service.apply_out_of_combat_regeneration(
         current_hp=120,
         max_hp=100,
