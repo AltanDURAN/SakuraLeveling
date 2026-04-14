@@ -20,6 +20,7 @@ from app.infrastructure.db.models.craft_model import CraftRecipeModel, CraftReci
 from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel
 from app.infrastructure.db.models.quest_model import QuestDefinitionModel, PlayerQuestStateModel
 from app.infrastructure.db.models.profession_model import PlayerProfessionModel
+from app.infrastructure.db.models.player_health_state_model import PlayerHealthStateModel
 
 
 config = context.config

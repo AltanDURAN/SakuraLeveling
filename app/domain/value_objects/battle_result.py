@@ -17,4 +17,4 @@ class BattleResult:
     summary: str
     turn_logs: list[BattleTurnLog]
     mob_name: str
-    mob_image_url: str | None
+    mob_image_name: str

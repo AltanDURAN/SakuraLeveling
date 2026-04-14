@@ -4,10 +4,12 @@
     "name": "Slime",
     "description": "Une créature gélatineuse faible.",
     "max_hp": 30,
+    "current_hp": 30,
     "attack": 6,
     "defense": 1,
     "xp_reward": 10,
     "gold_reward": 5,
+    "spawn_weight": 80,
     "loot_table": [
       {
         "item_code": "slime_gel",
@@ -16,6 +18,27 @@
         "max_quantity": 2
       }
     ],
-    "image_url": "https://i.imgur.com/tLYX58K.jpeg"
+    "image_name": "slime.png"
+  },
+  {
+    "code": "gobelin",
+    "name": "Gobelin",
+    "description": "Une créature faible.",
+    "max_hp": 300,
+    "current_hp": 300,
+    "attack": 15,
+    "defense": 10,
+    "xp_reward": 15,
+    "gold_reward": 15,
+    "spawn_weight": 50,
+    "loot_table": [
+      {
+        "item_code": "gobelin_tooth",
+        "drop_rate": 0.75,
+        "min_quantity": 1,
+        "max_quantity": 2
+      }
+    ],
+    "image_name": "gobelin.png"
   }
 ]

@@ -17,6 +17,7 @@ def main() -> None:
                 defense=1,
                 xp_reward=10,
                 gold_reward=5,
+                spawn_weight=80,
                 loot_table=[
                     {
                         "item_code": "slime_gel",
@@ -25,7 +26,7 @@ def main() -> None:
                         "max_quantity": 2,
                     }
                 ],
-                image_url="https://i.imgur.com/tLYX58K.jpeg"
+                image_name="slime.png"
             )
             print("Slime créé.")
         else:

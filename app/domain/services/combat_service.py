@@ -13,7 +13,7 @@ class CombatService:
         mob: MobDefinition,
     ) -> BattleResult:
         player_hp = player_stats.max_hp
-        mob_hp = mob.max_hp
+        mob_hp = mob.current_hp
         turns = 0
         turn_logs: list[BattleTurnLog] = []
 
@@ -68,7 +68,7 @@ class CombatService:
                     summary=f"Vous avez vaincu **{mob.name}** en {turns} tour(s).",
                     turn_logs=turn_logs,
                     mob_name=mob.name,
-                    mob_image_url=mob.image_url,
+                    mob_image_name=mob.image_name,
                 )
 
             if player_hp <= 0:
@@ -85,7 +85,7 @@ class CombatService:
                     summary=f"Vous avez été vaincu par **{mob.name}** en {turns} tour(s).",
                     turn_logs=turn_logs,
                     mob_name=mob.name,
-                    mob_image_url=mob.image_url,
+                    mob_image_name=mob.image_name,
                 )
 
         return BattleResult(
@@ -101,5 +101,5 @@ class CombatService:
             summary="Le combat s'est terminé de manière inattendue.",
             turn_logs=turn_logs,
             mob_name=mob.name,
-            mob_image_url=mob.image_url,
+            mob_image_name=mob.image_name,
         )

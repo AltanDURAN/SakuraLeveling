@@ -1,8 +1,10 @@
+from pathlib import Path
 import discord
 
 from app.domain.value_objects.battle_result import BattleResult
 from app.domain.value_objects.battle_turn_log import BattleTurnLog
 
+BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 
 def build_battle_turn_embed(
     result: BattleResult,
@@ -14,8 +16,9 @@ def build_battle_turn_embed(
         color=discord.Color.orange(),
     )
 
-    if result.mob_image_url:
-        embed.set_thumbnail(url=result.mob_image_url)
+    if result.mob_image_name:
+        mob_image_path = BASE_DIR / "assets" / "mobs" / result.mob_image_name
+        embed.set_image(url=f"attachment://{mob_image_path}")
 
     crit_text = "💥 Oui" if turn_log.player_crit else "➖ Non"
     dodge_text = "🌀 Oui" if turn_log.player_dodged else "➖ Non"
@@ -72,8 +75,9 @@ def build_battle_result_embed(result: BattleResult) -> discord.Embed:
         color=color,
     )
 
-    if result.mob_image_url:
-        embed.set_thumbnail(url=result.mob_image_url)
+    if result.mob_image_name:
+        mob_image_path = BASE_DIR / "assets" / "mobs" / result.mob_image_name
+        embed.set_image(url=f"attachment://{mob_image_path}")
 
     embed.add_field(name="🕒 Tours", value=f"**{result.turns}**", inline=True)
     embed.add_field(

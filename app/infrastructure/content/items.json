@@ -73,5 +73,18 @@
       "attack": 4,
       "crit_chance": 0.10
     }
+  },
+  {
+    "code": "gobelin_tooth",
+    "name": "Dent de Gobelin",
+    "description": "Une dent récupérée sur un gobelin.",
+    "category": "resource",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 2,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": null
   }
 ]
