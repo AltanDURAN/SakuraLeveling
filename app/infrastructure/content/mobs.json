@@ -9,7 +9,7 @@
     "defense": 1,
     "xp_reward": 10,
     "gold_reward": 5,
-    "spawn_weight": 80,
+    "spawn_weight": 60,
     "loot_table": [
       {
         "item_code": "slime_gel",
@@ -30,7 +30,7 @@
     "defense": 10,
     "xp_reward": 15,
     "gold_reward": 15,
-    "spawn_weight": 50,
+    "spawn_weight": 40,
     "loot_table": [
       {
         "item_code": "gobelin_tooth",
@@ -40,5 +40,152 @@
       }
     ],
     "image_name": "gobelin.png"
+  },
+  {
+    "code": "gobelin_combattant",
+    "name": "Gobelin Combattant",
+    "description": "Une créature endurcie.",
+    "max_hp": 700,
+    "current_hp": 700,
+    "attack": 60,
+    "defense": 50,
+    "xp_reward": 20,
+    "gold_reward": 20,
+    "spawn_weight": 30,
+    "loot_table": [
+      {
+        "item_code": "gobelin_tooth",
+        "drop_rate": 0.75,
+        "min_quantity": 1,
+        "max_quantity": 2
+      }
+    ],
+    "image_name": "gobelin_combattant.png"
+  },
+  {
+    "code": "gobelin_chaman",
+    "name": "Gobelin Chaman",
+    "description": "Une créature intelligente.",
+    "max_hp": 500,
+    "current_hp": 500,
+    "attack": 80,
+    "defense": 40,
+    "xp_reward": 20,
+    "gold_reward": 20,
+    "spawn_weight": 30,
+    "loot_table": [
+      {
+        "item_code": "gobelin_tooth",
+        "drop_rate": 0.75,
+        "min_quantity": 1,
+        "max_quantity": 2
+      }
+    ],
+    "image_name": "gobelin_chaman.png"
+  },
+  {
+    "code": "gobelin_geant",
+    "name": "Gobelin Géant",
+    "description": "Une créature imposante.",
+    "max_hp": 1000,
+    "current_hp": 1000,
+    "attack": 100,
+    "defense": 100,
+    "xp_reward": 25,
+    "gold_reward": 25,
+    "spawn_weight": 20,
+    "loot_table": [
+      {
+        "item_code": "gobelin_tooth",
+        "drop_rate": 0.75,
+        "min_quantity": 1,
+        "max_quantity": 2
+      }
+    ],
+    "image_name": "gobelin_geant.png"
+  },
+  {
+    "code": "gobelin_runique",
+    "name": "Gobelin Runique",
+    "description": "Une créature mystérieuse.",
+    "max_hp": 900,
+    "current_hp": 900,
+    "attack": 160,
+    "defense": 50,
+    "xp_reward": 25,
+    "gold_reward": 25,
+    "spawn_weight": 20,
+    "loot_table": [
+      {
+        "item_code": "gobelin_tooth",
+        "drop_rate": 0.75,
+        "min_quantity": 1,
+        "max_quantity": 2
+      }
+    ],
+    "image_name": "gobelin_runique.png"
+  },
+  {
+    "code": "gobelin_ballon",
+    "name": "Gobelin Ballon",
+    "description": "Un groupe de créatures inventives.",
+    "max_hp": 900,
+    "current_hp": 900,
+    "attack": 200,
+    "defense": 30,
+    "xp_reward": 25,
+    "gold_reward": 25,
+    "spawn_weight": 20,
+    "loot_table": [
+      {
+        "item_code": "gobelin_tooth",
+        "drop_rate": 0.75,
+        "min_quantity": 1,
+        "max_quantity": 2
+      }
+    ],
+    "image_name": "gobelin_ballon.png"
+  },
+  {
+    "code": "gobelin_assassin",
+    "name": "Gobelin Assassin",
+    "description": "Une créature discrète.",
+    "max_hp": 700,
+    "current_hp": 700,
+    "attack": 1000,
+    "defense": 10,
+    "xp_reward": 30,
+    "gold_reward": 30,
+    "spawn_weight": 10,
+    "loot_table": [
+      {
+        "item_code": "gobelin_tooth",
+        "drop_rate": 0.75,
+        "min_quantity": 1,
+        "max_quantity": 2
+      }
+    ],
+    "image_name": "gobelin_assassin.png"
+  },
+  {
+    "code": "gobelin_superieur",
+    "name": "Gobelin Supérieur",
+    "description": "Une créature supérieure.",
+    "max_hp": 2000,
+    "current_hp": 2000,
+    "attack": 300,
+    "defense": 600,
+    "xp_reward": 30,
+    "gold_reward": 30,
+    "spawn_weight": 10,
+    "loot_table": [
+      {
+        "item_code": "gobelin_tooth",
+        "drop_rate": 0.75,
+        "min_quantity": 1,
+        "max_quantity": 2
+      }
+    ],
+    "image_name": "gobelin_superieur.png"
   }
 ]
