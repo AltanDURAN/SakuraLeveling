@@ -42,6 +42,16 @@ class EncounterCog(commands.Cog):
             avatar_url=avatar_url,
         )
         return success, message
+    
+    async def unregister_participant(
+        self,
+        user_id: int,
+    ) -> tuple[bool, str]:
+        success, message = self.encounter_service.unregister_participant(
+            encounter=self.active_encounter,
+            user_id=user_id,
+        )
+        return success, message
 
     @tasks.loop(seconds=10)
     async def encounter_loop(self):
@@ -204,28 +214,18 @@ class EncounterCog(commands.Cog):
             for participant in self.active_encounter.participants.values()
         ]
 
-        if not players:
-            return
-
         filename = f"encounter_{self.active_encounter.message_id}_current.png"
         output_full = self.generated_dir / filename
         output_relative = f"generated_encounters/{filename}"
         background_path = LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
 
-        with get_db_session() as session:
-            mob_repository = MobRepository(session)
-            mob = mob_repository.get_by_code(self.active_encounter.mob_state.code)
-
-        if mob is None:
-            return
-
         mob_payload = {
-            "name": mob.name,
-            "image_name": mob.image_name,
-            "current_hp": mob.current_hp,
-            "max_hp": mob.max_hp,
-            "attack": mob.attack,
-            "defense": mob.defense,
+            "name": self.active_encounter.mob_state.name,
+            "image_name": self.active_encounter.mob_state.image_name,
+            "current_hp": self.active_encounter.mob_state.current_hp,
+            "max_hp": self.active_encounter.mob_state.max_hp,
+            "attack": self.active_encounter.mob_state.attack,
+            "defense": self.active_encounter.mob_state.defense,
         }
 
         compose_players_banner(
