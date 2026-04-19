@@ -82,6 +82,8 @@ class PartyCombatService:
                                     "avatar_url": member["avatar_url"],
                                     "current_hp": member["hp"],
                                     "max_hp": member["max_hp"],
+                                    "attack": member["stats"].attack,
+                                    "defense": member["stats"].defense,
                                     "speed": member["stats"].speed,
                                     "crit_chance": member["stats"].crit_chance,
                                     "crit_damage": member["stats"].crit_damage,
@@ -121,9 +123,6 @@ class PartyCombatService:
                 target = random.choice(possible_targets)
                 target_stats: Stats = target["stats"]
 
-                if target_stats.hp_regeneration > 0 and target["hp"] > 0:
-                    target["hp"] = min(target["max_hp"], target["hp"] + target_stats.hp_regeneration)
-
                 if random.random() < (target_stats.dodge / 100):
                     mob_action = f"{mob.name} attaque {target['name']}, mais l'attaque est esquivée."
                 else:
@@ -154,6 +153,8 @@ class PartyCombatService:
                                 "avatar_url": member["avatar_url"],
                                 "current_hp": member["hp"],
                                 "max_hp": member["max_hp"],
+                                "attack": member["stats"].attack,
+                                "defense": member["stats"].defense,
                                 "speed": member["stats"].speed,
                                 "crit_chance": member["stats"].crit_chance,
                                 "crit_damage": member["stats"].crit_damage,
