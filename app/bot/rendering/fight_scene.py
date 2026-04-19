@@ -15,6 +15,7 @@ def compose_players_banner(
     output_path: str = "result.png",
     background_path: str | None = None,
     mob: dict | None = None,
+    players_power_score: str = "XXXX",
 ):
     """
     players = [
@@ -34,6 +35,7 @@ def compose_players_banner(
         "max_hp": 30,
         "attack": 6,
         "defense": 1,
+        "power_score": "1K",  # optionnel
     }
     """
     background = load_background(background_path, size=(1024, 1536))
@@ -90,7 +92,7 @@ def compose_players_banner(
 
         x2 = x1 + int(825 * hp_ratio)
 
-        mob_power = "XXXX"
+        mob_power = mob.get("power_score", "XXXX")
         mob_info = f"{mob_name} • [{mob_power}]"
 
         if mob_current_hp > 0 and x2 > x1:
@@ -105,6 +107,7 @@ def compose_players_banner(
         draw.text((106, 146), mob_info, font=title_font, fill=(255, 255, 255, 255))
 
     if not players:
+        draw.text((850, 1400), players_power_score, font=stat_font, fill=(255, 255, 255, 255))
         result.save(output_path)
         print(f"Aucun player. Image sauvegardée : {output_path}")
         return
@@ -141,8 +144,7 @@ def compose_players_banner(
         avatar_x = center_x - aw // 2 + 31
         result.alpha_composite(avatar, (avatar_x, avatar_y))
 
-    players_power = "[XXXX]"
-    draw.text((850, 1400), players_power, font=stat_font, fill=(255, 255, 255, 255))
+    draw.text((850, 1400), players_power_score, font=stat_font, fill=(255, 255, 255, 255))
 
     result.save(output_path)
     print(f"Image créée : {output_path}")

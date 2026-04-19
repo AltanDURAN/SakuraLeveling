@@ -10,6 +10,8 @@ from app.bot.rendering.fight_scene import compose_players_banner
 from app.bot.runtime.active_encounter import ActiveEncounter
 from app.bot.runtime.encounter_mob_state import EncounterMobState
 from app.bot.views.encounter_view import EncounterView
+from app.domain.services.power_score_service import PowerScoreService
+from app.domain.value_objects.stats import Stats
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.session import get_db_session
@@ -25,6 +27,7 @@ class EncounterCog(commands.Cog):
         self.encounter_loop.start()
         self.generated_dir = GENERATED_ENCOUNTERS_DIR
         self.generated_dir.mkdir(exist_ok=True)
+        self.power_score_service = PowerScoreService()
 
     def cog_unload(self):
         self.encounter_loop.cancel()
@@ -42,7 +45,7 @@ class EncounterCog(commands.Cog):
             avatar_url=avatar_url,
         )
         return success, message
-    
+
     async def unregister_participant(
         self,
         user_id: int,
@@ -82,6 +85,10 @@ class EncounterCog(commands.Cog):
             attack=mob.attack,
             defense=mob.defense,
             speed=mob.speed,
+            crit_chance=mob.crit_chance,
+            crit_damage=mob.crit_damage,
+            dodge=mob.dodge,
+            hp_regeneration=mob.hp_regeneration,
         )
 
         encounter = ActiveEncounter.create(
@@ -99,6 +106,8 @@ class EncounterCog(commands.Cog):
         spawn_output_relative = f"generated_encounters/{spawn_filename}"
         background_path = LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
 
+        mob_score = self.power_score_service.calculate_and_format_from_mob(mob)
+
         spawn_mob_payload = {
             "name": encounter.mob_state.name,
             "image_name": encounter.mob_state.image_name,
@@ -107,6 +116,11 @@ class EncounterCog(commands.Cog):
             "attack": encounter.mob_state.attack,
             "defense": encounter.mob_state.defense,
             "speed": encounter.mob_state.speed,
+            "crit_chance": encounter.mob_state.crit_chance,
+            "crit_damage": encounter.mob_state.crit_damage,
+            "dodge": encounter.mob_state.dodge,
+            "hp_regeneration": encounter.mob_state.hp_regeneration,
+            "power_score": mob_score,
         }
 
         compose_players_banner(
@@ -114,6 +128,7 @@ class EncounterCog(commands.Cog):
             mob=spawn_mob_payload,
             output_path=str(spawn_output_full),
             background_path=str(background_path),
+            players_power_score="0",
         )
 
         embed, file = build_encounter_embed(
@@ -124,7 +139,7 @@ class EncounterCog(commands.Cog):
         encounter.message_id = message.id
         self.active_encounter = encounter
 
-        await asyncio.sleep(300)  # 5 minutes de recrutement
+        await asyncio.sleep(300)
 
         for child in view.children:
             child.disabled = True
@@ -156,12 +171,49 @@ class EncounterCog(commands.Cog):
         current_output_full = self.generated_dir / current_filename
         current_output_relative = f"generated_encounters/{current_filename}"
 
-        for index, turn_log in enumerate(result.turn_logs):
+        for turn_log in result.turn_logs:
+            players_stats_for_score: list[Stats] = []
+
+            for player_state in turn_log.players_state:
+                players_stats_for_score.append(
+                    Stats(
+                        max_hp=player_state["max_hp"],
+                        attack=player_state.get("attack", 1),
+                        defense=player_state.get("defense", 0),
+                        crit_chance=player_state.get("crit_chance", 0),
+                        crit_damage=player_state.get("crit_damage", 100),
+                        dodge=player_state.get("dodge", 0),
+                        hp_regeneration=player_state.get("hp_regeneration", 0),
+                        speed=player_state.get("speed", 1),
+                    )
+                )
+
+            players_power_score = self.power_score_service.calculate_and_format_party_score(
+                players_stats_for_score
+            )
+
+            mob_payload = dict(turn_log.mob_state)
+            mob_payload["power_score"] = self.power_score_service.format_score(
+                self.power_score_service.calculate_from_stats(
+                    Stats(
+                        max_hp=mob_payload["max_hp"],
+                        attack=mob_payload["attack"],
+                        defense=mob_payload["defense"],
+                        crit_chance=mob_payload.get("crit_chance", 0),
+                        crit_damage=mob_payload.get("crit_damage", 100),
+                        dodge=mob_payload.get("dodge", 0),
+                        hp_regeneration=mob_payload.get("hp_regeneration", 0),
+                        speed=mob_payload.get("speed", 1),
+                    )
+                )
+            )
+
             compose_players_banner(
                 players=turn_log.players_state,
-                mob=turn_log.mob_state,
+                mob=mob_payload,
                 output_path=str(current_output_full),
                 background_path=str(background_path),
+                players_power_score=players_power_score,
             )
 
             turn_embed, file = build_encounter_embed(
@@ -212,6 +264,13 @@ class EncounterCog(commands.Cog):
                 "avatar_url": participant.avatar_url,
                 "current_hp": participant.current_hp,
                 "max_hp": participant.max_hp,
+                "attack": participant.stats.attack,
+                "defense": participant.stats.defense,
+                "speed": participant.stats.speed,
+                "crit_chance": participant.stats.crit_chance,
+                "crit_damage": participant.stats.crit_damage,
+                "dodge": participant.stats.dodge,
+                "hp_regeneration": participant.stats.hp_regeneration,
             }
             for participant in self.active_encounter.participants.values()
         ]
@@ -221,6 +280,21 @@ class EncounterCog(commands.Cog):
         output_relative = f"generated_encounters/{filename}"
         background_path = LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
 
+        mob_score = self.power_score_service.format_score(
+            self.power_score_service.calculate_from_stats(
+                Stats(
+                    max_hp=self.active_encounter.mob_state.max_hp,
+                    attack=self.active_encounter.mob_state.attack,
+                    defense=self.active_encounter.mob_state.defense,
+                    crit_chance=self.active_encounter.mob_state.crit_chance,
+                    crit_damage=self.active_encounter.mob_state.crit_damage,
+                    dodge=self.active_encounter.mob_state.dodge,
+                    hp_regeneration=self.active_encounter.mob_state.hp_regeneration,
+                    speed=self.active_encounter.mob_state.speed,
+                )
+            )
+        )
+
         mob_payload = {
             "name": self.active_encounter.mob_state.name,
             "image_name": self.active_encounter.mob_state.image_name,
@@ -229,13 +303,37 @@ class EncounterCog(commands.Cog):
             "attack": self.active_encounter.mob_state.attack,
             "defense": self.active_encounter.mob_state.defense,
             "speed": self.active_encounter.mob_state.speed,
+            "crit_chance": self.active_encounter.mob_state.crit_chance,
+            "crit_damage": self.active_encounter.mob_state.crit_damage,
+            "dodge": self.active_encounter.mob_state.dodge,
+            "hp_regeneration": self.active_encounter.mob_state.hp_regeneration,
+            "power_score": mob_score,
         }
+
+        players_stats_for_score = [
+            Stats(
+                max_hp=player["max_hp"],
+                attack=player.get("attack", 1),
+                defense=player.get("defense", 0),
+                crit_chance=player.get("crit_chance", 0),
+                crit_damage=player.get("crit_damage", 100),
+                dodge=player.get("dodge", 0),
+                hp_regeneration=player.get("hp_regeneration", 0),
+                speed=player.get("speed", 1),
+            )
+            for player in players
+        ]
+
+        players_power_score = self.power_score_service.calculate_and_format_party_score(
+            players_stats_for_score
+        ) if players_stats_for_score else "0"
 
         compose_players_banner(
             players=players,
             mob=mob_payload,
             output_path=str(output_full),
             background_path=str(background_path),
+            players_power_score=players_power_score,
         )
 
         embed, file = build_encounter_embed(

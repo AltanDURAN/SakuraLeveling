@@ -150,3 +150,36 @@ class QuestRepository:
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
+        
+    def update_definition_by_code(
+        self,
+        code: str,
+        name: str,
+        description: str,
+        objective_type: str,
+        target_code: str,
+        required_quantity: int,
+        reward_gold: int,
+        reward_xp: int,
+        reward_items: list[dict] | None,
+    ):
+        stmt = select(QuestDefinitionModel).where(QuestDefinitionModel.code == code)
+        model = self.session.execute(stmt).scalar_one_or_none()
+
+        if model is None:
+            return None
+
+        model.name = name
+        model.description = description
+        model.objective_type = objective_type
+        model.target_code = target_code
+        model.required_quantity = required_quantity
+        model.reward_gold = reward_gold
+        model.reward_xp = reward_xp
+        model.reward_items = reward_items
+        model.updated_at = datetime.now(UTC)
+
+        self.session.commit()
+        self.session.refresh(model)
+
+        return self._to_definition_domain(model)

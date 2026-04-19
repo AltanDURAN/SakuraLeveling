@@ -37,7 +37,6 @@ class PartyCombatService:
                     player["gauge"] += player["stats"].speed
 
             mob_gauge += mob.speed
-
             acted = False
 
             for player in alive_party:
@@ -47,25 +46,34 @@ class PartyCombatService:
                     player["gauge"] -= 100
 
                     stats: Stats = player["stats"]
+
+                    if stats.hp_regeneration > 0 and player["hp"] > 0:
+                        player["hp"] = min(player["max_hp"], player["hp"] + stats.hp_regeneration)
+
                     damage = max(1, stats.attack - mob.defense)
                     crit = False
 
-                    if random.random() < stats.crit_chance:
-                        damage = int(damage * stats.crit_damage)
+                    if random.random() < (stats.crit_chance / 100):
+                        damage = int(damage * (stats.crit_damage / 100))
                         crit = True
 
-                    mob_hp -= damage
-                    mob_hp = max(0, mob_hp)
+                    if mob.dodge > 0 and random.random() < (mob.dodge / 100):
+                        damage = 0
+                        mob_action_text = f"{mob.name} esquive l'attaque de {player['name']}."
+                    else:
+                        mob_hp -= damage
+                        mob_hp = max(0, mob_hp)
+                        mob_action_text = f"{mob.name} subit l'attaque."
 
                     action_text = f"{player['name']} inflige {damage} dégâts"
-                    if crit:
+                    if crit and damage > 0:
                         action_text += " (CRIT)"
 
                     turn_logs.append(
                         PartyBattleTurnLog(
                             turn_number=turns,
                             player_actions=[action_text],
-                            mob_action=f"{mob.name} subit l'attaque.",
+                            mob_action=mob_action_text,
                             players_state=[
                                 {
                                     "player_id": member["player_id"],
@@ -74,6 +82,11 @@ class PartyCombatService:
                                     "avatar_url": member["avatar_url"],
                                     "current_hp": member["hp"],
                                     "max_hp": member["max_hp"],
+                                    "speed": member["stats"].speed,
+                                    "crit_chance": member["stats"].crit_chance,
+                                    "crit_damage": member["stats"].crit_damage,
+                                    "dodge": member["stats"].dodge,
+                                    "hp_regeneration": member["stats"].hp_regeneration,
                                 }
                                 for member in alive_party
                             ],
@@ -85,6 +98,10 @@ class PartyCombatService:
                                 "attack": mob.attack,
                                 "defense": mob.defense,
                                 "speed": mob.speed,
+                                "crit_chance": mob.crit_chance,
+                                "crit_damage": mob.crit_damage,
+                                "dodge": mob.dodge,
+                                "hp_regeneration": mob.hp_regeneration,
                             },
                         )
                     )
@@ -97,18 +114,32 @@ class PartyCombatService:
                 acted = True
                 mob_gauge -= 100
 
+                if mob.hp_regeneration > 0:
+                    mob_hp = min(mob.max_hp, mob_hp + mob.hp_regeneration)
+
                 possible_targets = [player for player in alive_party if player["hp"] > 0]
                 target = random.choice(possible_targets)
-
                 target_stats: Stats = target["stats"]
 
-                if random.random() < target_stats.dodge:
+                if target_stats.hp_regeneration > 0 and target["hp"] > 0:
+                    target["hp"] = min(target["max_hp"], target["hp"] + target_stats.hp_regeneration)
+
+                if random.random() < (target_stats.dodge / 100):
                     mob_action = f"{mob.name} attaque {target['name']}, mais l'attaque est esquivée."
                 else:
                     mob_damage = max(1, mob.attack - target_stats.defense)
+                    mob_crit = False
+
+                    if random.random() < (mob.crit_chance / 100):
+                        mob_damage = int(mob_damage * (mob.crit_damage / 100))
+                        mob_crit = True
+
                     target["hp"] -= mob_damage
                     target["hp"] = max(0, target["hp"])
+
                     mob_action = f"{mob.name} attaque {target['name']} et inflige {mob_damage} dégâts."
+                    if mob_crit and mob_damage > 0:
+                        mob_action += " (CRIT)"
 
                 turn_logs.append(
                     PartyBattleTurnLog(
@@ -123,6 +154,11 @@ class PartyCombatService:
                                 "avatar_url": member["avatar_url"],
                                 "current_hp": member["hp"],
                                 "max_hp": member["max_hp"],
+                                "speed": member["stats"].speed,
+                                "crit_chance": member["stats"].crit_chance,
+                                "crit_damage": member["stats"].crit_damage,
+                                "dodge": member["stats"].dodge,
+                                "hp_regeneration": member["stats"].hp_regeneration,
                             }
                             for member in alive_party
                         ],
@@ -134,6 +170,10 @@ class PartyCombatService:
                             "attack": mob.attack,
                             "defense": mob.defense,
                             "speed": mob.speed,
+                            "crit_chance": mob.crit_chance,
+                            "crit_damage": mob.crit_damage,
+                            "dodge": mob.dodge,
+                            "hp_regeneration": mob.hp_regeneration,
                         },
                     )
                 )

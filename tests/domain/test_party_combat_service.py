@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 from app.domain.entities.mob_definition import MobDefinition
 from app.domain.services.party_combat_service import PartyCombatService
@@ -25,6 +25,10 @@ def build_mob(
         attack=attack,
         defense=defense,
         speed=speed,
+        crit_chance=0,
+        crit_damage=100,
+        dodge=0,
+        hp_regeneration=0,
         xp_reward=10,
         gold_reward=5,
         spawn_weight=1,

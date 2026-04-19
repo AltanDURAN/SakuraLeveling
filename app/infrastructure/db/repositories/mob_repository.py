@@ -1,6 +1,7 @@
 import random
 
 from sqlalchemy import select
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from app.domain.entities.mob_definition import MobDefinition
@@ -44,6 +45,10 @@ class MobRepository:
         xp_reward: int,
         gold_reward: int,
         image_name: str,
+        crit_chance: int = 0,
+        crit_damage: int = 100,
+        dodge: int = 0,
+        hp_regeneration: int = 0,
         spawn_weight: int = 1,
         loot_table: list[dict] | None = None,
         current_hp: int | None = None,
@@ -63,6 +68,10 @@ class MobRepository:
             speed=speed,
             xp_reward=xp_reward,
             gold_reward=gold_reward,
+            crit_chance=crit_chance,
+            crit_damage=crit_damage,
+            dodge=dodge,
+            hp_regeneration=hp_regeneration,
             spawn_weight=spawn_weight,
             loot_table_json=loot_table,
         )
@@ -108,7 +117,60 @@ class MobRepository:
             xp_reward=model.xp_reward,
             gold_reward=model.gold_reward,
             spawn_weight=model.spawn_weight,
+            crit_chance=model.crit_chance,
+            crit_damage=model.crit_damage,
+            dodge=model.dodge,
+            hp_regeneration=model.hp_regeneration,
             loot_table=model.loot_table_json,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
+    
+    def update_by_code(
+        self,
+        code: str,
+        name: str,
+        description: str,
+        max_hp: int,
+        current_hp: int,
+        attack: int,
+        defense: int,
+        speed: int,
+        crit_chance: int,
+        crit_damage: int,
+        dodge: int,
+        hp_regeneration: int,
+        xp_reward: int,
+        gold_reward: int,
+        image_name: str | None,
+        spawn_weight: int,
+        loot_table: list[dict] | None = None,
+    ):
+        stmt = select(MobDefinitionModel).where(MobDefinitionModel.code == code)
+        model = self.session.execute(stmt).scalar_one_or_none()
+
+        if model is None:
+            return None
+
+        model.name = name
+        model.description = description
+        model.max_hp = max_hp
+        model.current_hp = current_hp
+        model.attack = attack
+        model.defense = defense
+        model.speed = speed
+        model.crit_chance = crit_chance
+        model.crit_damage = crit_damage
+        model.dodge = dodge
+        model.hp_regeneration = hp_regeneration
+        model.xp_reward = xp_reward
+        model.gold_reward = gold_reward
+        model.image_name = image_name
+        model.spawn_weight = spawn_weight
+        model.loot_table_json = loot_table
+        model.updated_at = datetime.now(timezone.utc)
+
+        self.session.commit()
+        self.session.refresh(model)
+
+        return self._to_domain(model)

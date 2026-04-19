@@ -30,16 +30,25 @@ class CombatService:
                 acted = True
                 player_gauge -= 100
 
+                if player_stats.hp_regeneration > 0:
+                    player_hp = min(player_stats.max_hp, player_hp + player_stats.hp_regeneration)
+
                 player_damage = max(1, player_stats.attack - mob.defense)
                 is_crit = False
+                mob_dodged = False
 
-                if random.random() < player_stats.crit_chance:
-                    player_damage = int(player_damage * player_stats.crit_damage)
+                if random.random() < (player_stats.crit_chance / 100):
+                    player_damage = int(player_damage * (player_stats.crit_damage / 100))
                     is_crit = True
 
                 mob_hp_before = mob_hp
-                mob_hp -= player_damage
-                mob_hp = max(0, mob_hp)
+
+                if random.random() < (mob.dodge / 100):
+                    player_damage = 0
+                    mob_dodged = True
+                else:
+                    mob_hp -= player_damage
+                    mob_hp = max(0, mob_hp)
 
                 turn_logs.append(
                     {
@@ -47,6 +56,7 @@ class CombatService:
                         "actor": "player",
                         "damage": player_damage,
                         "is_crit": is_crit,
+                        "target_dodged": mob_dodged,
                         "player_hp": player_hp,
                         "mob_hp_before": mob_hp_before,
                         "mob_hp_after": mob_hp,
@@ -75,24 +85,32 @@ class CombatService:
                 acted = True
                 mob_gauge -= 100
 
+                if mob.hp_regeneration > 0:
+                    mob_hp = min(mob.max_hp, mob_hp + mob.hp_regeneration)
+
                 player_hp_before = player_hp
+                mob_damage = max(1, mob.attack - player_stats.defense)
+                mob_is_crit = False
+                player_dodged = False
 
-                if random.random() < player_stats.dodge:
+                if random.random() < (mob.crit_chance / 100):
+                    mob_damage = int(mob_damage * (mob.crit_damage / 100))
+                    mob_is_crit = True
+
+                if random.random() < (player_stats.dodge / 100):
                     mob_damage = 0
-                    dodged = True
+                    player_dodged = True
                 else:
-                    mob_damage = max(1, mob.attack - player_stats.defense)
-                    dodged = False
-
-                player_hp -= mob_damage
-                player_hp = max(0, player_hp)
+                    player_hp -= mob_damage
+                    player_hp = max(0, player_hp)
 
                 turn_logs.append(
                     {
                         "turn": turns,
                         "actor": "mob",
                         "damage": mob_damage,
-                        "dodged": dodged,
+                        "is_crit": mob_is_crit,
+                        "target_dodged": player_dodged,
                         "player_hp_before": player_hp_before,
                         "player_hp_after": player_hp,
                         "mob_hp": mob_hp,

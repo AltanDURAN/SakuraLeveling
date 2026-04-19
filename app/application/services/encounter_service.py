@@ -87,8 +87,9 @@ class EncounterService:
             player_id=profile.player.id,
             display_name=display_name,
             avatar_url=avatar_url,
-            current_hp=regenerated_current_hp,
-            max_hp=stats.max_hp,
+            current_hp=profile.player.current_hp,
+            max_hp=profile.player.max_hp,
+            stats=profile.player.stats,
         )
 
         encounter.participants[user_id] = participant

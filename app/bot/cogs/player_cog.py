@@ -52,6 +52,7 @@ from app.infrastructure.db.session import get_db_session
 from app.shared.enums import EquipmentSlot
 from app.domain.services.health_regeneration_service import HealthRegenerationService
 from app.infrastructure.db.repositories.player_health_repository import PlayerHealthRepository
+from app.domain.services.power_score_service import PowerScoreService
 
 
 class PlayerCog(commands.Cog):
@@ -105,6 +106,10 @@ class PlayerCog(commands.Cog):
                 username=interaction.user.name,
                 display_name=interaction.user.display_name,
             )
+            
+            power_score_service = PowerScoreService()
+            raw_power_score = power_score_service.calculate_from_stats(stats)
+            formatted_power_score = power_score_service.format_score(raw_power_score)
 
             active_class = class_repository.get_current_class_for_player(profile.player.id)
 
@@ -134,6 +139,7 @@ class PlayerCog(commands.Cog):
             stats=stats,
             active_class=active_class,
             current_hp=regenerated_current_hp,
+            power_score=formatted_power_score,
         )
         await interaction.response.send_message(embed=embed)
 

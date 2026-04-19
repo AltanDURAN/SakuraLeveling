@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from app.domain.value_objects.stats import Stats
+
 
 @dataclass
 class EncounterParticipant:
@@ -9,3 +11,4 @@ class EncounterParticipant:
     avatar_url: str
     current_hp: int
     max_hp: int
+    stats: Stats

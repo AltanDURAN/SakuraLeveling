@@ -1,4 +1,5 @@
 from sqlalchemy import select
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from app.domain.entities.item_definition import ItemDefinition
@@ -69,3 +70,40 @@ class ItemRepository:
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
+    
+    def update_by_code(
+        self,
+        code: str,
+        name: str,
+        description: str,
+        category: str,
+        rarity: str,
+        stackable: bool,
+        max_stack: int | None,
+        sell_price: int,
+        buy_price: int | None,
+        icon: str | None,
+        stat_bonuses: dict | None,
+    ):
+        stmt = select(ItemDefinitionModel).where(ItemDefinitionModel.code == code)
+        model = self.session.execute(stmt).scalar_one_or_none()
+
+        if model is None:
+            return None
+
+        model.name = name
+        model.description = description
+        model.category = category
+        model.rarity = rarity
+        model.stackable = stackable
+        model.max_stack = max_stack
+        model.sell_price = sell_price
+        model.buy_price = buy_price
+        model.icon = icon
+        model.stat_bonuses = stat_bonuses
+        model.updated_at = datetime.now(timezone.utc)
+
+        self.session.commit()
+        self.session.refresh(model)
+
+        return self._to_domain(model)
