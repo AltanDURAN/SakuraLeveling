@@ -1,7 +1,7 @@
 import random
 
 from sqlalchemy import select
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from app.domain.entities.mob_definition import MobDefinition
@@ -168,7 +168,7 @@ class MobRepository:
         model.image_name = image_name
         model.spawn_weight = spawn_weight
         model.loot_table_json = loot_table
-        model.updated_at = datetime.now(UTC)
+        model.updated_at = datetime.now(timezone.utc)
 
         self.session.commit()
         self.session.refresh(model)

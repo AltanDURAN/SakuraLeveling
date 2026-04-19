@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from sqlalchemy import select, delete
 from sqlalchemy.orm import Session
 
@@ -106,7 +106,7 @@ class CraftRepository:
         model.name = name
         model.result_item_definition_id = result_item_definition_id
         model.result_quantity = result_quantity
-        model.updated_at = datetime.now(UTC)
+        model.updated_at = datetime.now(timezone.utc)
 
         self.session.execute(
             delete(CraftRecipeIngredientModel).where(

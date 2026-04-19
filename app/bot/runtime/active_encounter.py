@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import datetime, UTC, timedelta
+from datetime import datetime, timezone, timedelta
 
 from app.bot.runtime.encounter_mob_state import EncounterMobState
 from app.bot.runtime.encounter_participant import EncounterParticipant
@@ -25,7 +25,7 @@ class ActiveEncounter:
         flee_image_name: str,
         duration_minutes: int = 5,
     ) -> "ActiveEncounter":
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         return cls(
             mob_state=mob_state,
             victory_image_name=victory_image_name,

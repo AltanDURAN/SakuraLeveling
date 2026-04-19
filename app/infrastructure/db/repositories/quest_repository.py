@@ -177,7 +177,7 @@ class QuestRepository:
         model.reward_gold = reward_gold
         model.reward_xp = reward_xp
         model.reward_items = reward_items
-        model.updated_at = datetime.now(UTC)
+        model.updated_at = datetime.now(timezone.utc)
 
         self.session.commit()
         self.session.refresh(model)
