@@ -13,6 +13,7 @@ class PartyCombatService:
         mob: MobDefinition,
     ) -> PartyBattleResult:
         mob_hp = mob.current_hp
+        mob_gauge = 0
         turns = 0
         turn_logs: list[PartyBattleTurnLog] = []
 
@@ -25,53 +26,105 @@ class PartyCombatService:
                 "stats": player["stats"],
                 "hp": player["current_hp"],
                 "max_hp": player["max_hp"],
+                "gauge": 0,
             }
             for player in party
         ]
 
         while mob_hp > 0 and any(player["hp"] > 0 for player in alive_party):
-            turns += 1
-            player_actions: list[str] = []
+            for player in alive_party:
+                if player["hp"] > 0:
+                    player["gauge"] += player["stats"].speed
+
+            mob_gauge += mob.speed
+
+            acted = False
 
             for player in alive_party:
-                if player["hp"] <= 0:
-                    continue
+                while player["gauge"] >= 100 and player["hp"] > 0 and mob_hp > 0:
+                    turns += 1
+                    acted = True
+                    player["gauge"] -= 100
 
-                stats: Stats = player["stats"]
-                damage = max(1, stats.attack - mob.defense)
-                crit = False
+                    stats: Stats = player["stats"]
+                    damage = max(1, stats.attack - mob.defense)
+                    crit = False
 
-                if random.random() < stats.crit_chance:
-                    damage = int(damage * stats.crit_damage)
-                    crit = True
+                    if random.random() < stats.crit_chance:
+                        damage = int(damage * stats.crit_damage)
+                        crit = True
 
-                mob_hp -= damage
-                mob_hp = max(0, mob_hp)
+                    mob_hp -= damage
+                    mob_hp = max(0, mob_hp)
 
-                action_text = f"{player['name']} inflige {damage} dégâts"
-                if crit:
-                    action_text += " (CRIT)"
-                player_actions.append(action_text)
+                    action_text = f"{player['name']} inflige {damage} dégâts"
+                    if crit:
+                        action_text += " (CRIT)"
 
-                if mob_hp <= 0:
-                    break
+                    turn_logs.append(
+                        PartyBattleTurnLog(
+                            turn_number=turns,
+                            player_actions=[action_text],
+                            mob_action=f"{mob.name} subit l'attaque.",
+                            players_state=[
+                                {
+                                    "player_id": member["player_id"],
+                                    "user_id": member["user_id"],
+                                    "name": member["name"],
+                                    "avatar_url": member["avatar_url"],
+                                    "current_hp": member["hp"],
+                                    "max_hp": member["max_hp"],
+                                }
+                                for member in alive_party
+                            ],
+                            mob_state={
+                                "name": mob.name,
+                                "image_name": mob.image_name,
+                                "current_hp": mob_hp,
+                                "max_hp": mob.max_hp,
+                                "attack": mob.attack,
+                                "defense": mob.defense,
+                                "speed": mob.speed,
+                            },
+                        )
+                    )
 
-            if mob_hp <= 0:
+                    if mob_hp <= 0:
+                        break
+
+            while mob_gauge >= 100 and mob_hp > 0 and any(player["hp"] > 0 for player in alive_party):
+                turns += 1
+                acted = True
+                mob_gauge -= 100
+
+                possible_targets = [player for player in alive_party if player["hp"] > 0]
+                target = random.choice(possible_targets)
+
+                target_stats: Stats = target["stats"]
+
+                if random.random() < target_stats.dodge:
+                    mob_action = f"{mob.name} attaque {target['name']}, mais l'attaque est esquivée."
+                else:
+                    mob_damage = max(1, mob.attack - target_stats.defense)
+                    target["hp"] -= mob_damage
+                    target["hp"] = max(0, target["hp"])
+                    mob_action = f"{mob.name} attaque {target['name']} et inflige {mob_damage} dégâts."
+
                 turn_logs.append(
                     PartyBattleTurnLog(
                         turn_number=turns,
-                        player_actions=player_actions,
-                        mob_action=f"{mob.name} est vaincu.",
+                        player_actions=[],
+                        mob_action=mob_action,
                         players_state=[
                             {
-                                "player_id": player["player_id"],
-                                "user_id": player["user_id"],
-                                "name": player["name"],
-                                "avatar_url": player["avatar_url"],
-                                "current_hp": player["hp"],
-                                "max_hp": player["max_hp"],
+                                "player_id": member["player_id"],
+                                "user_id": member["user_id"],
+                                "name": member["name"],
+                                "avatar_url": member["avatar_url"],
+                                "current_hp": member["hp"],
+                                "max_hp": member["max_hp"],
                             }
-                            for player in alive_party
+                            for member in alive_party
                         ],
                         mob_state={
                             "name": mob.name,
@@ -80,49 +133,16 @@ class PartyCombatService:
                             "max_hp": mob.max_hp,
                             "attack": mob.attack,
                             "defense": mob.defense,
+                            "speed": mob.speed,
                         },
                     )
                 )
-                break
 
-            possible_targets = [player for player in alive_party if player["hp"] > 0]
-            target = random.choice(possible_targets)
+                if not any(player["hp"] > 0 for player in alive_party):
+                    break
 
-            target_stats: Stats = target["stats"]
-            if random.random() < target_stats.dodge:
-                mob_action = f"{mob.name} attaque {target['name']}, mais l'attaque est esquivée."
-            else:
-                mob_damage = max(1, mob.attack - target_stats.defense)
-                target["hp"] -= mob_damage
-                target["hp"] = max(0, target["hp"])
-                mob_action = f"{mob.name} attaque {target['name']} et inflige {mob_damage} dégâts."
-
-            turn_logs.append(
-                PartyBattleTurnLog(
-                    turn_number=turns,
-                    player_actions=player_actions,
-                    mob_action=mob_action,
-                    players_state=[
-                        {
-                            "player_id": player["player_id"],
-                            "user_id": player["user_id"],
-                            "name": player["name"],
-                            "avatar_url": player["avatar_url"],
-                            "current_hp": player["hp"],
-                            "max_hp": player["max_hp"],
-                        }
-                        for player in alive_party
-                    ],
-                    mob_state={
-                        "name": mob.name,
-                        "image_name": mob.image_name,
-                        "current_hp": mob_hp,
-                        "max_hp": mob.max_hp,
-                        "attack": mob.attack,
-                        "defense": mob.defense,
-                    },
-                )
-            )
+            if not acted:
+                continue
 
         surviving_players = [player["name"] for player in alive_party if player["hp"] > 0]
         defeated_players = [player["name"] for player in alive_party if player["hp"] <= 0]
@@ -139,7 +159,7 @@ class PartyCombatService:
             xp_gained=mob.xp_reward if victory else 0,
             gold_gained=mob.gold_reward if victory else 0,
             summary=(
-                f"Le groupe a vaincu {mob.name} en {turns} tours."
+                f"Le groupe a vaincu {mob.name} en {turns} action(s)."
                 if victory
                 else f"Le groupe a été vaincu par {mob.name}."
             ),

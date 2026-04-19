@@ -10,6 +10,7 @@ def build_mob(
     max_hp: int,
     attack: int,
     defense: int,
+    speed: int,
 ) -> MobDefinition:
     now = datetime.now(UTC)
 
@@ -23,6 +24,7 @@ def build_mob(
         current_hp=current_hp,
         attack=attack,
         defense=defense,
+        speed=speed,
         xp_reward=10,
         gold_reward=5,
         spawn_weight=1,
@@ -47,6 +49,7 @@ def test_party_combat_service_returns_turn_snapshots():
                 max_hp=100,
                 attack=20,
                 defense=5,
+                speed=5,
                 crit_chance=0.0,
                 crit_damage=1.5,
                 dodge=0.0,
@@ -64,6 +67,7 @@ def test_party_combat_service_returns_turn_snapshots():
                 max_hp=100,
                 attack=15,
                 defense=4,
+                speed=5,
                 crit_chance=0.0,
                 crit_damage=1.5,
                 dodge=0.0,
@@ -77,6 +81,7 @@ def test_party_combat_service_returns_turn_snapshots():
         max_hp=60,
         attack=8,
         defense=2,
+        speed=5,
     )
 
     result = service.fight_party_vs_mob(
@@ -107,3 +112,4 @@ def test_party_combat_service_returns_turn_snapshots():
     assert "max_hp" in first_turn.mob_state
     assert "attack" in first_turn.mob_state
     assert "defense" in first_turn.mob_state
+    assert "speed" in first_turn.mob_state

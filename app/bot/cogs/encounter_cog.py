@@ -81,6 +81,7 @@ class EncounterCog(commands.Cog):
             max_hp=mob.max_hp,
             attack=mob.attack,
             defense=mob.defense,
+            speed=mob.speed,
         )
 
         encounter = ActiveEncounter.create(
@@ -105,6 +106,7 @@ class EncounterCog(commands.Cog):
             "max_hp": encounter.mob_state.max_hp,
             "attack": encounter.mob_state.attack,
             "defense": encounter.mob_state.defense,
+            "speed": encounter.mob_state.speed,
         }
 
         compose_players_banner(
@@ -226,6 +228,7 @@ class EncounterCog(commands.Cog):
             "max_hp": self.active_encounter.mob_state.max_hp,
             "attack": self.active_encounter.mob_state.attack,
             "defense": self.active_encounter.mob_state.defense,
+            "speed": self.active_encounter.mob_state.speed,
         }
 
         compose_players_banner(

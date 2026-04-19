@@ -106,9 +106,10 @@ def test_stats_service_level_1_without_equipment_or_class():
     )
 
     assert stats.max_hp == 100
-    assert stats.hp_regeneration == 0
+    assert stats.hp_regeneration == 5
     assert stats.attack == 10
     assert stats.defense == 5
+    assert stats.speed == 5
     assert stats.crit_chance == 0.05
     assert stats.crit_damage == 1.50
     assert stats.dodge == 0.00
@@ -131,9 +132,10 @@ def test_stats_service_applies_equipment_bonuses():
     )
 
     assert stats.max_hp == 100
-    assert stats.hp_regeneration == 0
+    assert stats.hp_regeneration == 5
     assert stats.attack == 15
     assert stats.defense == 5
+    assert stats.speed == 5
 
 
 def test_stats_service_applies_class_bonuses():
@@ -151,9 +153,10 @@ def test_stats_service_applies_class_bonuses():
     )
 
     assert stats.max_hp == 120
-    assert stats.hp_regeneration == 0
+    assert stats.hp_regeneration == 5
     assert stats.attack == 13
     assert stats.defense == 7
+    assert stats.speed == 5
 
 
 def test_stats_service_applies_class_and_equipment_bonuses_together():
@@ -180,9 +183,10 @@ def test_stats_service_applies_class_and_equipment_bonuses_together():
     # Classe = +20 hp, +3 atk, +2 def
     # Équipement = +9 atk
     assert stats.max_hp == 130
-    assert stats.hp_regeneration == 0
+    assert stats.hp_regeneration == 5
     assert stats.attack == 24
     assert stats.defense == 8
+    assert stats.speed == 5
     
 def test_stats_service_applies_advanced_bonuses():
     profile = build_player_profile(level=1)
@@ -204,11 +208,12 @@ def test_stats_service_applies_advanced_bonuses():
         active_class=active_class,
     )
 
-    assert stats.hp_regeneration == 0
+    assert stats.hp_regeneration == 5
     assert stats.attack == 14
     assert stats.crit_chance == 0.25
     assert stats.dodge == 0.05
     assert stats.crit_damage == 1.50
+    assert stats.speed == 5
     
 def test_stats_service_applies_hp_regeneration_bonuses():
     profile = build_player_profile(level=1)
@@ -230,4 +235,26 @@ def test_stats_service_applies_hp_regeneration_bonuses():
         active_class=active_class,
     )
 
-    assert stats.hp_regeneration == 10
+    assert stats.hp_regeneration == 15
+
+def test_stats_service_applies_speed_bonuses():
+    profile = build_player_profile(level=1)
+    service = StatsService()
+
+    active_class = build_class_definition(
+        stat_bonuses={"speed": 3}
+    )
+
+    item = build_equipment_item(
+        code="swift_boots",
+        name="Bottes rapides",
+        stat_bonuses={"speed": 2},
+    )
+
+    stats = service.calculate_player_stats(
+        profile=profile,
+        equipped_items=[item],
+        active_class=active_class,
+    )
+
+    assert stats.speed == 10

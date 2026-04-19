@@ -30,13 +30,8 @@ def build_player_profile_embed(
     embed.add_field(name="🎯 Crit", value=f"{int(stats.crit_chance * 100)}%", inline=True)
     embed.add_field(name="💥 Dégâts crit", value=f"{int(stats.crit_damage * 100)}%", inline=True)
     embed.add_field(name="🌀 Esquive", value=f"{int(stats.dodge * 100)}%", inline=True)
-
-    # Regen (nouvelle mécanique)
-    embed.add_field(
-        name="✨ Régénération",
-        value=f"{stats.hp_regeneration} PV/min",
-        inline=True,
-    )
+    embed.add_field(name="💨 Vitesse", value=str(stats.speed), inline=True)
+    embed.add_field(name="✨ Régénération", value=f"{stats.hp_regeneration} PV/min", inline=True)
 
     # Classe
     if active_class is None:

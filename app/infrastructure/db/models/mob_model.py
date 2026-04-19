@@ -27,6 +27,7 @@ class MobDefinitionModel(Base):
     current_hp: Mapped[int] = mapped_column(Integer)
     attack: Mapped[int] = mapped_column(Integer)
     defense: Mapped[int] = mapped_column(Integer)
+    speed: Mapped[int] = mapped_column(Integer)
 
     xp_reward: Mapped[int] = mapped_column(Integer, default=0)
     gold_reward: Mapped[int] = mapped_column(Integer, default=0)

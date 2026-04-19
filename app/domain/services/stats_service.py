@@ -23,12 +23,16 @@ class StatsService:
         
         base_hp_regeneration = 5
         hp_regeneration = base_hp_regeneration
+        
+        base_speed = 5
+        speed = base_speed
 
         if active_class is not None:
             bonuses = active_class.stat_bonuses or {}
             max_hp += int(bonuses.get("max_hp", 0))
             attack += int(bonuses.get("attack", 0))
             defense += int(bonuses.get("defense", 0))
+            speed += int(bonuses.get("speed", 0))
             crit_chance += float(bonuses.get("crit_chance", 0.0))
             crit_damage += float(bonuses.get("crit_damage", 0.0))
             dodge += float(bonuses.get("dodge", 0.0))
@@ -39,6 +43,7 @@ class StatsService:
             max_hp += int(bonuses.get("max_hp", 0))
             attack += int(bonuses.get("attack", 0))
             defense += int(bonuses.get("defense", 0))
+            speed += int(bonuses.get("speed", 0))
             crit_chance += float(bonuses.get("crit_chance", 0.0))
             crit_damage += float(bonuses.get("crit_damage", 0.0))
             dodge += float(bonuses.get("dodge", 0.0))
@@ -48,11 +53,13 @@ class StatsService:
         dodge = min(dodge, 0.50)
         crit_damage = max(crit_damage, 1.0)
         hp_regeneration = max(0, hp_regeneration)
+        speed = max(1, speed)
 
         return Stats(
             max_hp=max_hp,
             attack=attack,
             defense=defense,
+            speed=speed,
             crit_chance=crit_chance,
             crit_damage=crit_damage,
             dodge=dodge,

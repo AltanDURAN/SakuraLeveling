@@ -10,3 +10,4 @@ class EncounterMobState:
     max_hp: int
     attack: int
     defense: int
+    speed: int

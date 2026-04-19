@@ -67,6 +67,7 @@ def seed_mobs() -> None:
                 max_hp=mob_data["max_hp"],
                 attack=mob_data["attack"],
                 defense=mob_data["defense"],
+                speed=mob_data["speed"],
                 xp_reward=mob_data["xp_reward"],
                 gold_reward=mob_data["gold_reward"],
                 image_name=mob_data.get("image_name"),

@@ -43,7 +43,7 @@ def compose_players_banner(
     draw = ImageDraw.Draw(result)
 
     try:
-        title_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 42)
+        title_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 48)
         stat_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 36)
     except Exception:
         title_font = ImageFont.load_default()
@@ -90,19 +90,19 @@ def compose_players_banner(
 
         x2 = x1 + int(825 * hp_ratio)
 
-        mob_power = "XXX"
+        mob_power = "XXXX"
         mob_info = f"{mob_name} • [{mob_power}]"
 
         if mob_current_hp > 0 and x2 > x1:
             draw.rounded_rectangle(
                 [(x1, y1), (x2, y2)],
                 radius=20,
-                fill=(0, 200, 0, 255),
+                fill=(0, 130, 0, 255),
             )
         else:
             mob_info = f"{mob_name} • [Mort]"
 
-        draw.text((130, 152), mob_info, font=title_font, fill=(255, 255, 255, 255))
+        draw.text((106, 146), mob_info, font=title_font, fill=(255, 255, 255, 255))
 
     if not players:
         result.save(output_path)
@@ -141,7 +141,7 @@ def compose_players_banner(
         avatar_x = center_x - aw // 2 + 31
         result.alpha_composite(avatar, (avatar_x, avatar_y))
 
-    players_power = "[XXX]"
+    players_power = "[XXXX]"
     draw.text((850, 1400), players_power, font=stat_font, fill=(255, 255, 255, 255))
 
     result.save(output_path)

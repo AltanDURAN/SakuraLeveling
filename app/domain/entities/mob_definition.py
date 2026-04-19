@@ -16,6 +16,7 @@ class MobDefinition:
     xp_reward: int
     gold_reward: int
     spawn_weight: int
+    speed: int
     loot_table: list[dict] | None
     created_at: datetime
     updated_at: datetime
