@@ -1,5 +1,5 @@
 from sqlalchemy import select
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from sqlalchemy.orm import Session
 
 from app.domain.entities.item_definition import ItemDefinition
@@ -101,7 +101,7 @@ class ItemRepository:
         model.buy_price = buy_price
         model.icon = icon
         model.stat_bonuses = stat_bonuses
-        model.updated_at = datetime.now(timezone.utc)
+        model.updated_at = datetime.now(UTC)
 
         self.session.commit()
         self.session.refresh(model)

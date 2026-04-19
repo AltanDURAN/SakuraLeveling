@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 
 import discord
 from discord.ext import commands, tasks
@@ -65,7 +65,7 @@ class EncounterCog(commands.Cog):
         if self.active_encounter is not None:
             return
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if self.next_spawn_at is not None and now < self.next_spawn_at:
             return
 
@@ -128,7 +128,7 @@ class EncounterCog(commands.Cog):
             mob=spawn_mob_payload,
             output_path=str(spawn_output_full),
             background_path=str(background_path),
-            players_power_score="0",
+            players_power_score="",
         )
 
         embed, file = build_encounter_embed(
@@ -145,7 +145,7 @@ class EncounterCog(commands.Cog):
             child.disabled = True
 
         if self.active_encounter is None:
-            self.next_spawn_at = datetime.now(timezone.utc) + timedelta(minutes=1)
+            self.next_spawn_at = datetime.now(UTC) + timedelta(minutes=1)
             return
 
         if not self.active_encounter.participants:
@@ -154,13 +154,13 @@ class EncounterCog(commands.Cog):
             )
             await message.edit(embed=flee_embed, attachments=[file], view=view)
             self.active_encounter = None
-            self.next_spawn_at = datetime.now(timezone.utc) + timedelta(minutes=1)
+            self.next_spawn_at = datetime.now(UTC) + timedelta(minutes=1)
             return
 
         result = self.resolve_active_encounter()
         if result is None:
             self.active_encounter = None
-            self.next_spawn_at = datetime.now(timezone.utc) + timedelta(minutes=1)
+            self.next_spawn_at = datetime.now(UTC) + timedelta(minutes=1)
             return
 
         self.persist_final_players_hp(result)
@@ -235,12 +235,12 @@ class EncounterCog(commands.Cog):
 
         await message.edit(embed=final_embed, attachments=[file], view=view)
         self.active_encounter = None
-        self.next_spawn_at = datetime.now(timezone.utc) + timedelta(minutes=1)
+        self.next_spawn_at = datetime.now(UTC) + timedelta(minutes=1)
 
     @encounter_loop.before_loop
     async def before_encounter_loop(self):
         await self.bot.wait_until_ready()
-        self.next_spawn_at = datetime.now(timezone.utc) + timedelta(minutes=1)
+        self.next_spawn_at = datetime.now(UTC) + timedelta(minutes=1)
 
     def resolve_active_encounter(self):
         return self.encounter_service.resolve_active_encounter(self.active_encounter)

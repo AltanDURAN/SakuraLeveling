@@ -144,9 +144,9 @@ class ClassRepository:
         model.description = description
         model.stat_bonuses = stat_bonuses
         model.unlock_requirements = unlock_requirements
-        model.updated_at = datetime.now(timezone.utc)
+        model.updated_at = datetime.now(UTC)
 
         self.session.commit()
         self.session.refresh(model)
 
-        return self._to_domain(model)
+        return self._to_class_domain(model)

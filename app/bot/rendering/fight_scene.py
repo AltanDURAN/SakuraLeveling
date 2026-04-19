@@ -107,7 +107,6 @@ def compose_players_banner(
         draw.text((106, 146), mob_info, font=title_font, fill=(255, 255, 255, 255))
 
     if not players:
-        draw.text((850, 1400), players_power_score, font=stat_font, fill=(255, 255, 255, 255))
         result.save(output_path)
         print(f"Aucun player. Image sauvegardée : {output_path}")
         return
@@ -144,7 +143,8 @@ def compose_players_banner(
         avatar_x = center_x - aw // 2 + 31
         result.alpha_composite(avatar, (avatar_x, avatar_y))
 
-    draw.text((850, 1400), players_power_score, font=stat_font, fill=(255, 255, 255, 255))
+    if players_power_score:
+        draw.text((850, 1400), f"[{players_power_score}]", font=stat_font, fill=(255, 255, 255, 255))
 
     result.save(output_path)
     print(f"Image créée : {output_path}")
