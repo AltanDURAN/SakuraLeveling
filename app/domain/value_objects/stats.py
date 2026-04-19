@@ -9,3 +9,4 @@ class Stats:
     crit_damage: float
     dodge: float
     hp_regeneration: int = 0
+    speed: int = 5

@@ -24,3 +24,20 @@ class EncounterView(discord.ui.View):
             await self.cog.refresh_encounter_scene()
 
         await interaction.followup.send(message, ephemeral=True)
+
+    @discord.ui.button(label="Quitter", style=discord.ButtonStyle.secondary, emoji="🚪")
+    async def leave_encounter(
+        self,
+        interaction: discord.Interaction,
+        button: discord.ui.Button,
+    ) -> None:
+        await interaction.response.defer(ephemeral=True)
+
+        success, message = await self.cog.unregister_participant(
+            user_id=interaction.user.id,
+        )
+
+        if success:
+            await self.cog.refresh_encounter_scene()
+
+        await interaction.followup.send(message, ephemeral=True)

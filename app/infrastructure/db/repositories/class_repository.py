@@ -125,3 +125,28 @@ class ClassRepository:
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
+        
+    def update_by_code(
+        self,
+        code: str,
+        name: str,
+        description: str,
+        stat_bonuses: dict | None,
+        unlock_requirements: list[dict] | None = None,
+    ):
+        stmt = select(ClassDefinitionModel).where(ClassDefinitionModel.code == code)
+        model = self.session.execute(stmt).scalar_one_or_none()
+
+        if model is None:
+            return None
+
+        model.name = name
+        model.description = description
+        model.stat_bonuses = stat_bonuses
+        model.unlock_requirements = unlock_requirements
+        model.updated_at = datetime.now(UTC)
+
+        self.session.commit()
+        self.session.refresh(model)
+
+        return self._to_class_domain(model)

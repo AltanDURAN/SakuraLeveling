@@ -89,6 +89,7 @@ class EncounterService:
             avatar_url=avatar_url,
             current_hp=regenerated_current_hp,
             max_hp=stats.max_hp,
+            stats=stats,
         )
 
         encounter.participants[user_id] = participant
@@ -181,3 +182,17 @@ class EncounterService:
 
                 player_repository.add_gold(participant.player_id, result.gold_gained)
                 player_repository.add_xp(participant.player_id, result.xp_gained)
+    
+    def unregister_participant(
+        self,
+        encounter,
+        user_id: int,
+    ) -> tuple[bool, str]:
+        if encounter is None:
+            return False, "Aucun combat à quitter."
+
+        if user_id not in encounter.participants:
+            return False, "Vous n'avez pas rejoint ce combat."
+
+        del encounter.participants[user_id]
+        return True, "Vous avez quitté le combat."

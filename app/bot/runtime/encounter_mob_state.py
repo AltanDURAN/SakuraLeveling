@@ -10,3 +10,8 @@ class EncounterMobState:
     max_hp: int
     attack: int
     defense: int
+    speed: int
+    crit_chance: int
+    crit_damage: int
+    dodge: int
+    hp_regeneration: int

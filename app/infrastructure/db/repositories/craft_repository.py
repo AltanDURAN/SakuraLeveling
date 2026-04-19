@@ -1,4 +1,5 @@
-from sqlalchemy import select
+from datetime import datetime, UTC
+from sqlalchemy import select, delete
 from sqlalchemy.orm import Session
 
 from app.domain.entities.craft_ingredient import CraftIngredient
@@ -87,3 +88,43 @@ class CraftRepository:
             created_at=recipe_model.created_at,
             updated_at=recipe_model.updated_at,
         )
+    
+    def update_by_code(
+        self,
+        code: str,
+        name: str,
+        result_item_definition_id: int,
+        result_quantity: int,
+        ingredients: list[tuple[int, int]],
+    ):
+        stmt = select(CraftRecipeModel).where(CraftRecipeModel.code == code)
+        model = self.session.execute(stmt).scalar_one_or_none()
+
+        if model is None:
+            return None
+
+        model.name = name
+        model.result_item_definition_id = result_item_definition_id
+        model.result_quantity = result_quantity
+        model.updated_at = datetime.now(UTC)
+
+        self.session.execute(
+            delete(CraftRecipeIngredientModel).where(
+                CraftRecipeIngredientModel.craft_recipe_id == model.id
+            )
+        )
+
+        self.session.flush()
+
+        for item_definition_id, quantity in ingredients:
+            ingredient = CraftRecipeIngredientModel(
+                craft_recipe_id=model.id,
+                item_definition_id=item_definition_id,
+                quantity=quantity,
+            )
+            self.session.add(ingredient)
+
+        self.session.commit()
+        self.session.refresh(model)
+
+        return self._to_domain(model)
