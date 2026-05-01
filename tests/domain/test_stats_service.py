@@ -110,9 +110,9 @@ def test_stats_service_level_1_without_equipment_or_class():
     assert stats.attack == 10
     assert stats.defense == 5
     assert stats.speed == 5
-    assert stats.crit_chance == 0.05
-    assert stats.crit_damage == 1.50
-    assert stats.dodge == 0.00
+    assert stats.crit_chance == 5
+    assert stats.crit_damage == 150
+    assert stats.dodge == 0
 
 
 def test_stats_service_applies_equipment_bonuses():
@@ -193,13 +193,13 @@ def test_stats_service_applies_advanced_bonuses():
     service = StatsService()
 
     active_class = build_class_definition(
-        stat_bonuses={"crit_chance": 0.10, "dodge": 0.05}
+        stat_bonuses={"crit_chance": 10, "dodge": 5}
     )
 
     sword = build_equipment_item(
         code="hunter_dagger",
         name="Dague du chasseur",
-        stat_bonuses={"attack": 4, "crit_chance": 0.10},
+        stat_bonuses={"attack": 4, "crit_chance": 10},
     )
 
     stats = service.calculate_player_stats(
@@ -210,9 +210,9 @@ def test_stats_service_applies_advanced_bonuses():
 
     assert stats.hp_regeneration == 5
     assert stats.attack == 14
-    assert stats.crit_chance == 0.25
-    assert stats.dodge == 0.05
-    assert stats.crit_damage == 1.50
+    assert stats.crit_chance == 25
+    assert stats.dodge == 5
+    assert stats.crit_damage == 150
     assert stats.speed == 5
     
 def test_stats_service_applies_hp_regeneration_bonuses():

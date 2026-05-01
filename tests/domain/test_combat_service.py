@@ -47,9 +47,9 @@ def test_combat_service_player_wins_against_weaker_mob():
         attack=10,
         defense=5,
         speed=5,
-        crit_chance=0.0,
-        crit_damage=1.50,
-        dodge=0.0,
+        crit_chance=0,
+        crit_damage=150,
+        dodge=0,
         hp_regeneration=0,
     )
 
@@ -79,9 +79,9 @@ def test_combat_service_player_loses_against_stronger_mob():
         attack=5,
         defense=1,
         speed=5,
-        crit_chance=0.0,
-        crit_damage=1.50,
-        dodge=0.0,
+        crit_chance=0,
+        crit_damage=150,
+        dodge=0,
         hp_regeneration=0,
     )
 
@@ -108,9 +108,9 @@ def test_combat_service_damage_has_minimum_of_one():
         attack=1,
         defense=999,
         speed=5,
-        crit_chance=0.0,
-        crit_damage=1.50,
-        dodge=0.0,
+        crit_chance=0,
+        crit_damage=150,
+        dodge=0,
         hp_regeneration=0,
     )
 
@@ -137,9 +137,9 @@ def test_combat_service_turn_count_is_consistent():
         attack=11,
         defense=5,
         speed=5,
-        crit_chance=0.0,
-        crit_damage=1.50,
-        dodge=0.0,
+        crit_chance=0,
+        crit_damage=150,
+        dodge=0,
         hp_regeneration=0,
     )
 

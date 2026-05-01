@@ -142,8 +142,8 @@ class ClassRepository:
 
         model.name = name
         model.description = description
-        model.stat_bonuses = stat_bonuses
-        model.unlock_requirements = unlock_requirements
+        model.stat_bonuses_json = stat_bonuses
+        model.unlock_requirements_json = unlock_requirements
         model.updated_at = datetime.now(UTC)
 
         self.session.commit()

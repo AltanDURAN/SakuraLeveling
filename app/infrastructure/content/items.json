@@ -71,7 +71,7 @@
     "icon": null,
     "stat_bonuses": {
       "attack": 4,
-      "crit_chance": 0.10
+      "crit_chance": 10
     }
   },
   {

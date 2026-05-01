@@ -17,13 +17,13 @@ class StatsService:
         attack = 10 + (level - 1) * 2
         defense = 5 + (level - 1) * 1
 
-        crit_chance = 0.05
-        crit_damage = 1.50
-        dodge = 0.00
-        
+        crit_chance = 5
+        crit_damage = 150
+        dodge = 0
+
         base_hp_regeneration = 5
         hp_regeneration = base_hp_regeneration
-        
+
         base_speed = 5
         speed = base_speed
 
@@ -33,9 +33,9 @@ class StatsService:
             attack += int(bonuses.get("attack", 0))
             defense += int(bonuses.get("defense", 0))
             speed += int(bonuses.get("speed", 0))
-            crit_chance += float(bonuses.get("crit_chance", 0.0))
-            crit_damage += float(bonuses.get("crit_damage", 0.0))
-            dodge += float(bonuses.get("dodge", 0.0))
+            crit_chance += float(bonuses.get("crit_chance", 0))
+            crit_damage += float(bonuses.get("crit_damage", 0))
+            dodge += float(bonuses.get("dodge", 0))
             hp_regeneration += int(bonuses.get("hp_regeneration", 0))
 
         for equipment_item in equipped_items:
@@ -44,14 +44,14 @@ class StatsService:
             attack += int(bonuses.get("attack", 0))
             defense += int(bonuses.get("defense", 0))
             speed += int(bonuses.get("speed", 0))
-            crit_chance += float(bonuses.get("crit_chance", 0.0))
-            crit_damage += float(bonuses.get("crit_damage", 0.0))
-            dodge += float(bonuses.get("dodge", 0.0))
+            crit_chance += float(bonuses.get("crit_chance", 0))
+            crit_damage += float(bonuses.get("crit_damage", 0))
+            dodge += float(bonuses.get("dodge", 0))
             hp_regeneration += int(bonuses.get("hp_regeneration", 0))
 
-        crit_chance = min(crit_chance, 0.75)
-        dodge = min(dodge, 0.50)
-        crit_damage = max(crit_damage, 1.0)
+        crit_chance = min(crit_chance, 75)
+        dodge = min(dodge, 50)
+        crit_damage = max(crit_damage, 100)
         hp_regeneration = max(0, hp_regeneration)
         speed = max(1, speed)
 

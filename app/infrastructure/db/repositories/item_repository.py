@@ -100,7 +100,7 @@ class ItemRepository:
         model.sell_price = sell_price
         model.buy_price = buy_price
         model.icon = icon
-        model.stat_bonuses = stat_bonuses
+        model.stat_bonuses_json = stat_bonuses
         model.updated_at = datetime.now(UTC)
 
         self.session.commit()
