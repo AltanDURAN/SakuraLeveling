@@ -111,6 +111,17 @@ class PlayerRepository:
         resources.gold = max(0, gold)
         resources.updated_at = datetime.now(UTC)
         self.session.commit()
+
+    def increment_daily_streak(self, player_id: int) -> int:
+        """Incrémente la série /daily du joueur de 1 et renvoie la nouvelle valeur."""
+        resources = self.session.get(PlayerResourceModel, player_id)
+        if resources is None:
+            return 0
+
+        resources.daily_streak += 1
+        resources.updated_at = datetime.now(UTC)
+        self.session.commit()
+        return resources.daily_streak
         
     def apply_progression(
         self,
@@ -173,6 +184,7 @@ class PlayerRepository:
         resources = PlayerResources(
             player_id=player_model.resources.player_id,
             gold=player_model.resources.gold,
+            daily_streak=player_model.resources.daily_streak,
             created_at=player_model.resources.created_at,
             updated_at=player_model.resources.updated_at,
         )

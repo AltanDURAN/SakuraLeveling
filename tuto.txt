@@ -53,7 +53,17 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     Exemple : /quest_claim slime_hunter
 
 /daily
-    Récupère votre récompense quotidienne (or + XP). Cooldown de 24h.
+    Récupère votre récompense quotidienne. Cooldown de 24h.
+    Mécanique de série (streak) :
+        • Première récupération : +100 or, série = 1
+        • Chaque récupération suivante : +(streak × 100) or, série += 1
+        • La série n'est JAMAIS perdue, même si vous sautez des jours
+        • Seul un /admin reset_player remet la série à 0
+    Affichage type :
+        Daily Streak 3 🔥 !
+        Vous récupérez :
+        300 🪙
+        Revenez également demain !
 
 --------------------------------------------------------------------------------
 1.2 — MÉTIERS & RESSOURCES

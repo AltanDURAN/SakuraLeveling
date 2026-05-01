@@ -27,6 +27,10 @@ from app.bot.embeds.battle_embeds import (
     build_battle_turn_embed,
 )
 from app.bot.embeds.class_embeds import build_player_class_embed
+from app.bot.embeds.daily_embeds import (
+    build_daily_cooldown_embed,
+    build_daily_success_embed,
+)
 from app.bot.embeds.craft_embeds import build_craft_list_embed
 from app.bot.embeds.inventory_embeds import build_inventory_embed
 from app.bot.embeds.player_embeds import build_player_profile_embed
@@ -442,19 +446,26 @@ class PlayerCog(commands.Cog):
                 player_repository=player_repository,
                 cooldown_repository=cooldown_repository,
                 cooldown_service=CooldownService(),
-                progression_service=ProgressionService(),
             )
 
-            success, message = use_case.execute(
+            result = use_case.execute(
                 discord_id=interaction.user.id,
                 username=interaction.user.name,
                 display_name=interaction.user.display_name,
             )
 
-        if success:
-            await interaction.response.send_message(message)
+        if result.success:
+            embed = build_daily_success_embed(
+                streak=result.streak,
+                gold_gained=result.gold_gained,
+            )
+            await interaction.response.send_message(embed=embed)
         else:
-            await interaction.response.send_message(message, ephemeral=True)
+            embed = build_daily_cooldown_embed(
+                streak=result.streak,
+                next_available_at=result.next_available_at,
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(name="quests", description="Afficher les quêtes d'un joueur")
     @app_commands.describe(target="Joueur dont afficher les quêtes (par défaut : vous)")

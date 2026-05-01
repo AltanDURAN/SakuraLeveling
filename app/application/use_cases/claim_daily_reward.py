@@ -1,35 +1,47 @@
+from dataclasses import dataclass
 from datetime import datetime, UTC
 
 from app.domain.services.cooldown_service import CooldownService
-from app.domain.services.progression_service import ProgressionService
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.shared.enums import CooldownAction
 
 
+@dataclass
+class DailyClaimResult:
+    success: bool
+    streak: int = 0
+    gold_gained: int = 0
+    next_available_at: datetime | None = None
+
+
 class ClaimDailyRewardUseCase:
+    """Daily reward gold-only avec série persistante.
+
+    Chaque /daily récupéré incrémente la série de 1 et donne `streak × 100` or.
+    La série n'est jamais réinitialisée par un jour manqué — elle ne peut que
+    grandir (ou être remise à zéro par un admin via /admin reset_player).
+    """
+
     DAILY_ACTION_KEY = CooldownAction.DAILY.value
-    DAILY_GOLD_REWARD = 25
-    DAILY_XP_REWARD = 10
+    GOLD_PER_STREAK = 100
 
     def __init__(
         self,
         player_repository: PlayerRepository,
         cooldown_repository: CooldownRepository,
         cooldown_service: CooldownService,
-        progression_service: ProgressionService,
     ):
         self.player_repository = player_repository
         self.cooldown_repository = cooldown_repository
         self.cooldown_service = cooldown_service
-        self.progression_service = progression_service
 
     def execute(
         self,
         discord_id: int,
         username: str,
         display_name: str,
-    ) -> tuple[bool, str]:
+    ) -> DailyClaimResult:
         profile = self.player_repository.get_or_create_by_discord_id(
             discord_id=discord_id,
             username=username,
@@ -44,23 +56,19 @@ class ClaimDailyRewardUseCase:
 
         if not self.cooldown_service.is_available(cooldown, now):
             assert cooldown is not None and cooldown.next_available_at is not None
-            return False, f"Daily déjà récupéré. Prochain disponible : {cooldown.next_available_at} UTC"
+            next_at = cooldown.next_available_at
+            if next_at.tzinfo is None:
+                next_at = next_at.replace(tzinfo=UTC)
+            return DailyClaimResult(
+                success=False,
+                streak=profile.resources.daily_streak,
+                next_available_at=next_at,
+            )
 
-        self.player_repository.add_gold(profile.player.id, self.DAILY_GOLD_REWARD)
+        new_streak = self.player_repository.increment_daily_streak(profile.player.id)
+        gold_gained = new_streak * self.GOLD_PER_STREAK
 
-        new_level, new_xp, new_skill_points = self.progression_service.apply_level_up(
-            current_level=profile.progression.level,
-            current_xp=profile.progression.xp,
-            gained_xp=self.DAILY_XP_REWARD,
-            current_skill_points=profile.progression.skill_points,
-        )
-
-        self.player_repository.apply_progression(
-            player_id=profile.player.id,
-            new_level=new_level,
-            new_xp=new_xp,
-            new_skill_points=new_skill_points,
-        )
+        self.player_repository.add_gold(profile.player.id, gold_gained)
 
         last_used_at, next_available_at = self.cooldown_service.build_next_daily_cooldown(now)
         self.cooldown_repository.upsert(
@@ -70,12 +78,9 @@ class ClaimDailyRewardUseCase:
             next_available_at=next_available_at,
         )
 
-        leveled_up = new_level > profile.progression.level
-
-        message = (
-            f"🎁 Daily récupéré : +{self.DAILY_GOLD_REWARD} gold, +{self.DAILY_XP_REWARD} XP"
+        return DailyClaimResult(
+            success=True,
+            streak=new_streak,
+            gold_gained=gold_gained,
+            next_available_at=next_available_at,
         )
-        if leveled_up:
-            message += f"\n🎉 Vous êtes passé niveau {new_level} !"
-
-        return True, message

@@ -37,6 +37,7 @@ class ResetPlayerUseCase:
         resources = session.get(PlayerResourceModel, player_id)
         if resources is not None:
             resources.gold = 0
+            resources.daily_streak = 0
             resources.updated_at = now
 
         # Tables 1:N — DELETE par player_id
