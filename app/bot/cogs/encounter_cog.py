@@ -59,6 +59,18 @@ class EncounterCog(commands.Cog):
         )
         return success, message
 
+    def trigger_immediate_spawn(self) -> tuple[bool, str]:
+        """Force la prochaine itération du loop à spawn un encounter.
+
+        La boucle tourne toutes les 10s : un nouvel encounter apparaîtra dans
+        ~10s maximum. Refuse si un combat est déjà actif.
+        """
+        if self.active_encounter is not None:
+            return False, "Un combat est déjà en cours."
+
+        self.next_spawn_at = datetime.now(UTC) - timedelta(seconds=1)
+        return True, "Spawn forcé : un monstre apparaît dans quelques secondes."
+
     @tasks.loop(seconds=10)
     async def encounter_loop(self):
         channel = self.bot.get_channel(settings.encounter_channel_id)

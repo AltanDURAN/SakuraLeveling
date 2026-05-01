@@ -1,0 +1,55 @@
+from datetime import datetime, UTC
+
+from sqlalchemy import delete
+from sqlalchemy.orm import Session
+
+from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel
+from app.infrastructure.db.models.equipment_model import PlayerEquipmentItemModel
+from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel
+from app.infrastructure.db.models.player_class_state_model import PlayerClassStateModel
+from app.infrastructure.db.models.player_health_state_model import PlayerHealthStateModel
+from app.infrastructure.db.models.player_mob_kill_model import PlayerMobKillModel
+from app.infrastructure.db.models.profession_model import PlayerProfessionModel
+from app.infrastructure.db.models.progression_model import PlayerProgressionModel
+from app.infrastructure.db.models.quest_model import PlayerQuestStateModel
+from app.infrastructure.db.models.resource_model import PlayerResourceModel
+
+
+class ResetPlayerUseCase:
+    """Remet le profil d'un joueur à zéro tout en gardant son identité Discord.
+
+    Conserve : `players` (id, discord_id, username, display_name, timestamps).
+    Réinitialise : niveau/XP/skill_points, or, classes, équipement, inventaire,
+    quêtes, cooldowns, professions, kills, état HP.
+    """
+
+    def execute(self, session: Session, player_id: int) -> None:
+        now = datetime.now(UTC)
+
+        # Tables 1:1 avec le joueur — UPDATE
+        progression = session.get(PlayerProgressionModel, player_id)
+        if progression is not None:
+            progression.level = 1
+            progression.xp = 0
+            progression.skill_points = 0
+            progression.updated_at = now
+
+        resources = session.get(PlayerResourceModel, player_id)
+        if resources is not None:
+            resources.gold = 0
+            resources.updated_at = now
+
+        # Tables 1:N — DELETE par player_id
+        for model_cls in (
+            PlayerInventoryItemModel,
+            PlayerEquipmentItemModel,
+            PlayerClassStateModel,
+            PlayerQuestStateModel,
+            PlayerCooldownModel,
+            PlayerHealthStateModel,
+            PlayerMobKillModel,
+            PlayerProfessionModel,
+        ):
+            session.execute(delete(model_cls).where(model_cls.player_id == player_id))
+
+        session.commit()

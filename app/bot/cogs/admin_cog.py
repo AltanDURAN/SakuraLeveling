@@ -2,6 +2,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from app.application.use_cases.reset_player import ResetPlayerUseCase
 from app.bot.checks.admin_check import admin_only
 from app.domain.services.progression_service import ProgressionService
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
@@ -274,6 +275,62 @@ class AdminCog(commands.Cog):
             f"✅ {quantity}× **{item.name}** retiré de l'inventaire de {target.mention}.",
             ephemeral=True,
         )
+
+    # -------------------------- Outils de test --------------------------
+
+    @admin.command(
+        name="reset_player",
+        description="Réinitialise complètement le profil d'un joueur (garde son identité Discord)",
+    )
+    @app_commands.describe(target="Joueur à réinitialiser")
+    @admin_only
+    async def reset_player(
+        self,
+        interaction: discord.Interaction,
+        target: discord.Member,
+    ) -> None:
+        await interaction.response.defer(ephemeral=True)
+
+        with get_db_session() as session:
+            player_repository = PlayerRepository(session)
+            profile = player_repository.get_by_discord_id(target.id)
+
+            if profile is None:
+                await interaction.followup.send(
+                    f"❌ {target.display_name} n'a pas encore de profil.",
+                    ephemeral=True,
+                )
+                return
+
+            ResetPlayerUseCase().execute(session=session, player_id=profile.player.id)
+
+        await interaction.followup.send(
+            f"✅ Profil de {target.mention} réinitialisé "
+            "(niveau 1, 0 or, inventaire/équipement/classes/quêtes/cooldowns/kills/HP vidés).",
+            ephemeral=True,
+        )
+
+    @admin.command(
+        name="spawn_encounter",
+        description="Force le spawn immédiat d'un encounter (dans le canal d'encounter)",
+    )
+    @admin_only
+    async def spawn_encounter(self, interaction: discord.Interaction) -> None:
+        encounter_cog = self.bot.get_cog("EncounterCog")
+        if encounter_cog is None:
+            await interaction.response.send_message(
+                "❌ Le cog d'encounter n'est pas chargé.",
+                ephemeral=True,
+            )
+            return
+
+        success, message = encounter_cog.trigger_immediate_spawn()
+        await interaction.response.send_message(
+            f"{'✅' if success else '⚠️'} {message}",
+            ephemeral=True,
+        )
+
+    # -------------------------- Autocomplete --------------------------
 
     @give_item.autocomplete("item_code")
     @remove_item.autocomplete("item_code")
