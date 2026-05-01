@@ -1,0 +1,306 @@
+================================================================================
+                        SAKURALEVELING — TUTORIEL
+                  Bot Discord RPG — V2 (en développement)
+================================================================================
+
+Ce document est tenu à jour automatiquement à chaque évolution du bot.
+Section 1 : commandes pour les joueurs
+Section 2 : commandes pour les administrateurs
+
+================================================================================
+                          1. COMMANDES JOUEUR
+================================================================================
+
+Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
+
+--------------------------------------------------------------------------------
+1.1 — PROFIL & PROGRESSION
+--------------------------------------------------------------------------------
+
+/ping
+    Vérifie que le bot répond. Rien de plus.
+
+/profile [target]
+    Affiche votre profil : niveau, XP, or, classe active, PV courants/max,
+    score de puissance, stats de combat (attaque, défense, vitesse, crit, etc.).
+    Si vous ajoutez `target`, vous voyez le profil d'un autre joueur via le
+    sélecteur Discord (par exemple : /profile @Altan).
+    Au premier usage sans target, votre profil est créé automatiquement.
+
+/inventory [target]
+    Affiche votre inventaire (objets et quantités). Avec un target, vous voyez
+    l'inventaire d'un autre joueur.
+
+/equipment [target]
+    Affiche votre équipement actuellement porté (arme, armure, accessoires).
+
+/class [target]
+    Affiche la classe active.
+
+/classes
+    Liste toutes les classes du jeu, leurs bonus de stats et les conditions
+    pour les débloquer (niveau de métier requis, item à posséder, etc.).
+
+/class_set <class_code>
+    Définit votre classe active. Vous devez avoir débloqué la classe.
+    Exemple : /class_set warrior
+
+/quests [target]
+    Affiche la liste de vos quêtes : description, progression, statut.
+
+/quest_claim <quest_code>
+    Récupère la récompense d'une quête terminée.
+    Exemple : /quest_claim slime_hunter
+
+/daily
+    Récupère votre récompense quotidienne (or + XP). Cooldown de 24h.
+
+--------------------------------------------------------------------------------
+1.2 — MÉTIERS & RESSOURCES
+--------------------------------------------------------------------------------
+
+/gather <profession_code>
+    Récolte des ressources via un métier (mining, woodcutting, etc.).
+    Vous gagnez de l'XP de métier et un objet selon votre niveau.
+    Exemple : /gather mining
+
+/craft_list
+    Liste toutes les recettes de craft disponibles avec ingrédients requis.
+
+/craft <recipe_code>
+    Fabrique un objet en consommant les ingrédients requis depuis votre
+    inventaire.
+    Exemple : /craft slime_blade
+
+--------------------------------------------------------------------------------
+1.3 — ÉQUIPEMENT
+--------------------------------------------------------------------------------
+
+/equip <item_code> <slot>
+    Équipe un objet de votre inventaire dans le slot indiqué.
+    Slots disponibles : weapon, armor, accessory, etc.
+    Exemple : /equip wood_sword weapon
+
+--------------------------------------------------------------------------------
+1.4 — COMBAT
+--------------------------------------------------------------------------------
+
+Combat de groupe (encounters) — déclenché automatiquement
+    Toutes les ~10 minutes, un monstre apparaît dans le canal d'encounter.
+    Vous avez 5 minutes pour cliquer sur "Combattre" pour rejoindre le combat,
+    ou "Quitter" pour vous retirer.
+
+    Quand le combat se résout, deux pages d'embed s'affichent (navigables avec
+    les flèches ⬅️ ➡️) :
+        • Page 1 — Récompenses : or, XP et drops reçus par chaque participant
+        • Page 2 — Détails : dégâts infligés, dégâts encaissés, PV régénérés,
+          PV restants, et part de contribution de chaque joueur (🏅 X%)
+
+Note : les morts en combat ne reçoivent ni or, ni XP, ni drops, ni kill credit.
+       Tant que vous êtes mort durant un combat, vous ne pouvez pas vous
+       régénérer en PV jusqu'à la fin du combat.
+
+--------------------------------------------------------------------------------
+1.5 — RÉPARTITION DES RÉCOMPENSES (combat de groupe)
+--------------------------------------------------------------------------------
+
+Or : pool = mob.gold_reward × nb_survivants, partagé selon le score de
+     contribution multi-métriques (role-agnostic). Pour chaque métrique active
+     dans l'équipe (dégâts infligés, dégâts tankés, PV régénérés), chaque
+     survivant gagne (sa_part / total_équipe) points. Score final = somme.
+     → Un Tank pur, un Healer pur ou un DPS pur gagnent tous 1 point dans
+       leur spécialité ; un polyvalent cumule.
+
+XP : multiplicateur = clamp(mob_power / player_power, 0.5, 2.5). Les joueurs
+     plus faibles que le mob gagnent plus d'XP (apprentissage). Plafonné à
+     ×2.5 max et ×0.5 min.
+
+Drops : roll indépendant via la table de loot du mob, pour chaque survivant.
+        N'est PAS affecté par les dégâts ou les contributions.
+
+Kill counter : tous les survivants reçoivent +1 sur le compteur du mob tué.
+
+--------------------------------------------------------------------------------
+1.6 — CLASSEMENTS
+--------------------------------------------------------------------------------
+
+/top <category>
+    Affiche un classement (top 10) avec autocomplete dynamique.
+    Catégories disponibles :
+        • Puissance (score de combat global)
+        • Niveau, Or
+        • Stats individuelles : Points de vie, Attaque, Défense, Vitesse,
+          Chance de critique, Dégâts de critique, Esquive, Régénération
+        • Monstres tués (total)
+        • Tués par mob spécifique (ex : Tués : Gobelin Géant)
+        • Tués par famille de mob (ex : Tués : famille Gobelin)
+    Tapez le début du nom et l'autocomplete vous propose les options.
+
+--------------------------------------------------------------------------------
+1.7 — BOUTIQUE
+--------------------------------------------------------------------------------
+
+/shop
+    Affiche tous les articles disponibles à la boutique avec :
+        • Prix d'achat (fixe, défini par l'admin)
+        • Prix de vente actuel (dynamique, dépend du stock)
+        • Stock actuel et taux de saturation
+    Plus le stock est haut, plus le prix de vente est bas (le marché est saturé).
+
+/buy <item_code> [quantity=1]
+    Achète une quantité d'un objet à la boutique. Prix fixe (admin-défini).
+    Stock toujours disponible côté shop. Échec si gold insuffisant.
+    Exemple : /buy slime_gel 5
+
+/sell <item_code> [quantity=1]
+    Vend une quantité d'un objet à la boutique. Prix dynamique.
+    Important : si vous vendez en lot, chaque unité fait baisser le prix de
+    la suivante (anti-exploit du dump massif). Vendre 10 gelées d'un coup
+    rapporte donc moins que 10 × le prix actuel.
+    Échec si vous n'avez pas la quantité dans l'inventaire.
+    Exemple : /sell slime_gel 3
+
+================================================================================
+                       2. COMMANDES ADMINISTRATEUR
+================================================================================
+
+Les commandes /admin ... ne sont accessibles qu'aux Discord IDs déclarés dans
+la variable d'environnement ADMIN_DISCORD_IDS (cf. .env).
+
+Toutes les commandes admin sont éphémères (réponse visible uniquement par
+l'admin). Elles fonctionnent depuis n'importe quel canal (pas de restriction
+beta channel sur le cog admin).
+
+--------------------------------------------------------------------------------
+2.1 — GESTION DES JOUEURS
+--------------------------------------------------------------------------------
+
+/admin give_gold <target> <amount>
+    Ajoute de l'or au profil de @target.
+    Range : 1 à 1 000 000 000.
+    Exemple : /admin give_gold @TestPlayer 5000
+
+/admin set_gold <target> <amount>
+    Définit l'or de @target à un montant absolu (clamp à 0 minimum).
+    Range : 0 à 1 000 000 000.
+    Exemple : /admin set_gold @TestPlayer 0
+
+/admin give_xp <target> <amount>
+    Ajoute de l'XP. Peut faire monter de niveau (le bot affiche la transition).
+    Range : 1 à 1 000 000 000.
+    Exemple : /admin give_xp @TestPlayer 1000
+
+/admin set_level <target> <level>
+    Définit le niveau du joueur (XP remis à 0 pour ce niveau).
+    Range : 1 à 1000.
+    Exemple : /admin set_level @TestPlayer 10
+
+/admin give_item <target> <item_code> <quantity>
+    Ajoute des objets à l'inventaire de @target.
+    Autocomplete sur item_code (parmi tous les items définis).
+    Exemple : /admin give_item @TestPlayer slime_gel 50
+
+/admin remove_item <target> <item_code> <quantity>
+    Retire des objets de l'inventaire de @target.
+    Échec si le joueur n'a pas la quantité demandée.
+    Exemple : /admin remove_item @TestPlayer slime_gel 10
+
+/admin reset_player <target>
+    Réinitialise complètement le profil de @target tout en gardant son
+    identité Discord (id, username, display_name).
+    Réinitialise : niveau (1), XP (0), or (0), inventaire (vide), équipement
+    (vide), classes, quêtes, cooldowns, état HP, kills, professions.
+    Très utile pour tester un nouveau flow.
+
+--------------------------------------------------------------------------------
+2.2 — TEST & DEBUG
+--------------------------------------------------------------------------------
+
+/admin spawn_encounter
+    Force l'apparition immédiate d'un monstre dans le canal d'encounter
+    (dans les ~10 secondes suivantes). Refuse si un combat est déjà actif.
+
+/fight <mob_code>
+    [Admin uniquement] Combat solo contre un monstre spécifique. Sert à
+    tester rapidement le système de combat sans attendre un encounter de
+    groupe. Cette commande nécessite d'être dans le canal beta.
+    Exemple : /fight slime
+
+--------------------------------------------------------------------------------
+2.3 — GESTION DE LA BOUTIQUE
+--------------------------------------------------------------------------------
+
+/admin shop_add <item_code> <buy_price> <max_sell_price> [min_sell_price=0] [stock_threshold=100]
+    Ajoute un objet au shop.
+    Paramètres :
+        • item_code : code de l'objet (autocomplete : items pas encore en shop)
+        • buy_price : prix fixe que les joueurs paient pour acheter (≥ 0)
+        • max_sell_price : prix payé au joueur quand le shop est vide (≥ 0)
+        • min_sell_price : prix minimum quand le shop est saturé (par défaut 0)
+        • stock_threshold : stock à partir duquel le prix de vente atteint le
+          minimum (par défaut 100)
+    Validation : min_sell_price doit être ≤ max_sell_price.
+    Exemple : /admin shop_add slime_gel 15 8 2 100
+              → Achat 15 or, vente 2-8 or, saturation à 100 unités en stock
+
+/admin shop_set <item_code> [buy_price] [max_sell_price] [min_sell_price] [stock_threshold] [enabled]
+    Modifie un objet existant du shop. Tous les champs sont optionnels :
+    seuls ceux fournis sont mis à jour.
+    Autocomplete sur item_code (items déjà dans le shop).
+    Exemple : /admin shop_set slime_gel buy_price:20 enabled:False
+              → Change le prix d'achat à 20 et désactive l'item
+
+/admin shop_remove <item_code>
+    Retire complètement un objet du shop.
+    Autocomplete sur item_code (items présents dans le shop).
+    Exemple : /admin shop_remove slime_gel
+
+/admin shop_set_stock <item_code> <stock>
+    Définit manuellement le stock d'un objet (clamp à 0 minimum).
+    Utile pour relancer le prix de vente vers le maximum après modération.
+    Range : 0 à 10 000 000.
+    Exemple : /admin shop_set_stock slime_gel 0
+              → Reset le stock à 0, le prix de vente revient à max
+
+--------------------------------------------------------------------------------
+2.4 — WORKFLOW ADMIN TYPE
+--------------------------------------------------------------------------------
+
+Tester un nouveau flow shop :
+    /admin reset_player @MoiTest          # repart de zéro
+    /admin give_gold @MoiTest 1000        # bourse
+    /admin shop_add slime_gel 15 8 2 100  # ajout shop
+    /admin give_item @MoiTest slime_gel 50
+    /shop                                 # voir le shop
+    /sell slime_gel 30                    # tester la vente
+    /shop                                 # voir l'effet sur les prix
+    /buy slime_gel 5                      # tester l'achat
+    /admin shop_set_stock slime_gel 0     # reset le stock
+
+Tester un combat de groupe :
+    /admin spawn_encounter                # spawn forcé d'un mob
+    (clic sur "Combattre" pour rejoindre)
+    (attendre ou regarder les autres joueurs rejoindre)
+    (combat se résout automatiquement)
+    (récap 2 pages s'affiche)
+
+================================================================================
+                           3. NOTES TECHNIQUES
+================================================================================
+
+— Toutes les valeurs de stats (crit_chance, crit_damage, dodge) sont en
+  pourcentages entiers 0..100, sauf crit_damage où 100 = neutre, 150 = ×1.5.
+
+— Les images de monstres sont stockées localement dans assets/mobs/.
+  Si une image manque, un placeholder gris s'affiche.
+
+— Les combats de groupe ont un lobby de 5 minutes. Si personne ne rejoint,
+  le monstre s'enfuit (pas de combat ni de récompense).
+
+— Le système de famille de monstres permet d'agréger plusieurs variantes
+  (gobelin, gobelin_combattant, gobelin_chaman...) sous une famille commune
+  (gobelin) — utile pour les classements et futurs titres.
+
+================================================================================
+                              FIN DU TUTORIEL
+================================================================================
