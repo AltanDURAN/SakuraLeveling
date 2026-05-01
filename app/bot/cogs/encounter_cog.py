@@ -5,12 +5,15 @@ import discord
 from discord.ext import commands, tasks
 
 from app.application.services.encounter_service import EncounterService
+from app.bot.embeds.battle_summary_embeds import build_rewards_page_embed
 from app.bot.embeds.encounter_embeds import build_encounter_embed
 from app.bot.rendering.fight_scene import compose_players_banner
 from app.bot.runtime.active_encounter import ActiveEncounter
 from app.bot.runtime.encounter_mob_state import EncounterMobState
+from app.bot.views.battle_summary_view import BattleSummaryView
 from app.bot.views.encounter_view import EncounterView
 from app.domain.services.power_score_service import PowerScoreService
+from app.domain.value_objects.battle_summary import BattleSummary
 from app.domain.value_objects.stats import Stats
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.mob_repository import MobRepository
@@ -149,10 +152,15 @@ class EncounterCog(commands.Cog):
             return
 
         if not self.active_encounter.participants:
-            flee_embed, file = build_encounter_embed(
-                image_name=self.active_encounter.flee_image_name,
+            flee_summary = BattleSummary(
+                outcome="flee",
+                mob_name=self.active_encounter.mob_state.name,
+                mob_image_name=self.active_encounter.mob_state.image_name,
+                mob_family="",
+                turns=0,
             )
-            await message.edit(embed=flee_embed, attachments=[file], view=view)
+            flee_embed = build_rewards_page_embed(flee_summary)
+            await message.edit(embed=flee_embed, attachments=[], view=None)
             self.active_encounter = None
             self.next_spawn_at = datetime.now(UTC) + timedelta(minutes=1)
             return
@@ -164,7 +172,7 @@ class EncounterCog(commands.Cog):
             return
 
         self.persist_final_players_hp(result)
-        self.encounter_service.apply_rewards(self.active_encounter, result)
+        battle_summary = self.encounter_service.apply_rewards(self.active_encounter, result)
 
         background_path = LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
         current_filename = f"encounter_{self.active_encounter.message_id}_current.png"
@@ -223,17 +231,18 @@ class EncounterCog(commands.Cog):
             await message.edit(embed=turn_embed, attachments=[file], view=view)
             await asyncio.sleep(1.5)
 
-        final_image = (
-            self.active_encounter.victory_image_name
-            if result.victory
-            else self.active_encounter.defeat_image_name
+        if battle_summary is None:
+            self.active_encounter = None
+            self.next_spawn_at = datetime.now(UTC) + timedelta(minutes=1)
+            return
+
+        summary_view = BattleSummaryView(battle_summary, timeout=600.0)
+        await message.edit(
+            embed=summary_view.current_embed,
+            attachments=[],
+            view=summary_view,
         )
 
-        final_embed, file = build_encounter_embed(
-            image_name=final_image,
-        )
-
-        await message.edit(embed=final_embed, attachments=[file], view=view)
         self.active_encounter = None
         self.next_spawn_at = datetime.now(UTC) + timedelta(minutes=1)
 

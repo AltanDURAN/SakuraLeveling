@@ -53,6 +53,13 @@ Ordre de lecture conseillé avant patch : `pyproject.toml` → `alembic.ini` →
 - **Images de mobs** : `mob.image_name` (asset local sous `assets/mobs/`), pas de URL externe.
 - **Famille de mobs** : champ `family` (snake_case) sur `MobDefinition`. Toujours renseigner pour qu'un mob soit comptabilisé dans les classements de famille (ex : "gobelin" pour tous les gobelins).
 - **Tracking des kills** : table `player_mob_kills` (player_id, mob_code, kill_count). Incrémentée dans `EncounterService.apply_rewards` (combat de groupe) et `FightMobUseCase` (combat solo) pour chaque survivant après victoire.
+- **Répartition des récompenses (combat de groupe)** :
+  - **Or** : pool = `mob.gold_reward × nb_survivants`, partagé proportionnellement aux dégâts infligés (`damage_dealt`). Si total = 0, partage égal.
+  - **XP** : multiplier = `clamp(mob_power / player_power, 0.5, 2.5)`, XP = `mob.xp_reward × multiplier`. Joueurs faibles vs mob fort gagnent plus.
+  - **Drops** : roll indépendant via `LootService` pour chaque survivant.
+  - **Kill counter** : tous les survivants reçoivent +1.
+- **Métriques de combat** trackées par `PartyCombatService` dans `PlayerContribution` : `damage_dealt`, `damage_tanked`, `hp_healed` (régen effective), `survived`, `final_hp`.
+- **Affichage du résultat** : `BattleSummaryView` paginée 2 pages (Récompenses ↔ Détails). Construit par `apply_rewards` qui retourne `BattleSummary`.
 
 ## Workflow Git
 
