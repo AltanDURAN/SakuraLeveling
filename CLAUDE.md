@@ -83,6 +83,10 @@ git checkout main
 | (boucle automatique) | `encounter_cog` | Spawn d'encounters, recrutement, combat de groupe |
 | `/top <category>` | `leaderboard_cog` | Classements (puissance, niveau, or, stats, kills total/mob/famille) avec autocomplete |
 | `/admin give_gold`, `/admin set_gold`, `/admin give_xp`, `/admin set_level`, `/admin give_item`, `/admin remove_item` | `admin_cog` | **Admin uniquement** — tous prennent `target: discord.Member` |
+| `/admin reset_player @target` | `admin_cog` | **Admin uniquement** — réinitialise tout sauf l'identité Discord |
+| `/admin spawn_encounter` | `admin_cog` | **Admin uniquement** — force le spawn immédiat d'un encounter |
+| `/admin shop_add`, `/admin shop_set`, `/admin shop_remove`, `/admin shop_set_stock` | `admin_cog` | **Admin uniquement** — gestion du shop (autocomplete sur item_code) |
+| `/shop`, `/buy <item> <qty>`, `/sell <item> <qty>` | `shop_cog` | Shop joueur (achat prix fixe, vente prix dynamique selon saturation) |
 
 ## Système d'administration
 
@@ -90,6 +94,14 @@ git checkout main
 - **Décorateur** `@admin_only` (dans `app/bot/checks/admin_check.py`) à apposer sur toute commande sensible.
 - **Targeting** : les commandes consultatives acceptent `target: discord.Member | None`. Quand `target=None` → auto-create du profil de l'auteur. Quand `target` est spécifié → lookup pur, message d'erreur si profil inexistant. Helper : `PlayerCog._resolve_profile`.
 - Le cog `AdminCog` n'a **pas** de restriction de canal (`interaction_check`) — admin peut agir depuis n'importe où.
+
+## Système de shop
+
+- **Modèle** : table `shop_items` (item_definition_id unique, buy_price, max_sell_price, min_sell_price, stock_threshold, current_stock, enabled).
+- **Achat** (joueur → shop) : prix fixe `buy_price`, stock illimité côté shop (l'admin alimente). Pas d'effet sur `current_stock`.
+- **Vente** (joueur → shop) : prix dynamique entre `max_sell_price` (stock vide) et `min_sell_price` (stock ≥ `stock_threshold`), interpolation linéaire. Le `total_sell_amount` simule la dégradation par unité (vendre 1000 d'un coup ne donne pas 1000 × prix max).
+- **Drop dégressif** : chaque vente incrémente `current_stock` ; admin peut reset manuellement via `/admin shop_set_stock`.
+- **Service** : `ShopPricingService` (domain) calcule `current_sell_price` et `total_sell_amount`. **Use cases** : `BuyFromShopUseCase`, `SellToShopUseCase` (application).
 
 ## Workflow type pour ajouter une nouvelle stat de combat
 

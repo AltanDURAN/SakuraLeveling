@@ -22,6 +22,7 @@ from app.infrastructure.db.models.quest_model import QuestDefinitionModel, Playe
 from app.infrastructure.db.models.profession_model import PlayerProfessionModel
 from app.infrastructure.db.models.player_health_state_model import PlayerHealthStateModel
 from app.infrastructure.db.models.player_mob_kill_model import PlayerMobKillModel
+from app.infrastructure.db.models.shop_item_model import ShopItemModel
 
 
 config = context.config
