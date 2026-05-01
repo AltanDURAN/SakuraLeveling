@@ -13,3 +13,4 @@ class PlayerReward:
     xp: int
     items: list[tuple[str, int]] = field(default_factory=list)
     contribution: PlayerContribution | None = None
+    contribution_share: float = 0.0  # 0..1, part de contribution au combat

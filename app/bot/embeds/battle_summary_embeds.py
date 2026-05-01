@@ -76,9 +76,19 @@ def build_rewards_page_embed(summary: BattleSummary) -> discord.Embed:
 
     if summary.is_victory:
         embed.set_footer(
-            text=f"Combat en {summary.turns} actions • Or partagé selon les dégâts • XP selon le rapport de force"
+            text=(
+                f"Combat en {summary.turns} actions • "
+                "Or partagé selon la contribution (dégâts + tank + soins) • "
+                "XP selon le rapport de force"
+            )
         )
     return embed
+
+
+def _percent_of(value: int, total: int) -> str:
+    if total <= 0:
+        return ""
+    return f" ({round(100 * value / total)}%)"
 
 
 def build_details_page_embed(summary: BattleSummary) -> discord.Embed:
@@ -97,12 +107,18 @@ def build_details_page_embed(summary: BattleSummary) -> discord.Embed:
 
     rewards_sorted = sorted(
         summary.rewards,
-        key=lambda r: (r.contribution.damage_dealt if r.contribution else 0),
+        key=lambda r: r.contribution_share,
         reverse=True,
     )
 
-    total_damage = sum(
+    team_dmg = sum(
         (r.contribution.damage_dealt if r.contribution else 0) for r in summary.rewards
+    )
+    team_tanked = sum(
+        (r.contribution.damage_tanked if r.contribution else 0) for r in summary.rewards
+    )
+    team_healed = sum(
+        (r.contribution.hp_healed if r.contribution else 0) for r in summary.rewards
     )
 
     for reward in rewards_sorted:
@@ -111,26 +127,33 @@ def build_details_page_embed(summary: BattleSummary) -> discord.Embed:
             continue
 
         survived_emoji = "✅" if contribution.survived else "💀"
-        share = (
-            f" ({100 * contribution.damage_dealt // total_damage}%)"
-            if total_damage > 0
-            else ""
+        share_pct = round(reward.contribution_share * 100)
+        header_suffix = (
+            f" — 🏅 {share_pct}% de la victoire" if contribution.survived else ""
         )
 
         lines = [
-            f"⚔️ Dégâts infligés : **{_format_int(contribution.damage_dealt)}**{share}",
-            f"🛡️ Dégâts encaissés : **{_format_int(contribution.damage_tanked)}**",
-            f"💚 PV régénérés : **{_format_int(contribution.hp_healed)}**",
+            f"⚔️ Dégâts infligés : **{_format_int(contribution.damage_dealt)}**"
+            f"{_percent_of(contribution.damage_dealt, team_dmg)}",
+            f"🛡️ Dégâts encaissés : **{_format_int(contribution.damage_tanked)}**"
+            f"{_percent_of(contribution.damage_tanked, team_tanked)}",
+            f"💚 PV régénérés : **{_format_int(contribution.hp_healed)}**"
+            f"{_percent_of(contribution.hp_healed, team_healed)}",
             f"❤️ PV restants : **{contribution.final_hp}** / {contribution.max_hp}",
         ]
 
         embed.add_field(
-            name=f"{survived_emoji} {reward.name}",
+            name=f"{survived_emoji} {reward.name}{header_suffix}",
             value="\n".join(lines),
             inline=False,
         )
 
-    embed.set_footer(text=f"Combat en {summary.turns} actions")
+    embed.set_footer(
+        text=(
+            f"Combat en {summary.turns} actions • "
+            "🏅 = part de contribution (dégâts + tank + soins) qui pondère le partage de l'or"
+        )
+    )
     return embed
 
 

@@ -226,6 +226,9 @@ class EncounterService:
                 participant.stats
             )
 
+        contribution_shares = reward_distribution_service.compute_contribution_shares(
+            contributions=result.contributions,
+        )
         gold_per_player = reward_distribution_service.distribute_gold(
             mob_gold_reward=mob.gold_reward,
             contributions=result.contributions,
@@ -258,6 +261,7 @@ class EncounterService:
                             xp=0,
                             items=[],
                             contribution=contribution,
+                            contribution_share=0.0,
                         )
                     )
                     continue
@@ -293,6 +297,9 @@ class EncounterService:
                         xp=xp,
                         items=dropped_items,
                         contribution=contribution,
+                        contribution_share=contribution_shares.get(
+                            participant.player_id, 0.0
+                        ),
                     )
                 )
 
