@@ -1,6 +1,9 @@
 from app.domain.services.progression_service import ProgressionService
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
+from app.infrastructure.db.repositories.player_career_stats_repository import (
+    PlayerCareerStatsRepository,
+)
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.quest_repository import QuestRepository
 
@@ -13,12 +16,14 @@ class ClaimQuestRewardUseCase:
         item_repository: ItemRepository,
         inventory_repository: InventoryRepository,
         progression_service: ProgressionService,
+        career_stats_repository: PlayerCareerStatsRepository | None = None,
     ):
         self.player_repository = player_repository
         self.quest_repository = quest_repository
         self.item_repository = item_repository
         self.inventory_repository = inventory_repository
         self.progression_service = progression_service
+        self.career_stats_repository = career_stats_repository
 
     def execute(
         self,
@@ -49,6 +54,10 @@ class ClaimQuestRewardUseCase:
             return False, "Quête non terminée."
 
         self.player_repository.add_gold(profile.player.id, quest.reward_gold)
+        if self.career_stats_repository is not None and quest.reward_gold > 0:
+            self.career_stats_repository.add(
+                profile.player.id, gold_earned=quest.reward_gold
+            )
 
         new_level, new_xp, new_skill_points = self.progression_service.apply_level_up(
             current_level=profile.progression.level,

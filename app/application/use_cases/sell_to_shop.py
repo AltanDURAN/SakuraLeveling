@@ -3,6 +3,9 @@ from dataclasses import dataclass
 from app.domain.services.shop_pricing_service import ShopPricingService
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
+from app.infrastructure.db.repositories.player_career_stats_repository import (
+    PlayerCareerStatsRepository,
+)
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.shop_repository import ShopRepository
 
@@ -31,12 +34,14 @@ class SellToShopUseCase:
         item_repository: ItemRepository,
         shop_repository: ShopRepository,
         shop_pricing_service: ShopPricingService,
+        career_stats_repository: PlayerCareerStatsRepository | None = None,
     ) -> None:
         self.player_repository = player_repository
         self.inventory_repository = inventory_repository
         self.item_repository = item_repository
         self.shop_repository = shop_repository
         self.shop_pricing_service = shop_pricing_service
+        self.career_stats_repository = career_stats_repository
 
     def execute(
         self,
@@ -93,6 +98,11 @@ class SellToShopUseCase:
 
         self.shop_repository.add_to_stock(shop_item.id, quantity)
         self.player_repository.add_gold(profile.player.id, total_gain)
+
+        if self.career_stats_repository is not None and total_gain > 0:
+            self.career_stats_repository.add(
+                profile.player.id, gold_earned=total_gain
+            )
 
         return SellResult(
             success=True,

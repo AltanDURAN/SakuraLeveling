@@ -14,6 +14,9 @@ from app.infrastructure.db.repositories.equipment_repository import EquipmentRep
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
+from app.infrastructure.db.repositories.player_career_stats_repository import (
+    PlayerCareerStatsRepository,
+)
 from app.infrastructure.db.repositories.player_health_repository import PlayerHealthRepository
 from app.infrastructure.db.repositories.player_kill_repository import PlayerKillRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
@@ -193,20 +196,28 @@ class EncounterService:
         contributions_by_id = {c.player_id: c for c in result.contributions}
 
         if not result.victory:
-            for participant in encounter.participants.values():
-                contribution = contributions_by_id.get(participant.player_id)
-                rewards.append(
-                    PlayerReward(
-                        player_id=participant.player_id,
-                        user_id=participant.user_id,
-                        name=participant.display_name,
-                        avatar_url=participant.avatar_url,
-                        gold=0,
-                        xp=0,
-                        items=[],
+            with get_db_session() as session:
+                career_repository = PlayerCareerStatsRepository(session)
+                for participant in encounter.participants.values():
+                    contribution = contributions_by_id.get(participant.player_id)
+                    self._record_combat_career_stats(
+                        career_repository=career_repository,
+                        participant=participant,
                         contribution=contribution,
+                        won_combat=False,
                     )
-                )
+                    rewards.append(
+                        PlayerReward(
+                            player_id=participant.player_id,
+                            user_id=participant.user_id,
+                            name=participant.display_name,
+                            avatar_url=participant.avatar_url,
+                            gold=0,
+                            xp=0,
+                            items=[],
+                            contribution=contribution,
+                        )
+                    )
 
             return BattleSummary(
                 outcome="defeat",
@@ -245,10 +256,18 @@ class EncounterService:
             kill_repository = PlayerKillRepository(session)
             inventory_repository = InventoryRepository(session)
             item_repository = ItemRepository(session)
+            career_repository = PlayerCareerStatsRepository(session)
 
             for participant in encounter.participants.values():
                 contribution = contributions_by_id.get(participant.player_id)
                 survived = contribution is not None and contribution.survived
+
+                self._record_combat_career_stats(
+                    career_repository=career_repository,
+                    participant=participant,
+                    contribution=contribution,
+                    won_combat=survived,
+                )
 
                 if not survived:
                     rewards.append(
@@ -272,6 +291,7 @@ class EncounterService:
 
                 if gold > 0:
                     player_repository.add_gold(participant.player_id, gold)
+                    career_repository.add(participant.player_id, gold_earned=gold)
                 if xp > 0:
                     player_repository.add_xp(participant.player_id, xp)
 
@@ -314,6 +334,34 @@ class EncounterService:
             base_gold_reward=mob.gold_reward,
         )
     
+    def _record_combat_career_stats(
+        self,
+        career_repository: PlayerCareerStatsRepository,
+        participant,
+        contribution,
+        won_combat: bool,
+    ) -> None:
+        """Met à jour les stats cumulées d'un participant après un combat.
+
+        combats_fought : +1 systématique (a participé)
+        combats_won    : +1 si le joueur a survécu à une victoire (won_combat=True)
+        combats_lost   : +1 sinon (mort en combat OU défaite de l'équipe)
+        damage_*, hp_healed : valeurs absolues du PlayerContribution si présent.
+        """
+        damage_dealt = contribution.damage_dealt if contribution else 0
+        damage_tanked = contribution.damage_tanked if contribution else 0
+        hp_healed = contribution.hp_healed if contribution else 0
+
+        career_repository.add(
+            participant.player_id,
+            damage_dealt=damage_dealt,
+            damage_tanked=damage_tanked,
+            hp_healed=hp_healed,
+            combats_fought=1,
+            combats_won=1 if won_combat else 0,
+            combats_lost=0 if won_combat else 1,
+        )
+
     def unregister_participant(
         self,
         encounter,

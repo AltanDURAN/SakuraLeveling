@@ -52,6 +52,9 @@ from app.infrastructure.db.repositories.inventory_repository import InventoryRep
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.repositories.player_kill_repository import PlayerKillRepository
+from app.infrastructure.db.repositories.player_career_stats_repository import (
+    PlayerCareerStatsRepository,
+)
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.profession_repository import ProfessionRepository
 from app.infrastructure.db.repositories.quest_repository import QuestRepository
@@ -139,6 +142,8 @@ class PlayerCog(commands.Cog):
             equipment_repository = EquipmentRepository(session)
             class_repository = ClassRepository(session)
             player_health_repository = PlayerHealthRepository(session)
+            kill_repository = PlayerKillRepository(session)
+            career_stats_repository = PlayerCareerStatsRepository(session)
 
             equipped_items = equipment_repository.list_by_player_id(profile.player.id)
             active_class = class_repository.get_current_class_for_player(profile.player.id)
@@ -175,12 +180,17 @@ class PlayerCog(commands.Cog):
                     new_current_hp=regenerated_current_hp,
                 )
 
+            total_kills = kill_repository.get_total_kills(profile.player.id)
+            career_stats = career_stats_repository.get_or_create(profile.player.id)
+
         embed = build_player_profile_embed(
             profile=profile,
             stats=stats,
             active_class=active_class,
             current_hp=regenerated_current_hp,
             power_score=formatted_power_score,
+            total_kills=total_kills,
+            career_stats=career_stats,
         )
         await interaction.response.send_message(embed=embed)
 
@@ -446,6 +456,7 @@ class PlayerCog(commands.Cog):
                 player_repository=player_repository,
                 cooldown_repository=cooldown_repository,
                 cooldown_service=CooldownService(),
+                career_stats_repository=PlayerCareerStatsRepository(session),
             )
 
             result = use_case.execute(
@@ -561,6 +572,7 @@ class PlayerCog(commands.Cog):
                 item_repository=item_repository,
                 inventory_repository=inventory_repository,
                 progression_service=ProgressionService(),
+                career_stats_repository=PlayerCareerStatsRepository(session),
             )
 
             success, message = use_case.execute(

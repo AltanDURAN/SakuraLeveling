@@ -12,6 +12,9 @@ from app.bot.embeds.shop_embeds import (
 from app.domain.services.shop_pricing_service import ShopPricingService
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
+from app.infrastructure.db.repositories.player_career_stats_repository import (
+    PlayerCareerStatsRepository,
+)
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.shop_repository import ShopRepository
 from app.infrastructure.db.session import get_db_session
@@ -95,6 +98,7 @@ class ShopCog(commands.Cog):
                 item_repository=ItemRepository(session),
                 shop_repository=ShopRepository(session),
                 shop_pricing_service=ShopPricingService(),
+                career_stats_repository=PlayerCareerStatsRepository(session),
             )
             result = use_case.execute(
                 discord_id=interaction.user.id,

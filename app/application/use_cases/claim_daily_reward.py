@@ -3,6 +3,9 @@ from datetime import datetime, UTC
 
 from app.domain.services.cooldown_service import CooldownService
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
+from app.infrastructure.db.repositories.player_career_stats_repository import (
+    PlayerCareerStatsRepository,
+)
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.shared.enums import CooldownAction
 
@@ -31,10 +34,12 @@ class ClaimDailyRewardUseCase:
         player_repository: PlayerRepository,
         cooldown_repository: CooldownRepository,
         cooldown_service: CooldownService,
+        career_stats_repository: PlayerCareerStatsRepository | None = None,
     ):
         self.player_repository = player_repository
         self.cooldown_repository = cooldown_repository
         self.cooldown_service = cooldown_service
+        self.career_stats_repository = career_stats_repository
 
     def execute(
         self,
@@ -69,6 +74,11 @@ class ClaimDailyRewardUseCase:
         gold_gained = new_streak * self.GOLD_PER_STREAK
 
         self.player_repository.add_gold(profile.player.id, gold_gained)
+
+        if self.career_stats_repository is not None and gold_gained > 0:
+            self.career_stats_repository.add(
+                profile.player.id, gold_earned=gold_gained
+            )
 
         last_used_at, next_available_at = self.cooldown_service.build_next_daily_cooldown(now)
         self.cooldown_repository.upsert(

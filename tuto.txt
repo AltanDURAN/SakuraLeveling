@@ -21,11 +21,22 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     Vérifie que le bot répond. Rien de plus.
 
 /profile [target]
-    Affiche votre profil : niveau, XP, or, classe active, PV courants/max,
-    score de puissance, stats de combat (attaque, défense, vitesse, crit, etc.).
-    Si vous ajoutez `target`, vous voyez le profil d'un autre joueur via le
-    sélecteur Discord (par exemple : /profile @Altan).
+    Affiche votre profil joueur. Si vous ajoutez `target`, vous voyez le
+    profil d'un autre joueur via le sélecteur Discord (ex : /profile @Altan).
     Au premier usage sans target, votre profil est créé automatiquement.
+
+    Le profil contient :
+        • Niveau, XP, or, score de puissance, classe active
+        • Stats de combat (attaque, défense, vitesse, crit %, esquive %, régen)
+        • Daily Streak actuelle 🔥
+        • Statistiques de carrière (cumulées sur la durée de vie du profil) :
+            - Monstres tués au total
+            - Combats : nombre total, victoires / défaites, taux de réussite
+            - Or amassé (all-time, indépendant de l'or actuel)
+            - Dégâts infligés / encaissés / PV régénérés cumulés
+        Note : ces statistiques de carrière n'augmentent que par le jeu
+        (combats, daily, quêtes, ventes au shop). L'or donné par /admin
+        give_gold n'est PAS comptabilisé dans le total amassé.
 
 /inventory [target]
     Affiche votre inventaire (objets et quantités). Avec un target, vous voyez
