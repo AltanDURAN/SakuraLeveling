@@ -77,9 +77,19 @@ git checkout main
 
 | Commande | Cog | Rôle |
 |---|---|---|
-| `/profile`, `/stats`, `/equipment`, `/equip`, `/inventory`, `/class`, `/class_set`, `/classes`, `/daily`, `/quests`, `/quest_claim`, `/gather`, `/craft`, `/craft_list`, `/fight` | `player_cog` | Profil, équipement, classes, quêtes, ressources, combat solo |
+| `/profile [target]`, `/equipment [target]`, `/inventory [target]`, `/class [target]`, `/quests [target]` | `player_cog` | Consultatives — `target` optionnel : par défaut soi-même, sinon profil d'un autre joueur |
+| `/equip`, `/class_set`, `/classes`, `/daily`, `/quest_claim`, `/gather`, `/craft`, `/craft_list` | `player_cog` | Actions sur soi ou listes globales |
+| `/fight <mob_code>` | `player_cog` | **Admin uniquement** (test/debug) |
 | (boucle automatique) | `encounter_cog` | Spawn d'encounters, recrutement, combat de groupe |
 | `/top <category>` | `leaderboard_cog` | Classements (puissance, niveau, or, stats, kills total/mob/famille) avec autocomplete |
+| `/admin give_gold`, `/admin set_gold`, `/admin give_xp`, `/admin set_level`, `/admin give_item`, `/admin remove_item` | `admin_cog` | **Admin uniquement** — tous prennent `target: discord.Member` |
+
+## Système d'administration
+
+- **Admins** : Discord IDs listés dans `.env` via `ADMIN_DISCORD_IDS=id1,id2,...` (parsé en liste par `Settings.admin_ids`).
+- **Décorateur** `@admin_only` (dans `app/bot/checks/admin_check.py`) à apposer sur toute commande sensible.
+- **Targeting** : les commandes consultatives acceptent `target: discord.Member | None`. Quand `target=None` → auto-create du profil de l'auteur. Quand `target` est spécifié → lookup pur, message d'erreur si profil inexistant. Helper : `PlayerCog._resolve_profile`.
+- Le cog `AdminCog` n'a **pas** de restriction de canal (`interaction_check`) — admin peut agir depuis n'importe où.
 
 ## Workflow type pour ajouter une nouvelle stat de combat
 

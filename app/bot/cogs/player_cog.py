@@ -5,6 +5,8 @@ from discord import app_commands
 from discord.ext import commands
 from datetime import datetime, UTC
 
+from app.bot.checks.admin_check import admin_only
+from app.domain.entities.player_profile import PlayerProfile
 from app.application.use_cases.change_player_class import ChangePlayerClassUseCase
 from app.application.use_cases.claim_daily_reward import ClaimDailyRewardUseCase
 from app.application.use_cases.claim_quest_reward import ClaimQuestRewardUseCase
@@ -60,6 +62,43 @@ class PlayerCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+    def _resolve_profile(
+        self,
+        interaction: discord.Interaction,
+        target: discord.Member | None,
+        session,
+    ) -> tuple[PlayerProfile | None, discord.abc.User]:
+        """Renvoie (profile, target_member). Si target est None, get_or_create
+        le profil de l'auteur. Si target est spécifié, lookup pur (pas de
+        création). Le profil est None si target n'a jamais joué."""
+        repo = PlayerRepository(session)
+
+        if target is None:
+            target_member = interaction.user
+            profile = repo.get_or_create_by_discord_id(
+                discord_id=target_member.id,
+                username=target_member.name,
+                display_name=target_member.display_name,
+            )
+        else:
+            target_member = target
+            profile = repo.get_by_discord_id(target_member.id)
+
+        return profile, target_member
+
+    async def _send_no_profile_error(
+        self,
+        interaction: discord.Interaction,
+        target_member,
+    ) -> None:
+        message = (
+            f"❌ {target_member.display_name} n'a pas encore de profil joueur."
+        )
+        if interaction.response.is_done():
+            await interaction.followup.send(message, ephemeral=True)
+        else:
+            await interaction.response.send_message(message, ephemeral=True)
+
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.channel_id != settings.beta_channel_id:
             if interaction.response.is_done():
@@ -80,39 +119,35 @@ class PlayerCog(commands.Cog):
     async def ping(self, interaction: discord.Interaction) -> None:
         await interaction.response.send_message("🏓 Pong !")
 
-    @app_commands.command(name="profile", description="Afficher votre profil joueur")
-    async def profile(self, interaction: discord.Interaction) -> None:
+    @app_commands.command(name="profile", description="Afficher un profil joueur")
+    @app_commands.describe(target="Joueur dont afficher le profil (par défaut : vous)")
+    async def profile(
+        self,
+        interaction: discord.Interaction,
+        target: discord.Member | None = None,
+    ) -> None:
         with get_db_session() as session:
-            player_repository = PlayerRepository(session)
+            profile, target_member = self._resolve_profile(interaction, target, session)
+            if profile is None:
+                await self._send_no_profile_error(interaction, target_member)
+                return
+
             equipment_repository = EquipmentRepository(session)
             class_repository = ClassRepository(session)
             player_health_repository = PlayerHealthRepository(session)
 
-            profile_use_case = GetPlayerProfileUseCase(player_repository)
-            stats_use_case = GetPlayerStatsUseCase(
-                player_repository=player_repository,
-                equipment_repository=equipment_repository,
-                class_repository=class_repository,
-                stats_service=StatsService(),
-            )
-
-            profile = profile_use_case.execute(
-                discord_id=interaction.user.id,
-                username=interaction.user.name,
-                display_name=interaction.user.display_name,
-            )
-
-            stats = stats_use_case.execute(
-                discord_id=interaction.user.id,
-                username=interaction.user.name,
-                display_name=interaction.user.display_name,
-            )
-            
-            power_score_service = PowerScoreService()
-            raw_power_score = power_score_service.calculate_from_stats(stats)
-            formatted_power_score = power_score_service.format_score(raw_power_score)
-
+            equipped_items = equipment_repository.list_by_player_id(profile.player.id)
             active_class = class_repository.get_current_class_for_player(profile.player.id)
+            stats = StatsService().calculate_player_stats(
+                profile=profile,
+                equipped_items=equipped_items,
+                active_class=active_class,
+            )
+
+            power_score_service = PowerScoreService()
+            formatted_power_score = power_score_service.format_score(
+                power_score_service.calculate_from_stats(stats)
+            )
 
             health_state = player_health_repository.get_or_create(
                 player_id=profile.player.id,
@@ -120,7 +155,6 @@ class PlayerCog(commands.Cog):
             )
 
             now = datetime.now(UTC)
-
             regenerated_current_hp = HealthRegenerationService().apply_out_of_combat_regeneration(
                 current_hp=health_state.current_hp,
                 max_hp=stats.max_hp,
@@ -129,7 +163,9 @@ class PlayerCog(commands.Cog):
                 now=now,
             )
 
-            if regenerated_current_hp != health_state.current_hp:
+            # On ne persiste la régénération que pour soi-même : éviter d'écrire
+            # sur le profil d'un tiers en simple consultation.
+            if regenerated_current_hp != health_state.current_hp and target is None:
                 player_health_repository.refresh_current_hp(
                     player_id=profile.player.id,
                     new_current_hp=regenerated_current_hp,
@@ -144,43 +180,43 @@ class PlayerCog(commands.Cog):
         )
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="inventory", description="Afficher votre inventaire")
-    async def inventory(self, interaction: discord.Interaction) -> None:
+    @app_commands.command(name="inventory", description="Afficher un inventaire")
+    @app_commands.describe(target="Joueur dont afficher l'inventaire (par défaut : vous)")
+    async def inventory(
+        self,
+        interaction: discord.Interaction,
+        target: discord.Member | None = None,
+    ) -> None:
         with get_db_session() as session:
-            player_repository = PlayerRepository(session)
+            profile, target_member = self._resolve_profile(interaction, target, session)
+            if profile is None:
+                await self._send_no_profile_error(interaction, target_member)
+                return
+
             inventory_repository = InventoryRepository(session)
-            use_case = GetPlayerInventoryUseCase(
-                player_repository=player_repository,
-                inventory_repository=inventory_repository,
-            )
+            items = inventory_repository.list_by_player_id(profile.player.id)
 
-            _, items = use_case.execute(
-                discord_id=interaction.user.id,
-                username=interaction.user.name,
-                display_name=interaction.user.display_name,
-            )
-
-        embed = build_inventory_embed(interaction.user.display_name, items)
+        embed = build_inventory_embed(target_member.display_name, items)
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="equipment", description="Afficher votre équipement")
-    async def equipment(self, interaction: discord.Interaction) -> None:
+    @app_commands.command(name="equipment", description="Afficher un équipement")
+    @app_commands.describe(target="Joueur dont afficher l'équipement (par défaut : vous)")
+    async def equipment(
+        self,
+        interaction: discord.Interaction,
+        target: discord.Member | None = None,
+    ) -> None:
         with get_db_session() as session:
-            player_repository = PlayerRepository(session)
-            equipment_repository = EquipmentRepository(session)
-            use_case = GetPlayerEquipmentUseCase(
-                player_repository=player_repository,
-                equipment_repository=equipment_repository,
-            )
+            profile, target_member = self._resolve_profile(interaction, target, session)
+            if profile is None:
+                await self._send_no_profile_error(interaction, target_member)
+                return
 
-            equipment_items = use_case.execute(
-                discord_id=interaction.user.id,
-                username=interaction.user.name,
-                display_name=interaction.user.display_name,
-            )
+            equipment_repository = EquipmentRepository(session)
+            equipment_items = equipment_repository.list_by_player_id(profile.player.id)
 
         embed = discord.Embed(
-            title=f"🛡️ Équipement de {interaction.user.display_name}",
+            title=f"🛡️ Équipement de {target_member.display_name}",
             color=discord.Color.purple(),
         )
 
@@ -242,8 +278,9 @@ class PlayerCog(commands.Cog):
             f"Item `{item_code}` équipé dans le slot `{slot}`."
         )
 
-    @app_commands.command(name="fight", description="Combattre un monstre")
+    @app_commands.command(name="fight", description="[Admin] Combattre un monstre (test)")
     @app_commands.describe(mob_code="Code technique du monstre")
+    @admin_only
     async def fight(self, interaction: discord.Interaction, mob_code: str) -> None:
         await interaction.response.defer()
 
@@ -303,24 +340,24 @@ class PlayerCog(commands.Cog):
         final_embed = build_battle_result_embed(result)
         await message.edit(embed=final_embed)
 
-    @app_commands.command(name="class", description="Afficher votre classe active")
-    async def player_class(self, interaction: discord.Interaction) -> None:
+    @app_commands.command(name="class", description="Afficher la classe active d'un joueur")
+    @app_commands.describe(target="Joueur dont afficher la classe (par défaut : vous)")
+    async def player_class(
+        self,
+        interaction: discord.Interaction,
+        target: discord.Member | None = None,
+    ) -> None:
         with get_db_session() as session:
-            player_repository = PlayerRepository(session)
+            profile, target_member = self._resolve_profile(interaction, target, session)
+            if profile is None:
+                await self._send_no_profile_error(interaction, target_member)
+                return
+
             class_repository = ClassRepository(session)
+            class_repository.get_or_create_player_class_state(profile.player.id)
+            active_class = class_repository.get_current_class_for_player(profile.player.id)
 
-            use_case = GetPlayerClassUseCase(
-                player_repository=player_repository,
-                class_repository=class_repository,
-            )
-
-            active_class = use_case.execute(
-                discord_id=interaction.user.id,
-                username=interaction.user.name,
-                display_name=interaction.user.display_name,
-            )
-
-        embed = build_player_class_embed(interaction.user.display_name, active_class)
+        embed = build_player_class_embed(target_member.display_name, active_class)
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="class_set", description="Définir votre classe active")
@@ -419,28 +456,63 @@ class PlayerCog(commands.Cog):
         else:
             await interaction.response.send_message(message, ephemeral=True)
 
-    @app_commands.command(name="quests", description="Afficher vos quêtes")
-    async def quests(self, interaction: discord.Interaction) -> None:
+    @app_commands.command(name="quests", description="Afficher les quêtes d'un joueur")
+    @app_commands.describe(target="Joueur dont afficher les quêtes (par défaut : vous)")
+    async def quests(
+        self,
+        interaction: discord.Interaction,
+        target: discord.Member | None = None,
+    ) -> None:
+        quest_service = QuestService()
+
         with get_db_session() as session:
-            player_repository = PlayerRepository(session)
+            profile, target_member = self._resolve_profile(interaction, target, session)
+            if profile is None:
+                await self._send_no_profile_error(interaction, target_member)
+                return
+
             quest_repository = QuestRepository(session)
             inventory_repository = InventoryRepository(session)
 
-            use_case = GetPlayerQuestsUseCase(
-                player_repository=player_repository,
-                quest_repository=quest_repository,
-                inventory_repository=inventory_repository,
-                quest_service=QuestService(),
-            )
+            quests = quest_repository.list_definitions()
+            inventory_items = inventory_repository.list_by_player_id(profile.player.id)
 
-            quest_entries = use_case.execute(
-                discord_id=interaction.user.id,
-                username=interaction.user.name,
-                display_name=interaction.user.display_name,
-            )
+            quest_entries: list[dict] = []
+
+            for quest in quests:
+                state = quest_repository.get_or_create_player_quest_state(
+                    profile.player.id,
+                    quest.id,
+                )
+
+                progress = state.progress_quantity
+                is_completed = state.is_completed
+
+                if quest.objective_type == "collect_item":
+                    progress, is_completed = quest_service.compute_progress_for_collect_quest(
+                        quest,
+                        inventory_items,
+                    )
+                    # On ne persiste l'état des quêtes "collect_item" que pour soi-même.
+                    if target is None:
+                        quest_repository.update_progress(
+                            profile.player.id,
+                            quest.id,
+                            progress,
+                            is_completed,
+                        )
+
+                quest_entries.append(
+                    {
+                        "quest": quest,
+                        "state": state,
+                        "progress": progress,
+                        "is_completed": is_completed,
+                    }
+                )
 
         embed = discord.Embed(
-            title=f"📜 Quêtes de {interaction.user.display_name}",
+            title=f"📜 Quêtes de {target_member.display_name}",
             color=discord.Color.teal(),
         )
 

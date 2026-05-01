@@ -19,6 +19,10 @@ class ItemRepository:
 
         return self._to_domain(model)
 
+    def list_all(self) -> list[ItemDefinition]:
+        stmt = select(ItemDefinitionModel).order_by(ItemDefinitionModel.code)
+        return [self._to_domain(model) for model in self.session.execute(stmt).scalars().all()]
+
     def create(
         self,
         code: str,

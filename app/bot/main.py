@@ -13,6 +13,7 @@ class SakuraBot(commands.Bot):
         await self.load_extension("app.bot.cogs.player_cog")
         await self.load_extension("app.bot.cogs.encounter_cog")
         await self.load_extension("app.bot.cogs.leaderboard_cog")
+        await self.load_extension("app.bot.cogs.admin_cog")
         await self.tree.sync()
 
 

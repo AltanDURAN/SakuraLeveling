@@ -102,6 +102,15 @@ class PlayerRepository:
         resources.gold += gold
         resources.updated_at = datetime.now(UTC)
         self.session.commit()
+
+    def set_gold(self, player_id: int, gold: int) -> None:
+        resources = self.session.get(PlayerResourceModel, player_id)
+        if resources is None:
+            return
+
+        resources.gold = max(0, gold)
+        resources.updated_at = datetime.now(UTC)
+        self.session.commit()
         
     def apply_progression(
         self,
