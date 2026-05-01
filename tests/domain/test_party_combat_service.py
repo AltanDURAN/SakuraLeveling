@@ -20,6 +20,7 @@ def build_mob(
         name="Gobelin",
         description="",
         image_name="gobelin.png",
+        family="gobelin",
         max_hp=max_hp,
         current_hp=current_hp,
         attack=attack,

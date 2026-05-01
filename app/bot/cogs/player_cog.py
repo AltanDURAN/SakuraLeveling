@@ -45,6 +45,7 @@ from app.infrastructure.db.repositories.equipment_repository import EquipmentRep
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
+from app.infrastructure.db.repositories.player_kill_repository import PlayerKillRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.profession_repository import ProfessionRepository
 from app.infrastructure.db.repositories.quest_repository import QuestRepository
@@ -262,6 +263,7 @@ class PlayerCog(commands.Cog):
                 inventory_repository=inventory_repository,
                 item_repository=item_repository,
                 quest_repository=quest_repository,
+                kill_repository=PlayerKillRepository(session),
                 stats_service=StatsService(),
                 combat_service=CombatService(),
                 loot_service=LootService(),

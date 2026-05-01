@@ -9,6 +9,7 @@ from app.infrastructure.db.repositories.equipment_repository import EquipmentRep
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
+from app.infrastructure.db.repositories.player_kill_repository import PlayerKillRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.quest_repository import QuestRepository
 
@@ -22,6 +23,7 @@ class FightMobUseCase:
         inventory_repository: InventoryRepository,
         item_repository: ItemRepository,
         quest_repository: QuestRepository,
+        kill_repository: PlayerKillRepository,
         stats_service: StatsService,
         combat_service: CombatService,
         loot_service: LootService,
@@ -35,6 +37,7 @@ class FightMobUseCase:
         self.inventory_repository = inventory_repository
         self.item_repository = item_repository
         self.quest_repository = quest_repository
+        self.kill_repository = kill_repository
         self.stats_service = stats_service
         self.combat_service = combat_service
         self.loot_service = loot_service
@@ -77,6 +80,7 @@ class FightMobUseCase:
             return result
 
         self.player_repository.add_gold(profile.player.id, result.gold_gained)
+        self.kill_repository.increment(profile.player.id, mob.code)
 
         new_level, new_xp, new_skill_points = self.progression_service.apply_level_up(
             current_level=profile.progression.level,

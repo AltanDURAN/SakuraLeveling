@@ -44,6 +44,7 @@ def build_mob(
         name="Test Mob",
         description="",
         image_name="test.png",
+        family="test",
         max_hp=max_hp,
         current_hp=max_hp,
         attack=attack,

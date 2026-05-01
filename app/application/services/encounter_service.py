@@ -8,6 +8,7 @@ from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.repositories.player_health_repository import PlayerHealthRepository
+from app.infrastructure.db.repositories.player_kill_repository import PlayerKillRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
 
@@ -172,9 +173,11 @@ class EncounterService:
             return
 
         surviving_names = set(result.surviving_players)
+        mob_code = encounter.mob_state.code
 
         with get_db_session() as session:
             player_repository = PlayerRepository(session)
+            kill_repository = PlayerKillRepository(session)
 
             for participant in encounter.participants.values():
                 if participant.display_name not in surviving_names:
@@ -182,6 +185,7 @@ class EncounterService:
 
                 player_repository.add_gold(participant.player_id, result.gold_gained)
                 player_repository.add_xp(participant.player_id, result.xp_gained)
+                kill_repository.increment(participant.player_id, mob_code)
     
     def unregister_participant(
         self,

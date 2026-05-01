@@ -75,6 +75,7 @@ def seed_mobs() -> None:
                 code=mob_data["code"],
                 name=mob_data["name"],
                 description=mob_data["description"],
+                family=mob_data.get("family", "unknown"),
                 max_hp=mob_data["max_hp"],
                 current_hp=mob_data.get("current_hp", mob_data["max_hp"]),
                 attack=mob_data["attack"],

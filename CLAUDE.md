@@ -51,6 +51,8 @@ Ordre de lecture conseillé avant patch : `pyproject.toml` → `alembic.ini` →
 - **Snapshots de combat** : `PartyCombatService.players_state` doit contenir toutes les stats pour permettre recalcul du score équipe en cours de combat.
 - **Discord interactions longues** : `interaction.response.defer(ephemeral=True)` puis `interaction.followup.send(...)`. Une seule réponse primaire.
 - **Images de mobs** : `mob.image_name` (asset local sous `assets/mobs/`), pas de URL externe.
+- **Famille de mobs** : champ `family` (snake_case) sur `MobDefinition`. Toujours renseigner pour qu'un mob soit comptabilisé dans les classements de famille (ex : "gobelin" pour tous les gobelins).
+- **Tracking des kills** : table `player_mob_kills` (player_id, mob_code, kill_count). Incrémentée dans `EncounterService.apply_rewards` (combat de groupe) et `FightMobUseCase` (combat solo) pour chaque survivant après victoire.
 
 ## Workflow Git
 
@@ -62,6 +64,14 @@ git merge main
 git push origin beta
 git checkout main
 ```
+
+## Slash commands disponibles
+
+| Commande | Cog | Rôle |
+|---|---|---|
+| `/profile`, `/stats`, `/equipment`, `/equip`, `/inventory`, `/class`, `/class_set`, `/classes`, `/daily`, `/quests`, `/quest_claim`, `/gather`, `/craft`, `/craft_list`, `/fight` | `player_cog` | Profil, équipement, classes, quêtes, ressources, combat solo |
+| (boucle automatique) | `encounter_cog` | Spawn d'encounters, recrutement, combat de groupe |
+| `/top <category>` | `leaderboard_cog` | Classements (puissance, niveau, or, stats, kills total/mob/famille) avec autocomplete |
 
 ## Workflow type pour ajouter une nouvelle stat de combat
 

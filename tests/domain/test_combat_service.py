@@ -21,6 +21,7 @@ def build_mob(
         name="Slime",
         description="",
         image_name="",
+        family="slime",
         max_hp=max_hp,
         current_hp=max_hp,
         attack=attack,

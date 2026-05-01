@@ -9,6 +9,7 @@ class MobDefinition:
     name: str
     description: str
     image_name: str | None
+    family: str
     max_hp: int
     current_hp: int
     attack: int

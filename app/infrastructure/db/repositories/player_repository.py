@@ -133,6 +133,14 @@ class PlayerRepository:
 
         self.session.commit()
 
+    def list_all_profiles(self) -> list[PlayerProfile]:
+        stmt = select(PlayerModel).options(
+            joinedload(PlayerModel.progression),
+            joinedload(PlayerModel.resources),
+        )
+        models = self.session.execute(stmt).scalars().all()
+        return [self._to_domain(model) for model in models]
+
     def _to_domain(self, player_model: PlayerModel) -> PlayerProfile:
         player = Player(
             id=player_model.id,
