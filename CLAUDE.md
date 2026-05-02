@@ -87,6 +87,7 @@ git checkout main
 | `/admin spawn_encounter` | `admin_cog` | **Admin uniquement** — force le spawn immédiat d'un encounter |
 | `/admin shop_add`, `/admin shop_set`, `/admin shop_remove`, `/admin shop_set_stock` | `admin_cog` | **Admin uniquement** — gestion du shop (autocomplete sur item_code) |
 | `/shop`, `/buy <item> <qty>`, `/sell <item> <qty>` | `shop_cog` | Shop joueur (achat prix fixe, vente prix dynamique selon saturation) |
+| `/skill [target]` | `skill_cog` | Arbre de compétences avec image, boutons Investir/Vue web/Reset (cooldown 7j) |
 
 ## Système d'administration
 
@@ -102,6 +103,17 @@ git checkout main
 - **Vente** (joueur → shop) : prix dynamique entre `max_sell_price` (stock vide) et `min_sell_price` (stock ≥ `stock_threshold`), interpolation linéaire. Le `total_sell_amount` simule la dégradation par unité (vendre 1000 d'un coup ne donne pas 1000 × prix max).
 - **Drop dégressif** : chaque vente incrémente `current_stock` ; admin peut reset manuellement via `/admin shop_set_stock`.
 - **Service** : `ShopPricingService` (domain) calcule `current_sell_price` et `total_sell_amount`. **Use cases** : `BuyFromShopUseCase`, `SellToShopUseCase` (application).
+
+## Système d'arbre de compétences
+
+- **Définition** : un seul JSON [`app/infrastructure/content/skill_tree.json`](app/infrastructure/content/skill_tree.json), 20 nœuds par défaut, chargé au boot par [`skill_tree_loader.py`](app/infrastructure/skill_tree/skill_tree_loader.py) (cache module-level).
+- **Modèle DB** : table `player_skill_allocations(player_id, skill_code, level)` 1:N. Cooldown reset 7j via `player_cooldowns` action_key="skill_tree_reset".
+- **Convention `values`** : valeurs **cumulatives** au niveau N (lvl 1 → values[0]). Les `costs` restent des deltas (chaque niveau a son coût).
+- **Bonus injectés** : `StatsService` accepte un `skill_bonuses: SkillBonuses | None` (4e étage, après équipement/classe, avant les caps). `LootService.generate_loot` accepte un `drop_rate_multiplier`. `EncounterService.apply_rewards` et `FightMobUseCase` chargent les bonus du joueur (xp/gold/drop) avant d'appliquer les récompenses.
+- **L'or `/admin give_gold` n'incrémente pas `gold_earned_total`** (career stats), idem les bonus de l'arbre **ne s'appliquent pas** sur l'or admin (pas de double-comptage artificiel).
+- **Reset** : `ResetSkillTreeUseCase` (cooldown 7j) restitue tous les points dépensés via `compute_total_refund`. `/admin reset_player` purge aussi les allocations + cooldown.
+- **Webapp** : FastAPI mono-service ([`webapp/`](webapp/)), même rendu SVG que le bot. `python -m webapp.main` → http://localhost:8000. Routes : `/skill/<discord_id>` (HTML interactif zoom/pan/hover) + `/api/skill/<discord_id>` (JSON).
+- **Rendu PNG Discord** : SVG → PNG via cairosvg, pas de Chromium ni Playwright.
 
 ## Workflow type pour ajouter une nouvelle stat de combat
 

@@ -258,3 +258,97 @@ def test_stats_service_applies_speed_bonuses():
     )
 
     assert stats.speed == 10
+
+
+# ---------- Bonus de l'arbre de compétences (skill tree) ----------
+
+
+def test_stats_service_applies_skill_atk_percent_multiplicatively():
+    from app.domain.value_objects.skill_bonuses import SkillBonuses
+
+    profile = build_player_profile(level=1)
+    service = StatsService()
+    bonuses = SkillBonuses(atk_percent=0.15)  # +15%
+
+    stats = service.calculate_player_stats(
+        profile=profile,
+        equipped_items=[],
+        active_class=None,
+        skill_bonuses=bonuses,
+    )
+
+    # base atk = 10, +15% = round(10 * 1.15) = 12 (round half to even → 11.5 → 12)
+    assert stats.attack == round(10 * 1.15)
+
+
+def test_stats_service_applies_skill_atk_percent_after_flat_bonuses():
+    from app.domain.value_objects.skill_bonuses import SkillBonuses
+
+    profile = build_player_profile(level=1)
+    service = StatsService()
+    sword = build_equipment_item("sword", "Épée", stat_bonuses={"attack": 10})
+    bonuses = SkillBonuses(atk_percent=0.20)  # +20%
+
+    stats = service.calculate_player_stats(
+        profile=profile,
+        equipped_items=[sword],
+        active_class=None,
+        skill_bonuses=bonuses,
+    )
+
+    # base 10 + équipement 10 = 20, puis ×1.20 = 24
+    assert stats.attack == round(20 * 1.20)
+
+
+def test_stats_service_applies_skill_crit_chance_flat_with_cap():
+    from app.domain.value_objects.skill_bonuses import SkillBonuses
+
+    profile = build_player_profile(level=1)
+    service = StatsService()
+    bonuses = SkillBonuses(crit_chance_flat=80)  # gros boost
+
+    stats = service.calculate_player_stats(
+        profile=profile,
+        equipped_items=[],
+        active_class=None,
+        skill_bonuses=bonuses,
+    )
+
+    # base crit_chance = 5, +80 = 85, mais cap = 75
+    assert stats.crit_chance == 75
+
+
+def test_stats_service_applies_skill_speed_flat():
+    from app.domain.value_objects.skill_bonuses import SkillBonuses
+
+    profile = build_player_profile(level=1)
+    service = StatsService()
+    bonuses = SkillBonuses(speed_flat=4)
+
+    stats = service.calculate_player_stats(
+        profile=profile,
+        equipped_items=[],
+        active_class=None,
+        skill_bonuses=bonuses,
+    )
+
+    assert stats.speed == 5 + 4  # base 5 + bonus 4
+
+
+def test_stats_service_skill_bonuses_none_keeps_legacy_behavior():
+    profile = build_player_profile(level=1)
+    service = StatsService()
+
+    stats_legacy = service.calculate_player_stats(
+        profile=profile,
+        equipped_items=[],
+        active_class=None,
+    )
+    stats_with_none = service.calculate_player_stats(
+        profile=profile,
+        equipped_items=[],
+        active_class=None,
+        skill_bonuses=None,
+    )
+
+    assert stats_legacy == stats_with_none

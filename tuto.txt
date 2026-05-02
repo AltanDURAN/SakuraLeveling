@@ -56,6 +56,30 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     Définit votre classe active. Vous devez avoir débloqué la classe.
     Exemple : /class_set warrior
 
+/skill [target]
+    Affiche votre arbre de compétences :
+        • Image générée à la volée (PNG) avec couleurs par état :
+            violet = niveau max  /  or = en cours
+            bleu = débloquable    /  gris = verrouillée
+        • Compteur de points disponibles / dépensés / compétences débloquées
+        • Bouton "Investir un point" → Select Menu listant les 5 prochaines
+          compétences débloquables, avec coût et description
+        • Bouton "Vue détaillée" → lien vers la page web (locale pour l'instant)
+        • Bouton "Réinitialiser" → restitue tous les points investis,
+          cooldown de 7 jours
+    Si vous ajoutez `target`, vous pouvez consulter l'arbre d'un autre
+    joueur en lecture seule (boutons d'action désactivés).
+
+    Bonus passifs accordés (cumul des compétences débloquées) :
+        • Stats principales en pourcentage (atk, def, max_hp) — multiplicatif
+        • Stats de combat flat (crit_chance, crit_damage, dodge, speed,
+          hp_regeneration)
+        • Bonus farm : XP drop %, gold drop %, drop rate multiplier
+          (sur le taux de base de chaque drop, pour préserver la rareté
+          des items rares)
+    Les bonus s'appliquent automatiquement dans /profile, en combat
+    (de groupe et solo), au calcul du score de puissance, et aux drops.
+
 /quests [target]
     Affiche la liste de vos quêtes : description, progression, statut.
 

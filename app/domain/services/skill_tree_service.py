@@ -54,8 +54,13 @@ class SkillTreeService:
                 if effect.type not in _EFFECT_FIELD_MAP:
                     continue
 
-                # On somme tous les paliers atteints (cumul des bonus)
-                cumulative = sum(effect.values[: min(level, len(effect.values))])
+                # `values` représente le bonus *cumulé* à chaque palier :
+                # values[0] = bonus à lvl 1, values[1] = bonus à lvl 2, etc.
+                # On indexe directement par level-1 (clamp si level dépasse).
+                idx = min(level, len(effect.values)) - 1
+                if idx < 0:
+                    continue
+                cumulative = effect.values[idx]
 
                 match effect.type:
                     case "atk_percent":
