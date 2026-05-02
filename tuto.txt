@@ -463,27 +463,54 @@ beta channel sur le cog admin).
     Annule l'encounter actif (combat de groupe en cours). Le timer de
     respawn est posé à +1 minute pour éviter un respawn instantané.
 
-/boss spawn <mob_code> [custom_name]
-    Spawn un world boss à partir d'un mob existant boosté ×100 (max_hp,
-    attack, defense). Le boss apparaît dans le canal dédié défini par
+/boss spawn <boss_code>
+    [Admin] Spawn manuel d'un world boss défini dans
+    `app/infrastructure/content/boss_definitions.json`. Refuse si un
+    autre boss est actif. Le boss apparaît dans le canal défini par
     BOSS_CHANNEL_ID (fallback : ENCOUNTER_CHANNEL_ID si non défini).
-    Refuse si un autre boss est déjà actif (mort = un seul à la fois).
     Le boss ne regagne JAMAIS de PV — vaincu à l'usure.
+    Autocomplete sur boss_code.
 
-    Le message posté embarque 3 boutons accessibles à tous :
-        • [🤝 Rejoindre]      → s'inscrire au raid
-        • [🚪 Quitter]        → se désinscrire (refus si déjà combattu)
-        • [⚔️ Lancer le combat] → solo combat avec bonus d'équipe :
-              +5% attack/defense/max_hp par participant inscrit (capé +50%).
-              Cooldown 1 combat / jour / joueur, reset à minuit UTC.
+/boss list
+    Affiche le catalogue complet des world bosses définis : stats, tier
+    (intro/medium/hard/endgame), poids de spawn, particularités, lore.
 
-    À la défaite, le bot poste un récap dans le canal et distribue :
-        • Top dégâts / Top tank / Top heal : +200g, +100xp, +1 potion_soin_iii
-        • Tous les participants : +50g, +25xp, +1 potion_soin_i (en plus
-          du bonus catégorie pour les top-X)
+Auto-spawn
+    Toutes les heures, le bot vérifie si un nouveau boss peut apparaître :
+        • Pas de boss actuellement actif
+        • Dernière défaite > 7 jours OU jamais spawné
+        • Tirage aléatoire 5%/heure → ~1 spawn / jour de moyenne après
+          la fenêtre 7j
+    Sélection pondérée par `spawn_weight` : plus le poids est haut, plus
+    le boss a de chance d'apparaître. Les bosses easy ont des poids hauts
+    (100), les endgame des poids bas (5).
 
-    V1 : pas d'auto-spawn (admin manuel via cette commande). À enrichir
-    plus tard avec une table dédiée de bosses + spawn random hebdomadaire.
+5 bosses définis par défaut (test/early-game) :
+    • [intro]       slime_titan      — 50k PV, immunité dmg <5
+    • [medium]      gobelin_warlord  — 200k PV, enrage 30% (atk ×1.5)
+    • [medium_hard] stone_colossus   — 500k PV, immunité dmg <50
+    • [hard]        shadow_wraith    — 800k PV, immune aux crits, dodge 30
+    • [endgame]     ancient_dragon   — 2M PV, immunité dmg <100, enrage 25% (atk ×1.8)
+
+Ces stats sont des données de test : à remplacer par les vraies valeurs
+quand ces dernières seront fournies.
+
+Particularités (modifiers) supportées :
+    • damage_immunity_threshold : les dégâts < N sont ignorés (boss "armuré")
+    • enrage_below_pct + enrage_attack_multiplier : à X% PV, atk × N
+    • crit_immunity : ignore l'effet des coups critiques du joueur
+
+Le message du boss embarque 3 boutons :
+    • [🤝 Rejoindre]      → s'inscrire au raid (1 fois)
+    • [🚪 Quitter]        → se désinscrire (refusé si déjà combattu)
+    • [⚔️ Lancer le combat] → solo combat avec bonus d'équipe (cooldown
+      1/jour, reset minuit UTC). Bonus = +5% atk/def/HP par participant
+      inscrit, capé à +50%.
+
+À la défaite, le bot poste un récap dans le canal et distribue :
+    • Top dégâts / Top tank / Top heal : +200g, +100xp, +1 potion_soin_iii
+    • Tous les participants : +50g, +25xp, +1 potion_soin_i (en plus
+      du bonus catégorie pour les top-X — cumul possible).
 
 --------------------------------------------------------------------------------
 2.3 — GESTION DE LA BOUTIQUE

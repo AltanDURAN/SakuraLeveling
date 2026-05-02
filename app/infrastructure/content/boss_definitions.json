@@ -1,0 +1,100 @@
+[
+  {
+    "code": "slime_titan",
+    "name": "Titan Visqueux",
+    "description": "Un slime ancestral devenu colosse, sa masse étouffante absorbe les coups les plus faibles.",
+    "image_name": "slime.png",
+    "tier": "intro",
+    "spawn_weight": 100,
+    "max_hp": 50000,
+    "attack": 50,
+    "defense": 20,
+    "speed": 8,
+    "crit_chance": 0,
+    "crit_damage": 100,
+    "dodge": 0,
+    "modifiers": {
+      "damage_immunity_threshold": 5
+    },
+    "lore": "Premier obstacle des aventuriers ambitieux. Endurant mais sans surprise."
+  },
+  {
+    "code": "gobelin_warlord",
+    "name": "Seigneur de Guerre Gobelin",
+    "description": "Le chef d'une horde sanguinaire. Plus il est blessé, plus sa rage l'amplifie.",
+    "image_name": "gobelin_geant.png",
+    "tier": "medium",
+    "spawn_weight": 60,
+    "max_hp": 200000,
+    "attack": 200,
+    "defense": 100,
+    "speed": 12,
+    "crit_chance": 5,
+    "crit_damage": 130,
+    "dodge": 5,
+    "modifiers": {
+      "enrage_below_pct": 30,
+      "enrage_attack_multiplier": 1.5
+    },
+    "lore": "À 30% PV, sa rage le pousse à frapper 50% plus fort. Tomber l'achever vite ou tenir bon."
+  },
+  {
+    "code": "stone_colossus",
+    "name": "Colosse de Pierre",
+    "description": "Une statue runique animée par d'antiques magies. Inébranlable face aux frappes faibles.",
+    "image_name": "gobelin_runique.png",
+    "tier": "medium_hard",
+    "spawn_weight": 30,
+    "max_hp": 500000,
+    "attack": 300,
+    "defense": 400,
+    "speed": 5,
+    "crit_chance": 0,
+    "crit_damage": 100,
+    "dodge": 0,
+    "modifiers": {
+      "damage_immunity_threshold": 50
+    },
+    "lore": "Sa carapace runique ignore les dégâts inférieurs à 50. Il faut frapper fort ou pas du tout."
+  },
+  {
+    "code": "shadow_wraith",
+    "name": "Spectre des Ténèbres",
+    "description": "Une entité incorporelle qui glisse entre les coups. Les coups critiques traversent sa forme étherée.",
+    "image_name": "gobelin_assassin.png",
+    "tier": "hard",
+    "spawn_weight": 15,
+    "max_hp": 800000,
+    "attack": 500,
+    "defense": 150,
+    "speed": 18,
+    "crit_chance": 10,
+    "crit_damage": 150,
+    "dodge": 30,
+    "modifiers": {
+      "crit_immunity": true
+    },
+    "lore": "Les coups critiques sont annulés (traités comme des coups normaux). Sa vitesse rend ses esquives redoutables."
+  },
+  {
+    "code": "ancient_dragon",
+    "name": "Dragon Ancestral",
+    "description": "Le sommet de l'évolution. Inflige des coups dévastateurs et entre en rage à la fin.",
+    "image_name": "gobelin_superieur.png",
+    "tier": "endgame",
+    "spawn_weight": 5,
+    "max_hp": 2000000,
+    "attack": 800,
+    "defense": 300,
+    "speed": 15,
+    "crit_chance": 25,
+    "crit_damage": 200,
+    "dodge": 10,
+    "modifiers": {
+      "damage_immunity_threshold": 100,
+      "enrage_below_pct": 25,
+      "enrage_attack_multiplier": 1.8
+    },
+    "lore": "Le boss définitif : armure dragon (ignore <100 dmg), rage finale (-25% PV → +80% atk). Ne peut être vaincu qu'en raid massif."
+  }
+]

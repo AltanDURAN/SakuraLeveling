@@ -42,6 +42,17 @@ class WorldBossRepository:
         model = self.session.get(WorldBossModel, boss_id)
         return self._to_domain(model) if model else None
 
+    def get_latest_defeated(self) -> WorldBoss | None:
+        """Le dernier boss défait (utilisé pour le cooldown de respawn 7j)."""
+        stmt = (
+            select(WorldBossModel)
+            .where(WorldBossModel.status == WorldBossStatus.DEFEATED.value)
+            .order_by(WorldBossModel.defeated_at.desc())
+            .limit(1)
+        )
+        model = self.session.execute(stmt).scalar_one_or_none()
+        return self._to_domain(model) if model else None
+
     def create(
         self,
         code: str,

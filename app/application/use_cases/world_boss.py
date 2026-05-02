@@ -1,24 +1,26 @@
 """Use cases du système de world boss.
 
-5 use cases regroupés pour cohérence :
-    1. SpawnWorldBossUseCase — admin uniquement, V1 : boost ×100 d'un mob existant
-    2. JoinWorldBossUseCase — joueur s'inscrit à la session
-    3. LeaveWorldBossUseCase — joueur se désinscrit (refus s'il a déjà combattu)
-    4. FightWorldBossUseCase — solo combat avec bonus d'équipe + cooldown 1/jour
-    5. CompleteWorldBossUseCase — récompenses à la défaite
+6 use cases regroupés pour cohérence :
+    1. SpawnWorldBossUseCase — spawn manuel à partir d'une BossDefinition (JSON)
+    2. SpawnRandomWorldBossUseCase — auto-spawn pondéré par spawn_weight
+    3. JoinWorldBossUseCase — joueur s'inscrit à la session
+    4. LeaveWorldBossUseCase — joueur se désinscrit (refus s'il a déjà combattu)
+    5. FightWorldBossUseCase — solo combat avec bonus d'équipe + cooldown 1/jour
+       + application des modifiers (immunity threshold, enrage, crit immunity)
+    6. CompleteWorldBossUseCase — récompenses à la défaite
 
-Convention HP/résultat : `PartyCombatService` étant orienté équipe vs mob,
-on simule un combat 1v1 (1 joueur vs 1 boss) en réutilisant le
-`CombatService.fight_player_vs_mob` qui prend `Stats` + `MobDefinition`.
-On wrappe les stats du boss dans une `MobDefinition` éphémère (factory
-pure, jamais persistée) pour rester compatible.
+Convention HP/résultat : on réutilise `CombatService.fight_player_vs_mob` en
+wrappant le boss dans une `MobDefinition` éphémère.
 """
 
+import random
 from dataclasses import dataclass, field
 from datetime import datetime, UTC, timedelta
 
+from app.domain.entities.boss_definition import BossDefinition
 from app.domain.entities.mob_definition import MobDefinition
 from app.domain.entities.world_boss import WorldBoss, WorldBossParticipation
+from app.domain.services.boss_modifier_service import BossModifierService
 from app.domain.services.combat_service import CombatService
 from app.domain.services.cooldown_service import CooldownService
 from app.domain.services.skill_tree_service import SkillTreeService
@@ -30,7 +32,6 @@ from app.infrastructure.db.repositories.cooldown_repository import CooldownRepos
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
-from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.player_skill_allocation_repository import (
     PlayerSkillAllocationRepository,
@@ -39,10 +40,14 @@ from app.infrastructure.db.repositories.world_boss_repository import WorldBossRe
 from app.infrastructure.skill_tree.skill_tree_loader import (
     get_definition as get_skill_tree_definition,
 )
+from app.infrastructure.world_boss.boss_definition_loader import (
+    get_definition as get_boss_definition,
+    pick_random_definition,
+)
 
 
 BOSS_FIGHT_COOLDOWN_KEY = "world_boss_fight"
-BOSS_STAT_BOOST_FACTOR = 100  # V1 : boost ×100 du mob de base pour test
+BOSS_RESPAWN_COOLDOWN_DAYS = 7  # 7 jours après défaite avant un nouveau spawn
 DAILY_RESET_HOUR_UTC = 0  # reset à minuit UTC
 
 
@@ -53,21 +58,22 @@ def _next_midnight_utc(now: datetime) -> datetime:
     return tomorrow
 
 
-def _boost_mob_to_boss_stats(mob: MobDefinition, factor: int) -> dict:
-    return {
-        "max_hp": mob.max_hp * factor,
-        "attack": mob.attack * factor,
-        "defense": mob.defense * factor,
-        "speed": mob.speed,
-        "crit_chance": mob.crit_chance,
-        "crit_damage": mob.crit_damage,
-        "dodge": mob.dodge,
-        "hp_regeneration": 0,  # spec : un boss ne regagne JAMAIS de PV
-    }
+def _normalize_utc(dt: datetime) -> datetime:
+    """SQLite renvoie des datetimes naïfs ; on assume UTC pour les comparaisons."""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=UTC)
+    return dt
 
 
-def _boss_to_mob_definition(boss: WorldBoss) -> MobDefinition:
-    """Wrappe un WorldBoss en MobDefinition pour réutiliser CombatService."""
+def _boss_to_mob_definition(
+    boss: WorldBoss,
+    overridden_attack: int | None = None,
+) -> MobDefinition:
+    """Wrappe un WorldBoss en MobDefinition pour réutiliser CombatService.
+
+    `overridden_attack` permet d'injecter une attack ajustée par les
+    modifiers (ex : enrage). Si None, on utilise la valeur native du boss.
+    """
     return MobDefinition(
         id=-1,  # sentinel : pas en DB en tant que mob
         code=boss.code,
@@ -77,7 +83,7 @@ def _boss_to_mob_definition(boss: WorldBoss) -> MobDefinition:
         family="world_boss",
         max_hp=boss.max_hp,
         current_hp=boss.current_hp,
-        attack=boss.attack,
+        attack=overridden_attack if overridden_attack is not None else boss.attack,
         defense=boss.defense,
         speed=boss.speed,
         crit_chance=boss.crit_chance,
@@ -93,6 +99,24 @@ def _boss_to_mob_definition(boss: WorldBoss) -> MobDefinition:
     )
 
 
+def _create_boss_from_definition(
+    repo: WorldBossRepository, definition: BossDefinition
+) -> WorldBoss:
+    return repo.create(
+        code=definition.code,
+        name=definition.name,
+        image_name=definition.image_name,
+        max_hp=definition.max_hp,
+        attack=definition.attack,
+        defense=definition.defense,
+        speed=definition.speed,
+        crit_chance=definition.crit_chance,
+        crit_damage=definition.crit_damage,
+        dodge=definition.dodge,
+        hp_regeneration=0,
+    )
+
+
 # ---------- 1. Spawn ----------
 
 
@@ -104,21 +128,17 @@ class SpawnBossResult:
 
 
 class SpawnWorldBossUseCase:
-    """Spawn manuel d'un world boss à partir d'un mob existant boosté ×100.
+    """Spawn manuel d'un world boss à partir de son code (BossDefinition JSON).
 
-    Refuse s'il y a déjà un boss actif. Pour V1, prend un mob_code existant
-    en DB. Plus tard, prendra un boss_code dédié avec stats finement réglées.
+    Refuse s'il y a déjà un boss actif. La définition vient de
+    `app/infrastructure/content/boss_definitions.json` — édition à chaud
+    possible (clear le cache du loader).
     """
 
-    def __init__(
-        self,
-        world_boss_repository: WorldBossRepository,
-        mob_repository: MobRepository,
-    ) -> None:
+    def __init__(self, world_boss_repository: WorldBossRepository) -> None:
         self.world_boss_repository = world_boss_repository
-        self.mob_repository = mob_repository
 
-    def execute(self, mob_code: str, custom_name: str | None = None) -> SpawnBossResult:
+    def execute(self, boss_code: str) -> SpawnBossResult:
         existing = self.world_boss_repository.get_active()
         if existing is not None:
             return SpawnBossResult(
@@ -129,32 +149,82 @@ class SpawnWorldBossUseCase:
                 ),
             )
 
-        mob = self.mob_repository.get_by_code(mob_code)
-        if mob is None:
+        definition = get_boss_definition(boss_code)
+        if definition is None:
             return SpawnBossResult(
-                success=False, message=f"❌ Mob `{mob_code}` introuvable."
+                success=False, message=f"❌ Boss `{boss_code}` introuvable."
             )
 
-        boost = _boost_mob_to_boss_stats(mob, BOSS_STAT_BOOST_FACTOR)
-        boss = self.world_boss_repository.create(
-            code=f"boss_{mob.code}",
-            name=custom_name or f"{mob.name} surpuissant",
-            image_name=mob.image_name,
-            max_hp=boost["max_hp"],
-            attack=boost["attack"],
-            defense=boost["defense"],
-            speed=boost["speed"],
-            crit_chance=boost["crit_chance"],
-            crit_damage=boost["crit_damage"],
-            dodge=boost["dodge"],
-            hp_regeneration=boost["hp_regeneration"],
-        )
+        boss = _create_boss_from_definition(self.world_boss_repository, definition)
         return SpawnBossResult(
             success=True,
-            message=(
-                f"⚡ **{boss.name}** apparaît avec **{boss.max_hp:,}** PV !"
-            ),
+            message=(f"⚡ **{boss.name}** apparaît avec **{boss.max_hp:,}** PV !"),
             boss=boss,
+        )
+
+
+@dataclass
+class AutoSpawnDecision:
+    spawned: bool
+    reason: str
+    boss: WorldBoss | None = None
+
+
+class SpawnRandomWorldBossUseCase:
+    """Auto-spawn aléatoire pondéré par `spawn_weight` des définitions.
+
+    Conditions de spawn (toutes doivent être vraies) :
+        1. Aucun boss actif actuellement
+        2. Soit aucun boss n'a jamais été spawn, soit le dernier mort
+           a été défait il y a ≥ BOSS_RESPAWN_COOLDOWN_DAYS jours
+        3. Tirage aléatoire : par défaut `spawn_probability` = 0.05 (5%
+           de chance par appel — ajustable). Avec un loop horaire, ça
+           donne en moyenne ~1 spawn / jour après la fenêtre 7j → on
+           reste cohérent avec "1 par semaine" en moyenne (le user peut
+           ajuster).
+
+    Le caller est responsable d'appeler ce use case périodiquement.
+    """
+
+    def __init__(
+        self,
+        world_boss_repository: WorldBossRepository,
+        spawn_probability: float = 0.05,
+    ) -> None:
+        self.world_boss_repository = world_boss_repository
+        self.spawn_probability = spawn_probability
+
+    def execute(
+        self,
+        now: datetime | None = None,
+        rng: random.Random | None = None,
+        force: bool = False,
+    ) -> AutoSpawnDecision:
+        now = now or datetime.now(UTC)
+        rng = rng or random
+
+        if self.world_boss_repository.get_active() is not None:
+            return AutoSpawnDecision(False, "boss_actif")
+
+        last_defeated = self.world_boss_repository.get_latest_defeated()
+        if last_defeated is not None:
+            elapsed = now - _normalize_utc(last_defeated.defeated_at)
+            if elapsed < timedelta(days=BOSS_RESPAWN_COOLDOWN_DAYS):
+                return AutoSpawnDecision(
+                    False, f"cooldown_respawn ({elapsed.days}j sur 7j)"
+                )
+
+        # Tirage aléatoire (sauf si force=True pour les tests)
+        if not force and rng.random() > self.spawn_probability:
+            return AutoSpawnDecision(False, "tirage_negatif")
+
+        definition = pick_random_definition(rng=rng)
+        if definition is None:
+            return AutoSpawnDecision(False, "aucune_definition")
+
+        boss = _create_boss_from_definition(self.world_boss_repository, definition)
+        return AutoSpawnDecision(
+            spawned=True, reason="ok", boss=boss,
         )
 
 
@@ -271,6 +341,7 @@ class FightWorldBossUseCase:
         scaling_service: WorldBossScalingService,
         combat_service: CombatService,
         cooldown_service: CooldownService,
+        modifier_service: BossModifierService | None = None,
     ) -> None:
         self.world_boss_repository = world_boss_repository
         self.player_repository = player_repository
@@ -282,6 +353,7 @@ class FightWorldBossUseCase:
         self.scaling_service = scaling_service
         self.combat_service = combat_service
         self.cooldown_service = cooldown_service
+        self.modifier_service = modifier_service or BossModifierService()
 
     def execute(
         self, discord_id: int, username: str, display_name: str,
@@ -332,19 +404,53 @@ class FightWorldBossUseCase:
             (self.scaling_service.compute_team_bonus_multiplier(num_participants) - 1) * 100
         )
 
-        # Combat
-        boss_as_mob = _boss_to_mob_definition(boss)
+        # Récupérer les modifiers depuis la BossDefinition (si présente)
+        boss_def = get_boss_definition(boss.code)
+        modifiers = boss_def.modifiers if boss_def is not None else {}
+
+        # Application des modifiers : enrage (mult atk boss) + crit_immunity
+        adjustments = self.modifier_service.compute_adjustments(
+            modifiers=modifiers,
+            boss_max_hp=boss.max_hp,
+            boss_current_hp=boss.current_hp,
+            boss_attack=boss.attack,
+            player_crit_chance=boosted_stats.crit_chance,
+        )
+
+        # Si crit immunity actif, on neutralise la crit_chance du joueur
+        if adjustments.player_crit_chance != boosted_stats.crit_chance:
+            boosted_stats = type(boosted_stats)(
+                max_hp=boosted_stats.max_hp,
+                attack=boosted_stats.attack,
+                defense=boosted_stats.defense,
+                speed=boosted_stats.speed,
+                crit_chance=adjustments.player_crit_chance,
+                crit_damage=boosted_stats.crit_damage,
+                dodge=boosted_stats.dodge,
+                hp_regeneration=boosted_stats.hp_regeneration,
+            )
+
+        # Combat avec attack du boss potentiellement enragé
+        boss_as_mob = _boss_to_mob_definition(
+            boss, overridden_attack=adjustments.boss_attack
+        )
         battle_result = self.combat_service.fight_player_vs_mob(
             player_stats=boosted_stats, mob=boss_as_mob,
         )
 
         # Calcul des métriques de combat
-        damage_dealt = boss.current_hp - max(0, battle_result.mob_remaining_hp)
+        raw_damage_dealt = boss.current_hp - max(0, battle_result.mob_remaining_hp)
+        # Application du damage_immunity_threshold sur le total infligé.
+        # Note V1 : on filtre globalement, pas par coup. C'est une approximation
+        # raisonnable pour le squelette ; raffinable plus tard en intégrant le
+        # filter dans le tour-par-tour de CombatService.
+        damage_dealt = self.modifier_service.filter_incoming_damage(
+            raw_damage_dealt, adjustments.damage_immunity_threshold,
+        )
         damage_tanked = boosted_stats.max_hp - max(0, battle_result.player_remaining_hp)
-        # V1 : pas de heal (mode solo, pas de healer dédié)
-        hp_healed = 0
+        hp_healed = 0  # V1 solo
 
-        # Persist
+        # Persist (damage filtré, pas raw)
         self.world_boss_repository.apply_damage(boss.id, damage_dealt)
         self.world_boss_repository.add_combat_metrics(
             boss.id, profile.player.id,
@@ -372,6 +478,17 @@ class FightWorldBossUseCase:
         ]
         if team_bonus_pct > 0:
             msg_lines.append(f"🤝 Bonus d'équipe appliqué : **+{team_bonus_pct}%**")
+        if adjustments.enraged:
+            msg_lines.append("🔥 **Boss enragé** — son attaque est amplifiée.")
+        if (
+            adjustments.damage_immunity_threshold > 0
+            and raw_damage_dealt > 0
+            and damage_dealt == 0
+        ):
+            msg_lines.append(
+                f"🛡️ Carapace : vos coups (<{adjustments.damage_immunity_threshold}) "
+                "ont glissé. Frappez plus fort."
+            )
         if defeated:
             msg_lines.append(f"🏆 **{boss.name}** est vaincu !")
 

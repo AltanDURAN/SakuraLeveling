@@ -179,15 +179,23 @@ Pour un nouveau cog : si les commandes restent dans le canal beta → poser `int
 
 ## Système de world boss
 
-- **Modèle DB** : tables `world_bosses` (1 seul "active" à la fois) et `world_boss_participations` (UNIQUE sur boss_id+player_id, cumule damage_dealt/tanked/hp_healed/fights_count).
-- **Spawn** : `/boss spawn <mob_code>` (admin uniquement) crée un boss à partir d'un mob existant boosté **×100** (max_hp, attack, defense). Speed/crit/dodge inchangés. **`hp_regeneration=0` par construction** — un boss ne regen jamais ses PV.
+- **Définitions JSON** : [`app/infrastructure/content/boss_definitions.json`](app/infrastructure/content/boss_definitions.json) — 5 bosses progressifs (intro → endgame) avec stats, modifiers, lore. Loader à cache module-level [`boss_definition_loader.py`](app/infrastructure/world_boss/boss_definition_loader.py) (pattern identique à `skill_tree_loader`).
+- **Modèle DB** : tables `world_bosses` (1 seul "active" à la fois — instance courante du boss) et `world_boss_participations` (UNIQUE sur boss_id+player_id, cumule damage_dealt/tanked/hp_healed/fights_count). Les définitions vivent dans le JSON, les **instances** vivent en DB.
+- **Spawn manuel** : `/boss spawn <boss_code>` (admin) lit la `BossDefinition` depuis le JSON et crée l'instance avec ses stats raw. Refuse s'il y a déjà un boss actif.
+- **Auto-spawn** : `WorldBossCog.auto_spawn_loop` (`tasks.loop(hours=1)`) appelle `SpawnRandomWorldBossUseCase`. Conditions de spawn : pas de boss actif + (jamais spawné OU dernière défaite > 7j) + tirage random 5%/heure. Sélection pondérée par `spawn_weight`.
 - **Channel dédié** : `settings.boss_channel_id` (fallback `encounter_channel_id` si non défini, pour ne pas casser les .env existants).
 - **View** : 3 boutons sur le message du boss (Rejoindre / Quitter / Lancer le combat). Le message est édité après chaque action via `WorldBossCog.refresh_boss_message`.
-- **Cooldown 1 combat / jour / joueur** : action_key="world_boss_fight" dans `player_cooldowns`, reset à minuit UTC (cf. [`world_boss.py:_next_midnight_utc`](app/application/use_cases/world_boss.py)).
-- **Bonus d'équipe** : `WorldBossScalingService` applique +5% par participant additionnel (capé à +50%) sur attack/defense/max_hp du joueur. Speed/crit/dodge ne sont PAS boostés (stats tactiques). Plus l'équipe est nombreuse, plus chaque joueur frappe fort — incite au raid groupé.
-- **Persistence HP** : le boss garde `current_hp` entre les combats — vaincu à l'usure par les coups successifs.
-- **Récompenses** ([`CompleteWorldBossUseCase`](app/application/use_cases/world_boss.py)) : à la défaite, top_damage/top_tank/top_heal reçoivent +200g/+100xp/+1 potion_soin_iii (cumul possible). Tous les participants reçoivent en plus la base : +50g/+25xp/+1 potion_soin_i. Un même joueur top de plusieurs catégories cumule chaque bonus.
-- **À faire plus tard** : auto-spawn aléatoire 1×/semaine, table `boss_definitions` JSON dédiée avec stats finement réglées et particularités, cooldown de respawn 7j après défaite.
+- **Cooldown 1 combat / jour / joueur** : action_key="world_boss_fight" dans `player_cooldowns`, reset à minuit UTC.
+- **Bonus d'équipe** : `WorldBossScalingService` applique +5% par participant additionnel (capé à +50%) sur attack/defense/max_hp du joueur. Speed/crit/dodge ne sont PAS boostés (stats tactiques).
+- **Modifiers** ([`BossModifierService`](app/domain/services/boss_modifier_service.py)) — appliqués pendant le combat :
+  - `damage_immunity_threshold` (int) : ignore les dégâts < N. Filtré sur le total infligé en V1.
+  - `enrage_below_pct` + `enrage_attack_multiplier` : si current_hp/max_hp ≤ X%, multiplie l'attack du boss
+  - `crit_immunity` (bool) : neutralise la crit_chance du joueur (les crits = dmg normaux)
+  - Modifier inconnu = ignoré poliment → extensibilité par contenu pur
+- **Persistence HP** : le boss garde `current_hp` entre les combats. `hp_regeneration=0` forcé — un boss ne regen jamais ses PV.
+- **Récompenses** ([`CompleteWorldBossUseCase`](app/application/use_cases/world_boss.py)) : à la défaite, top_damage/top_tank/top_heal reçoivent +200g/+100xp/+1 potion_soin_iii (cumul possible). Tous les participants reçoivent en plus la base : +50g/+25xp/+1 potion_soin_i.
+- **Catalogue** : `/boss list` affiche tous les bosses définis avec leurs stats et particularités (utile pour debug/preview).
+- **À faire quand le user enverra ses vraies données** : remplacer/étendre `boss_definitions.json`, ajuster `spawn_probability` du loop si besoin.
 
 ## Système de duel 1v1 (PvP)
 
