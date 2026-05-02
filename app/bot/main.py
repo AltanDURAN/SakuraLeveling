@@ -20,6 +20,7 @@ class SakuraBot(commands.Bot):
         await self.load_extension("app.bot.cogs.world_boss_cog")
         await self.load_extension("app.bot.cogs.help_cog")
         await self.load_extension("app.bot.cogs.title_cog")
+        await self.load_extension("app.bot.cogs.weekly_quest_cog")
         await self.tree.sync()
 
 

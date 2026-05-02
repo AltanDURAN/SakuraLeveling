@@ -460,6 +460,22 @@ class FightWorldBossUseCase:
             hp_healed=hp_healed,
         )
 
+        # Quête hebdo : boss_damage (best effort)
+        try:
+            from app.infrastructure.db.repositories.weekly_quest_repository import (
+                WeeklyQuestRepository,
+            )
+            session = self.world_boss_repository.session
+            wqp_session = WeeklyQuestRepository(session)
+            from app.application.use_cases.weekly_quests import (
+                WeeklyQuestProgressService,
+            )
+            WeeklyQuestProgressService(wqp_session).on_boss_damage(
+                profile.player.id, damage_dealt
+            )
+        except Exception:
+            pass
+
         # Cooldown : prochaine fenêtre = minuit UTC
         next_avail = _next_midnight_utc(now)
         self.cooldown_repository.upsert(

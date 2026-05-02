@@ -173,6 +173,24 @@ class ChallengePlayerUseCase:
             challenger_profile.player.id, DUEL_COOLDOWN_KEY, last_used, next_avail
         )
 
+        # Progress quête hebdo : duel_win pour le vainqueur (best effort)
+        try:
+            from app.application.use_cases.weekly_quests import (
+                WeeklyQuestProgressService,
+            )
+            from app.infrastructure.db.repositories.weekly_quest_repository import (
+                WeeklyQuestRepository,
+            )
+            session = self.duel_rank_repository.session  # même session SQLAlchemy
+            wqp = WeeklyQuestProgressService(WeeklyQuestRepository(session))
+            winner_pid = (
+                challenger_profile.player.id if challenger_won
+                else target_profile.player.id
+            )
+            wqp.on_duel_won(winner_pid, count=1)
+        except Exception:
+            pass  # quête hebdo = best effort, ne casse pas le duel
+
         return DuelOutcome(
             success=True,
             message=(

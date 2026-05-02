@@ -88,6 +88,21 @@ class ClaimDailyRewardUseCase:
             next_available_at=next_available_at,
         )
 
+        # Quête hebdo : daily_streak (best effort)
+        try:
+            from app.application.use_cases.weekly_quests import (
+                WeeklyQuestProgressService,
+            )
+            from app.infrastructure.db.repositories.weekly_quest_repository import (
+                WeeklyQuestRepository,
+            )
+            session = self.cooldown_repository.session
+            WeeklyQuestProgressService(WeeklyQuestRepository(session)).on_daily_claimed(
+                profile.player.id, current_streak=new_streak,
+            )
+        except Exception:
+            pass
+
         return DailyClaimResult(
             success=True,
             streak=new_streak,

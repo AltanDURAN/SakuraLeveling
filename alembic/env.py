@@ -29,6 +29,7 @@ from app.infrastructure.db.models.trade_model import TradeItemModel, TradeModel
 from app.infrastructure.db.models.player_duel_rank_model import PlayerDuelRankModel
 from app.infrastructure.db.models.world_boss_model import WorldBossModel, WorldBossParticipationModel
 from app.infrastructure.db.models.player_title_model import PlayerTitleModel
+from app.infrastructure.db.models.weekly_quest_model import WeeklyQuestAssignmentModel
 
 
 config = context.config

@@ -15,6 +15,7 @@ from app.infrastructure.db.models.player_skill_allocation_model import (
     PlayerSkillAllocationModel,
 )
 from app.infrastructure.db.models.player_title_model import PlayerTitleModel
+from app.infrastructure.db.models.weekly_quest_model import WeeklyQuestAssignmentModel
 from app.infrastructure.db.models.world_boss_model import WorldBossParticipationModel
 from app.infrastructure.db.models.profession_model import PlayerProfessionModel
 from app.infrastructure.db.models.progression_model import PlayerProgressionModel
@@ -62,6 +63,7 @@ class ResetPlayerUseCase:
             PlayerDuelRankModel,
             WorldBossParticipationModel,
             PlayerTitleModel,
+            WeeklyQuestAssignmentModel,
         ):
             session.execute(delete(model_cls).where(model_cls.player_id == player_id))
 
