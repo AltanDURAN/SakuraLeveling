@@ -83,8 +83,14 @@ git checkout main
 | (boucle automatique) | `encounter_cog` | Spawn d'encounters, recrutement, combat de groupe |
 | `/top <category>` | `leaderboard_cog` | Classements (puissance, niveau, or, stats, kills total/mob/famille, duels 1v1) avec autocomplete |
 | `/admin give_gold`, `/admin set_gold`, `/admin give_xp`, `/admin set_level`, `/admin give_item`, `/admin remove_item` | `admin_cog` | **Admin uniquement** — tous prennent `target: discord.Member` |
+| `/admin give_skill_points` (+/-), `/admin set_skill_points` | `admin_cog` | **Admin uniquement** — gestion directe des skill points |
+| `/admin set_current_hp`, `/admin heal_full` | `admin_cog` | **Admin uniquement** — manipulation des PV courants |
+| `/admin set_daily_streak`, `/admin set_class`, `/admin set_kills` | `admin_cog` | **Admin uniquement** — set arbitraire (avec autocomplete sur class/mob) |
+| `/admin force_equip`, `/admin force_unequip` | `admin_cog` | **Admin uniquement** — bypass des checks d'équipement (slot canonique par défaut) |
+| `/admin set_duel_rank` | `admin_cog` | **Admin uniquement** — force la position du joueur dans le ladder 1v1 (décale les autres) |
 | `/admin reset_player @target` | `admin_cog` | **Admin uniquement** — réinitialise tout sauf l'identité Discord |
-| `/admin spawn_encounter` | `admin_cog` | **Admin uniquement** — force le spawn immédiat d'un encounter |
+| `/admin spawn_encounter [mob_code]` | `admin_cog` | **Admin uniquement** — spawn immédiat d'un encounter (random ou mob spécifique) |
+| `/admin end_encounter` | `admin_cog` | **Admin uniquement** — annule l'encounter actif |
 | `/admin shop_add`, `/admin shop_set`, `/admin shop_remove`, `/admin shop_set_stock` | `admin_cog` | **Admin uniquement** — gestion du shop (autocomplete sur item_code) |
 | `/shop`, `/buy <item> <qty>`, `/sell <item> <qty>` | `shop_cog` | Shop joueur (achat prix fixe, vente prix dynamique selon saturation) |
 | `/skill [target]` | `skill_cog` | Arbre de compétences avec image, boutons Investir/Vue web/Reset (cooldown 7j) |

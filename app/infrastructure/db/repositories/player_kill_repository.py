@@ -12,6 +12,36 @@ class PlayerKillRepository:
     def __init__(self, session: Session):
         self.session = session
 
+    def set_kill_count(self, player_id: int, mob_code: str, count: int) -> None:
+        """Force le compteur à une valeur exacte (utilisé par /admin set_kills).
+        count <= 0 supprime la ligne."""
+        stmt = select(PlayerMobKillModel).where(
+            PlayerMobKillModel.player_id == player_id,
+            PlayerMobKillModel.mob_code == mob_code,
+        )
+        model = self.session.execute(stmt).scalar_one_or_none()
+        now = datetime.now(UTC)
+
+        if count <= 0:
+            if model is not None:
+                self.session.delete(model)
+                self.session.commit()
+            return
+
+        if model is None:
+            model = PlayerMobKillModel(
+                player_id=player_id,
+                mob_code=mob_code,
+                kill_count=count,
+                created_at=now,
+                updated_at=now,
+            )
+            self.session.add(model)
+        else:
+            model.kill_count = count
+            model.updated_at = now
+        self.session.commit()
+
     def increment(self, player_id: int, mob_code: str, amount: int = 1) -> None:
         stmt = select(PlayerMobKillModel).where(
             PlayerMobKillModel.player_id == player_id,

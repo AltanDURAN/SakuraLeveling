@@ -27,6 +27,7 @@ class EncounterCog(commands.Cog):
         self.active_encounter: ActiveEncounter | None = None
         self.encounter_service = EncounterService()
         self.next_spawn_at: datetime | None = None
+        self._forced_mob_code: str | None = None
         self.encounter_loop.start()
         self.generated_dir = GENERATED_ENCOUNTERS_DIR
         self.generated_dir.mkdir(exist_ok=True)
@@ -59,17 +60,41 @@ class EncounterCog(commands.Cog):
         )
         return success, message
 
-    def trigger_immediate_spawn(self) -> tuple[bool, str]:
+    def trigger_immediate_spawn(self, mob_code: str | None = None) -> tuple[bool, str]:
         """Force la prochaine itération du loop à spawn un encounter.
 
         La boucle tourne toutes les 10s : un nouvel encounter apparaîtra dans
-        ~10s maximum. Refuse si un combat est déjà actif.
+        ~10s maximum. Refuse si un combat est déjà actif. Si `mob_code` est
+        fourni, le prochain spawn ciblera ce mob précis (sinon random).
         """
         if self.active_encounter is not None:
             return False, "Un combat est déjà en cours."
 
+        if mob_code is not None:
+            with get_db_session() as session:
+                mob = MobRepository(session).get_by_code(mob_code)
+            if mob is None:
+                return False, f"Mob `{mob_code}` introuvable."
+
+        self._forced_mob_code = mob_code
         self.next_spawn_at = datetime.now(UTC) - timedelta(seconds=1)
-        return True, "Spawn forcé : un monstre apparaît dans quelques secondes."
+        suffix = f" ({mob_code})" if mob_code else ""
+        return True, f"Spawn forcé{suffix} : un monstre apparaît dans quelques secondes."
+
+    def force_end_encounter(self) -> tuple[bool, str]:
+        """Annule un encounter actif (utilisé par /admin end_encounter).
+
+        N'envoie pas de message dans le canal — l'admin se chargera de
+        communiquer si besoin. Le timer de respawn est reset à +1min pour
+        éviter qu'un autre n'apparaisse instantanément.
+        """
+        if self.active_encounter is None:
+            return False, "Aucun combat actif à arrêter."
+        mob_name = self.active_encounter.mob_state.name
+        self.active_encounter = None
+        self._forced_mob_code = None
+        self.next_spawn_at = datetime.now(UTC) + timedelta(minutes=1)
+        return True, f"Encounter actif (**{mob_name}**) annulé."
 
     @tasks.loop(seconds=10)
     async def encounter_loop(self):
@@ -84,9 +109,15 @@ class EncounterCog(commands.Cog):
         if self.next_spawn_at is not None and now < self.next_spawn_at:
             return
 
+        forced_code = self._forced_mob_code
+        self._forced_mob_code = None  # consommé en une fois
         with get_db_session() as session:
             mob_repository = MobRepository(session)
-            mob = mob_repository.get_random()
+            mob = (
+                mob_repository.get_by_code(forced_code)
+                if forced_code is not None
+                else mob_repository.get_random()
+            )
 
         if mob is None:
             return

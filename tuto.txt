@@ -384,20 +384,69 @@ beta channel sur le cog admin).
     Échec si le joueur n'a pas la quantité demandée.
     Exemple : /admin remove_item @TestPlayer slime_gel 10
 
+/admin give_skill_points <target> <amount>
+    Ajoute (ou retire si négatif) des skill points à @target. Le total est
+    clampé à 0 minimum. Range : -1000 à 1000.
+    Exemple : /admin give_skill_points @TestPlayer 5
+
+/admin set_skill_points <target> <amount>
+    Définit le nombre exact de skill points de @target. Range : 0 à 10 000.
+    Exemple : /admin set_skill_points @TestPlayer 0
+
+/admin set_current_hp <target> <hp>
+    Définit les PV courants de @target. Utile pour tester les KO ou la régen.
+    Range : 0 à 1 000 000.
+
+/admin heal_full <target>
+    Restaure les PV de @target à son `max_hp` courant (recalculé en fonction
+    du niveau, équipement, classe, skill bonuses).
+
+/admin set_daily_streak <target> <streak>
+    Définit le compteur de streak du /daily de @target (≥ 0).
+
+/admin set_class <target> <class_code>
+    Force la classe active de @target (ignore les prérequis de niveau).
+    Autocomplete sur class_code.
+
+/admin set_kills <target> <mob_code> <count>
+    Définit le compteur de kills de @target pour un mob spécifique.
+    `count = 0` supprime la ligne. Autocomplete sur mob_code.
+
+/admin force_equip <target> <item_code> [slot]
+    Force l'équipement d'un item sur un slot. Bypass tous les checks
+    (inventaire, prérequis, slot canonique). Si `slot` non précisé,
+    utilise le slot canonique de l'item.
+
+/admin force_unequip <target> <slot>
+    Vide un slot d'équipement de @target. Aucun retour en inventaire :
+    l'item est juste détaché. Autocomplete sur slot.
+
+/admin set_duel_rank <target> <position>
+    Force la position de @target dans le ladder 1v1 (#1 = meilleur).
+    Si la position est déjà occupée, les autres joueurs sont décalés
+    automatiquement. Range : 1 à 10 000.
+
 /admin reset_player <target>
     Réinitialise complètement le profil de @target tout en gardant son
     identité Discord (id, username, display_name).
     Réinitialise : niveau (1), XP (0), or (0), inventaire (vide), équipement
-    (vide), classes, quêtes, cooldowns, état HP, kills, professions.
+    (vide), classes, quêtes, cooldowns, état HP, kills, professions, skill
+    points, allocations skill tree, position duel rank.
     Très utile pour tester un nouveau flow.
 
 --------------------------------------------------------------------------------
 2.2 — TEST & DEBUG
 --------------------------------------------------------------------------------
 
-/admin spawn_encounter
+/admin spawn_encounter [mob_code]
     Force l'apparition immédiate d'un monstre dans le canal d'encounter
     (dans les ~10 secondes suivantes). Refuse si un combat est déjà actif.
+    Sans paramètre : mob aléatoire. Avec mob_code (autocomplete) : ce mob
+    précis sera spawn.
+
+/admin end_encounter
+    Annule l'encounter actif (combat de groupe en cours). Le timer de
+    respawn est posé à +1 minute pour éviter un respawn instantané.
 
 --------------------------------------------------------------------------------
 2.3 — GESTION DE LA BOUTIQUE

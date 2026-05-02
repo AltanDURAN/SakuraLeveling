@@ -134,7 +134,31 @@ class PlayerRepository:
         resources.updated_at = datetime.now(UTC)
         self.session.commit()
         return resources.daily_streak
-        
+
+    def set_daily_streak(self, player_id: int, streak: int) -> None:
+        resources = self.session.get(PlayerResourceModel, player_id)
+        if resources is None:
+            return
+        resources.daily_streak = max(0, streak)
+        resources.updated_at = datetime.now(UTC)
+        self.session.commit()
+
+    def add_skill_points(self, player_id: int, amount: int) -> None:
+        progression = self.session.get(PlayerProgressionModel, player_id)
+        if progression is None:
+            return
+        progression.skill_points = max(0, progression.skill_points + amount)
+        progression.updated_at = datetime.now(UTC)
+        self.session.commit()
+
+    def set_skill_points(self, player_id: int, amount: int) -> None:
+        progression = self.session.get(PlayerProgressionModel, player_id)
+        if progression is None:
+            return
+        progression.skill_points = max(0, amount)
+        progression.updated_at = datetime.now(UTC)
+        self.session.commit()
+
     def apply_progression(
         self,
         player_id: int,

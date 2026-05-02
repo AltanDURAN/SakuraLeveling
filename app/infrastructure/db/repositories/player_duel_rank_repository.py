@@ -118,6 +118,62 @@ class PlayerDuelRankRepository:
         model.updated_at = datetime.now(UTC)
         self.session.commit()
 
+    def set_rank_position(self, player_id: int, new_position: int) -> None:
+        """Force la position d'un joueur à `new_position` (utilisé par
+        /admin set_duel_rank).
+
+        Si le joueur n'est pas encore inscrit, il est créé. Les autres
+        joueurs occupant des positions ≥ new_position sont décalés de +1
+        pour faire de la place. Le joueur est ensuite inséré à la position
+        cible. Idempotent : si le joueur est déjà à new_position, ne fait
+        rien.
+        """
+        if new_position < 1:
+            new_position = 1
+
+        existing = self.session.execute(
+            select(PlayerDuelRankModel).where(
+                PlayerDuelRankModel.player_id == player_id
+            )
+        ).scalar_one_or_none()
+
+        now = datetime.now(UTC)
+
+        if existing is not None and existing.rank_position == new_position:
+            return
+
+        # Décaler les autres joueurs à >= new_position de +1, en excluant
+        # la ligne du joueur cible (s'il existait déjà).
+        others = self.session.execute(
+            select(PlayerDuelRankModel)
+            .where(PlayerDuelRankModel.rank_position >= new_position)
+            .where(PlayerDuelRankModel.player_id != player_id)
+            .order_by(PlayerDuelRankModel.rank_position.desc())
+        ).scalars().all()
+
+        # Décalage en partant des plus hautes pour éviter conflits si on
+        # ajoute plus tard un UNIQUE sur rank_position.
+        for other in others:
+            other.rank_position += 1
+            other.updated_at = now
+        self.session.flush()
+
+        if existing is None:
+            model = PlayerDuelRankModel(
+                player_id=player_id,
+                rank_position=new_position,
+                wins=0,
+                losses=0,
+                created_at=now,
+                updated_at=now,
+            )
+            self.session.add(model)
+        else:
+            existing.rank_position = new_position
+            existing.updated_at = now
+
+        self.session.commit()
+
     def delete_for_player(self, player_id: int) -> None:
         """Supprime la ligne d'un joueur (utilisé par /admin reset_player).
 
