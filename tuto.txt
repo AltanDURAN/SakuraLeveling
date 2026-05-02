@@ -190,6 +190,31 @@ Note : les morts en combat ne reçoivent ni or, ni XP, ni drops, ni kill credit.
        Tant que vous êtes mort durant un combat, vous ne pouvez pas vous
        régénérer en PV jusqu'à la fin du combat.
 
+/fight @target
+    Duel 1v1 PvP entre joueurs, purement compétitif. Déterminant le ladder
+    1v1 (visible via /top "Classement duels 1v1") sans rien faire perdre :
+        • Aucun gain ni perte d'or, d'XP, de drops ou de kill counter
+        • Aucune perte de PV réelle : l'animation montre une barre d'HP qui
+          descend (les deux combattants démarrent à leur max_hp) mais à la
+          fin, votre current_hp réel est exactement celui que vous aviez
+          avant le défi
+        • Le combat est animé tour par tour dans le canal beta
+
+    Règle de défi :
+        • Vous ne pouvez défier qu'un joueur STRICTEMENT mieux classé que
+          vous (rank_position plus petit = mieux placé)
+        • Si vous gagnez → échange des places dans le ladder
+        • Si vous perdez → ladder inchangé, mais le compteur W-L reflète
+          la défaite/victoire
+        • Tout joueur jamais inscrit est ajouté au ladder en dernier rang
+          la première fois qu'il défie ou est défié
+        • Cooldown : 60 secondes entre 2 défis sortants
+
+    Pas de validation de la cible : tant que le défi est éligible (vous
+    êtes moins bien classé), le combat se lance immédiatement.
+
+    Exemple : /fight @Bob (vous êtes #5, Bob est #2 → défi accepté)
+
 --------------------------------------------------------------------------------
 1.5 — RÉPARTITION DES RÉCOMPENSES (combat de groupe)
 --------------------------------------------------------------------------------
@@ -224,6 +249,7 @@ Kill counter : tous les survivants reçoivent +1 sur le compteur du mob tué.
         • Monstres tués (total)
         • Tués par mob spécifique (ex : Tués : Gobelin Géant)
         • Tués par famille de mob (ex : Tués : famille Gobelin)
+        • Classement duels 1v1 (cf. section 1.4 pour les règles)
     Tapez le début du nom et l'autocomplete vous propose les options.
 
 --------------------------------------------------------------------------------
@@ -372,12 +398,6 @@ beta channel sur le cog admin).
 /admin spawn_encounter
     Force l'apparition immédiate d'un monstre dans le canal d'encounter
     (dans les ~10 secondes suivantes). Refuse si un combat est déjà actif.
-
-/fight <mob_code>
-    [Admin uniquement] Combat solo contre un monstre spécifique. Sert à
-    tester rapidement le système de combat sans attendre un encounter de
-    groupe. Cette commande nécessite d'être dans le canal beta.
-    Exemple : /fight slime
 
 --------------------------------------------------------------------------------
 2.3 — GESTION DE LA BOUTIQUE

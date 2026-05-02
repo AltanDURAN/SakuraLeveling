@@ -1,11 +1,18 @@
 from dataclasses import dataclass
 
-from app.domain.services.leaderboard_service import Leaderboard, LeaderboardService
+from app.domain.services.leaderboard_service import (
+    Leaderboard,
+    LeaderboardEntry,
+    LeaderboardService,
+)
 from app.domain.services.power_score_service import PowerScoreService
 from app.domain.services.stats_service import StatsService
 from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
+from app.infrastructure.db.repositories.player_duel_rank_repository import (
+    PlayerDuelRankRepository,
+)
 from app.infrastructure.db.repositories.player_kill_repository import PlayerKillRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.shared.formatters import format_int as _format_int
@@ -41,6 +48,7 @@ class GetLeaderboardUseCase:
         stats_service: StatsService,
         power_score_service: PowerScoreService,
         leaderboard_service: LeaderboardService,
+        duel_rank_repository: PlayerDuelRankRepository | None = None,
     ) -> None:
         self.player_repository = player_repository
         self.equipment_repository = equipment_repository
@@ -50,6 +58,7 @@ class GetLeaderboardUseCase:
         self.stats_service = stats_service
         self.power_score_service = power_score_service
         self.leaderboard_service = leaderboard_service
+        self.duel_rank_repository = duel_rank_repository
 
     def execute(self, category_code: str, limit: int = 10) -> Leaderboard | None:
         if category_code == "power":
@@ -66,6 +75,9 @@ class GetLeaderboardUseCase:
 
         if category_code == "kills_total":
             return self._compute_kills_total(limit)
+
+        if category_code == "duel_rank":
+            return self._compute_duel_rank(limit)
 
         if category_code.startswith("kills_mob:"):
             mob_code = category_code.split(":", 1)[1]
@@ -187,6 +199,38 @@ class GetLeaderboardUseCase:
         return Leaderboard(
             category_code=f"kills_mob:{mob_code}",
             category_label=f"Tués : {mob.name}",
+            entries=entries,
+        )
+
+    def _compute_duel_rank(self, limit: int) -> Leaderboard | None:
+        """Ladder 1v1 : tri ASC sur rank_position (plus petit = mieux classé).
+
+        On bypasse `LeaderboardService.rank()` qui trie en DESC et on construit
+        directement les `LeaderboardEntry` depuis le repository qui renvoie
+        déjà la liste triée. Le `value` exposé est la position elle-même
+        (pour cohérence de l'embed). Le `formatted_value` montre "#N (W-L)".
+        """
+        if self.duel_rank_repository is None:
+            return None
+
+        ranks = self.duel_rank_repository.list_top(limit=limit)
+        entries: list[LeaderboardEntry] = []
+        for rank in ranks:
+            profile = self.player_repository.get_profile_by_player_id(rank.player_id)
+            display_name = (
+                profile.player.display_name if profile is not None else f"Joueur#{rank.player_id}"
+            )
+            entries.append(
+                LeaderboardEntry(
+                    player_id=rank.player_id,
+                    display_name=display_name,
+                    value=rank.rank_position,
+                    formatted_value=f"#{rank.rank_position} ({rank.wins}V-{rank.losses}D)",
+                )
+            )
+        return Leaderboard(
+            category_code="duel_rank",
+            category_label="Classement duels 1v1",
             entries=entries,
         )
 

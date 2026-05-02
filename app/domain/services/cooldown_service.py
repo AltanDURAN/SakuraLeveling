@@ -30,3 +30,10 @@ class CooldownService:
         last_used_at = now
         next_available_at = now + timedelta(days=days)
         return last_used_at, next_available_at
+
+    def build_next_duel_challenge_cooldown(
+        self, now: datetime, seconds: int = 60
+    ) -> tuple[datetime, datetime]:
+        last_used_at = now
+        next_available_at = now + timedelta(seconds=seconds)
+        return last_used_at, next_available_at

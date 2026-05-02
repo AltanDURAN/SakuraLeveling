@@ -79,9 +79,9 @@ git checkout main
 |---|---|---|
 | `/profile [target]`, `/equipment [target]`, `/inventory [target]`, `/class [target]`, `/quests [target]` | `player_cog` | Consultatives — `target` optionnel : par défaut soi-même, sinon profil d'un autre joueur |
 | `/equip`, `/class_set`, `/classes`, `/daily`, `/quest_claim`, `/gather`, `/craft`, `/craft_list` | `player_cog` | Actions sur soi ou listes globales |
-| `/fight <mob_code>` | `player_cog` | **Admin uniquement** (test/debug) |
+| `/fight @target` | `player_cog` | Duel 1v1 PvP entre joueurs (rien à gagner ni à perdre, juste pour le ladder) |
 | (boucle automatique) | `encounter_cog` | Spawn d'encounters, recrutement, combat de groupe |
-| `/top <category>` | `leaderboard_cog` | Classements (puissance, niveau, or, stats, kills total/mob/famille) avec autocomplete |
+| `/top <category>` | `leaderboard_cog` | Classements (puissance, niveau, or, stats, kills total/mob/famille, duels 1v1) avec autocomplete |
 | `/admin give_gold`, `/admin set_gold`, `/admin give_xp`, `/admin set_level`, `/admin give_item`, `/admin remove_item` | `admin_cog` | **Admin uniquement** — tous prennent `target: discord.Member` |
 | `/admin reset_player @target` | `admin_cog` | **Admin uniquement** — réinitialise tout sauf l'identité Discord |
 | `/admin spawn_encounter` | `admin_cog` | **Admin uniquement** — force le spawn immédiat d'un encounter |
@@ -102,7 +102,7 @@ Convention : la restriction au canal beta est **par cog** via `interaction_check
 
 | Cog | `interaction_check` ? | Stratégie additionnelle |
 |---|---|---|
-| `player_cog` | ✅ canal beta | + `@admin_only` sur `/fight` |
+| `player_cog` | ✅ canal beta | — (toutes les commandes joueur) |
 | `encounter_cog` | n/a (boucle, pas de slash) | — |
 | `leaderboard_cog` | ❌ accessible partout | Lecture publique, pas de restriction |
 | `shop_cog` | ✅ canal beta | — |
@@ -161,6 +161,18 @@ Pour un nouveau cog : si les commandes restent dans le canal beta → poser `int
 - **Reset** : `ResetSkillTreeUseCase` (cooldown 7j) restitue tous les points dépensés via `compute_total_refund`. `/admin reset_player` purge aussi les allocations + cooldown.
 - **Webapp** : FastAPI mono-service ([`webapp/`](webapp/)), même rendu SVG que le bot. `python -m webapp.main` → http://localhost:8000. Routes : `/skill/<discord_id>` (HTML interactif zoom/pan/hover) + `/api/skill/<discord_id>` (JSON).
 - **Rendu PNG Discord** : SVG → PNG via cairosvg, pas de Chromium ni Playwright.
+
+## Système de duel 1v1 (PvP)
+
+- **Modèle DB** : table `player_duel_ranks(player_id UNIQUE, rank_position, wins, losses)`. Index sur `rank_position`. Plus petit rank_position = mieux classé. `get_or_create` attribue `max(rank_position) + 1` au nouveau venu.
+- **Commande** : `/fight @target` ([`player_cog.py`](app/bot/cogs/player_cog.py)) — anime tour par tour via `interaction.followup.send` puis `message.edit` toutes les ~1.2s, embeds dans [`duel_embeds.py`](app/bot/embeds/duel_embeds.py).
+- **Règle d'éligibilité** : challenger.rank_position **STRICTEMENT > ** target.rank_position. Sinon `DuelOutcome(success=False)`. Pas de mode consensuel — l'attaque est unilatérale tant que la règle est respectée.
+- **HP** : le `DuelCombatService.fight_player_vs_player` démarre les deux combattants à `max_hp` et ne lit JAMAIS `player_health_state`. Aucune écriture en DB sur les HP réels après le duel — l'animation visible est purement cosmétique.
+- **Rien d'autre n'est tracké** : pas d'or, XP, loot, kill_count, career_stats. Seuls `wins`/`losses` du `player_duel_ranks` bougent.
+- **Cooldown anti-spam** : 60 s entre 2 défis sortants par challenger (action_key="duel_challenge" dans `player_cooldowns`).
+- **Swap** : si challenger gagne → `swap_positions(challenger_id, target_id)` (atomique, via valeur sentinelle pour préparer un futur UNIQUE sur rank_position). Sinon ladder inchangé.
+- **Reset** : `/admin reset_player` purge la ligne du ladder (via `PlayerDuelRankModel` ajouté à la liste de DELETE de `ResetPlayerUseCase`).
+- **Leaderboard** : catégorie `duel_rank` dans `/top` — bypass `LeaderboardService.rank()` (qui trie DESC) et construit directement les `LeaderboardEntry` depuis `repo.list_top()` (déjà trié ASC). Affiche `#N (WV-DD)`.
 
 ## Workflow type pour ajouter une nouvelle stat de combat
 

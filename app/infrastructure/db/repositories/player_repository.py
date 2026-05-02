@@ -33,6 +33,18 @@ class PlayerRepository:
 
         return self._to_domain(player_model)
 
+    def get_profile_by_player_id(self, player_id: int) -> PlayerProfile | None:
+        stmt = (
+            select(PlayerModel)
+            .options(
+                joinedload(PlayerModel.progression),
+                joinedload(PlayerModel.resources),
+            )
+            .where(PlayerModel.id == player_id)
+        )
+        player_model = self.session.execute(stmt).scalar_one_or_none()
+        return self._to_domain(player_model) if player_model else None
+
     def create_player(self, discord_id: int, username: str, display_name: str) -> PlayerProfile:
         now = datetime.now(UTC)
 

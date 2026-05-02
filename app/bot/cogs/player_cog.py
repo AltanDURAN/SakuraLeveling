@@ -5,14 +5,13 @@ from discord import app_commands
 from discord.ext import commands
 from datetime import datetime, UTC
 
-from app.bot.checks.admin_check import admin_only
 from app.domain.entities.player_profile import PlayerProfile
 from app.application.use_cases.change_player_class import ChangePlayerClassUseCase
 from app.application.use_cases.transfer_gold import TransferGoldUseCase
 from app.application.use_cases.claim_daily_reward import ClaimDailyRewardUseCase
 from app.application.use_cases.claim_quest_reward import ClaimQuestRewardUseCase
+from app.application.use_cases.challenge_player import ChallengePlayerUseCase
 from app.application.use_cases.craft_item import CraftItemUseCase
-from app.application.use_cases.fight_mob import FightMobUseCase
 from app.application.use_cases.gather_resource import GatherResourceUseCase
 from app.application.use_cases.get_available_classes import GetAvailableClassesUseCase
 from app.application.use_cases.get_available_crafts import GetAvailableCraftsUseCase
@@ -23,9 +22,10 @@ from app.application.use_cases.get_player_inventory import GetPlayerInventoryUse
 from app.application.use_cases.get_player_profile import GetPlayerProfileUseCase
 from app.application.use_cases.get_player_quests import GetPlayerQuestsUseCase
 from app.application.use_cases.get_player_stats import GetPlayerStatsUseCase
-from app.bot.embeds.battle_embeds import (
-    build_battle_result_embed,
-    build_battle_turn_embed,
+from app.bot.embeds.duel_embeds import (
+    build_duel_intro_embed,
+    build_duel_result_embed,
+    build_duel_turn_embed,
 )
 from app.bot.embeds.class_embeds import build_player_class_embed
 from app.bot.embeds.daily_embeds import (
@@ -37,10 +37,9 @@ from app.bot.embeds.craft_embeds import WEAPON_CATEGORIES, build_craft_list_embe
 from app.bot.embeds.inventory_embeds import build_inventory_embed
 from app.bot.embeds.player_embeds import build_player_profile_embed
 from app.domain.services.class_service import ClassService
-from app.domain.services.combat_service import CombatService
 from app.domain.services.cooldown_service import CooldownService
 from app.domain.services.craft_service import CraftService
-from app.domain.services.loot_service import LootService
+from app.domain.services.duel_combat_service import DuelCombatService
 from app.domain.services.profession_service import ProfessionService
 from app.domain.services.progression_service import ProgressionService
 from app.domain.services.quest_service import QuestService
@@ -52,7 +51,9 @@ from app.infrastructure.db.repositories.craft_repository import CraftRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
-from app.infrastructure.db.repositories.mob_repository import MobRepository
+from app.infrastructure.db.repositories.player_duel_rank_repository import (
+    PlayerDuelRankRepository,
+)
 from app.infrastructure.db.repositories.player_kill_repository import PlayerKillRepository
 from app.infrastructure.db.repositories.player_career_stats_repository import (
     PlayerCareerStatsRepository,
@@ -348,67 +349,88 @@ class PlayerCog(commands.Cog):
             if current_lower in s.value.lower()
         ][:25]
 
-    @app_commands.command(name="fight", description="[Admin] Combattre un monstre (test)")
-    @app_commands.describe(mob_code="Code technique du monstre")
-    @admin_only
-    async def fight(self, interaction: discord.Interaction, mob_code: str) -> None:
-        await interaction.response.defer()
-
-        with get_db_session() as session:
-            player_repository = PlayerRepository(session)
-            equipment_repository = EquipmentRepository(session)
-            mob_repository = MobRepository(session)
-            inventory_repository = InventoryRepository(session)
-            item_repository = ItemRepository(session)
-            quest_repository = QuestRepository(session)
-            class_repository = ClassRepository(session)
-
-            use_case = FightMobUseCase(
-                player_repository=player_repository,
-                equipment_repository=equipment_repository,
-                mob_repository=mob_repository,
-                inventory_repository=inventory_repository,
-                item_repository=item_repository,
-                quest_repository=quest_repository,
-                kill_repository=PlayerKillRepository(session),
-                stats_service=StatsService(),
-                combat_service=CombatService(),
-                loot_service=LootService(),
-                progression_service=ProgressionService(),
-                quest_service=QuestService(),
-                class_repository=class_repository,
-                skill_allocation_repository=PlayerSkillAllocationRepository(session),
+    @app_commands.command(
+        name="fight",
+        description="Défier un autre joueur en duel 1v1 (PvP, sans gain ni perte)",
+    )
+    @app_commands.describe(target="Joueur à défier")
+    async def fight(self, interaction: discord.Interaction, target: discord.Member) -> None:
+        if target.bot:
+            await interaction.response.send_message(
+                "❌ Vous ne pouvez pas défier un bot.",
+                ephemeral=True,
             )
-
-            result = use_case.execute(
-                discord_id=interaction.user.id,
-                username=interaction.user.name,
-                display_name=interaction.user.display_name,
-                mob_code=mob_code,
-            )
-
-        if result is None:
-            await interaction.followup.send(
-                "Monstre introuvable.",
+            return
+        if target.id == interaction.user.id:
+            await interaction.response.send_message(
+                "❌ Vous ne pouvez pas vous défier vous-même.",
                 ephemeral=True,
             )
             return
 
-        if not result.turn_logs:
-            embed = build_battle_result_embed(result)
-            await interaction.followup.send(embed=embed)
+        await interaction.response.defer()
+
+        with get_db_session() as session:
+            use_case = ChallengePlayerUseCase(
+                player_repository=PlayerRepository(session),
+                equipment_repository=EquipmentRepository(session),
+                class_repository=ClassRepository(session),
+                skill_allocation_repository=PlayerSkillAllocationRepository(session),
+                duel_rank_repository=PlayerDuelRankRepository(session),
+                cooldown_repository=CooldownRepository(session),
+                stats_service=StatsService(),
+                duel_combat_service=DuelCombatService(),
+                cooldown_service=CooldownService(),
+            )
+            outcome = use_case.execute(
+                challenger_discord_id=interaction.user.id,
+                challenger_username=interaction.user.name,
+                challenger_display_name=interaction.user.display_name,
+                target_discord_id=target.id,
+                target_display_name=target.display_name,
+            )
+
+        if not outcome.success or outcome.result is None:
+            await interaction.followup.send(outcome.message, ephemeral=True)
             return
 
-        first_embed = build_battle_turn_embed(result, result.turn_logs[0])
-        message = await interaction.followup.send(embed=first_embed)
+        challenger_name = outcome.challenger_display_name
+        target_name = outcome.target_display_name
+        result = outcome.result
 
-        for turn_log in result.turn_logs[1:]:
-            await asyncio.sleep(1.5)
-            embed = build_battle_turn_embed(result, turn_log)
-            await message.edit(embed=embed)
+        intro = build_duel_intro_embed(
+            challenger_name=challenger_name,
+            target_name=target_name,
+            challenger_max_hp=result.a_max_hp,
+            target_max_hp=result.b_max_hp,
+        )
+        message = await interaction.followup.send(
+            content=f"⚔️ {interaction.user.mention} défie {target.mention} !",
+            embed=intro,
+        )
 
         await asyncio.sleep(1.5)
-        final_embed = build_battle_result_embed(result)
+        for turn_log in result.turn_logs:
+            embed = build_duel_turn_embed(
+                challenger_name=challenger_name,
+                target_name=target_name,
+                result=result,
+                turn_log=turn_log,
+            )
+            await message.edit(embed=embed)
+            await asyncio.sleep(1.2)
+
+        final_embed = build_duel_result_embed(
+            challenger_name=challenger_name,
+            target_name=target_name,
+            result=result,
+            challenger_won=outcome.challenger_won,
+            swapped=outcome.swapped,
+            challenger_old_position=outcome.challenger_old_position,
+            target_old_position=outcome.target_old_position,
+            challenger_new_position=outcome.challenger_new_position,
+            target_new_position=outcome.target_new_position,
+        )
         await message.edit(embed=final_embed)
 
     @app_commands.command(name="class", description="Afficher la classe active d'un joueur")

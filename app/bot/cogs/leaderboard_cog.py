@@ -10,6 +10,9 @@ from app.domain.services.stats_service import StatsService
 from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
+from app.infrastructure.db.repositories.player_duel_rank_repository import (
+    PlayerDuelRankRepository,
+)
 from app.infrastructure.db.repositories.player_kill_repository import PlayerKillRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
@@ -28,6 +31,7 @@ STATIC_CATEGORIES: list[tuple[str, str]] = [
     ("dodge", "Esquive"),
     ("hp_regeneration", "Régénération"),
     ("kills_total", "Monstres tués (total)"),
+    ("duel_rank", "Classement duels 1v1"),
 ]
 
 
@@ -50,6 +54,7 @@ class LeaderboardCog(commands.Cog):
                 stats_service=StatsService(),
                 power_score_service=PowerScoreService(),
                 leaderboard_service=LeaderboardService(),
+                duel_rank_repository=PlayerDuelRankRepository(session),
             )
 
             leaderboard = use_case.execute(category_code=category, limit=10)
