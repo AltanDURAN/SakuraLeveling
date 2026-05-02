@@ -109,6 +109,20 @@ class FightMobUseCase:
         self.player_repository.add_gold(profile.player.id, final_gold)
         self.kill_repository.increment(profile.player.id, mob.code)
 
+        # Check titres : la famille du mob peut débloquer un titre. Best
+        # effort : si le repo n'est pas fourni (rétrocompat tests), skip.
+        title_repo = getattr(self, "title_repository", None)
+        if title_repo is not None:
+            from app.application.services.title_unlock_service import (
+                TitleUnlockService,
+            )
+            TitleUnlockService(title_repo, self.kill_repository).check_kills_family(
+                profile.player.id, mob.family
+            )
+            TitleUnlockService(title_repo, self.kill_repository).check_kills_total(
+                profile.player.id
+            )
+
         new_level, new_xp, new_skill_points = self.progression_service.apply_level_up(
             current_level=profile.progression.level,
             current_xp=profile.progression.xp,

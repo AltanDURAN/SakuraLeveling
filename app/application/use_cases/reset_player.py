@@ -14,6 +14,7 @@ from app.infrastructure.db.models.player_mob_kill_model import PlayerMobKillMode
 from app.infrastructure.db.models.player_skill_allocation_model import (
     PlayerSkillAllocationModel,
 )
+from app.infrastructure.db.models.player_title_model import PlayerTitleModel
 from app.infrastructure.db.models.world_boss_model import WorldBossParticipationModel
 from app.infrastructure.db.models.profession_model import PlayerProfessionModel
 from app.infrastructure.db.models.progression_model import PlayerProgressionModel
@@ -60,6 +61,7 @@ class ResetPlayerUseCase:
             PlayerSkillAllocationModel,
             PlayerDuelRankModel,
             WorldBossParticipationModel,
+            PlayerTitleModel,
         ):
             session.execute(delete(model_cls).where(model_cls.player_id == player_id))
 

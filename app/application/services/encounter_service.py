@@ -123,6 +123,12 @@ class EncounterService:
         if encounter is None:
             return None
 
+        from app.domain.services.title_bonus_service import TitleBonusService
+        from app.infrastructure.db.repositories.player_title_repository import (
+            PlayerTitleRepository,
+        )
+        from app.infrastructure.titles.title_loader import get_definition as get_title_def
+
         with get_db_session() as session:
             player_repository = PlayerRepository(session)
             equipment_repository = EquipmentRepository(session)
@@ -130,12 +136,15 @@ class EncounterService:
             mob_repository = MobRepository(session)
             skill_allocation_repository = PlayerSkillAllocationRepository(session)
             skill_tree_service = SkillTreeService(get_skill_tree_definition())
+            title_repo = PlayerTitleRepository(session)
+            title_bonus_service = TitleBonusService()
 
             mob = mob_repository.get_by_code(encounter.mob_state.code)
             if mob is None:
                 return None
 
             party = []
+            title_bonuses_by_player: dict = {}
 
             for participant in encounter.participants.values():
                 profile = player_repository.get_by_discord_id(participant.user_id)
@@ -166,12 +175,23 @@ class EncounterService:
                     }
                 )
 
+                # Charger les définitions des titres débloqués pour agréger
+                # les bonus passifs (s'appliquent en combat selon mob.family)
+                title_codes = title_repo.list_codes_for_player(participant.player_id)
+                title_defs = [
+                    d for d in (get_title_def(code) for code in title_codes) if d is not None
+                ]
+                title_bonuses_by_player[participant.player_id] = (
+                    title_bonus_service.aggregate(title_defs)
+                )
+
         if not party:
             return None
 
         return PartyCombatService().fight_party_vs_mob(
             party=party,
             mob=mob,
+            title_bonuses_by_player=title_bonuses_by_player,
         )
 
     def persist_final_players_hp(self, result) -> None:
@@ -275,6 +295,14 @@ class EncounterService:
             item_repository = ItemRepository(session)
             career_repository = PlayerCareerStatsRepository(session)
             skill_allocation_repository = PlayerSkillAllocationRepository(session)
+            from app.application.services.title_unlock_service import TitleUnlockService
+            from app.infrastructure.db.repositories.player_title_repository import (
+                PlayerTitleRepository,
+            )
+            title_unlock_service = TitleUnlockService(
+                title_repository=PlayerTitleRepository(session),
+                kill_repository=kill_repository,
+            )
             skill_tree_service = SkillTreeService(get_skill_tree_definition())
 
             for participant in encounter.participants.values():
@@ -326,6 +354,14 @@ class EncounterService:
                     player_repository.add_xp(participant.player_id, xp)
 
                 kill_repository.increment(participant.player_id, mob_code)
+                # Check titres : kills_family puis kills_total. L'unlock
+                # est silencieux côté embed pour rester non-disruptif ;
+                # le joueur découvre le titre via /title.
+                if mob.family:
+                    title_unlock_service.check_kills_family(
+                        participant.player_id, mob.family
+                    )
+                title_unlock_service.check_kills_total(participant.player_id)
 
                 for item_code, quantity in dropped_items:
                     item = item_repository.get_by_code(item_code)

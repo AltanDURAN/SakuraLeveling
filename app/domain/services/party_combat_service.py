@@ -1,6 +1,7 @@
 import random
 
 from app.domain.entities.mob_definition import MobDefinition
+from app.domain.services.title_bonus_service import TitleBonuses
 from app.domain.value_objects.party_battle_result import PartyBattleResult
 from app.domain.value_objects.party_battle_turn_log import PartyBattleTurnLog
 from app.domain.value_objects.player_contribution import PlayerContribution
@@ -12,7 +13,10 @@ class PartyCombatService:
         self,
         party: list[dict],
         mob: MobDefinition,
+        title_bonuses_by_player: dict[int, TitleBonuses] | None = None,
     ) -> PartyBattleResult:
+        title_bonuses_by_player = title_bonuses_by_player or {}
+        mob_family = mob.family or ""
         mob_hp = mob.current_hp
         mob_gauge = 0
         turns = 0
@@ -70,6 +74,13 @@ class PartyCombatService:
                     if random.random() < (stats.crit_chance / 100):
                         damage = int(damage * (stats.crit_damage / 100))
                         crit = True
+
+                    # Bonus de titre : +X% dégâts vs famille du mob
+                    title_bonus = title_bonuses_by_player.get(player["player_id"])
+                    if title_bonus is not None and mob_family:
+                        damage = max(
+                            1, round(damage * title_bonus.damage_multiplier_vs(mob_family))
+                        )
 
                     mob_hp_before = mob_hp
 
@@ -151,6 +162,19 @@ class PartyCombatService:
                     if random.random() < (mob.crit_chance / 100):
                         mob_damage = int(mob_damage * (mob.crit_damage / 100))
                         mob_crit = True
+
+                    # Bonus de titre : -X% dégâts subis depuis cette famille
+                    target_title_bonus = title_bonuses_by_player.get(target["player_id"])
+                    if target_title_bonus is not None and mob_family:
+                        mob_damage = max(
+                            1,
+                            round(
+                                mob_damage
+                                * target_title_bonus.damage_received_multiplier_from(
+                                    mob_family
+                                )
+                            ),
+                        )
 
                     target_hp_before = target["hp"]
                     target["hp"] -= mob_damage

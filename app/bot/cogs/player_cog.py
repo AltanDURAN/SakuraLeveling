@@ -205,6 +205,20 @@ class PlayerCog(commands.Cog):
                 profile.player.id
             )
 
+            from app.infrastructure.db.repositories.player_title_repository import (
+                PlayerTitleRepository,
+            )
+            from app.infrastructure.titles.title_loader import get_definition as _get_title_def
+
+            active_title_code = PlayerTitleRepository(session).get_active_title_code(
+                profile.player.id
+            )
+            active_title_name: str | None = None
+            if active_title_code:
+                title_def = _get_title_def(active_title_code)
+                if title_def is not None:
+                    active_title_name = f"{title_def.icon} {title_def.name}"
+
         embed = build_player_profile_embed(
             profile=profile,
             stats=stats,
@@ -216,6 +230,7 @@ class PlayerCog(commands.Cog):
             duel_rank_position=duel_rank.rank_position if duel_rank else None,
             duel_wins=duel_rank.wins if duel_rank else 0,
             duel_losses=duel_rank.losses if duel_rank else 0,
+            active_title=active_title_name,
         )
         await interaction.response.send_message(embed=embed)
 
