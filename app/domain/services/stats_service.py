@@ -1,6 +1,7 @@
 from app.domain.entities.class_definition import ClassDefinition
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
 from app.domain.entities.player_profile import PlayerProfile
+from app.domain.value_objects.skill_bonuses import SkillBonuses
 from app.domain.value_objects.stats import Stats
 
 
@@ -10,6 +11,7 @@ class StatsService:
         profile: PlayerProfile,
         equipped_items: list[PlayerEquipmentItem],
         active_class: ClassDefinition | None = None,
+        skill_bonuses: SkillBonuses | None = None,
     ) -> Stats:
         level = profile.progression.level
 
@@ -48,6 +50,20 @@ class StatsService:
             crit_damage += float(bonuses.get("crit_damage", 0))
             dodge += float(bonuses.get("dodge", 0))
             hp_regeneration += int(bonuses.get("hp_regeneration", 0))
+
+        # 4e étage : bonus de l'arbre de compétences (flat additif puis %).
+        # Appliqué après équipement/classe et AVANT les caps finaux pour que
+        # crit_chance / dodge restent bornés.
+        if skill_bonuses is not None:
+            crit_chance += skill_bonuses.crit_chance_flat
+            crit_damage += skill_bonuses.crit_damage_flat
+            dodge += skill_bonuses.dodge_flat
+            speed += skill_bonuses.speed_flat
+            hp_regeneration += skill_bonuses.hp_regeneration_flat
+
+            max_hp = round(max_hp * (1 + skill_bonuses.hp_max_percent))
+            attack = round(attack * (1 + skill_bonuses.atk_percent))
+            defense = round(defense * (1 + skill_bonuses.def_percent))
 
         crit_chance = min(crit_chance, 75)
         dodge = min(dodge, 50)

@@ -10,6 +10,9 @@ from app.infrastructure.db.models.player_career_stats_model import PlayerCareerS
 from app.infrastructure.db.models.player_class_state_model import PlayerClassStateModel
 from app.infrastructure.db.models.player_health_state_model import PlayerHealthStateModel
 from app.infrastructure.db.models.player_mob_kill_model import PlayerMobKillModel
+from app.infrastructure.db.models.player_skill_allocation_model import (
+    PlayerSkillAllocationModel,
+)
 from app.infrastructure.db.models.profession_model import PlayerProfessionModel
 from app.infrastructure.db.models.progression_model import PlayerProgressionModel
 from app.infrastructure.db.models.quest_model import PlayerQuestStateModel
@@ -52,6 +55,7 @@ class ResetPlayerUseCase:
             PlayerMobKillModel,
             PlayerProfessionModel,
             PlayerCareerStatsModel,
+            PlayerSkillAllocationModel,
         ):
             session.execute(delete(model_cls).where(model_cls.player_id == player_id))
 

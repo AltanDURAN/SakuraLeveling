@@ -55,7 +55,14 @@ from app.infrastructure.db.repositories.player_kill_repository import PlayerKill
 from app.infrastructure.db.repositories.player_career_stats_repository import (
     PlayerCareerStatsRepository,
 )
+from app.infrastructure.db.repositories.player_skill_allocation_repository import (
+    PlayerSkillAllocationRepository,
+)
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
+from app.infrastructure.skill_tree.skill_tree_loader import (
+    get_definition as get_skill_tree_definition,
+)
+from app.domain.services.skill_tree_service import SkillTreeService
 from app.infrastructure.db.repositories.profession_repository import ProfessionRepository
 from app.infrastructure.db.repositories.quest_repository import QuestRepository
 from app.infrastructure.db.session import get_db_session
@@ -144,13 +151,19 @@ class PlayerCog(commands.Cog):
             player_health_repository = PlayerHealthRepository(session)
             kill_repository = PlayerKillRepository(session)
             career_stats_repository = PlayerCareerStatsRepository(session)
+            skill_allocation_repository = PlayerSkillAllocationRepository(session)
 
             equipped_items = equipment_repository.list_by_player_id(profile.player.id)
             active_class = class_repository.get_current_class_for_player(profile.player.id)
+            allocations = skill_allocation_repository.list_by_player(profile.player.id)
+            skill_bonuses = SkillTreeService(get_skill_tree_definition()).aggregate_bonuses(
+                allocations
+            )
             stats = StatsService().calculate_player_stats(
                 profile=profile,
                 equipped_items=equipped_items,
                 active_class=active_class,
+                skill_bonuses=skill_bonuses,
             )
 
             power_score_service = PowerScoreService()
@@ -321,6 +334,7 @@ class PlayerCog(commands.Cog):
                 progression_service=ProgressionService(),
                 quest_service=QuestService(),
                 class_repository=class_repository,
+                skill_allocation_repository=PlayerSkillAllocationRepository(session),
             )
 
             result = use_case.execute(

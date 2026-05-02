@@ -23,3 +23,10 @@ class CooldownService:
         last_used_at = now
         next_available_at = now + timedelta(days=1)
         return last_used_at, next_available_at
+
+    def build_next_skill_reset_cooldown(
+        self, now: datetime, days: int = 7
+    ) -> tuple[datetime, datetime]:
+        last_used_at = now
+        next_available_at = now + timedelta(days=days)
+        return last_used_at, next_available_at

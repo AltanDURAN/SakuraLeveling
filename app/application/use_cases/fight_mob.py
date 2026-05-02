@@ -2,6 +2,7 @@ from app.domain.services.combat_service import CombatService
 from app.domain.services.loot_service import LootService
 from app.domain.services.progression_service import ProgressionService
 from app.domain.services.quest_service import QuestService
+from app.domain.services.skill_tree_service import SkillTreeService
 from app.domain.services.stats_service import StatsService
 from app.domain.value_objects.battle_result import BattleResult
 from app.infrastructure.db.repositories.class_repository import ClassRepository
@@ -11,7 +12,13 @@ from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.repositories.player_kill_repository import PlayerKillRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
+from app.infrastructure.db.repositories.player_skill_allocation_repository import (
+    PlayerSkillAllocationRepository,
+)
 from app.infrastructure.db.repositories.quest_repository import QuestRepository
+from app.infrastructure.skill_tree.skill_tree_loader import (
+    get_definition as get_skill_tree_definition,
+)
 
 
 class FightMobUseCase:
@@ -30,6 +37,7 @@ class FightMobUseCase:
         progression_service: ProgressionService,
         quest_service: QuestService,
         class_repository: ClassRepository,
+        skill_allocation_repository: PlayerSkillAllocationRepository | None = None,
     ):
         self.player_repository = player_repository
         self.equipment_repository = equipment_repository
@@ -44,6 +52,7 @@ class FightMobUseCase:
         self.progression_service = progression_service
         self.quest_service = quest_service
         self.class_repository = class_repository
+        self.skill_allocation_repository = skill_allocation_repository
 
     def execute(
         self,
@@ -65,10 +74,20 @@ class FightMobUseCase:
         equipped_items = self.equipment_repository.list_by_player_id(profile.player.id)
         active_class = self.class_repository.get_current_class_for_player(profile.player.id)
 
+        # Bonus de l'arbre de compétences (None si repository non fourni)
+        if self.skill_allocation_repository is not None:
+            allocations = self.skill_allocation_repository.list_by_player(profile.player.id)
+            skill_bonuses = SkillTreeService(get_skill_tree_definition()).aggregate_bonuses(
+                allocations
+            )
+        else:
+            skill_bonuses = None
+
         player_stats = self.stats_service.calculate_player_stats(
             profile=profile,
             equipped_items=equipped_items,
             active_class=active_class,
+            skill_bonuses=skill_bonuses,
         )
 
         result = self.combat_service.fight_player_vs_mob(
@@ -79,13 +98,21 @@ class FightMobUseCase:
         if not result.victory:
             return result
 
-        self.player_repository.add_gold(profile.player.id, result.gold_gained)
+        # Application des bonus xp/gold/drop de l'arbre
+        gold_multiplier = 1.0 + (skill_bonuses.gold_drop_percent if skill_bonuses else 0.0)
+        xp_multiplier = 1.0 + (skill_bonuses.xp_drop_percent if skill_bonuses else 0.0)
+        drop_multiplier = skill_bonuses.drop_rate_multiplier if skill_bonuses else 1.0
+
+        final_gold = round(result.gold_gained * gold_multiplier)
+        final_xp = round(result.xp_gained * xp_multiplier)
+
+        self.player_repository.add_gold(profile.player.id, final_gold)
         self.kill_repository.increment(profile.player.id, mob.code)
 
         new_level, new_xp, new_skill_points = self.progression_service.apply_level_up(
             current_level=profile.progression.level,
             current_xp=profile.progression.xp,
-            gained_xp=result.xp_gained,
+            gained_xp=final_xp,
             current_skill_points=profile.progression.skill_points,
         )
 
@@ -98,7 +125,9 @@ class FightMobUseCase:
             new_skill_points=new_skill_points,
         )
 
-        dropped_items = self.loot_service.generate_loot(mob)
+        dropped_items = self.loot_service.generate_loot(
+            mob, drop_rate_multiplier=drop_multiplier
+        )
 
         for item_code, quantity in dropped_items:
             item = self.item_repository.get_by_code(item_code)
@@ -135,6 +164,9 @@ class FightMobUseCase:
                 is_completed,
             )
 
+        # On reflète les valeurs boostées dans le résultat affiché au joueur
+        result.gold_gained = final_gold
+        result.xp_gained = final_xp
         result.items_gained = dropped_items
         result.leveled_up = leveled_up
         result.new_level = new_level if leveled_up else None
