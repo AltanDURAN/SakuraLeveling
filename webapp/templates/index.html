@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SakuraLeveling — Skill Tree Viewer</title>
+    <link rel="stylesheet" href="/static/skill_tree.css">
+</head>
+<body>
+    <div class="page">
+        <header class="page-header">
+            <h1>🌳 SakuraLeveling</h1>
+            <p class="subtitle">Visualiseur d'arbre de compétences</p>
+        </header>
+
+        <main class="page-main">
+            <div class="card">
+                <h2>Comment afficher un arbre ?</h2>
+                <p>Naviguez vers <code>/skill/&lt;votre_discord_id&gt;</code> pour voir
+                l'arbre d'un joueur.</p>
+                <p>Exemple : <a href="/skill/701782195844546662">/skill/701782195844546662</a></p>
+            </div>
+            <div class="card">
+                <h2>API JSON</h2>
+                <p><code>GET /api/skill/&lt;discord_id&gt;</code> renvoie l'état complet
+                de l'arbre + sa définition au format JSON.</p>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,189 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+    background: linear-gradient(180deg, #0f0f1a 0%, #16213e 100%);
+    color: #e8e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.page-header h1 {
+    font-size: 36px;
+    font-weight: 700;
+}
+
+.subtitle {
+    color: #a0a0c0;
+    font-size: 16px;
+    margin-top: 8px;
+}
+
+.card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+}
+
+.card h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+}
+
+.card p {
+    color: #c0c0d8;
+    margin-bottom: 8px;
+}
+
+.card code {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: "Menlo", "Monaco", monospace;
+    font-size: 13px;
+}
+
+.card a {
+    color: #4a90e2;
+}
+
+/* ----- Page arbre ----- */
+
+.page-tree {
+    overflow: hidden;
+    height: 100vh;
+    position: relative;
+}
+
+.tree-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    padding: 20px 30px;
+    background: linear-gradient(180deg, rgba(15, 15, 26, 0.95) 0%, rgba(15, 15, 26, 0.7) 100%);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.tree-header h1 {
+    font-size: 22px;
+}
+
+.tree-header .subtitle {
+    margin-top: 4px;
+    font-size: 14px;
+}
+
+.legend {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.legend-maxed { color: #c08fdb; }
+.legend-in_progress { color: #d4af37; }
+.legend-unlockable { color: #6ab0f3; }
+.legend-locked { color: #6a6a8a; }
+
+.tree-container {
+    width: 100vw;
+    height: 100vh;
+    cursor: grab;
+}
+
+.tree-container:active {
+    cursor: grabbing;
+}
+
+.tree-container svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.skill-node {
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.skill-node:hover {
+    transform: translate(var(--cx, 0), var(--cy, 0)) scale(1.08);
+}
+
+.tooltip {
+    position: fixed;
+    background: rgba(20, 20, 35, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 14px 16px;
+    max-width: 340px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    backdrop-filter: blur(8px);
+    z-index: 20;
+}
+
+.tooltip-title {
+    font-size: 16px;
+    margin-bottom: 6px;
+}
+
+.tooltip-state {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    color: #a0a0c0;
+}
+
+.tooltip-description {
+    font-size: 13px;
+    color: #c0c0d8;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.tooltip-level {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.tooltip-state.maxed { color: #c08fdb; }
+.tooltip-state.in_progress { color: #d4af37; }
+.tooltip-state.unlockable { color: #6ab0f3; }
+.tooltip-state.locked { color: #6a6a8a; }
+
+@media (max-width: 700px) {
+    .tree-header { flex-direction: column; align-items: flex-start; }
+    .legend { font-size: 10px; }
+    .tooltip { max-width: 280px; font-size: 13px; }
+}
