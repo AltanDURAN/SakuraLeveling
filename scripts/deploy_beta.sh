@@ -13,7 +13,7 @@ set -euo pipefail
 # ----- Configuration -----
 PROJECT_DIR="/home/ubuntu/SakuraLeveling"
 SERVICE_NAME="sakura-bot"
-PYTHON_BIN="python3.12"   # Adapté selon ce qui est installé
+PYTHON_BIN="python3.12"
 BOSS_CHANNEL_ID="1500256259687972915"  # ID prod/beta fourni par le user
 
 # Couleurs
@@ -47,15 +47,27 @@ ok "Branche actuelle : $(git rev-parse --abbrev-ref HEAD)"
 
 # ----- 2. Vérifie / installe Python 3.12 -----
 step "2/10 — Python 3.12"
+# On bypass le PPA deadsnakes (Launchpad bloqué côté OVH sur certains VPS)
+# en utilisant `uv` qui télécharge des binaires Python pré-compilés depuis
+# le CDN astral.sh — pas de dépendance à Launchpad.
 if ! command -v "$PYTHON_BIN" >/dev/null; then
-    warn "$PYTHON_BIN absent — installation via deadsnakes PPA"
-    sudo add-apt-repository -y ppa:deadsnakes/ppa
-    sudo apt update -qq
-    sudo apt install -y python3.12 python3.12-venv python3.12-dev libcairo2 libcairo2-dev
-    ok "Python 3.12 installé"
-else
-    ok "$($PYTHON_BIN --version)"
+    if ! command -v uv >/dev/null; then
+        warn "uv absent — installation"
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        # uv s'installe dans ~/.local/bin
+        export PATH="$HOME/.local/bin:$PATH"
+    fi
+    warn "$PYTHON_BIN absent — installation via uv"
+    uv python install 3.12
+    # Localise le binaire python3.12 installé par uv
+    UV_PYTHON_DIR=$(uv python find 3.12 2>/dev/null || true)
+    if [[ -n "$UV_PYTHON_DIR" ]]; then
+        # Crée un symlink dans /usr/local/bin pour que python3.12 soit accessible
+        sudo ln -sf "$UV_PYTHON_DIR" /usr/local/bin/python3.12
+    fi
+    ok "Python 3.12 installé via uv"
 fi
+ok "$($PYTHON_BIN --version)"
 
 # Vérifie que libcairo2 est dispo (pour cairosvg → world boss & skill tree)
 if ! dpkg -l libcairo2 2>/dev/null | grep -q "^ii"; then
