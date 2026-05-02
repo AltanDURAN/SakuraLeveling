@@ -269,17 +269,27 @@ Kill counter : tous les survivants reçoivent +1 sur le compteur du mob tué.
     Exemple : /pay @Bob 50
 
 /trade @target
-    Propose un échange à un autre joueur. Une modal s'ouvre avec 4 champs :
-        • Items que vous proposez (un par ligne, format "code quantité"
-          ou "quantité code", ex : "iron_ingot 5")
-        • Or que vous proposez
-        • Items que vous demandez en retour
-        • Or que vous demandez
-    Vous pouvez répéter le même item code sur plusieurs lignes : les
-    quantités sont additionnées.
+    Propose un échange à un autre joueur. Un brouillon ephemeral s'ouvre
+    et se construit en cliquant sur des boutons (workflow itératif, pas
+    de saisie manuelle de codes d'item) :
+        • [+ Mon item]      → Select Menu listant vos items en inventaire
+                              (top 25 par quantité), puis modal de quantité
+        • [+ Item demandé]  → Select Menu listant les items de la cible,
+                              puis modal de quantité
+        • [💰 Mon or]       → modal d'un seul champ pour le montant que
+                              vous proposez
+        • [💰 Or demandé]   → modal d'un seul champ pour le montant que
+                              vous demandez en retour
+        • [🔄 Reset]        → vide entièrement le brouillon
+        • [🛑 Annuler]      → ferme le brouillon sans rien envoyer
+        • [✅ Soumettre]    → crée le trade et poste le message public
 
-    Une fois la proposition validée, un récapitulatif est posté dans le
-    canal avec @target tag et 3 boutons :
+    Le brouillon est mis à jour visuellement à chaque action : embed avec
+    deux colonnes "Vous proposez" / "La cible doit donner". Si vous
+    cliquez deux fois sur le même item, les quantités sont additionnées.
+
+    Une fois soumis, un récapitulatif est posté dans le canal avec
+    @target tag et 3 boutons :
         • ✅ Accepter (réservé à @target) : exécute l'échange
         • ✋ Refuser (réservé à @target) : ferme le trade
         • 🛑 Annuler (réservé à l'initiateur) : ferme le trade
@@ -291,15 +301,17 @@ Kill counter : tous les survivants reçoivent +1 sur le compteur du mob tué.
           du décalage entre proposition et accept : si l'un des deux
           a entre temps consommé ses ressources, l'échange échoue
           proprement et rien ne bouge)
-        • Cooldown 5 minutes : le trade expire si pas accepté dans ce délai
+        • Cooldown 5 minutes : le trade expire si pas accepté dans ce délai.
+          Un cleanup loop côté bot marque automatiquement les trades
+          dépassés en "expired" toutes les minutes pour libérer la paire
         • Un seul trade pending par paire de joueurs à la fois
         • Pas de trade avec un bot, pas de trade avec soi-même
 
     Exemple : /trade @Bob
-        → "Je propose : iron_ingot 5"
-        → "J'offre : 50 or"
-        → "Je veux : gobelin_tooth 10"
-        → "Je veux : 0 or"
+        → [+ Mon item] → choisir "iron_ingot" → quantité 5
+        → [💰 Mon or] → 50
+        → [+ Item demandé] → choisir "gobelin_tooth" → quantité 10
+        → [✅ Soumettre]
 
 ================================================================================
                        2. COMMANDES ADMINISTRATEUR

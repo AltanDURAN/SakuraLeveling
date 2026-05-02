@@ -4,16 +4,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 
-from app.application.use_cases.create_trade import (
-    CreateTradeUseCase,
-    TradeOffer,
-)
-from app.bot.embeds.trade_embeds import build_trade_embed
-from app.bot.views.trade_view import TradeProposalModal, TradeResponseView
+from app.bot.views.trade_draft_view import TradeDraftView
 from app.infrastructure.config.settings import settings
-from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
-from app.infrastructure.db.repositories.item_repository import ItemRepository
-from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.trade_repository import TradeRepository
 from app.infrastructure.db.session import get_db_session
 
@@ -88,74 +80,17 @@ class TradeCog(commands.Cog):
             )
             return
 
-        async def on_modal_submit(
-            interaction: discord.Interaction,
-            offered_items: list[tuple[str, int]],
-            offered_gold: int,
-            requested_items: list[tuple[str, int]],
-            requested_gold: int,
-        ) -> None:
-            # `target` est capturé par closure ici
-            await self._create_trade_with_target(
-                interaction=interaction,
-                target=target,
-                offered_items=offered_items,
-                offered_gold=offered_gold,
-                requested_items=requested_items,
-                requested_gold=requested_gold,
-            )
-
-        modal = TradeProposalModal(
-            target_member=target,
-            target_display_name=target.display_name,
-            on_submit_callback=on_modal_submit,
-        )
-        await interaction.response.send_modal(modal)
-
-    async def _create_trade_with_target(
-        self,
-        interaction: discord.Interaction,
-        target: discord.Member,
-        offered_items: list[tuple[str, int]],
-        offered_gold: int,
-        requested_items: list[tuple[str, int]],
-        requested_gold: int,
-    ) -> None:
-        with get_db_session() as session:
-            use_case = CreateTradeUseCase(
-                player_repository=PlayerRepository(session),
-                inventory_repository=InventoryRepository(session),
-                item_repository=ItemRepository(session),
-                trade_repository=TradeRepository(session),
-            )
-            result = use_case.execute(
-                initiator_discord_id=interaction.user.id,
-                target_discord_id=target.id,
-                initiator_username=interaction.user.name,
-                initiator_display_name=interaction.user.display_name,
-                target_display_name=target.display_name,
-                initiator_offer=TradeOffer(items=offered_items, gold=offered_gold),
-                target_request=TradeOffer(items=requested_items, gold=requested_gold),
-                ttl_minutes=TRADE_TTL_MINUTES,
-            )
-
-        if not result.success or result.trade is None:
-            await interaction.response.send_message(result.message, ephemeral=True)
-            return
-
-        embed = build_trade_embed(result.trade)
-        view = TradeResponseView(
-            trade_id=result.trade.id,
-            initiator_discord_id=result.trade.initiator_discord_id,
-            target_discord_id=result.trade.target_discord_id,
+        view = TradeDraftView(
+            initiator=interaction.user,
+            target=target,
             timeout=TRADE_TTL_MINUTES * 60,
         )
-
         await interaction.response.send_message(
-            content=f"{target.mention}, {interaction.user.mention} vous propose un échange :",
-            embed=embed,
+            embed=view._build_embed(),
             view=view,
+            ephemeral=True,
         )
+        view.draft_message = await interaction.original_response()
 
 
 async def setup(bot: commands.Bot) -> None:
