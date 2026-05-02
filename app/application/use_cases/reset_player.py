@@ -14,6 +14,7 @@ from app.infrastructure.db.models.player_mob_kill_model import PlayerMobKillMode
 from app.infrastructure.db.models.player_skill_allocation_model import (
     PlayerSkillAllocationModel,
 )
+from app.infrastructure.db.models.marketplace_listing_model import MarketplaceListingModel
 from app.infrastructure.db.models.player_title_model import PlayerTitleModel
 from app.infrastructure.db.models.weekly_quest_model import WeeklyQuestAssignmentModel
 from app.infrastructure.db.models.world_boss_model import WorldBossParticipationModel
@@ -66,5 +67,15 @@ class ResetPlayerUseCase:
             WeeklyQuestAssignmentModel,
         ):
             session.execute(delete(model_cls).where(model_cls.player_id == player_id))
+
+        # Marketplace : la clé est `seller_player_id` (pas player_id).
+        # On purge les annonces actives du joueur — les items "en consigne"
+        # sont perdus côté brocante (l'inventaire étant déjà vidé), ce qui
+        # est cohérent avec l'esprit "reset complet".
+        session.execute(
+            delete(MarketplaceListingModel).where(
+                MarketplaceListingModel.seller_player_id == player_id
+            )
+        )
 
         session.commit()
