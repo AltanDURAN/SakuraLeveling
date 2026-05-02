@@ -4,6 +4,7 @@ from discord.ext import commands
 
 from app.application.use_cases.reset_player import ResetPlayerUseCase
 from app.bot.checks.admin_check import admin_only
+from app.shared.formatters import format_int as _format_int
 from app.domain.services.progression_service import ProgressionService
 from app.domain.services.shop_pricing_service import ShopPricingService
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
@@ -11,10 +12,6 @@ from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.shop_repository import ShopRepository
 from app.infrastructure.db.session import get_db_session
-
-
-def _format_int(value: int) -> str:
-    return f"{value:,}".replace(",", " ")
 
 
 class AdminCog(commands.Cog):

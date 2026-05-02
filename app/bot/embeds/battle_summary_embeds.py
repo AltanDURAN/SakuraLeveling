@@ -1,10 +1,7 @@
 import discord
 
+from app.shared.formatters import format_int as _format_int
 from app.domain.value_objects.battle_summary import BattleSummary
-
-
-def _format_int(value: int) -> str:
-    return f"{value:,}".replace(",", " ")
 
 
 def _outcome_color(summary: BattleSummary) -> discord.Color:

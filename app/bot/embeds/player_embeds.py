@@ -1,13 +1,10 @@
 import discord
 
+from app.shared.formatters import format_int as _format_int
 from app.domain.entities.class_definition import ClassDefinition
 from app.domain.entities.player_career_stats import PlayerCareerStats
 from app.domain.entities.player_profile import PlayerProfile
 from app.domain.value_objects.stats import Stats
-
-
-def _format_int(value: int) -> str:
-    return f"{value:,}".replace(",", " ")
 
 
 def build_player_profile_embed(

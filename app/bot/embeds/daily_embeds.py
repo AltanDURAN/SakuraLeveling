@@ -2,9 +2,7 @@ from datetime import datetime
 
 import discord
 
-
-def _format_int(value: int) -> str:
-    return f"{value:,}".replace(",", " ")
+from app.shared.formatters import format_int as _format_int
 
 
 def build_daily_success_embed(streak: int, gold_gained: int) -> discord.Embed:

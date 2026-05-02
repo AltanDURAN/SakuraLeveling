@@ -1,11 +1,8 @@
 import discord
 
+from app.shared.formatters import format_int as _format_int
 from app.domain.entities.shop_item import ShopItem
 from app.domain.services.shop_pricing_service import ShopPricingService
-
-
-def _format_int(value: int) -> str:
-    return f"{value:,}".replace(",", " ")
 
 
 def build_shop_embed(shop_items: list[ShopItem]) -> discord.Embed:

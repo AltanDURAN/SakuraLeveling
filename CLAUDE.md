@@ -96,6 +96,25 @@ git checkout main
 - **Targeting** : les commandes consultatives acceptent `target: discord.Member | None`. Quand `target=None` → auto-create du profil de l'auteur. Quand `target` est spécifié → lookup pur, message d'erreur si profil inexistant. Helper : `PlayerCog._resolve_profile`.
 - Le cog `AdminCog` n'a **pas** de restriction de canal (`interaction_check`) — admin peut agir depuis n'importe où.
 
+## Pattern `interaction_check` par cog
+
+Convention : la restriction au canal beta est **par cog** via `interaction_check`. Les cogs joueurs la posent ; les cogs spéciaux s'en passent et gatent au niveau de chaque commande.
+
+| Cog | `interaction_check` ? | Stratégie additionnelle |
+|---|---|---|
+| `player_cog` | ✅ canal beta | + `@admin_only` sur `/fight` |
+| `encounter_cog` | n/a (boucle, pas de slash) | — |
+| `leaderboard_cog` | ❌ accessible partout | Lecture publique, pas de restriction |
+| `shop_cog` | ✅ canal beta | — |
+| `skill_cog` | ✅ canal beta | Boutons grisés si viewer ≠ owner |
+| `admin_cog` | ❌ accessible partout | `@admin_only` sur chaque commande |
+
+Pour un nouveau cog : si les commandes restent dans le canal beta → poser `interaction_check`. Si admin / lecture publique → s'en passer et utiliser des décorateurs au niveau commande.
+
+## Helpers partagés
+
+- `app/shared/formatters.py` : `format_int(value)` — séparateurs d'espaces FR (1500 → "1 500"). Utilisé partout (embeds + use cases). Centralisé pour éviter la duplication.
+
 ## Système de shop
 
 - **Modèle** : table `shop_items` (item_definition_id unique, buy_price, max_sell_price, min_sell_price, stock_threshold, current_stock, enabled).

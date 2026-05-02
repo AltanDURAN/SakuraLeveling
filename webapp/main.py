@@ -19,8 +19,10 @@ from __future__ import annotations
 from dataclasses import asdict
 from pathlib import Path
 
+import logging
+
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -43,9 +45,27 @@ TEMPLATES_DIR = WEBAPP_DIR / "templates"
 STATIC_DIR = WEBAPP_DIR / "static"
 
 
+_logger = logging.getLogger(__name__)
+
+
 app = FastAPI(title="SakuraLeveling — Skill Tree Viewer")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+
+@app.exception_handler(Exception)
+async def _unhandled_exception_handler(request: Request, exc: Exception):
+    """Handler global : log la stack trace et renvoie une réponse propre.
+
+    Évite d'exposer la stack trace brute aux navigateurs en cas d'erreur 500.
+    """
+    _logger.exception("Erreur non gérée sur %s", request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Erreur interne du serveur. Réessayez plus tard.",
+        },
+    )
 
 
 def _load_state_for_discord(discord_id: int):

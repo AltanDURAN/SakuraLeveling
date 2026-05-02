@@ -352,3 +352,74 @@ def test_stats_service_skill_bonuses_none_keeps_legacy_behavior():
     )
 
     assert stats_legacy == stats_with_none
+
+
+def test_stats_service_applies_skill_hp_regeneration_flat():
+    from app.domain.value_objects.skill_bonuses import SkillBonuses
+
+    profile = build_player_profile(level=1)
+    service = StatsService()
+    bonuses = SkillBonuses(hp_regeneration_flat=7)
+
+    stats = service.calculate_player_stats(
+        profile=profile,
+        equipped_items=[],
+        active_class=None,
+        skill_bonuses=bonuses,
+    )
+
+    # base hp_regeneration = 5, +7 = 12
+    assert stats.hp_regeneration == 12
+
+
+def test_stats_service_applies_skill_hp_max_percent_after_class_bonus():
+    from app.domain.value_objects.skill_bonuses import SkillBonuses
+
+    profile = build_player_profile(level=1)
+    service = StatsService()
+    active_class = build_class_definition(stat_bonuses={"max_hp": 50})
+    bonuses = SkillBonuses(hp_max_percent=0.20)
+
+    stats = service.calculate_player_stats(
+        profile=profile,
+        equipped_items=[],
+        active_class=active_class,
+        skill_bonuses=bonuses,
+    )
+
+    # base 100 + classe 50 = 150, puis ×1.20 = 180
+    assert stats.max_hp == round(150 * 1.20)
+
+
+def test_stats_service_skill_bonuses_combine_correctly():
+    """Tous les bonus de l'arbre s'appliquent ensemble, ordre flat puis %."""
+    from app.domain.value_objects.skill_bonuses import SkillBonuses
+
+    profile = build_player_profile(level=2)  # base hp 110, atk 12, def 6
+    service = StatsService()
+    bonuses = SkillBonuses(
+        atk_percent=0.10,
+        def_percent=0.05,
+        hp_max_percent=0.15,
+        crit_chance_flat=2,
+        crit_damage_flat=10,
+        dodge_flat=3,
+        speed_flat=1,
+        hp_regeneration_flat=2,
+    )
+
+    stats = service.calculate_player_stats(
+        profile=profile,
+        equipped_items=[],
+        active_class=None,
+        skill_bonuses=bonuses,
+    )
+
+    assert stats.attack == round(12 * 1.10)
+    assert stats.defense == round(6 * 1.05)
+    assert stats.max_hp == round(110 * 1.15)
+    assert stats.crit_chance == 5 + 2
+    assert stats.crit_damage == 150 + 10
+    assert stats.dodge == 0 + 3
+    assert stats.speed == 5 + 1
+    assert stats.hp_regeneration == 5 + 2

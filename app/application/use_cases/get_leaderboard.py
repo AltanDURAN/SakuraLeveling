@@ -8,6 +8,7 @@ from app.infrastructure.db.repositories.equipment_repository import EquipmentRep
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.repositories.player_kill_repository import PlayerKillRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
+from app.shared.formatters import format_int as _format_int
 
 
 COMPUTED_STAT_FIELDS = {
@@ -27,10 +28,6 @@ class LeaderboardCategory:
     code: str
     label: str
     icon: str = "📊"
-
-
-def _format_int(value: int) -> str:
-    return f"{value:,}".replace(",", " ")
 
 
 class GetLeaderboardUseCase:
