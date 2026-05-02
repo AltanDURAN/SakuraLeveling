@@ -23,6 +23,7 @@ from app.domain.entities.world_boss import WorldBoss, WorldBossParticipation
 from app.domain.services.boss_modifier_service import BossModifierService
 from app.domain.services.combat_service import CombatService
 from app.domain.services.cooldown_service import CooldownService
+from app.domain.services.progression_service import ProgressionService
 from app.domain.services.skill_tree_service import SkillTreeService
 from app.domain.services.stats_service import StatsService
 from app.domain.services.world_boss_scaling_service import WorldBossScalingService
@@ -551,11 +552,13 @@ class CompleteWorldBossUseCase:
         player_repository: PlayerRepository,
         item_repository: ItemRepository,
         inventory_repository: InventoryRepository,
+        progression_service: ProgressionService | None = None,
     ) -> None:
         self.world_boss_repository = world_boss_repository
         self.player_repository = player_repository
         self.item_repository = item_repository
         self.inventory_repository = inventory_repository
+        self.progression_service = progression_service or ProgressionService()
 
     def execute(self, boss_id: int) -> CompleteBossResult:
         boss = self.world_boss_repository.get_by_id(boss_id)
@@ -610,7 +613,20 @@ class CompleteWorldBossUseCase:
 
             # Application en DB
             self.player_repository.add_gold(p.player_id, total_gold)
-            self.player_repository.add_xp(p.player_id, total_xp)
+            # XP avec calcul de level-up correct (sinon l'XP est juste
+            # ajoutée mais le joueur ne gagne pas de niveau ni de skill points)
+            new_level, new_xp, new_skill_points = self.progression_service.apply_level_up(
+                current_level=profile.progression.level,
+                current_xp=profile.progression.xp,
+                gained_xp=total_xp,
+                current_skill_points=profile.progression.skill_points,
+            )
+            self.player_repository.apply_progression(
+                player_id=p.player_id,
+                new_level=new_level,
+                new_xp=new_xp,
+                new_skill_points=new_skill_points,
+            )
             for item_code, qty in items:
                 item = self.item_repository.get_by_code(item_code)
                 if item is not None:

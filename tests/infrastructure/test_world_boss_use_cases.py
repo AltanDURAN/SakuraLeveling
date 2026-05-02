@@ -302,6 +302,47 @@ def test_auto_spawn_force_creates_random_boss(session):
     assert decision.boss is not None
 
 
+def test_complete_triggers_level_up_when_xp_threshold_crossed(session):
+    """Bug fix : l'XP des récompenses boss doit déclencher le level up via
+    ProgressionService, pas juste incrémenter le compteur xp."""
+    _seed_potions(session)
+    SpawnWorldBossUseCase(WorldBossRepository(session)).execute(
+        boss_code="slime_titan"
+    )
+    boss = WorldBossRepository(session).get_active()
+
+    JoinWorldBossUseCase(
+        WorldBossRepository(session), PlayerRepository(session)
+    ).execute(discord_id=1, username="alice", display_name="Alice")
+    p_alice = session.query(PlayerModel).filter_by(discord_id=1).one().id
+
+    # Pose le profil à level 1, xp 90 (presque level 2 si threshold ~100)
+    from app.infrastructure.db.models.progression_model import PlayerProgressionModel
+    prog = session.get(PlayerProgressionModel, p_alice)
+    prog.xp = 90
+    session.commit()
+
+    # Donne des métriques pour qu'Alice soit top damage (cumul = 100xp + 25 base = 125xp)
+    WorldBossRepository(session).add_combat_metrics(
+        boss.id, p_alice, damage_dealt=500, damage_tanked=0, hp_healed=0,
+    )
+
+    complete = CompleteWorldBossUseCase(
+        world_boss_repository=WorldBossRepository(session),
+        player_repository=PlayerRepository(session),
+        item_repository=ItemRepository(session),
+        inventory_repository=InventoryRepository(session),
+    )
+    result = complete.execute(boss.id)
+    assert result.success is True
+
+    # Avec 90 + 125 = 215 xp, Alice doit avoir au moins level 2 et un skill_point
+    refreshed = session.get(PlayerProgressionModel, p_alice)
+    session.refresh(refreshed)
+    assert refreshed.level >= 2
+    assert refreshed.skill_points >= 1
+
+
 def test_complete_distributes_rewards_to_top_and_base(session):
     _seed_mob(session)
     _seed_potions(session)

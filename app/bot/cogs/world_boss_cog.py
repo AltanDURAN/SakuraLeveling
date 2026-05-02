@@ -61,14 +61,39 @@ def _get_boss_channel(bot: commands.Bot):
 
 
 class WorldBossView(discord.ui.View):
-    """View attachée au message du boss (3 boutons)."""
+    """View persistante attachée au message du boss (3 boutons).
 
-    def __init__(self, cog: "WorldBossCog", boss_id: int) -> None:
+    Persistante = `timeout=None` + chaque bouton a un `custom_id` stable.
+    Au démarrage du bot, le cog ré-enregistre une instance via
+    `bot.add_view(...)` pour que Discord reconnecte les clics aux callbacks
+    sans avoir besoin du message original. Indispensable pour un boss qui
+    peut survivre à un reboot.
+    """
+
+    def __init__(self, cog: "WorldBossCog | None" = None) -> None:
         super().__init__(timeout=None)
         self.cog = cog
-        self.boss_id = boss_id
 
-    @discord.ui.button(label="Rejoindre", style=discord.ButtonStyle.success, emoji="🤝")
+    def _resolve_cog(self, interaction: discord.Interaction) -> "WorldBossCog | None":
+        """Si la view a été restaurée sans cog (pas de référence au reboot),
+        on récupère le cog vivant depuis le bot."""
+        if self.cog is not None:
+            return self.cog
+        return interaction.client.get_cog("WorldBossCog")
+
+    async def _resolve_active_boss_id(self) -> int | None:
+        """Trouve l'id du boss actuellement actif (peu importe quel message
+        a déclenché l'interaction). Renvoie None si aucun boss actif."""
+        with get_db_session() as session:
+            boss = WorldBossRepository(session).get_active()
+        return boss.id if boss else None
+
+    @discord.ui.button(
+        label="Rejoindre",
+        style=discord.ButtonStyle.success,
+        emoji="🤝",
+        custom_id="world_boss:join",
+    )
     async def join_button(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
@@ -85,9 +110,17 @@ class WorldBossView(discord.ui.View):
             )
         await interaction.followup.send(result.message, ephemeral=True)
         if result.success:
-            await self.cog.refresh_boss_message(self.boss_id)
+            cog = self._resolve_cog(interaction)
+            boss_id = await self._resolve_active_boss_id()
+            if cog and boss_id:
+                await cog.refresh_boss_message(boss_id)
 
-    @discord.ui.button(label="Quitter", style=discord.ButtonStyle.secondary, emoji="🚪")
+    @discord.ui.button(
+        label="Quitter",
+        style=discord.ButtonStyle.secondary,
+        emoji="🚪",
+        custom_id="world_boss:leave",
+    )
     async def leave_button(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
@@ -100,10 +133,16 @@ class WorldBossView(discord.ui.View):
             result = use_case.execute(discord_id=interaction.user.id)
         await interaction.followup.send(result.message, ephemeral=True)
         if result.success:
-            await self.cog.refresh_boss_message(self.boss_id)
+            cog = self._resolve_cog(interaction)
+            boss_id = await self._resolve_active_boss_id()
+            if cog and boss_id:
+                await cog.refresh_boss_message(boss_id)
 
     @discord.ui.button(
-        label="Lancer le combat", style=discord.ButtonStyle.primary, emoji="⚔️"
+        label="Lancer le combat",
+        style=discord.ButtonStyle.primary,
+        emoji="⚔️",
+        custom_id="world_boss:fight",
     )
     async def fight_button(
         self, interaction: discord.Interaction, button: discord.ui.Button
@@ -130,9 +169,17 @@ class WorldBossView(discord.ui.View):
             )
         await interaction.followup.send(result.message, ephemeral=True)
         if result.success:
-            await self.cog.refresh_boss_message(self.boss_id)
-            if result.boss_defeated:
-                await self.cog.complete_boss(self.boss_id)
+            cog = self._resolve_cog(interaction)
+            boss_id = await self._resolve_active_boss_id()
+            if cog and boss_id:
+                await cog.refresh_boss_message(boss_id)
+            if result.boss_defeated and cog:
+                # boss_id ici peut être None (déjà passé en defeated) — on
+                # le retrouve depuis le get_latest_defeated.
+                with get_db_session() as session:
+                    last = WorldBossRepository(session).get_latest_defeated()
+                if last:
+                    await cog.complete_boss(last.id)
 
 
 class WorldBossCog(commands.Cog):
@@ -149,6 +196,9 @@ class WorldBossCog(commands.Cog):
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
+        # Enregistre la view persistante : Discord pourra reconnecter les
+        # clics (custom_id stables) même si le bot a redémarré.
+        self.bot.add_view(WorldBossView(self))
         self.auto_spawn_loop.start()
 
     def cog_unload(self) -> None:
@@ -266,7 +316,7 @@ class WorldBossCog(commands.Cog):
         if channel is None:
             return None
 
-        view = WorldBossView(self, boss.id)
+        view = WorldBossView(self)
         embed = build_boss_dashboard_embed(
             boss, num_participants=0, team_bonus_pct=0,
         )
@@ -301,7 +351,7 @@ class WorldBossCog(commands.Cog):
             except discord.NotFound:
                 return
             embed = build_boss_dashboard_embed(boss, num, bonus_pct)
-            view = WorldBossView(self, boss_id) if boss.is_alive else None
+            view = WorldBossView(self) if boss.is_alive else None
             await message.edit(embed=embed, view=view)
         except Exception:
             pass
