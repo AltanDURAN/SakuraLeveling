@@ -466,18 +466,26 @@ class FightWorldBossUseCase:
             hp_healed=hp_healed,
         )
 
-        # Quête hebdo : boss_damage (best effort)
+        # Quêtes hebdo + quotidiennes : on_boss_damage (best effort)
         try:
-            from app.infrastructure.db.repositories.weekly_quest_repository import (
-                WeeklyQuestRepository,
-            )
-            session = self.world_boss_repository.session
-            wqp_session = WeeklyQuestRepository(session)
             from app.application.use_cases.weekly_quests import (
                 WeeklyQuestProgressService,
             )
-            WeeklyQuestProgressService(wqp_session).on_boss_damage(
-                profile.player.id, damage_dealt
+            from app.application.use_cases.daily_quests import (
+                DailyQuestProgressService,
+            )
+            from app.infrastructure.db.repositories.weekly_quest_repository import (
+                WeeklyQuestRepository,
+            )
+            from app.infrastructure.db.repositories.daily_quest_repository import (
+                DailyQuestRepository,
+            )
+            session = self.world_boss_repository.session
+            WeeklyQuestProgressService(WeeklyQuestRepository(session)).on_boss_damage(
+                profile.player.id, damage_dealt,
+            )
+            DailyQuestProgressService(DailyQuestRepository(session)).on_boss_damage(
+                profile.player.id, damage_dealt,
             )
         except Exception:
             pass

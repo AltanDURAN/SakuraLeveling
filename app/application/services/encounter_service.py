@@ -363,17 +363,26 @@ class EncounterService:
                     )
                 title_unlock_service.check_kills_total(participant.player_id)
 
-                # Progress quêtes hebdo : on_kill (total + family) + gold_earned
+                # Progress quêtes hebdo + quotidiennes (best effort)
                 from app.application.use_cases.weekly_quests import (
                     WeeklyQuestProgressService,
+                )
+                from app.application.use_cases.daily_quests import (
+                    DailyQuestProgressService,
                 )
                 from app.infrastructure.db.repositories.weekly_quest_repository import (
                     WeeklyQuestRepository,
                 )
+                from app.infrastructure.db.repositories.daily_quest_repository import (
+                    DailyQuestRepository,
+                )
                 _wqp = WeeklyQuestProgressService(WeeklyQuestRepository(session))
+                _dqp = DailyQuestProgressService(DailyQuestRepository(session))
                 _wqp.on_kill(participant.player_id, mob.family or "", count=1)
+                _dqp.on_kill(participant.player_id, mob.family or "", count=1)
                 if gold > 0:
                     _wqp.on_gold_earned(participant.player_id, gold)
+                    _dqp.on_gold_earned(participant.player_id, gold)
 
                 for item_code, quantity in dropped_items:
                     item = item_repository.get_by_code(item_code)

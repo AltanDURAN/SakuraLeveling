@@ -64,6 +64,10 @@ class WeeklyQuestState:
     week_start: datetime
     quests: list[QuestStatus] = field(default_factory=list)
 
+    @property
+    def claimable_count(self) -> int:
+        return sum(1 for q in self.quests if q.completed and not q.claimed)
+
 
 class GetWeeklyQuestsUseCase:
     """Charge l'état des quêtes du joueur pour la semaine courante.
@@ -225,6 +229,113 @@ class ClaimWeeklyQuestUseCase:
             items=list(d.reward_items),
             leveled_up=leveled,
             new_level=new_level if leveled else None,
+        )
+
+
+@dataclass
+class ClaimedReward:
+    quest_code: str
+    name: str
+    gold: int
+    xp: int
+    items: list
+
+
+@dataclass
+class ClaimAllResult:
+    success: bool
+    message: str
+    rewards: list[ClaimedReward] = field(default_factory=list)
+    leveled_up: bool = False
+    new_level: int | None = None
+
+
+class ClaimAllWeeklyUseCase:
+    """Réclame d'un coup toutes les quêtes hebdo complétées non-claim."""
+
+    def __init__(
+        self,
+        player_repository: PlayerRepository,
+        quest_repository: WeeklyQuestRepository,
+        item_repository: ItemRepository,
+        inventory_repository: InventoryRepository,
+        progression_service: ProgressionService | None = None,
+    ) -> None:
+        self.player_repository = player_repository
+        self.quest_repository = quest_repository
+        self.item_repository = item_repository
+        self.inventory_repository = inventory_repository
+        self.progression_service = progression_service or ProgressionService()
+
+    def execute(
+        self,
+        discord_id: int,
+        username: str,
+        display_name: str,
+    ) -> ClaimAllResult:
+        profile = self.player_repository.get_or_create_by_discord_id(
+            discord_id=discord_id, username=username, display_name=display_name,
+        )
+        week_start = get_current_week_start()
+        assignments = self.quest_repository.list_for_player_week(
+            profile.player.id, week_start,
+        )
+        claimable = [a for a in assignments if a.completed and not a.claimed]
+        if not claimable:
+            return ClaimAllResult(
+                success=False,
+                message="⚠️ Aucune récompense à récupérer pour l'instant.",
+            )
+
+        rewards: list[ClaimedReward] = []
+        total_xp = 0
+        total_gold = 0
+        starting_level = profile.progression.level
+
+        for a in claimable:
+            d = get_definition(a.quest_code)
+            if d is None:
+                continue
+            self.player_repository.add_gold(profile.player.id, d.reward_gold)
+            total_gold += d.reward_gold
+            total_xp += d.reward_xp
+            for item_code, qty in d.reward_items:
+                item = self.item_repository.get_by_code(item_code)
+                if item is not None:
+                    self.inventory_repository.add_item(
+                        player_id=profile.player.id,
+                        item_definition_id=item.id,
+                        quantity=int(qty),
+                    )
+            self.quest_repository.mark_claimed(
+                profile.player.id, week_start, a.quest_code,
+            )
+            rewards.append(
+                ClaimedReward(
+                    quest_code=a.quest_code, name=d.name, gold=d.reward_gold,
+                    xp=d.reward_xp, items=list(d.reward_items),
+                )
+            )
+
+        if total_xp > 0:
+            new_level, new_xp, new_sp = self.progression_service.apply_level_up(
+                current_level=profile.progression.level,
+                current_xp=profile.progression.xp,
+                gained_xp=total_xp,
+                current_skill_points=profile.progression.skill_points,
+            )
+            self.player_repository.apply_progression(
+                profile.player.id, new_level, new_xp, new_sp,
+            )
+            leveled = new_level > starting_level
+            new_level_for_msg = new_level if leveled else None
+        else:
+            leveled, new_level_for_msg = False, None
+
+        return ClaimAllResult(
+            success=True,
+            message=f"✅ {len(rewards)} récompense(s) récupérée(s).",
+            rewards=rewards, leveled_up=leveled, new_level=new_level_for_msg,
         )
 
 

@@ -58,17 +58,26 @@ class GatherResourceUseCase:
             new_xp,
         )
 
-        # Quête hebdo : on_gather (best effort)
+        # Quêtes : on_gather (hebdo + quotidienne, best effort)
         try:
             from app.application.use_cases.weekly_quests import (
                 WeeklyQuestProgressService,
             )
+            from app.application.use_cases.daily_quests import (
+                DailyQuestProgressService,
+            )
             from app.infrastructure.db.repositories.weekly_quest_repository import (
                 WeeklyQuestRepository,
             )
+            from app.infrastructure.db.repositories.daily_quest_repository import (
+                DailyQuestRepository,
+            )
             session = self.inventory_repository.session
             WeeklyQuestProgressService(WeeklyQuestRepository(session)).on_gather(
-                profile.player.id, count=1
+                profile.player.id, count=1,
+            )
+            DailyQuestProgressService(DailyQuestRepository(session)).on_gather(
+                profile.player.id, count=1,
             )
         except Exception:
             pass

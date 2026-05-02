@@ -104,17 +104,26 @@ class CraftItemUseCase:
             quantity=recipe.result_quantity,
         )
 
-        # Quête hebdo : on_craft (best effort, ne casse pas le craft)
+        # Quêtes hebdo + quotidiennes : on_craft (best effort)
         try:
             from app.application.use_cases.weekly_quests import (
                 WeeklyQuestProgressService,
             )
+            from app.application.use_cases.daily_quests import (
+                DailyQuestProgressService,
+            )
             from app.infrastructure.db.repositories.weekly_quest_repository import (
                 WeeklyQuestRepository,
             )
+            from app.infrastructure.db.repositories.daily_quest_repository import (
+                DailyQuestRepository,
+            )
             session = self.inventory_repository.session
             WeeklyQuestProgressService(WeeklyQuestRepository(session)).on_craft(
-                profile.player.id, count=recipe.result_quantity
+                profile.player.id, count=recipe.result_quantity,
+            )
+            DailyQuestProgressService(DailyQuestRepository(session)).on_craft(
+                profile.player.id, count=recipe.result_quantity,
             )
         except Exception:
             pass

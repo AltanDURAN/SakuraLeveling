@@ -1,6 +1,6 @@
-"""Cog des quêtes hebdomadaires (/weekly_quest).
+"""Cog des quêtes quotidiennes (/daily_quest).
 
-3 quêtes assignées chaque lundi 00:00 UTC. Bouton 'Récupérer ma/mes
+3 quêtes assignées chaque jour à minuit UTC. Bouton 'Récupérer ma/mes
 récompense(s)' affiché si au moins une quête est complétée non-claim.
 """
 
@@ -8,19 +8,17 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from app.application.use_cases.weekly_quests import (
-    ClaimAllWeeklyUseCase,
-    GetWeeklyQuestsUseCase,
-    WeeklyQuestState,
+from app.application.use_cases.daily_quests import (
+    ClaimAllDailyUseCase,
+    DailyQuestState,
+    GetDailyQuestsUseCase,
 )
 from app.bot.views.quest_claim_view import QuestClaimView
 from app.infrastructure.config.settings import settings
+from app.infrastructure.db.repositories.daily_quest_repository import DailyQuestRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
-from app.infrastructure.db.repositories.weekly_quest_repository import (
-    WeeklyQuestRepository,
-)
 from app.infrastructure.db.session import get_db_session
 
 
@@ -36,18 +34,15 @@ def _tier_emoji(tier: str) -> str:
     return {"easy": "🟢", "medium": "🟡", "hard": "🔴"}.get(tier, "⚪")
 
 
-def build_weekly_embed(
-    display_name: str, state: WeeklyQuestState
-) -> discord.Embed:
+def build_daily_embed(display_name: str, state: DailyQuestState) -> discord.Embed:
     embed = discord.Embed(
-        title=f"📅 Quêtes hebdo de {display_name}",
+        title=f"📅 Quêtes quotidiennes de {display_name}",
         description=(
-            f"Semaine du <t:{int(state.week_start.timestamp())}:D>. "
-            "Reset chaque lundi à minuit UTC."
+            f"Reset à minuit UTC. Dernière rotation : "
+            f"<t:{int(state.day_start.timestamp())}:D>."
         ),
-        color=discord.Color.purple(),
+        color=discord.Color.teal(),
     )
-
     if not state.quests:
         embed.add_field(name="—", value="Aucune quête assignée.", inline=False)
         return embed
@@ -77,7 +72,7 @@ def build_weekly_embed(
     return embed
 
 
-class WeeklyQuestCog(commands.Cog):
+class DailyQuestCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
@@ -95,20 +90,20 @@ class WeeklyQuestCog(commands.Cog):
         return True
 
     @app_commands.command(
-        name="weekly_quest",
-        description="Voir et réclamer vos 3 quêtes hebdomadaires",
+        name="daily_quest",
+        description="Voir et réclamer vos 3 quêtes quotidiennes",
     )
-    async def weekly_quest(self, interaction: discord.Interaction) -> None:
+    async def daily_quest(self, interaction: discord.Interaction) -> None:
         state = self._fetch_state(interaction)
-        embed = build_weekly_embed(interaction.user.display_name, state)
+        embed = build_daily_embed(interaction.user.display_name, state)
         view = self._build_view(interaction, state)
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
-    def _fetch_state(self, interaction: discord.Interaction) -> WeeklyQuestState:
+    def _fetch_state(self, interaction: discord.Interaction) -> DailyQuestState:
         with get_db_session() as session:
-            return GetWeeklyQuestsUseCase(
+            return GetDailyQuestsUseCase(
                 player_repository=PlayerRepository(session),
-                quest_repository=WeeklyQuestRepository(session),
+                quest_repository=DailyQuestRepository(session),
             ).execute(
                 discord_id=interaction.user.id,
                 username=interaction.user.name,
@@ -116,14 +111,14 @@ class WeeklyQuestCog(commands.Cog):
             )
 
     def _build_view(
-        self, interaction: discord.Interaction, state: WeeklyQuestState,
+        self, interaction: discord.Interaction, state: DailyQuestState,
     ) -> QuestClaimView:
         async def on_claim(claim_interaction: discord.Interaction) -> None:
             await claim_interaction.response.defer(ephemeral=True)
             with get_db_session() as session:
-                use_case = ClaimAllWeeklyUseCase(
+                use_case = ClaimAllDailyUseCase(
                     player_repository=PlayerRepository(session),
-                    quest_repository=WeeklyQuestRepository(session),
+                    quest_repository=DailyQuestRepository(session),
                     item_repository=ItemRepository(session),
                     inventory_repository=InventoryRepository(session),
                 )
@@ -151,8 +146,9 @@ class WeeklyQuestCog(commands.Cog):
             if result.leveled_up and result.new_level is not None:
                 lines.append(f"🎉 Niveau **{result.new_level}** atteint !")
 
+            # Re-fetch et mise à jour du message principal pour cacher le bouton
             new_state = self._fetch_state(claim_interaction)
-            new_embed = build_weekly_embed(
+            new_embed = build_daily_embed(
                 claim_interaction.user.display_name, new_state,
             )
             new_view = self._build_view(claim_interaction, new_state)
@@ -171,4 +167,4 @@ class WeeklyQuestCog(commands.Cog):
 
 
 async def setup(bot: commands.Bot) -> None:
-    await bot.add_cog(WeeklyQuestCog(bot))
+    await bot.add_cog(DailyQuestCog(bot))
