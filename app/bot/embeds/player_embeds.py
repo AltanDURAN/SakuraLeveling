@@ -15,9 +15,14 @@ def build_player_profile_embed(
     power_score: str = "0",
     total_kills: int = 0,
     career_stats: PlayerCareerStats | None = None,
+    duel_rank_position: int | None = None,
+    duel_wins: int = 0,
+    duel_losses: int = 0,
+    active_title: str | None = None,
 ) -> discord.Embed:
+    title_prefix = f"🏷️ {active_title} • " if active_title else ""
     embed = discord.Embed(
-        title=f"👤 Profil de {profile.player.display_name}",
+        title=f"👤 {title_prefix}Profil de {profile.player.display_name}",
         color=discord.Color.blue(),
     )
 
@@ -26,6 +31,17 @@ def build_player_profile_embed(
     embed.add_field(name="✨ XP", value=_format_int(profile.progression.xp), inline=True)
     embed.add_field(name="💰 Or", value=_format_int(profile.resources.gold), inline=True)
     embed.add_field(name="🔥 Puissance", value=power_score, inline=True)
+    embed.add_field(
+        name="📚 Skill points",
+        value=_format_int(profile.progression.skill_points),
+        inline=True,
+    )
+    duel_label = (
+        f"#{duel_rank_position} ({duel_wins}V-{duel_losses}D)"
+        if duel_rank_position is not None
+        else "—"
+    )
+    embed.add_field(name="⚔️ Rang duel 1v1", value=duel_label, inline=True)
 
     # Bloc combat / stats
     embed.add_field(name="❤️ PV", value=f"{current_hp}/{stats.max_hp}", inline=True)

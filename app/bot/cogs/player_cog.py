@@ -34,6 +34,7 @@ from app.bot.embeds.daily_embeds import (
     build_daily_success_embed,
 )
 from app.bot.views.equipment_view import EquipmentView
+from app.bot.views.inventory_view import InventoryView
 from app.bot.embeds.craft_embeds import WEAPON_CATEGORIES, build_craft_list_embed
 from app.bot.embeds.inventory_embeds import build_inventory_embed
 from app.bot.embeds.player_embeds import build_player_profile_embed
@@ -200,6 +201,10 @@ class PlayerCog(commands.Cog):
             total_kills = kill_repository.get_total_kills(profile.player.id)
             career_stats = career_stats_repository.get_or_create(profile.player.id)
 
+            duel_rank = PlayerDuelRankRepository(session).get_by_player_id(
+                profile.player.id
+            )
+
         embed = build_player_profile_embed(
             profile=profile,
             stats=stats,
@@ -208,6 +213,9 @@ class PlayerCog(commands.Cog):
             power_score=formatted_power_score,
             total_kills=total_kills,
             career_stats=career_stats,
+            duel_rank_position=duel_rank.rank_position if duel_rank else None,
+            duel_wins=duel_rank.wins if duel_rank else 0,
+            duel_losses=duel_rank.losses if duel_rank else 0,
         )
         await interaction.response.send_message(embed=embed)
 
@@ -227,8 +235,8 @@ class PlayerCog(commands.Cog):
             inventory_repository = InventoryRepository(session)
             items = inventory_repository.list_by_player_id(profile.player.id)
 
-        embed = build_inventory_embed(target_member.display_name, items)
-        await interaction.response.send_message(embed=embed)
+        view = InventoryView(target_member.display_name, items)
+        await interaction.response.send_message(embed=view._build_embed(), view=view)
 
     @app_commands.command(name="equipment", description="Afficher un équipement (12 slots, 2 pages)")
     @app_commands.describe(target="Joueur dont afficher l'équipement (par défaut : vous)")
