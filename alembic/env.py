@@ -27,6 +27,7 @@ from app.infrastructure.db.models.player_career_stats_model import PlayerCareerS
 from app.infrastructure.db.models.player_skill_allocation_model import PlayerSkillAllocationModel
 from app.infrastructure.db.models.trade_model import TradeItemModel, TradeModel
 from app.infrastructure.db.models.player_duel_rank_model import PlayerDuelRankModel
+from app.infrastructure.db.models.world_boss_model import WorldBossModel, WorldBossParticipationModel
 
 
 config = context.config

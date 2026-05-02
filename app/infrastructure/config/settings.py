@@ -8,6 +8,10 @@ class Settings(BaseSettings):
     debug: bool = True
     beta_channel_id: int
     encounter_channel_id: int
+    # Channel dédié aux world bosses. Optionnel pour rester rétrocompatible
+    # avec les .env existants qui n'ont pas encore l'ID. Si 0/None, fallback
+    # vers encounter_channel_id (les bosses sortent dans le même canal).
+    boss_channel_id: int = 0
     admin_discord_ids: str = ""
 
     model_config = SettingsConfigDict(

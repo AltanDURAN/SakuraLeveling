@@ -94,6 +94,8 @@ git checkout main
 | `/admin shop_add`, `/admin shop_set`, `/admin shop_remove`, `/admin shop_set_stock` | `admin_cog` | **Admin uniquement** — gestion du shop (autocomplete sur item_code) |
 | `/shop`, `/buy <item> <qty>`, `/sell <item> <qty>` | `shop_cog` | Shop joueur (achat prix fixe, vente prix dynamique selon saturation) |
 | `/skill [target]` | `skill_cog` | Arbre de compétences avec image, boutons Investir/Vue web/Reset (cooldown 7j) |
+| `/use <item_code>` | `player_cog` | Utiliser un consommable (potions de soin I/II/III en V1) |
+| `/boss spawn <mob_code>` | `world_boss_cog` | **Admin uniquement** — spawn un world boss à partir d'un mob boosté ×100 |
 
 ## Système d'administration
 
@@ -167,6 +169,25 @@ Pour un nouveau cog : si les commandes restent dans le canal beta → poser `int
 - **Reset** : `ResetSkillTreeUseCase` (cooldown 7j) restitue tous les points dépensés via `compute_total_refund`. `/admin reset_player` purge aussi les allocations + cooldown.
 - **Webapp** : FastAPI mono-service ([`webapp/`](webapp/)), même rendu SVG que le bot. `python -m webapp.main` → http://localhost:8000. Routes : `/skill/<discord_id>` (HTML interactif zoom/pan/hover) + `/api/skill/<discord_id>` (JSON).
 - **Rendu PNG Discord** : SVG → PNG via cairosvg, pas de Chromium ni Playwright.
+
+## Système de consommables
+
+- **Convention** : `category="consumable"` + `stat_bonuses_json={"effect": str, "value": ...}`. V1 supporte uniquement `effect="heal_percent"` (heal X% du max_hp courant, capé à max_hp).
+- **3 potions de soin** (I=50%, II=75%, III=100%) seedées dans [`items.json`](app/infrastructure/content/items.json) et [`shop_items.json`](app/infrastructure/content/shop_items.json).
+- **Use case** : [`UseConsumableUseCase`](app/application/use_cases/use_consumable.py) — décrément atomique de l'inventaire, calcul du `max_hp` via `StatsService` (équipement + classe + skill bonuses), update `player_health_state`.
+- **Commande** : `/use <item_code>` avec autocomplete sur les consommables actuellement possédés. Refus si pas en inventaire ou si l'item n'est pas marqué consommable.
+
+## Système de world boss
+
+- **Modèle DB** : tables `world_bosses` (1 seul "active" à la fois) et `world_boss_participations` (UNIQUE sur boss_id+player_id, cumule damage_dealt/tanked/hp_healed/fights_count).
+- **Spawn** : `/boss spawn <mob_code>` (admin uniquement) crée un boss à partir d'un mob existant boosté **×100** (max_hp, attack, defense). Speed/crit/dodge inchangés. **`hp_regeneration=0` par construction** — un boss ne regen jamais ses PV.
+- **Channel dédié** : `settings.boss_channel_id` (fallback `encounter_channel_id` si non défini, pour ne pas casser les .env existants).
+- **View** : 3 boutons sur le message du boss (Rejoindre / Quitter / Lancer le combat). Le message est édité après chaque action via `WorldBossCog.refresh_boss_message`.
+- **Cooldown 1 combat / jour / joueur** : action_key="world_boss_fight" dans `player_cooldowns`, reset à minuit UTC (cf. [`world_boss.py:_next_midnight_utc`](app/application/use_cases/world_boss.py)).
+- **Bonus d'équipe** : `WorldBossScalingService` applique +5% par participant additionnel (capé à +50%) sur attack/defense/max_hp du joueur. Speed/crit/dodge ne sont PAS boostés (stats tactiques). Plus l'équipe est nombreuse, plus chaque joueur frappe fort — incite au raid groupé.
+- **Persistence HP** : le boss garde `current_hp` entre les combats — vaincu à l'usure par les coups successifs.
+- **Récompenses** ([`CompleteWorldBossUseCase`](app/application/use_cases/world_boss.py)) : à la défaite, top_damage/top_tank/top_heal reçoivent +200g/+100xp/+1 potion_soin_iii (cumul possible). Tous les participants reçoivent en plus la base : +50g/+25xp/+1 potion_soin_i. Un même joueur top de plusieurs catégories cumule chaque bonus.
+- **À faire plus tard** : auto-spawn aléatoire 1×/semaine, table `boss_definitions` JSON dédiée avec stats finement réglées et particularités, cooldown de respawn 7j après défaite.
 
 ## Système de duel 1v1 (PvP)
 

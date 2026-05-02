@@ -463,6 +463,28 @@ beta channel sur le cog admin).
     Annule l'encounter actif (combat de groupe en cours). Le timer de
     respawn est posé à +1 minute pour éviter un respawn instantané.
 
+/boss spawn <mob_code> [custom_name]
+    Spawn un world boss à partir d'un mob existant boosté ×100 (max_hp,
+    attack, defense). Le boss apparaît dans le canal dédié défini par
+    BOSS_CHANNEL_ID (fallback : ENCOUNTER_CHANNEL_ID si non défini).
+    Refuse si un autre boss est déjà actif (mort = un seul à la fois).
+    Le boss ne regagne JAMAIS de PV — vaincu à l'usure.
+
+    Le message posté embarque 3 boutons accessibles à tous :
+        • [🤝 Rejoindre]      → s'inscrire au raid
+        • [🚪 Quitter]        → se désinscrire (refus si déjà combattu)
+        • [⚔️ Lancer le combat] → solo combat avec bonus d'équipe :
+              +5% attack/defense/max_hp par participant inscrit (capé +50%).
+              Cooldown 1 combat / jour / joueur, reset à minuit UTC.
+
+    À la défaite, le bot poste un récap dans le canal et distribue :
+        • Top dégâts / Top tank / Top heal : +200g, +100xp, +1 potion_soin_iii
+        • Tous les participants : +50g, +25xp, +1 potion_soin_i (en plus
+          du bonus catégorie pour les top-X)
+
+    V1 : pas d'auto-spawn (admin manuel via cette commande). À enrichir
+    plus tard avec une table dédiée de bosses + spawn random hebdomadaire.
+
 --------------------------------------------------------------------------------
 2.3 — GESTION DE LA BOUTIQUE
 --------------------------------------------------------------------------------
