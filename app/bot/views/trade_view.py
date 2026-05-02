@@ -60,23 +60,37 @@ def parse_items_text(text: str) -> tuple[list[tuple[str, int]], list[str]]:
             errors.append(raw_line)
             continue
 
+        # Refuse explicitement les quantités nulles ou négatives plutôt que
+        # de les corriger silencieusement (signal d'erreur de saisie au user).
+        if first_int <= 0:
+            errors.append(raw_line)
+            continue
+
         # Le code est la concat des autres parts
         code_parts = [p for i, p in enumerate(parts) if i != first_int_idx]
         if not code_parts:
             errors.append(raw_line)
             continue
         code = "_".join(code_parts) if len(code_parts) > 1 else code_parts[0]
-        items.append((code, max(1, first_int)))
+        items.append((code, first_int))
 
     return items, errors
 
 
-def _parse_int(text: str) -> int:
-    """Parse un nombre. Vide → 0. Invalide → raise ValueError."""
+def _parse_non_negative_int(text: str) -> int:
+    """Parse un nombre ≥ 0. Vide → 0. Négatif ou invalide → raise ValueError."""
     text = (text or "").strip()
     if not text:
         return 0
-    return int(text)
+    value = int(text)
+    if value < 0:
+        raise ValueError("le montant doit être positif ou nul")
+    return value
+
+
+def _parse_int(text: str) -> int:
+    """Alias rétrocompat de `_parse_non_negative_int` (anciennement permissif)."""
+    return _parse_non_negative_int(text)
 
 
 class TradeProposalModal(discord.ui.Modal):

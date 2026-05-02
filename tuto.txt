@@ -254,6 +254,20 @@ Kill counter : tous les survivants reçoivent +1 sur le compteur du mob tué.
 1.8 — ÉCHANGES ENTRE JOUEURS
 --------------------------------------------------------------------------------
 
+/pay @target <amount>
+    Envoie de l'or à un autre joueur. Transfert unilatéral, simple et
+    sécurisé.
+    Validations :
+        • amount strictement positif (≥ 1) — bloqué côté Discord et côté
+          use case
+        • Refus si vous tentez de vous payer vous-même
+        • Refus si la cible n'a pas de profil joueur
+        • Refus si vos fonds sont insuffisants au moment de l'envoi
+    L'or transféré n'est PAS comptabilisé dans le `gold_earned_total` du
+    receiver (cohérent avec /admin give_gold et /trade : seuls les gains
+    "via le jeu" comptent dans les stats de carrière).
+    Exemple : /pay @Bob 50
+
 /trade @target
     Propose un échange à un autre joueur. Une modal s'ouvre avec 4 champs :
         • Items que vous proposez (un par ligne, format "code quantité"

@@ -8,6 +8,7 @@ from datetime import datetime, UTC
 from app.bot.checks.admin_check import admin_only
 from app.domain.entities.player_profile import PlayerProfile
 from app.application.use_cases.change_player_class import ChangePlayerClassUseCase
+from app.application.use_cases.transfer_gold import TransferGoldUseCase
 from app.application.use_cases.claim_daily_reward import ClaimDailyRewardUseCase
 from app.application.use_cases.claim_quest_reward import ClaimQuestRewardUseCase
 from app.application.use_cases.craft_item import CraftItemUseCase
@@ -649,6 +650,47 @@ class PlayerCog(commands.Cog):
             if len(choices) >= 25:
                 break
         return choices
+
+    @app_commands.command(
+        name="pay",
+        description="Envoyer de l'or à un autre joueur",
+    )
+    @app_commands.describe(
+        target="Joueur destinataire",
+        amount="Montant à envoyer (>= 1)",
+    )
+    async def pay(
+        self,
+        interaction: discord.Interaction,
+        target: discord.Member,
+        amount: app_commands.Range[int, 1, 1_000_000_000],
+    ) -> None:
+        if target.bot:
+            await interaction.response.send_message(
+                "❌ Vous ne pouvez pas envoyer d'or à un bot.",
+                ephemeral=True,
+            )
+            return
+
+        with get_db_session() as session:
+            use_case = TransferGoldUseCase(PlayerRepository(session))
+            result = use_case.execute(
+                sender_discord_id=interaction.user.id,
+                sender_username=interaction.user.name,
+                sender_display_name=interaction.user.display_name,
+                receiver_discord_id=target.id,
+                receiver_display_name=target.display_name,
+                amount=amount,
+            )
+
+        if not result.success:
+            await interaction.response.send_message(result.message, ephemeral=True)
+            return
+
+        await interaction.response.send_message(
+            f"💸 {interaction.user.mention} a envoyé **{amount}** or à {target.mention}.\n"
+            f"_Votre solde : {result.sender_balance_after} or._"
+        )
 
     @app_commands.command(name="daily", description="Récupérer votre récompense quotidienne")
     async def daily(self, interaction: discord.Interaction) -> None:

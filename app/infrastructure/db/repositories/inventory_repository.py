@@ -25,6 +25,11 @@ class InventoryRepository:
         return [self._to_domain(model) for model in models]
 
     def add_item(self, player_id: int, item_definition_id: int, quantity: int) -> None:
+        # Garde défensif : quantité <= 0 = no-op (préviens l'usage négatif
+        # qui décrementerait l'inventaire).
+        if quantity <= 0:
+            return
+
         stmt = select(PlayerInventoryItemModel).where(
             PlayerInventoryItemModel.player_id == player_id,
             PlayerInventoryItemModel.item_definition_id == item_definition_id,
@@ -49,6 +54,11 @@ class InventoryRepository:
         self.session.commit()
 
     def remove_item(self, player_id: int, item_definition_id: int, quantity: int) -> bool:
+        # Garde défensif : qty négative ferait un increment via le `-= quantity`.
+        # Qty zéro est un no-op qui pourrait simuler un succès faux.
+        if quantity <= 0:
+            return False
+
         stmt = select(PlayerInventoryItemModel).where(
             PlayerInventoryItemModel.player_id == player_id,
             PlayerInventoryItemModel.item_definition_id == item_definition_id,
