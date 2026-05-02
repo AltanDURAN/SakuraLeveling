@@ -28,6 +28,9 @@ class EncounterCog(commands.Cog):
         self.encounter_service = EncounterService()
         self.next_spawn_at: datetime | None = None
         self._forced_mob_code: str | None = None
+        # Event signalé par /admin start_encounter pour résoudre tout de suite
+        # le combat actif sans attendre les 5 min. Re-créé à chaque spawn.
+        self._early_resolve_event: asyncio.Event | None = None
         self.encounter_loop.start()
         self.generated_dir = GENERATED_ENCOUNTERS_DIR
         self.generated_dir.mkdir(exist_ok=True)
@@ -63,23 +66,47 @@ class EncounterCog(commands.Cog):
     def trigger_immediate_spawn(self, mob_code: str | None = None) -> tuple[bool, str]:
         """Force la prochaine itération du loop à spawn un encounter.
 
-        La boucle tourne toutes les 10s : un nouvel encounter apparaîtra dans
-        ~10s maximum. Refuse si un combat est déjà actif. Si `mob_code` est
+        Si un combat est déjà actif, il est annulé pour faire place au nouveau
+        (le timer de respawn naturel est correctement réinitialisé via
+        `_early_resolve_event` qui débloque la boucle). Si `mob_code` est
         fourni, le prochain spawn ciblera ce mob précis (sinon random).
         """
-        if self.active_encounter is not None:
-            return False, "Un combat est déjà en cours."
-
         if mob_code is not None:
             with get_db_session() as session:
                 mob = MobRepository(session).get_by_code(mob_code)
             if mob is None:
                 return False, f"Mob `{mob_code}` introuvable."
 
+        cancelled_existing = False
+        if self.active_encounter is not None:
+            # On signale au loop de finir tout de suite l'encounter actuel
+            # (équivalent à un /admin end_encounter implicite). Le loop posera
+            # automatiquement next_spawn_at = +1min puis on l'écrase juste
+            # après pour spawner immédiatement.
+            self.active_encounter = None
+            if self._early_resolve_event is not None:
+                self._early_resolve_event.set()
+            cancelled_existing = True
+
         self._forced_mob_code = mob_code
         self.next_spawn_at = datetime.now(UTC) - timedelta(seconds=1)
         suffix = f" ({mob_code})" if mob_code else ""
-        return True, f"Spawn forcé{suffix} : un monstre apparaît dans quelques secondes."
+        prefix = "Combat précédent annulé. " if cancelled_existing else ""
+        return True, (
+            f"{prefix}Spawn forcé{suffix} : un monstre apparaît dans quelques secondes."
+        )
+
+    def request_early_resolve(self) -> tuple[bool, str]:
+        """Demande au loop de résoudre tout de suite l'encounter actif sans
+        attendre les 5 min. Utilisé par /admin start_encounter. Pas de
+        décalage temporel : la boucle continue ensuite normalement (next_spawn_at
+        sera posé par la résolution comme d'habitude)."""
+        if self.active_encounter is None:
+            return False, "Aucun combat actif à résoudre."
+        if self._early_resolve_event is None:
+            return False, "Combat actif mais loop non prêt."
+        self._early_resolve_event.set()
+        return True, f"Combat lancé immédiatement contre **{self.active_encounter.mob_state.name}**."
 
     def force_end_encounter(self) -> tuple[bool, str]:
         """Annule un encounter actif (utilisé par /admin end_encounter).
@@ -185,7 +212,16 @@ class EncounterCog(commands.Cog):
         encounter.message_id = message.id
         self.active_encounter = encounter
 
-        await asyncio.sleep(300)
+        # Fenêtre de recrutement / combat : 5 min OU jusqu'à signal
+        # d'/admin start_encounter (early resolve). Pas de décalage timer :
+        # la suite de la boucle pose next_spawn_at comme d'habitude.
+        self._early_resolve_event = asyncio.Event()
+        try:
+            await asyncio.wait_for(self._early_resolve_event.wait(), timeout=300)
+        except asyncio.TimeoutError:
+            pass
+        finally:
+            self._early_resolve_event = None
 
         for child in view.children:
             child.disabled = True

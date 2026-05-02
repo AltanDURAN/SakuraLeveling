@@ -40,114 +40,184 @@ class AdminCog(commands.Cog):
 
     # -------------------------- Or --------------------------
 
-    @admin.command(name="give_gold", description="Ajoute de l'or à un joueur")
-    @app_commands.describe(target="Joueur ciblé", amount="Quantité d'or à ajouter")
-    @admin_only
-    async def give_gold(
+    # -------------------------- Resource triplet (set/give/remove) --------------------------
+    #
+    # Une seule commande paramétrée par action pour rester sous la limite
+    # Discord de 25 child-commands par groupe. Le param `resource` choisit
+    # quelle ressource manipuler.
+
+    _RESOURCE_CHOICES = [
+        app_commands.Choice(name="Or", value="gold"),
+        app_commands.Choice(name="XP", value="xp"),
+        app_commands.Choice(name="Skill points", value="skill_points"),
+        app_commands.Choice(name="PV courants", value="current_hp"),
+        app_commands.Choice(name="Daily streak", value="daily_streak"),
+    ]
+
+    async def _apply_resource(
         self,
-        interaction: discord.Interaction,
+        action: str,  # "set" | "give" | "remove"
+        resource: str,
         target: discord.Member,
-        amount: app_commands.Range[int, 1, 1_000_000_000],
-    ) -> None:
-        await interaction.response.defer(ephemeral=True)
-
+        amount: int,
+    ) -> str:
         with get_db_session() as session:
-            player_repository = PlayerRepository(session)
-            profile = player_repository.get_by_discord_id(target.id)
-
+            repo = PlayerRepository(session)
+            profile = repo.get_by_discord_id(target.id)
             if profile is None:
-                await interaction.followup.send(
-                    f"❌ {target.display_name} n'a pas encore de profil.",
-                    ephemeral=True,
+                return f"❌ {target.display_name} n'a pas encore de profil."
+
+            if resource == "gold":
+                current = profile.resources.gold
+                if action == "set":
+                    new = max(0, amount)
+                elif action == "give":
+                    new = current + amount
+                else:
+                    new = max(0, current - amount)
+                repo.set_gold(profile.player.id, new)
+                label = "Or"
+
+            elif resource == "xp":
+                current = profile.progression.xp
+                if action == "set":
+                    new = max(0, amount)
+                    repo.apply_progression(
+                        profile.player.id, profile.progression.level, new,
+                        profile.progression.skill_points,
+                    )
+                elif action == "give":
+                    # Avec level-up calculé proprement
+                    progression_service = ProgressionService()
+                    new_level, new_xp, new_sp = progression_service.apply_level_up(
+                        current_level=profile.progression.level,
+                        current_xp=current,
+                        gained_xp=amount,
+                        current_skill_points=profile.progression.skill_points,
+                    )
+                    repo.apply_progression(profile.player.id, new_level, new_xp, new_sp)
+                    new = new_xp
+                else:
+                    new = max(0, current - amount)
+                    repo.apply_progression(
+                        profile.player.id, profile.progression.level, new,
+                        profile.progression.skill_points,
+                    )
+                label = "XP"
+
+            elif resource == "skill_points":
+                current = profile.progression.skill_points
+                if action == "set":
+                    repo.set_skill_points(profile.player.id, max(0, amount))
+                    new = max(0, amount)
+                elif action == "give":
+                    repo.add_skill_points(profile.player.id, amount)
+                    new = current + amount
+                else:
+                    repo.add_skill_points(profile.player.id, -amount)
+                    new = max(0, current - amount)
+                label = "Skill points"
+
+            elif resource == "current_hp":
+                equipped = EquipmentRepository(session).list_by_player_id(profile.player.id)
+                active_class = ClassRepository(session).get_current_class_for_player(
+                    profile.player.id
                 )
-                return
+                stats = StatsService().calculate_player_stats(
+                    profile=profile, equipped_items=equipped, active_class=active_class,
+                )
+                health_repo = PlayerHealthRepository(session)
+                state = health_repo.get_or_create(
+                    profile.player.id, default_current_hp=stats.max_hp,
+                )
+                if action == "set":
+                    new = max(0, min(stats.max_hp, amount))
+                elif action == "give":
+                    new = min(stats.max_hp, state.current_hp + amount)
+                else:
+                    new = max(0, state.current_hp - amount)
+                health_repo.update_current_hp(profile.player.id, new)
+                label = f"PV courants (max {stats.max_hp})"
 
-            player_repository.add_gold(profile.player.id, amount)
+            elif resource == "daily_streak":
+                current = profile.resources.daily_streak
+                if action == "set":
+                    new = max(0, amount)
+                elif action == "give":
+                    new = current + amount
+                else:
+                    new = max(0, current - amount)
+                repo.set_daily_streak(profile.player.id, new)
+                label = "Daily streak"
 
-        await interaction.followup.send(
-            f"✅ **{_format_int(amount)}** or ajouté à {target.mention}.",
-            ephemeral=True,
+            else:
+                return f"❌ Ressource inconnue : `{resource}`."
+
+        verb = {"set": "défini à", "give": "augmenté à", "remove": "réduit à"}[action]
+        return (
+            f"✅ {label} de {target.mention} {verb} **{_format_int(new)}** "
+            f"({'+' if action == 'give' else '-' if action == 'remove' else ''}"
+            f"{_format_int(amount) if action != 'set' else ''})."
         )
 
-    @admin.command(name="set_gold", description="Définit le montant d'or d'un joueur")
-    @app_commands.describe(target="Joueur ciblé", amount="Nouvelle quantité d'or (>= 0)")
+    @admin.command(name="set", description="Définit une ressource d'un joueur à une valeur")
+    @app_commands.describe(
+        target="Joueur ciblé",
+        resource="Type de ressource",
+        amount="Nouvelle valeur (≥ 0)",
+    )
+    @app_commands.choices(resource=_RESOURCE_CHOICES)
     @admin_only
-    async def set_gold(
+    async def set_resource(
         self,
         interaction: discord.Interaction,
         target: discord.Member,
+        resource: app_commands.Choice[str],
         amount: app_commands.Range[int, 0, 1_000_000_000],
     ) -> None:
         await interaction.response.defer(ephemeral=True)
+        msg = await self._apply_resource("set", resource.value, target, amount)
+        await interaction.followup.send(msg, ephemeral=True)
 
-        with get_db_session() as session:
-            player_repository = PlayerRepository(session)
-            profile = player_repository.get_by_discord_id(target.id)
-
-            if profile is None:
-                await interaction.followup.send(
-                    f"❌ {target.display_name} n'a pas encore de profil.",
-                    ephemeral=True,
-                )
-                return
-
-            player_repository.set_gold(profile.player.id, amount)
-
-        await interaction.followup.send(
-            f"✅ Or de {target.mention} défini à **{_format_int(amount)}**.",
-            ephemeral=True,
-        )
-
-    # -------------------------- XP / Niveau --------------------------
-
-    @admin.command(name="give_xp", description="Ajoute de l'XP à un joueur (peut faire monter de niveau)")
-    @app_commands.describe(target="Joueur ciblé", amount="Quantité d'XP à ajouter")
+    @admin.command(name="give", description="Ajoute une quantité de ressource à un joueur")
+    @app_commands.describe(
+        target="Joueur ciblé",
+        resource="Type de ressource",
+        amount="Quantité à ajouter (≥ 1)",
+    )
+    @app_commands.choices(resource=_RESOURCE_CHOICES)
     @admin_only
-    async def give_xp(
+    async def give_resource(
         self,
         interaction: discord.Interaction,
         target: discord.Member,
+        resource: app_commands.Choice[str],
         amount: app_commands.Range[int, 1, 1_000_000_000],
     ) -> None:
         await interaction.response.defer(ephemeral=True)
+        msg = await self._apply_resource("give", resource.value, target, amount)
+        await interaction.followup.send(msg, ephemeral=True)
 
-        progression_service = ProgressionService()
+    @admin.command(name="remove", description="Retire une quantité de ressource à un joueur (clamp à 0)")
+    @app_commands.describe(
+        target="Joueur ciblé",
+        resource="Type de ressource",
+        amount="Quantité à retirer (≥ 1)",
+    )
+    @app_commands.choices(resource=_RESOURCE_CHOICES)
+    @admin_only
+    async def remove_resource(
+        self,
+        interaction: discord.Interaction,
+        target: discord.Member,
+        resource: app_commands.Choice[str],
+        amount: app_commands.Range[int, 1, 1_000_000_000],
+    ) -> None:
+        await interaction.response.defer(ephemeral=True)
+        msg = await self._apply_resource("remove", resource.value, target, amount)
+        await interaction.followup.send(msg, ephemeral=True)
 
-        with get_db_session() as session:
-            player_repository = PlayerRepository(session)
-            profile = player_repository.get_by_discord_id(target.id)
-
-            if profile is None:
-                await interaction.followup.send(
-                    f"❌ {target.display_name} n'a pas encore de profil.",
-                    ephemeral=True,
-                )
-                return
-
-            new_level, new_xp, new_skill_points = progression_service.apply_level_up(
-                current_level=profile.progression.level,
-                current_xp=profile.progression.xp,
-                gained_xp=amount,
-                current_skill_points=profile.progression.skill_points,
-            )
-
-            player_repository.apply_progression(
-                player_id=profile.player.id,
-                new_level=new_level,
-                new_xp=new_xp,
-                new_skill_points=new_skill_points,
-            )
-
-            level_msg = (
-                f" — niveau **{profile.progression.level} → {new_level}**"
-                if new_level > profile.progression.level
-                else ""
-            )
-
-        await interaction.followup.send(
-            f"✅ **{_format_int(amount)}** XP ajoutés à {target.mention}{level_msg}.",
-            ephemeral=True,
-        )
+    # -------------------------- Niveau (cas spécial) --------------------------
 
     @admin.command(name="set_level", description="Définit le niveau d'un joueur (XP remis à 0 pour ce niveau)")
     @app_commands.describe(target="Joueur ciblé", level="Nouveau niveau (>= 1)")
@@ -288,93 +358,6 @@ class AdminCog(commands.Cog):
             ephemeral=True,
         )
 
-    # -------------------------- Skill points --------------------------
-
-    @admin.command(
-        name="give_skill_points",
-        description="Ajoute des skill points à un joueur (peut être négatif pour retirer)",
-    )
-    @app_commands.describe(target="Joueur ciblé", amount="Nombre de skill points à ajouter (négatif pour retirer)")
-    @admin_only
-    async def give_skill_points(
-        self,
-        interaction: discord.Interaction,
-        target: discord.Member,
-        amount: app_commands.Range[int, -1000, 1000],
-    ) -> None:
-        await interaction.response.defer(ephemeral=True)
-        with get_db_session() as session:
-            repo = PlayerRepository(session)
-            profile = repo.get_by_discord_id(target.id)
-            if profile is None:
-                await interaction.followup.send(
-                    f"❌ {target.display_name} n'a pas encore de profil.", ephemeral=True
-                )
-                return
-            repo.add_skill_points(profile.player.id, amount)
-        verb = "ajouté" if amount >= 0 else "retiré"
-        await interaction.followup.send(
-            f"✅ **{abs(amount)}** skill point(s) {verb} pour {target.mention}.",
-            ephemeral=True,
-        )
-
-    @admin.command(
-        name="set_skill_points",
-        description="Définit le nombre exact de skill points d'un joueur",
-    )
-    @app_commands.describe(target="Joueur ciblé", amount="Nouvelle valeur (≥ 0)")
-    @admin_only
-    async def set_skill_points(
-        self,
-        interaction: discord.Interaction,
-        target: discord.Member,
-        amount: app_commands.Range[int, 0, 10_000],
-    ) -> None:
-        await interaction.response.defer(ephemeral=True)
-        with get_db_session() as session:
-            repo = PlayerRepository(session)
-            profile = repo.get_by_discord_id(target.id)
-            if profile is None:
-                await interaction.followup.send(
-                    f"❌ {target.display_name} n'a pas encore de profil.", ephemeral=True
-                )
-                return
-            repo.set_skill_points(profile.player.id, amount)
-        await interaction.followup.send(
-            f"✅ Skill points de {target.mention} définis à **{amount}**.",
-            ephemeral=True,
-        )
-
-    # -------------------------- HP --------------------------
-
-    @admin.command(
-        name="set_current_hp",
-        description="Définit les PV courants d'un joueur (0 = KO)",
-    )
-    @app_commands.describe(target="Joueur ciblé", hp="Nouveaux PV (≥ 0)")
-    @admin_only
-    async def set_current_hp(
-        self,
-        interaction: discord.Interaction,
-        target: discord.Member,
-        hp: app_commands.Range[int, 0, 1_000_000],
-    ) -> None:
-        await interaction.response.defer(ephemeral=True)
-        with get_db_session() as session:
-            profile = PlayerRepository(session).get_by_discord_id(target.id)
-            if profile is None:
-                await interaction.followup.send(
-                    f"❌ {target.display_name} n'a pas encore de profil.", ephemeral=True
-                )
-                return
-            health_repo = PlayerHealthRepository(session)
-            # get_or_create exige un default ; on le pose à `hp` puis on update
-            # (couvre le cas du joueur jamais blessé).
-            health_repo.get_or_create(profile.player.id, default_current_hp=hp)
-            health_repo.update_current_hp(profile.player.id, hp)
-        await interaction.followup.send(
-            f"✅ PV de {target.mention} définis à **{hp}**.", ephemeral=True
-        )
 
     @admin.command(
         name="heal_full",
@@ -408,35 +391,6 @@ class AdminCog(commands.Cog):
             health_repo.update_current_hp(profile.player.id, stats.max_hp)
         await interaction.followup.send(
             f"✅ {target.mention} restauré à pleins PV (**{stats.max_hp}**).",
-            ephemeral=True,
-        )
-
-    # -------------------------- Daily streak --------------------------
-
-    @admin.command(
-        name="set_daily_streak",
-        description="Définit le compteur de streak du /daily d'un joueur",
-    )
-    @app_commands.describe(target="Joueur ciblé", streak="Nombre de jours consécutifs (≥ 0)")
-    @admin_only
-    async def set_daily_streak(
-        self,
-        interaction: discord.Interaction,
-        target: discord.Member,
-        streak: app_commands.Range[int, 0, 10_000],
-    ) -> None:
-        await interaction.response.defer(ephemeral=True)
-        with get_db_session() as session:
-            repo = PlayerRepository(session)
-            profile = repo.get_by_discord_id(target.id)
-            if profile is None:
-                await interaction.followup.send(
-                    f"❌ {target.display_name} n'a pas encore de profil.", ephemeral=True
-                )
-                return
-            repo.set_daily_streak(profile.player.id, streak)
-        await interaction.followup.send(
-            f"✅ Streak quotidien de {target.mention} défini à **{streak}** jour(s).",
             ephemeral=True,
         )
 
@@ -626,6 +580,23 @@ class AdminCog(commands.Cog):
         )
 
     # -------------------------- Encounter management --------------------------
+
+    @admin.command(
+        name="start_encounter",
+        description="Lance immédiatement le combat de l'encounter actif (skip les 5 min)",
+    )
+    @admin_only
+    async def start_encounter(self, interaction: discord.Interaction) -> None:
+        encounter_cog = self.bot.get_cog("EncounterCog")
+        if encounter_cog is None:
+            await interaction.response.send_message(
+                "❌ Le cog d'encounter n'est pas chargé.", ephemeral=True
+            )
+            return
+        success, message = encounter_cog.request_early_resolve()
+        await interaction.response.send_message(
+            f"{'✅' if success else '⚠️'} {message}", ephemeral=True
+        )
 
     @admin.command(
         name="end_encounter",
