@@ -277,54 +277,132 @@ class PlayerCog(commands.Cog):
         await interaction.response.send_message(embed=view.current_embed, view=view)
 
     @app_commands.command(name="equip", description="Équiper un item depuis votre inventaire")
-    @app_commands.describe(
-        item_code="Code de l'item (autocomplete)",
-        slot="Slot cible (optionnel : utilise le slot par défaut de l'item)",
-    )
+    @app_commands.describe(item_code="Code de l'item (autocomplete sur votre inventaire)")
     async def equip(
         self,
         interaction: discord.Interaction,
         item_code: str,
-        slot: str | None = None,
     ) -> None:
-        if slot is not None:
-            allowed_slots = {s.value for s in EquipmentSlot}
-            if slot not in allowed_slots:
+        from app.bot.views.equip_confirm_view import (
+            EquipConfirmView,
+            build_equip_confirm_embed,
+            compute_stats_diff,
+        )
+        from app.domain.entities.player_equipment_item import PlayerEquipmentItem
+
+        with get_db_session() as session:
+            profile = PlayerRepository(session).get_or_create_by_discord_id(
+                discord_id=interaction.user.id,
+                username=interaction.user.name,
+                display_name=interaction.user.display_name,
+            )
+            inventory_repository = InventoryRepository(session)
+            equipment_repository = EquipmentRepository(session)
+            class_repository = ClassRepository(session)
+            skill_alloc_repo = PlayerSkillAllocationRepository(session)
+
+            inventory_items = inventory_repository.list_by_player_id(profile.player.id)
+            matched = next(
+                (i for i in inventory_items if i.item_definition.code == item_code),
+                None,
+            )
+            if matched is None:
                 await interaction.response.send_message(
-                    f"Slot invalide. Slots disponibles : {', '.join(sorted(allowed_slots))}",
+                    f"❌ L'item `{item_code}` n'est pas dans votre inventaire.",
+                    ephemeral=True,
+                )
+                return
+            if not matched.item_definition.is_equipable:
+                await interaction.response.send_message(
+                    f"❌ **{matched.item_definition.name}** n'est pas équipable.",
                     ephemeral=True,
                 )
                 return
 
-        with get_db_session() as session:
-            player_repository = PlayerRepository(session)
-            inventory_repository = InventoryRepository(session)
-            equipment_repository = EquipmentRepository(session)
-
-            use_case = EquipItemUseCase(
-                player_repository=player_repository,
-                inventory_repository=inventory_repository,
-                equipment_repository=equipment_repository,
+            target_slot = matched.item_definition.equipment_slot
+            current_equipment = equipment_repository.list_by_player_id(profile.player.id)
+            current_in_slot = next(
+                (e for e in current_equipment if e.slot == target_slot), None
             )
 
-            result = use_case.execute(
-                discord_id=interaction.user.id,
-                username=interaction.user.name,
-                display_name=interaction.user.display_name,
-                item_code=item_code,
-                slot=slot,
+            # Si le slot est vide ou occupé par le même item, équipe directement.
+            if (
+                current_in_slot is None
+                or current_in_slot.item_definition.id == matched.item_definition.id
+            ):
+                use_case = EquipItemUseCase(
+                    player_repository=PlayerRepository(session),
+                    inventory_repository=inventory_repository,
+                    equipment_repository=equipment_repository,
+                )
+                result = use_case.execute(
+                    discord_id=interaction.user.id,
+                    username=interaction.user.name,
+                    display_name=interaction.user.display_name,
+                    item_code=item_code,
+                )
+                if not result.success:
+                    await interaction.response.send_message(
+                        result.message, ephemeral=True
+                    )
+                    return
+                msg = result.message
+                if result.unequipped_items:
+                    msg += f"\n_Déséquipé : {', '.join(result.unequipped_items)}._"
+                await interaction.response.send_message(msg)
+                return
+
+            # Sinon : un autre item est déjà dans le slot → calcule diff
+            active_class = class_repository.get_current_class_for_player(profile.player.id)
+            allocations = skill_alloc_repo.list_by_player(profile.player.id)
+            skill_bonuses = SkillTreeService(get_skill_tree_definition()).aggregate_bonuses(
+                allocations
             )
 
-        if not result.success:
-            await interaction.response.send_message(result.message, ephemeral=True)
-            return
-
-        message = result.message
-        if result.unequipped_items:
-            message += (
-                f"\n_Déséquipé(s) : {', '.join(result.unequipped_items)}._"
+            current_stats = StatsService().calculate_player_stats(
+                profile=profile,
+                equipped_items=current_equipment,
+                active_class=active_class,
+                skill_bonuses=skill_bonuses,
             )
-        await interaction.response.send_message(message)
+            # Simule la nouvelle config : retirer l'occupant du slot, ajouter
+            # le nouvel item. Pas de persistence — juste un objet domain.
+            simulated_new = PlayerEquipmentItem(
+                id=-1,
+                player_id=profile.player.id,
+                slot=target_slot,
+                item_definition=matched.item_definition,
+                created_at=current_in_slot.created_at,
+                updated_at=current_in_slot.updated_at,
+            )
+            simulated = [
+                e for e in current_equipment if e.slot != target_slot
+            ] + [simulated_new]
+            new_stats = StatsService().calculate_player_stats(
+                profile=profile,
+                equipped_items=simulated,
+                active_class=active_class,
+                skill_bonuses=skill_bonuses,
+            )
+
+            current_in_slot_name = current_in_slot.item_definition.name
+            matched_name = matched.item_definition.name
+
+        diffs = compute_stats_diff(current_stats, new_stats)
+        embed = build_equip_confirm_embed(
+            item_name=matched_name,
+            slot=target_slot,
+            replacing_name=current_in_slot_name,
+            diffs=diffs,
+        )
+        view = EquipConfirmView(
+            author_id=interaction.user.id,
+            discord_id=interaction.user.id,
+            username=interaction.user.name,
+            display_name=interaction.user.display_name,
+            item_code=item_code,
+        )
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
     @equip.autocomplete("item_code")
     async def equip_item_code_autocomplete(
@@ -359,19 +437,6 @@ class PlayerCog(commands.Cog):
             if len(choices) >= 25:
                 break
         return choices
-
-    @equip.autocomplete("slot")
-    async def equip_slot_autocomplete(
-        self,
-        interaction: discord.Interaction,
-        current: str,
-    ) -> list[app_commands.Choice[str]]:
-        current_lower = current.lower()
-        return [
-            app_commands.Choice(name=s.value, value=s.value)
-            for s in EquipmentSlot
-            if current_lower in s.value.lower()
-        ][:25]
 
     @app_commands.command(
         name="fight",
@@ -628,18 +693,48 @@ class PlayerCog(commands.Cog):
                 craft_service=CraftService(),
             )
 
-            success = use_case.execute(
+            craft_outcome = use_case.execute_detailed(
                 discord_id=interaction.user.id,
                 username=interaction.user.name,
                 display_name=interaction.user.display_name,
                 recipe_code=recipe_code,
             )
 
-        if not success:
-            await interaction.response.send_message(
-                "❌ Ingrédients insuffisants ou recette indisponible.",
-                ephemeral=True,
-            )
+        if not craft_outcome.success:
+            # Si on a la liste des ingrédients manquants, on affiche le détail
+            if craft_outcome.missing_ingredients:
+                lines = []
+                # Affiche TOUS les ingrédients (avec leur statut), pas juste les
+                # manquants, pour que le joueur voie aussi ce qu'il a déjà.
+                # missing_ingredients ne contient que les manquants → on
+                # complète avec ceux fulfilled. Plus simple : on re-check via
+                # le service ici.
+                from app.domain.services.craft_service import CraftService as _CS
+                with get_db_session() as session2:
+                    inv2 = InventoryRepository(session2).list_by_player_id(
+                        PlayerRepository(session2).get_by_discord_id(
+                            interaction.user.id
+                        ).player.id
+                    )
+                    recipe2 = CraftRepository(session2).get_by_code(recipe_code)
+                check2 = _CS().check_requirements(recipe2, inv2)
+                for ing in check2.ingredients:
+                    if ing.fulfilled:
+                        lines.append(f"✅ {ing.item_name} : **{ing.owned}/{ing.required}**")
+                    else:
+                        lines.append(
+                            f"❌ {ing.item_name} : **{ing.owned}/{ing.required}** "
+                            f"(manque {ing.missing})"
+                        )
+                msg = (
+                    f"{craft_outcome.message}\n\n**Ingrédients :**\n"
+                    + "\n".join(lines)
+                )
+                await interaction.response.send_message(msg, ephemeral=True)
+            else:
+                await interaction.response.send_message(
+                    craft_outcome.message, ephemeral=True
+                )
             return
 
         verb = "Forgé" if expect_weapon else "Fabriqué"
