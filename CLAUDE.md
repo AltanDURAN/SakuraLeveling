@@ -134,6 +134,16 @@ Pour un nouveau cog : si les commandes restent dans le canal beta → poser `int
   - `/equip <item> [slot]` : `slot` optionnel, défaut = slot canonique de l'item
   - `/equipment [target]` : 2 pages naviguables (Principaux / Secondaires)
 
+## Système de trade entre joueurs
+
+- **Modèle DB** : tables `trades` (initiator/target_player_id, status, or offerts, expires_at) et `trade_items` (offered_by initiator/target, item_definition_id, quantity).
+- **Statuts** : `pending`, `accepted`, `refused`, `cancelled`, `expired`, `failed` (ressources manquantes à l'accept).
+- **Sécurité atomique** : `AcceptTradeUseCase` revérifie les ressources des **deux** joueurs au moment de l'acceptation, pas seulement à la proposition. Si l'un manque de quoi que ce soit → status `failed`, aucun déplacement.
+- **TTL** : 5 minutes par défaut. Au-delà, status devient `expired` à la prochaine tentative d'acceptation.
+- **Un trade pending par paire** : si Alice→Bob a un trade pending, ni Alice→Bob ni Bob→Alice ne peuvent en proposer un nouveau. Annuler ou attendre l'expiration.
+- **UI** : `/trade @target` → modal Discord avec 4 champs textareas (items proposés / or proposé / items demandés / or demandé). Submit → récap embed + boutons Accept/Refuse/Cancel.
+- **Parser** : `parse_items_text` accepte `"code qty"`, `"qty code"`, `"code:qty"`, `"code, qty"` ou `"code"` (qty=1). Lignes vides ignorées, lignes invalides remontées au user.
+
 ## Système de shop
 
 - **Modèle** : table `shop_items` (item_definition_id unique, buy_price, max_sell_price, min_sell_price, stock_threshold, current_stock, enabled).

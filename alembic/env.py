@@ -25,6 +25,7 @@ from app.infrastructure.db.models.player_mob_kill_model import PlayerMobKillMode
 from app.infrastructure.db.models.shop_item_model import ShopItemModel
 from app.infrastructure.db.models.player_career_stats_model import PlayerCareerStatsModel
 from app.infrastructure.db.models.player_skill_allocation_model import PlayerSkillAllocationModel
+from app.infrastructure.db.models.trade_model import TradeItemModel, TradeModel
 
 
 config = context.config

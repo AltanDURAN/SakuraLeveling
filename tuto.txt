@@ -250,6 +250,43 @@ Kill counter : tous les survivants reçoivent +1 sur le compteur du mob tué.
     Échec si vous n'avez pas la quantité dans l'inventaire.
     Exemple : /sell slime_gel 3
 
+--------------------------------------------------------------------------------
+1.8 — ÉCHANGES ENTRE JOUEURS
+--------------------------------------------------------------------------------
+
+/trade @target
+    Propose un échange à un autre joueur. Une modal s'ouvre avec 4 champs :
+        • Items que vous proposez (un par ligne, format "code quantité"
+          ou "quantité code", ex : "iron_ingot 5")
+        • Or que vous proposez
+        • Items que vous demandez en retour
+        • Or que vous demandez
+    Vous pouvez répéter le même item code sur plusieurs lignes : les
+    quantités sont additionnées.
+
+    Une fois la proposition validée, un récapitulatif est posté dans le
+    canal avec @target tag et 3 boutons :
+        • ✅ Accepter (réservé à @target) : exécute l'échange
+        • ✋ Refuser (réservé à @target) : ferme le trade
+        • 🛑 Annuler (réservé à l'initiateur) : ferme le trade
+
+    Sécurité :
+        • Vérification des items et de l'or à la proposition (vous ne
+          pouvez pas proposer ce que vous n'avez pas)
+        • Re-vérification au moment de l'acceptation (anti-exploitation
+          du décalage entre proposition et accept : si l'un des deux
+          a entre temps consommé ses ressources, l'échange échoue
+          proprement et rien ne bouge)
+        • Cooldown 5 minutes : le trade expire si pas accepté dans ce délai
+        • Un seul trade pending par paire de joueurs à la fois
+        • Pas de trade avec un bot, pas de trade avec soi-même
+
+    Exemple : /trade @Bob
+        → "Je propose : iron_ingot 5"
+        → "J'offre : 50 or"
+        → "Je veux : gobelin_tooth 10"
+        → "Je veux : 0 or"
+
 ================================================================================
                        2. COMMANDES ADMINISTRATEUR
 ================================================================================
