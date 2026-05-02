@@ -50,6 +50,9 @@ class SkillTreeView(discord.ui.View):
         self.viewer_discord_id = viewer_discord_id
         self.definition = definition
         self.web_url = web_url
+        # Référence du message principal (posée par le cog après send).
+        # Permet de re-render l'embed/image après une action.
+        self.message: discord.Message | None = None
 
         if viewer_discord_id != owner_discord_id:
             for child in self.children:
@@ -73,8 +76,14 @@ class SkillTreeView(discord.ui.View):
 
         embed = build_skill_tree_embed(state, web_url=self.web_url)
         attachment = render_attachment(state, self.definition)
-        await interaction.message.edit(
-            embed=embed, attachments=[attachment], view=self
+        # Édite le message principal (pas celui du picker éphémère qui peut
+        # contenir l'interaction courante). Si la référence n'a pas été
+        # posée par le cog (cas de fallback), on retombe sur interaction.message.
+        target_message = self.message or interaction.message
+        if target_message is None:
+            return
+        await target_message.edit(
+            embed=embed, attachments=[attachment], view=self,
         )
 
     async def _check_owner(self, interaction: discord.Interaction) -> bool:

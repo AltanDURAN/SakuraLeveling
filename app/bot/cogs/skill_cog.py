@@ -89,9 +89,12 @@ class SkillCog(commands.Cog):
             definition=definition,
             web_url=web_url,
         )
-        await interaction.followup.send(
-            embed=embed, file=attachment, view=view
+        message = await interaction.followup.send(
+            embed=embed, file=attachment, view=view, wait=True,
         )
+        # Persiste la référence du message principal pour permettre aux
+        # callbacks (Select / boutons) d'éditer cet embed après une action.
+        view.message = message
 
 
 async def setup(bot: commands.Bot) -> None:

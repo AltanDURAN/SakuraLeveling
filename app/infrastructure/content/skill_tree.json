@@ -6,240 +6,593 @@
       "description": "Le commencement de votre voyage. Toutes les voies partent d'ici.",
       "icon": "⭐",
       "max_level": 1,
-      "costs": [0],
+      "costs": [
+        0
+      ],
       "effects": [],
       "prerequisites": [],
-      "position": { "x": 0, "y": 0 }
+      "position": {
+        "x": 0,
+        "y": 0
+      }
     },
-
     "combat_root": {
       "name": "Voie du Combat",
       "description": "Discipline du combat rapproché : porter des coups, encaisser, frapper plus vite.",
       "icon": "⚔️",
       "max_level": 1,
-      "costs": [1],
+      "costs": [
+        1
+      ],
       "effects": [],
-      "prerequisites": ["aventurier"],
-      "position": { "x": -240, "y": 160 }
+      "prerequisites": [
+        "aventurier"
+      ],
+      "position": {
+        "x": -800,
+        "y": 220
+      }
     },
     "force_brute": {
       "name": "Force Brute",
       "description": "Augmente votre attaque (multiplicatif). +1/3/6/10/15%.",
       "icon": "💪",
       "max_level": 5,
-      "costs": [1, 2, 3, 4, 5],
-      "effects": [
-        { "type": "atk_percent", "values": [1, 3, 6, 10, 15] }
+      "costs": [
+        1,
+        2,
+        3,
+        4,
+        5
       ],
-      "prerequisites": ["combat_root"],
-      "position": { "x": -360, "y": 320 }
+      "effects": [
+        {
+          "type": "atk_percent",
+          "values": [
+            1,
+            3,
+            6,
+            10,
+            15
+          ]
+        }
+      ],
+      "prerequisites": [
+        "combat_root"
+      ],
+      "position": {
+        "x": -1000,
+        "y": 440
+      }
     },
     "armes_aiguisees": {
       "name": "Armes Aiguisées",
       "description": "Augmente votre chance de coup critique. +1/2/3/4/5%.",
       "icon": "🗡️",
       "max_level": 5,
-      "costs": [1, 1, 2, 3, 4],
-      "effects": [
-        { "type": "crit_chance_flat", "values": [1, 2, 3, 4, 5] }
+      "costs": [
+        1,
+        1,
+        2,
+        3,
+        4
       ],
-      "prerequisites": ["combat_root"],
-      "position": { "x": -240, "y": 320 }
+      "effects": [
+        {
+          "type": "crit_chance_flat",
+          "values": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ],
+      "prerequisites": [
+        "combat_root"
+      ],
+      "position": {
+        "x": -600,
+        "y": 440
+      }
     },
     "coups_critiques": {
       "name": "Coups Critiques",
       "description": "Augmente les dégâts de vos coups critiques. +5/10/15/20/25%.",
       "icon": "💥",
       "max_level": 5,
-      "costs": [1, 2, 2, 3, 4],
-      "effects": [
-        { "type": "crit_damage_flat", "values": [5, 10, 15, 20, 25] }
+      "costs": [
+        1,
+        2,
+        2,
+        3,
+        4
       ],
-      "prerequisites": ["armes_aiguisees"],
-      "position": { "x": -180, "y": 460 }
+      "effects": [
+        {
+          "type": "crit_damage_flat",
+          "values": [
+            5,
+            10,
+            15,
+            20,
+            25
+          ]
+        }
+      ],
+      "prerequisites": [
+        "armes_aiguisees"
+      ],
+      "position": {
+        "x": -1000,
+        "y": 660
+      }
     },
     "frappe_eclair": {
       "name": "Frappe Éclair",
       "description": "Augmente votre vitesse de combat. +1/2/3/4/5.",
       "icon": "⚡",
       "max_level": 5,
-      "costs": [1, 2, 3, 4, 5],
-      "effects": [
-        { "type": "speed_flat", "values": [1, 2, 3, 4, 5] }
+      "costs": [
+        1,
+        2,
+        3,
+        4,
+        5
       ],
-      "prerequisites": ["force_brute"],
-      "position": { "x": -440, "y": 460 }
+      "effects": [
+        {
+          "type": "speed_flat",
+          "values": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ],
+      "prerequisites": [
+        "force_brute"
+      ],
+      "position": {
+        "x": -600,
+        "y": 660
+      }
     },
-
     "survie_root": {
       "name": "Voie de la Survie",
       "description": "Endurance et résistance : tenir là où d'autres tombent.",
       "icon": "🛡️",
       "max_level": 1,
-      "costs": [1],
+      "costs": [
+        1
+      ],
       "effects": [],
-      "prerequisites": ["aventurier"],
-      "position": { "x": 0, "y": 160 }
+      "prerequisites": [
+        "aventurier"
+      ],
+      "position": {
+        "x": 0,
+        "y": 220
+      }
     },
     "vitalite": {
       "name": "Vitalité",
       "description": "Augmente vos points de vie maximum (multiplicatif). +2/5/10/17/25%.",
       "icon": "❤️",
       "max_level": 5,
-      "costs": [1, 2, 3, 4, 5],
-      "effects": [
-        { "type": "hp_max_percent", "values": [2, 5, 10, 17, 25] }
+      "costs": [
+        1,
+        2,
+        3,
+        4,
+        5
       ],
-      "prerequisites": ["survie_root"],
-      "position": { "x": -80, "y": 320 }
+      "effects": [
+        {
+          "type": "hp_max_percent",
+          "values": [
+            2,
+            5,
+            10,
+            17,
+            25
+          ]
+        }
+      ],
+      "prerequisites": [
+        "survie_root"
+      ],
+      "position": {
+        "x": -200,
+        "y": 440
+      }
     },
     "peau_de_pierre": {
       "name": "Peau de Pierre",
       "description": "Augmente votre défense (multiplicatif). +1/3/6/10/15%.",
       "icon": "🪨",
       "max_level": 5,
-      "costs": [1, 2, 3, 4, 5],
-      "effects": [
-        { "type": "def_percent", "values": [1, 3, 6, 10, 15] }
+      "costs": [
+        1,
+        2,
+        3,
+        4,
+        5
       ],
-      "prerequisites": ["survie_root"],
-      "position": { "x": 80, "y": 320 }
+      "effects": [
+        {
+          "type": "def_percent",
+          "values": [
+            1,
+            3,
+            6,
+            10,
+            15
+          ]
+        }
+      ],
+      "prerequisites": [
+        "survie_root"
+      ],
+      "position": {
+        "x": 200,
+        "y": 440
+      }
     },
     "instinct_evasion": {
       "name": "Instinct d'Évasion",
       "description": "Augmente votre chance d'esquiver une attaque. +1/2/3/4/5%.",
       "icon": "🌀",
       "max_level": 5,
-      "costs": [1, 1, 2, 3, 4],
-      "effects": [
-        { "type": "dodge_flat", "values": [1, 2, 3, 4, 5] }
+      "costs": [
+        1,
+        1,
+        2,
+        3,
+        4
       ],
-      "prerequisites": ["vitalite"],
-      "position": { "x": -160, "y": 460 }
+      "effects": [
+        {
+          "type": "dodge_flat",
+          "values": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ],
+      "prerequisites": [
+        "vitalite"
+      ],
+      "position": {
+        "x": -200,
+        "y": 660
+      }
     },
     "regeneration_rapide": {
       "name": "Régénération Rapide",
       "description": "Augmente la régénération de PV. +1/2/4/6/9 PV/min.",
       "icon": "💚",
       "max_level": 5,
-      "costs": [1, 2, 2, 3, 4],
-      "effects": [
-        { "type": "hp_regeneration_flat", "values": [1, 2, 4, 6, 9] }
+      "costs": [
+        1,
+        2,
+        2,
+        3,
+        4
       ],
-      "prerequisites": ["peau_de_pierre"],
-      "position": { "x": 160, "y": 460 }
+      "effects": [
+        {
+          "type": "hp_regeneration_flat",
+          "values": [
+            1,
+            2,
+            4,
+            6,
+            9
+          ]
+        }
+      ],
+      "prerequisites": [
+        "peau_de_pierre"
+      ],
+      "position": {
+        "x": 200,
+        "y": 660
+      }
     },
-
     "chasseur_root": {
       "name": "Voie du Chasseur",
       "description": "Trouver plus, gagner plus : optimisation des récoltes de combat.",
       "icon": "🏹",
       "max_level": 1,
-      "costs": [1],
+      "costs": [
+        1
+      ],
       "effects": [],
-      "prerequisites": ["aventurier"],
-      "position": { "x": 240, "y": 160 }
+      "prerequisites": [
+        "aventurier"
+      ],
+      "position": {
+        "x": 800,
+        "y": 220
+      }
     },
     "traqueur_aguerri": {
       "name": "Traqueur Aguerri",
       "description": "Augmente l'XP gagnée sur les monstres. +2/5/10/17/25%.",
       "icon": "🎯",
       "max_level": 5,
-      "costs": [1, 2, 3, 4, 5],
-      "effects": [
-        { "type": "xp_drop_percent", "values": [2, 5, 10, 17, 25] }
+      "costs": [
+        1,
+        2,
+        3,
+        4,
+        5
       ],
-      "prerequisites": ["chasseur_root"],
-      "position": { "x": 160, "y": 320 }
+      "effects": [
+        {
+          "type": "xp_drop_percent",
+          "values": [
+            2,
+            5,
+            10,
+            17,
+            25
+          ]
+        }
+      ],
+      "prerequisites": [
+        "chasseur_root"
+      ],
+      "position": {
+        "x": 600,
+        "y": 440
+      }
     },
     "bourse_remplie": {
       "name": "Bourse Remplie",
       "description": "Augmente l'or gagné sur les monstres. +2/5/10/17/25%.",
       "icon": "💰",
       "max_level": 5,
-      "costs": [1, 2, 3, 4, 5],
-      "effects": [
-        { "type": "gold_drop_percent", "values": [2, 5, 10, 17, 25] }
+      "costs": [
+        1,
+        2,
+        3,
+        4,
+        5
       ],
-      "prerequisites": ["chasseur_root"],
-      "position": { "x": 320, "y": 320 }
+      "effects": [
+        {
+          "type": "gold_drop_percent",
+          "values": [
+            2,
+            5,
+            10,
+            17,
+            25
+          ]
+        }
+      ],
+      "prerequisites": [
+        "chasseur_root"
+      ],
+      "position": {
+        "x": 1000,
+        "y": 440
+      }
     },
     "chance_pillarde": {
       "name": "Chance Pillarde",
       "description": "Augmente vos chances de drop d'objets (multiplicatif sur le taux de base). +1/2/3/4/5%.",
       "icon": "🍀",
       "max_level": 5,
-      "costs": [1, 2, 3, 4, 5],
-      "effects": [
-        { "type": "drop_rate_multiplier", "values": [1, 2, 3, 4, 5] }
+      "costs": [
+        1,
+        2,
+        3,
+        4,
+        5
       ],
-      "prerequisites": ["chasseur_root"],
-      "position": { "x": 240, "y": 320 }
+      "effects": [
+        {
+          "type": "drop_rate_multiplier",
+          "values": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ],
+      "prerequisites": [
+        "chasseur_root"
+      ],
+      "position": {
+        "x": 1000,
+        "y": 660
+      }
     },
     "oeil_du_lynx": {
       "name": "Œil du Lynx",
       "description": "Augmente votre chance de coup critique. +2/4/6%.",
       "icon": "👁️",
       "max_level": 3,
-      "costs": [2, 3, 4],
-      "effects": [
-        { "type": "crit_chance_flat", "values": [2, 4, 6] }
+      "costs": [
+        2,
+        3,
+        4
       ],
-      "prerequisites": ["traqueur_aguerri"],
-      "position": { "x": 80, "y": 460 }
+      "effects": [
+        {
+          "type": "crit_chance_flat",
+          "values": [
+            2,
+            4,
+            6
+          ]
+        }
+      ],
+      "prerequisites": [
+        "traqueur_aguerri"
+      ],
+      "position": {
+        "x": 600,
+        "y": 660
+      }
     },
     "chasseur_silencieux": {
       "name": "Chasseur Silencieux",
       "description": "Augmente la vitesse en combat. +1/2/4.",
       "icon": "🐾",
       "max_level": 3,
-      "costs": [2, 3, 4],
-      "effects": [
-        { "type": "speed_flat", "values": [1, 2, 4] }
+      "costs": [
+        2,
+        3,
+        4
       ],
-      "prerequisites": ["bourse_remplie"],
-      "position": { "x": 400, "y": 460 }
+      "effects": [
+        {
+          "type": "speed_flat",
+          "values": [
+            1,
+            2,
+            4
+          ]
+        }
+      ],
+      "prerequisites": [
+        "bourse_remplie"
+      ],
+      "position": {
+        "x": 900,
+        "y": 770
+      }
     },
-
     "maitrise_combat": {
       "name": "Maîtrise du Combat",
       "description": "Bonus combiné offensif et défensif. +3/8/15% atk et def.",
       "icon": "🛡️⚔️",
       "max_level": 3,
-      "costs": [3, 5, 7],
-      "effects": [
-        { "type": "atk_percent", "values": [3, 8, 15] },
-        { "type": "def_percent", "values": [3, 8, 15] }
+      "costs": [
+        3,
+        5,
+        7
       ],
-      "prerequisites": ["coups_critiques", "frappe_eclair"],
-      "position": { "x": -300, "y": 600 }
+      "effects": [
+        {
+          "type": "atk_percent",
+          "values": [
+            3,
+            8,
+            15
+          ]
+        },
+        {
+          "type": "def_percent",
+          "values": [
+            3,
+            8,
+            15
+          ]
+        }
+      ],
+      "prerequisites": [
+        "coups_critiques",
+        "frappe_eclair"
+      ],
+      "position": {
+        "x": -800,
+        "y": 880
+      }
     },
     "endurance_legendaire": {
       "name": "Endurance Légendaire",
       "description": "PV et régénération massifs. +5/12/20% HP, +2/5/10 régen.",
       "icon": "🌳",
       "max_level": 3,
-      "costs": [3, 5, 7],
-      "effects": [
-        { "type": "hp_max_percent", "values": [5, 12, 20] },
-        { "type": "hp_regeneration_flat", "values": [2, 5, 10] }
+      "costs": [
+        3,
+        5,
+        7
       ],
-      "prerequisites": ["instinct_evasion", "regeneration_rapide"],
-      "position": { "x": 0, "y": 600 }
+      "effects": [
+        {
+          "type": "hp_max_percent",
+          "values": [
+            5,
+            12,
+            20
+          ]
+        },
+        {
+          "type": "hp_regeneration_flat",
+          "values": [
+            2,
+            5,
+            10
+          ]
+        }
+      ],
+      "prerequisites": [
+        "instinct_evasion",
+        "regeneration_rapide"
+      ],
+      "position": {
+        "x": 0,
+        "y": 880
+      }
     },
     "fortune_du_chasseur": {
       "name": "Fortune du Chasseur",
       "description": "XP, or et drops cumulés. +3/8/15% sur chaque.",
       "icon": "✨",
       "max_level": 3,
-      "costs": [3, 5, 7],
-      "effects": [
-        { "type": "xp_drop_percent", "values": [3, 8, 15] },
-        { "type": "gold_drop_percent", "values": [3, 8, 15] },
-        { "type": "drop_rate_multiplier", "values": [1, 3, 5] }
+      "costs": [
+        3,
+        5,
+        7
       ],
-      "prerequisites": ["oeil_du_lynx", "chasseur_silencieux"],
-      "position": { "x": 300, "y": 600 }
+      "effects": [
+        {
+          "type": "xp_drop_percent",
+          "values": [
+            3,
+            8,
+            15
+          ]
+        },
+        {
+          "type": "gold_drop_percent",
+          "values": [
+            3,
+            8,
+            15
+          ]
+        },
+        {
+          "type": "drop_rate_multiplier",
+          "values": [
+            1,
+            3,
+            5
+          ]
+        }
+      ],
+      "prerequisites": [
+        "oeil_du_lynx",
+        "chasseur_silencieux"
+      ],
+      "position": {
+        "x": 800,
+        "y": 880
+      }
     }
   }
 }

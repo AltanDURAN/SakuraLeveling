@@ -133,10 +133,14 @@ html, body {
 .skill-node {
     cursor: pointer;
     transition: transform 0.15s ease;
+    /* transform-box=fill-box pour que `scale` se calcule autour du
+       centre du nœud SVG plutôt que du coin (0,0) du document. */
+    transform-box: fill-box;
+    transform-origin: center;
 }
 
 .skill-node:hover {
-    transform: translate(var(--cx, 0), var(--cy, 0)) scale(1.08);
+    transform: scale(1.08);
 }
 
 .tooltip {
