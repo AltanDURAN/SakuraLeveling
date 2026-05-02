@@ -31,7 +31,8 @@ from app.bot.embeds.daily_embeds import (
     build_daily_cooldown_embed,
     build_daily_success_embed,
 )
-from app.bot.embeds.craft_embeds import build_craft_list_embed
+from app.bot.views.equipment_view import EquipmentView
+from app.bot.embeds.craft_embeds import WEAPON_CATEGORIES, build_craft_list_embed
 from app.bot.embeds.inventory_embeds import build_inventory_embed
 from app.bot.embeds.player_embeds import build_player_profile_embed
 from app.domain.services.class_service import ClassService
@@ -226,7 +227,7 @@ class PlayerCog(commands.Cog):
         embed = build_inventory_embed(target_member.display_name, items)
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="equipment", description="Afficher un équipement")
+    @app_commands.command(name="equipment", description="Afficher un équipement (12 slots, 2 pages)")
     @app_commands.describe(target="Joueur dont afficher l'équipement (par défaut : vous)")
     async def equipment(
         self,
@@ -242,38 +243,32 @@ class PlayerCog(commands.Cog):
             equipment_repository = EquipmentRepository(session)
             equipment_items = equipment_repository.list_by_player_id(profile.player.id)
 
-        embed = discord.Embed(
-            title=f"🛡️ Équipement de {target_member.display_name}",
-            color=discord.Color.purple(),
+        view = EquipmentView(
+            target_name=target_member.display_name,
+            equipped_items=equipment_items,
+            timeout=600.0,
         )
-
-        if not equipment_items:
-            embed.description = "Aucun équipement."
-        else:
-            lines = [
-                f"**{item.slot}** : {item.item_definition.name}"
-                for item in equipment_items
-            ]
-            embed.description = "\n".join(lines)
-
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(embed=view.current_embed, view=view)
 
     @app_commands.command(name="equip", description="Équiper un item depuis votre inventaire")
-    @app_commands.describe(item_code="Code technique de l'item", slot="Slot d'équipement")
+    @app_commands.describe(
+        item_code="Code de l'item (autocomplete)",
+        slot="Slot cible (optionnel : utilise le slot par défaut de l'item)",
+    )
     async def equip(
         self,
         interaction: discord.Interaction,
         item_code: str,
-        slot: str,
+        slot: str | None = None,
     ) -> None:
-        allowed_slots = {slot.value for slot in EquipmentSlot}
-
-        if slot not in allowed_slots:
-            await interaction.response.send_message(
-                f"Slot invalide. Slots disponibles : {', '.join(sorted(allowed_slots))}",
-                ephemeral=True,
-            )
-            return
+        if slot is not None:
+            allowed_slots = {s.value for s in EquipmentSlot}
+            if slot not in allowed_slots:
+                await interaction.response.send_message(
+                    f"Slot invalide. Slots disponibles : {', '.join(sorted(allowed_slots))}",
+                    ephemeral=True,
+                )
+                return
 
         with get_db_session() as session:
             player_repository = PlayerRepository(session)
@@ -286,7 +281,7 @@ class PlayerCog(commands.Cog):
                 equipment_repository=equipment_repository,
             )
 
-            success = use_case.execute(
+            result = use_case.execute(
                 discord_id=interaction.user.id,
                 username=interaction.user.name,
                 display_name=interaction.user.display_name,
@@ -294,16 +289,63 @@ class PlayerCog(commands.Cog):
                 slot=slot,
             )
 
-        if not success:
-            await interaction.response.send_message(
-                "Item introuvable dans votre inventaire.",
-                ephemeral=True,
-            )
+        if not result.success:
+            await interaction.response.send_message(result.message, ephemeral=True)
             return
 
-        await interaction.response.send_message(
-            f"Item `{item_code}` équipé dans le slot `{slot}`."
-        )
+        message = result.message
+        if result.unequipped_items:
+            message += (
+                f"\n_Déséquipé(s) : {', '.join(result.unequipped_items)}._"
+            )
+        await interaction.response.send_message(message)
+
+    @equip.autocomplete("item_code")
+    async def equip_item_code_autocomplete(
+        self,
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        """Propose uniquement les items équipables présents dans l'inventaire."""
+        with get_db_session() as session:
+            player_repository = PlayerRepository(session)
+            profile = player_repository.get_by_discord_id(interaction.user.id)
+            if profile is None:
+                return []
+
+            inventory_repository = InventoryRepository(session)
+            items = inventory_repository.list_by_player_id(profile.player.id)
+
+        current_lower = current.lower()
+        choices: list[app_commands.Choice[str]] = []
+        for item in items:
+            definition = item.item_definition
+            if not definition.is_equipable:
+                continue
+            label = f"{definition.name} ({definition.equipment_slot})"[:100]
+            if (
+                current_lower in definition.code.lower()
+                or current_lower in definition.name.lower()
+            ):
+                choices.append(
+                    app_commands.Choice(name=label, value=definition.code)
+                )
+            if len(choices) >= 25:
+                break
+        return choices
+
+    @equip.autocomplete("slot")
+    async def equip_slot_autocomplete(
+        self,
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        current_lower = current.lower()
+        return [
+            app_commands.Choice(name=s.value, value=s.value)
+            for s in EquipmentSlot
+            if current_lower in s.value.lower()
+        ][:25]
 
     @app_commands.command(name="fight", description="[Admin] Combattre un monstre (test)")
     @app_commands.describe(mob_code="Code technique du monstre")
@@ -414,25 +456,122 @@ class PlayerCog(commands.Cog):
 
         await interaction.response.send_message(message, ephemeral=not success)
 
-    @app_commands.command(name="craft_list", description="Afficher les recettes disponibles")
+    @app_commands.command(
+        name="craft_list",
+        description="Liste les recettes d'équipement et accessoires (hors armes/boucliers)",
+    )
     async def craft_list(self, interaction: discord.Interaction) -> None:
+        await self._send_recipe_list(
+            interaction,
+            include_categories=None,
+            exclude_categories=WEAPON_CATEGORIES,
+            title="🛠️ Recettes — Équipement & Accessoires",
+            color=discord.Color.orange(),
+        )
+
+    @app_commands.command(
+        name="forge_list",
+        description="Liste les recettes d'armes et boucliers (à forger)",
+    )
+    async def forge_list(self, interaction: discord.Interaction) -> None:
+        await self._send_recipe_list(
+            interaction,
+            include_categories=WEAPON_CATEGORIES,
+            exclude_categories=None,
+            title="🔥 Recettes — Forge (armes & boucliers)",
+            color=discord.Color.red(),
+        )
+
+    async def _send_recipe_list(
+        self,
+        interaction: discord.Interaction,
+        include_categories: set[str] | None,
+        exclude_categories: set[str] | None,
+        title: str,
+        color: discord.Color,
+    ) -> None:
         with get_db_session() as session:
             craft_repository = CraftRepository(session)
-            use_case = GetAvailableCraftsUseCase(craft_repository)
+            item_repository = ItemRepository(session)
+            recipes = craft_repository.list_all()
+            all_items = item_repository.list_all()
 
-            recipes = use_case.execute()
+        item_lookup = {item.code: item for item in all_items}
 
-        embed = build_craft_list_embed(recipes)
+        def _matches(recipe) -> bool:
+            result = item_lookup.get(recipe.result_item_code)
+            if result is None:
+                return False
+            if include_categories is not None and result.category not in include_categories:
+                return False
+            if exclude_categories is not None and result.category in exclude_categories:
+                return False
+            return True
+
+        filtered = [r for r in recipes if _matches(r)]
+        embed = build_craft_list_embed(
+            recipes=filtered,
+            item_lookup=item_lookup,
+            title=title,
+            color=color,
+        )
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="craft", description="Fabriquer un objet")
-    @app_commands.describe(recipe_code="Code technique de la recette")
+    @app_commands.command(name="craft", description="Fabriquer un objet (équipement / accessoire)")
+    @app_commands.describe(recipe_code="Code de la recette (autocomplete)")
     async def craft(self, interaction: discord.Interaction, recipe_code: str) -> None:
+        await self._execute_craft(
+            interaction, recipe_code, expect_weapon=False
+        )
+
+    @app_commands.command(name="forge", description="Forger une arme ou un bouclier")
+    @app_commands.describe(recipe_code="Code de la recette (autocomplete sur armes/boucliers)")
+    async def forge(self, interaction: discord.Interaction, recipe_code: str) -> None:
+        await self._execute_craft(
+            interaction, recipe_code, expect_weapon=True
+        )
+
+    async def _execute_craft(
+        self,
+        interaction: discord.Interaction,
+        recipe_code: str,
+        expect_weapon: bool,
+    ) -> None:
         with get_db_session() as session:
             player_repository = PlayerRepository(session)
             craft_repository = CraftRepository(session)
             inventory_repository = InventoryRepository(session)
             item_repository = ItemRepository(session)
+
+            recipe = craft_repository.get_by_code(recipe_code)
+            if recipe is None:
+                await interaction.response.send_message(
+                    f"❌ Recette `{recipe_code}` introuvable.",
+                    ephemeral=True,
+                )
+                return
+
+            result_item = item_repository.get_by_code(recipe.result_item_code)
+            if result_item is None:
+                await interaction.response.send_message(
+                    "❌ Objet de résultat introuvable (config invalide).",
+                    ephemeral=True,
+                )
+                return
+
+            is_weapon = result_item.category in WEAPON_CATEGORIES
+            if expect_weapon and not is_weapon:
+                await interaction.response.send_message(
+                    f"❌ **{result_item.name}** n'est pas une arme : utilisez `/craft` à la place.",
+                    ephemeral=True,
+                )
+                return
+            if not expect_weapon and is_weapon:
+                await interaction.response.send_message(
+                    f"❌ **{result_item.name}** est une arme : utilisez `/forge` à la place.",
+                    ephemeral=True,
+                )
+                return
 
             use_case = CraftItemUseCase(
                 player_repository=player_repository,
@@ -451,14 +590,65 @@ class PlayerCog(commands.Cog):
 
         if not success:
             await interaction.response.send_message(
-                "Craft impossible. Vérifiez la recette et vos ingrédients.",
+                "❌ Ingrédients insuffisants ou recette indisponible.",
                 ephemeral=True,
             )
             return
 
+        verb = "Forgé" if expect_weapon else "Fabriqué"
         await interaction.response.send_message(
-            f"Craft `{recipe_code}` réalisé avec succès."
+            f"✅ {verb} : **{result_item.name}** est ajouté à votre inventaire."
         )
+
+    @craft.autocomplete("recipe_code")
+    async def craft_recipe_autocomplete(
+        self,
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        return await self._recipe_autocomplete(
+            current, weapons_only=False
+        )
+
+    @forge.autocomplete("recipe_code")
+    async def forge_recipe_autocomplete(
+        self,
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        return await self._recipe_autocomplete(
+            current, weapons_only=True
+        )
+
+    async def _recipe_autocomplete(
+        self,
+        current: str,
+        weapons_only: bool,
+    ) -> list[app_commands.Choice[str]]:
+        with get_db_session() as session:
+            recipes = CraftRepository(session).list_all()
+            items = {item.code: item for item in ItemRepository(session).list_all()}
+
+        current_lower = current.lower()
+        choices: list[app_commands.Choice[str]] = []
+        for recipe in recipes:
+            result = items.get(recipe.result_item_code)
+            if result is None:
+                continue
+            is_weapon = result.category in WEAPON_CATEGORIES
+            if weapons_only and not is_weapon:
+                continue
+            if not weapons_only and is_weapon:
+                continue
+            label = f"{result.name} ({recipe.code})"[:100]
+            if (
+                current_lower in recipe.code.lower()
+                or current_lower in result.name.lower()
+            ):
+                choices.append(app_commands.Choice(name=label, value=recipe.code))
+            if len(choices) >= 25:
+                break
+        return choices
 
     @app_commands.command(name="daily", description="Récupérer votre récompense quotidienne")
     async def daily(self, interaction: discord.Interaction) -> None:

@@ -30,34 +30,26 @@ def seed_items() -> None:
         for item_data in items:
             existing = item_repository.get_by_code(item_data["code"])
 
+            payload = dict(
+                code=item_data["code"],
+                name=item_data["name"],
+                description=item_data["description"],
+                category=item_data["category"],
+                rarity=item_data["rarity"],
+                stackable=item_data["stackable"],
+                max_stack=item_data["max_stack"],
+                sell_price=item_data["sell_price"],
+                buy_price=item_data["buy_price"],
+                icon=item_data["icon"],
+                stat_bonuses=item_data["stat_bonuses"],
+                equipment_slot=item_data.get("equipment_slot"),
+                requires_two_hands=bool(item_data.get("requires_two_hands", False)),
+            )
+
             if existing is None:
-                item_repository.create(
-                    code=item_data["code"],
-                    name=item_data["name"],
-                    description=item_data["description"],
-                    category=item_data["category"],
-                    rarity=item_data["rarity"],
-                    stackable=item_data["stackable"],
-                    max_stack=item_data["max_stack"],
-                    sell_price=item_data["sell_price"],
-                    buy_price=item_data["buy_price"],
-                    icon=item_data["icon"],
-                    stat_bonuses=item_data["stat_bonuses"],
-                )
+                item_repository.create(**payload)
             else:
-                item_repository.update_by_code(
-                    code=item_data["code"],
-                    name=item_data["name"],
-                    description=item_data["description"],
-                    category=item_data["category"],
-                    rarity=item_data["rarity"],
-                    stackable=item_data["stackable"],
-                    max_stack=item_data["max_stack"],
-                    sell_price=item_data["sell_price"],
-                    buy_price=item_data["buy_price"],
-                    icon=item_data["icon"],
-                    stat_bonuses=item_data["stat_bonuses"],
-                )
+                item_repository.update_by_code(**payload)
 
     print("Items seedés.")
 

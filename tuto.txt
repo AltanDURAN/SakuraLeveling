@@ -43,7 +43,16 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     l'inventaire d'un autre joueur.
 
 /equipment [target]
-    Affiche votre équipement actuellement porté (arme, armure, accessoires).
+    Affiche l'équipement porté sur 12 slots, en 2 pages naviguables avec
+    les flèches ⬅️ ➡️ :
+        Page 1 (Principaux) : casque, plastron, jambières, bottes,
+                              main droite, main gauche
+        Page 2 (Secondaires) : collier, bracelet, bague, ceinture, cape,
+                               boucle d'oreille
+    Chaque slot affiche son icône, son nom, l'objet équipé (ou "vide")
+    et les bonus apportés. Si une arme à 2 mains est équipée, la main
+    gauche apparaît "verrouillée par l'arme à 2 mains".
+    Avec un target, vue lecture seule sur l'équipement d'un autre joueur.
 
 /class [target]
     Affiche la classe active.
@@ -110,21 +119,57 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     Exemple : /gather mining
 
 /craft_list
-    Liste toutes les recettes de craft disponibles avec ingrédients requis.
+    Liste les recettes d'équipement et accessoires (hors armes / boucliers).
+    Pour chaque recette : nom du résultat, slot d'équipement, bonus de stats,
+    ingrédients requis. Code utilisable avec /craft.
+
+/forge_list
+    Liste les recettes d'armes et boucliers (catégories weapon / shield).
+    Code utilisable avec /forge.
 
 /craft <recipe_code>
-    Fabrique un objet en consommant les ingrédients requis depuis votre
-    inventaire.
-    Exemple : /craft slime_blade
+    Fabrique un objet d'équipement / accessoire (casque, plastron, jambières,
+    bottes, collier, ceinture, etc.). Refuse si la recette produit une arme :
+    utilisez /forge dans ce cas. Autocomplete sur les recettes valides.
+    Exemple : /craft leather_cap_recipe
+
+/forge <recipe_code>
+    Forge une arme ou un bouclier. Refuse si la recette produit autre chose :
+    utilisez /craft dans ce cas. Autocomplete sur les armes/boucliers.
+    Exemple : /forge two_handed_iron_sword_recipe
 
 --------------------------------------------------------------------------------
 1.3 — ÉQUIPEMENT
 --------------------------------------------------------------------------------
 
-/equip <item_code> <slot>
-    Équipe un objet de votre inventaire dans le slot indiqué.
-    Slots disponibles : weapon, armor, accessory, etc.
-    Exemple : /equip wood_sword weapon
+Slots d'équipement (12 au total) :
+    Principaux  : casque, plastron, jambieres, bottes, main_droite, main_gauche
+    Secondaires : collier, bracelet, bague, ceinture, cape, boucle_oreille
+
+Règles d'équipement :
+    • Un seul objet par slot
+    • Les armes 1-main peuvent être équipées en main_droite OU main_gauche
+      (ambidextrie). Pour porter la même arme dans les deux mains, il faut
+      en posséder deux exemplaires distincts.
+    • Les armes 2-mains (épée longue, etc.) occupent les deux slots de main
+      en même temps : équiper une 2-mains déséquipe automatiquement ce qui
+      était dans main_droite ET main_gauche.
+    • Équiper en main_gauche alors qu'une 2-mains est portée la déséquipe.
+    • On ne gagne PAS de stats en craftant un équipement, on en gagne
+      uniquement en l'équipant. Changer d'équipement est gratuit et permet
+      le théorycrafting.
+
+/equip <item_code> [slot]
+    Équipe un objet de votre inventaire. Le `slot` est optionnel : si non
+    fourni, l'objet va dans son slot par défaut. Pour les armes 1-main,
+    spécifiez `main_droite` ou `main_gauche` selon le côté souhaité.
+    Autocomplete : ne propose que les objets équipables présents dans
+    votre inventaire. Si un objet est déjà équipé dans le slot, il est
+    automatiquement déséquipé.
+    Exemples :
+        /equip iron_helmet                   → casque (slot par défaut)
+        /equip wood_sword main_gauche        → arme 1-main en main gauche
+        /equip two_handed_iron_sword         → 2-mains, libère les deux mains
 
 --------------------------------------------------------------------------------
 1.4 — COMBAT

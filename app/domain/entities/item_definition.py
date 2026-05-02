@@ -18,3 +18,13 @@ class ItemDefinition:
     stat_bonuses: dict | None
     created_at: datetime
     updated_at: datetime
+    # Slot principal où l'item peut être équipé (None = non équipable).
+    # Pour les armes 1-main, ce slot est le défaut mais on peut équiper en
+    # OFF_HAND aussi (ambidextrie gérée dans EquipItemUseCase).
+    equipment_slot: str | None = None
+    # Vrai pour les armes à 2 mains qui occupent MAIN_HAND + OFF_HAND.
+    requires_two_hands: bool = False
+
+    @property
+    def is_equipable(self) -> bool:
+        return self.equipment_slot is not None

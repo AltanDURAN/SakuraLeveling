@@ -115,6 +115,25 @@ Pour un nouveau cog : si les commandes restent dans le canal beta → poser `int
 
 - `app/shared/formatters.py` : `format_int(value)` — séparateurs d'espaces FR (1500 → "1 500"). Utilisé partout (embeds + use cases). Centralisé pour éviter la duplication.
 
+## Système d'équipement et de craft
+
+- **12 slots** définis dans `EquipmentSlot` (`app/shared/enums.py`) :
+  - **Principaux** : `casque`, `plastron`, `jambieres`, `bottes`, `main_droite`, `main_gauche` (constante `PRIMARY_SLOTS`)
+  - **Secondaires** : `collier`, `bracelet`, `bague`, `ceinture`, `cape`, `boucle_oreille` (constante `SECONDARY_SLOTS`)
+- **Item fields** (sur `ItemDefinition`) :
+  - `equipment_slot: str | None` — slot canonique où l'item s'équipe ; `None` = item non équipable (ressource).
+  - `requires_two_hands: bool` — vrai pour les armes 2-mains qui occupent main_droite ET main_gauche.
+- **Convention armes 1-main** : `equipment_slot="main_droite"` ; le `EquipItemUseCase` accepte aussi `main_gauche` pour l'ambidextrie. Refuse de placer la même instance dans les deux mains (besoin de 2 exemplaires distincts).
+- **Convention armes 2-mains** : stockées en `main_droite` en DB, mais `OFF_HAND` est verrouillée tant qu'une 2-mains est portée. Équiper en `main_gauche` déséquipe la 2-mains.
+- **Anti-power-creep** : on ne gagne pas de stats au craft, uniquement à l'équipement (libre de changer). Bonus de stats des items volontairement modestes.
+- **Commandes** :
+  - `/craft_list` : recettes d'équipement / accessoires (hors armes)
+  - `/forge_list` : recettes d'armes / boucliers
+  - `/craft <recipe>` : fabrique un équipement (refuse les armes)
+  - `/forge <recipe>` : forge une arme (refuse les autres)
+  - `/equip <item> [slot]` : `slot` optionnel, défaut = slot canonique de l'item
+  - `/equipment [target]` : 2 pages naviguables (Principaux / Secondaires)
+
 ## Système de shop
 
 - **Modèle** : table `shop_items` (item_definition_id unique, buy_price, max_sell_price, min_sell_price, stock_threshold, current_stock, enabled).
