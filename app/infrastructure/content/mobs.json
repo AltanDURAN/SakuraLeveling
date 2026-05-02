@@ -2,6 +2,7 @@
   {
     "code": "slime",
     "name": "Slime",
+    "family": "slime",
     "description": "Une créature gélatineuse faible.",
     "max_hp": 100,
     "current_hp": 100,
@@ -28,6 +29,7 @@
   {
     "code": "gobelin",
     "name": "Gobelin",
+    "family": "gobelin",
     "description": "Une créature faible.",
     "max_hp": 500,
     "current_hp": 500,
@@ -54,6 +56,7 @@
   {
     "code": "gobelin_combattant",
     "name": "Gobelin Combattant",
+    "family": "gobelin",
     "description": "Une créature endurcie.",
     "max_hp": 600,
     "current_hp": 600,
@@ -80,6 +83,7 @@
   {
     "code": "gobelin_chaman",
     "name": "Gobelin Chaman",
+    "family": "gobelin",
     "description": "Une créature intelligente.",
     "max_hp": 700,
     "current_hp": 700,
@@ -106,6 +110,7 @@
   {
     "code": "gobelin_geant",
     "name": "Gobelin Géant",
+    "family": "gobelin",
     "description": "Une créature imposante.",
     "max_hp": 1100,
     "current_hp": 1100,
@@ -132,6 +137,7 @@
   {
     "code": "gobelin_runique",
     "name": "Gobelin Runique",
+    "family": "gobelin",
     "description": "Une créature mystérieuse.",
     "max_hp": 600,
     "current_hp": 600,
@@ -158,6 +164,7 @@
   {
     "code": "gobelin_ballon",
     "name": "Gobelin Ballon",
+    "family": "gobelin",
     "description": "Un groupe de créatures inventives.",
     "max_hp": 800,
     "current_hp": 800,
@@ -184,6 +191,7 @@
   {
     "code": "gobelin_assassin",
     "name": "Gobelin Assassin",
+    "family": "gobelin",
     "description": "Une créature discrète.",
     "max_hp": 225,
     "current_hp": 225,
@@ -210,6 +218,7 @@
   {
     "code": "gobelin_superieur",
     "name": "Gobelin Supérieur",
+    "family": "gobelin",
     "description": "Une créature supérieure.",
     "max_hp": 900,
     "current_hp": 900,

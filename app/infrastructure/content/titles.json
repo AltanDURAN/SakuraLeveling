@@ -1,0 +1,28 @@
+[
+  {
+    "code": "slime_slayer",
+    "name": "Slime Slayer",
+    "description": "Tueur de slimes confirmé. +10% dégâts infligés et -10% dégâts subis face aux slimes.",
+    "icon": "🟢",
+    "condition_type": "kills_family",
+    "condition_target": "slime",
+    "condition_value": 100,
+    "effects": [
+      { "type": "damage_bonus_vs_family", "target": "slime", "value": 10 },
+      { "type": "damage_reduction_from_family", "target": "slime", "value": 10 }
+    ]
+  },
+  {
+    "code": "gobelin_slayer",
+    "name": "Gobelin Slayer",
+    "description": "Bourreau des gobelins. +10% dégâts infligés et -10% dégâts subis face aux gobelins.",
+    "icon": "👹",
+    "condition_type": "kills_family",
+    "condition_target": "gobelin",
+    "condition_value": 100,
+    "effects": [
+      { "type": "damage_bonus_vs_family", "target": "gobelin", "value": 10 },
+      { "type": "damage_reduction_from_family", "target": "gobelin", "value": 10 }
+    ]
+  }
+]

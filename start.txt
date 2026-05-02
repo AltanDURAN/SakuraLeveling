@@ -3,6 +3,13 @@
     python -m app.bot.main
 #####################
 
+##############################
+### Lancer le site web      ###
+###  (arbre de compétences)  ###
+    python -m webapp.main
+###  → http://localhost:8000  ###
+##############################
+
 #################################################
 ### Créer le données du jeu (item, mob, etc.) ###
     python -m app.infrastructure.db.seeders.seed_content

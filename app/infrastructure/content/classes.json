@@ -22,8 +22,8 @@
     "description": "Une classe rapide et offensive.",
     "stat_bonuses": {
       "attack": 5,
-      "crit_chance": 0.10,
-      "dodge": 0.05
+      "crit_chance": 10,
+      "dodge": 5
     },
     "unlock_requirements": [
       {

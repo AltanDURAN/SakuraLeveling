@@ -1,6 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from app.domain.value_objects.party_battle_turn_log import PartyBattleTurnLog
+from app.domain.value_objects.player_contribution import PlayerContribution
 
 
 @dataclass
@@ -16,3 +17,4 @@ class PartyBattleResult:
     gold_gained: int
     summary: str
     turn_logs: list[PartyBattleTurnLog]
+    contributions: list[PlayerContribution] = field(default_factory=list)

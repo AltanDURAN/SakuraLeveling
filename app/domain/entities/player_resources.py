@@ -8,3 +8,4 @@ class PlayerResources:
     gold: int
     created_at: datetime
     updated_at: datetime
+    daily_streak: int = 0

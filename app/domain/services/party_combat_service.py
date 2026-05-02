@@ -1,8 +1,10 @@
 import random
 
 from app.domain.entities.mob_definition import MobDefinition
+from app.domain.services.title_bonus_service import TitleBonuses
 from app.domain.value_objects.party_battle_result import PartyBattleResult
 from app.domain.value_objects.party_battle_turn_log import PartyBattleTurnLog
+from app.domain.value_objects.player_contribution import PlayerContribution
 from app.domain.value_objects.stats import Stats
 
 
@@ -11,7 +13,10 @@ class PartyCombatService:
         self,
         party: list[dict],
         mob: MobDefinition,
+        title_bonuses_by_player: dict[int, TitleBonuses] | None = None,
     ) -> PartyBattleResult:
+        title_bonuses_by_player = title_bonuses_by_player or {}
+        mob_family = mob.family or ""
         mob_hp = mob.current_hp
         mob_gauge = 0
         turns = 0
@@ -31,6 +36,17 @@ class PartyCombatService:
             for player in party
         ]
 
+        contributions: dict[int, PlayerContribution] = {
+            member["player_id"]: PlayerContribution(
+                player_id=member["player_id"],
+                user_id=member["user_id"],
+                name=member["name"],
+                max_hp=member["max_hp"],
+                final_hp=member["hp"],
+            )
+            for member in alive_party
+        }
+
         while mob_hp > 0 and any(player["hp"] > 0 for player in alive_party):
             for player in alive_party:
                 if player["hp"] > 0:
@@ -48,7 +64,9 @@ class PartyCombatService:
                     stats: Stats = player["stats"]
 
                     if stats.hp_regeneration > 0 and player["hp"] > 0:
+                        before_hp = player["hp"]
                         player["hp"] = min(player["max_hp"], player["hp"] + stats.hp_regeneration)
+                        contributions[player["player_id"]].hp_healed += player["hp"] - before_hp
 
                     damage = max(1, stats.attack - mob.defense)
                     crit = False
@@ -57,6 +75,15 @@ class PartyCombatService:
                         damage = int(damage * (stats.crit_damage / 100))
                         crit = True
 
+                    # Bonus de titre : +X% dégâts vs famille du mob
+                    title_bonus = title_bonuses_by_player.get(player["player_id"])
+                    if title_bonus is not None and mob_family:
+                        damage = max(
+                            1, round(damage * title_bonus.damage_multiplier_vs(mob_family))
+                        )
+
+                    mob_hp_before = mob_hp
+
                     if mob.dodge > 0 and random.random() < (mob.dodge / 100):
                         damage = 0
                         mob_action_text = f"{mob.name} esquive l'attaque de {player['name']}."
@@ -64,6 +91,9 @@ class PartyCombatService:
                         mob_hp -= damage
                         mob_hp = max(0, mob_hp)
                         mob_action_text = f"{mob.name} subit l'attaque."
+
+                    actual_damage = mob_hp_before - mob_hp
+                    contributions[player["player_id"]].damage_dealt += actual_damage
 
                     action_text = f"{player['name']} inflige {damage} dégâts"
                     if crit and damage > 0:
@@ -126,15 +156,37 @@ class PartyCombatService:
                 if random.random() < (target_stats.dodge / 100):
                     mob_action = f"{mob.name} attaque {target['name']}, mais l'attaque est esquivée."
                 else:
-                    mob_damage = max(1, mob.attack - target_stats.defense)
+                    # Calcul en cascade pour pouvoir comptabiliser le "tanked"
+                    # (= ce qu'on aurait pris sans défense ni titre).
+                    raw_attack = mob.attack
                     mob_crit = False
-
                     if random.random() < (mob.crit_chance / 100):
-                        mob_damage = int(mob_damage * (mob.crit_damage / 100))
+                        raw_attack = int(raw_attack * (mob.crit_damage / 100))
                         mob_crit = True
 
+                    after_defense = max(1, raw_attack - target_stats.defense)
+
+                    target_title_bonus = title_bonuses_by_player.get(target["player_id"])
+                    if target_title_bonus is not None and mob_family:
+                        mob_damage = max(
+                            1,
+                            round(
+                                after_defense
+                                * target_title_bonus.damage_received_multiplier_from(
+                                    mob_family
+                                )
+                            ),
+                        )
+                    else:
+                        mob_damage = after_defense
+
+                    target_hp_before = target["hp"]
                     target["hp"] -= mob_damage
                     target["hp"] = max(0, target["hp"])
+                    # damage_tanked = le brut entrant (après crit, avant
+                    # réductions). Capture la "valeur encaissée" même
+                    # quand la défense + titre absorbent une part.
+                    contributions[target["player_id"]].damage_tanked += raw_attack
 
                     mob_action = f"{mob.name} attaque {target['name']} et inflige {mob_damage} dégâts."
                     if mob_crit and mob_damage > 0:
@@ -185,6 +237,11 @@ class PartyCombatService:
             if not acted:
                 continue
 
+        for member in alive_party:
+            contribution = contributions[member["player_id"]]
+            contribution.final_hp = member["hp"]
+            contribution.survived = member["hp"] > 0
+
         surviving_players = [player["name"] for player in alive_party if player["hp"] > 0]
         defeated_players = [player["name"] for player in alive_party if player["hp"] <= 0]
         victory = mob_hp <= 0
@@ -205,4 +262,5 @@ class PartyCombatService:
                 else f"Le groupe a été vaincu par {mob.name}."
             ),
             turn_logs=turn_logs,
+            contributions=list(contributions.values()),
         )

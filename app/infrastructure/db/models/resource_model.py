@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 from sqlalchemy import ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -14,8 +14,9 @@ class PlayerResourceModel(Base):
     )
 
     gold: Mapped[int] = mapped_column(Integer, default=0)
+    daily_streak: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
-    created_at: Mapped[datetime] = mapped_column(default=datetime.now(timezone.utc))
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
 
     player = relationship("PlayerModel", back_populates="resources")

@@ -12,6 +12,17 @@ class SakuraBot(commands.Bot):
     async def setup_hook(self) -> None:
         await self.load_extension("app.bot.cogs.player_cog")
         await self.load_extension("app.bot.cogs.encounter_cog")
+        await self.load_extension("app.bot.cogs.leaderboard_cog")
+        await self.load_extension("app.bot.cogs.admin_cog")
+        await self.load_extension("app.bot.cogs.shop_cog")
+        await self.load_extension("app.bot.cogs.skill_cog")
+        await self.load_extension("app.bot.cogs.trade_cog")
+        await self.load_extension("app.bot.cogs.world_boss_cog")
+        await self.load_extension("app.bot.cogs.help_cog")
+        await self.load_extension("app.bot.cogs.title_cog")
+        await self.load_extension("app.bot.cogs.weekly_quest_cog")
+        await self.load_extension("app.bot.cogs.daily_quest_cog")
+        await self.load_extension("app.bot.cogs.brocante_cog")
         await self.tree.sync()
 
 

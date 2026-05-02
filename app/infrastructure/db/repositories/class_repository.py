@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -59,7 +59,7 @@ class ClassRepository:
     def get_or_create_player_class_state(self, player_id: int) -> PlayerClassState:
         model = self.session.get(PlayerClassStateModel, player_id)
         if model is None:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             model = PlayerClassStateModel(
                 player_id=player_id,
                 current_class_id=None,
@@ -75,7 +75,7 @@ class ClassRepository:
 
     def set_player_class(self, player_id: int, class_id: int) -> None:
         model = self.session.get(PlayerClassStateModel, player_id)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         if model is None:
             model = PlayerClassStateModel(
@@ -142,9 +142,9 @@ class ClassRepository:
 
         model.name = name
         model.description = description
-        model.stat_bonuses = stat_bonuses
-        model.unlock_requirements = unlock_requirements
-        model.updated_at = datetime.now(timezone.utc)
+        model.stat_bonuses_json = stat_bonuses
+        model.unlock_requirements_json = unlock_requirements
+        model.updated_at = datetime.now(UTC)
 
         self.session.commit()
         self.session.refresh(model)

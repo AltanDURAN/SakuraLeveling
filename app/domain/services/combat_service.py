@@ -18,6 +18,8 @@ class CombatService:
         mob_gauge = 0
         turns = 0
         turn_logs: list[dict] = []
+        # Brut entrant total (avant déduction de la défense joueur)
+        player_total_raw_taken = 0
 
         while player_hp > 0 and mob_hp > 0:
             player_gauge += player_stats.speed
@@ -78,6 +80,7 @@ class CombatService:
                         turn_logs=turn_logs,
                         mob_name=mob.name,
                         mob_image_name=mob.image_name,
+                        player_total_raw_damage_taken=player_total_raw_taken,
                     )
 
             while mob_gauge >= 100 and player_hp > 0 and mob_hp > 0:
@@ -89,20 +92,24 @@ class CombatService:
                     mob_hp = min(mob.max_hp, mob_hp + mob.hp_regeneration)
 
                 player_hp_before = player_hp
-                mob_damage = max(1, mob.attack - player_stats.defense)
+                # Calcul en cascade : brut → crit → défense, pour tracker
+                # `player_total_raw_taken` honnêtement.
+                raw_attack = mob.attack
                 mob_is_crit = False
                 player_dodged = False
 
                 if random.random() < (mob.crit_chance / 100):
-                    mob_damage = int(mob_damage * (mob.crit_damage / 100))
+                    raw_attack = int(raw_attack * (mob.crit_damage / 100))
                     mob_is_crit = True
 
                 if random.random() < (player_stats.dodge / 100):
                     mob_damage = 0
                     player_dodged = True
                 else:
+                    mob_damage = max(1, raw_attack - player_stats.defense)
                     player_hp -= mob_damage
                     player_hp = max(0, player_hp)
+                    player_total_raw_taken += raw_attack
 
                 turn_logs.append(
                     {
@@ -132,6 +139,7 @@ class CombatService:
                         turn_logs=turn_logs,
                         mob_name=mob.name,
                         mob_image_name=mob.image_name,
+                        player_total_raw_damage_taken=player_total_raw_taken,
                     )
 
             if not acted:
@@ -151,4 +159,5 @@ class CombatService:
             turn_logs=turn_logs,
             mob_name=mob.name,
             mob_image_name=mob.image_name,
+            player_total_raw_damage_taken=player_total_raw_taken,
         )

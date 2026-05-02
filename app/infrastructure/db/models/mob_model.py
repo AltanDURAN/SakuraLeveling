@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 from sqlalchemy import Column, Integer, String, JSON
 from sqlalchemy.orm import Mapped, mapped_column
@@ -22,6 +22,7 @@ class MobDefinitionModel(Base):
     name: Mapped[str] = mapped_column(String(100))
     description: Mapped[str] = mapped_column(String(255), default="")
     image_name: Mapped[str] = mapped_column(String(100), nullable=True)
+    family: Mapped[str] = mapped_column(String(100), nullable=False, server_default="unknown", index=True)
 
     max_hp: Mapped[int] = mapped_column(Integer)
     current_hp: Mapped[int] = mapped_column(Integer)
@@ -38,5 +39,5 @@ class MobDefinitionModel(Base):
     spawn_weight: Mapped[int] = mapped_column(Integer, default=1)
     loot_table_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(default=datetime.now(timezone.utc))
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))

@@ -1,7 +1,7 @@
 import random
 
 from sqlalchemy import select
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from sqlalchemy.orm import Session
 
 from app.domain.entities.mob_definition import MobDefinition
@@ -45,6 +45,7 @@ class MobRepository:
         xp_reward: int,
         gold_reward: int,
         image_name: str,
+        family: str = "unknown",
         crit_chance: int = 0,
         crit_damage: int = 100,
         dodge: int = 0,
@@ -61,6 +62,7 @@ class MobRepository:
             name=name,
             description=description,
             image_name=image_name,
+            family=family,
             max_hp=max_hp,
             current_hp=current_hp,
             attack=attack,
@@ -102,6 +104,18 @@ class MobRepository:
         model.current_hp = model.max_hp
         self.session.commit()
 
+    def list_distinct_families(self) -> list[str]:
+        stmt = select(MobDefinitionModel.family).distinct().order_by(MobDefinitionModel.family)
+        return [row[0] for row in self.session.execute(stmt).all()]
+
+    def list_codes_by_family(self, family: str) -> list[str]:
+        stmt = select(MobDefinitionModel.code).where(MobDefinitionModel.family == family)
+        return [row[0] for row in self.session.execute(stmt).all()]
+
+    def list_all(self) -> list[MobDefinition]:
+        stmt = select(MobDefinitionModel).order_by(MobDefinitionModel.code)
+        return [self._to_domain(model) for model in self.session.execute(stmt).scalars().all()]
+
     def _to_domain(self, model: MobDefinitionModel) -> MobDefinition:
         return MobDefinition(
             id=model.id,
@@ -109,6 +123,7 @@ class MobRepository:
             name=model.name,
             description=model.description,
             image_name=model.image_name,
+            family=model.family,
             max_hp=model.max_hp,
             current_hp=model.current_hp,
             attack=model.attack,
@@ -125,7 +140,7 @@ class MobRepository:
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
-    
+
     def update_by_code(
         self,
         code: str,
@@ -144,6 +159,7 @@ class MobRepository:
         gold_reward: int,
         image_name: str | None,
         spawn_weight: int,
+        family: str = "unknown",
         loot_table: list[dict] | None = None,
     ):
         stmt = select(MobDefinitionModel).where(MobDefinitionModel.code == code)
@@ -166,9 +182,10 @@ class MobRepository:
         model.xp_reward = xp_reward
         model.gold_reward = gold_reward
         model.image_name = image_name
+        model.family = family
         model.spawn_weight = spawn_weight
         model.loot_table_json = loot_table
-        model.updated_at = datetime.now(timezone.utc)
+        model.updated_at = datetime.now(UTC)
 
         self.session.commit()
         self.session.refresh(model)

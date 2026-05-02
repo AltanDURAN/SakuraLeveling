@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
@@ -25,13 +25,18 @@ class InventoryRepository:
         return [self._to_domain(model) for model in models]
 
     def add_item(self, player_id: int, item_definition_id: int, quantity: int) -> None:
+        # Garde défensif : quantité <= 0 = no-op (préviens l'usage négatif
+        # qui décrementerait l'inventaire).
+        if quantity <= 0:
+            return
+
         stmt = select(PlayerInventoryItemModel).where(
             PlayerInventoryItemModel.player_id == player_id,
             PlayerInventoryItemModel.item_definition_id == item_definition_id,
         )
 
         model = self.session.execute(stmt).scalar_one_or_none()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         if model is None:
             model = PlayerInventoryItemModel(
@@ -49,6 +54,11 @@ class InventoryRepository:
         self.session.commit()
 
     def remove_item(self, player_id: int, item_definition_id: int, quantity: int) -> bool:
+        # Garde défensif : qty négative ferait un increment via le `-= quantity`.
+        # Qty zéro est un no-op qui pourrait simuler un succès faux.
+        if quantity <= 0:
+            return False
+
         stmt = select(PlayerInventoryItemModel).where(
             PlayerInventoryItemModel.player_id == player_id,
             PlayerInventoryItemModel.item_definition_id == item_definition_id,
@@ -60,7 +70,7 @@ class InventoryRepository:
             return False
 
         model.quantity -= quantity
-        model.updated_at = datetime.now(timezone.utc)
+        model.updated_at = datetime.now(UTC)
 
         if model.quantity == 0:
             self.session.delete(model)
@@ -84,6 +94,8 @@ class InventoryRepository:
             buy_price=item_model.buy_price,
             icon=item_model.icon,
             stat_bonuses=item_model.stat_bonuses_json,
+            equipment_slot=item_model.equipment_slot,
+            requires_two_hands=bool(item_model.requires_two_hands or False),
             created_at=item_model.created_at,
             updated_at=item_model.updated_at,
         )

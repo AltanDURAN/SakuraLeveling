@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 from app.domain.entities.class_definition import ClassDefinition
 from app.domain.entities.item_definition import ItemDefinition
@@ -11,7 +11,7 @@ from app.domain.services.stats_service import StatsService
 
 
 def build_player_profile(level: int = 1) -> PlayerProfile:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     player = Player(
         id=1,
@@ -51,7 +51,7 @@ def build_equipment_item(
     name: str,
     stat_bonuses: dict | None,
 ) -> PlayerEquipmentItem:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     item_definition = ItemDefinition(
         id=1,
@@ -81,7 +81,7 @@ def build_equipment_item(
 
 
 def build_class_definition(stat_bonuses: dict | None) -> ClassDefinition:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     return ClassDefinition(
         id=1,
@@ -110,9 +110,9 @@ def test_stats_service_level_1_without_equipment_or_class():
     assert stats.attack == 10
     assert stats.defense == 5
     assert stats.speed == 5
-    assert stats.crit_chance == 0.05
-    assert stats.crit_damage == 1.50
-    assert stats.dodge == 0.00
+    assert stats.crit_chance == 5
+    assert stats.crit_damage == 150
+    assert stats.dodge == 0
 
 
 def test_stats_service_applies_equipment_bonuses():
@@ -193,13 +193,13 @@ def test_stats_service_applies_advanced_bonuses():
     service = StatsService()
 
     active_class = build_class_definition(
-        stat_bonuses={"crit_chance": 0.10, "dodge": 0.05}
+        stat_bonuses={"crit_chance": 10, "dodge": 5}
     )
 
     sword = build_equipment_item(
         code="hunter_dagger",
         name="Dague du chasseur",
-        stat_bonuses={"attack": 4, "crit_chance": 0.10},
+        stat_bonuses={"attack": 4, "crit_chance": 10},
     )
 
     stats = service.calculate_player_stats(
@@ -210,9 +210,9 @@ def test_stats_service_applies_advanced_bonuses():
 
     assert stats.hp_regeneration == 5
     assert stats.attack == 14
-    assert stats.crit_chance == 0.25
-    assert stats.dodge == 0.05
-    assert stats.crit_damage == 1.50
+    assert stats.crit_chance == 25
+    assert stats.dodge == 5
+    assert stats.crit_damage == 150
     assert stats.speed == 5
     
 def test_stats_service_applies_hp_regeneration_bonuses():
@@ -258,3 +258,168 @@ def test_stats_service_applies_speed_bonuses():
     )
 
     assert stats.speed == 10
+
+
+# ---------- Bonus de l'arbre de compétences (skill tree) ----------
+
+
+def test_stats_service_applies_skill_atk_percent_multiplicatively():
+    from app.domain.value_objects.skill_bonuses import SkillBonuses
+
+    profile = build_player_profile(level=1)
+    service = StatsService()
+    bonuses = SkillBonuses(atk_percent=0.15)  # +15%
+
+    stats = service.calculate_player_stats(
+        profile=profile,
+        equipped_items=[],
+        active_class=None,
+        skill_bonuses=bonuses,
+    )
+
+    # base atk = 10, +15% = round(10 * 1.15) = 12 (round half to even → 11.5 → 12)
+    assert stats.attack == round(10 * 1.15)
+
+
+def test_stats_service_applies_skill_atk_percent_after_flat_bonuses():
+    from app.domain.value_objects.skill_bonuses import SkillBonuses
+
+    profile = build_player_profile(level=1)
+    service = StatsService()
+    sword = build_equipment_item("sword", "Épée", stat_bonuses={"attack": 10})
+    bonuses = SkillBonuses(atk_percent=0.20)  # +20%
+
+    stats = service.calculate_player_stats(
+        profile=profile,
+        equipped_items=[sword],
+        active_class=None,
+        skill_bonuses=bonuses,
+    )
+
+    # base 10 + équipement 10 = 20, puis ×1.20 = 24
+    assert stats.attack == round(20 * 1.20)
+
+
+def test_stats_service_applies_skill_crit_chance_flat_with_cap():
+    from app.domain.value_objects.skill_bonuses import SkillBonuses
+
+    profile = build_player_profile(level=1)
+    service = StatsService()
+    bonuses = SkillBonuses(crit_chance_flat=80)  # gros boost
+
+    stats = service.calculate_player_stats(
+        profile=profile,
+        equipped_items=[],
+        active_class=None,
+        skill_bonuses=bonuses,
+    )
+
+    # base crit_chance = 5, +80 = 85, mais cap = 75
+    assert stats.crit_chance == 75
+
+
+def test_stats_service_applies_skill_speed_flat():
+    from app.domain.value_objects.skill_bonuses import SkillBonuses
+
+    profile = build_player_profile(level=1)
+    service = StatsService()
+    bonuses = SkillBonuses(speed_flat=4)
+
+    stats = service.calculate_player_stats(
+        profile=profile,
+        equipped_items=[],
+        active_class=None,
+        skill_bonuses=bonuses,
+    )
+
+    assert stats.speed == 5 + 4  # base 5 + bonus 4
+
+
+def test_stats_service_skill_bonuses_none_keeps_legacy_behavior():
+    profile = build_player_profile(level=1)
+    service = StatsService()
+
+    stats_legacy = service.calculate_player_stats(
+        profile=profile,
+        equipped_items=[],
+        active_class=None,
+    )
+    stats_with_none = service.calculate_player_stats(
+        profile=profile,
+        equipped_items=[],
+        active_class=None,
+        skill_bonuses=None,
+    )
+
+    assert stats_legacy == stats_with_none
+
+
+def test_stats_service_applies_skill_hp_regeneration_flat():
+    from app.domain.value_objects.skill_bonuses import SkillBonuses
+
+    profile = build_player_profile(level=1)
+    service = StatsService()
+    bonuses = SkillBonuses(hp_regeneration_flat=7)
+
+    stats = service.calculate_player_stats(
+        profile=profile,
+        equipped_items=[],
+        active_class=None,
+        skill_bonuses=bonuses,
+    )
+
+    # base hp_regeneration = 5, +7 = 12
+    assert stats.hp_regeneration == 12
+
+
+def test_stats_service_applies_skill_hp_max_percent_after_class_bonus():
+    from app.domain.value_objects.skill_bonuses import SkillBonuses
+
+    profile = build_player_profile(level=1)
+    service = StatsService()
+    active_class = build_class_definition(stat_bonuses={"max_hp": 50})
+    bonuses = SkillBonuses(hp_max_percent=0.20)
+
+    stats = service.calculate_player_stats(
+        profile=profile,
+        equipped_items=[],
+        active_class=active_class,
+        skill_bonuses=bonuses,
+    )
+
+    # base 100 + classe 50 = 150, puis ×1.20 = 180
+    assert stats.max_hp == round(150 * 1.20)
+
+
+def test_stats_service_skill_bonuses_combine_correctly():
+    """Tous les bonus de l'arbre s'appliquent ensemble, ordre flat puis %."""
+    from app.domain.value_objects.skill_bonuses import SkillBonuses
+
+    profile = build_player_profile(level=2)  # base hp 110, atk 12, def 6
+    service = StatsService()
+    bonuses = SkillBonuses(
+        atk_percent=0.10,
+        def_percent=0.05,
+        hp_max_percent=0.15,
+        crit_chance_flat=2,
+        crit_damage_flat=10,
+        dodge_flat=3,
+        speed_flat=1,
+        hp_regeneration_flat=2,
+    )
+
+    stats = service.calculate_player_stats(
+        profile=profile,
+        equipped_items=[],
+        active_class=None,
+        skill_bonuses=bonuses,
+    )
+
+    assert stats.attack == round(12 * 1.10)
+    assert stats.defense == round(6 * 1.05)
+    assert stats.max_hp == round(110 * 1.15)
+    assert stats.crit_chance == 5 + 2
+    assert stats.crit_damage == 150 + 10
+    assert stats.dodge == 0 + 3
+    assert stats.speed == 5 + 1
+    assert stats.hp_regeneration == 5 + 2

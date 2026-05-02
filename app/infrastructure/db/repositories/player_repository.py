@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
@@ -33,8 +33,20 @@ class PlayerRepository:
 
         return self._to_domain(player_model)
 
+    def get_profile_by_player_id(self, player_id: int) -> PlayerProfile | None:
+        stmt = (
+            select(PlayerModel)
+            .options(
+                joinedload(PlayerModel.progression),
+                joinedload(PlayerModel.resources),
+            )
+            .where(PlayerModel.id == player_id)
+        )
+        player_model = self.session.execute(stmt).scalar_one_or_none()
+        return self._to_domain(player_model) if player_model else None
+
     def create_player(self, discord_id: int, username: str, display_name: str) -> PlayerProfile:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         player_model = PlayerModel(
             discord_id=discord_id,
@@ -100,9 +112,53 @@ class PlayerRepository:
             return
 
         resources.gold += gold
-        resources.updated_at = datetime.now(timezone.utc)
+        resources.updated_at = datetime.now(UTC)
         self.session.commit()
-        
+
+    def set_gold(self, player_id: int, gold: int) -> None:
+        resources = self.session.get(PlayerResourceModel, player_id)
+        if resources is None:
+            return
+
+        resources.gold = max(0, gold)
+        resources.updated_at = datetime.now(UTC)
+        self.session.commit()
+
+    def increment_daily_streak(self, player_id: int) -> int:
+        """Incrémente la série /daily du joueur de 1 et renvoie la nouvelle valeur."""
+        resources = self.session.get(PlayerResourceModel, player_id)
+        if resources is None:
+            return 0
+
+        resources.daily_streak += 1
+        resources.updated_at = datetime.now(UTC)
+        self.session.commit()
+        return resources.daily_streak
+
+    def set_daily_streak(self, player_id: int, streak: int) -> None:
+        resources = self.session.get(PlayerResourceModel, player_id)
+        if resources is None:
+            return
+        resources.daily_streak = max(0, streak)
+        resources.updated_at = datetime.now(UTC)
+        self.session.commit()
+
+    def add_skill_points(self, player_id: int, amount: int) -> None:
+        progression = self.session.get(PlayerProgressionModel, player_id)
+        if progression is None:
+            return
+        progression.skill_points = max(0, progression.skill_points + amount)
+        progression.updated_at = datetime.now(UTC)
+        self.session.commit()
+
+    def set_skill_points(self, player_id: int, amount: int) -> None:
+        progression = self.session.get(PlayerProgressionModel, player_id)
+        if progression is None:
+            return
+        progression.skill_points = max(0, amount)
+        progression.updated_at = datetime.now(UTC)
+        self.session.commit()
+
     def apply_progression(
         self,
         player_id: int,
@@ -117,7 +173,7 @@ class PlayerRepository:
         progression.level = new_level
         progression.xp = new_xp
         progression.skill_points = new_skill_points
-        progression.updated_at = datetime.now(timezone.utc)
+        progression.updated_at = datetime.now(UTC)
 
         self.session.commit()
 
@@ -128,10 +184,18 @@ class PlayerRepository:
 
         player_model.username = username
         player_model.display_name = display_name
-        player_model.last_seen_at = datetime.now(timezone.utc)
-        player_model.updated_at = datetime.now(timezone.utc)
+        player_model.last_seen_at = datetime.now(UTC)
+        player_model.updated_at = datetime.now(UTC)
 
         self.session.commit()
+
+    def list_all_profiles(self) -> list[PlayerProfile]:
+        stmt = select(PlayerModel).options(
+            joinedload(PlayerModel.progression),
+            joinedload(PlayerModel.resources),
+        )
+        models = self.session.execute(stmt).scalars().all()
+        return [self._to_domain(model) for model in models]
 
     def _to_domain(self, player_model: PlayerModel) -> PlayerProfile:
         player = Player(
@@ -156,6 +220,7 @@ class PlayerRepository:
         resources = PlayerResources(
             player_id=player_model.resources.player_id,
             gold=player_model.resources.gold,
+            daily_streak=player_model.resources.daily_streak,
             created_at=player_model.resources.created_at,
             updated_at=player_model.resources.updated_at,
         )

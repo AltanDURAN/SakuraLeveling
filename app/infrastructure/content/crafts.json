@@ -1,18 +1,340 @@
 [
   {
+    "code": "leather_cap_recipe",
+    "name": "Casque en cuir",
+    "result_item_code": "leather_cap",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "leather_strip", "quantity": 3 },
+      { "item_code": "linen_cloth", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "leather_chest_recipe",
+    "name": "Plastron en cuir",
+    "result_item_code": "leather_chest",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "leather_strip", "quantity": 5 },
+      { "item_code": "linen_cloth", "quantity": 2 }
+    ]
+  },
+  {
+    "code": "leather_legs_recipe",
+    "name": "Jambières en cuir",
+    "result_item_code": "leather_legs",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "leather_strip", "quantity": 4 },
+      { "item_code": "linen_cloth", "quantity": 2 }
+    ]
+  },
+  {
+    "code": "leather_boots_recipe",
+    "name": "Bottes en cuir",
+    "result_item_code": "leather_boots",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "leather_strip", "quantity": 3 }
+    ]
+  },
+  {
+    "code": "leather_belt_recipe",
+    "name": "Ceinture en cuir",
+    "result_item_code": "leather_belt",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "leather_strip", "quantity": 2 },
+      { "item_code": "iron_ingot", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "leather_bracelet_recipe",
+    "name": "Bracelet en cuir",
+    "result_item_code": "leather_bracelet",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "leather_strip", "quantity": 2 }
+    ]
+  },
+  {
+    "code": "linen_cape_recipe",
+    "name": "Cape en lin",
+    "result_item_code": "linen_cape",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "linen_cloth", "quantity": 4 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "stone_earring_recipe",
+    "name": "Boucle de pierre polie",
+    "result_item_code": "stone_earring",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "polished_stone", "quantity": 2 },
+      { "item_code": "iron_ingot", "quantity": 1 }
+    ]
+  },
+
+  {
+    "code": "wood_sword_recipe",
+    "name": "Épée en bois",
+    "result_item_code": "wood_sword",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "wood_log", "quantity": 3 }
+    ]
+  },
+  {
+    "code": "wooden_shield_recipe",
+    "name": "Bouclier en bois",
+    "result_item_code": "wooden_shield",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "wood_log", "quantity": 4 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "iron_buckler_recipe",
+    "name": "Rondache en fer",
+    "result_item_code": "iron_buckler",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "iron_ingot", "quantity": 3 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
     "code": "slime_blade_recipe",
     "name": "Lame visqueuse",
     "result_item_code": "slime_blade",
     "result_quantity": 1,
     "ingredients": [
-      {
-        "item_code": "slime_gel",
-        "quantity": 3
-      },
-      {
-        "item_code": "wood_sword",
-        "quantity": 1
-      }
+      { "item_code": "slime_gel", "quantity": 3 },
+      { "item_code": "wood_sword", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "hunter_dagger_recipe",
+    "name": "Dague du chasseur",
+    "result_item_code": "hunter_dagger",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "iron_ingot", "quantity": 2 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "gobelin_axe_recipe",
+    "name": "Hache gobeline",
+    "result_item_code": "gobelin_axe",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "gobelin_tooth", "quantity": 4 },
+      { "item_code": "iron_ingot", "quantity": 2 },
+      { "item_code": "wood_log", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "two_handed_iron_sword_recipe",
+    "name": "Espadon de fer",
+    "result_item_code": "two_handed_iron_sword",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "iron_ingot", "quantity": 8 },
+      { "item_code": "leather_strip", "quantity": 2 },
+      { "item_code": "wood_log", "quantity": 2 }
+    ]
+  },
+  {
+    "code": "iron_helmet_recipe",
+    "name": "Casque de fer",
+    "result_item_code": "iron_helmet",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "iron_ingot", "quantity": 4 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "iron_chest_recipe",
+    "name": "Plastron de fer",
+    "result_item_code": "iron_chest",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "iron_ingot", "quantity": 6 },
+      { "item_code": "leather_strip", "quantity": 2 }
+    ]
+  },
+  {
+    "code": "iron_legs_recipe",
+    "name": "Jambières de fer",
+    "result_item_code": "iron_legs",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "iron_ingot", "quantity": 5 },
+      { "item_code": "leather_strip", "quantity": 2 }
+    ]
+  },
+  {
+    "code": "iron_boots_recipe",
+    "name": "Bottes en fer",
+    "result_item_code": "iron_boots",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "iron_ingot", "quantity": 4 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "gobelin_crown_recipe",
+    "name": "Couronne gobeline",
+    "result_item_code": "gobelin_crown",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "gobelin_tooth", "quantity": 6 },
+      { "item_code": "polished_stone", "quantity": 2 },
+      { "item_code": "iron_ingot", "quantity": 1 }
+    ]
+  },
+
+  {
+    "code": "iron_ring_recipe",
+    "name": "Anneau de fer",
+    "result_item_code": "iron_ring",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "iron_ingot", "quantity": 2 }
+    ]
+  },
+  {
+    "code": "gobelin_ring_recipe",
+    "name": "Bague gobeline",
+    "result_item_code": "gobelin_ring",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "gobelin_tooth", "quantity": 3 },
+      { "item_code": "iron_ingot", "quantity": 1 },
+      { "item_code": "polished_stone", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "slime_pendant_recipe",
+    "name": "Pendentif de Slime",
+    "result_item_code": "slime_pendant",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "slime_gel", "quantity": 5 },
+      { "item_code": "polished_stone", "quantity": 1 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+
+  {
+    "code": "linen_hood_recipe",
+    "name": "Capuche en lin",
+    "result_item_code": "linen_hood",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "linen_cloth", "quantity": 4 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "linen_robe_recipe",
+    "name": "Robe en lin",
+    "result_item_code": "linen_robe",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "linen_cloth", "quantity": 6 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "linen_gloves_recipe",
+    "name": "Mitaines en lin",
+    "result_item_code": "linen_gloves",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "linen_cloth", "quantity": 3 }
+    ]
+  },
+  {
+    "code": "slime_cloak_recipe",
+    "name": "Cape gluante",
+    "result_item_code": "slime_cloak",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "slime_gel", "quantity": 5 },
+      { "item_code": "linen_cloth", "quantity": 3 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "goblin_amulet_recipe",
+    "name": "Amulette gobeline",
+    "result_item_code": "goblin_amulet",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "gobelin_tooth", "quantity": 5 },
+      { "item_code": "polished_stone", "quantity": 2 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "polished_stone_ring_recipe",
+    "name": "Anneau de pierre polie",
+    "result_item_code": "polished_stone_ring",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "polished_stone", "quantity": 3 }
+    ]
+  },
+  {
+    "code": "iron_gauntlets_recipe",
+    "name": "Gantelets en fer",
+    "result_item_code": "iron_gauntlets",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "iron_ingot", "quantity": 4 },
+      { "item_code": "leather_strip", "quantity": 2 }
+    ]
+  },
+
+  {
+    "code": "iron_dagger_recipe",
+    "name": "Dague en fer",
+    "result_item_code": "iron_dagger",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "iron_ingot", "quantity": 2 },
+      { "item_code": "wood_log", "quantity": 1 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "goblin_blade_recipe",
+    "name": "Lame gobeline",
+    "result_item_code": "goblin_blade",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "gobelin_tooth", "quantity": 4 },
+      { "item_code": "iron_ingot", "quantity": 2 },
+      { "item_code": "wood_log", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "slime_shield_recipe",
+    "name": "Bouclier visqueux",
+    "result_item_code": "slime_shield",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "slime_gel", "quantity": 4 },
+      { "item_code": "wood_log", "quantity": 3 },
+      { "item_code": "leather_strip", "quantity": 1 }
     ]
   }
 ]

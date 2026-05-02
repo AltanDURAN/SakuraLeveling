@@ -18,3 +18,6 @@ class BattleResult:
     turn_logs: list[BattleTurnLog]
     mob_name: str
     mob_image_name: str
+    # Brut entrant total avant réduction par la défense — sert au tracking
+    # "damage tanked" honnête (la défense a absorbé `raw - hp_lost`).
+    player_total_raw_damage_taken: int = 0

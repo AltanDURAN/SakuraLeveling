@@ -21,6 +21,17 @@ from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel
 from app.infrastructure.db.models.quest_model import QuestDefinitionModel, PlayerQuestStateModel
 from app.infrastructure.db.models.profession_model import PlayerProfessionModel
 from app.infrastructure.db.models.player_health_state_model import PlayerHealthStateModel
+from app.infrastructure.db.models.player_mob_kill_model import PlayerMobKillModel
+from app.infrastructure.db.models.shop_item_model import ShopItemModel
+from app.infrastructure.db.models.player_career_stats_model import PlayerCareerStatsModel
+from app.infrastructure.db.models.player_skill_allocation_model import PlayerSkillAllocationModel
+from app.infrastructure.db.models.trade_model import TradeItemModel, TradeModel
+from app.infrastructure.db.models.player_duel_rank_model import PlayerDuelRankModel
+from app.infrastructure.db.models.world_boss_model import WorldBossModel, WorldBossParticipationModel
+from app.infrastructure.db.models.player_title_model import PlayerTitleModel
+from app.infrastructure.db.models.weekly_quest_model import WeeklyQuestAssignmentModel
+from app.infrastructure.db.models.daily_quest_model import DailyQuestAssignmentModel
+from app.infrastructure.db.models.marketplace_listing_model import MarketplaceListingModel
 
 
 config = context.config

@@ -1,0 +1,592 @@
+================================================================================
+                        SAKURALEVELING — TUTORIEL
+                  Bot Discord RPG — V2 (en développement)
+================================================================================
+
+Ce document est tenu à jour automatiquement à chaque évolution du bot.
+Section 1 : commandes pour les joueurs
+Section 2 : commandes pour les administrateurs
+
+================================================================================
+                          1. COMMANDES JOUEUR
+================================================================================
+
+Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
+
+--------------------------------------------------------------------------------
+1.1 — PROFIL & PROGRESSION
+--------------------------------------------------------------------------------
+
+/ping
+    Vérifie que le bot répond. Rien de plus.
+
+/profile [target]
+    Affiche votre profil joueur. Si vous ajoutez `target`, vous voyez le
+    profil d'un autre joueur via le sélecteur Discord (ex : /profile @Altan).
+    Au premier usage sans target, votre profil est créé automatiquement.
+
+    Le profil contient :
+        • Niveau, XP, or, score de puissance, classe active
+        • Stats de combat (attaque, défense, vitesse, crit %, esquive %, régen)
+        • Daily Streak actuelle 🔥
+        • Statistiques de carrière (cumulées sur la durée de vie du profil) :
+            - Monstres tués au total
+            - Combats : nombre total, victoires / défaites, taux de réussite
+            - Or amassé (all-time, indépendant de l'or actuel)
+            - Dégâts infligés / encaissés / PV régénérés cumulés
+        Note : ces statistiques de carrière n'augmentent que par le jeu
+        (combats, daily, quêtes, ventes au shop). L'or donné par /admin
+        give_gold n'est PAS comptabilisé dans le total amassé.
+
+/inventory [target]
+    Affiche votre inventaire (objets et quantités). Avec un target, vous voyez
+    l'inventaire d'un autre joueur.
+
+/equipment [target]
+    Affiche l'équipement porté sur 12 slots, en 2 pages naviguables avec
+    les flèches ⬅️ ➡️ :
+        Page 1 (Principaux) : casque, plastron, jambières, bottes,
+                              main droite, main gauche
+        Page 2 (Secondaires) : collier, bracelet, bague, ceinture, cape,
+                               boucle d'oreille
+    Chaque slot affiche son icône, son nom, l'objet équipé (ou "vide")
+    et les bonus apportés. Si une arme à 2 mains est équipée, la main
+    gauche apparaît "verrouillée par l'arme à 2 mains".
+    Avec un target, vue lecture seule sur l'équipement d'un autre joueur.
+
+/class [target]
+    Affiche la classe active.
+
+/classes
+    Liste toutes les classes du jeu, leurs bonus de stats et les conditions
+    pour les débloquer (niveau de métier requis, item à posséder, etc.).
+
+/class_set <class_code>
+    Définit votre classe active. Vous devez avoir débloqué la classe.
+    Exemple : /class_set warrior
+
+/skill [target]
+    Affiche votre arbre de compétences :
+        • Image générée à la volée (PNG) avec couleurs par état :
+            violet = niveau max  /  or = en cours
+            bleu = débloquable    /  gris = verrouillée
+        • Compteur de points disponibles / dépensés / compétences débloquées
+        • Bouton "Investir un point" → Select Menu listant les 5 prochaines
+          compétences débloquables, avec coût et description
+        • Bouton "Vue détaillée" → lien vers la page web (locale pour l'instant)
+        • Bouton "Réinitialiser" → restitue tous les points investis,
+          cooldown de 7 jours
+    Si vous ajoutez `target`, vous pouvez consulter l'arbre d'un autre
+    joueur en lecture seule (boutons d'action désactivés).
+
+    Bonus passifs accordés (cumul des compétences débloquées) :
+        • Stats principales en pourcentage (atk, def, max_hp) — multiplicatif
+        • Stats de combat flat (crit_chance, crit_damage, dodge, speed,
+          hp_regeneration)
+        • Bonus farm : XP drop %, gold drop %, drop rate multiplier
+          (sur le taux de base de chaque drop, pour préserver la rareté
+          des items rares)
+    Les bonus s'appliquent automatiquement dans /profile, en combat
+    (de groupe et solo), au calcul du score de puissance, et aux drops.
+
+/quests [target]
+    Affiche la liste de vos quêtes : description, progression, statut.
+
+/quest_claim <quest_code>
+    Récupère la récompense d'une quête terminée.
+    Exemple : /quest_claim slime_hunter
+
+/daily
+    Récupère votre récompense quotidienne. Cooldown de 24h.
+    Mécanique de série (streak) :
+        • Première récupération : +100 or, série = 1
+        • Chaque récupération suivante : +(streak × 100) or, série += 1
+        • La série n'est JAMAIS perdue, même si vous sautez des jours
+        • Seul un /admin reset_player remet la série à 0
+    Affichage type :
+        Daily Streak 3 🔥 !
+        Vous récupérez :
+        300 🪙
+        Revenez également demain !
+
+--------------------------------------------------------------------------------
+1.2 — MÉTIERS & RESSOURCES
+--------------------------------------------------------------------------------
+
+/gather <profession_code>
+    Récolte des ressources via un métier (mining, woodcutting, etc.).
+    Vous gagnez de l'XP de métier et un objet selon votre niveau.
+    Exemple : /gather mining
+
+/craft_list
+    Liste les recettes d'équipement et accessoires (hors armes / boucliers).
+    Pour chaque recette : nom du résultat, slot d'équipement, bonus de stats,
+    ingrédients requis. Code utilisable avec /craft.
+
+/forge_list
+    Liste les recettes d'armes et boucliers (catégories weapon / shield).
+    Code utilisable avec /forge.
+
+/craft <recipe_code>
+    Fabrique un objet d'équipement / accessoire (casque, plastron, jambières,
+    bottes, collier, ceinture, etc.). Refuse si la recette produit une arme :
+    utilisez /forge dans ce cas. Autocomplete sur les recettes valides.
+    Exemple : /craft leather_cap_recipe
+
+/forge <recipe_code>
+    Forge une arme ou un bouclier. Refuse si la recette produit autre chose :
+    utilisez /craft dans ce cas. Autocomplete sur les armes/boucliers.
+    Exemple : /forge two_handed_iron_sword_recipe
+
+--------------------------------------------------------------------------------
+1.3 — ÉQUIPEMENT
+--------------------------------------------------------------------------------
+
+Slots d'équipement (12 au total) :
+    Principaux  : casque, plastron, jambieres, bottes, main_droite, main_gauche
+    Secondaires : collier, bracelet, bague, ceinture, cape, boucle_oreille
+
+Règles d'équipement :
+    • Un seul objet par slot
+    • Les armes 1-main peuvent être équipées en main_droite OU main_gauche
+      (ambidextrie). Pour porter la même arme dans les deux mains, il faut
+      en posséder deux exemplaires distincts.
+    • Les armes 2-mains (épée longue, etc.) occupent les deux slots de main
+      en même temps : équiper une 2-mains déséquipe automatiquement ce qui
+      était dans main_droite ET main_gauche.
+    • Équiper en main_gauche alors qu'une 2-mains est portée la déséquipe.
+    • On ne gagne PAS de stats en craftant un équipement, on en gagne
+      uniquement en l'équipant. Changer d'équipement est gratuit et permet
+      le théorycrafting.
+
+/equip <item_code> [slot]
+    Équipe un objet de votre inventaire. Le `slot` est optionnel : si non
+    fourni, l'objet va dans son slot par défaut. Pour les armes 1-main,
+    spécifiez `main_droite` ou `main_gauche` selon le côté souhaité.
+    Autocomplete : ne propose que les objets équipables présents dans
+    votre inventaire. Si un objet est déjà équipé dans le slot, il est
+    automatiquement déséquipé.
+    Exemples :
+        /equip iron_helmet                   → casque (slot par défaut)
+        /equip wood_sword main_gauche        → arme 1-main en main gauche
+        /equip two_handed_iron_sword         → 2-mains, libère les deux mains
+
+--------------------------------------------------------------------------------
+1.4 — COMBAT
+--------------------------------------------------------------------------------
+
+Combat de groupe (encounters) — déclenché automatiquement
+    Toutes les ~10 minutes, un monstre apparaît dans le canal d'encounter.
+    Vous avez 5 minutes pour cliquer sur "Combattre" pour rejoindre le combat,
+    ou "Quitter" pour vous retirer.
+
+    Quand le combat se résout, deux pages d'embed s'affichent (navigables avec
+    les flèches ⬅️ ➡️) :
+        • Page 1 — Récompenses : or, XP et drops reçus par chaque participant
+        • Page 2 — Détails : dégâts infligés, dégâts encaissés, PV régénérés,
+          PV restants, et part de contribution de chaque joueur (🏅 X%)
+
+Note : les morts en combat ne reçoivent ni or, ni XP, ni drops, ni kill credit.
+       Tant que vous êtes mort durant un combat, vous ne pouvez pas vous
+       régénérer en PV jusqu'à la fin du combat.
+
+/fight @target
+    Duel 1v1 PvP entre joueurs, purement compétitif. Déterminant le ladder
+    1v1 (visible via /top "Classement duels 1v1") sans rien faire perdre :
+        • Aucun gain ni perte d'or, d'XP, de drops ou de kill counter
+        • Aucune perte de PV réelle : l'animation montre une barre d'HP qui
+          descend (les deux combattants démarrent à leur max_hp) mais à la
+          fin, votre current_hp réel est exactement celui que vous aviez
+          avant le défi
+        • Le combat est animé tour par tour dans le canal beta
+
+    Règle de défi :
+        • Vous ne pouvez défier qu'un joueur STRICTEMENT mieux classé que
+          vous (rank_position plus petit = mieux placé)
+        • Si vous gagnez → échange des places dans le ladder
+        • Si vous perdez → ladder inchangé, mais le compteur W-L reflète
+          la défaite/victoire
+        • Tout joueur jamais inscrit est ajouté au ladder en dernier rang
+          la première fois qu'il défie ou est défié
+        • Cooldown : 60 secondes entre 2 défis sortants
+
+    Pas de validation de la cible : tant que le défi est éligible (vous
+    êtes moins bien classé), le combat se lance immédiatement.
+
+    Exemple : /fight @Bob (vous êtes #5, Bob est #2 → défi accepté)
+
+--------------------------------------------------------------------------------
+1.5 — RÉPARTITION DES RÉCOMPENSES (combat de groupe)
+--------------------------------------------------------------------------------
+
+Or : pool = mob.gold_reward × nb_survivants, partagé selon le score de
+     contribution multi-métriques (role-agnostic). Pour chaque métrique active
+     dans l'équipe (dégâts infligés, dégâts tankés, PV régénérés), chaque
+     survivant gagne (sa_part / total_équipe) points. Score final = somme.
+     → Un Tank pur, un Healer pur ou un DPS pur gagnent tous 1 point dans
+       leur spécialité ; un polyvalent cumule.
+
+XP : multiplicateur = clamp(mob_power / player_power, 0.5, 2.5). Les joueurs
+     plus faibles que le mob gagnent plus d'XP (apprentissage). Plafonné à
+     ×2.5 max et ×0.5 min.
+
+Drops : roll indépendant via la table de loot du mob, pour chaque survivant.
+        N'est PAS affecté par les dégâts ou les contributions.
+
+Kill counter : tous les survivants reçoivent +1 sur le compteur du mob tué.
+
+/use <item_code>
+    Utiliser un consommable de votre inventaire (autocomplete sur les
+    consommables possédés). Décrémente la quantité de 1 et applique
+    l'effet immédiatement. Si déjà full HP avec une potion : l'effet
+    cap à max_hp (pas de gaspillage évité — le consommable est tout
+    de même utilisé).
+
+    Consommables actuellement disponibles :
+        • potion_soin_i    (Potion de soin I)   — restaure 50% PV max
+        • potion_soin_ii   (Potion de soin II)  — restaure 75% PV max
+        • potion_soin_iii  (Potion de soin III) — restaure 100% PV max
+
+    Tous les 3 sont vendus en boutique. À craft / loot pour des recettes
+    dédiées plus tard.
+
+--------------------------------------------------------------------------------
+1.6 — CLASSEMENTS
+--------------------------------------------------------------------------------
+
+/top <category>
+    Affiche un classement (top 10) avec autocomplete dynamique.
+    Catégories disponibles :
+        • Puissance (score de combat global)
+        • Niveau, Or
+        • Stats individuelles : Points de vie, Attaque, Défense, Vitesse,
+          Chance de critique, Dégâts de critique, Esquive, Régénération
+        • Monstres tués (total)
+        • Tués par mob spécifique (ex : Tués : Gobelin Géant)
+        • Tués par famille de mob (ex : Tués : famille Gobelin)
+        • Classement duels 1v1 (cf. section 1.4 pour les règles)
+    Tapez le début du nom et l'autocomplete vous propose les options.
+
+--------------------------------------------------------------------------------
+1.7 — BOUTIQUE
+--------------------------------------------------------------------------------
+
+/shop
+    Affiche tous les articles disponibles à la boutique avec :
+        • Prix d'achat (fixe, défini par l'admin)
+        • Prix de vente actuel (dynamique, dépend du stock)
+        • Stock actuel et taux de saturation
+    Plus le stock est haut, plus le prix de vente est bas (le marché est saturé).
+
+/buy <item_code> [quantity=1]
+    Achète une quantité d'un objet à la boutique. Prix fixe (admin-défini).
+    Stock toujours disponible côté shop. Échec si gold insuffisant.
+    Exemple : /buy slime_gel 5
+
+/sell <item_code> [quantity=1]
+    Vend une quantité d'un objet à la boutique. Prix dynamique.
+    Important : si vous vendez en lot, chaque unité fait baisser le prix de
+    la suivante (anti-exploit du dump massif). Vendre 10 gelées d'un coup
+    rapporte donc moins que 10 × le prix actuel.
+    Échec si vous n'avez pas la quantité dans l'inventaire.
+    Exemple : /sell slime_gel 3
+
+--------------------------------------------------------------------------------
+1.8 — ÉCHANGES ENTRE JOUEURS
+--------------------------------------------------------------------------------
+
+/pay @target <amount>
+    Envoie de l'or à un autre joueur. Transfert unilatéral, simple et
+    sécurisé.
+    Validations :
+        • amount strictement positif (≥ 1) — bloqué côté Discord et côté
+          use case
+        • Refus si vous tentez de vous payer vous-même
+        • Refus si la cible n'a pas de profil joueur
+        • Refus si vos fonds sont insuffisants au moment de l'envoi
+    L'or transféré n'est PAS comptabilisé dans le `gold_earned_total` du
+    receiver (cohérent avec /admin give_gold et /trade : seuls les gains
+    "via le jeu" comptent dans les stats de carrière).
+    Exemple : /pay @Bob 50
+
+/trade @target
+    Propose un échange à un autre joueur. Un brouillon ephemeral s'ouvre
+    et se construit en cliquant sur des boutons (workflow itératif, pas
+    de saisie manuelle de codes d'item) :
+        • [+ Mon item]      → Select Menu listant vos items en inventaire
+                              (top 25 par quantité), puis modal de quantité
+        • [+ Item demandé]  → Select Menu listant les items de la cible,
+                              puis modal de quantité
+        • [💰 Mon or]       → modal d'un seul champ pour le montant que
+                              vous proposez
+        • [💰 Or demandé]   → modal d'un seul champ pour le montant que
+                              vous demandez en retour
+        • [🔄 Reset]        → vide entièrement le brouillon
+        • [🛑 Annuler]      → ferme le brouillon sans rien envoyer
+        • [✅ Soumettre]    → crée le trade et poste le message public
+
+    Le brouillon est mis à jour visuellement à chaque action : embed avec
+    deux colonnes "Vous proposez" / "La cible doit donner". Si vous
+    cliquez deux fois sur le même item, les quantités sont additionnées.
+
+    Une fois soumis, un récapitulatif est posté dans le canal avec
+    @target tag et 3 boutons :
+        • ✅ Accepter (réservé à @target) : exécute l'échange
+        • ✋ Refuser (réservé à @target) : ferme le trade
+        • 🛑 Annuler (réservé à l'initiateur) : ferme le trade
+
+    Sécurité :
+        • Vérification des items et de l'or à la proposition (vous ne
+          pouvez pas proposer ce que vous n'avez pas)
+        • Re-vérification au moment de l'acceptation (anti-exploitation
+          du décalage entre proposition et accept : si l'un des deux
+          a entre temps consommé ses ressources, l'échange échoue
+          proprement et rien ne bouge)
+        • Cooldown 5 minutes : le trade expire si pas accepté dans ce délai.
+          Un cleanup loop côté bot marque automatiquement les trades
+          dépassés en "expired" toutes les minutes pour libérer la paire
+        • Un seul trade pending par paire de joueurs à la fois
+        • Pas de trade avec un bot, pas de trade avec soi-même
+
+    Exemple : /trade @Bob
+        → [+ Mon item] → choisir "iron_ingot" → quantité 5
+        → [💰 Mon or] → 50
+        → [+ Item demandé] → choisir "gobelin_tooth" → quantité 10
+        → [✅ Soumettre]
+
+================================================================================
+                       2. COMMANDES ADMINISTRATEUR
+================================================================================
+
+Les commandes /admin ... ne sont accessibles qu'aux Discord IDs déclarés dans
+la variable d'environnement ADMIN_DISCORD_IDS (cf. .env).
+
+Toutes les commandes admin sont éphémères (réponse visible uniquement par
+l'admin). Elles fonctionnent depuis n'importe quel canal (pas de restriction
+beta channel sur le cog admin).
+
+--------------------------------------------------------------------------------
+2.1 — GESTION DES JOUEURS
+--------------------------------------------------------------------------------
+
+/admin give_gold <target> <amount>
+    Ajoute de l'or au profil de @target.
+    Range : 1 à 1 000 000 000.
+    Exemple : /admin give_gold @TestPlayer 5000
+
+/admin set_gold <target> <amount>
+    Définit l'or de @target à un montant absolu (clamp à 0 minimum).
+    Range : 0 à 1 000 000 000.
+    Exemple : /admin set_gold @TestPlayer 0
+
+/admin give_xp <target> <amount>
+    Ajoute de l'XP. Peut faire monter de niveau (le bot affiche la transition).
+    Range : 1 à 1 000 000 000.
+    Exemple : /admin give_xp @TestPlayer 1000
+
+/admin set_level <target> <level>
+    Définit le niveau du joueur (XP remis à 0 pour ce niveau).
+    Range : 1 à 1000.
+    Exemple : /admin set_level @TestPlayer 10
+
+/admin give_item <target> <item_code> <quantity>
+    Ajoute des objets à l'inventaire de @target.
+    Autocomplete sur item_code (parmi tous les items définis).
+    Exemple : /admin give_item @TestPlayer slime_gel 50
+
+/admin remove_item <target> <item_code> <quantity>
+    Retire des objets de l'inventaire de @target.
+    Échec si le joueur n'a pas la quantité demandée.
+    Exemple : /admin remove_item @TestPlayer slime_gel 10
+
+/admin give_skill_points <target> <amount>
+    Ajoute (ou retire si négatif) des skill points à @target. Le total est
+    clampé à 0 minimum. Range : -1000 à 1000.
+    Exemple : /admin give_skill_points @TestPlayer 5
+
+/admin set_skill_points <target> <amount>
+    Définit le nombre exact de skill points de @target. Range : 0 à 10 000.
+    Exemple : /admin set_skill_points @TestPlayer 0
+
+/admin set_current_hp <target> <hp>
+    Définit les PV courants de @target. Utile pour tester les KO ou la régen.
+    Range : 0 à 1 000 000.
+
+/admin heal_full <target>
+    Restaure les PV de @target à son `max_hp` courant (recalculé en fonction
+    du niveau, équipement, classe, skill bonuses).
+
+/admin set_daily_streak <target> <streak>
+    Définit le compteur de streak du /daily de @target (≥ 0).
+
+/admin set_class <target> <class_code>
+    Force la classe active de @target (ignore les prérequis de niveau).
+    Autocomplete sur class_code.
+
+/admin set_kills <target> <mob_code> <count>
+    Définit le compteur de kills de @target pour un mob spécifique.
+    `count = 0` supprime la ligne. Autocomplete sur mob_code.
+
+/admin force_equip <target> <item_code> [slot]
+    Force l'équipement d'un item sur un slot. Bypass tous les checks
+    (inventaire, prérequis, slot canonique). Si `slot` non précisé,
+    utilise le slot canonique de l'item.
+
+/admin force_unequip <target> <slot>
+    Vide un slot d'équipement de @target. Aucun retour en inventaire :
+    l'item est juste détaché. Autocomplete sur slot.
+
+/admin set_duel_rank <target> <position>
+    Force la position de @target dans le ladder 1v1 (#1 = meilleur).
+    Si la position est déjà occupée, les autres joueurs sont décalés
+    automatiquement. Range : 1 à 10 000.
+
+/admin reset_player <target>
+    Réinitialise complètement le profil de @target tout en gardant son
+    identité Discord (id, username, display_name).
+    Réinitialise : niveau (1), XP (0), or (0), inventaire (vide), équipement
+    (vide), classes, quêtes, cooldowns, état HP, kills, professions, skill
+    points, allocations skill tree, position duel rank.
+    Très utile pour tester un nouveau flow.
+
+--------------------------------------------------------------------------------
+2.2 — TEST & DEBUG
+--------------------------------------------------------------------------------
+
+/admin spawn_encounter [mob_code]
+    Force l'apparition immédiate d'un monstre dans le canal d'encounter
+    (dans les ~10 secondes suivantes). Refuse si un combat est déjà actif.
+    Sans paramètre : mob aléatoire. Avec mob_code (autocomplete) : ce mob
+    précis sera spawn.
+
+/admin end_encounter
+    Annule l'encounter actif (combat de groupe en cours). Le timer de
+    respawn est posé à +1 minute pour éviter un respawn instantané.
+
+/boss spawn <boss_code>
+    [Admin] Spawn manuel d'un world boss défini dans
+    `app/infrastructure/content/boss_definitions.json`. Refuse si un
+    autre boss est actif. Le boss apparaît dans le canal défini par
+    BOSS_CHANNEL_ID (fallback : ENCOUNTER_CHANNEL_ID si non défini).
+    Le boss ne regagne JAMAIS de PV — vaincu à l'usure.
+    Autocomplete sur boss_code.
+
+/boss list
+    Affiche le catalogue complet des world bosses définis : stats, tier
+    (intro/medium/hard/endgame), poids de spawn, particularités, lore.
+
+Auto-spawn
+    Toutes les heures, le bot vérifie si un nouveau boss peut apparaître :
+        • Pas de boss actuellement actif
+        • Dernière défaite > 7 jours OU jamais spawné
+        • Tirage aléatoire 5%/heure → ~1 spawn / jour de moyenne après
+          la fenêtre 7j
+    Sélection pondérée par `spawn_weight` : plus le poids est haut, plus
+    le boss a de chance d'apparaître. Les bosses easy ont des poids hauts
+    (100), les endgame des poids bas (5).
+
+5 bosses définis par défaut (test/early-game) :
+    • [intro]       slime_titan      — 50k PV, immunité dmg <5
+    • [medium]      gobelin_warlord  — 200k PV, enrage 30% (atk ×1.5)
+    • [medium_hard] stone_colossus   — 500k PV, immunité dmg <50
+    • [hard]        shadow_wraith    — 800k PV, immune aux crits, dodge 30
+    • [endgame]     ancient_dragon   — 2M PV, immunité dmg <100, enrage 25% (atk ×1.8)
+
+Ces stats sont des données de test : à remplacer par les vraies valeurs
+quand ces dernières seront fournies.
+
+Particularités (modifiers) supportées :
+    • damage_immunity_threshold : les dégâts < N sont ignorés (boss "armuré")
+    • enrage_below_pct + enrage_attack_multiplier : à X% PV, atk × N
+    • crit_immunity : ignore l'effet des coups critiques du joueur
+
+Le message du boss embarque 3 boutons :
+    • [🤝 Rejoindre]      → s'inscrire au raid (1 fois)
+    • [🚪 Quitter]        → se désinscrire (refusé si déjà combattu)
+    • [⚔️ Lancer le combat] → solo combat avec bonus d'équipe (cooldown
+      1/jour, reset minuit UTC). Bonus = +5% atk/def/HP par participant
+      inscrit, capé à +50%.
+
+À la défaite, le bot poste un récap dans le canal et distribue :
+    • Top dégâts / Top tank / Top heal : +200g, +100xp, +1 potion_soin_iii
+    • Tous les participants : +50g, +25xp, +1 potion_soin_i (en plus
+      du bonus catégorie pour les top-X — cumul possible).
+
+--------------------------------------------------------------------------------
+2.3 — GESTION DE LA BOUTIQUE
+--------------------------------------------------------------------------------
+
+/admin shop_add <item_code> <buy_price> <max_sell_price> [min_sell_price=0] [stock_threshold=100]
+    Ajoute un objet au shop.
+    Paramètres :
+        • item_code : code de l'objet (autocomplete : items pas encore en shop)
+        • buy_price : prix fixe que les joueurs paient pour acheter (≥ 0)
+        • max_sell_price : prix payé au joueur quand le shop est vide (≥ 0)
+        • min_sell_price : prix minimum quand le shop est saturé (par défaut 0)
+        • stock_threshold : stock à partir duquel le prix de vente atteint le
+          minimum (par défaut 100)
+    Validation : min_sell_price doit être ≤ max_sell_price.
+    Exemple : /admin shop_add slime_gel 15 8 2 100
+              → Achat 15 or, vente 2-8 or, saturation à 100 unités en stock
+
+/admin shop_set <item_code> [buy_price] [max_sell_price] [min_sell_price] [stock_threshold] [enabled]
+    Modifie un objet existant du shop. Tous les champs sont optionnels :
+    seuls ceux fournis sont mis à jour.
+    Autocomplete sur item_code (items déjà dans le shop).
+    Exemple : /admin shop_set slime_gel buy_price:20 enabled:False
+              → Change le prix d'achat à 20 et désactive l'item
+
+/admin shop_remove <item_code>
+    Retire complètement un objet du shop.
+    Autocomplete sur item_code (items présents dans le shop).
+    Exemple : /admin shop_remove slime_gel
+
+/admin shop_set_stock <item_code> <stock>
+    Définit manuellement le stock d'un objet (clamp à 0 minimum).
+    Utile pour relancer le prix de vente vers le maximum après modération.
+    Range : 0 à 10 000 000.
+    Exemple : /admin shop_set_stock slime_gel 0
+              → Reset le stock à 0, le prix de vente revient à max
+
+--------------------------------------------------------------------------------
+2.4 — WORKFLOW ADMIN TYPE
+--------------------------------------------------------------------------------
+
+Tester un nouveau flow shop :
+    /admin reset_player @MoiTest          # repart de zéro
+    /admin give_gold @MoiTest 1000        # bourse
+    /admin shop_add slime_gel 15 8 2 100  # ajout shop
+    /admin give_item @MoiTest slime_gel 50
+    /shop                                 # voir le shop
+    /sell slime_gel 30                    # tester la vente
+    /shop                                 # voir l'effet sur les prix
+    /buy slime_gel 5                      # tester l'achat
+    /admin shop_set_stock slime_gel 0     # reset le stock
+
+Tester un combat de groupe :
+    /admin spawn_encounter                # spawn forcé d'un mob
+    (clic sur "Combattre" pour rejoindre)
+    (attendre ou regarder les autres joueurs rejoindre)
+    (combat se résout automatiquement)
+    (récap 2 pages s'affiche)
+
+================================================================================
+                           3. NOTES TECHNIQUES
+================================================================================
+
+— Toutes les valeurs de stats (crit_chance, crit_damage, dodge) sont en
+  pourcentages entiers 0..100, sauf crit_damage où 100 = neutre, 150 = ×1.5.
+
+— Les images de monstres sont stockées localement dans assets/mobs/.
+  Si une image manque, un placeholder gris s'affiche.
+
+— Les combats de groupe ont un lobby de 5 minutes. Si personne ne rejoint,
+  le monstre s'enfuit (pas de combat ni de récompense).
+
+— Le système de famille de monstres permet d'agréger plusieurs variantes
+  (gobelin, gobelin_combattant, gobelin_chaman...) sous une famille commune
+  (gobelin) — utile pour les classements et futurs titres.
+
+================================================================================
+                              FIN DU TUTORIEL
+================================================================================

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 
 class HealthRegenerationService:
@@ -21,10 +21,10 @@ class HealthRegenerationService:
 
         # 🔥 NORMALISATION
         if last_updated_at.tzinfo is None:
-            last_updated_at = last_updated_at.replace(tzinfo=timezone.utc)
+            last_updated_at = last_updated_at.replace(tzinfo=UTC)
 
         if now.tzinfo is None:
-            now = now.replace(tzinfo=timezone.utc)
+            now = now.replace(tzinfo=UTC)
 
         elapsed_seconds = (now - last_updated_at).total_seconds()
 

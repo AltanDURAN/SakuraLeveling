@@ -10,69 +10,9 @@
     "sell_price": 2,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": null
-  },
-  {
-    "code": "wood_sword",
-    "name": "Épée en bois",
-    "description": "Une arme basique pour débuter.",
-    "category": "weapon",
-    "rarity": "common",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 5,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack": 5
-    }
-  },
-  {
-    "code": "leather_cap",
-    "name": "Casque en cuir",
-    "description": "Un casque léger.",
-    "category": "helmet",
-    "rarity": "common",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 4,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "defense": 2,
-      "max_hp": 10
-    }
-  },
-  {
-    "code": "slime_blade",
-    "name": "Lame visqueuse",
-    "description": "Une épée recouverte d'une étrange matière gélatineuse.",
-    "category": "weapon",
-    "rarity": "uncommon",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 12,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack": 9
-    }
-  },
-  {
-    "code": "hunter_dagger",
-    "name": "Dague du chasseur",
-    "description": "Une dague légère favorisant les coups précis.",
-    "category": "weapon",
-    "rarity": "uncommon",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 15,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack": 4,
-      "crit_chance": 0.10
-    }
+    "stat_bonuses": null,
+    "equipment_slot": null,
+    "requires_two_hands": false
   },
   {
     "code": "gobelin_tooth",
@@ -85,6 +25,712 @@
     "sell_price": 2,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": null
+    "stat_bonuses": null,
+    "equipment_slot": null,
+    "requires_two_hands": false
+  },
+
+  {
+    "code": "iron_ingot",
+    "name": "Lingot de fer",
+    "description": "Métal de base, vendu par les marchands.",
+    "category": "resource",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 5,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": null,
+    "equipment_slot": null,
+    "requires_two_hands": false
+  },
+  {
+    "code": "leather_strip",
+    "name": "Lanière de cuir",
+    "description": "Bande de cuir tannée, utile pour la maroquinerie.",
+    "category": "resource",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 3,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": null,
+    "equipment_slot": null,
+    "requires_two_hands": false
+  },
+  {
+    "code": "linen_cloth",
+    "name": "Toile de lin",
+    "description": "Une toile résistante pour vêtements et capes.",
+    "category": "resource",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 3,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": null,
+    "equipment_slot": null,
+    "requires_two_hands": false
+  },
+  {
+    "code": "polished_stone",
+    "name": "Pierre polie",
+    "description": "Pierre travaillée, base des bijoux modestes.",
+    "category": "resource",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 4,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": null,
+    "equipment_slot": null,
+    "requires_two_hands": false
+  },
+  {
+    "code": "wood_log",
+    "name": "Bûche de bois",
+    "description": "Bois brut. Sera plus tard récolté via le métier de bûcheron.",
+    "category": "resource",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 1,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": null,
+    "equipment_slot": null,
+    "requires_two_hands": false
+  },
+
+  {
+    "code": "wood_sword",
+    "name": "Épée en bois",
+    "description": "Une arme basique pour débuter. Une main.",
+    "category": "weapon",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 5,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 3
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false
+  },
+  {
+    "code": "slime_blade",
+    "name": "Lame visqueuse",
+    "description": "Une épée recouverte d'une étrange matière gélatineuse. Une main.",
+    "category": "weapon",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 12,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 5,
+      "max_hp": 5
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false
+  },
+  {
+    "code": "hunter_dagger",
+    "name": "Dague du chasseur",
+    "description": "Une dague légère favorisant les coups précis. Une main.",
+    "category": "weapon",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 15,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 3,
+      "crit_chance": 5
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false
+  },
+  {
+    "code": "gobelin_axe",
+    "name": "Hache gobeline",
+    "description": "Hache fruste taillée par les gobelins. Une main.",
+    "category": "weapon",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 18,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 6,
+      "crit_damage": 5
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false
+  },
+  {
+    "code": "two_handed_iron_sword",
+    "name": "Espadon de fer",
+    "description": "Une longue lame qui demande de tenir des deux mains.",
+    "category": "weapon",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 35,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 10,
+      "crit_damage": 10
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": true
+  },
+
+  {
+    "code": "wooden_shield",
+    "name": "Bouclier en bois",
+    "description": "Un bouclier léger, à porter en main gauche.",
+    "category": "shield",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 6,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 3,
+      "max_hp": 5
+    },
+    "equipment_slot": "main_gauche",
+    "requires_two_hands": false
+  },
+  {
+    "code": "iron_buckler",
+    "name": "Rondache en fer",
+    "description": "Un petit bouclier rond, à porter en main gauche.",
+    "category": "shield",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 14,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 5,
+      "dodge": 2
+    },
+    "equipment_slot": "main_gauche",
+    "requires_two_hands": false
+  },
+
+  {
+    "code": "leather_cap",
+    "name": "Casque en cuir",
+    "description": "Un casque léger.",
+    "category": "helmet",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 4,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 1,
+      "max_hp": 3
+    },
+    "equipment_slot": "casque",
+    "requires_two_hands": false
+  },
+  {
+    "code": "iron_helmet",
+    "name": "Casque de fer",
+    "description": "Un casque robuste forgé dans du fer.",
+    "category": "helmet",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 12,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 3,
+      "max_hp": 8
+    },
+    "equipment_slot": "casque",
+    "requires_two_hands": false
+  },
+  {
+    "code": "gobelin_crown",
+    "name": "Couronne gobeline",
+    "description": "Couronne tribale, légère et étrange.",
+    "category": "helmet",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 22,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 2,
+      "max_hp": 5,
+      "crit_chance": 3
+    },
+    "equipment_slot": "casque",
+    "requires_two_hands": false
+  },
+
+  {
+    "code": "leather_chest",
+    "name": "Plastron en cuir",
+    "description": "Une protection de torse en cuir tanné.",
+    "category": "chest",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 6,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 2,
+      "max_hp": 6
+    },
+    "equipment_slot": "plastron",
+    "requires_two_hands": false
+  },
+  {
+    "code": "iron_chest",
+    "name": "Plastron de fer",
+    "description": "Plastron rigide qui absorbe les coups.",
+    "category": "chest",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 18,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 5,
+      "max_hp": 12
+    },
+    "equipment_slot": "plastron",
+    "requires_two_hands": false
+  },
+
+  {
+    "code": "leather_legs",
+    "name": "Jambières en cuir",
+    "description": "Jambières souples qui protègent les jambes.",
+    "category": "legs",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 5,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 1,
+      "max_hp": 4,
+      "speed": 1
+    },
+    "equipment_slot": "jambieres",
+    "requires_two_hands": false
+  },
+  {
+    "code": "iron_legs",
+    "name": "Jambières de fer",
+    "description": "Jambières lourdes qui sacrifient la vitesse pour la défense.",
+    "category": "legs",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 16,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 4,
+      "max_hp": 8
+    },
+    "equipment_slot": "jambieres",
+    "requires_two_hands": false
+  },
+
+  {
+    "code": "leather_boots",
+    "name": "Bottes en cuir",
+    "description": "Bottes souples pour les longues marches.",
+    "category": "boots",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 4,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 1,
+      "speed": 1
+    },
+    "equipment_slot": "bottes",
+    "requires_two_hands": false
+  },
+  {
+    "code": "iron_boots",
+    "name": "Bottes en fer",
+    "description": "Bottes robustes, légèrement encombrantes.",
+    "category": "boots",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 14,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 3,
+      "max_hp": 5
+    },
+    "equipment_slot": "bottes",
+    "requires_two_hands": false
+  },
+
+  {
+    "code": "slime_pendant",
+    "name": "Pendentif de Slime",
+    "description": "Un collier orné d'une perle gélatineuse.",
+    "category": "necklace",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 10,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 8,
+      "hp_regeneration": 1
+    },
+    "equipment_slot": "collier",
+    "requires_two_hands": false
+  },
+  {
+    "code": "leather_bracelet",
+    "name": "Bracelet en cuir",
+    "description": "Un bracelet simple qui assouplit les mouvements.",
+    "category": "bracelet",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 5,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "speed": 1,
+      "dodge": 1
+    },
+    "equipment_slot": "bracelet",
+    "requires_two_hands": false
+  },
+  {
+    "code": "iron_ring",
+    "name": "Anneau de fer",
+    "description": "Une bague modeste mais bien forgée.",
+    "category": "ring",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 8,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 1,
+      "defense": 1
+    },
+    "equipment_slot": "bague",
+    "requires_two_hands": false
+  },
+  {
+    "code": "gobelin_ring",
+    "name": "Bague gobeline",
+    "description": "Bague de tribu, vibrante d'une étrange énergie.",
+    "category": "ring",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 14,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "crit_chance": 2,
+      "crit_damage": 5
+    },
+    "equipment_slot": "bague",
+    "requires_two_hands": false
+  },
+  {
+    "code": "leather_belt",
+    "name": "Ceinture en cuir",
+    "description": "Une ceinture renforcée qui maintient l'équipement.",
+    "category": "belt",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 5,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 1,
+      "max_hp": 4
+    },
+    "equipment_slot": "ceinture",
+    "requires_two_hands": false
+  },
+  {
+    "code": "linen_cape",
+    "name": "Cape en lin",
+    "description": "Cape légère qui protège du vent et des regards.",
+    "category": "cape",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 6,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 1,
+      "dodge": 1
+    },
+    "equipment_slot": "cape",
+    "requires_two_hands": false
+  },
+  {
+    "code": "stone_earring",
+    "name": "Boucle de pierre polie",
+    "description": "Petit ornement d'oreille modestement enchanté.",
+    "category": "earring",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 5,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 3,
+      "speed": 1
+    },
+    "equipment_slot": "boucle_oreille",
+    "requires_two_hands": false
+  },
+  {
+    "code": "potion_soin_i",
+    "name": "Potion de soin I",
+    "description": "Restaure 50% des PV maximum.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 8,
+    "buy_price": 30,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "heal_percent",
+      "value": 50
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false
+  },
+  {
+    "code": "potion_soin_ii",
+    "name": "Potion de soin II",
+    "description": "Restaure 75% des PV maximum.",
+    "category": "consumable",
+    "rarity": "uncommon",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 18,
+    "buy_price": 70,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "heal_percent",
+      "value": 75
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false
+  },
+  {
+    "code": "potion_soin_iii",
+    "name": "Potion de soin III",
+    "description": "Restaure 100% des PV maximum.",
+    "category": "consumable",
+    "rarity": "rare",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 40,
+    "buy_price": 150,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "heal_percent",
+      "value": 100
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false
+  },
+
+  {
+    "code": "linen_hood",
+    "name": "Capuche en lin",
+    "description": "Une capuche légère cousue dans du lin tressé.",
+    "category": "helmet",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 4,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": { "max_hp": 2, "dodge": 1 },
+    "equipment_slot": "casque",
+    "requires_two_hands": false
+  },
+  {
+    "code": "linen_robe",
+    "name": "Robe en lin",
+    "description": "Vêtement modeste tissé pour les apprentis.",
+    "category": "chest",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 6,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": { "max_hp": 4, "speed": 1 },
+    "equipment_slot": "plastron",
+    "requires_two_hands": false
+  },
+  {
+    "code": "linen_gloves",
+    "name": "Mitaines en lin",
+    "description": "Mitaines fines, idéales pour ne pas gêner les manipulations.",
+    "category": "bracelet",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 3,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": { "speed": 1, "crit_chance": 1 },
+    "equipment_slot": "bracelet",
+    "requires_two_hands": false
+  },
+  {
+    "code": "slime_cloak",
+    "name": "Cape gluante",
+    "description": "Cape recouverte d'une pellicule de gel de slime — collante mais étonnamment résistante.",
+    "category": "cape",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 14,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": { "max_hp": 5, "defense": 2 },
+    "equipment_slot": "cape",
+    "requires_two_hands": false
+  },
+  {
+    "code": "goblin_amulet",
+    "name": "Amulette gobeline",
+    "description": "Petits crocs de gobelin enfilés sur une lanière de cuir.",
+    "category": "necklace",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 16,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": { "attack": 2, "crit_chance": 1 },
+    "equipment_slot": "collier",
+    "requires_two_hands": false
+  },
+  {
+    "code": "polished_stone_ring",
+    "name": "Anneau de pierre polie",
+    "description": "Un anneau simple, taillé dans de la pierre patinée.",
+    "category": "ring",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 6,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": { "defense": 1, "max_hp": 2 },
+    "equipment_slot": "bague",
+    "requires_two_hands": false
+  },
+  {
+    "code": "iron_gauntlets",
+    "name": "Gantelets en fer",
+    "description": "Gantelets articulés, légèrement encombrants mais robustes.",
+    "category": "bracelet",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 10,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": { "attack": 1, "defense": 2 },
+    "equipment_slot": "bracelet",
+    "requires_two_hands": false
+  },
+
+  {
+    "code": "iron_dagger",
+    "name": "Dague en fer",
+    "description": "Dague affûtée, légère et discrète.",
+    "category": "weapon",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 12,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": { "attack": 3, "speed": 2, "crit_chance": 2 },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false
+  },
+  {
+    "code": "goblin_blade",
+    "name": "Lame gobeline",
+    "description": "Lame ébréchée mais redoutable, taillée d'os de gobelin.",
+    "category": "weapon",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 22,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": { "attack": 5, "crit_damage": 10 },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false
+  },
+  {
+    "code": "slime_shield",
+    "name": "Bouclier visqueux",
+    "description": "Bouclier en bois enveloppé de gel de slime — absorbe les chocs comme une éponge.",
+    "category": "shield",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 18,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": { "defense": 4, "max_hp": 6 },
+    "equipment_slot": "main_gauche",
+    "requires_two_hands": false
   }
 ]

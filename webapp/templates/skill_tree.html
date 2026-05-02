@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arbre de {{ state.player_display_name }} — SakuraLeveling</title>
+    <link rel="stylesheet" href="/static/skill_tree.css">
+</head>
+<body class="page-tree">
+    <header class="tree-header">
+        <div>
+            <h1>🌳 Arbre de {{ state.player_display_name }}</h1>
+            <p class="subtitle">
+                ✨ <strong>{{ state.available_points }}</strong> points disponibles
+                · 🔧 <strong>{{ state.spent_points }}</strong> points investis
+            </p>
+        </div>
+        <div class="legend">
+            <span class="legend-item legend-maxed">⬣ Max</span>
+            <span class="legend-item legend-in_progress">⬣ En cours</span>
+            <span class="legend-item legend-unlockable">⬣ Débloquable</span>
+            <span class="legend-item legend-locked">⬣ Verrouillée</span>
+        </div>
+    </header>
+
+    <div id="tree-container" class="tree-container">
+        {{ svg | safe }}
+    </div>
+
+    <aside id="tooltip" class="tooltip" hidden>
+        <h3 class="tooltip-title"></h3>
+        <p class="tooltip-state"></p>
+        <p class="tooltip-description"></p>
+        <p class="tooltip-level"></p>
+    </aside>
+
+    <script>
+        window.SKILL_NODES = {{ nodes | tojson }};
+    </script>
+    <script src="/static/skill_tree.js"></script>
+</body>
+</html>

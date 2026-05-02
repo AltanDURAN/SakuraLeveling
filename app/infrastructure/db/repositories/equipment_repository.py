@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
@@ -30,7 +30,7 @@ class EquipmentRepository:
         )
 
         model = self.session.execute(stmt).scalar_one_or_none()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         if model is None:
             model = PlayerEquipmentItemModel(
@@ -46,6 +46,35 @@ class EquipmentRepository:
             model.updated_at = now
 
         self.session.commit()
+
+    def unequip_slot(self, player_id: int, slot: str) -> bool:
+        """Retire l'équipement du slot spécifié. Renvoie True si quelque chose
+        a été retiré, False si le slot était déjà vide."""
+        stmt = select(PlayerEquipmentItemModel).where(
+            PlayerEquipmentItemModel.player_id == player_id,
+            PlayerEquipmentItemModel.slot == slot,
+        )
+        model = self.session.execute(stmt).scalar_one_or_none()
+        if model is None:
+            return False
+
+        self.session.delete(model)
+        self.session.commit()
+        return True
+
+    def get_slot(self, player_id: int, slot: str):
+        stmt = (
+            select(PlayerEquipmentItemModel)
+            .options(joinedload(PlayerEquipmentItemModel.item_definition))
+            .where(
+                PlayerEquipmentItemModel.player_id == player_id,
+                PlayerEquipmentItemModel.slot == slot,
+            )
+        )
+        model = self.session.execute(stmt).scalar_one_or_none()
+        if model is None:
+            return None
+        return self._to_domain(model)
 
     def _to_domain(self, model: PlayerEquipmentItemModel) -> PlayerEquipmentItem:
         item_model = model.item_definition
@@ -63,6 +92,8 @@ class EquipmentRepository:
             buy_price=item_model.buy_price,
             icon=item_model.icon,
             stat_bonuses=item_model.stat_bonuses_json,
+            equipment_slot=item_model.equipment_slot,
+            requires_two_hands=bool(item_model.requires_two_hands or False),
             created_at=item_model.created_at,
             updated_at=item_model.updated_at,
         )

@@ -1,5 +1,5 @@
 from sqlalchemy import select
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from sqlalchemy.orm import Session
 
 from app.domain.entities.item_definition import ItemDefinition
@@ -19,6 +19,10 @@ class ItemRepository:
 
         return self._to_domain(model)
 
+    def list_all(self) -> list[ItemDefinition]:
+        stmt = select(ItemDefinitionModel).order_by(ItemDefinitionModel.code)
+        return [self._to_domain(model) for model in self.session.execute(stmt).scalars().all()]
+
     def create(
         self,
         code: str,
@@ -32,6 +36,8 @@ class ItemRepository:
         buy_price: int | None = None,
         icon: str | None = None,
         stat_bonuses: dict | None = None,
+        equipment_slot: str | None = None,
+        requires_two_hands: bool = False,
     ) -> ItemDefinition:
         model = ItemDefinitionModel(
             code=code,
@@ -45,6 +51,8 @@ class ItemRepository:
             buy_price=buy_price,
             icon=icon,
             stat_bonuses_json=stat_bonuses,
+            equipment_slot=equipment_slot,
+            requires_two_hands=requires_two_hands,
         )
 
         self.session.add(model)
@@ -67,10 +75,12 @@ class ItemRepository:
             buy_price=model.buy_price,
             icon=model.icon,
             stat_bonuses=model.stat_bonuses_json,
+            equipment_slot=model.equipment_slot,
+            requires_two_hands=bool(model.requires_two_hands or False),
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
-    
+
     def update_by_code(
         self,
         code: str,
@@ -84,6 +94,8 @@ class ItemRepository:
         buy_price: int | None,
         icon: str | None,
         stat_bonuses: dict | None,
+        equipment_slot: str | None = None,
+        requires_two_hands: bool = False,
     ):
         stmt = select(ItemDefinitionModel).where(ItemDefinitionModel.code == code)
         model = self.session.execute(stmt).scalar_one_or_none()
@@ -100,8 +112,10 @@ class ItemRepository:
         model.sell_price = sell_price
         model.buy_price = buy_price
         model.icon = icon
-        model.stat_bonuses = stat_bonuses
-        model.updated_at = datetime.now(timezone.utc)
+        model.stat_bonuses_json = stat_bonuses
+        model.equipment_slot = equipment_slot
+        model.requires_two_hands = requires_two_hands
+        model.updated_at = datetime.now(UTC)
 
         self.session.commit()
         self.session.refresh(model)
