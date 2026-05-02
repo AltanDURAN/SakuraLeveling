@@ -54,5 +54,29 @@
     "min_sell_price": 0,
     "stock_threshold": 100,
     "enabled": true
+  },
+  {
+    "item_code": "potion_soin_i",
+    "buy_price": 30,
+    "max_sell_price": 8,
+    "min_sell_price": 3,
+    "stock_threshold": 50,
+    "enabled": true
+  },
+  {
+    "item_code": "potion_soin_ii",
+    "buy_price": 70,
+    "max_sell_price": 18,
+    "min_sell_price": 7,
+    "stock_threshold": 30,
+    "enabled": true
+  },
+  {
+    "item_code": "potion_soin_iii",
+    "buy_price": 150,
+    "max_sell_price": 40,
+    "min_sell_price": 15,
+    "stock_threshold": 20,
+    "enabled": true
   }
 ]

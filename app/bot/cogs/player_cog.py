@@ -13,6 +13,7 @@ from app.application.use_cases.claim_quest_reward import ClaimQuestRewardUseCase
 from app.application.use_cases.challenge_player import ChallengePlayerUseCase
 from app.application.use_cases.craft_item import CraftItemUseCase
 from app.application.use_cases.gather_resource import GatherResourceUseCase
+from app.application.use_cases.use_consumable import UseConsumableUseCase
 from app.application.use_cases.get_available_classes import GetAvailableClassesUseCase
 from app.application.use_cases.get_available_crafts import GetAvailableCraftsUseCase
 from app.application.use_cases.get_player_class import GetPlayerClassUseCase
@@ -713,6 +714,64 @@ class PlayerCog(commands.Cog):
             f"💸 {interaction.user.mention} a envoyé **{amount}** or à {target.mention}.\n"
             f"_Votre solde : {result.sender_balance_after} or._"
         )
+
+    @app_commands.command(
+        name="use",
+        description="Utiliser un consommable de votre inventaire (potion, etc.)",
+    )
+    @app_commands.describe(item_code="Code du consommable (autocomplete sur votre inventaire)")
+    async def use(self, interaction: discord.Interaction, item_code: str) -> None:
+        await interaction.response.defer(ephemeral=True)
+        with get_db_session() as session:
+            use_case = UseConsumableUseCase(
+                player_repository=PlayerRepository(session),
+                item_repository=ItemRepository(session),
+                inventory_repository=InventoryRepository(session),
+                equipment_repository=EquipmentRepository(session),
+                class_repository=ClassRepository(session),
+                skill_allocation_repository=PlayerSkillAllocationRepository(session),
+                health_repository=PlayerHealthRepository(session),
+                stats_service=StatsService(),
+            )
+            result = use_case.execute(
+                discord_id=interaction.user.id,
+                username=interaction.user.name,
+                display_name=interaction.user.display_name,
+                item_code=item_code,
+            )
+        await interaction.followup.send(result.message, ephemeral=True)
+
+    @use.autocomplete("item_code")
+    async def use_autocomplete(
+        self,
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        """Autocomplete sur les consommables actuellement en inventaire."""
+        with get_db_session() as session:
+            profile = PlayerRepository(session).get_by_discord_id(interaction.user.id)
+            if profile is None:
+                return []
+            inventory = InventoryRepository(session).list_by_player_id(profile.player.id)
+        current_lower = current.lower()
+        choices: list[app_commands.Choice[str]] = []
+        for inv_item in inventory:
+            item = inv_item.item_definition
+            if item.category != "consumable":
+                continue
+            if (
+                current_lower in item.code.lower()
+                or current_lower in item.name.lower()
+            ):
+                choices.append(
+                    app_commands.Choice(
+                        name=f"{item.name} (×{inv_item.quantity})",
+                        value=item.code,
+                    )
+                )
+            if len(choices) >= 25:
+                break
+        return choices
 
     @app_commands.command(name="daily", description="Récupérer votre récompense quotidienne")
     async def daily(self, interaction: discord.Interaction) -> None:

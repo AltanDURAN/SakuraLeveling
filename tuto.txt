@@ -235,6 +235,21 @@ Drops : roll indépendant via la table de loot du mob, pour chaque survivant.
 
 Kill counter : tous les survivants reçoivent +1 sur le compteur du mob tué.
 
+/use <item_code>
+    Utiliser un consommable de votre inventaire (autocomplete sur les
+    consommables possédés). Décrémente la quantité de 1 et applique
+    l'effet immédiatement. Si déjà full HP avec une potion : l'effet
+    cap à max_hp (pas de gaspillage évité — le consommable est tout
+    de même utilisé).
+
+    Consommables actuellement disponibles :
+        • potion_soin_i    (Potion de soin I)   — restaure 50% PV max
+        • potion_soin_ii   (Potion de soin II)  — restaure 75% PV max
+        • potion_soin_iii  (Potion de soin III) — restaure 100% PV max
+
+    Tous les 3 sont vendus en boutique. À craft / loot pour des recettes
+    dédiées plus tard.
+
 --------------------------------------------------------------------------------
 1.6 — CLASSEMENTS
 --------------------------------------------------------------------------------

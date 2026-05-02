@@ -526,5 +526,59 @@
     },
     "equipment_slot": "boucle_oreille",
     "requires_two_hands": false
+  },
+  {
+    "code": "potion_soin_i",
+    "name": "Potion de soin I",
+    "description": "Restaure 50% des PV maximum.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 8,
+    "buy_price": 30,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "heal_percent",
+      "value": 50
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false
+  },
+  {
+    "code": "potion_soin_ii",
+    "name": "Potion de soin II",
+    "description": "Restaure 75% des PV maximum.",
+    "category": "consumable",
+    "rarity": "uncommon",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 18,
+    "buy_price": 70,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "heal_percent",
+      "value": 75
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false
+  },
+  {
+    "code": "potion_soin_iii",
+    "name": "Potion de soin III",
+    "description": "Restaure 100% des PV maximum.",
+    "category": "consumable",
+    "rarity": "rare",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 40,
+    "buy_price": 150,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "heal_percent",
+      "value": 100
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false
   }
 ]
