@@ -8,6 +8,7 @@ from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.repositories.profession_repository import ProfessionRepository
 from app.infrastructure.db.repositories.quest_repository import QuestRepository
+from app.infrastructure.db.repositories.shop_repository import ShopRepository
 from app.infrastructure.db.session import get_db_session
 
 
@@ -236,6 +237,48 @@ def seed_professions() -> None:
     print("Professions seedées.")
 
 
+def seed_shop_items() -> None:
+    """Crée les entrées de shop par défaut depuis shop_items.json.
+
+    Création seule : si une entrée existe déjà pour un item_code, ses prix
+    et son stock sont préservés (l'admin peut tweaker via /admin shop_set
+    sans crainte de voir ses ajustements écrasés au prochain seed).
+    """
+    shop_items_data = load_json("shop_items.json")
+
+    created = 0
+    skipped = 0
+
+    with get_db_session() as session:
+        item_repository = ItemRepository(session)
+        shop_repository = ShopRepository(session)
+
+        for entry in shop_items_data:
+            item_code = entry["item_code"]
+            item = item_repository.get_by_code(item_code)
+            if item is None:
+                print(f"  ⚠️  Item `{item_code}` introuvable, skip.")
+                continue
+
+            existing = shop_repository.get_by_item_code(item_code)
+            if existing is not None:
+                skipped += 1
+                continue
+
+            shop_repository.create(
+                item_definition_id=item.id,
+                buy_price=entry["buy_price"],
+                max_sell_price=entry["max_sell_price"],
+                min_sell_price=entry.get("min_sell_price", 0),
+                stock_threshold=entry.get("stock_threshold", 100),
+                current_stock=0,
+                enabled=entry.get("enabled", True),
+            )
+            created += 1
+
+    print(f"Shop items seedés (créés : {created}, déjà présents : {skipped}).")
+
+
 def main() -> None:
     seed_items()
     seed_mobs()
@@ -243,6 +286,7 @@ def main() -> None:
     seed_crafts()
     seed_quests()
     seed_professions()
+    seed_shop_items()
     print("Seed terminé.")
 
 
