@@ -24,10 +24,15 @@ def _hp_bar(current: int, maximum: int) -> str:
     return char * filled + "⬛" * (10 - filled)
 
 
+def _pluralize(n: int, singular: str, plural: str | None = None) -> str:
+    return singular if n <= 1 else (plural or singular + "s")
+
+
 def build_boss_dashboard_embed(
     boss: WorldBoss,
     num_participants: int,
     team_bonus_pct: int,
+    num_fought: int = 0,
 ) -> discord.Embed:
     color = (
         discord.Color.dark_purple()
@@ -61,12 +66,15 @@ def build_boss_dashboard_embed(
         ),
         inline=True,
     )
+    inscrit_word = _pluralize(num_participants, "inscrit")
+    combattu_word = _pluralize(num_fought, "combattu")
+    participant_lines = [f"**{num_participants}** {inscrit_word}"]
+    if num_fought > 0:
+        participant_lines.append(f"dont **{num_fought}** {combattu_word}")
+    participant_lines.append(f"Bonus d'équipe : **+{team_bonus_pct}%**")
     embed.add_field(
         name="🤝 Participants",
-        value=(
-            f"**{num_participants}** inscrit(s)\n"
-            f"Bonus d'équipe : **+{team_bonus_pct}%**"
-        ),
+        value="\n".join(participant_lines),
         inline=True,
     )
     if not boss.is_alive:

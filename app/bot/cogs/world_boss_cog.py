@@ -337,6 +337,11 @@ class WorldBossCog(commands.Cog):
                 if boss is None or boss.channel_message_id is None:
                     return
                 num = repo.count_joined(boss_id)
+                fought = sum(
+                    1
+                    for p in repo.list_participations_with_metrics(boss_id)
+                    if p.fights_count > 0
+                )
 
             scaling = WorldBossScalingService()
             bonus_pct = int(
@@ -350,7 +355,7 @@ class WorldBossCog(commands.Cog):
                 message = await channel.fetch_message(boss.channel_message_id)
             except discord.NotFound:
                 return
-            embed = build_boss_dashboard_embed(boss, num, bonus_pct)
+            embed = build_boss_dashboard_embed(boss, num, bonus_pct, num_fought=fought)
             view = WorldBossView(self) if boss.is_alive else None
             await message.edit(embed=embed, view=view)
         except Exception:

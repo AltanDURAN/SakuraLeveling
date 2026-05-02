@@ -156,31 +156,37 @@ class PartyCombatService:
                 if random.random() < (target_stats.dodge / 100):
                     mob_action = f"{mob.name} attaque {target['name']}, mais l'attaque est esquivée."
                 else:
-                    mob_damage = max(1, mob.attack - target_stats.defense)
+                    # Calcul en cascade pour pouvoir comptabiliser le "tanked"
+                    # (= ce qu'on aurait pris sans défense ni titre).
+                    raw_attack = mob.attack
                     mob_crit = False
-
                     if random.random() < (mob.crit_chance / 100):
-                        mob_damage = int(mob_damage * (mob.crit_damage / 100))
+                        raw_attack = int(raw_attack * (mob.crit_damage / 100))
                         mob_crit = True
 
-                    # Bonus de titre : -X% dégâts subis depuis cette famille
+                    after_defense = max(1, raw_attack - target_stats.defense)
+
                     target_title_bonus = title_bonuses_by_player.get(target["player_id"])
                     if target_title_bonus is not None and mob_family:
                         mob_damage = max(
                             1,
                             round(
-                                mob_damage
+                                after_defense
                                 * target_title_bonus.damage_received_multiplier_from(
                                     mob_family
                                 )
                             ),
                         )
+                    else:
+                        mob_damage = after_defense
 
                     target_hp_before = target["hp"]
                     target["hp"] -= mob_damage
                     target["hp"] = max(0, target["hp"])
-                    actual_taken = target_hp_before - target["hp"]
-                    contributions[target["player_id"]].damage_tanked += actual_taken
+                    # damage_tanked = le brut entrant (après crit, avant
+                    # réductions). Capture la "valeur encaissée" même
+                    # quand la défense + titre absorbent une part.
+                    contributions[target["player_id"]].damage_tanked += raw_attack
 
                     mob_action = f"{mob.name} attaque {target['name']} et inflige {mob_damage} dégâts."
                     if mob_crit and mob_damage > 0:

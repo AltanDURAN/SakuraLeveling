@@ -94,7 +94,9 @@ def build_inventory_embed(
             body = body[:3900] + "\n_… (liste tronquée)_"
 
     embed.description = body
-    embed.set_author(name=f"{page_emoji} {page_label} ({len(page_items_sorted)} item(s))")
+    n = len(page_items_sorted)
+    item_word = "item" if n <= 1 else "items"
+    embed.set_author(name=f"{page_emoji} {page_label} ({n} {item_word})")
 
     # Pagination : indique les pages disponibles avec leur nb d'items
     nav_parts: list[str] = []

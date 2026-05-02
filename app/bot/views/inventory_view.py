@@ -31,19 +31,18 @@ class InventoryView(discord.ui.View):
         # qui contient au moins 1 item, plus la page "all").
         from app.bot.embeds.inventory_embeds import _filter_items_for_page
 
+        # Si l'inventaire est entièrement vide, on n'affiche aucun bouton
+        if not items:
+            return
         for key, label, emoji in PAGES:
             count = (
                 len(items)
                 if key == "all"
                 else len(_filter_items_for_page(items, key))
             )
-            # On affiche tous les boutons même vides (sauf si l'inventaire est
-            # entièrement vide, auquel cas la view ne sert à rien — on n'affiche
-            # aucun bouton). Le bouton est marqué "(0)" pour info.
-            if count == 0 and key != "all":
-                # Cache les pages vides pour ne pas surcharger la barre
-                continue
-
+            # Tous les boutons toujours présents pour permettre la navigation
+            # complète. Le compteur "(0)" indique simplement qu'il n'y a rien
+            # dans la page mais le bouton reste cliquable pour y revenir.
             button = _PageButton(
                 page_key=key,
                 label=f"{label} ({count})",

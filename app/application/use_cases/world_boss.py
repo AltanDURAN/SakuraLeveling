@@ -265,9 +265,10 @@ class JoinWorldBossUseCase:
             boss.id, profile.player.id, joined=True
         )
         count = self.world_boss_repository.count_joined(boss.id)
+        word = "joueur" if count <= 1 else "joueurs"
         return JoinLeaveResult(
             True,
-            f"✅ Vous rejoignez le raid contre **{boss.name}** (raid à {count} joueur(s)).",
+            f"✅ Vous rejoignez le raid contre **{boss.name}** (raid à {count} {word}).",
         )
 
 
@@ -448,7 +449,12 @@ class FightWorldBossUseCase:
         damage_dealt = self.modifier_service.filter_incoming_damage(
             raw_damage_dealt, adjustments.damage_immunity_threshold,
         )
-        damage_tanked = boosted_stats.max_hp - max(0, battle_result.player_remaining_hp)
+        # damage_tanked = brut entrant total (avant réduction par défense),
+        # cf. BattleResult.player_total_raw_damage_taken. Si l'attribut est
+        # absent (anciens tests), fallback sur le calcul HP perdus.
+        damage_tanked = getattr(
+            battle_result, "player_total_raw_damage_taken", 0
+        ) or (boosted_stats.max_hp - max(0, battle_result.player_remaining_hp))
         hp_healed = 0  # V1 solo
 
         # Persist (damage filtré, pas raw)

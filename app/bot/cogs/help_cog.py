@@ -93,11 +93,12 @@ class HelpCog(commands.Cog):
         )
 
     async def _send_list(self, interaction: discord.Interaction) -> None:
-        # Regroupe par préfixe (le 1er token avant le 1er espace = nom du groupe
-        # ou la commande elle-même). /admin set_class → group "admin", /pay → "pay".
+        # Regroupe par préfixe pour ranger visuellement, mais Discord limite
+        # à 25 fields par embed → si on dépasse, on consolide les commandes
+        # simples (sans groupe `/xxx yyy`) dans un seul field "Joueur".
         groups: dict[str, list[tuple[str, str]]] = {}
         for name, desc, _ in _walk_all_commands(self.bot):
-            top = name.split(" ", 1)[0]
+            top = name.split(" ", 1)[0] if " " in name else "_player_"
             groups.setdefault(top, []).append((name, desc))
 
         embed = discord.Embed(
@@ -109,23 +110,39 @@ class HelpCog(commands.Cog):
             color=discord.Color.blurple(),
         )
 
-        # Ordonner les groupes (les commandes simples d'abord, puis admin & co)
-        ordered = sorted(groups.keys(), key=lambda g: (g in ("admin",), g))
+        # _player_ d'abord, puis admin & autres groupes triés
+        ordered = sorted(
+            groups.keys(),
+            key=lambda g: (g != "_player_", g in ("admin",), g),
+        )
+        max_fields = 24  # garde 1 slot pour le footer "+ N autres"
+        added = 0
         for group_name in ordered:
+            if added >= max_fields:
+                break
             cmds = sorted(groups[group_name], key=lambda x: x[0])
             lines = [f"`/{name}` — {desc}" for name, desc in cmds]
-            # Discord cap: 1024 chars per field value
             value = "\n".join(lines)
             if len(value) > 1000:
                 value = value[:1000] + "\n_…_"
             label = (
-                f"📂 /{group_name} ({len(cmds)})"
-                if len(cmds) > 1 or " " in cmds[0][0]
-                else f"📂 /{group_name}"
+                "📂 Joueur"
+                if group_name == "_player_"
+                else f"📂 /{group_name} ({len(cmds)})"
             )
             embed.add_field(name=label, value=value, inline=False)
+            added += 1
 
-        embed.set_footer(text=f"{sum(len(v) for v in groups.values())} commandes au total")
+        total = sum(len(v) for v in groups.values())
+        if added < len(groups):
+            remaining = len(groups) - added
+            embed.add_field(
+                name="…",
+                value=f"_+{remaining} groupe(s) supplémentaires masqués_",
+                inline=False,
+            )
+
+        embed.set_footer(text=f"{total} commandes au total")
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 

@@ -14,6 +14,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from app.infrastructure.config.settings import settings
+from app.infrastructure.db.repositories.player_kill_repository import PlayerKillRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.player_title_repository import (
     PlayerTitleRepository,
@@ -23,6 +24,16 @@ from app.infrastructure.titles.title_loader import (
     get_definition,
     list_definitions,
 )
+
+
+def _compute_progress(title, kill_repo: PlayerKillRepository, player_id: int) -> int:
+    """Renvoie la progression actuelle vers la condition du titre.
+    Retourne 0 si le type n'est pas géré (extensibilité)."""
+    if title.condition_type == "kills_family" and title.condition_target:
+        return kill_repo.get_kills_for_family(player_id, title.condition_target)
+    if title.condition_type == "kills_total":
+        return kill_repo.get_total_kills(player_id)
+    return 0
 
 
 class TitleCog(commands.Cog):
@@ -61,18 +72,29 @@ class TitleCog(commands.Cog):
                 )
                 return
             title_repo = PlayerTitleRepository(session)
+            kill_repo = PlayerKillRepository(session)
             unlocked_codes = title_repo.list_codes_for_player(profile.player.id)
             active_code = title_repo.get_active_title_code(profile.player.id)
+            # Progression actuelle pour chaque titre verrouillé
+            all_defs_local = list_definitions()
+            progress_by_code: dict[str, int] = {}
+            for d in all_defs_local:
+                if d.code in unlocked_codes:
+                    progress_by_code[d.code] = d.condition_value  # déjà au max
+                else:
+                    progress_by_code[d.code] = _compute_progress(
+                        d, kill_repo, profile.player.id,
+                    )
 
-        all_defs = list_definitions()
+        all_defs = all_defs_local
         unlocked_defs = [d for d in all_defs if d.code in unlocked_codes]
         locked_defs = [d for d in all_defs if d.code not in unlocked_codes]
 
+        ratio_unlocked = len(unlocked_defs)
+        ratio_total = len(all_defs)
         embed = discord.Embed(
             title=f"🏷️ Titres de {target_member.display_name}",
-            description=(
-                f"**{len(unlocked_defs)}** débloqué(s) sur **{len(all_defs)}** au total."
-            ),
+            description=f"**{ratio_unlocked}** débloqué(s) sur **{ratio_total}** au total.",
             color=discord.Color.gold(),
         )
 
@@ -86,11 +108,25 @@ class TitleCog(commands.Cog):
         if locked_defs:
             lines = []
             for d in locked_defs:
-                cond = f"{d.condition_type}={d.condition_value}"
-                if d.condition_target:
-                    cond = f"{d.condition_type}({d.condition_target})={d.condition_value}"
-                lines.append(f"{d.icon} {d.name} — _verrouillé_ ({cond})")
-            embed.add_field(name="🔒 À débloquer", value="\n".join(lines)[:1024], inline=False)
+                progress = progress_by_code.get(d.code, 0)
+                # Description courte de la condition
+                if d.condition_type == "kills_family" and d.condition_target:
+                    cond_label = f"{d.condition_target} tués"
+                elif d.condition_type == "kills_total":
+                    cond_label = "monstres tués au total"
+                elif d.condition_type == "duels_won":
+                    cond_label = "duels gagnés"
+                elif d.condition_type == "items_crafted":
+                    cond_label = "items craftés"
+                else:
+                    cond_label = d.condition_type
+                lines.append(
+                    f"{d.icon} {d.name} — **{progress}/{d.condition_value}** "
+                    f"{cond_label}"
+                )
+            embed.add_field(
+                name="🔒 À débloquer", value="\n".join(lines)[:1024], inline=False
+            )
 
         await interaction.response.send_message(embed=embed)
 
