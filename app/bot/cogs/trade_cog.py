@@ -1,6 +1,8 @@
+import logging
+
 import discord
 from discord import app_commands
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 from app.application.use_cases.create_trade import (
     CreateTradeUseCase,
@@ -18,12 +20,36 @@ from app.infrastructure.db.session import get_db_session
 
 TRADE_TTL_MINUTES = 5
 
+_logger = logging.getLogger(__name__)
+
 
 class TradeCog(commands.Cog):
     """Échange entre joueurs : items et/ou or, dans les deux sens."""
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
+        self.expire_loop.start()
+
+    def cog_unload(self) -> None:
+        self.expire_loop.cancel()
+
+    @tasks.loop(minutes=1)
+    async def expire_loop(self) -> None:
+        """Marque les trades pending dépassés en status=expired toutes les
+        minutes. Évite que des trades restent éternellement en pending et
+        bloquent les nouvelles propositions entre les mêmes joueurs."""
+        try:
+            with get_db_session() as session:
+                expired_count = TradeRepository(session).expire_overdue_pending()
+            if expired_count > 0:
+                _logger.info("Trade cleanup: %d trade(s) marqués expired", expired_count)
+        except Exception:
+            # Ne plante jamais le bot pour un pb de cleanup ; juste log.
+            _logger.exception("Trade cleanup loop failed")
+
+    @expire_loop.before_loop
+    async def _before_expire_loop(self) -> None:
+        await self.bot.wait_until_ready()
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.channel_id != settings.beta_channel_id:

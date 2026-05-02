@@ -1,6 +1,6 @@
 from datetime import datetime, UTC, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.domain.entities.trade import Trade, TradeItemOffer, TradeSide, TradeStatus
@@ -78,6 +78,27 @@ class TradeRepository:
         return [self._to_domain(m) for m in self.session.execute(stmt).scalars().all()]
 
     # ---------- transitions de statut ----------
+
+    def expire_overdue_pending(self) -> int:
+        """Marque tous les trades pending dont expires_at est dépassé en
+        status=expired. Bulk UPDATE pour efficacité.
+
+        Renvoie le nombre de trades affectés. Idempotent : si appelé deux fois
+        de suite, le 2e appel renvoie 0.
+        """
+        now = datetime.now(UTC)
+        # SQLite ne préserve pas tzinfo : on compare avec un datetime naïf
+        # pour matcher la sérialisation côté DB. La cohérence est assurée car
+        # tout est implicitement UTC (cf. CooldownService._normalize).
+        stmt = (
+            update(TradeModel)
+            .where(TradeModel.status == TradeStatus.PENDING.value)
+            .where(TradeModel.expires_at < now)
+            .values(status=TradeStatus.EXPIRED.value, updated_at=now)
+        )
+        result = self.session.execute(stmt)
+        self.session.commit()
+        return result.rowcount or 0
 
     def update_status(
         self, trade_id: int, status: TradeStatus, completed: bool = False
