@@ -9,14 +9,15 @@ Type=simple
 User=ubuntu
 Group=ubuntu
 WorkingDirectory=/home/ubuntu/SakuraLeveling
-# uvicorn écoute sur 0.0.0.0:8080 — exposition publique directe sans nginx.
-# Choix d'un port haut (8080) pour éviter tout conflit avec d'autres services
-# (nginx Pterodactyl, etc.) qui peuvent occuper le port 80.
+# uvicorn écoute sur 0.0.0.0:8001 — exposition publique directe sans nginx.
+# 8001 plutôt que 8080 (Pterodactyl Wings utilise 8080) ni 8000 (rester
+# libre pour autres dev locaux). Si tu changes ce port, mets aussi à jour
+# scripts/setup_webapp_standalone.sh et la valeur WEBAPP_BASE_URL du .env.
 # Pour passer derrière un reverse proxy nginx avec HTTPS plus tard, change
-# l'host pour 127.0.0.1 et configure un vhost nginx vers 127.0.0.1:8080.
+# l'host pour 127.0.0.1 et configure un vhost nginx vers 127.0.0.1:8001.
 ExecStart=/home/ubuntu/SakuraLeveling/.venv/bin/uvicorn webapp.main:app \
     --host 0.0.0.0 \
-    --port 8080 \
+    --port 8001 \
     --workers 1 \
     --log-level info
 Restart=on-failure

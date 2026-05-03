@@ -15,7 +15,9 @@ set -euo pipefail
 
 PROJECT_DIR="/home/ubuntu/SakuraLeveling"
 WEBAPP_SERVICE="sakura-webapp"
-WEBAPP_PORT="8080"
+# 8001 plutôt que 8080 (occupé par Pterodactyl Wings sur certains VPS).
+# Doit correspondre au --port du fichier deploy/sakura-webapp.service.
+WEBAPP_PORT="8001"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
 step() { echo -e "\n${BLUE}━━━ $1 ━━━${NC}"; }
