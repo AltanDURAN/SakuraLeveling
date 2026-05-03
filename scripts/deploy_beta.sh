@@ -69,10 +69,27 @@ if ! command -v "$PYTHON_BIN" >/dev/null; then
 fi
 ok "$($PYTHON_BIN --version)"
 
-# Vérifie que libcairo2 est dispo (pour cairosvg → world boss & skill tree)
+# Vérifie que libcairo2 est dispo (runtime pour cairosvg → world boss & skill
+# tree). On installe UNIQUEMENT le runtime (pas le -dev) pour éviter de tirer
+# libglib2.0-dev qui veut des libpcre*-dev depuis des PPA potentiellement
+# bloqués (Launchpad timeout sur certains VPS OVH).
 if ! dpkg -l libcairo2 2>/dev/null | grep -q "^ii"; then
     warn "libcairo2 absent — installation"
-    sudo apt install -y libcairo2 libcairo2-dev
+    # Désactive temporairement les PPA tiers qui pourraient timeout vers
+    # ppa.launchpadcontent.net (PPA ondrej/php notamment).
+    DISABLED_PPAS=()
+    for ppa in /etc/apt/sources.list.d/*ondrej* /etc/apt/sources.list.d/*deadsnakes*; do
+        if [[ -f "$ppa" && "$ppa" != *.disabled ]]; then
+            sudo mv "$ppa" "${ppa}.disabled"
+            DISABLED_PPAS+=("$ppa")
+        fi
+    done
+    sudo apt update -qq -o Acquire::ForceIPv4=true || true
+    sudo apt install -y libcairo2
+    # Réactive les PPA pour ne pas perturber tes autres usages
+    for ppa in "${DISABLED_PPAS[@]}"; do
+        sudo mv "${ppa}.disabled" "$ppa" 2>/dev/null || true
+    done
 fi
 
 # ----- 3. Stop le bot -----
