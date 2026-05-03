@@ -143,21 +143,30 @@ def _render_node(
         f'data-max-level="{node.max_level}"'
     )
 
-    # Cercle ombré + cercle principal + icône au centre
+    # Architecture en 2 <g> imbriqués pour éviter le conflit hover :
+    #   • <g> wrapper externe : porte le `translate(cx, cy)` (positionnement
+    #     stable, JAMAIS modifié au hover).
+    #   • <g class="skill-node"> interne : porte les classes & data-* et
+    #     reçoit le `transform: scale(1.08)` CSS au hover. Comme il n'a pas
+    #     d'attribut transform initial, le CSS ne déplace plus le node vers
+    #     (0,0).
+    # NB : le hover JS bind sur `.skill-node` continue de marcher car les
+    #      data-* sont sur l'élément interne.
     return f"""
-        <g class="skill-node skill-node--{state}" {data_attrs}
-           transform="translate({cx}, {cy})">
-            <circle r="{NODE_RADIUS + 4}" fill="black" opacity="0.35"
-                    transform="translate(2, 3)"/>
-            <circle r="{NODE_RADIUS}" fill="{fill}" stroke="{stroke}"
-                    stroke-width="3"/>
-            <text x="0" y="6" text-anchor="middle"
-                  font-size="22" fill="{text_color}"
-                  font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI Emoji', sans-serif">{icon}</text>
-            <text x="0" y="{NODE_RADIUS + 18}" text-anchor="middle"
-                  font-size="12" font-weight="600" fill="{text_color}"
-                  font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">{escape(node.name)}</text>
-            {f'<text x="0" y="{NODE_RADIUS + 34}" text-anchor="middle" font-size="11" fill="{text_color}" opacity="0.8" font-family="monospace">{level_label}</text>' if level_label else ''}
+        <g transform="translate({cx}, {cy})">
+            <g class="skill-node skill-node--{state}" {data_attrs}>
+                <circle r="{NODE_RADIUS + 4}" fill="black" opacity="0.35"
+                        transform="translate(2, 3)"/>
+                <circle r="{NODE_RADIUS}" fill="{fill}" stroke="{stroke}"
+                        stroke-width="3"/>
+                <text x="0" y="6" text-anchor="middle"
+                      font-size="22" fill="{text_color}"
+                      font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI Emoji', sans-serif">{icon}</text>
+                <text x="0" y="{NODE_RADIUS + 18}" text-anchor="middle"
+                      font-size="12" font-weight="600" fill="{text_color}"
+                      font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">{escape(node.name)}</text>
+                {f'<text x="0" y="{NODE_RADIUS + 34}" text-anchor="middle" font-size="11" fill="{text_color}" opacity="0.8" font-family="monospace">{level_label}</text>' if level_label else ''}
+            </g>
         </g>
     """
 

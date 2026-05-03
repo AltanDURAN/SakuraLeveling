@@ -133,10 +133,13 @@ html, body {
 .skill-node {
     cursor: pointer;
     transition: transform 0.15s ease;
-    /* transform-box=fill-box pour que `scale` se calcule autour du
-       centre du nœud SVG plutôt que du coin (0,0) du document. */
-    transform-box: fill-box;
-    transform-origin: center;
+    /* Le scale s'applique autour de (0,0) — coïncide avec le centre du
+       node car le <g> parent porte déjà le translate(cx, cy) et nos
+       éléments internes (circle, text) sont positionnés autour de 0,0.
+       Plus de transform-box: fill-box (instable sur certains navigateurs
+       avec les groupes SVG) et plus de conflit avec un transform attribute
+       SVG (déplacé sur le wrapper). */
+    transform-origin: 0 0;
 }
 
 .skill-node:hover {
