@@ -32,6 +32,7 @@ from app.infrastructure.db.models.player_title_model import PlayerTitleModel
 from app.infrastructure.db.models.weekly_quest_model import WeeklyQuestAssignmentModel
 from app.infrastructure.db.models.daily_quest_model import DailyQuestAssignmentModel
 from app.infrastructure.db.models.marketplace_listing_model import MarketplaceListingModel
+from app.infrastructure.db.models.help_subscriber_model import HelpSubscriberModel
 
 
 config = context.config
