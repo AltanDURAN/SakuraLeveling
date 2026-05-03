@@ -1,0 +1,29 @@
+[Unit]
+Description=SakuraLeveling Skill Tree Webapp (FastAPI)
+After=network.target
+# Soft dependency : si la DB n'est pas prête, le webapp survivra (lit en lazy)
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/SakuraLeveling
+# uvicorn écoute sur 127.0.0.1:8000 — exposition publique via nginx (reverse proxy)
+ExecStart=/home/ubuntu/SakuraLeveling/.venv/bin/uvicorn webapp.main:app \
+    --host 127.0.0.1 \
+    --port 8000 \
+    --workers 1 \
+    --log-level info
+Restart=on-failure
+RestartSec=5s
+
+# Sandboxing minimal (sans casser l'accès à lita_v2.db)
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/ubuntu/SakuraLeveling
+
+[Install]
+WantedBy=multi-user.target
