@@ -67,13 +67,15 @@ if [[ -L /etc/nginx/sites-enabled/default ]]; then
     sudo rm /etc/nginx/sites-enabled/default
     warn "Site nginx 'default' désactivé (conflit catch-all)"
 fi
-# Test de la conf avant reload
-if sudo nginx -t 2>&1 | grep -q "syntax is ok"; then
+# Test de la conf avant reload — utilise le code retour de nginx -t
+# directement (0 = OK). On capture stderr pour qu'il s'affiche seulement
+# en cas d'erreur. Évite les soucis de pipefail avec un pipe vers grep.
+if sudo nginx -t >/tmp/nginx-test.out 2>&1; then
     sudo systemctl reload nginx
     ok "nginx rechargé avec la nouvelle config"
 else
     err "Config nginx invalide :"
-    sudo nginx -t
+    cat /tmp/nginx-test.out
     exit 1
 fi
 
