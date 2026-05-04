@@ -79,7 +79,10 @@ class GatherResourceUseCase:
             DailyQuestProgressService(DailyQuestRepository(session)).on_gather(
                 profile.player.id, count=1,
             )
-        except Exception:
-            pass
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Quest progress hook failed: %s", _e, exc_info=True,
+            )
 
         return True, f"+{quantity} {item_code} | +{gained_xp} XP métier"

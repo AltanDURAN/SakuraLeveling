@@ -72,30 +72,6 @@
     "tier": "hard"
   },
   {
-    "code": "duel_win_3",
-    "name": "Duelliste novice",
-    "description": "Gagner 3 duels 1v1 cette semaine.",
-    "objective_type": "duel_win",
-    "objective_target": "",
-    "objective_quantity": 3,
-    "reward_gold": 800,
-    "reward_xp": 350,
-    "reward_items": [["potion_soin_ii", 1]],
-    "tier": "medium"
-  },
-  {
-    "code": "duel_win_10",
-    "name": "Duelliste confirmé",
-    "description": "Gagner 10 duels 1v1 cette semaine.",
-    "objective_type": "duel_win",
-    "objective_target": "",
-    "objective_quantity": 10,
-    "reward_gold": 2500,
-    "reward_xp": 1000,
-    "reward_items": [["potion_soin_iii", 2]],
-    "tier": "hard"
-  },
-  {
     "code": "craft_5",
     "name": "Artisan du dimanche",
     "description": "Crafter 5 objets cette semaine (toutes recettes confondues).",

@@ -6,6 +6,7 @@ from discord.ext import commands
 from datetime import datetime, UTC
 
 from app.domain.entities.player_profile import PlayerProfile
+from app.shared.formatters import format_int as _format_int
 from app.application.use_cases.change_player_class import ChangePlayerClassUseCase
 from app.application.use_cases.transfer_gold import TransferGoldUseCase
 from app.application.use_cases.claim_daily_reward import ClaimDailyRewardUseCase
@@ -277,6 +278,38 @@ class PlayerCog(commands.Cog):
         )
         await interaction.response.send_message(embed=view.current_embed, view=view)
 
+    @app_commands.command(
+        name="equipement_list",
+        description="Liste les équipements possédés par catégorie (équipés ou non)",
+    )
+    @app_commands.describe(target="Joueur ciblé (par défaut : vous)")
+    async def equipement_list(
+        self,
+        interaction: discord.Interaction,
+        target: discord.Member | None = None,
+    ) -> None:
+        from app.bot.views.equipement_list_view import EquipementListView
+
+        with get_db_session() as session:
+            profile, target_member = self._resolve_profile(interaction, target, session)
+            if profile is None:
+                await self._send_no_profile_error(interaction, target_member)
+                return
+
+            inventory_repository = InventoryRepository(session)
+            equipment_repository = EquipmentRepository(session)
+            items = inventory_repository.list_by_player_id(profile.player.id)
+            equipped = equipment_repository.list_by_player_id(profile.player.id)
+
+        view = EquipementListView(
+            display_name=target_member.display_name,
+            items=items,
+            equipped=equipped,
+        )
+        await interaction.response.send_message(
+            embed=view._build_embed(), view=view,
+        )
+
     @app_commands.command(name="equip", description="Équiper un item depuis votre inventaire")
     @app_commands.describe(item_code="Code de l'item (autocomplete sur votre inventaire)")
     async def equip(
@@ -320,8 +353,36 @@ class PlayerCog(commands.Cog):
                 )
                 return
 
-            target_slot = matched.item_definition.equipment_slot
             current_equipment = equipment_repository.list_by_player_id(profile.player.id)
+
+            # Auto-pick du slot pour les armes 1-main : on choisit le slot
+            # libre (main_droite prioritaire) sans demander à l'utilisateur.
+            # Pour les autres items : slot canonique de la définition.
+            item_def = matched.item_definition
+            from app.shared.enums import EquipmentSlot as _ES
+            _hand_slots = {_ES.MAIN_HAND.value, _ES.OFF_HAND.value}
+            is_hand_weapon = (
+                item_def.equipment_slot in _hand_slots
+                and not item_def.requires_two_hands
+            )
+            if is_hand_weapon:
+                md_occupied = next(
+                    (e for e in current_equipment if e.slot == _ES.MAIN_HAND.value),
+                    None,
+                )
+                mg_occupied = next(
+                    (e for e in current_equipment if e.slot == _ES.OFF_HAND.value),
+                    None,
+                )
+                if md_occupied is None:
+                    target_slot = _ES.MAIN_HAND.value
+                elif mg_occupied is None:
+                    target_slot = _ES.OFF_HAND.value
+                else:
+                    target_slot = _ES.MAIN_HAND.value
+            else:
+                target_slot = item_def.equipment_slot
+
             current_in_slot = next(
                 (e for e in current_equipment if e.slot == target_slot), None
             )
@@ -903,6 +964,29 @@ class PlayerCog(commands.Cog):
             if len(choices) >= 25:
                 break
         return choices
+
+    @app_commands.command(
+        name="gold",
+        description="Voir votre or (ou celui d'un autre joueur)",
+    )
+    @app_commands.describe(target="Joueur ciblé (par défaut : vous)")
+    async def gold(
+        self,
+        interaction: discord.Interaction,
+        target: discord.Member | None = None,
+    ) -> None:
+        with get_db_session() as session:
+            profile, target_member = self._resolve_profile(interaction, target, session)
+            if profile is None:
+                await self._send_no_profile_error(interaction, target_member)
+                return
+
+            gold_amount = profile.resources.gold
+
+        await interaction.response.send_message(
+            f"💰 **{target_member.display_name}** possède "
+            f"**{_format_int(gold_amount)}** or."
+        )
 
     @app_commands.command(name="daily", description="Récupérer votre récompense quotidienne")
     async def daily(self, interaction: discord.Interaction) -> None:

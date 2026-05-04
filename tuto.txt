@@ -39,8 +39,17 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
         give_gold n'est PAS comptabilisé dans le total amassé.
 
 /inventory [target]
-    Affiche votre inventaire (objets et quantités). Avec un target, vous voyez
-    l'inventaire d'un autre joueur.
+    Affiche votre inventaire (consommables et ressources uniquement).
+    Les pièces d'équipement sont listées séparément via /equipement_list
+    pour ne pas saturer la vue. Pages naviguables : Consommables, Ressources.
+    Avec un target, vous voyez l'inventaire d'un autre joueur.
+
+/equipement_list [target]
+    Liste tous les équipements possédés (portés ou en réserve), répartis
+    en 12 catégories (1 page = 1 type de slot). Chaque ligne indique
+    l'item, sa quantité, et un marqueur "✅ équipé" si l'item est
+    actuellement porté. Pratique pour faire le tri / vendre / brocanter
+    ses doublons sans polluer /inventory.
 
 /equipment [target]
     Affiche l'équipement porté sur 12 slots, en 2 pages naviguables avec
@@ -53,6 +62,13 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     et les bonus apportés. Si une arme à 2 mains est équipée, la main
     gauche apparaît "verrouillée par l'arme à 2 mains".
     Avec un target, vue lecture seule sur l'équipement d'un autre joueur.
+
+    Note : les armes à 1 main n'ont pas de "main préférée" — équiper
+    sans préciser de slot remplit la première main libre (droite, sinon
+    gauche). Les armes à 2 mains occupent toujours les deux mains.
+
+/gold [target]
+    Affiche votre or actuel. Avec un target, montre l'or d'un autre joueur.
 
 /class [target]
     Affiche la classe active.
@@ -249,6 +265,14 @@ Kill counter : tous les survivants reçoivent +1 sur le compteur du mob tué.
 
     Tous les 3 sont vendus en boutique. À craft / loot pour des recettes
     dédiées plus tard.
+
+/bestiaire
+    Catalogue paginé des monstres du jeu (1 mob par page, navigation via
+    flèches ⬅️ ➡️). Pour chaque mob :
+        • Stats brutes (PV max, attaque, défense, vitesse, crit, esquive)
+        • Récompenses (XP, or, poids de spawn, famille)
+        • Drops possibles avec leur taux de base
+    Les mobs sont triés par famille puis par PV pour faciliter la lecture.
 
 --------------------------------------------------------------------------------
 1.6 — CLASSEMENTS

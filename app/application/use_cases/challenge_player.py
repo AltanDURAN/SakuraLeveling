@@ -173,33 +173,9 @@ class ChallengePlayerUseCase:
             challenger_profile.player.id, DUEL_COOLDOWN_KEY, last_used, next_avail
         )
 
-        # Progress quêtes hebdo + quotidiennes : duel_win pour le vainqueur
-        try:
-            from app.application.use_cases.weekly_quests import (
-                WeeklyQuestProgressService,
-            )
-            from app.application.use_cases.daily_quests import (
-                DailyQuestProgressService,
-            )
-            from app.infrastructure.db.repositories.weekly_quest_repository import (
-                WeeklyQuestRepository,
-            )
-            from app.infrastructure.db.repositories.daily_quest_repository import (
-                DailyQuestRepository,
-            )
-            session = self.duel_rank_repository.session
-            winner_pid = (
-                challenger_profile.player.id if challenger_won
-                else target_profile.player.id
-            )
-            WeeklyQuestProgressService(WeeklyQuestRepository(session)).on_duel_won(
-                winner_pid, count=1,
-            )
-            DailyQuestProgressService(DailyQuestRepository(session)).on_duel_won(
-                winner_pid, count=1,
-            )
-        except Exception:
-            pass
+        # Note : les quêtes duel_win ont été retirées du catalogue suite aux
+        # retours bêta. Si on les réintroduit plus tard, hook ici via
+        # WeeklyQuestProgressService.on_duel_won / DailyQuestProgressService.
 
         return DuelOutcome(
             success=True,

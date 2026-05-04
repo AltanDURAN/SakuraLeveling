@@ -487,8 +487,11 @@ class FightWorldBossUseCase:
             DailyQuestProgressService(DailyQuestRepository(session)).on_boss_damage(
                 profile.player.id, damage_dealt,
             )
-        except Exception:
-            pass
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Quest progress hook failed: %s", _e, exc_info=True,
+            )
 
         # Cooldown : prochaine fenêtre = minuit UTC
         next_avail = _next_midnight_utc(now)
