@@ -68,7 +68,14 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     gauche). Les armes à 2 mains occupent toujours les deux mains.
 
 /gold [target]
-    Affiche votre or actuel. Avec un target, montre l'or d'un autre joueur.
+    Affiche un encart "bourse" : or actuel + or amassé en carrière (si > 0)
+    + avatar du joueur. Avec un target, montre la bourse d'un autre joueur.
+
+/unequip <slot>
+    Retire l'équipement du slot spécifié sans le remplacer (laisse le slot
+    vide). Autocomplete sur les slots actuellement occupés (affiche aussi
+    le nom de l'item porté pour chaque entrée). Si le slot contenait une
+    arme à 2 mains, `main_gauche` redevient libre automatiquement.
 
 /class [target]
     Affiche la classe active.
@@ -105,15 +112,14 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     Les bonus s'appliquent automatiquement dans /profile, en combat
     (de groupe et solo), au calcul du score de puissance, et aux drops.
 
-/quests [target]
-    Affiche la liste de vos quêtes : description, progression, statut.
-
-/quest_claim <quest_code>
-    Récupère la récompense d'une quête terminée.
-    Exemple : /quest_claim slime_hunter
+/daily_quest et /weekly_quest
+    Le système de quêtes (cf. section 1.3) — les anciennes commandes
+    /quests et /quest_claim ont été retirées, tout passe désormais par
+    les quêtes quotidiennes et hebdomadaires.
 
 /daily
-    Récupère votre récompense quotidienne. Cooldown de 24h.
+    Récupère votre récompense quotidienne. Reset à minuit UTC :
+    réclamer à 23:59 vous autorise une nouvelle récup' dès 00:00.
     Mécanique de série (streak) :
         • Première récupération : +100 or, série = 1
         • Chaque récupération suivante : +(streak × 100) or, série += 1

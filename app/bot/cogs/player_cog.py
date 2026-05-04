@@ -10,7 +10,6 @@ from app.shared.formatters import format_int as _format_int
 from app.application.use_cases.change_player_class import ChangePlayerClassUseCase
 from app.application.use_cases.transfer_gold import TransferGoldUseCase
 from app.application.use_cases.claim_daily_reward import ClaimDailyRewardUseCase
-from app.application.use_cases.claim_quest_reward import ClaimQuestRewardUseCase
 from app.application.use_cases.challenge_player import ChallengePlayerUseCase
 from app.application.use_cases.craft_item import CraftItemUseCase
 from app.application.use_cases.gather_resource import GatherResourceUseCase
@@ -22,7 +21,6 @@ from app.application.use_cases.get_player_equipment import GetPlayerEquipmentUse
 from app.application.use_cases.equip_item import EquipItemUseCase
 from app.application.use_cases.get_player_inventory import GetPlayerInventoryUseCase
 from app.application.use_cases.get_player_profile import GetPlayerProfileUseCase
-from app.application.use_cases.get_player_quests import GetPlayerQuestsUseCase
 from app.application.use_cases.get_player_stats import GetPlayerStatsUseCase
 from app.bot.embeds.duel_embeds import (
     build_duel_intro_embed,
@@ -45,8 +43,6 @@ from app.domain.services.cooldown_service import CooldownService
 from app.domain.services.craft_service import CraftService
 from app.domain.services.duel_combat_service import DuelCombatService
 from app.domain.services.profession_service import ProfessionService
-from app.domain.services.progression_service import ProgressionService
-from app.domain.services.quest_service import QuestService
 from app.domain.services.stats_service import StatsService
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.class_repository import ClassRepository
@@ -71,7 +67,6 @@ from app.infrastructure.skill_tree.skill_tree_loader import (
 )
 from app.domain.services.skill_tree_service import SkillTreeService
 from app.infrastructure.db.repositories.profession_repository import ProfessionRepository
-from app.infrastructure.db.repositories.quest_repository import QuestRepository
 from app.infrastructure.db.session import get_db_session
 from app.shared.enums import EquipmentSlot
 from app.domain.services.health_regeneration_service import HealthRegenerationService
@@ -506,6 +501,66 @@ class PlayerCog(commands.Cog):
                 choices.append(
                     app_commands.Choice(name=label, value=definition.code)
                 )
+            if len(choices) >= 25:
+                break
+        return choices
+
+    @app_commands.command(
+        name="unequip",
+        description="Déséquiper un emplacement (laisse-le vide, sans rééquiper)",
+    )
+    @app_commands.describe(slot="Emplacement à vider (autocomplete : seulement ceux occupés)")
+    async def unequip(
+        self,
+        interaction: discord.Interaction,
+        slot: str,
+    ) -> None:
+        with get_db_session() as session:
+            profile = PlayerRepository(session).get_or_create_by_discord_id(
+                discord_id=interaction.user.id,
+                username=interaction.user.name,
+                display_name=interaction.user.display_name,
+            )
+            equipment_repository = EquipmentRepository(session)
+            current = equipment_repository.get_slot(profile.player.id, slot)
+            if current is None:
+                await interaction.response.send_message(
+                    f"❌ Aucun équipement dans `{slot}`.",
+                    ephemeral=True,
+                )
+                return
+
+            item_name = current.item_definition.name
+            was_two_hands = bool(current.item_definition.requires_two_hands)
+            equipment_repository.unequip_slot(profile.player.id, slot)
+
+        msg = f"✅ **{item_name}** déséquipé de `{slot}`."
+        if was_two_hands:
+            msg += "\n_(Arme à 2 mains : `main_gauche` est de nouveau libre.)_"
+        await interaction.response.send_message(msg)
+
+    @unequip.autocomplete("slot")
+    async def unequip_slot_autocomplete(
+        self,
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        """Liste uniquement les slots actuellement occupés du joueur,
+        avec le nom de l'item porté pour rendre le choix explicite."""
+        with get_db_session() as session:
+            profile = PlayerRepository(session).get_by_discord_id(interaction.user.id)
+            if profile is None:
+                return []
+
+            equipped = EquipmentRepository(session).list_by_player_id(profile.player.id)
+
+        current_lower = current.lower()
+        choices: list[app_commands.Choice[str]] = []
+        for entry in equipped:
+            label = f"{entry.slot} — {entry.item_definition.name}"[:100]
+            if current_lower and current_lower not in entry.slot.lower():
+                continue
+            choices.append(app_commands.Choice(name=label, value=entry.slot))
             if len(choices) >= 25:
                 break
         return choices
@@ -982,11 +1037,37 @@ class PlayerCog(commands.Cog):
                 return
 
             gold_amount = profile.resources.gold
+            career_gold = 0
+            try:
+                career = PlayerCareerStatsRepository(session).get_or_create(
+                    profile.player.id
+                )
+                career_gold = int(getattr(career, "gold_earned_total", 0) or 0)
+            except Exception:
+                career_gold = 0
 
-        await interaction.response.send_message(
-            f"💰 **{target_member.display_name}** possède "
-            f"**{_format_int(gold_amount)}** or."
+        is_self = target_member.id == interaction.user.id
+        title = "💰 Votre bourse" if is_self else f"💰 Bourse de {target_member.display_name}"
+
+        embed = discord.Embed(
+            title=title,
+            color=discord.Color.gold(),
         )
+        embed.set_thumbnail(url=target_member.display_avatar.url)
+        embed.add_field(
+            name="Or actuel",
+            value=f"🪙 **{_format_int(gold_amount)}**",
+            inline=False,
+        )
+        if career_gold > 0:
+            embed.add_field(
+                name="Or amassé (carrière)",
+                value=f"📊 {_format_int(career_gold)}",
+                inline=False,
+            )
+        embed.set_footer(text=f"Joueur : {target_member.display_name}")
+
+        await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="daily", description="Récupérer votre récompense quotidienne")
     async def daily(self, interaction: discord.Interaction) -> None:
@@ -1019,112 +1100,6 @@ class PlayerCog(commands.Cog):
                 next_available_at=result.next_available_at,
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
-
-    @app_commands.command(name="quests", description="Afficher les quêtes d'un joueur")
-    @app_commands.describe(target="Joueur dont afficher les quêtes (par défaut : vous)")
-    async def quests(
-        self,
-        interaction: discord.Interaction,
-        target: discord.Member | None = None,
-    ) -> None:
-        quest_service = QuestService()
-
-        with get_db_session() as session:
-            profile, target_member = self._resolve_profile(interaction, target, session)
-            if profile is None:
-                await self._send_no_profile_error(interaction, target_member)
-                return
-
-            quest_repository = QuestRepository(session)
-            inventory_repository = InventoryRepository(session)
-
-            quests = quest_repository.list_definitions()
-            inventory_items = inventory_repository.list_by_player_id(profile.player.id)
-
-            quest_entries: list[dict] = []
-
-            for quest in quests:
-                state = quest_repository.get_or_create_player_quest_state(
-                    profile.player.id,
-                    quest.id,
-                )
-
-                progress = state.progress_quantity
-                is_completed = state.is_completed
-
-                if quest.objective_type == "collect_item":
-                    progress, is_completed = quest_service.compute_progress_for_collect_quest(
-                        quest,
-                        inventory_items,
-                    )
-                    # On ne persiste l'état des quêtes "collect_item" que pour soi-même.
-                    if target is None:
-                        quest_repository.update_progress(
-                            profile.player.id,
-                            quest.id,
-                            progress,
-                            is_completed,
-                        )
-
-                quest_entries.append(
-                    {
-                        "quest": quest,
-                        "state": state,
-                        "progress": progress,
-                        "is_completed": is_completed,
-                    }
-                )
-
-        embed = discord.Embed(
-            title=f"📜 Quêtes de {target_member.display_name}",
-            color=discord.Color.teal(),
-        )
-
-        if not quest_entries:
-            embed.description = "Aucune quête disponible."
-        else:
-            lines = []
-            for entry in quest_entries:
-                quest = entry["quest"]
-                progress = entry["progress"]
-                is_completed = entry["is_completed"]
-                status = "✅ Terminée" if is_completed else "⏳ En cours"
-                lines.append(
-                    f"**{quest.code}** — {quest.name}\n"
-                    f"{quest.description}\n"
-                    f"Progression : {progress}/{quest.required_quantity} • {status}"
-                )
-
-            embed.description = "\n\n".join(lines)
-
-        await interaction.response.send_message(embed=embed)
-
-    @app_commands.command(name="quest_claim", description="Récupérer la récompense d'une quête")
-    @app_commands.describe(quest_code="Code technique de la quête")
-    async def quest_claim(self, interaction: discord.Interaction, quest_code: str) -> None:
-        with get_db_session() as session:
-            player_repository = PlayerRepository(session)
-            quest_repository = QuestRepository(session)
-            item_repository = ItemRepository(session)
-            inventory_repository = InventoryRepository(session)
-
-            use_case = ClaimQuestRewardUseCase(
-                player_repository=player_repository,
-                quest_repository=quest_repository,
-                item_repository=item_repository,
-                inventory_repository=inventory_repository,
-                progression_service=ProgressionService(),
-                career_stats_repository=PlayerCareerStatsRepository(session),
-            )
-
-            success, message = use_case.execute(
-                discord_id=interaction.user.id,
-                username=interaction.user.name,
-                display_name=interaction.user.display_name,
-                quest_code=quest_code,
-            )
-
-        await interaction.response.send_message(message, ephemeral=not success)
 
     @app_commands.command(name="gather", description="Récolter des ressources")
     @app_commands.describe(profession_code="Code du métier")

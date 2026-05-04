@@ -42,12 +42,36 @@ def test_cooldown_is_not_available_when_active():
     assert service.is_available(cooldown, now) is False
 
 
-def test_build_next_daily_cooldown():
+def test_build_next_daily_cooldown_resets_at_next_midnight_utc():
     service = CooldownService()
 
-    now = datetime.now(UTC)
+    # 5 mai 2026, 14h30 UTC → next_midnight = 6 mai 2026, 00:00 UTC
+    now = datetime(2026, 5, 5, 14, 30, 0, tzinfo=UTC)
 
     last_used, next_available = service.build_next_daily_cooldown(now)
 
     assert last_used == now
-    assert next_available == now + timedelta(days=1)
+    assert next_available == datetime(2026, 5, 6, 0, 0, 0, tzinfo=UTC)
+
+
+def test_build_next_daily_cooldown_just_before_midnight():
+    """Réclamer à 23:59:59 UTC autorise la prochaine récup' dès 00:00 (1s plus tard)."""
+    service = CooldownService()
+
+    now = datetime(2026, 5, 5, 23, 59, 59, tzinfo=UTC)
+
+    _, next_available = service.build_next_daily_cooldown(now)
+
+    assert next_available == datetime(2026, 5, 6, 0, 0, 0, tzinfo=UTC)
+    assert (next_available - now) == timedelta(seconds=1)
+
+
+def test_build_next_daily_cooldown_just_after_midnight():
+    """Réclamer à 00:00:01 UTC fait attendre presque 24h jusqu'au lendemain 00:00."""
+    service = CooldownService()
+
+    now = datetime(2026, 5, 5, 0, 0, 1, tzinfo=UTC)
+
+    _, next_available = service.build_next_daily_cooldown(now)
+
+    assert next_available == datetime(2026, 5, 6, 0, 0, 0, tzinfo=UTC)

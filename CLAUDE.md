@@ -77,8 +77,8 @@ git checkout main
 
 | Commande | Cog | Rôle |
 |---|---|---|
-| `/profile [target]`, `/equipment [target]`, `/inventory [target]`, `/class [target]`, `/quests [target]` | `player_cog` | Consultatives — `target` optionnel : par défaut soi-même, sinon profil d'un autre joueur |
-| `/equip`, `/class_set`, `/classes`, `/daily`, `/quest_claim`, `/gather`, `/craft`, `/craft_list` | `player_cog` | Actions sur soi ou listes globales |
+| `/profile [target]`, `/equipment [target]`, `/equipement_list [target]`, `/inventory [target]`, `/class [target]`, `/gold [target]` | `player_cog` | Consultatives — `target` optionnel : par défaut soi-même, sinon profil d'un autre joueur |
+| `/equip`, `/unequip <slot>`, `/class_set`, `/classes`, `/daily`, `/gather`, `/craft`, `/craft_list`, `/forge`, `/forge_list` | `player_cog` | Actions sur soi ou listes globales (`/daily` reset à minuit UTC) |
 | `/fight @target` | `player_cog` | Duel 1v1 PvP entre joueurs (rien à gagner ni à perdre, juste pour le ladder) |
 | (boucle automatique) | `encounter_cog` | Spawn d'encounters, recrutement, combat de groupe |
 | `/top <category>` | `leaderboard_cog` | Classements (puissance, niveau, or, stats, kills total/mob/famille, duels 1v1) avec autocomplete |
