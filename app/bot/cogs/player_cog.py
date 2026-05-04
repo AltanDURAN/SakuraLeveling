@@ -6,6 +6,7 @@ from discord.ext import commands
 from datetime import datetime, UTC
 
 from app.domain.entities.player_profile import PlayerProfile
+from app.shared.formatters import format_int as _format_int
 from app.application.use_cases.change_player_class import ChangePlayerClassUseCase
 from app.application.use_cases.transfer_gold import TransferGoldUseCase
 from app.application.use_cases.claim_daily_reward import ClaimDailyRewardUseCase
@@ -35,7 +36,8 @@ from app.bot.embeds.daily_embeds import (
 )
 from app.bot.views.equipment_view import EquipmentView
 from app.bot.views.inventory_view import InventoryView
-from app.bot.embeds.craft_embeds import WEAPON_CATEGORIES, build_craft_list_embed
+from app.bot.embeds.craft_embeds import FORGE_CATEGORIES, build_craft_list_embed
+from app.bot.views.recipe_list_view import RecipeListView
 from app.bot.embeds.inventory_embeds import build_inventory_embed
 from app.bot.embeds.player_embeds import build_player_profile_embed
 from app.domain.services.class_service import ClassService
@@ -276,6 +278,38 @@ class PlayerCog(commands.Cog):
         )
         await interaction.response.send_message(embed=view.current_embed, view=view)
 
+    @app_commands.command(
+        name="equipement_list",
+        description="Liste les équipements possédés par catégorie (équipés ou non)",
+    )
+    @app_commands.describe(target="Joueur ciblé (par défaut : vous)")
+    async def equipement_list(
+        self,
+        interaction: discord.Interaction,
+        target: discord.Member | None = None,
+    ) -> None:
+        from app.bot.views.equipement_list_view import EquipementListView
+
+        with get_db_session() as session:
+            profile, target_member = self._resolve_profile(interaction, target, session)
+            if profile is None:
+                await self._send_no_profile_error(interaction, target_member)
+                return
+
+            inventory_repository = InventoryRepository(session)
+            equipment_repository = EquipmentRepository(session)
+            items = inventory_repository.list_by_player_id(profile.player.id)
+            equipped = equipment_repository.list_by_player_id(profile.player.id)
+
+        view = EquipementListView(
+            display_name=target_member.display_name,
+            items=items,
+            equipped=equipped,
+        )
+        await interaction.response.send_message(
+            embed=view._build_embed(), view=view,
+        )
+
     @app_commands.command(name="equip", description="Équiper un item depuis votre inventaire")
     @app_commands.describe(item_code="Code de l'item (autocomplete sur votre inventaire)")
     async def equip(
@@ -319,8 +353,36 @@ class PlayerCog(commands.Cog):
                 )
                 return
 
-            target_slot = matched.item_definition.equipment_slot
             current_equipment = equipment_repository.list_by_player_id(profile.player.id)
+
+            # Auto-pick du slot pour les armes 1-main : on choisit le slot
+            # libre (main_droite prioritaire) sans demander à l'utilisateur.
+            # Pour les autres items : slot canonique de la définition.
+            item_def = matched.item_definition
+            from app.shared.enums import EquipmentSlot as _ES
+            _hand_slots = {_ES.MAIN_HAND.value, _ES.OFF_HAND.value}
+            is_hand_weapon = (
+                item_def.equipment_slot in _hand_slots
+                and not item_def.requires_two_hands
+            )
+            if is_hand_weapon:
+                md_occupied = next(
+                    (e for e in current_equipment if e.slot == _ES.MAIN_HAND.value),
+                    None,
+                )
+                mg_occupied = next(
+                    (e for e in current_equipment if e.slot == _ES.OFF_HAND.value),
+                    None,
+                )
+                if md_occupied is None:
+                    target_slot = _ES.MAIN_HAND.value
+                elif mg_occupied is None:
+                    target_slot = _ES.OFF_HAND.value
+                else:
+                    target_slot = _ES.MAIN_HAND.value
+            else:
+                target_slot = item_def.equipment_slot
+
             current_in_slot = next(
                 (e for e in current_equipment if e.slot == target_slot), None
             )
@@ -410,7 +472,9 @@ class PlayerCog(commands.Cog):
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        """Propose uniquement les items équipables présents dans l'inventaire."""
+        """Propose les items équipables en inventaire, en excluant ceux qui
+        sont DÉJÀ équipés (par item_definition_id) — évite la confusion
+        d'avoir un même item proposé alors qu'il est déjà porté."""
         with get_db_session() as session:
             player_repository = PlayerRepository(session)
             profile = player_repository.get_by_discord_id(interaction.user.id)
@@ -418,13 +482,21 @@ class PlayerCog(commands.Cog):
                 return []
 
             inventory_repository = InventoryRepository(session)
+            equipment_repository = EquipmentRepository(session)
             items = inventory_repository.list_by_player_id(profile.player.id)
+            equipped_ids = {
+                e.item_definition.id
+                for e in equipment_repository.list_by_player_id(profile.player.id)
+            }
 
         current_lower = current.lower()
         choices: list[app_commands.Choice[str]] = []
         for item in items:
             definition = item.item_definition
             if not definition.is_equipable:
+                continue
+            # Filtre : ne propose pas un item déjà équipé (même définition)
+            if definition.id in equipped_ids:
                 continue
             label = f"{definition.name} ({definition.equipment_slot})"[:100]
             if (
@@ -570,27 +642,27 @@ class PlayerCog(commands.Cog):
 
     @app_commands.command(
         name="craft_list",
-        description="Liste les recettes d'équipement et accessoires (hors armes/boucliers)",
+        description="Liste les recettes d'accessoires (collier, bague, ceinture, cape…)",
     )
     async def craft_list(self, interaction: discord.Interaction) -> None:
         await self._send_recipe_list(
             interaction,
             include_categories=None,
-            exclude_categories=WEAPON_CATEGORIES,
-            title="🛠️ Recettes — Équipement & Accessoires",
+            exclude_categories=FORGE_CATEGORIES,
+            title="🛠️ Recettes — Atelier",
             color=discord.Color.orange(),
         )
 
     @app_commands.command(
         name="forge_list",
-        description="Liste les recettes d'armes et boucliers (à forger)",
+        description="Liste les recettes d'armes, boucliers et armures (à forger)",
     )
     async def forge_list(self, interaction: discord.Interaction) -> None:
         await self._send_recipe_list(
             interaction,
-            include_categories=WEAPON_CATEGORIES,
+            include_categories=FORGE_CATEGORIES,
             exclude_categories=None,
-            title="🔥 Recettes — Forge (armes & boucliers)",
+            title="🔥 Recettes — Forge",
             color=discord.Color.red(),
         )
 
@@ -621,13 +693,15 @@ class PlayerCog(commands.Cog):
             return True
 
         filtered = [r for r in recipes if _matches(r)]
-        embed = build_craft_list_embed(
+        view = RecipeListView(
             recipes=filtered,
             item_lookup=item_lookup,
-            title=title,
+            title_prefix=title,
             color=color,
         )
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(
+            embed=view._build_embed(), view=view,
+        )
 
     @app_commands.command(name="craft", description="Fabriquer un objet (équipement / accessoire)")
     @app_commands.describe(recipe_code="Code de la recette (autocomplete)")
@@ -671,16 +745,16 @@ class PlayerCog(commands.Cog):
                 )
                 return
 
-            is_weapon = result_item.category in WEAPON_CATEGORIES
-            if expect_weapon and not is_weapon:
+            is_forgeable = result_item.category in FORGE_CATEGORIES
+            if expect_weapon and not is_forgeable:
                 await interaction.response.send_message(
-                    f"❌ **{result_item.name}** n'est pas une arme : utilisez `/craft` à la place.",
+                    f"❌ **{result_item.name}** ne se forge pas : utilisez `/craft` à la place.",
                     ephemeral=True,
                 )
                 return
-            if not expect_weapon and is_weapon:
+            if not expect_weapon and is_forgeable:
                 await interaction.response.send_message(
-                    f"❌ **{result_item.name}** est une arme : utilisez `/forge` à la place.",
+                    f"❌ **{result_item.name}** se forge : utilisez `/forge` à la place.",
                     ephemeral=True,
                 )
                 return
@@ -777,10 +851,10 @@ class PlayerCog(commands.Cog):
             result = items.get(recipe.result_item_code)
             if result is None:
                 continue
-            is_weapon = result.category in WEAPON_CATEGORIES
-            if weapons_only and not is_weapon:
+            is_forgeable = result.category in FORGE_CATEGORIES
+            if weapons_only and not is_forgeable:
                 continue
-            if not weapons_only and is_weapon:
+            if not weapons_only and is_forgeable:
                 continue
             label = f"{result.name} ({recipe.code})"[:100]
             if (
@@ -890,6 +964,29 @@ class PlayerCog(commands.Cog):
             if len(choices) >= 25:
                 break
         return choices
+
+    @app_commands.command(
+        name="gold",
+        description="Voir votre or (ou celui d'un autre joueur)",
+    )
+    @app_commands.describe(target="Joueur ciblé (par défaut : vous)")
+    async def gold(
+        self,
+        interaction: discord.Interaction,
+        target: discord.Member | None = None,
+    ) -> None:
+        with get_db_session() as session:
+            profile, target_member = self._resolve_profile(interaction, target, session)
+            if profile is None:
+                await self._send_no_profile_error(interaction, target_member)
+                return
+
+            gold_amount = profile.resources.gold
+
+        await interaction.response.send_message(
+            f"💰 **{target_member.display_name}** possède "
+            f"**{_format_int(gold_amount)}** or."
+        )
 
     @app_commands.command(name="daily", description="Récupérer votre récompense quotidienne")
     async def daily(self, interaction: discord.Interaction) -> None:

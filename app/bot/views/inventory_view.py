@@ -1,17 +1,19 @@
-"""View paginée de l'inventaire (boutons par catégorie).
+"""View paginée de l'inventaire (uniquement consommables et ressources).
 
-Chaque bouton bascule vers une catégorie d'items (armes, équipement,
-accessoires, consommables, ressources, tout). La view est ephemeral et
-non-persistante — on accepte qu'elle expire au timeout (5 min). Le viewer
-reste l'auteur de la commande, pas restrictif sur les autres viewers
-(consultation publique).
+Les équipements sont gérés séparément via /equipement_list.
+La view est ephemeral et non-persistante — expire au timeout 5 min.
 """
 
 from __future__ import annotations
 
 import discord
 
-from app.bot.embeds.inventory_embeds import PAGES, build_inventory_embed
+from app.bot.embeds.inventory_embeds import (
+    PAGES,
+    _filter_items_for_page,
+    _is_inventory_item,
+    build_inventory_embed,
+)
 from app.domain.entities.player_inventory_item import PlayerInventoryItem
 
 
@@ -25,24 +27,16 @@ class InventoryView(discord.ui.View):
         super().__init__(timeout=timeout)
         self.display_name = display_name
         self.items = items
-        self.current_page = "weapon"
+        # Page par défaut : consommables (le PAGES[0] courant)
+        self.current_page = PAGES[0][0] if PAGES else "consumable"
 
-        # Boutons générés dynamiquement à partir de PAGES (chaque catégorie
-        # qui contient au moins 1 item, plus la page "all").
-        from app.bot.embeds.inventory_embeds import _filter_items_for_page
-
-        # Si l'inventaire est entièrement vide, on n'affiche aucun bouton
-        if not items:
+        # Si aucun item non-équipable, on n'affiche aucun bouton
+        non_equipable_count = sum(1 for i in items if _is_inventory_item(i))
+        if non_equipable_count == 0:
             return
+
         for key, label, emoji in PAGES:
-            count = (
-                len(items)
-                if key == "all"
-                else len(_filter_items_for_page(items, key))
-            )
-            # Tous les boutons toujours présents pour permettre la navigation
-            # complète. Le compteur "(0)" indique simplement qu'il n'y a rien
-            # dans la page mais le bouton reste cliquable pour y revenir.
+            count = len(_filter_items_for_page(items, key))
             button = _PageButton(
                 page_key=key,
                 label=f"{label} ({count})",

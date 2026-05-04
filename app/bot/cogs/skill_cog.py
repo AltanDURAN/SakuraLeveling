@@ -17,9 +17,10 @@ from app.infrastructure.skill_tree.skill_tree_loader import (
 )
 
 
-# URL de la page web (locale par défaut). À déplacer dans settings.py + .env
-# quand le déploiement public sera fait.
-WEB_BASE_URL = "http://localhost:8000"
+# URL de la page web — lue depuis settings (configurable via .env via
+# `WEBAPP_BASE_URL=...`). Par défaut localhost pour le dev.
+from app.infrastructure.config.settings import settings as _settings
+WEB_BASE_URL = _settings.webapp_base_url
 
 
 class SkillCog(commands.Cog):

@@ -4,8 +4,34 @@ from app.domain.entities.craft_recipe import CraftRecipe
 from app.domain.entities.item_definition import ItemDefinition
 
 
-# Catégories d'items considérées comme des armes (filtrage /forge)
-WEAPON_CATEGORIES = {"weapon", "shield"}
+# Catégories d'items qui passent par la FORGE (armes + boucliers + armures
+# métalliques classiques). Tout le reste tombe dans /craft.
+FORGE_CATEGORIES = {
+    "weapon", "shield",
+    "helmet", "chest", "legs", "boots",
+}
+
+# Alias rétrocompatible pour le code existant qui peut encore importer
+# `WEAPON_CATEGORIES`. Sera retiré dans une future passe.
+WEAPON_CATEGORIES = FORGE_CATEGORIES
+
+# Libellés conviviaux par catégorie (pour les boutons de filtre)
+CATEGORY_LABELS: dict[str, tuple[str, str]] = {
+    "weapon":   ("Armes", "⚔️"),
+    "shield":   ("Boucliers", "🛡️"),
+    "helmet":   ("Casques", "🪖"),
+    "chest":    ("Plastrons", "🦺"),
+    "legs":     ("Jambières", "👖"),
+    "boots":    ("Bottes", "🥾"),
+    "necklace": ("Colliers", "📿"),
+    "bracelet": ("Bracelets", "⛓️"),
+    "ring":     ("Bagues", "💍"),
+    "belt":     ("Ceintures", "🪢"),
+    "cape":     ("Capes", "🧥"),
+    "earring":  ("Boucles d'oreilles", "💎"),
+    "consumable": ("Consommables", "🧪"),
+    "resource": ("Ressources", "🌾"),
+}
 
 
 def _format_ingredients(recipe: CraftRecipe, item_lookup: dict[str, ItemDefinition]) -> str:

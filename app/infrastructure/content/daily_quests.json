@@ -48,30 +48,6 @@
     "tier": "easy"
   },
   {
-    "code": "duel_win_1",
-    "name": "Première victoire",
-    "description": "Gagner 1 duel 1v1 aujourd'hui.",
-    "objective_type": "duel_win",
-    "objective_target": "",
-    "objective_quantity": 1,
-    "reward_gold": 200,
-    "reward_xp": 80,
-    "reward_items": [],
-    "tier": "easy"
-  },
-  {
-    "code": "duel_win_3",
-    "name": "Triple victoire",
-    "description": "Gagner 3 duels 1v1 aujourd'hui.",
-    "objective_type": "duel_win",
-    "objective_target": "",
-    "objective_quantity": 3,
-    "reward_gold": 600,
-    "reward_xp": 250,
-    "reward_items": [["potion_soin_ii", 1]],
-    "tier": "medium"
-  },
-  {
     "code": "craft_2",
     "name": "Atelier rapide",
     "description": "Crafter 2 objets aujourd'hui.",

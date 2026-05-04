@@ -14,6 +14,7 @@ from app.infrastructure.db.models.player_mob_kill_model import PlayerMobKillMode
 from app.infrastructure.db.models.player_skill_allocation_model import (
     PlayerSkillAllocationModel,
 )
+from app.infrastructure.db.models.help_subscriber_model import HelpSubscriberModel
 from app.infrastructure.db.models.marketplace_listing_model import MarketplaceListingModel
 from app.infrastructure.db.models.player_title_model import PlayerTitleModel
 from app.infrastructure.db.models.daily_quest_model import DailyQuestAssignmentModel
@@ -67,6 +68,7 @@ class ResetPlayerUseCase:
             PlayerTitleModel,
             WeeklyQuestAssignmentModel,
             DailyQuestAssignmentModel,
+            HelpSubscriberModel,
         ):
             session.execute(delete(model_cls).where(model_cls.player_id == player_id))
 

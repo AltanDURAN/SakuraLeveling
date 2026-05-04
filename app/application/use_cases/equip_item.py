@@ -73,13 +73,29 @@ class EquipItemUseCase:
                 message=f"❌ **{item_def.name}** n'est pas équipable.",
             )
 
-        # Détermine le slot cible : explicite par le user, sinon défaut item.
-        target_slot = slot or item_def.equipment_slot
-
         is_hand_weapon = (
             item_def.equipment_slot in _HAND_SLOTS
             and not item_def.requires_two_hands
         )
+
+        # Auto-pick du slot pour les armes 1-main : on prend le slot libre,
+        # main_droite en priorité, fallback main_gauche, sinon main_droite
+        # (sera remplacée). L'utilisateur n'a plus besoin de spécifier.
+        if is_hand_weapon and slot is None:
+            md_occupied = self.equipment_repository.get_slot(
+                profile.player.id, EquipmentSlot.MAIN_HAND.value,
+            )
+            mg_occupied = self.equipment_repository.get_slot(
+                profile.player.id, EquipmentSlot.OFF_HAND.value,
+            )
+            if md_occupied is None:
+                target_slot = EquipmentSlot.MAIN_HAND.value
+            elif mg_occupied is None:
+                target_slot = EquipmentSlot.OFF_HAND.value
+            else:
+                target_slot = EquipmentSlot.MAIN_HAND.value
+        else:
+            target_slot = slot or item_def.equipment_slot
 
         if is_hand_weapon:
             if target_slot not in _HAND_SLOTS:

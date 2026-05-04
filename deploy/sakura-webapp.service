@@ -1,0 +1,34 @@
+[Unit]
+Description=SakuraLeveling Skill Tree Webapp (FastAPI)
+After=network.target
+# Soft dependency : si la DB n'est pas prête, le webapp survivra (lit en lazy)
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/SakuraLeveling
+# uvicorn écoute sur 0.0.0.0:8001 — exposition publique directe sans nginx.
+# 8001 plutôt que 8080 (Pterodactyl Wings utilise 8080) ni 8000 (rester
+# libre pour autres dev locaux). Si tu changes ce port, mets aussi à jour
+# scripts/setup_webapp_standalone.sh et la valeur WEBAPP_BASE_URL du .env.
+# Pour passer derrière un reverse proxy nginx avec HTTPS plus tard, change
+# l'host pour 127.0.0.1 et configure un vhost nginx vers 127.0.0.1:8001.
+ExecStart=/home/ubuntu/SakuraLeveling/.venv/bin/uvicorn webapp.main:app \
+    --host 0.0.0.0 \
+    --port 8001 \
+    --workers 1 \
+    --log-level info
+Restart=on-failure
+RestartSec=5s
+
+# Sandboxing minimal (sans casser l'accès à lita_v2.db)
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/ubuntu/SakuraLeveling
+
+[Install]
+WantedBy=multi-user.target

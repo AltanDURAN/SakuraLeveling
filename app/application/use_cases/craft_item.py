@@ -125,8 +125,11 @@ class CraftItemUseCase:
             DailyQuestProgressService(DailyQuestRepository(session)).on_craft(
                 profile.player.id, count=recipe.result_quantity,
             )
-        except Exception:
-            pass
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Quest progress hook failed: %s", _e, exc_info=True,
+            )
 
         return CraftFailure(
             success=True,
