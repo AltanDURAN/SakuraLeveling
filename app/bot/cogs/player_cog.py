@@ -35,7 +35,8 @@ from app.bot.embeds.daily_embeds import (
 )
 from app.bot.views.equipment_view import EquipmentView
 from app.bot.views.inventory_view import InventoryView
-from app.bot.embeds.craft_embeds import WEAPON_CATEGORIES, build_craft_list_embed
+from app.bot.embeds.craft_embeds import FORGE_CATEGORIES, build_craft_list_embed
+from app.bot.views.recipe_list_view import RecipeListView
 from app.bot.embeds.inventory_embeds import build_inventory_embed
 from app.bot.embeds.player_embeds import build_player_profile_embed
 from app.domain.services.class_service import ClassService
@@ -410,7 +411,9 @@ class PlayerCog(commands.Cog):
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        """Propose uniquement les items équipables présents dans l'inventaire."""
+        """Propose les items équipables en inventaire, en excluant ceux qui
+        sont DÉJÀ équipés (par item_definition_id) — évite la confusion
+        d'avoir un même item proposé alors qu'il est déjà porté."""
         with get_db_session() as session:
             player_repository = PlayerRepository(session)
             profile = player_repository.get_by_discord_id(interaction.user.id)
@@ -418,13 +421,21 @@ class PlayerCog(commands.Cog):
                 return []
 
             inventory_repository = InventoryRepository(session)
+            equipment_repository = EquipmentRepository(session)
             items = inventory_repository.list_by_player_id(profile.player.id)
+            equipped_ids = {
+                e.item_definition.id
+                for e in equipment_repository.list_by_player_id(profile.player.id)
+            }
 
         current_lower = current.lower()
         choices: list[app_commands.Choice[str]] = []
         for item in items:
             definition = item.item_definition
             if not definition.is_equipable:
+                continue
+            # Filtre : ne propose pas un item déjà équipé (même définition)
+            if definition.id in equipped_ids:
                 continue
             label = f"{definition.name} ({definition.equipment_slot})"[:100]
             if (
@@ -570,27 +581,27 @@ class PlayerCog(commands.Cog):
 
     @app_commands.command(
         name="craft_list",
-        description="Liste les recettes d'équipement et accessoires (hors armes/boucliers)",
+        description="Liste les recettes d'accessoires (collier, bague, ceinture, cape…)",
     )
     async def craft_list(self, interaction: discord.Interaction) -> None:
         await self._send_recipe_list(
             interaction,
             include_categories=None,
-            exclude_categories=WEAPON_CATEGORIES,
-            title="🛠️ Recettes — Équipement & Accessoires",
+            exclude_categories=FORGE_CATEGORIES,
+            title="🛠️ Recettes — Atelier",
             color=discord.Color.orange(),
         )
 
     @app_commands.command(
         name="forge_list",
-        description="Liste les recettes d'armes et boucliers (à forger)",
+        description="Liste les recettes d'armes, boucliers et armures (à forger)",
     )
     async def forge_list(self, interaction: discord.Interaction) -> None:
         await self._send_recipe_list(
             interaction,
-            include_categories=WEAPON_CATEGORIES,
+            include_categories=FORGE_CATEGORIES,
             exclude_categories=None,
-            title="🔥 Recettes — Forge (armes & boucliers)",
+            title="🔥 Recettes — Forge",
             color=discord.Color.red(),
         )
 
@@ -621,13 +632,15 @@ class PlayerCog(commands.Cog):
             return True
 
         filtered = [r for r in recipes if _matches(r)]
-        embed = build_craft_list_embed(
+        view = RecipeListView(
             recipes=filtered,
             item_lookup=item_lookup,
-            title=title,
+            title_prefix=title,
             color=color,
         )
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(
+            embed=view._build_embed(), view=view,
+        )
 
     @app_commands.command(name="craft", description="Fabriquer un objet (équipement / accessoire)")
     @app_commands.describe(recipe_code="Code de la recette (autocomplete)")
@@ -671,16 +684,16 @@ class PlayerCog(commands.Cog):
                 )
                 return
 
-            is_weapon = result_item.category in WEAPON_CATEGORIES
-            if expect_weapon and not is_weapon:
+            is_forgeable = result_item.category in FORGE_CATEGORIES
+            if expect_weapon and not is_forgeable:
                 await interaction.response.send_message(
-                    f"❌ **{result_item.name}** n'est pas une arme : utilisez `/craft` à la place.",
+                    f"❌ **{result_item.name}** ne se forge pas : utilisez `/craft` à la place.",
                     ephemeral=True,
                 )
                 return
-            if not expect_weapon and is_weapon:
+            if not expect_weapon and is_forgeable:
                 await interaction.response.send_message(
-                    f"❌ **{result_item.name}** est une arme : utilisez `/forge` à la place.",
+                    f"❌ **{result_item.name}** se forge : utilisez `/forge` à la place.",
                     ephemeral=True,
                 )
                 return
@@ -777,10 +790,10 @@ class PlayerCog(commands.Cog):
             result = items.get(recipe.result_item_code)
             if result is None:
                 continue
-            is_weapon = result.category in WEAPON_CATEGORIES
-            if weapons_only and not is_weapon:
+            is_forgeable = result.category in FORGE_CATEGORIES
+            if weapons_only and not is_forgeable:
                 continue
-            if not weapons_only and is_weapon:
+            if not weapons_only and is_forgeable:
                 continue
             label = f"{result.name} ({recipe.code})"[:100]
             if (
