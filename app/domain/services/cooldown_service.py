@@ -20,9 +20,15 @@ class CooldownService:
         return _normalize(now) >= _normalize(cooldown.next_available_at)
 
     def build_next_daily_cooldown(self, now: datetime) -> tuple[datetime, datetime]:
+        """Reset à minuit UTC : la prochaine récup' est dispo dès le lendemain
+        00:00 UTC, peu importe l'heure de la réclamation. Réclamer à 23:59
+        autorise une nouvelle récup' dès 00:00, soit 1 minute plus tard."""
         last_used_at = now
-        next_available_at = now + timedelta(days=1)
-        return last_used_at, next_available_at
+        now_utc = now.astimezone(UTC) if now.tzinfo is not None else now.replace(tzinfo=UTC)
+        next_midnight = (now_utc + timedelta(days=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        return last_used_at, next_midnight
 
     def build_next_skill_reset_cooldown(
         self, now: datetime, days: int = 7
