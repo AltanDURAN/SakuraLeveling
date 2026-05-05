@@ -189,3 +189,51 @@ def test_dodge_does_not_break_score_at_zero():
     score = service.calculate_from_stats(build_stats(dodge=0))
 
     assert score >= 1
+
+
+# ---------- Rangs (F- → SSS+) ----------
+
+
+def test_compute_rank_starts_at_f_minus_for_low_scores():
+    service = PowerScoreService()
+
+    assert service.compute_rank(0) == "F-"
+    assert service.compute_rank(1) == "F-"
+    assert service.compute_rank(199) == "F-"
+
+
+def test_compute_rank_thresholds_are_strict():
+    """Score == borne ne donne PAS le rang inférieur — il bascule au suivant."""
+    service = PowerScoreService()
+
+    # 200 = borne F- → on bascule sur F
+    assert service.compute_rank(199) == "F-"
+    assert service.compute_rank(200) == "F"
+    # 1000 = borne F+ → on bascule sur E-
+    assert service.compute_rank(999) == "F+"
+    assert service.compute_rank(1_000) == "E-"
+
+
+def test_compute_rank_letter_progression():
+    service = PowerScoreService()
+
+    # Score == borne ⇒ bascule sur le rang du dessus (lookup strict)
+    assert service.compute_rank(499) == "F"
+    assert service.compute_rank(500) == "F+"
+    assert service.compute_rank(1_500) == "E-"
+    assert service.compute_rank(49_999) == "D"
+    assert service.compute_rank(50_000) == "D+"
+    assert service.compute_rank(500_000) == "C+"
+    assert service.compute_rank(5_000_000) == "B+"
+    assert service.compute_rank(50_000_000) == "A+"
+    assert service.compute_rank(500_000_000) == "S+"
+    assert service.compute_rank(5_000_000_000) == "SS+"
+    assert service.compute_rank(50_000_000_000) == "SSS+"
+
+
+def test_compute_rank_caps_at_sss_plus():
+    service = PowerScoreService()
+
+    # Au-delà du dernier seuil (50_000_000_000), tout est SSS+
+    assert service.compute_rank(50_000_000_000) == "SSS+"
+    assert service.compute_rank(10**15) == "SSS+"

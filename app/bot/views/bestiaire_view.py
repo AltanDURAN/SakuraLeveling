@@ -41,7 +41,8 @@ def build_mob_embed(mob: MobDefinition, idx: int, total: int) -> discord.Embed:
             f"⚔️ Atk : **{mob.attack:,}**\n"
             f"🛡️ Def : **{mob.defense:,}**\n"
             f"💨 Spd : **{mob.speed}**\n"
-            f"🎯 Crit : **{mob.crit_chance}%** (×{mob.crit_damage}%)\n"
+            f"🎯 Chance crit : **{mob.crit_chance}%**\n"
+            f"💥 Dégâts crit : **{mob.crit_damage}%**\n"
             f"🌀 Esquive : **{mob.dodge}%**"
         ),
         inline=True,

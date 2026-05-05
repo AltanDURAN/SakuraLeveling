@@ -26,9 +26,13 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     Au premier usage sans target, votre profil est créé automatiquement.
 
     Le profil contient :
-        • Niveau, XP, or, score de puissance, classe active
+        • Niveau, XP, or, score de puissance, **rang** (F- → SSS+), classe active
         • Stats de combat (attaque, défense, vitesse, crit %, esquive %, régen)
         • Daily Streak actuelle 🔥
+
+    Rangs : tirés du score de puissance, paliers stricts F-/F/F+, E-/E/E+, …,
+    SSS-/SSS/SSS+. Ex : <200 = F-, <500 = F, <1000 = F+, <2000 = E-, etc.,
+    chaque lettre couvre 3 sous-rangs avant de basculer sur la suivante.
         • Statistiques de carrière (cumulées sur la durée de vie du profil) :
             - Monstres tués au total
             - Combats : nombre total, victoires / défaites, taux de réussite
@@ -51,7 +55,7 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     actuellement porté. Pratique pour faire le tri / vendre / brocanter
     ses doublons sans polluer /inventory.
 
-/equipment [target]
+/equipement [target]
     Affiche l'équipement porté sur 12 slots, en 2 pages naviguables avec
     les flèches ⬅️ ➡️ :
         Page 1 (Principaux) : casque, plastron, jambières, bottes,
@@ -202,11 +206,23 @@ Combat de groupe (encounters) — déclenché automatiquement
     Vous avez 5 minutes pour cliquer sur "Combattre" pour rejoindre le combat,
     ou "Quitter" pour vous retirer.
 
-    Quand le combat se résout, deux pages d'embed s'affichent (navigables avec
-    les flèches ⬅️ ➡️) :
+    Quand le combat démarre, le bot envoie un second message "⚔️ Combat en
+    cours" dans le même canal. Ce message est édité à chaque tour avec :
+        • Le détail du tour (qui frappe qui, dégâts, crit, esquive)
+        • Les PV courants du mob et de l'équipe
+    À la fin du combat, ce message indique "✅ Combat terminé" et fournit
+    un lien direct vers le récap (le message original du spawn).
+
+    Le récap final (sur le message de spawn) reste affiché en deux pages
+    d'embed (navigables avec les flèches ⬅️ ➡️) :
         • Page 1 — Récompenses : or, XP et drops reçus par chaque participant
         • Page 2 — Détails : dégâts infligés, dégâts encaissés, PV régénérés,
           PV restants, et part de contribution de chaque joueur (🏅 X%)
+
+    Note sur la part de contribution : la régénération passive (hp_regen tour
+    par tour) ne compte PAS comme "PV soignés" pour le partage de l'or — un
+    joueur tanky avec gros hp_regen ne monopolise plus la part heal. Le champ
+    "PV soignés" est réservé aux soins actifs (futur système de classe Soigneur).
 
 Note : les morts en combat ne reçoivent ni or, ni XP, ni drops, ni kill credit.
        Tant que vous êtes mort durant un combat, vous ne pouvez pas vous

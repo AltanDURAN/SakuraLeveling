@@ -63,10 +63,13 @@ class PartyCombatService:
 
                     stats: Stats = player["stats"]
 
+                    # Regen tour-par-tour : ne compte PAS comme "PV soignés" pour
+                    # la contribution. hp_healed est réservé aux soins actifs
+                    # (futur système de classe Soigneur). Le but est d'éviter
+                    # qu'un joueur tanky avec gros hp_regen monopolise la part
+                    # heal alors qu'il ne fait que se régénérer passivement.
                     if stats.hp_regeneration > 0 and player["hp"] > 0:
-                        before_hp = player["hp"]
                         player["hp"] = min(player["max_hp"], player["hp"] + stats.hp_regeneration)
-                        contributions[player["player_id"]].hp_healed += player["hp"] - before_hp
 
                     damage = max(1, stats.attack - mob.defense)
                     crit = False

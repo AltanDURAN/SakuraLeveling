@@ -54,13 +54,16 @@ Ordre de lecture conseillé avant patch : `pyproject.toml` → `alembic.ini` →
 - **Famille de mobs** : champ `family` (snake_case) sur `MobDefinition`. Toujours renseigner pour qu'un mob soit comptabilisé dans les classements de famille (ex : "gobelin" pour tous les gobelins).
 - **Tracking des kills** : table `player_mob_kills` (player_id, mob_code, kill_count). Incrémentée dans `EncounterService.apply_rewards` (combat de groupe) et `FightMobUseCase` (combat solo) pour chaque survivant après victoire.
 - **Répartition des récompenses (combat de groupe)** :
-  - **Or** : pool = `mob.gold_reward × nb_survivants`, partagé selon le **score de contribution multi-métriques** (role-agnostic). Pour chaque métrique active dans l'équipe (dégâts infligés, dégâts tankés, PV régénérés), chaque survivant reçoit `sa_part / total_équipe` points. Score final = somme des 3. Un Tank pur, un Healer pur ou un DPS pur gagnent tous 1 point dans leur spécialité ; un polyvalent cumule. Une métrique inutilisée (ex : aucun heal dans le combat) est ignorée.
+  - **Or** : pool = `mob.gold_reward × nb_survivants`, partagé selon le **score de contribution multi-métriques** (role-agnostic). Pour chaque métrique active dans l'équipe (dégâts infligés, dégâts tankés, **PV soignés via heal actif uniquement**), chaque survivant reçoit `sa_part / total_équipe` points. Score final = somme des 3. Un Tank pur, un Healer pur ou un DPS pur gagnent tous 1 point dans leur spécialité ; un polyvalent cumule. Une métrique inutilisée (ex : aucun heal dans le combat) est ignorée. **La régénération passive (hp_regeneration tour par tour) ne compte PAS** comme heal — sinon un tanky avec gros regen monopoliserait la part heal. Le champ `hp_healed` reste mais n'est rempli que par les soins actifs (futur système de classe Soigneur).
   - **XP** : multiplier = `clamp(mob_power / player_power, 0.5, 2.5)`, XP = `mob.xp_reward × multiplier`. Joueurs faibles vs mob fort gagnent plus.
   - **Drops** : roll indépendant via `LootService` pour chaque survivant.
   - **Kill counter** : tous les survivants reçoivent +1.
   - Le `PlayerReward.contribution_share` (0..1) expose la part calculée pour affichage et debug.
-- **Métriques de combat** trackées par `PartyCombatService` dans `PlayerContribution` : `damage_dealt`, `damage_tanked`, `hp_healed` (régen effective), `survived`, `final_hp`.
-- **Affichage du résultat** : `BattleSummaryView` paginée 2 pages (Récompenses ↔ Détails). Construit par `apply_rewards` qui retourne `BattleSummary`.
+- **Métriques de combat** trackées par `PartyCombatService` dans `PlayerContribution` : `damage_dealt`, `damage_tanked`, `hp_healed` (heal actif uniquement, pas la régen), `survived`, `final_hp`.
+- **Affichage du résultat** : deux messages distincts pendant un encounter naturel.
+  - **Message de spawn** : reçoit le `BattleSummaryView` à la fin (paginé 2 pages : Récompenses ↔ Détails).
+  - **Message de journal** : envoyé au début du combat, édité à chaque tour avec la ligne d'action (qui frappe qui, dégâts, crit, esquive) + PV courants. À la fin du combat, ajoute en tête un lien `jump_url` vers le message de spawn (où sont les récompenses). Cf. [encounter_combat_log_embed.py](app/bot/embeds/encounter_combat_log_embed.py).
+- **Rang du joueur** : dérivé du `power_score` via `PowerScoreService.compute_rank` (paliers stricts F- → SSS+, chaque lettre couvre 3 sous-rangs à 2×/5×/10× de la base puis saute d'un facteur 20×). Affiché dans `/profile`. Pas persisté en DB — toujours recalculé.
 
 ## Workflow Git
 
@@ -77,7 +80,7 @@ git checkout main
 
 | Commande | Cog | Rôle |
 |---|---|---|
-| `/profile [target]`, `/equipment [target]`, `/equipement_list [target]`, `/inventory [target]`, `/class [target]`, `/gold [target]` | `player_cog` | Consultatives — `target` optionnel : par défaut soi-même, sinon profil d'un autre joueur |
+| `/profile [target]`, `/equipement [target]`, `/equipement_list [target]`, `/inventory [target]`, `/class [target]`, `/gold [target]` | `player_cog` | Consultatives — `target` optionnel : par défaut soi-même, sinon profil d'un autre joueur |
 | `/equip`, `/unequip <slot>`, `/class_set`, `/classes`, `/daily`, `/gather`, `/craft`, `/craft_list`, `/forge`, `/forge_list` | `player_cog` | Actions sur soi ou listes globales (`/daily` reset à minuit UTC) |
 | `/fight @target` | `player_cog` | Duel 1v1 PvP entre joueurs (rien à gagner ni à perdre, juste pour le ladder) |
 | (boucle automatique) | `encounter_cog` | Spawn d'encounters, recrutement, combat de groupe |
@@ -144,7 +147,7 @@ Pour un nouveau cog : si les commandes restent dans le canal beta → poser `int
   - `/craft <recipe>` : fabrique un équipement (refuse les armes)
   - `/forge <recipe>` : forge une arme (refuse les autres)
   - `/equip <item> [slot]` : `slot` optionnel, défaut = slot canonique de l'item
-  - `/equipment [target]` : 2 pages naviguables (Principaux / Secondaires)
+  - `/equipement [target]` : 2 pages naviguables (Principaux / Secondaires)
 
 ## Système de trade entre joueurs
 

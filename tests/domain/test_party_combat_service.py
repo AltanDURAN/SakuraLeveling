@@ -180,16 +180,19 @@ def test_party_combat_service_tracks_per_player_contributions():
     assert by_id[2].hp_healed == 0
 
 
-def test_party_combat_service_tracks_hp_healed_when_regenerating():
+def test_party_combat_service_does_not_count_regen_as_hp_healed():
+    """La régénération passive (hp_regeneration) ne doit PAS incrémenter
+    hp_healed. Ce champ est réservé aux soins actifs (futur système de
+    classe Soigneur). Sinon, un joueur tanky monopoliserait la part heal."""
     service = PartyCombatService()
 
     party = [
         {
             "player_id": 1,
             "user_id": 101,
-            "name": "Healer",
+            "name": "Tanky",
             "avatar_url": "",
-            "current_hp": 50,  # commence à mi-vie pour permettre régen effective
+            "current_hp": 50,
             "max_hp": 100,
             "stats": Stats(
                 max_hp=100,
@@ -209,7 +212,7 @@ def test_party_combat_service_tracks_hp_healed_when_regenerating():
     result = service.fight_party_vs_mob(party=party, mob=mob)
 
     contribution = result.contributions[0]
-    assert contribution.hp_healed > 0
+    assert contribution.hp_healed == 0
 
 
 def test_party_combat_service_marks_dead_player_as_not_survived():

@@ -1,10 +1,9 @@
 """Vue de listes de recettes (/craft_list, /forge_list) avec boutons de
 filtre par catégorie d'item (armes, casques, bagues, etc.).
 
-Le bouton 'Tout' montre l'ensemble des recettes de la liste. Cliquer sur
-un autre bouton filtre l'embed pour ne montrer que cette catégorie.
-Tous les boutons sont accessibles à n'importe quel utilisateur (vue
-publique, lecture seule).
+Plus de bouton "Tout" — la vue ouvre directement sur la première catégorie
+disponible et l'utilisateur navigue uniquement entre catégories. Tous les
+boutons restent publics (lecture seule).
 """
 
 from __future__ import annotations
@@ -24,13 +23,12 @@ _MAX_BUTTONS = 24
 class _CategoryButton(discord.ui.Button):
     def __init__(
         self,
-        category: str | None,
+        category: str,
         label: str,
         emoji: str | None,
         style: discord.ButtonStyle,
         count: int,
     ) -> None:
-        # `category=None` = bouton "Tout"
         super().__init__(
             label=f"{label} ({count})",
             emoji=emoji,
@@ -61,7 +59,9 @@ class RecipeListView(discord.ui.View):
         self.item_lookup = item_lookup
         self.title_prefix = title_prefix
         self.color = color
-        self.current_category: str | None = None  # None = "Tout"
+        # Première catégorie ordonnée par CATEGORY_LABELS comme catégorie
+        # par défaut. Reste None uniquement si la liste est vide.
+        self.current_category: str | None = None
 
         self._build_buttons()
 
@@ -77,31 +77,27 @@ class RecipeListView(discord.ui.View):
             if cat:
                 by_cat[cat] = by_cat.get(cat, 0) + 1
 
-        # Bouton "Tout" en premier (style primary par défaut)
-        self.add_item(
-            _CategoryButton(
-                category=None,
-                label="Tout",
-                emoji="📜",
-                style=discord.ButtonStyle.primary,
-                count=len(self.recipes),
-            )
-        )
-
-        # Un bouton par catégorie présente, dans l'ordre du mapping CATEGORY_LABELS
-        # (plus joli qu'un dict order arbitraire). Limite à 24 boutons (1 + 23).
-        added = 1
+        # Un bouton par catégorie présente, dans l'ordre du mapping
+        # CATEGORY_LABELS pour un rendu déterministe.
+        added = 0
         for cat, (label, emoji) in CATEGORY_LABELS.items():
             if cat not in by_cat:
                 continue
             if added >= _MAX_BUTTONS:
                 break
+            # Première catégorie listée = catégorie par défaut affichée
+            if self.current_category is None:
+                self.current_category = cat
             self.add_item(
                 _CategoryButton(
                     category=cat,
                     label=label,
                     emoji=emoji,
-                    style=discord.ButtonStyle.secondary,
+                    style=(
+                        discord.ButtonStyle.primary
+                        if cat == self.current_category
+                        else discord.ButtonStyle.secondary
+                    ),
                     count=by_cat[cat],
                 )
             )
@@ -119,13 +115,15 @@ class RecipeListView(discord.ui.View):
 
     def _filtered_recipes(self) -> list[CraftRecipe]:
         if self.current_category is None:
+            # Cas dégénéré : aucune catégorie connue côté contenu — on
+            # tombe sur la liste brute pour ne pas afficher un embed vide.
             return self.recipes
         return [r for r in self.recipes if self._category_of(r) == self.current_category]
 
     def _build_embed(self) -> discord.Embed:
         filtered = self._filtered_recipes()
         if self.current_category is None:
-            title = f"{self.title_prefix} — Toutes les recettes"
+            title = f"{self.title_prefix}"
         else:
             label, emoji = CATEGORY_LABELS.get(
                 self.current_category, (self.current_category, "📂"),
