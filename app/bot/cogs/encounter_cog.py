@@ -6,6 +6,10 @@ from discord.ext import commands, tasks
 
 from app.application.services.encounter_service import EncounterService
 from app.bot.embeds.battle_summary_embeds import build_rewards_page_embed
+from app.bot.embeds.encounter_combat_log_embed import (
+    build_combat_log_embed,
+    format_turn_action,
+)
 from app.bot.embeds.encounter_embeds import build_encounter_embed
 from app.bot.rendering.fight_scene import compose_players_banner
 from app.bot.runtime.active_encounter import ActiveEncounter
@@ -258,6 +262,25 @@ class EncounterCog(commands.Cog):
         current_output_full = self.generated_dir / current_filename
         current_output_relative = f"generated_encounters/{current_filename}"
 
+        # Message dédié au journal de combat tour par tour. Indépendant du
+        # message de spawn (qui garde l'image et finira sur le BattleSummary).
+        # On y accumule les actions et on poste un lien retour à la fin.
+        mob_name = self.active_encounter.mob_state.name
+        mob_max_hp = self.active_encounter.mob_state.max_hp
+        action_lines: list[str] = []
+        initial_log_embed = build_combat_log_embed(
+            mob_name=mob_name,
+            actions=action_lines,
+            mob_current_hp=mob_max_hp,
+            mob_max_hp=mob_max_hp,
+            players_state=None,
+            finished=False,
+        )
+        try:
+            combat_log_message = await channel.send(embed=initial_log_embed)
+        except discord.HTTPException:
+            combat_log_message = None
+
         for turn_log in result.turn_logs:
             players_stats_for_score: list[Stats] = []
 
@@ -308,6 +331,27 @@ class EncounterCog(commands.Cog):
             )
 
             await message.edit(embed=turn_embed, attachments=[file], view=view)
+
+            # Met à jour le journal de combat séparé : on ajoute la ligne
+            # narrant ce tour et on rafraîchit les PV affichés.
+            if combat_log_message is not None:
+                action_lines.append(format_turn_action(turn_log))
+                log_embed = build_combat_log_embed(
+                    mob_name=mob_name,
+                    actions=action_lines,
+                    mob_current_hp=int(turn_log.mob_state.get("current_hp", 0) or 0),
+                    mob_max_hp=mob_max_hp,
+                    players_state=turn_log.players_state,
+                    finished=False,
+                )
+                try:
+                    await combat_log_message.edit(embed=log_embed)
+                except discord.HTTPException:
+                    # On garde la suite du combat même si une édition échoue
+                    # (rate limit, message supprimé). Le récap final reste
+                    # disponible sur le message de spawn.
+                    combat_log_message = None
+
             await asyncio.sleep(1.5)
 
         if battle_summary is None:
@@ -321,6 +365,26 @@ class EncounterCog(commands.Cog):
             attachments=[],
             view=summary_view,
         )
+
+        # Édition finale du journal de combat : on ajoute le lien vers
+        # le message de spawn, où le BattleSummary affiche les récompenses.
+        if combat_log_message is not None:
+            redirect_url = getattr(message, "jump_url", None)
+            final_log_embed = build_combat_log_embed(
+                mob_name=mob_name,
+                actions=action_lines,
+                mob_current_hp=0
+                if battle_summary.outcome == "victory"
+                else max(0, result.mob_remaining_hp),
+                mob_max_hp=mob_max_hp,
+                players_state=None,
+                finished=True,
+                redirect_url=redirect_url,
+            )
+            try:
+                await combat_log_message.edit(embed=final_log_embed)
+            except discord.HTTPException:
+                pass
 
         self.active_encounter = None
         self.next_spawn_at = datetime.now(UTC) + timedelta(minutes=1)

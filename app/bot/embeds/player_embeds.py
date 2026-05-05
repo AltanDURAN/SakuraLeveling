@@ -13,6 +13,7 @@ def build_player_profile_embed(
     active_class: ClassDefinition | None = None,
     current_hp: int = 0,
     power_score: str = "0",
+    rank_label: str = "F-",
     total_kills: int = 0,
     career_stats: PlayerCareerStats | None = None,
     duel_rank_position: int | None = None,
@@ -31,6 +32,7 @@ def build_player_profile_embed(
     embed.add_field(name="✨ XP", value=_format_int(profile.progression.xp), inline=True)
     embed.add_field(name="💰 Or", value=_format_int(profile.resources.gold), inline=True)
     embed.add_field(name="🔥 Puissance", value=power_score, inline=True)
+    embed.add_field(name="🏅 Rang", value=f"**{rank_label}**", inline=True)
     embed.add_field(
         name="📚 Skill points",
         value=_format_int(profile.progression.skill_points),

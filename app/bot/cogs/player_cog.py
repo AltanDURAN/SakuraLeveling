@@ -169,9 +169,9 @@ class PlayerCog(commands.Cog):
             )
 
             power_score_service = PowerScoreService()
-            formatted_power_score = power_score_service.format_score(
-                power_score_service.calculate_from_stats(stats)
-            )
+            raw_power_score = power_score_service.calculate_from_stats(stats)
+            formatted_power_score = power_score_service.format_score(raw_power_score)
+            rank_label = power_score_service.compute_rank(raw_power_score)
 
             health_state = player_health_repository.get_or_create(
                 player_id=profile.player.id,
@@ -222,6 +222,7 @@ class PlayerCog(commands.Cog):
             active_class=active_class,
             current_hp=regenerated_current_hp,
             power_score=formatted_power_score,
+            rank_label=rank_label,
             total_kills=total_kills,
             career_stats=career_stats,
             duel_rank_position=duel_rank.rank_position if duel_rank else None,
@@ -250,7 +251,7 @@ class PlayerCog(commands.Cog):
         view = InventoryView(target_member.display_name, items)
         await interaction.response.send_message(embed=view._build_embed(), view=view)
 
-    @app_commands.command(name="equipment", description="Afficher un équipement (12 slots, 2 pages)")
+    @app_commands.command(name="equipement", description="Afficher un équipement (12 slots, 2 pages)")
     @app_commands.describe(target="Joueur dont afficher l'équipement (par défaut : vous)")
     async def equipment(
         self,
