@@ -61,7 +61,7 @@ Ordre de lecture conseillé avant patch : `pyproject.toml` → `alembic.ini` →
   - Le `PlayerReward.contribution_share` (0..1) expose la part calculée pour affichage et debug.
 - **Métriques de combat** trackées par `PartyCombatService` dans `PlayerContribution` : `damage_dealt`, `damage_tanked`, `hp_healed` (heal actif uniquement, pas la régen), `survived`, `final_hp`.
 - **Affichage du résultat** : deux messages distincts pendant un encounter naturel.
-  - **Message de spawn** : reçoit le `BattleSummaryView` à la fin (paginé 2 pages : Récompenses ↔ Détails).
+  - **Message de spawn** : reçoit le `BattleSummaryView` à la fin (paginé 2 pages : Récompenses ↔ Détails). La page Détails affiche en tête un graphique ASCII de la **part de victoire** (médailles 🥇🥈🥉 pour le top 3, barre de progression `████░░` proportionnelle à `contribution_share`). Helper `_build_contribution_chart` dans [`battle_summary_embeds.py`](app/bot/embeds/battle_summary_embeds.py).
   - **Message de journal** : envoyé au début du combat, édité à chaque tour avec la ligne d'action (qui frappe qui, dégâts, crit, esquive) + PV courants. À la fin du combat, ajoute en tête un lien `jump_url` vers le message de spawn (où sont les récompenses). Cf. [encounter_combat_log_embed.py](app/bot/embeds/encounter_combat_log_embed.py).
 - **Rang du joueur** : dérivé du `power_score` via `PowerScoreService.compute_rank` (paliers stricts F- → SSS+, chaque lettre couvre 3 sous-rangs à 2×/5×/10× de la base puis saute d'un facteur 20×). Affiché dans `/profile`. Pas persisté en DB — toujours recalculé.
 
@@ -95,7 +95,7 @@ git checkout main
 | `/admin spawn_encounter [mob_code]` | `admin_cog` | **Admin uniquement** — spawn immédiat d'un encounter (random ou mob spécifique) |
 | `/admin end_encounter` | `admin_cog` | **Admin uniquement** — annule l'encounter actif |
 | `/admin shop_add`, `/admin shop_set`, `/admin shop_remove`, `/admin shop_set_stock` | `admin_cog` | **Admin uniquement** — gestion du shop (autocomplete sur item_code) |
-| `/shop`, `/buy <item> <qty>`, `/sell <item> <qty>` | `shop_cog` | Shop joueur (achat prix fixe, vente prix dynamique selon saturation) |
+| `/shop`, `/buy <item> <qty>`, `/sell <item> <qty>` | `shop_cog` | Shop joueur paginé par catégorie (achat prix fixe, vente prix dynamique selon saturation) |
 | `/skill [target]` | `skill_cog` | Arbre de compétences avec image, boutons Investir/Vue web/Reset (cooldown 7j) |
 | `/use <item_code>` | `player_cog` | Utiliser un consommable (potions de soin I/II/III en V1) |
 | `/help [command]` | `help_cog` | Liste dynamique des commandes (autocomplete) ou détail d'une commande |
@@ -174,7 +174,10 @@ Pour un nouveau cog : si les commandes restent dans le canal beta → poser `int
 - **Bonus injectés** : `StatsService` accepte un `skill_bonuses: SkillBonuses | None` (4e étage, après équipement/classe, avant les caps). `LootService.generate_loot` accepte un `drop_rate_multiplier`. `EncounterService.apply_rewards` et `FightMobUseCase` chargent les bonus du joueur (xp/gold/drop) avant d'appliquer les récompenses.
 - **L'or `/admin give_gold` n'incrémente pas `gold_earned_total`** (career stats), idem les bonus de l'arbre **ne s'appliquent pas** sur l'or admin (pas de double-comptage artificiel).
 - **Reset** : `ResetSkillTreeUseCase` (cooldown 7j) restitue tous les points dépensés via `compute_total_refund`. `/admin reset_player` purge aussi les allocations + cooldown.
-- **Webapp** : FastAPI mono-service ([`webapp/`](webapp/)), même rendu SVG que le bot. `python -m webapp.main` → http://localhost:8000. Routes : `/skill/<discord_id>` (HTML interactif zoom/pan/hover) + `/api/skill/<discord_id>` (JSON).
+- **Webapp** : FastAPI mono-service ([`webapp/`](webapp/)), même rendu SVG que le bot. `python -m webapp.main` → http://localhost:8000. Routes :
+  - `/skill/<discord_id>` (HTML interactif zoom/pan/hover) + `/api/skill/<discord_id>` (JSON). Le tooltip affiche désormais le **coût du prochain niveau** et la liste des **prérequis** avec leur état (✅ rempli / ❌ manquant). Côté SVG, les arêtes parent → enfant deviennent rouges quand le parent n'est pas encore investi (signal visuel pour guider le joueur vers ce qu'il faut débloquer en premier).
+  - `/bestiary` (HTML public, vitrine du jeu) + `/api/bestiary` (JSON). Liste tous les mobs avec stats / drops / power score / rang calculé.
+- **Bannière `/profile`** ([`profile_banner.py`](app/bot/rendering/profile_banner.py)) : Pillow génère un PNG 1024×480 (avatar + nom + niveau + classe + badge de rang coloré + power score + 6 stats principales). Attaché en `embed.set_image(attachment://...)`. Si la génération échoue, fallback silencieux sur l'embed texte seul. Les fichiers sont stockés dans `assets/generated_profiles/` (gitignoré).
 - **Rendu PNG Discord** : SVG → PNG via cairosvg, pas de Chromium ni Playwright.
 
 ## Système de consommables

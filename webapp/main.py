@@ -28,8 +28,10 @@ from fastapi.templating import Jinja2Templates
 
 from app.application.use_cases.get_skill_tree_state import GetSkillTreeStateUseCase
 from app.bot.rendering.skill_tree_renderer import render_to_svg
+from app.domain.services.power_score_service import PowerScoreService
 from app.domain.services.skill_tree_service import SkillTreeService
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
+from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.player_skill_allocation_repository import (
     PlayerSkillAllocationRepository,
@@ -100,6 +102,22 @@ async def skill_page(request: Request, discord_id: int):
 
     nodes_payload = []
     for node in definition.skills.values():
+        # Pour chaque prérequis, on enrichit avec son nom + niveau courant
+        # afin que le tooltip puisse afficher "Prérequis : <X> ✅/❌".
+        prereqs_with_state = []
+        for prereq_code in node.prerequisites:
+            prereq_node = definition.get(prereq_code)
+            if prereq_node is None:
+                continue
+            prereq_level = state.allocations.get(prereq_code, 0)
+            prereqs_with_state.append({
+                "code": prereq_code,
+                "name": prereq_node.name,
+                "icon": prereq_node.icon,
+                "current_level": prereq_level,
+                "satisfied": prereq_level > 0,
+            })
+
         nodes_payload.append(
             {
                 "code": node.code,
@@ -111,6 +129,7 @@ async def skill_page(request: Request, discord_id: int):
                 "state": service.compute_node_state(state.allocations, node.code),
                 "costs": node.costs,
                 "prerequisites": node.prerequisites,
+                "prereqs_detail": prereqs_with_state,
                 "effects": [
                     {"type": e.type, "values": e.values} for e in node.effects
                 ],
@@ -126,6 +145,80 @@ async def skill_page(request: Request, discord_id: int):
             "nodes": nodes_payload,
         },
     )
+
+
+@app.get("/bestiary", response_class=HTMLResponse)
+async def bestiary_page(request: Request):
+    """Catalogue public des monstres du jeu."""
+    pss = PowerScoreService()
+
+    with get_db_session() as session:
+        mobs = MobRepository(session).list_all()
+
+    # Tri : famille puis PV décroissant pour avoir une lecture cohérente
+    mobs_sorted = sorted(
+        mobs, key=lambda m: (m.family or "zzz", -m.max_hp),
+    )
+
+    rendered_mobs = []
+    for m in mobs_sorted:
+        score = pss.calculate_from_mob(m)
+        rendered_mobs.append({
+            "code": m.code,
+            "name": m.name,
+            "family": m.family,
+            "description": m.description,
+            "max_hp": m.max_hp,
+            "attack": m.attack,
+            "defense": m.defense,
+            "speed": m.speed,
+            "crit_chance": m.crit_chance,
+            "crit_damage": m.crit_damage,
+            "dodge": m.dodge,
+            "xp_reward": m.xp_reward,
+            "gold_reward": m.gold_reward,
+            "loot_table": m.loot_table or [],
+            "power_score": pss.format_score(score),
+            "rank": pss.compute_rank(score),
+        })
+
+    return templates.TemplateResponse(
+        request,
+        "bestiary.html",
+        context={"mobs": rendered_mobs},
+    )
+
+
+@app.get("/api/bestiary")
+async def bestiary_api():
+    pss = PowerScoreService()
+    with get_db_session() as session:
+        mobs = MobRepository(session).list_all()
+    return {
+        "mobs": [
+            {
+                "code": m.code,
+                "name": m.name,
+                "family": m.family,
+                "description": m.description,
+                "max_hp": m.max_hp,
+                "attack": m.attack,
+                "defense": m.defense,
+                "speed": m.speed,
+                "crit_chance": m.crit_chance,
+                "crit_damage": m.crit_damage,
+                "dodge": m.dodge,
+                "hp_regeneration": m.hp_regeneration,
+                "xp_reward": m.xp_reward,
+                "gold_reward": m.gold_reward,
+                "spawn_weight": m.spawn_weight,
+                "loot_table": m.loot_table,
+                "power_score": pss.calculate_from_mob(m),
+                "rank": pss.compute_rank(pss.calculate_from_mob(m)),
+            }
+            for m in mobs
+        ]
+    }
 
 
 @app.get("/api/skill/{discord_id}")
