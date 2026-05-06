@@ -111,6 +111,79 @@ def _rank_color(rank_label: str) -> tuple[int, int, int]:
     return _RANK_BASE_COLOR.get(rank_label[0].upper(), (140, 140, 145))
 
 
+def _draw_sakura_petals(
+    base: Image.Image,
+    seed: int = 42,
+    count: int = 28,
+) -> None:
+    """Décor de fond : pétales de sakura roses dispersés en filigrane.
+
+    Chaque pétale est dessiné à la main (forme de goutte / pétale stylisé)
+    avec une rotation aléatoire et une couleur rose pâle à très basse
+    opacité — assez visible pour donner un sentiment "anime/sakura" mais
+    sans gêner la lisibilité du contenu par-dessus.
+
+    `seed` : permet d'avoir un layout déterministe par joueur si on
+    passe le player_id en seed. Sinon (42 par défaut) tous les profils
+    auront la même disposition.
+    """
+    import random
+    rng = random.Random(seed)
+    w, h = base.size
+    overlay = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+
+    # Palette : roses pâles avec légère variation pour texture
+    palettes = [
+        (255, 200, 215, 36),
+        (255, 180, 200, 30),
+        (255, 220, 230, 28),
+        (250, 170, 200, 32),
+    ]
+
+    for _ in range(count):
+        size = rng.randint(36, 72)
+        cx = rng.randint(-size // 2, w + size // 2)
+        cy = rng.randint(-size // 2, h + size // 2)
+        rotation = rng.randint(0, 359)
+        color = rng.choice(palettes)
+
+        # Petit canvas pour le pétale + rotation
+        pad = int(size * 1.4)
+        petal = Image.new("RGBA", (pad, pad), (0, 0, 0, 0))
+        pd = ImageDraw.Draw(petal)
+        # Forme : 5 ellipses fines superposées en éventail (mini-fleur)
+        # → look "fleur de cerisier" plutôt qu'un seul pétale ovale
+        center_x = pad // 2
+        center_y = pad // 2
+        petal_w = size // 3
+        petal_h = int(size * 0.55)
+        for i in range(5):
+            import math
+            angle = math.radians(-90 + i * 72)
+            ex = center_x + int(size * 0.18 * math.cos(angle))
+            ey = center_y + int(size * 0.18 * math.sin(angle))
+            # Ellipse alignée verticalement, on fait pivoter le canvas
+            # entier après. C'est suffisant pour donner une silhouette
+            # de fleur 5 pétales.
+            pd.ellipse(
+                (
+                    ex - petal_w // 2,
+                    ey - petal_h // 2,
+                    ex + petal_w // 2,
+                    ey + petal_h // 2,
+                ),
+                fill=color,
+            )
+
+        rotated = petal.rotate(rotation, resample=Image.BICUBIC, expand=False)
+        overlay.alpha_composite(
+            rotated,
+            (cx - rotated.width // 2, cy - rotated.height // 2),
+        )
+
+    base.alpha_composite(overlay)
+
+
 def _add_vignette(base: Image.Image, intensity: float = 0.55) -> None:
     """Assombrit progressivement les bords/coins pour donner du relief
     à l'image. Itère sur des rectangles concentriques avec alpha croissant.
@@ -184,6 +257,28 @@ def _draw_text_with_shadow(
 
 def _format_int(n: int) -> str:
     return f"{n:,}".replace(",", " ")
+
+
+def _format_compact(n: int) -> str:
+    """Format compact pour grands nombres : 1234 -> 1.2K, 12345 -> 12K,
+    1234567 -> 1.2M, etc. Évite les dépassements de cards. Les valeurs
+    < 1000 sont affichées en clair pour rester précises."""
+    n = int(n)
+    if n < 1_000:
+        return str(n)
+    if n < 10_000:
+        # 1234 -> "1.2K", 9999 -> "9.9K". On enlève le ".0" trailing.
+        s = f"{n / 1_000:.1f}".rstrip("0").rstrip(".")
+        return f"{s}K"
+    if n < 1_000_000:
+        return f"{n // 1_000}K"
+    if n < 10_000_000:
+        s = f"{n / 1_000_000:.1f}".rstrip("0").rstrip(".")
+        return f"{s}M"
+    if n < 1_000_000_000:
+        return f"{n // 1_000_000}M"
+    s = f"{n / 1_000_000_000:.1f}".rstrip("0").rstrip(".")
+    return f"{s}B"
 
 
 def _draw_panel(
@@ -266,22 +361,53 @@ def _draw_xp_bar(
     origin: tuple[int, int],
     size: tuple[int, int],
     progress: float,
+    *,
+    seed: int = 0,
 ) -> None:
-    """Barre d'XP horizontale avec dégradé + petit halo de remplissage."""
+    """Barre d'XP horizontale stylée :
+       - fond sombre + bord blanc
+       - remplissage gradient bleu → cyan
+       - halo extérieur lumineux autour de la portion remplie
+       - particules / sparkles dispersés sur le rempli
+       - tête de progression brillante
+    """
+    import random
     progress = max(0.0, min(1.0, progress))
     overlay = Image.new("RGBA", size, (0, 0, 0, 0))
     od = ImageDraw.Draw(overlay)
 
+    # Fond sombre arrondi
     od.rounded_rectangle(
         [(0, 0), (size[0] - 1, size[1] - 1)],
         radius=size[1] // 2,
         fill=COLORS["xp_bar_bg"],
-        outline=(255, 255, 255, 50),
+        outline=(255, 255, 255, 60),
         width=1,
     )
 
     fill_w = int((size[0] - 4) * progress)
     if fill_w > 0:
+        # Halo extérieur autour de la portion remplie : assombrissement
+        # progressif sur 6 rangées au-dessus et au-dessous, qui simule
+        # un effet "néon" cyan.
+        glow = Image.new("RGBA", size, (0, 0, 0, 0))
+        gld = ImageDraw.Draw(glow)
+        glow_color = (100, 200, 255)
+        for thickness in range(6, 0, -1):
+            alpha = int(20 + (6 - thickness) * 8)
+            gld.rounded_rectangle(
+                [
+                    (2 - thickness, 2 - thickness),
+                    (fill_w + 2 + thickness, size[1] - 3 + thickness),
+                ],
+                radius=(size[1] - 4) // 2 + thickness,
+                fill=None,
+                outline=(glow_color[0], glow_color[1], glow_color[2], alpha),
+                width=1,
+            )
+        overlay.alpha_composite(glow)
+
+        # Remplissage gradient
         gradient = Image.new("RGBA", (fill_w, size[1] - 4), (0, 0, 0, 0))
         gd = ImageDraw.Draw(gradient)
         c1 = COLORS["xp_bar_fill_start"]
@@ -292,6 +418,18 @@ def _draw_xp_bar(
             g = int(c1[1] + (c2[1] - c1[1]) * ratio)
             b = int(c1[2] + (c2[2] - c1[2]) * ratio)
             gd.line((x, 0, x, size[1] - 4), fill=(r, g, b, 255))
+
+        # Bande lumineuse horizontale en haut (effet "shine")
+        shine_h = max(2, (size[1] - 4) // 4)
+        for sy in range(shine_h):
+            shine_alpha = int(140 - sy * 20)
+            if shine_alpha <= 0:
+                break
+            gd.line(
+                (0, sy, fill_w - 1, sy),
+                fill=(255, 255, 255, shine_alpha),
+            )
+
         mask = Image.new("L", gradient.size, 0)
         ImageDraw.Draw(mask).rounded_rectangle(
             [(0, 0), (gradient.size[0] - 1, gradient.size[1] - 1)],
@@ -300,6 +438,50 @@ def _draw_xp_bar(
         )
         gradient.putalpha(mask)
         overlay.alpha_composite(gradient, (2, 2))
+
+        # Particules / sparkles : petits points blancs aléatoires
+        # dispersés sur la portion remplie. Donne un effet "magique".
+        rng = random.Random(seed)
+        n_particles = max(3, fill_w // 35)
+        for _ in range(n_particles):
+            px = rng.randint(8, max(8, fill_w - 4))
+            py = rng.randint(4, size[1] - 6)
+            radius = rng.choice([1, 1, 2])
+            alpha = rng.randint(160, 230)
+            od.ellipse(
+                (px - radius, py - radius, px + radius, py + radius),
+                fill=(255, 255, 255, alpha),
+            )
+
+        # Tête de progression : disque brillant à l'extrémité droite du
+        # rempli, simule un "bulbe" de lumière qui suit la barre.
+        head_x = fill_w + 2
+        head_r = (size[1] - 4) // 2 + 2
+        # Halo doux autour de la tête
+        head_overlay = Image.new("RGBA", size, (0, 0, 0, 0))
+        hod = ImageDraw.Draw(head_overlay)
+        for r_offset in range(6, 0, -1):
+            alpha = int(15 + (6 - r_offset) * 18)
+            hod.ellipse(
+                (
+                    head_x - head_r - r_offset,
+                    size[1] // 2 - head_r - r_offset,
+                    head_x + head_r + r_offset,
+                    size[1] // 2 + head_r + r_offset,
+                ),
+                fill=(180, 230, 255, alpha),
+            )
+        # Disque blanc plein au cœur de la tête
+        hod.ellipse(
+            (
+                head_x - head_r // 2,
+                size[1] // 2 - head_r // 2,
+                head_x + head_r // 2,
+                size[1] // 2 + head_r // 2,
+            ),
+            fill=(255, 255, 255, 240),
+        )
+        overlay.alpha_composite(head_overlay)
 
     base.alpha_composite(overlay, origin)
 
@@ -361,72 +543,156 @@ def _draw_rank_badge(
     rank_font,
     pwr_font,
 ) -> None:
-    """Médaille de rang avec halo coloré + anneau + cercle intérieur sombre
-    + lettre du rang + 'PWR XXX' en petit dessous. Le halo se rend dans
-    une plus grande image autour du badge pour donner un effet "néon".
-    Tout est contenu visuellement dans la zone réservée au badge.
+    """Badge en forme de fleur de sakura : 5 pétales arrondis disposés à
+    72° autour d'un cercle central qui contient le rang. Le power_score
+    s'affiche sous le rang en format ``[score]``.
+
+    Les pétales prennent la couleur du rang ; le centre est sombre pour
+    faire ressortir la lettre. Halo coloré autour pour l'effet "néon".
     """
+    import math
     rc = _rank_color(rank_label)
 
-    # Image plus grande que le badge pour accueillir le halo.
-    halo_extra = 22
+    # Canvas légèrement plus grand pour les pétales qui dépassent et le halo
+    halo_extra = 26
     canvas_size = size + 2 * halo_extra
     canvas = Image.new("RGBA", (canvas_size, canvas_size), (0, 0, 0, 0))
-
-    # Halo : plusieurs cercles concentriques décroissants en alpha.
     cd = ImageDraw.Draw(canvas)
-    for i in range(6, 0, -1):
+
+    cx = halo_extra + size // 2
+    cy = halo_extra + size // 2
+
+    # ---- Halo extérieur ----
+    for i in range(7, 0, -1):
         radius_extra = i * 4
-        alpha = int(30 + (6 - i) * 12)  # plus dense au bord du badge
+        alpha = int(20 + (7 - i) * 11)
         cd.ellipse(
-            (
-                halo_extra - radius_extra,
-                halo_extra - radius_extra,
-                halo_extra + size - 1 + radius_extra,
-                halo_extra + size - 1 + radius_extra,
-            ),
+            (cx - size // 2 - radius_extra,
+             cy - size // 2 - radius_extra,
+             cx + size // 2 + radius_extra,
+             cy + size // 2 + radius_extra),
             fill=(rc[0], rc[1], rc[2], alpha),
         )
 
-    # Anneau extérieur coloré
+    # ---- 5 pétales en fleur de sakura ----
+    # Pétales rose/blanc style fleur de cerisier authentique. Le rang
+    # se signale par la couleur de l'anneau (cf. avatar) et du halo
+    # autour du badge — la fleur reste reconnaissable comme "sakura"
+    # même pour les hauts rangs.
+    petal_color = (255, 200, 220, 250)  # rose pâle
+    petal_outline = (255, 235, 240, 220)  # blanc rosé pour le contour
+    # Highlight ajoute un soupçon de rouge/rose chaud en haut du pétale
+    highlight = (255, 170, 195, 130)
+
+    petal_w = int(size * 0.42)
+    petal_h = int(size * 0.55)
+    # Distance du centre du pétale au centre de la fleur
+    distance = int(size * 0.28)
+
+    for i in range(5):
+        angle_deg = -90 + i * 72  # premier pétale en haut, sens horaire
+        angle_rad = math.radians(angle_deg)
+        px = cx + int(distance * math.cos(angle_rad))
+        py = cy + int(distance * math.sin(angle_rad))
+
+        # On rend chaque pétale dans une image temporaire qu'on tourne.
+        pad = max(petal_w, petal_h) * 2
+        petal = Image.new("RGBA", (pad, pad), (0, 0, 0, 0))
+        pd = ImageDraw.Draw(petal)
+        # Pétale = ellipse haute + encoche au sommet pour effet "fleur".
+        # On dessine 2 ellipses se chevauchant légèrement avec un dégradé.
+        pcx, pcy = pad // 2, pad // 2
+        pd.ellipse(
+            (pcx - petal_w // 2, pcy - petal_h // 2,
+             pcx + petal_w // 2, pcy + petal_h // 2),
+            fill=petal_color,
+            outline=petal_outline,
+            width=3,
+        )
+        # Touche rosée plus chaude au sommet du pétale (effet anime)
+        inner_w = petal_w // 2
+        inner_h = petal_h // 2
+        pd.ellipse(
+            (pcx - inner_w // 2, pcy - inner_h - 4,
+             pcx + inner_w // 2, pcy + inner_h // 2 - 4),
+            fill=highlight,
+        )
+
+        # Rotation : pointer la pointe vers l'extérieur. Le pétale est
+        # vertical par défaut (long axis Y), donc l'angle de rotation
+        # pour qu'il pointe à `angle_deg` du centre est `angle_deg + 90`.
+        rotated = petal.rotate(
+            -(angle_deg + 90),
+            resample=Image.BICUBIC,
+            expand=True,
+        )
+        canvas.alpha_composite(
+            rotated,
+            (px - rotated.width // 2, py - rotated.height // 2),
+        )
+
+    # ---- Cercle central avec rang ----
+    inner_radius = int(size * 0.30)
+    # Disque foncé semi-transparent
     cd.ellipse(
-        (halo_extra, halo_extra, halo_extra + size - 1, halo_extra + size - 1),
-        fill=(rc[0], rc[1], rc[2], 245),
-        outline=(255, 255, 255, 255),
-        width=6,
-    )
-    # Cercle intérieur foncé
-    inset = 14
-    cd.ellipse(
-        (
-            halo_extra + inset,
-            halo_extra + inset,
-            halo_extra + size - 1 - inset,
-            halo_extra + size - 1 - inset,
-        ),
-        fill=(0, 0, 0, 220),
+        (cx - inner_radius, cy - inner_radius,
+         cx + inner_radius, cy + inner_radius),
+        fill=(20, 18, 30, 235),
+        outline=(255, 255, 255, 220),
+        width=3,
     )
 
-    # Lettre du rang — légèrement remontée pour le PWR en dessous
-    text_w = cd.textlength(rank_label, font=rank_font)
-    text_x = halo_extra + (size - text_w) // 2
-    text_y = halo_extra + int(size * 0.10)
+    # ---- Lettre du rang centrée ----
+    # Adapte la taille de la police au nombre de caractères pour que
+    # même "SSS+" tienne dans le cercle central.
+    n_chars = len(rank_label)
+    if n_chars <= 1:
+        adaptive_size = 78
+    elif n_chars == 2:
+        adaptive_size = 66
+    elif n_chars == 3:
+        adaptive_size = 52
+    else:
+        adaptive_size = 42
+    adaptive_rank_font = _try_font(adaptive_size, bold=True)
+
+    rank_w = cd.textlength(rank_label, font=adaptive_rank_font)
+    rank_x = cx - rank_w // 2
+    # Lettre placée plus haut pour laisser de la place au score en dessous
+    rank_y = cy - int(adaptive_size * 0.78)
     cd.text(
-        (text_x, text_y), rank_label, font=rank_font,
+        (rank_x + 2, rank_y + 2),
+        rank_label, font=adaptive_rank_font,
+        fill=(0, 0, 0, 200),
+    )
+    cd.text(
+        (rank_x, rank_y),
+        rank_label, font=adaptive_rank_font,
         fill=COLORS["rank_text"],
     )
 
-    # "PWR XXX" en petit, sous la lettre, centré, doré
-    pwr_text = f"PWR  {power_score}"
-    pwr_w = cd.textlength(pwr_text, font=pwr_font)
-    pwr_x = halo_extra + (size - pwr_w) // 2
-    pwr_y = halo_extra + int(size * 0.66)
+    # ---- Score sous le rang : format [XXX] doré ----
+    score_text = f"[{power_score}]"
+    score_w = cd.textlength(score_text, font=pwr_font)
+    score_x = cx - score_w // 2
+    # Espace clair sous la lettre du rang : 12% du badge size, peu importe
+    # la taille adaptative de la lettre (évite chevauchement quand la
+    # lettre est grande "F" comme quand elle est petite "SSS+").
+    score_y = cy + int(size * 0.06)
     cd.text(
-        (pwr_x, pwr_y), pwr_text, font=pwr_font,
+        (score_x + 1, score_y + 1),
+        score_text, font=pwr_font,
+        fill=(0, 0, 0, 200),
+    )
+    cd.text(
+        (score_x, score_y),
+        score_text, font=pwr_font,
         fill=COLORS["gold_color"],
     )
 
-    base.alpha_composite(canvas, (origin[0] - halo_extra, origin[1] - halo_extra))
+    base.alpha_composite(
+        canvas, (origin[0] - halo_extra, origin[1] - halo_extra),
+    )
 
 
 def _draw_section_header(
@@ -494,6 +760,11 @@ def compose_profile_banner(
     active_title: str | None = None,
 ) -> None:
     bg = _gradient_background(WIDTH, HEIGHT)
+
+    # Pétales de sakura en filigrane — décor "anime" subtil avant tout
+    # ce qui sera dessiné par-dessus. Seed dérivé du nom pour que chaque
+    # profil ait sa disposition unique mais stable d'un appel à l'autre.
+    _draw_sakura_petals(bg, seed=hash(display_name) & 0xFFFF)
 
     # Vignette douce dans les 4 coins pour ambiance "vue plongeante",
     # plus pro qu'un fond plat dégradé. On la rend très subtile pour
@@ -576,7 +847,10 @@ def compose_profile_banner(
     raw_progress = (xp_current / xp_required) if xp_required > 0 else 0.0
     progress = min(1.0, max(0.0, raw_progress))
     pct = int(round(progress * 100))
-    _draw_xp_bar(bg, (info_x, bar_y), (bar_w, bar_h), progress)
+    _draw_xp_bar(
+        bg, (info_x, bar_y), (bar_w, bar_h), progress,
+        seed=hash(display_name) & 0xFFFF,
+    )
     if xp_required > 0:
         xp_text = f"⚡ XP : {_format_int(xp_current)} / {_format_int(xp_required)}  ({pct}%)"
     else:
@@ -589,7 +863,7 @@ def compose_profile_banner(
     # Ligne d'infos compactes (or, daily streak, duel, skill points)
     bottom_info_y = bar_y + bar_h + xp_label_font.size + 22
     parts: list[tuple[str, tuple[int, int, int, int]]] = [
-        (f"💰 {_format_int(gold)} or", COLORS["gold_color"]),
+        (f"💰 {_format_compact(gold)} or", COLORS["gold_color"]),
     ]
     if daily_streak > 0:
         parts.append((f"🔥 Daily Streak : {daily_streak}", (255, 170, 90, 255)))
@@ -652,10 +926,13 @@ def compose_profile_banner(
     card_w = available // grid_cols
     card_h = 130
 
+    # Combat : valeurs principales en format compact (PV/Atk/Def peuvent
+    # devenir gros en endgame), pourcentages restent en chiffres pleins
+    # car ils sont bornés [0..200] selon les caps.
     combat_cards = [
-        ("❤️", "PV max", _format_int(stats.get("max_hp", 0)), "hp"),
-        ("⚔️", "Attaque", _format_int(stats.get("attack", 0)), "atk"),
-        ("🛡️", "Défense", _format_int(stats.get("defense", 0)), "def"),
+        ("❤️", "PV max", _format_compact(int(stats.get("max_hp", 0))), "hp"),
+        ("⚔️", "Attaque", _format_compact(int(stats.get("attack", 0))), "atk"),
+        ("🛡️", "Défense", _format_compact(int(stats.get("defense", 0))), "def"),
         ("💨", "Vitesse", str(stats.get("speed", 0)), "speed"),
         ("🎯", "Crit %", f"{int(stats.get('crit_chance', 0))}%", "crit_chance"),
         ("💥", "Crit dmg", f"{int(stats.get('crit_damage', 100))}%", "crit_damage"),
@@ -692,25 +969,26 @@ def compose_profile_banner(
     # value_font 40 + label_font 22. "Dégâts encaissés" est trop long, on
     # raccourcit à "Dégâts subis" ; on supprime "totales" sur "Esquives"
     # (déjà dans la section "carrière" donc implicite).
+    # Toutes les valeurs en compact (1.2K, 22K, 1.5M…) — assure que les
+    # chiffres tiennent dans la card à value_font 42, même quand un joueur
+    # accumule des millions de dégâts ou d'or.
     career_cards = [
         ("💀", "Tués",
-         _format_int(int(career.get("monsters_killed", 0))), "kills"),
+         _format_compact(int(career.get("monsters_killed", 0))), "kills"),
         ("⚔️", "Combats",
-         _format_int(fought), "combats"),
+         _format_compact(fought), "combats"),
         ("💰", "Or amassé",
-         _format_int(int(career.get("gold_earned_total", 0))), "gold"),
+         _format_compact(int(career.get("gold_earned_total", 0))), "gold"),
         ("💢", "Dmg inf.",
-         _format_int(int(career.get("damage_dealt_total", 0))), "dmg_dealt"),
+         _format_compact(int(career.get("damage_dealt_total", 0))), "dmg_dealt"),
         ("🛡️", "Dmg subis",
-         _format_int(int(career.get("damage_tanked_total", 0))), "dmg_tanked"),
+         _format_compact(int(career.get("damage_tanked_total", 0))), "dmg_tanked"),
         ("💚", "PV soignés",
-         _format_int(int(career.get("hp_healed_total", 0))), "healed"),
+         _format_compact(int(career.get("hp_healed_total", 0))), "healed"),
         ("🌀", "Esquives",
-         _format_int(int(career.get("dodges_total", 0))), "dodge"),
-        # "87 / 20" plutôt que "87V / 20D" : tient dans la card à value_font
-        # 42, et le label "V / D" + l'icône 🏆 rendent l'ordre clair.
+         _format_compact(int(career.get("dodges_total", 0))), "dodge"),
         ("🏆", "V / D",
-         f"{won} / {lost}", "trophy"),
+         f"{_format_compact(won)} / {_format_compact(lost)}", "trophy"),
     ]
 
     for idx, (emoji, label, value, accent_key) in enumerate(career_cards):
