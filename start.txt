@@ -37,3 +37,9 @@ git push
 git checkout main
 
 ##################
+
+##########################
+Pour régénérer sakura_content.xlsx après un changement de JSON :
+
+.venv/bin/python scripts/export_content_spreadsheet.py
+##########################
