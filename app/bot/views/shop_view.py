@@ -128,9 +128,15 @@ class ShopView(discord.ui.View):
         self.current_page_label = ""
         self.current_page_emoji = ""
 
+        # On ne crée AUCUN bouton pour les catégories vides — pas de
+        # "Armes (0)" qui ne sert qu'à occuper de la place. Ça maintient
+        # la vue toujours utile : seuls les onglets ayant au moins un
+        # article apparaissent.
         for label, emoji, cat_set in _PAGES:
             page_count = sum(counts.get(c, 0) for c in cat_set)
-            if page_count > 0 and not self.current_categories:
+            if page_count == 0:
+                continue
+            if not self.current_categories:
                 self.current_categories = cat_set
                 self.current_page_label = label
                 self.current_page_emoji = emoji

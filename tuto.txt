@@ -25,27 +25,31 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     profil d'un autre joueur via le sélecteur Discord (ex : /profile @Altan).
     Au premier usage sans target, votre profil est créé automatiquement.
 
-    Le profil contient :
-        • Une **bannière PNG** générée par Pillow, affichée en haut de
-          l'embed : avatar circulaire, nom, niveau, or, XP, classe, badge
-          coloré du rang (F-/F/F+/E-/.../SSS+) et stats de combat en bas.
-          Si la génération de l'image échoue (cas extrême), l'embed
-          textuel suffit — pas de régression.
-        • Niveau, XP, or, score de puissance, **rang** (F- → SSS+), classe active
-        • Stats de combat (attaque, défense, vitesse, crit %, esquive %, régen)
-        • Daily Streak actuelle 🔥
+    Le profil est rendu en UNE SEULE IMAGE PNG (pas de fields textuels
+    dupliqués) générée à la volée par Pillow. La bannière contient :
+        • Header : avatar circulaire, titre actif (s'il y en a un), nom,
+          niveau, classe, badge de rang coloré (F- → SSS+), score de
+          puissance (PWR).
+        • Barre d'XP : "XP : 152 / 1 200 (13%)" avec remplissage gradient.
+        • Ligne d'infos : or actuel, daily streak, rang duel 1v1
+          (#N — WV-DD), skill points libres.
+        • Section "Stats de combat" : 8 cards (PV max, Atk, Def, Vitesse,
+          Crit chance, Crit dégâts, Esquive, Régen / min).
+        • Section "Statistiques de carrière" : 8 cards (Monstres tués,
+          Combats avec taux de réussite, Or amassé, Dégâts infligés,
+          Dégâts encaissés, PV soignés, Esquives totales, Victoires/Défaites).
 
     Rangs : tirés du score de puissance, paliers stricts F-/F/F+, E-/E/E+, …,
     SSS-/SSS/SSS+. Ex : <200 = F-, <500 = F, <1000 = F+, <2000 = E-, etc.,
     chaque lettre couvre 3 sous-rangs avant de basculer sur la suivante.
-        • Statistiques de carrière (cumulées sur la durée de vie du profil) :
-            - Monstres tués au total
-            - Combats : nombre total, victoires / défaites, taux de réussite
-            - Or amassé (all-time, indépendant de l'or actuel)
-            - Dégâts infligés / encaissés / PV régénérés cumulés
-        Note : ces statistiques de carrière n'augmentent que par le jeu
-        (combats, daily, quêtes, ventes au shop). L'or donné par /admin
-        give_gold n'est PAS comptabilisé dans le total amassé.
+
+    Note : ces statistiques de carrière n'augmentent que par le jeu
+    (combats, daily, quêtes, ventes au shop). L'or donné par /admin
+    give_gold n'est PAS comptabilisé dans le total amassé.
+
+    En cas d'échec de la génération d'image (cas extrême), un embed
+    textuel "fallback" plein de fields prend le relais — le profil reste
+    accessible, juste moins joli.
 
 /inventory [target]
     Affiche votre inventaire (consommables et ressources uniquement).
@@ -371,10 +375,12 @@ Kill counter : tous les survivants reçoivent +1 sur le compteur du mob tué.
 --------------------------------------------------------------------------------
 
 /shop
-    Affiche les articles disponibles à la boutique, paginé par catégorie
-    (boutons : Armes, Boucliers, Armure, Accessoires, Consommables, Ressources).
-    Ouvre par défaut sur la première catégorie qui contient au moins un
-    article. Pour chaque entrée :
+    Affiche les articles disponibles à la boutique, paginé par catégorie.
+    Seuls les onglets ayant au moins un article apparaissent — pas de
+    bouton "Armes (0)" inutile si aucune arme n'est en vente. Boutons
+    possibles : Armes, Boucliers, Armure, Accessoires, Consommables,
+    Ressources. Ouvre par défaut sur la première catégorie disponible.
+    Pour chaque entrée :
         • Prix d'achat (fixe, défini par l'admin)
         • Prix de vente actuel (dynamique, dépend du stock)
         • Stock actuel et taux de saturation

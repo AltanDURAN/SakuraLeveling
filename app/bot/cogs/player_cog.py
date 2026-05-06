@@ -236,11 +236,13 @@ class PlayerCog(commands.Cog):
             active_title=active_title_name,
         )
 
-        # Bannière Pillow attachée en image de l'embed. Best effort —
-        # si la génération de l'image échoue, on envoie l'embed seul
-        # (pas de régression du /profile).
+        # Bannière Pillow CONTIENT TOUT le profil — l'embed n'est qu'un
+        # conteneur minimaliste pour l'image (pas de duplication des
+        # informations en fields). Si la génération échoue, on retombe
+        # sur l'embed texte historique.
         try:
             from app.bot.rendering.profile_banner import compose_profile_banner
+            from app.domain.services.progression_service import ProgressionService
             from app.shared.paths import GENERATED_PROFILES_DIR
 
             GENERATED_PROFILES_DIR.mkdir(parents=True, exist_ok=True)
@@ -251,17 +253,41 @@ class PlayerCog(commands.Cog):
                 target_member.display_avatar.url if target_member else None
             )
             class_name = active_class.name if active_class else None
+            xp_required = ProgressionService().xp_required_for_next_level(
+                profile.progression.level
+            )
+
+            career_payload = {}
+            if career_stats is not None:
+                career_payload = {
+                    "monsters_killed": total_kills,
+                    "combats_fought": career_stats.combats_fought,
+                    "combats_won": career_stats.combats_won,
+                    "combats_lost": career_stats.combats_lost,
+                    "gold_earned_total": career_stats.gold_earned_total,
+                    "damage_dealt_total": career_stats.damage_dealt_total,
+                    "damage_tanked_total": career_stats.damage_tanked_total,
+                    "hp_healed_total": career_stats.hp_healed_total,
+                    "dodges_total": getattr(career_stats, "dodges_total", 0),
+                }
+
             compose_profile_banner(
                 output_path=str(banner_path),
                 display_name=profile.player.display_name,
                 avatar_url=avatar_url,
                 level=profile.progression.level,
-                xp=profile.progression.xp,
+                xp_current=profile.progression.xp,
+                xp_required=xp_required,
                 gold=profile.resources.gold,
                 rank_label=rank_label,
                 power_score=formatted_power_score,
                 class_name=class_name,
                 active_title=active_title_name,
+                duel_position=duel_rank.rank_position if duel_rank else None,
+                duel_wins=duel_rank.wins if duel_rank else 0,
+                duel_losses=duel_rank.losses if duel_rank else 0,
+                daily_streak=profile.resources.daily_streak,
+                skill_points=profile.progression.skill_points,
                 stats={
                     "max_hp": stats.max_hp,
                     "attack": stats.attack,
@@ -272,10 +298,20 @@ class PlayerCog(commands.Cog):
                     "dodge": stats.dodge,
                     "hp_regeneration": stats.hp_regeneration,
                 },
+                career=career_payload,
+            )
+
+            # Embed minimaliste : juste un conteneur pour l'image. Les
+            # informations sont déjà toutes lisibles directement dessus.
+            from app.bot.embeds.player_embeds import (
+                build_player_profile_image_embed,
+            )
+            image_embed = build_player_profile_image_embed(
+                display_name=profile.player.display_name,
+                attachment_filename=banner_filename,
             )
             file = discord.File(str(banner_path), filename=banner_filename)
-            embed.set_image(url=f"attachment://{banner_filename}")
-            await interaction.response.send_message(embed=embed, file=file)
+            await interaction.response.send_message(embed=image_embed, file=file)
             return
         except Exception as _e:
             import logging
@@ -284,6 +320,7 @@ class PlayerCog(commands.Cog):
                 _e, exc_info=True,
             )
 
+        # Fallback : ancien embed plein de fields si la bannière échoue.
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="inventory", description="Afficher un inventaire")

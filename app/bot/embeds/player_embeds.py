@@ -7,6 +7,22 @@ from app.domain.entities.player_profile import PlayerProfile
 from app.domain.value_objects.stats import Stats
 
 
+def build_player_profile_image_embed(
+    display_name: str,
+    attachment_filename: str,
+) -> discord.Embed:
+    """Embed minimaliste qui sert UNIQUEMENT à embarquer la bannière PNG.
+
+    Le titre est placé sur l'image elle-même donc on ne le double pas ici :
+    on utilise juste un set_image vers le fichier joint. Discord exige
+    cependant un objet `Embed` pour que `set_image(attachment://...)`
+    s'affiche, donc on en envoie un sans fields ni description.
+    """
+    embed = discord.Embed(color=discord.Color.dark_blue())
+    embed.set_image(url=f"attachment://{attachment_filename}")
+    return embed
+
+
 def build_player_profile_embed(
     profile: PlayerProfile,
     stats: Stats,
