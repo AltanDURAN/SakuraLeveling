@@ -685,6 +685,16 @@ Tester un combat de groupe :
 — Toutes les valeurs de stats (crit_chance, crit_damage, dodge) sont en
   pourcentages entiers 0..100, sauf crit_damage où 100 = neutre, 150 = ×1.5.
 
+— Formule de dégâts (identique en combat de groupe, solo et duel 1v1) :
+    1. raw_attack = attaque
+    2. SI crit (random < crit_chance/100) :
+           raw_attack = int(raw_attack × crit_damage / 100)
+    3. dégâts = max(1, raw_attack - défense_cible)
+    4. (groupe uniquement) bonus de titre Slayer : dégâts × multiplicateur famille
+    5. SI esquive de la cible (random < dodge/100) → dégâts = 0
+  Le crit est donc appliqué au coup BRUT puis la défense est soustraite —
+  un crit garde sa pleine valeur même contre une cible blindée.
+
 — Les images de monstres sont stockées localement dans assets/mobs/.
   Si une image manque, un placeholder gris s'affiche.
 

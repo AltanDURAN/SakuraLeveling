@@ -46,13 +46,16 @@ class DuelCombatService:
                 if a_stats.hp_regeneration > 0:
                     a_hp = min(a_stats.max_hp, a_hp + a_stats.hp_regeneration)
 
-                damage = max(1, a_stats.attack - b_stats.defense)
+                # Cascade : crit AVANT défense (symétrique entre tous les
+                # combats du jeu : party / solo / duel).
+                raw_attack = a_stats.attack
                 is_crit = False
                 dodged = False
-
                 if random.random() < (a_stats.crit_chance / 100):
-                    damage = int(damage * (a_stats.crit_damage / 100))
+                    raw_attack = int(raw_attack * (a_stats.crit_damage / 100))
                     is_crit = True
+
+                damage = max(1, raw_attack - b_stats.defense)
 
                 if random.random() < (b_stats.dodge / 100):
                     damage = 0
@@ -91,13 +94,15 @@ class DuelCombatService:
                 if b_stats.hp_regeneration > 0:
                     b_hp = min(b_stats.max_hp, b_hp + b_stats.hp_regeneration)
 
-                damage = max(1, b_stats.attack - a_stats.defense)
+                # Cascade : crit AVANT défense (cf. côté A → B plus haut).
+                raw_attack = b_stats.attack
                 is_crit = False
                 dodged = False
-
                 if random.random() < (b_stats.crit_chance / 100):
-                    damage = int(damage * (b_stats.crit_damage / 100))
+                    raw_attack = int(raw_attack * (b_stats.crit_damage / 100))
                     is_crit = True
+
+                damage = max(1, raw_attack - a_stats.defense)
 
                 if random.random() < (a_stats.dodge / 100):
                     damage = 0
