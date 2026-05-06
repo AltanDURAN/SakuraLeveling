@@ -11,6 +11,15 @@ BRANCH="beta"
 
 cd "$REPO_DIR"
 
+echo "==> 0. Vérifier la présence de NotoColorEmoji (pour la bannière /profile)"
+if [ ! -f /usr/share/fonts/truetype/noto/NotoColorEmoji.ttf ]; then
+    echo "    Installation de fonts-noto-color-emoji…"
+    sudo apt-get update -y >/dev/null
+    sudo apt-get install -y fonts-noto-color-emoji
+else
+    echo "    NotoColorEmoji déjà présent."
+fi
+
 echo "==> 1. Backup DB"
 cp "$DB_FILE" "lita_v2_backup_$(date +%Y%m%d_%H%M%S).db"
 ls -lh lita_v2_backup_*.db | tail -3

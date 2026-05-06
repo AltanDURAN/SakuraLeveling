@@ -26,18 +26,23 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     Au premier usage sans target, votre profil est créé automatiquement.
 
     Le profil est rendu en UNE SEULE IMAGE PNG (pas de fields textuels
-    dupliqués) générée à la volée par Pillow. La bannière contient :
-        • Header : avatar circulaire, titre actif (s'il y en a un), nom,
-          niveau, classe, badge de rang coloré (F- → SSS+), score de
-          puissance (PWR).
-        • Barre d'XP : "XP : 152 / 1 200 (13%)" avec remplissage gradient.
-        • Ligne d'infos : or actuel, daily streak, rang duel 1v1
-          (#N — WV-DD), skill points libres.
-        • Section "Stats de combat" : 8 cards (PV max, Atk, Def, Vitesse,
-          Crit chance, Crit dégâts, Esquive, Régen / min).
-        • Section "Statistiques de carrière" : 8 cards (Monstres tués,
-          Combats avec taux de réussite, Or amassé, Dégâts infligés,
-          Dégâts encaissés, PV soignés, Esquives totales, Victoires/Défaites).
+    dupliqués) générée à la volée par Pillow, avec emojis couleur. La
+    bannière contient :
+        • Header : avatar circulaire, titre actif en or (avec son emoji),
+          nom, "Niveau X · Classe", barre d'XP gradient bleu→cyan avec
+          "⚡ XP : 152 / 1 200 (13%)".
+        • Badge de rang à droite : disque coloré selon la lettre (F- gris,
+          E vert, D bleu, C violet, B orange, A or, S/SS/SSS rouge), avec
+          la lettre du rang et "PWR X.XK" écrits dedans.
+        • Ligne d'infos : 💰 or, 🔥 Daily Streak, ⚔️ Duel #N (WV-DD),
+          📚 SP libres. Wrap auto sur 2 lignes si nécessaire.
+        • Section "Stats de combat" : 8 cards avec barre d'accent colorée
+          par type de stat (❤️ PV rouge, ⚔️ Atk orange, 🛡️ Def bleu,
+          💨 Vit cyan, 🎯 Crit jaune, 💥 Crit dmg magenta, 🌀 Esquive,
+          ✨ Régen vert).
+        • Section "Statistiques de carrière" : 8 cards (💀 Tués,
+          ⚔️ Combats %W, 💰 Or amassé, 💢 Dégâts infligés, 🛡️ Dégâts
+          encaissés, 💚 PV soignés, 🌀 Esquives totales, 🏆 V/D).
 
     Rangs : tirés du score de puissance, paliers stricts F-/F/F+, E-/E/E+, …,
     SSS-/SSS/SSS+. Ex : <200 = F-, <500 = F, <1000 = F+, <2000 = E-, etc.,
