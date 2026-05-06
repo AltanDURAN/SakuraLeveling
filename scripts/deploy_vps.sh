@@ -40,9 +40,16 @@ echo "==> 4. Seed contenu (idempotent)"
 
 echo "==> 5. Restart services"
 sudo systemctl restart sakura-bot
-if systemctl list-unit-files | grep -q "sakura-webapp"; then
+# Note historique : on filtrait via `systemctl list-unit-files | grep`
+# mais la sortie de systemctl est tronquée selon la largeur du tty
+# (en SSH non-interactif, "sakura-webapp.service" devient "sakura-...service")
+# donc le grep ratait le match. On utilise maintenant `cat`, qui se base
+# directement sur la présence du fichier d'unit et n'est pas affecté.
+if sudo systemctl cat sakura-webapp.service >/dev/null 2>&1; then
     sudo systemctl restart sakura-webapp
     echo "    sakura-webapp restarted"
+else
+    echo "    sakura-webapp.service absent, skip"
 fi
 sleep 3
 
