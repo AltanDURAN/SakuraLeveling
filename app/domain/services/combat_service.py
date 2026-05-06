@@ -35,13 +35,16 @@ class CombatService:
                 if player_stats.hp_regeneration > 0:
                     player_hp = min(player_stats.max_hp, player_hp + player_stats.hp_regeneration)
 
-                player_damage = max(1, player_stats.attack - mob.defense)
+                # Cascade : crit AVANT défense (symétrique avec mob → joueur).
+                # Le crit s'applique au coup brut, puis la défense soustraite.
+                raw_player_attack = player_stats.attack
                 is_crit = False
                 mob_dodged = False
-
                 if random.random() < (player_stats.crit_chance / 100):
-                    player_damage = int(player_damage * (player_stats.crit_damage / 100))
+                    raw_player_attack = int(raw_player_attack * (player_stats.crit_damage / 100))
                     is_crit = True
+
+                player_damage = max(1, raw_player_attack - mob.defense)
 
                 mob_hp_before = mob_hp
 

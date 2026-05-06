@@ -71,12 +71,18 @@ class PartyCombatService:
                     if stats.hp_regeneration > 0 and player["hp"] > 0:
                         player["hp"] = min(player["max_hp"], player["hp"] + stats.hp_regeneration)
 
-                    damage = max(1, stats.attack - mob.defense)
+                    # Cascade : crit AVANT défense pour conserver la même
+                    # logique côté joueur et côté mob (cf. plus bas, mob → joueur).
+                    # Un crit applique son multiplicateur au coup brut, puis
+                    # la défense est soustraite ensuite — le crit profite
+                    # ainsi pleinement même contre une cible blindée.
+                    raw_attack = stats.attack
                     crit = False
-
                     if random.random() < (stats.crit_chance / 100):
-                        damage = int(damage * (stats.crit_damage / 100))
+                        raw_attack = int(raw_attack * (stats.crit_damage / 100))
                         crit = True
+
+                    damage = max(1, raw_attack - mob.defense)
 
                     # Bonus de titre : +X% dégâts vs famille du mob
                     title_bonus = title_bonuses_by_player.get(player["player_id"])
