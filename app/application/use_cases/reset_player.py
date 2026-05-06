@@ -1,6 +1,6 @@
 from datetime import datetime, UTC
 
-from sqlalchemy import delete
+from sqlalchemy import delete, or_, select, update
 from sqlalchemy.orm import Session
 
 from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel
@@ -24,6 +24,7 @@ from app.infrastructure.db.models.profession_model import PlayerProfessionModel
 from app.infrastructure.db.models.progression_model import PlayerProgressionModel
 from app.infrastructure.db.models.quest_model import PlayerQuestStateModel
 from app.infrastructure.db.models.resource_model import PlayerResourceModel
+from app.infrastructure.db.models.trade_model import TradeItemModel, TradeModel
 
 
 class ResetPlayerUseCase:
@@ -72,13 +73,42 @@ class ResetPlayerUseCase:
         ):
             session.execute(delete(model_cls).where(model_cls.player_id == player_id))
 
-        # Marketplace : la clé est `seller_player_id` (pas player_id).
-        # On purge les annonces actives du joueur — les items "en consigne"
-        # sont perdus côté brocante (l'inventaire étant déjà vidé), ce qui
-        # est cohérent avec l'esprit "reset complet".
+        # Marketplace : on purge les annonces actives du joueur (clé
+        # `seller_player_id`). Les items "en consigne" sont perdus côté
+        # brocante (l'inventaire étant déjà vidé), ce qui est cohérent
+        # avec l'esprit "reset complet".
         session.execute(
             delete(MarketplaceListingModel).where(
                 MarketplaceListingModel.seller_player_id == player_id
+            )
+        )
+
+        # On efface aussi `last_buyer_player_id` sur les annonces déjà
+        # vendues, pour ne pas laisser de référence vers un profil reseté.
+        session.execute(
+            update(MarketplaceListingModel)
+            .where(MarketplaceListingModel.last_buyer_player_id == player_id)
+            .values(last_buyer_player_id=None)
+        )
+
+        # Trades : on purge tous les trades où le joueur est initiator ou
+        # target (en cours, accepté, refusé, etc.) ainsi que leurs items.
+        # Pendant qu'on y est, idempotent sur les trades sans item.
+        trade_ids_subquery = select(TradeModel.id).where(
+            or_(
+                TradeModel.initiator_player_id == player_id,
+                TradeModel.target_player_id == player_id,
+            )
+        )
+        session.execute(
+            delete(TradeItemModel).where(TradeItemModel.trade_id.in_(trade_ids_subquery))
+        )
+        session.execute(
+            delete(TradeModel).where(
+                or_(
+                    TradeModel.initiator_player_id == player_id,
+                    TradeModel.target_player_id == player_id,
+                )
             )
         )
 

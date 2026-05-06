@@ -24,5 +24,27 @@
       { "type": "damage_bonus_vs_family", "target": "gobelin", "value": 10 },
       { "type": "damage_reduction_from_family", "target": "gobelin", "value": 10 }
     ]
+  },
+  {
+    "code": "champion_1v1",
+    "name": "Champion en 1vs1",
+    "description": "Détenteur du sommet du ladder 1v1. +1% sur toutes vos stats (multiplicatif sur PV/atk/def, additif sur crit/esquive, +1 flat sur vitesse/régen). Perdu dès qu'un autre joueur prend la première place.",
+    "icon": "👑",
+    "condition_type": "duel_top1",
+    "exclusive": true,
+    "effects": [
+      { "type": "champion_all_stats", "value": 1 }
+    ]
+  },
+  {
+    "code": "farmer_fou",
+    "name": "Le Farmer Fou",
+    "description": "Détenteur du record absolu de monstres tués. +1% sur l'or et l'XP gagnés à la fin d'un combat (uniquement pour le détenteur). Perdu dès qu'un autre joueur dépasse votre record.",
+    "icon": "🌾",
+    "condition_type": "kills_record",
+    "exclusive": true,
+    "effects": [
+      { "type": "gold_xp_bonus_pct", "value": 1 }
+    ]
   }
 ]

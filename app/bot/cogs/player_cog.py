@@ -161,11 +161,16 @@ class PlayerCog(commands.Cog):
             skill_bonuses = SkillTreeService(get_skill_tree_definition()).aggregate_bonuses(
                 allocations
             )
+            from app.application.services.title_bonus_resolver import (
+                resolve_title_bonuses,
+            )
+            title_bonuses = resolve_title_bonuses(session, profile.player.id)
             stats = StatsService().calculate_player_stats(
                 profile=profile,
                 equipped_items=equipped_items,
                 active_class=active_class,
                 skill_bonuses=skill_bonuses,
+                title_bonuses=title_bonuses,
             )
 
             power_score_service = PowerScoreService()

@@ -32,6 +32,7 @@ def _load() -> list[TitleDefinition]:
             condition_type=item["condition_type"],
             condition_target=item.get("condition_target", ""),
             condition_value=int(item.get("condition_value", 0)),
+            exclusive=bool(item.get("exclusive", False)),
             effects=item.get("effects", []) or [],
         )
         for item in raw

@@ -83,11 +83,23 @@ class FightMobUseCase:
         else:
             skill_bonuses = None
 
+        # Bonus de titres (Champion 1v1 actif s'applique aussi en combat solo).
+        try:
+            from app.application.services.title_bonus_resolver import (
+                resolve_title_bonuses,
+            )
+            title_bonuses = resolve_title_bonuses(
+                self.kill_repository.session, profile.player.id,
+            )
+        except Exception:
+            title_bonuses = None
+
         player_stats = self.stats_service.calculate_player_stats(
             profile=profile,
             equipped_items=equipped_items,
             active_class=active_class,
             skill_bonuses=skill_bonuses,
+            title_bonuses=title_bonuses,
         )
 
         result = self.combat_service.fight_player_vs_mob(
@@ -98,13 +110,14 @@ class FightMobUseCase:
         if not result.victory:
             return result
 
-        # Application des bonus xp/gold/drop de l'arbre
+        # Application des bonus xp/gold/drop de l'arbre + Farmer Fou.
         gold_multiplier = 1.0 + (skill_bonuses.gold_drop_percent if skill_bonuses else 0.0)
         xp_multiplier = 1.0 + (skill_bonuses.xp_drop_percent if skill_bonuses else 0.0)
         drop_multiplier = skill_bonuses.drop_rate_multiplier if skill_bonuses else 1.0
+        farmer_pct = (title_bonuses.gold_xp_bonus_pct / 100.0) if title_bonuses else 0.0
 
-        final_gold = round(result.gold_gained * gold_multiplier)
-        final_xp = round(result.xp_gained * xp_multiplier)
+        final_gold = round(result.gold_gained * gold_multiplier * (1 + farmer_pct))
+        final_xp = round(result.xp_gained * xp_multiplier * (1 + farmer_pct))
 
         self.player_repository.add_gold(profile.player.id, final_gold)
         self.kill_repository.increment(profile.player.id, mob.code)
@@ -122,6 +135,27 @@ class FightMobUseCase:
             TitleUnlockService(title_repo, self.kill_repository).check_kills_total(
                 profile.player.id
             )
+
+            # Titre exclusif Farmer Fou : transfert si le candidat dépasse
+            # STRICTEMENT le détenteur actuel.
+            try:
+                from app.application.services.exclusive_title_service import (
+                    ExclusiveTitleService,
+                )
+                excl = ExclusiveTitleService(self.kill_repository.session)
+                holder_id = excl.current_holder("farmer_fou")
+                candidate_total = self.kill_repository.get_total_kills(profile.player.id)
+                if holder_id is None and candidate_total > 0:
+                    excl.award_to("farmer_fou", profile.player.id)
+                elif holder_id is not None and holder_id != profile.player.id:
+                    holder_total = self.kill_repository.get_total_kills(holder_id)
+                    if candidate_total > holder_total:
+                        excl.award_to("farmer_fou", profile.player.id)
+            except Exception as _e:
+                import logging
+                logging.getLogger(__name__).warning(
+                    "Farmer Fou title hook (solo) failed: %s", _e, exc_info=True,
+                )
 
         new_level, new_xp, new_skill_points = self.progression_service.apply_level_up(
             current_level=profile.progression.level,

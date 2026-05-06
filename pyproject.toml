@@ -3,7 +3,7 @@ name = "lita-v2"
 version = "0.1.0"
 description = "Discord RPG bot rebuilt with a clean architecture"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
     "discord.py>=2.5.0",
     "sqlalchemy>=2.0.0",
@@ -17,6 +17,7 @@ dependencies = [
     "cairosvg>=2.7.0",
     "requests>=2.31.0",
     "pillow>=10.0.0",
+    "openpyxl>=3.1.0",
 ]
 
 [tool.pytest.ini_options]
