@@ -44,7 +44,7 @@ from app.bot.rendering.image_utils import (
 
 
 WIDTH = 1024
-HEIGHT = 880
+HEIGHT = 1040
 
 
 # Palette principale ----------------------------------------------------
@@ -253,13 +253,13 @@ def _draw_stat_card(
     x, y = origin
     # Label avec emoji rendu via NotoColorEmoji
     draw_text_with_emojis(
-        base, (x + 18, y + 10), label, label_font,
+        base, (x + 22, y + 14), label, label_font,
         fill=COLORS["text_secondary"],
     )
     # Valeur — pas d'emoji ici donc shadow standard
     draw = ImageDraw.Draw(base)
     _draw_text_with_shadow(
-        draw, (x + 18, y + 36), value, value_font,
+        draw, (x + 22, y + 14 + label_font.size + 8), value, value_font,
     )
 
 
@@ -356,17 +356,19 @@ def compose_profile_banner(
     bg = _gradient_background(WIDTH, HEIGHT)
     draw = ImageDraw.Draw(bg)
 
-    # ----- Fonts (généreuses, lisibles) -----
-    name_font = _try_font(54, bold=True)
-    title_font = _try_font(26, bold=True)
-    sub_font = _try_font(24)
-    info_font = _try_font(22, bold=True)
-    label_font = _try_font(18, bold=True)
-    value_font = _try_font(28, bold=True)
-    section_font = _try_font(22, bold=True)
-    rank_font = _try_font(72, bold=True)
-    score_font = _try_font(32, bold=True)
-    xp_label_font = _try_font(18, bold=True)
+    # Fonts. Tailles "grosses" pour rester lisibles même quand Discord
+    # compresse la bannière en thumbnail (~400 px de large), donc la
+    # plupart des joueurs verront cette taille sans cliquer.
+    name_font = _try_font(64, bold=True)
+    title_font = _try_font(30, bold=True)
+    sub_font = _try_font(30)
+    info_font = _try_font(26, bold=True)
+    label_font = _try_font(22, bold=True)
+    value_font = _try_font(40, bold=True)
+    section_font = _try_font(28, bold=True)
+    rank_font = _try_font(80, bold=True)
+    pwr_inner_font_size = 24  # utilisé plus bas dans l'appel au badge
+    xp_label_font = _try_font(22, bold=True)
 
     margin = 30
 
@@ -406,20 +408,24 @@ def compose_profile_banner(
         draw, (info_x, info_y), display_name, name_font,
     )
 
-    # Niveau · Classe
+    # Niveau · Classe — placé sous le nom (qui fait `name_font.size` de haut)
     level_text = f"Niveau {level}"
     if class_name:
         level_text += f"  ·  {class_name}"
+    level_y = info_y + name_font.size + 6
     _draw_text_with_shadow(
-        draw, (info_x, info_y + 64), level_text, sub_font,
+        draw, (info_x, level_y), level_text, sub_font,
         fill=COLORS["text_secondary"],
     )
 
     # Barre d'XP — full width depuis info_x jusqu'au début de la zone badge.
-    bar_y = info_y + 102
-    bar_w = WIDTH - info_x - 200
-    bar_h = 26
-    progress = (xp_current / xp_required) if xp_required > 0 else 0.0
+    bar_y = level_y + sub_font.size + 16
+    bar_w = WIDTH - info_x - 220
+    bar_h = 32
+    # Cap au cas où l'XP a temporairement dépassé le seuil (bug historique
+    # de level-up non appliqué) — on ne veut jamais afficher 105%.
+    raw_progress = (xp_current / xp_required) if xp_required > 0 else 0.0
+    progress = min(1.0, max(0.0, raw_progress))
     pct = int(round(progress * 100))
     _draw_xp_bar(bg, (info_x, bar_y), (bar_w, bar_h), progress)
     if xp_required > 0:
@@ -427,12 +433,12 @@ def compose_profile_banner(
     else:
         xp_text = f"⚡ XP : {_format_int(xp_current)}"
     draw_text_with_emojis(
-        bg, (info_x, bar_y + bar_h + 6), xp_text, xp_label_font,
+        bg, (info_x, bar_y + bar_h + 8), xp_text, xp_label_font,
         fill=COLORS["xp_color"],
     )
 
     # Ligne d'infos compactes (or, daily streak, duel, skill points)
-    bottom_info_y = bar_y + bar_h + 38
+    bottom_info_y = bar_y + bar_h + xp_label_font.size + 22
     parts: list[tuple[str, tuple[int, int, int, int]]] = [
         (f"💰 {_format_int(gold)} or", COLORS["gold_color"]),
     ]
@@ -475,10 +481,10 @@ def compose_profile_banner(
 
     # Badge de rang à droite — la lettre + le PWR sont DANS le badge
     # pour ne pas déborder sur la ligne d'infos juste en dessous.
-    badge_size = 170
+    badge_size = 200
     badge_x = WIDTH - badge_size - margin - 4
-    badge_y = avatar_y - 12
-    pwr_inner_font = _try_font(20, bold=True)
+    badge_y = avatar_y - 14
+    pwr_inner_font = _try_font(pwr_inner_font_size, bold=True)
     _draw_rank_badge(
         bg, (badge_x, badge_y), badge_size,
         rank_label, power_score, rank_font, pwr_inner_font,
@@ -490,12 +496,12 @@ def compose_profile_banner(
         bg, (margin, section_combat_y), "⚔️  STATS DE COMBAT",
         section_font, WIDTH - 2 * margin,
     )
-    combat_grid_y = section_combat_y + 50
+    combat_grid_y = section_combat_y + 56
     grid_cols = 4
     spacing = 14
     available = WIDTH - 2 * margin - spacing * (grid_cols - 1)
     card_w = available // grid_cols
-    card_h = 84
+    card_h = 116
 
     combat_cards = [
         ("❤️ PV max", _format_int(stats.get("max_hp", 0)), "hp"),
@@ -530,24 +536,29 @@ def compose_profile_banner(
     fought = int(career.get("combats_fought", 0))
     won = int(career.get("combats_won", 0))
     lost = int(career.get("combats_lost", 0))
-    win_rate = f" ({round(100 * won / fought)}%W)" if fought > 0 else ""
+    # Le %W est volontairement omis — la card V/D voisine montre
+    # déjà "87V / 20D" donc le ratio est calculable d'un coup d'œil.
 
+    # Labels courts pour rester DANS la largeur des cards (~225 px) avec
+    # value_font 40 + label_font 22. "Dégâts encaissés" est trop long, on
+    # raccourcit à "Dégâts subis" ; on supprime "totales" sur "Esquives"
+    # (déjà dans la section "carrière" donc implicite).
     career_cards = [
         ("💀 Monstres tués",
          _format_int(int(career.get("monsters_killed", 0))), "kills"),
         ("⚔️ Combats",
-         f"{_format_int(fought)}{win_rate}", "combats"),
+         _format_int(fought), "combats"),
         ("💰 Or amassé",
          _format_int(int(career.get("gold_earned_total", 0))), "gold"),
         ("💢 Dégâts infligés",
          _format_int(int(career.get("damage_dealt_total", 0))), "dmg_dealt"),
-        ("🛡️ Dégâts encaissés",
+        ("🛡️ Dégâts subis",
          _format_int(int(career.get("damage_tanked_total", 0))), "dmg_tanked"),
         ("💚 PV soignés",
          _format_int(int(career.get("hp_healed_total", 0))), "healed"),
-        ("🌀 Esquives totales",
+        ("🌀 Esquives",
          _format_int(int(career.get("dodges_total", 0))), "dodge"),
-        ("🏆 Victoires / Défaites",
+        ("🏆 V / D",
          f"{won}V / {lost}D", "trophy"),
     ]
 
