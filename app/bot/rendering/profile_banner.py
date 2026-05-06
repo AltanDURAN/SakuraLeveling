@@ -44,25 +44,27 @@ from app.bot.rendering.image_utils import (
 
 
 WIDTH = 1024
-HEIGHT = 1040
+HEIGHT = 1080
 
 
-# Palette principale ----------------------------------------------------
+# Palette principale ---------------------------------------------------
+# Contraste poussé pour la lecture en thumbnail Discord (~360 px). Les
+# labels passent à blanc plein, les fonds des cards sont plus opaques.
 COLORS = {
     "bg_top": (12, 14, 28, 255),
     "bg_bottom": (38, 42, 78, 255),
-    "panel_bg": (0, 0, 0, 130),
-    "panel_border": (255, 255, 255, 32),
-    "section_label": (210, 220, 240, 255),
-    "section_separator": (255, 255, 255, 30),
-    "text_primary": (255, 255, 255, 255),
-    "text_secondary": (180, 200, 230, 255),
-    "text_muted": (150, 165, 195, 255),
-    "title_color": (255, 200, 80, 255),
-    "gold_color": (255, 215, 100, 255),
-    "xp_color": (180, 220, 255, 255),
+    "panel_bg": (0, 0, 0, 160),         # +30 d'opacité vs ancien (130)
+    "panel_border": (255, 255, 255, 50),
+    "section_label": (255, 255, 255, 245),
+    "section_separator": (255, 255, 255, 60),
+    "text_primary": (255, 255, 255, 245),
+    "text_secondary": (210, 225, 245, 255),
+    "text_muted": (175, 190, 215, 255),
+    "title_color": (255, 210, 90, 255),
+    "gold_color": (255, 220, 110, 255),
+    "xp_color": (200, 235, 255, 255),
     "rank_text": (255, 255, 255, 255),
-    "shadow": (0, 0, 0, 200),
+    "shadow": (0, 0, 0, 220),
     "xp_bar_bg": (35, 45, 75, 255),
     "xp_bar_fill_start": (90, 160, 220, 255),
     "xp_bar_fill_end": (60, 220, 200, 255),
@@ -236,30 +238,47 @@ def _draw_stat_card(
     base: Image.Image,
     origin: tuple[int, int],
     size: tuple[int, int],
+    emoji: str,
     label: str,
     value: str,
     label_font,
     value_font,
     *,
     accent_key: str | None = None,
+    emoji_size: int = 60,
 ) -> None:
-    """Card de stat avec :
+    """Card avec :
        - barre verticale d'accent colorée à gauche
-       - label (avec emoji) au-dessus
-       - valeur en gros en dessous
+       - GROSSE icône emoji centrée verticalement à gauche
+       - label en haut à droite (texte uni blanc)
+       - valeur en gros en bas à droite (jaune / blanc selon contraste)
     """
+    from app.bot.rendering.emoji_text import _render_emoji_cached
+
     accent = _STAT_ACCENT.get(accent_key) if accent_key else None
     _draw_panel(base, origin, size, accent=accent)
     x, y = origin
-    # Label avec emoji rendu via NotoColorEmoji
-    draw_text_with_emojis(
-        base, (x + 22, y + 14), label, label_font,
-        fill=COLORS["text_secondary"],
-    )
-    # Valeur — pas d'emoji ici donc shadow standard
+    w, h = size
+
+    # Emoji à gauche, verticalement centré
+    emoji_x = x + 16
+    text_x = emoji_x + 18  # fallback si pas d'emoji
+    emoji_img = _render_emoji_cached(emoji, emoji_size) if emoji else None
+    if emoji_img is not None:
+        emoji_y = y + (h - emoji_size) // 2
+        base.alpha_composite(emoji_img, (emoji_x, emoji_y))
+        text_x = emoji_x + emoji_size + 14
+
+    # Texte aligné à droite de l'emoji : label haut, valeur bas
     draw = ImageDraw.Draw(base)
+    label_y = y + 14
+    value_y = y + h - value_font.size - 14
     _draw_text_with_shadow(
-        draw, (x + 22, y + 14 + label_font.size + 8), value, value_font,
+        draw, (text_x, label_y), label, label_font,
+        fill=COLORS["text_primary"],
+    )
+    _draw_text_with_shadow(
+        draw, (text_x, value_y), value, value_font,
     )
 
 
@@ -362,13 +381,13 @@ def compose_profile_banner(
     name_font = _try_font(64, bold=True)
     title_font = _try_font(30, bold=True)
     sub_font = _try_font(30)
-    info_font = _try_font(26, bold=True)
-    label_font = _try_font(22, bold=True)
-    value_font = _try_font(40, bold=True)
-    section_font = _try_font(28, bold=True)
+    info_font = _try_font(28, bold=True)
+    label_font = _try_font(24, bold=True)
+    value_font = _try_font(42, bold=True)
+    section_font = _try_font(30, bold=True)
     rank_font = _try_font(80, bold=True)
     pwr_inner_font_size = 24  # utilisé plus bas dans l'appel au badge
-    xp_label_font = _try_font(22, bold=True)
+    xp_label_font = _try_font(24, bold=True)
 
     margin = 30
 
@@ -501,27 +520,27 @@ def compose_profile_banner(
     spacing = 14
     available = WIDTH - 2 * margin - spacing * (grid_cols - 1)
     card_w = available // grid_cols
-    card_h = 116
+    card_h = 130
 
     combat_cards = [
-        ("❤️ PV max", _format_int(stats.get("max_hp", 0)), "hp"),
-        ("⚔️ Attaque", _format_int(stats.get("attack", 0)), "atk"),
-        ("🛡️ Défense", _format_int(stats.get("defense", 0)), "def"),
-        ("💨 Vitesse", str(stats.get("speed", 0)), "speed"),
-        ("🎯 Crit chance", f"{int(stats.get('crit_chance', 0))}%", "crit_chance"),
-        ("💥 Crit dégâts", f"{int(stats.get('crit_damage', 100))}%", "crit_damage"),
-        ("🌀 Esquive", f"{int(stats.get('dodge', 0))}%", "dodge"),
-        ("✨ Régen / min", str(stats.get("hp_regeneration", 0)), "regen"),
+        ("❤️", "PV max", _format_int(stats.get("max_hp", 0)), "hp"),
+        ("⚔️", "Attaque", _format_int(stats.get("attack", 0)), "atk"),
+        ("🛡️", "Défense", _format_int(stats.get("defense", 0)), "def"),
+        ("💨", "Vitesse", str(stats.get("speed", 0)), "speed"),
+        ("🎯", "Crit %", f"{int(stats.get('crit_chance', 0))}%", "crit_chance"),
+        ("💥", "Crit dmg", f"{int(stats.get('crit_damage', 100))}%", "crit_damage"),
+        ("🌀", "Esquive", f"{int(stats.get('dodge', 0))}%", "dodge"),
+        ("✨", "Régen", str(stats.get("hp_regeneration", 0)), "regen"),
     ]
 
-    for idx, (label, value, accent_key) in enumerate(combat_cards):
+    for idx, (emoji, label, value, accent_key) in enumerate(combat_cards):
         row = idx // grid_cols
         col = idx % grid_cols
         x = margin + col * (card_w + spacing)
         y = combat_grid_y + row * (card_h + spacing)
         _draw_stat_card(
             bg, (x, y), (card_w, card_h),
-            label, value, label_font, value_font,
+            emoji, label, value, label_font, value_font,
             accent_key=accent_key,
         )
 
@@ -544,32 +563,34 @@ def compose_profile_banner(
     # raccourcit à "Dégâts subis" ; on supprime "totales" sur "Esquives"
     # (déjà dans la section "carrière" donc implicite).
     career_cards = [
-        ("💀 Monstres tués",
+        ("💀", "Tués",
          _format_int(int(career.get("monsters_killed", 0))), "kills"),
-        ("⚔️ Combats",
+        ("⚔️", "Combats",
          _format_int(fought), "combats"),
-        ("💰 Or amassé",
+        ("💰", "Or amassé",
          _format_int(int(career.get("gold_earned_total", 0))), "gold"),
-        ("💢 Dégâts infligés",
+        ("💢", "Dmg inf.",
          _format_int(int(career.get("damage_dealt_total", 0))), "dmg_dealt"),
-        ("🛡️ Dégâts subis",
+        ("🛡️", "Dmg subis",
          _format_int(int(career.get("damage_tanked_total", 0))), "dmg_tanked"),
-        ("💚 PV soignés",
+        ("💚", "PV soignés",
          _format_int(int(career.get("hp_healed_total", 0))), "healed"),
-        ("🌀 Esquives",
+        ("🌀", "Esquives",
          _format_int(int(career.get("dodges_total", 0))), "dodge"),
-        ("🏆 V / D",
-         f"{won}V / {lost}D", "trophy"),
+        # "87 / 20" plutôt que "87V / 20D" : tient dans la card à value_font
+        # 42, et le label "V / D" + l'icône 🏆 rendent l'ordre clair.
+        ("🏆", "V / D",
+         f"{won} / {lost}", "trophy"),
     ]
 
-    for idx, (label, value, accent_key) in enumerate(career_cards):
+    for idx, (emoji, label, value, accent_key) in enumerate(career_cards):
         row = idx // grid_cols
         col = idx % grid_cols
         x = margin + col * (card_w + spacing)
         y = career_grid_y + row * (card_h + spacing)
         _draw_stat_card(
             bg, (x, y), (card_w, card_h),
-            label, value, label_font, value_font,
+            emoji, label, value, label_font, value_font,
             accent_key=accent_key,
         )
 
