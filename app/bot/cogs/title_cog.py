@@ -13,7 +13,11 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from app.application.services.exclusive_title_service import ExclusiveTitleService
 from app.infrastructure.config.settings import settings
+from app.infrastructure.db.repositories.player_career_stats_repository import (
+    PlayerCareerStatsRepository,
+)
 from app.infrastructure.db.repositories.player_kill_repository import PlayerKillRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.player_title_repository import (
@@ -26,14 +30,93 @@ from app.infrastructure.titles.title_loader import (
 )
 
 
-def _compute_progress(title, kill_repo: PlayerKillRepository, player_id: int) -> int:
-    """Renvoie la progression actuelle vers la condition du titre.
-    Retourne 0 si le type n'est pas géré (extensibilité)."""
+def _build_progress_label(
+    title,
+    *,
+    profile,
+    session,
+) -> str:
+    """Renvoie la ligne de progression formatée à afficher pour un titre
+    NON encore débloqué. Gère tous les `condition_type` connus, y compris
+    les exclusifs (qui n'ont pas de seuil numérique mais un détenteur
+    actuel).
+    """
+    kill_repo = PlayerKillRepository(session)
+    career_repo = PlayerCareerStatsRepository(session)
+    excl = ExclusiveTitleService(session)
+    pid = profile.player.id
+
     if title.condition_type == "kills_family" and title.condition_target:
-        return kill_repo.get_kills_for_family(player_id, title.condition_target)
+        progress = kill_repo.get_kills_for_family(pid, title.condition_target)
+        return f"**{progress}/{title.condition_value}** {title.condition_target} tués"
+
     if title.condition_type == "kills_total":
-        return kill_repo.get_total_kills(player_id)
-    return 0
+        progress = kill_repo.get_total_kills(pid)
+        return f"**{progress}/{title.condition_value}** monstres tués au total"
+
+    if title.condition_type == "kills_mob" and title.condition_target:
+        progress = kill_repo.get_kills_per_mob(pid).get(title.condition_target, 0)
+        return f"**{progress}/{title.condition_value}** kills sur ce mob"
+
+    if title.condition_type == "dodges_total":
+        career = career_repo.get_or_create(pid)
+        return (
+            f"**{getattr(career, 'dodges_total', 0)}/{title.condition_value}** "
+            "esquives en combat de groupe"
+        )
+
+    if title.condition_type == "daily_streak":
+        return (
+            f"**{profile.resources.daily_streak}/{title.condition_value}** "
+            "jours de daily streak"
+        )
+
+    if title.condition_type == "duel_top1":
+        # Titre exclusif : montrer le détenteur actuel (rang 1 du ladder)
+        # plutôt qu'un compteur 0/0 qui n'a aucun sens.
+        holder_id = excl.current_holder("champion_1v1")
+        if holder_id is None:
+            return "_Personne ne le détient encore. Atteignez la 1re place du ladder duel._"
+        if holder_id == pid:
+            return "_Vous êtes le détenteur actuel !_"
+        holder_profile = PlayerRepository(session).get_profile_by_player_id(holder_id)
+        holder_name = (
+            holder_profile.player.display_name if holder_profile else f"#{holder_id}"
+        )
+        return f"Détenteur actuel : **{holder_name}** (top 1 du ladder duel)"
+
+    if title.condition_type == "kills_record":
+        # Titre exclusif Farmer Fou : afficher record actuel + détenteur
+        # + écart pour le viewer.
+        holder_id = excl.current_holder("farmer_fou")
+        viewer_total = kill_repo.get_total_kills(pid)
+        if holder_id is None:
+            return (
+                f"_Personne ne détient encore le record._ "
+                f"Vous : **{viewer_total}** kills."
+            )
+        holder_total = kill_repo.get_total_kills(holder_id)
+        if holder_id == pid:
+            return (
+                f"_Vous êtes le détenteur actuel avec_ **{holder_total}** kills."
+            )
+        holder_profile = PlayerRepository(session).get_profile_by_player_id(holder_id)
+        holder_name = (
+            holder_profile.player.display_name if holder_profile else f"#{holder_id}"
+        )
+        # On dépasse strictement, donc il faut au moins +1 par rapport au détenteur
+        gap = max(0, holder_total - viewer_total + 1)
+        return (
+            f"Détenteur : **{holder_name}** avec **{holder_total}** kills · "
+            f"vous : **{viewer_total}** (il vous manque **{gap}**)"
+        )
+
+    if title.condition_type == "duels_won":
+        return f"**0/{title.condition_value}** duels gagnés (tracking à venir)"
+    if title.condition_type == "items_crafted":
+        return f"**0/{title.condition_value}** items craftés (tracking à venir)"
+
+    return f"_Condition : {title.condition_type}_"
 
 
 class TitleCog(commands.Cog):
@@ -72,26 +155,23 @@ class TitleCog(commands.Cog):
                 )
                 return
             title_repo = PlayerTitleRepository(session)
-            kill_repo = PlayerKillRepository(session)
             unlocked_codes = title_repo.list_codes_for_player(profile.player.id)
             active_code = title_repo.get_active_title_code(profile.player.id)
-            # Progression actuelle pour chaque titre verrouillé
-            all_defs_local = list_definitions()
-            progress_by_code: dict[str, int] = {}
-            for d in all_defs_local:
-                if d.code in unlocked_codes:
-                    progress_by_code[d.code] = d.condition_value  # déjà au max
-                else:
-                    progress_by_code[d.code] = _compute_progress(
-                        d, kill_repo, profile.player.id,
-                    )
 
-        all_defs = all_defs_local
-        unlocked_defs = [d for d in all_defs if d.code in unlocked_codes]
-        locked_defs = [d for d in all_defs if d.code not in unlocked_codes]
+            all_defs_local = list_definitions()
+            unlocked_defs = [d for d in all_defs_local if d.code in unlocked_codes]
+            locked_defs = [d for d in all_defs_local if d.code not in unlocked_codes]
+
+            # Progression formatée pour chaque titre encore verrouillé.
+            # On reste DANS le `with session` pour pouvoir requêter kill_repo /
+            # career_repo / duel_repo / exclusive_service au besoin.
+            progress_label_by_code: dict[str, str] = {
+                d.code: _build_progress_label(d, profile=profile, session=session)
+                for d in locked_defs
+            }
 
         ratio_unlocked = len(unlocked_defs)
-        ratio_total = len(all_defs)
+        ratio_total = len(all_defs_local)
         embed = discord.Embed(
             title=f"🏷️ Titres de {target_member.display_name}",
             description=f"**{ratio_unlocked}** débloqué(s) sur **{ratio_total}** au total.",
@@ -106,27 +186,28 @@ class TitleCog(commands.Cog):
             embed.add_field(name="✅ Débloqués", value="\n".join(lines)[:1024], inline=False)
 
         if locked_defs:
+            # On groupe en plusieurs fields pour ne pas dépasser la limite
+            # de 1024 caractères par field (le tableau peut faire 13+ titres
+            # avec les 9 Chasseur Légendaire, 4 nouveaux et les 2 exclusifs).
             lines = []
             for d in locked_defs:
-                progress = progress_by_code.get(d.code, 0)
-                # Description courte de la condition
-                if d.condition_type == "kills_family" and d.condition_target:
-                    cond_label = f"{d.condition_target} tués"
-                elif d.condition_type == "kills_total":
-                    cond_label = "monstres tués au total"
-                elif d.condition_type == "duels_won":
-                    cond_label = "duels gagnés"
-                elif d.condition_type == "items_crafted":
-                    cond_label = "items craftés"
-                else:
-                    cond_label = d.condition_type
                 lines.append(
-                    f"{d.icon} {d.name} — **{progress}/{d.condition_value}** "
-                    f"{cond_label}"
+                    f"{d.icon} **{d.name}** — {progress_label_by_code.get(d.code, '?')}"
                 )
-            embed.add_field(
-                name="🔒 À débloquer", value="\n".join(lines)[:1024], inline=False
-            )
+
+            # Découpe en chunks <= 1000 chars (laisse de la marge)
+            chunks: list[list[str]] = [[]]
+            current_len = 0
+            for line in lines:
+                if current_len + len(line) + 1 > 1000 and chunks[-1]:
+                    chunks.append([])
+                    current_len = 0
+                chunks[-1].append(line)
+                current_len += len(line) + 1
+
+            for idx, chunk in enumerate(chunks):
+                name = "🔒 À débloquer" if idx == 0 else f"🔒 À débloquer (suite {idx + 1})"
+                embed.add_field(name=name, value="\n".join(chunk), inline=False)
 
         await interaction.response.send_message(embed=embed)
 
