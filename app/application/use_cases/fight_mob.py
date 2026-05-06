@@ -135,6 +135,9 @@ class FightMobUseCase:
             TitleUnlockService(title_repo, self.kill_repository).check_kills_total(
                 profile.player.id
             )
+            TitleUnlockService(title_repo, self.kill_repository).check_kills_mob(
+                profile.player.id, mob.code,
+            )
 
             # Titre exclusif Farmer Fou : transfert si le candidat dépasse
             # STRICTEMENT le détenteur actuel.
@@ -173,8 +176,11 @@ class FightMobUseCase:
             new_skill_points=new_skill_points,
         )
 
+        # Chasseur Légendaire : bonus drop rate sur ce mob spécifique
+        # (multiplicatif, additionne aux autres multiplicateurs).
+        chasseur_mult = title_bonuses.drop_rate_multiplier_for_mob(mob.code) if title_bonuses else 1.0
         dropped_items = self.loot_service.generate_loot(
-            mob, drop_rate_multiplier=drop_multiplier
+            mob, drop_rate_multiplier=drop_multiplier * chasseur_mult,
         )
 
         for item_code, quantity in dropped_items:

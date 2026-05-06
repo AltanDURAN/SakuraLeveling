@@ -1098,6 +1098,7 @@ class PlayerCog(commands.Cog):
             embed = build_daily_success_embed(
                 streak=result.streak,
                 gold_gained=result.gold_gained,
+                bonus_items=result.bonus_items,
             )
             await interaction.response.send_message(embed=embed)
         else:

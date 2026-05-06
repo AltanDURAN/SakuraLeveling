@@ -46,5 +46,146 @@
     "effects": [
       { "type": "gold_xp_bonus_pct", "value": 1 }
     ]
+  },
+  {
+    "code": "bourreau",
+    "name": "Le Bourreau",
+    "description": "Tueur impitoyable de 500 monstres au total. +5% sur les dégâts critiques (additif sur crit_damage).",
+    "icon": "🩸",
+    "condition_type": "kills_total",
+    "condition_value": 500,
+    "effects": [
+      { "type": "crit_damage_flat", "value": 5 }
+    ]
+  },
+  {
+    "code": "intouchable",
+    "name": "L'Intouchable",
+    "description": "Esquiveur aguerri (100 esquives encaissées en combat de groupe). +1% d'esquive permanent.",
+    "icon": "🌪️",
+    "condition_type": "dodges_total",
+    "condition_value": 100,
+    "effects": [
+      { "type": "dodge_flat", "value": 1 }
+    ]
+  },
+  {
+    "code": "taverne_addict",
+    "name": "Taverne Addict",
+    "description": "Daily streak de 30 jours. Reçoit en bonus une potion de soin I à chaque /daily (en plus de l'or).",
+    "icon": "🍺",
+    "condition_type": "daily_streak",
+    "condition_value": 30,
+    "effects": [
+      { "type": "daily_bonus_item", "target": "potion_soin_i", "value": 1 }
+    ]
+  },
+  {
+    "code": "slime_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Slime",
+    "description": "50 slimes tués. +5% drop rate sur les slimes (multiplicatif, préserve la rareté).",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "slime",
+    "condition_value": 50,
+    "effects": [
+      { "type": "drop_rate_bonus_vs_mob", "target": "slime", "value": 5 }
+    ]
+  },
+  {
+    "code": "gobelin_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Gobelin",
+    "description": "50 gobelins tués. +5% drop rate sur les gobelins.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "gobelin",
+    "condition_value": 50,
+    "effects": [
+      { "type": "drop_rate_bonus_vs_mob", "target": "gobelin", "value": 5 }
+    ]
+  },
+  {
+    "code": "gobelin_combattant_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Gobelin Combattant",
+    "description": "50 gobelins combattants tués. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "gobelin_combattant",
+    "condition_value": 50,
+    "effects": [
+      { "type": "drop_rate_bonus_vs_mob", "target": "gobelin_combattant", "value": 5 }
+    ]
+  },
+  {
+    "code": "gobelin_chaman_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Gobelin Chaman",
+    "description": "50 gobelins chamans tués. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "gobelin_chaman",
+    "condition_value": 50,
+    "effects": [
+      { "type": "drop_rate_bonus_vs_mob", "target": "gobelin_chaman", "value": 5 }
+    ]
+  },
+  {
+    "code": "gobelin_geant_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Gobelin Géant",
+    "description": "50 gobelins géants tués. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "gobelin_geant",
+    "condition_value": 50,
+    "effects": [
+      { "type": "drop_rate_bonus_vs_mob", "target": "gobelin_geant", "value": 5 }
+    ]
+  },
+  {
+    "code": "gobelin_runique_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Gobelin Runique",
+    "description": "50 gobelins runiques tués. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "gobelin_runique",
+    "condition_value": 50,
+    "effects": [
+      { "type": "drop_rate_bonus_vs_mob", "target": "gobelin_runique", "value": 5 }
+    ]
+  },
+  {
+    "code": "gobelin_ballon_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Gobelin Ballon",
+    "description": "50 gobelins ballons tués. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "gobelin_ballon",
+    "condition_value": 50,
+    "effects": [
+      { "type": "drop_rate_bonus_vs_mob", "target": "gobelin_ballon", "value": 5 }
+    ]
+  },
+  {
+    "code": "gobelin_assassin_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Gobelin Assassin",
+    "description": "50 gobelins assassins tués. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "gobelin_assassin",
+    "condition_value": 50,
+    "effects": [
+      { "type": "drop_rate_bonus_vs_mob", "target": "gobelin_assassin", "value": 5 }
+    ]
+  },
+  {
+    "code": "gobelin_superieur_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Gobelin Supérieur",
+    "description": "50 gobelins supérieurs tués. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "gobelin_superieur",
+    "condition_value": 50,
+    "effects": [
+      { "type": "drop_rate_bonus_vs_mob", "target": "gobelin_superieur", "value": 5 }
+    ]
   }
 ]

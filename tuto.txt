@@ -159,6 +159,24 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
             la fin d'un combat (encounter et solo). Bonus retiré dès que le
             record est battu par un autre joueur.
 
+        🩸 Le Bourreau
+            Tuer 500 monstres (toutes familles confondues). Bonus : +5%
+            additif sur les dégâts critiques (crit_damage 150 → 155).
+
+        🌪️ L'Intouchable
+            Encaisser 100 esquives en combat de groupe (encounters
+            uniquement, pas en solo). Bonus : +1% d'esquive permanent.
+
+        🍺 Taverne Addict
+            Atteindre une daily streak de 30. Bonus : reçoit 1 potion de
+            soin I supplémentaire à chaque /daily (en plus de l'or).
+
+        🏹 Chasseur Légendaire — <Mob>
+            50 kills sur un même mob spécifique → titre dédié à CE mob.
+            Bonus : +5% drop rate sur ce mob (multiplicatif, préserve la
+            rareté des items rares). Un titre par mob du jeu : avec 9 mobs
+            actuels, c'est 9 chasseurs distincts à débloquer.
+
 --------------------------------------------------------------------------------
 1.2 — MÉTIERS & RESSOURCES
 --------------------------------------------------------------------------------

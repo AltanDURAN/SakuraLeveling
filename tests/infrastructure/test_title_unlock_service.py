@@ -113,3 +113,81 @@ def test_unlock_only_for_matching_family(session):
     kill_repo.set_kill_count(pid, "slime", 100)
     events = service.check_kills_family(pid, "gobelin")
     assert events == []
+
+
+def test_unlock_bourreau_at_500_kills_total(session):
+    """500 mobs (toutes familles confondues) → unlock 'bourreau'."""
+    pid = _create_player(session, 42)
+    _seed_slime_mob(session)
+
+    kill_repo = PlayerKillRepository(session)
+    title_repo = PlayerTitleRepository(session)
+    service = TitleUnlockService(title_repo, kill_repo)
+
+    kill_repo.set_kill_count(pid, "slime", 499)
+    events = service.check_kills_total(pid)
+    assert all(e.title.code != "bourreau" for e in events)
+
+    kill_repo.set_kill_count(pid, "slime", 500)
+    events = service.check_kills_total(pid)
+    assert any(e.title.code == "bourreau" for e in events)
+
+
+def test_unlock_chasseur_legendaire_per_mob(session):
+    """50 kills sur un mob_code → unlock du chasseur_legendaire correspondant."""
+    pid = _create_player(session, 99)
+    _seed_slime_mob(session)
+
+    kill_repo = PlayerKillRepository(session)
+    title_repo = PlayerTitleRepository(session)
+    service = TitleUnlockService(title_repo, kill_repo)
+
+    kill_repo.set_kill_count(pid, "slime", 49)
+    events = service.check_kills_mob(pid, "slime")
+    assert events == []
+
+    kill_repo.set_kill_count(pid, "slime", 50)
+    events = service.check_kills_mob(pid, "slime")
+    assert len(events) == 1
+    assert events[0].title.code == "slime_chasseur_legendaire"
+
+
+def test_unlock_chasseur_only_targets_specified_mob(session):
+    """50 kills slime ne débloque pas le chasseur gobelin."""
+    pid = _create_player(session, 100)
+    _seed_slime_mob(session)
+
+    kill_repo = PlayerKillRepository(session)
+    title_repo = PlayerTitleRepository(session)
+    service = TitleUnlockService(title_repo, kill_repo)
+
+    kill_repo.set_kill_count(pid, "slime", 50)
+    # Si on check pour 'gobelin', rien ne s'unlock
+    events = service.check_kills_mob(pid, "gobelin")
+    assert events == []
+
+
+def test_unlock_intouchable_at_100_dodges(session):
+    pid = _create_player(session, 200)
+    kill_repo = PlayerKillRepository(session)
+    title_repo = PlayerTitleRepository(session)
+    service = TitleUnlockService(title_repo, kill_repo)
+
+    events = service.check_dodges_total(pid, 99)
+    assert events == []
+
+    events = service.check_dodges_total(pid, 100)
+    assert any(e.title.code == "intouchable" for e in events)
+
+
+def test_unlock_taverne_addict_at_streak_30(session):
+    pid = _create_player(session, 300)
+    kill_repo = PlayerKillRepository(session)
+    title_repo = PlayerTitleRepository(session)
+    service = TitleUnlockService(title_repo, kill_repo)
+
+    events = service.check_daily_streak(pid, 29)
+    assert events == []
+
+    events = service.check_daily_streak(pid, 30)
+    assert any(e.title.code == "taverne_addict" for e in events)

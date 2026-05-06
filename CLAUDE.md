@@ -206,18 +206,28 @@ Pour un nouveau cog : si les commandes restent dans le canal beta → poser `int
 
 ## Système de titres
 
-- **Définitions** : [`titles.json`](app/infrastructure/content/titles.json) — Slayer (10% dmg vs famille, 100 kills), Champion 1v1 et Farmer Fou (exclusifs).
+- **Définitions** : [`titles.json`](app/infrastructure/content/titles.json) — Slayer (10% dmg vs famille, 100 kills), Champion 1v1, Farmer Fou (exclusifs), Bourreau (500 kills total → +5 crit_damage), Intouchable (100 esquives en encounter → +1 dodge), Taverne Addict (streak 30 → +1 potion_soin_i par /daily), Chasseur Légendaire (1 titre par mob, 50 kills → +5% drop rate sur ce mob).
 - **Modèle DB** : `player_titles(player_id, title_code, is_active, unlocked_at)` — 1:N avec unicité applicative (pas en DB) sur `(title_code, *)` pour les titres exclusifs.
+- **Tracking dodges** : `player_career_stats.dodges_total` (ajouté par migration `9f6c9ab82525_add_dodges_total_to_player_career_stats`). Incrémenté UNIQUEMENT par `PartyCombatService` quand un joueur esquive (encounters de groupe). Le solo `FightMobUseCase` ne tracke pas les esquives.
 - **Effets passifs** ([`title_bonus_service.py`](app/domain/services/title_bonus_service.py)) — agrégés dans `TitleBonuses` :
   - `damage_bonus_vs_family` / `damage_reduction_from_family` : multiplicateurs par famille (titres Slayer)
   - `champion_all_stats_pct` : +X% sur PV/atk/def (multiplicatif, ceil), +X flat sur speed/regen, +X additif sur crit/dodge/crit_dmg. **Appliqué en 5e étage** dans `StatsService.calculate_player_stats` (après les caps standards — un Champion peut donc dépasser le cap crit/dodge de 1 pt).
   - `gold_xp_bonus_pct` : +X% sur or/xp gagnés en combat (Farmer Fou). Appliqué dans `EncounterService.apply_rewards` et `FightMobUseCase` UNIQUEMENT au détenteur — les coéquipiers n'en bénéficient pas.
+  - `crit_damage_flat` (Bourreau) / `dodge_flat` (Intouchable) : additifs sur la stat correspondante, appliqués au même 5e étage (s'additionnent au champion_all_stats_pct quand les 2 titres coexistent).
+  - `drop_rate_bonus_vs_mob[mob_code]` (Chasseur Légendaire) : multiplicateur drop_rate spécifique à un mob (pas une famille). Appliqué dans `EncounterService.apply_rewards` et `FightMobUseCase` via `LootService(drop_rate_multiplier=base * chasseur_mult)`. Multiplicatif pour préserver la rareté.
+  - `daily_bonus_items: list[(item_code, qty)]` (Taverne Addict) : items octroyés à chaque `/daily`. Appliqués dans `ClaimDailyRewardUseCase` après l'or, surfaces dans le `DailyClaimResult.bonus_items` puis dans `build_daily_success_embed`.
 - **Helper centralisé** : [`resolve_title_bonuses(session, player_id)`](app/application/services/title_bonus_resolver.py) — charge les codes via `PlayerTitleRepository.list_codes_for_player`, charge les `TitleDefinition` via `title_loader`, agrège via `TitleBonusService`. À appeler partout où on calcule des stats ou des récompenses.
 - **Titres exclusifs** ([`exclusive_title_service.py`](app/application/services/exclusive_title_service.py)) :
   - `award_to(title_code, new_holder_id)` : retire à TOUS les autres détenteurs (delete row → l'`is_active` saute aussi) puis assigne au nouveau. Idempotent. La supression de la ligne fait que `get_active_title_code` retombera sur None pour l'ancien détenteur.
   - **Hooks** :
     - Champion 1v1 : à chaque résolution de duel (`ChallengePlayerUseCase`), on lit `duel_rank_repository.list_top(1)` et on appelle `award_to('champion_1v1', top1_id)`.
     - Farmer Fou : à chaque incrément de kill (`EncounterService.apply_rewards` + `FightMobUseCase`), on compare `kill_repository.get_total_kills(candidate)` avec `get_total_kills(current_holder)`. Transfert UNIQUEMENT si candidat > détenteur (égalité ⇒ premier arrivé garde).
+- **Hooks d'unlock non-exclusifs** dans `TitleUnlockService` :
+  - `check_kills_family(player_id, family)` : déclenché après chaque kill d'un mob dans cette famille.
+  - `check_kills_total(player_id)` : déclenché après chaque kill, débloque Bourreau à 500.
+  - `check_kills_mob(player_id, mob_code)` : déclenché après chaque kill, débloque le Chasseur Légendaire correspondant.
+  - `check_dodges_total(player_id, total)` : déclenché après combat encounter, débloque Intouchable à 100.
+  - `check_daily_streak(player_id, streak)` : déclenché à chaque /daily, débloque Taverne Addict à 30.
 - **Reset** : `ResetPlayerUseCase` purge `player_titles` du joueur — un Champion 1v1 reseté perd son titre, qu'il sera réattribué au prochain duel.
 
 ## Système de duel 1v1 (PvP)
