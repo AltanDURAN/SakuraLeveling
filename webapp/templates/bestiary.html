@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bestiaire — SakuraLeveling</title>
+    <link rel="stylesheet" href="/static/skill_tree.css">
+    <link rel="stylesheet" href="/static/bestiary.css">
+</head>
+<body class="page-bestiary">
+    <header class="page-header">
+        <h1>📖 Bestiaire</h1>
+        <p class="subtitle">
+            {{ mobs|length }} monstre{% if mobs|length != 1 %}s{% endif %} répertorié{% if mobs|length != 1 %}s{% endif %}.
+            Triés par famille puis par PV.
+        </p>
+    </header>
+
+    <main class="bestiary-grid">
+        {% for mob in mobs %}
+        <article class="mob-card mob-card--{{ mob.family or 'unknown' }}">
+            <header class="mob-card-header">
+                <h2>{{ mob.name }}</h2>
+                <span class="mob-rank">{{ mob.rank }}</span>
+            </header>
+
+            <p class="mob-family">
+                Famille : <strong>{{ mob.family or '—' }}</strong>
+                {% if mob.power_score %}
+                <span class="mob-power"> · Power score {{ mob.power_score }}</span>
+                {% endif %}
+            </p>
+
+            {% if mob.description %}
+            <p class="mob-description">{{ mob.description }}</p>
+            {% endif %}
+
+            <div class="mob-stats">
+                <div class="stat"><span class="stat-label">❤️ PV</span><span class="stat-value">{{ "{:,}".format(mob.max_hp).replace(",", " ") }}</span></div>
+                <div class="stat"><span class="stat-label">⚔️ Atk</span><span class="stat-value">{{ "{:,}".format(mob.attack).replace(",", " ") }}</span></div>
+                <div class="stat"><span class="stat-label">🛡️ Def</span><span class="stat-value">{{ "{:,}".format(mob.defense).replace(",", " ") }}</span></div>
+                <div class="stat"><span class="stat-label">💨 Spd</span><span class="stat-value">{{ mob.speed }}</span></div>
+                <div class="stat"><span class="stat-label">🎯 Crit</span><span class="stat-value">{{ mob.crit_chance }}%</span></div>
+                <div class="stat"><span class="stat-label">💥 Crit dmg</span><span class="stat-value">{{ mob.crit_damage }}%</span></div>
+                <div class="stat"><span class="stat-label">🌀 Esquive</span><span class="stat-value">{{ mob.dodge }}%</span></div>
+                <div class="stat"><span class="stat-label">✨ XP</span><span class="stat-value">{{ mob.xp_reward }}</span></div>
+                <div class="stat"><span class="stat-label">💰 Or</span><span class="stat-value">{{ mob.gold_reward }}</span></div>
+            </div>
+
+            {% if mob.loot_table %}
+            <details class="mob-loot">
+                <summary>🎁 Drops ({{ mob.loot_table|length }})</summary>
+                <ul>
+                    {% for entry in mob.loot_table %}
+                    <li>
+                        <code>{{ entry.item_code }}</code>
+                        ×{{ entry.min_quantity }}{% if entry.max_quantity != entry.min_quantity %}–{{ entry.max_quantity }}{% endif %}
+                        <span class="drop-rate">({{ (entry.drop_rate * 100)|round|int }}%)</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </details>
+            {% endif %}
+        </article>
+        {% endfor %}
+    </main>
+
+    <footer class="bestiary-footer">
+        <p>Mis à jour automatiquement depuis <code>app/infrastructure/content/mobs.json</code>.</p>
+    </footer>
+</body>
+</html>

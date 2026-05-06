@@ -9,4 +9,5 @@ lita_v2.db
 *.db
 *.egg-info/
 assets/generated_encounters/
+assets/generated_profiles/
 players_banner.png

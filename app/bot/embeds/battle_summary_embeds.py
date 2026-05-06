@@ -88,6 +88,41 @@ def _percent_of(value: int, total: int) -> str:
     return f" ({round(100 * value / total)}%)"
 
 
+def _build_contribution_chart(rewards: list, bar_width: int = 18) -> str:
+    """Construit un graphique ASCII de la part de contribution.
+
+    Format en bloc monospace, classement décroissant, médailles pour le top 3
+    et le nom tronqué/paddé pour aligner les barres. Renvoie une string déjà
+    enrobée dans un bloc ``` (markdown code) pour préserver l'alignement
+    fixe quel que soit le client Discord.
+    """
+    survivors = [r for r in rewards if r.contribution_share > 0]
+    if not survivors:
+        return ""
+
+    # Classement décroissant par part de contribution
+    sorted_rewards = sorted(survivors, key=lambda r: r.contribution_share, reverse=True)
+
+    # Plus long nom (tronqué à 12) pour un padding cohérent
+    name_width = max(len(r.name[:12]) for r in sorted_rewards)
+    name_width = max(name_width, 8)
+
+    medals = ["🥇", "🥈", "🥉"]
+    lines = []
+    for idx, reward in enumerate(sorted_rewards):
+        share = reward.contribution_share
+        pct = round(share * 100)
+        filled = round(share * bar_width)
+        bar = "█" * filled + "░" * (bar_width - filled)
+        # Les médailles ne sont PAS en monospace donc l'alignement post-médaille
+        # peut bouger ; on accepte ce léger décalage pour le top 3.
+        prefix = medals[idx] if idx < 3 else "  "
+        name_str = reward.name[:12].ljust(name_width)
+        lines.append(f"{prefix} {name_str}  {bar}  {pct:>3}%")
+
+    return "```\n" + "\n".join(lines) + "\n```"
+
+
 def build_details_page_embed(summary: BattleSummary) -> discord.Embed:
     embed = discord.Embed(
         title=f"📊 Détails du combat — {summary.mob_name}",
@@ -107,6 +142,17 @@ def build_details_page_embed(summary: BattleSummary) -> discord.Embed:
         key=lambda r: r.contribution_share,
         reverse=True,
     )
+
+    # Bandeau "graphique de participation" en haut du panneau Détails.
+    # Permet de voir d'un coup la répartition (qui a porté le combat)
+    # avant de plonger dans le détail des métriques par joueur.
+    chart = _build_contribution_chart(rewards_sorted)
+    if chart:
+        embed.add_field(
+            name="🏅 Part de victoire",
+            value=chart,
+            inline=False,
+        )
 
     team_dmg = sum(
         (r.contribution.damage_dealt if r.contribution else 0) for r in summary.rewards

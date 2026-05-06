@@ -184,6 +184,43 @@ html, body {
     font-weight: 600;
 }
 
+.tooltip-cost {
+    font-size: 13px;
+    color: #6ab0f3;
+    margin-top: 6px;
+}
+
+.tooltip-cost.maxed {
+    color: #9b59b6;
+}
+
+.tooltip-prereqs {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.tooltip-prereqs-heading {
+    font-size: 12px;
+    font-weight: 600;
+    color: #a0a0c0;
+    margin-bottom: 4px;
+}
+
+.tooltip-prereq {
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.tooltip-prereq.satisfied {
+    color: #6ab0f3;
+}
+
+.tooltip-prereq.missing {
+    color: #ff6b6b;
+    font-weight: 600;
+}
+
 .tooltip-state.maxed { color: #c08fdb; }
 .tooltip-state.in_progress { color: #d4af37; }
 .tooltip-state.unlockable { color: #6ab0f3; }

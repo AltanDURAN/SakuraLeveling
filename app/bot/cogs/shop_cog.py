@@ -7,8 +7,8 @@ from app.application.use_cases.sell_to_shop import SellToShopUseCase
 from app.bot.embeds.shop_embeds import (
     build_buy_result_embed,
     build_sell_result_embed,
-    build_shop_embed,
 )
+from app.bot.views.shop_view import ShopView
 from app.domain.services.shop_pricing_service import ShopPricingService
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
@@ -44,8 +44,10 @@ class ShopCog(commands.Cog):
             shop_repository = ShopRepository(session)
             shop_items = shop_repository.list_all(only_enabled=False)
 
-        embed = build_shop_embed(shop_items)
-        await interaction.response.send_message(embed=embed)
+        view = ShopView(shop_items)
+        await interaction.response.send_message(
+            embed=view._build_embed(), view=view,
+        )
 
     @app_commands.command(name="buy", description="Acheter un objet à la boutique")
     @app_commands.describe(item_code="Code de l'objet à acheter", quantity="Quantité à acheter")

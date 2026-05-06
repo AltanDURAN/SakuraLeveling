@@ -26,6 +26,11 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     Au premier usage sans target, votre profil est créé automatiquement.
 
     Le profil contient :
+        • Une **bannière PNG** générée par Pillow, affichée en haut de
+          l'embed : avatar circulaire, nom, niveau, or, XP, classe, badge
+          coloré du rang (F-/F/F+/E-/.../SSS+) et stats de combat en bas.
+          Si la génération de l'image échoue (cas extrême), l'embed
+          textuel suffit — pas de régression.
         • Niveau, XP, or, score de puissance, **rang** (F- → SSS+), classe active
         • Stats de combat (attaque, défense, vitesse, crit %, esquive %, régen)
         • Daily Streak actuelle 🔥
@@ -97,10 +102,14 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
         • Image générée à la volée (PNG) avec couleurs par état :
             violet = niveau max  /  or = en cours
             bleu = débloquable    /  gris = verrouillée
+            (les liens parent → enfant sont rouges quand le prérequis
+            n'est pas encore rempli, signalant ce qu'il faut investir avant)
         • Compteur de points disponibles / dépensés / compétences débloquées
         • Bouton "Investir un point" → Select Menu listant les 5 prochaines
           compétences débloquables, avec coût et description
-        • Bouton "Vue détaillée" → lien vers la page web (locale pour l'instant)
+        • Bouton "Vue détaillée" → page web interactive avec tooltip enrichi
+          (coût du prochain niveau, prérequis remplis ✅ / manquants ❌, panning
+          + zoom à la souris)
         • Bouton "Réinitialiser" → restitue tous les points investis,
           cooldown de 7 jours
     Si vous ajoutez `target`, vous pouvez consulter l'arbre d'un autre
@@ -258,8 +267,10 @@ Combat de groupe (encounters) — déclenché automatiquement
     Le récap final (sur le message de spawn) reste affiché en deux pages
     d'embed (navigables avec les flèches ⬅️ ➡️) :
         • Page 1 — Récompenses : or, XP et drops reçus par chaque participant
-        • Page 2 — Détails : dégâts infligés, dégâts encaissés, PV régénérés,
-          PV restants, et part de contribution de chaque joueur (🏅 X%)
+        • Page 2 — Détails : un graphique en barres ASCII (🏅 Part de victoire)
+          en haut de la page synthétise la répartition de la contribution
+          (médailles 🥇🥈🥉 pour le top 3) ; en dessous, le détail par joueur :
+          dégâts infligés, dégâts encaissés, PV soignés, PV restants.
 
     Note sur la part de contribution : la régénération passive (hp_regen tour
     par tour) ne compte PAS comme "PV soignés" pour le partage de l'or — un
@@ -360,7 +371,10 @@ Kill counter : tous les survivants reçoivent +1 sur le compteur du mob tué.
 --------------------------------------------------------------------------------
 
 /shop
-    Affiche tous les articles disponibles à la boutique avec :
+    Affiche les articles disponibles à la boutique, paginé par catégorie
+    (boutons : Armes, Boucliers, Armure, Accessoires, Consommables, Ressources).
+    Ouvre par défaut sur la première catégorie qui contient au moins un
+    article. Pour chaque entrée :
         • Prix d'achat (fixe, défini par l'admin)
         • Prix de vente actuel (dynamique, dépend du stock)
         • Stock actuel et taux de saturation

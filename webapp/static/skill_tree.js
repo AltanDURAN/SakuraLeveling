@@ -12,6 +12,8 @@
     const tooltipState = tooltip.querySelector('.tooltip-state');
     const tooltipDescription = tooltip.querySelector('.tooltip-description');
     const tooltipLevel = tooltip.querySelector('.tooltip-level');
+    const tooltipCost = tooltip.querySelector('.tooltip-cost');
+    const tooltipPrereqs = tooltip.querySelector('.tooltip-prereqs');
 
     if (!svg) return;
 
@@ -36,11 +38,41 @@
         tooltipLevel.textContent =
             `Niveau : ${skill.current_level} / ${skill.max_level}`;
 
+        // Coût du prochain niveau (ou message "max atteint")
+        if (skill.state === 'maxed') {
+            tooltipCost.textContent = '✅ Niveau maximum atteint';
+            tooltipCost.className = 'tooltip-cost maxed';
+        } else if (skill.costs && skill.costs.length > skill.current_level) {
+            const nextCost = skill.costs[skill.current_level];
+            tooltipCost.textContent = `💎 Prochain niveau : ${nextCost} pt(s) de compétence`;
+            tooltipCost.className = 'tooltip-cost';
+        } else {
+            tooltipCost.textContent = '';
+        }
+
+        // Prérequis : ceux non remplis sont marqués en rouge
+        tooltipPrereqs.innerHTML = '';
+        if (skill.prereqs_detail && skill.prereqs_detail.length > 0) {
+            const heading = document.createElement('p');
+            heading.className = 'tooltip-prereqs-heading';
+            heading.textContent = 'Prérequis :';
+            tooltipPrereqs.appendChild(heading);
+
+            skill.prereqs_detail.forEach(prereq => {
+                const line = document.createElement('p');
+                line.className = 'tooltip-prereq ' +
+                    (prereq.satisfied ? 'satisfied' : 'missing');
+                const icon = prereq.satisfied ? '✅' : '❌';
+                line.textContent = `${icon} ${prereq.icon} ${prereq.name} (niv. ${prereq.current_level})`;
+                tooltipPrereqs.appendChild(line);
+            });
+        }
+
         const padding = 12;
         let left = x + padding;
         let top = y + padding;
         if (left + 360 > window.innerWidth) left = x - 360;
-        if (top + 200 > window.innerHeight) top = y - 200;
+        if (top + 280 > window.innerHeight) top = y - 280;
         tooltip.style.left = left + 'px';
         tooltip.style.top = top + 'px';
         tooltip.hidden = false;

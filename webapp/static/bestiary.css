@@ -1,0 +1,150 @@
+/* Styles propres à la page bestiaire (vient s'ajouter à skill_tree.css). */
+
+.page-bestiary {
+    padding: 30px 24px 60px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.page-bestiary .page-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.bestiary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.mob-card {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.mob-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.mob-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.mob-card-header h2 {
+    font-size: 18px;
+    margin: 0;
+}
+
+.mob-rank {
+    background: rgba(212, 175, 55, 0.15);
+    color: #d4af37;
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.mob-family {
+    color: #a0a0c0;
+    font-size: 13px;
+}
+
+.mob-power {
+    color: #6ab0f3;
+}
+
+.mob-description {
+    font-style: italic;
+    color: #c0c0d0;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.mob-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.stat {
+    background: rgba(0, 0, 0, 0.18);
+    border-radius: 6px;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.stat-label {
+    font-size: 11px;
+    color: #a0a0c0;
+}
+
+.stat-value {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.mob-loot {
+    margin-top: 4px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+    padding: 8px 12px;
+}
+
+.mob-loot summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: #d4af37;
+}
+
+.mob-loot ul {
+    margin: 8px 0 0 8px;
+    list-style: none;
+    padding: 0;
+}
+
+.mob-loot li {
+    padding: 2px 0;
+    font-size: 13px;
+}
+
+.mob-loot code {
+    background: rgba(255, 255, 255, 0.06);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.drop-rate {
+    color: #6ab0f3;
+    font-size: 12px;
+}
+
+/* Couleurs douces par famille (extensible) */
+.mob-card--slime { border-left: 3px solid #50c878; }
+.mob-card--gobelin { border-left: 3px solid #b87333; }
+
+.bestiary-footer {
+    text-align: center;
+    margin-top: 40px;
+    color: #707090;
+    font-size: 12px;
+}
+
+@media (max-width: 700px) {
+    .bestiary-grid { grid-template-columns: 1fr; }
+}

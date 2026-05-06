@@ -235,6 +235,55 @@ class PlayerCog(commands.Cog):
             duel_losses=duel_rank.losses if duel_rank else 0,
             active_title=active_title_name,
         )
+
+        # Bannière Pillow attachée en image de l'embed. Best effort —
+        # si la génération de l'image échoue, on envoie l'embed seul
+        # (pas de régression du /profile).
+        try:
+            from app.bot.rendering.profile_banner import compose_profile_banner
+            from app.shared.paths import GENERATED_PROFILES_DIR
+
+            GENERATED_PROFILES_DIR.mkdir(parents=True, exist_ok=True)
+            banner_filename = f"profile_{profile.player.id}.png"
+            banner_path = GENERATED_PROFILES_DIR / banner_filename
+
+            avatar_url = (
+                target_member.display_avatar.url if target_member else None
+            )
+            class_name = active_class.name if active_class else None
+            compose_profile_banner(
+                output_path=str(banner_path),
+                display_name=profile.player.display_name,
+                avatar_url=avatar_url,
+                level=profile.progression.level,
+                xp=profile.progression.xp,
+                gold=profile.resources.gold,
+                rank_label=rank_label,
+                power_score=formatted_power_score,
+                class_name=class_name,
+                active_title=active_title_name,
+                stats={
+                    "max_hp": stats.max_hp,
+                    "attack": stats.attack,
+                    "defense": stats.defense,
+                    "speed": stats.speed,
+                    "crit_chance": stats.crit_chance,
+                    "crit_damage": stats.crit_damage,
+                    "dodge": stats.dodge,
+                    "hp_regeneration": stats.hp_regeneration,
+                },
+            )
+            file = discord.File(str(banner_path), filename=banner_filename)
+            embed.set_image(url=f"attachment://{banner_filename}")
+            await interaction.response.send_message(embed=embed, file=file)
+            return
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Profile banner render failed, falling back to text embed: %s",
+                _e, exc_info=True,
+            )
+
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="inventory", description="Afficher un inventaire")

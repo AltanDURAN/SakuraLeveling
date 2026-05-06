@@ -31,6 +31,9 @@ COLORS = {
     "header_text": "#e8e8f0",
     "subheader_text": "#a0a0c0",
     "edge_locked": "#3a3a4e",
+    # Edge "rouge" = on doit d'abord investir dans le parent avant que cet
+    # enfant soit accessible. Visuellement saillant pour guider le joueur.
+    "edge_blocked_by_prereq": "#c84a4a",
     "edge_unlockable": "#4a90e2",
     "edge_in_progress": "#d4af37",
     "edge_maxed": "#9b59b6",
@@ -76,13 +79,24 @@ def _node_state_colors(state: str) -> tuple[str, str, str]:
     )
 
 
-def _edge_color(child_state: str) -> str:
+def _edge_color(child_state: str, parent_level: int) -> str:
+    """Couleur d'une arête (parent → enfant).
+
+    Quand l'enfant est verrouillé ET que le parent n'a aucun niveau
+    investi (parent_level==0), on bascule sur du rouge pour signaler
+    le prérequis manquant. Si l'enfant est juste 'unlockable' ou
+    plus avancé, c'est qu'au moins ce parent-là est satisfait — on
+    garde la couleur progressive habituelle.
+    """
     if child_state == "maxed":
         return COLORS["edge_maxed"]
     if child_state == "in_progress":
         return COLORS["edge_in_progress"]
     if child_state == "unlockable":
         return COLORS["edge_unlockable"]
+    # child_state == "locked"
+    if parent_level <= 0:
+        return COLORS["edge_blocked_by_prereq"]
     return COLORS["edge_locked"]
 
 
@@ -174,15 +188,20 @@ def _render_node(
 def _render_edges(
     definition: SkillTreeDefinition,
     states: dict[str, str],
+    allocations: dict[str, int],
 ) -> str:
-    """Lignes reliant chaque parent à ses enfants."""
+    """Lignes reliant chaque parent à ses enfants. La couleur dépend de
+    l'état de l'enfant ET du niveau du parent (rouge si prérequis non
+    rempli, cf. `_edge_color`)."""
     edges: list[str] = []
     for node in definition.skills.values():
         for prereq_code in node.prerequisites:
             parent = definition.get(prereq_code)
             if parent is None:
                 continue
-            color = _edge_color(states.get(node.code, "locked"))
+            child_state = states.get(node.code, "locked")
+            parent_level = allocations.get(prereq_code, 0)
+            color = _edge_color(child_state, parent_level)
             x1, y1 = parent.position.x, parent.position.y
             x2, y2 = node.position.x, node.position.y
             edges.append(
@@ -206,7 +225,7 @@ def render_to_svg(
 
     view_x, view_y, view_w, view_h = _compute_view_box(definition)
     header = _render_header(state, view_x, view_w)
-    edges = _render_edges(definition, states)
+    edges = _render_edges(definition, states, state.allocations)
     nodes = "\n".join(
         _render_node(
             node=node,
