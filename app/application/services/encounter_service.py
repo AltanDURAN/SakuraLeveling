@@ -92,11 +92,17 @@ class EncounterService:
                 allocations
             )
 
+            from app.application.services.title_bonus_resolver import (
+                resolve_title_bonuses,
+            )
+            title_bonuses = resolve_title_bonuses(session, profile.player.id)
+
             stats = StatsService().calculate_player_stats(
                 profile=profile,
                 equipped_items=equipped_items,
                 active_class=active_class,
                 skill_bonuses=skill_bonuses,
+                title_bonuses=title_bonuses,
             )
 
         regenerated_current_hp = self.get_regenerated_player_hp(
@@ -156,11 +162,21 @@ class EncounterService:
                 allocations = skill_allocation_repository.list_by_player(participant.player_id)
                 skill_bonuses = skill_tree_service.aggregate_bonuses(allocations)
 
+                # Charger les définitions des titres débloqués pour agréger
+                # les bonus passifs (vs famille du mob + Champion 1v1).
+                title_codes = title_repo.list_codes_for_player(participant.player_id)
+                title_defs = [
+                    d for d in (get_title_def(code) for code in title_codes) if d is not None
+                ]
+                title_bonuses = title_bonus_service.aggregate(title_defs)
+                title_bonuses_by_player[participant.player_id] = title_bonuses
+
                 stats = StatsService().calculate_player_stats(
                     profile=profile,
                     equipped_items=equipped_items,
                     active_class=active_class,
                     skill_bonuses=skill_bonuses,
+                    title_bonuses=title_bonuses,
                 )
 
                 party.append(
@@ -173,16 +189,6 @@ class EncounterService:
                         "max_hp": participant.max_hp,
                         "stats": stats,
                     }
-                )
-
-                # Charger les définitions des titres débloqués pour agréger
-                # les bonus passifs (s'appliquent en combat selon mob.family)
-                title_codes = title_repo.list_codes_for_player(participant.player_id)
-                title_defs = [
-                    d for d in (get_title_def(code) for code in title_codes) if d is not None
-                ]
-                title_bonuses_by_player[participant.player_id] = (
-                    title_bonus_service.aggregate(title_defs)
                 )
 
         if not party:
@@ -338,10 +344,22 @@ class EncounterService:
                 )
                 bonuses: SkillBonuses = skill_tree_service.aggregate_bonuses(allocations)
 
+                # Bonus du titre Farmer Fou (+1% gold/xp). N'affecte que le
+                # détenteur — les coéquipiers n'en bénéficient pas.
+                from app.application.services.title_bonus_resolver import (
+                    resolve_title_bonuses,
+                )
+                title_bonuses = resolve_title_bonuses(session, participant.player_id)
+                farmer_pct = title_bonuses.gold_xp_bonus_pct / 100.0
+
                 base_gold = gold_per_player.get(participant.player_id, 0)
                 base_xp = xp_per_player.get(participant.player_id, 0)
-                gold = round(base_gold * (1 + bonuses.gold_drop_percent))
-                xp = round(base_xp * (1 + bonuses.xp_drop_percent))
+                gold = round(
+                    base_gold * (1 + bonuses.gold_drop_percent) * (1 + farmer_pct)
+                )
+                xp = round(
+                    base_xp * (1 + bonuses.xp_drop_percent) * (1 + farmer_pct)
+                )
 
                 dropped_items = loot_service.generate_loot(
                     mob, drop_rate_multiplier=bonuses.drop_rate_multiplier
@@ -362,6 +380,30 @@ class EncounterService:
                         participant.player_id, mob.family
                     )
                 title_unlock_service.check_kills_total(participant.player_id)
+
+                # Titre exclusif Farmer Fou : transfert si le candidat
+                # dépasse STRICTEMENT le détenteur actuel (ex aequo ⇒ le
+                # premier arrivé garde — comportement décidé côté beta).
+                try:
+                    from app.application.services.exclusive_title_service import (
+                        ExclusiveTitleService,
+                    )
+                    excl = ExclusiveTitleService(session)
+                    holder_id = excl.current_holder("farmer_fou")
+                    candidate_total = kill_repository.get_total_kills(
+                        participant.player_id
+                    )
+                    if holder_id is None and candidate_total > 0:
+                        excl.award_to("farmer_fou", participant.player_id)
+                    elif holder_id is not None and holder_id != participant.player_id:
+                        holder_total = kill_repository.get_total_kills(holder_id)
+                        if candidate_total > holder_total:
+                            excl.award_to("farmer_fou", participant.player_id)
+                except Exception as _e:
+                    import logging
+                    logging.getLogger(__name__).warning(
+                        "Farmer Fou title hook failed: %s", _e, exc_info=True,
+                    )
 
                 # Progress quêtes hebdo + quotidiennes (best effort)
                 from app.application.use_cases.weekly_quests import (

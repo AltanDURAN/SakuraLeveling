@@ -355,6 +355,47 @@ def write_skill_tree_sheet(wb: Workbook) -> None:
     ws.freeze_panes = "B2"
 
 
+def write_titles_sheet(wb: Workbook) -> None:
+    try:
+        titles = _load("titles.json")
+    except FileNotFoundError:
+        return
+    ws = wb.create_sheet("🏷️ Titres")
+    ws.append([
+        "Code", "Nom", "Icône", "Exclusif",
+        "Condition", "Cible / Valeur", "Effets", "Description",
+    ])
+    _apply_header_style(ws)
+    for t in titles:
+        condition = t.get("condition_type", "—")
+        target = t.get("condition_target", "")
+        value = t.get("condition_value", 0)
+        cond_target = (
+            f"{target} / {value}" if target and value
+            else (str(value) if value else (target or "—"))
+        )
+        effects_str = "\n".join(
+            f"{e.get('type','?')} → "
+            + (f"target={e['target']}, " if e.get("target") else "")
+            + f"value={e.get('value', 0)}"
+            for e in (t.get("effects") or [])
+        )
+        ws.append([
+            t["code"], t["name"], t.get("icon", ""),
+            "oui" if t.get("exclusive") else "non",
+            condition, cond_target,
+            effects_str or "—",
+            t.get("description", ""),
+        ])
+    for row in ws.iter_rows(min_row=2):
+        for cell in row:
+            if isinstance(cell.value, str) and "\n" in cell.value:
+                cell.alignment = Alignment(wrap_text=True, vertical="top")
+    _autosize(ws, max_width=60)
+    _zebra(ws)
+    ws.freeze_panes = "B2"
+
+
 def write_world_bosses_sheet(wb: Workbook) -> None:
     try:
         bosses = _load("boss_definitions.json")
@@ -425,6 +466,7 @@ def main() -> None:
     write_shop_sheet(wb)
     write_classes_sheet(wb)
     write_skill_tree_sheet(wb)
+    write_titles_sheet(wb)
     write_world_bosses_sheet(wb)
     write_summary_sheet(wb)  # ajouté en premier via index=0
 

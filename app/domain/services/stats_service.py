@@ -1,6 +1,7 @@
 from app.domain.entities.class_definition import ClassDefinition
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
 from app.domain.entities.player_profile import PlayerProfile
+from app.domain.services.title_bonus_service import TitleBonuses
 from app.domain.value_objects.skill_bonuses import SkillBonuses
 from app.domain.value_objects.stats import Stats
 
@@ -12,6 +13,7 @@ class StatsService:
         equipped_items: list[PlayerEquipmentItem],
         active_class: ClassDefinition | None = None,
         skill_bonuses: SkillBonuses | None = None,
+        title_bonuses: TitleBonuses | None = None,
     ) -> Stats:
         level = profile.progression.level
 
@@ -71,7 +73,7 @@ class StatsService:
         hp_regeneration = max(0, hp_regeneration)
         speed = max(1, speed)
 
-        return Stats(
+        stats = Stats(
             max_hp=max_hp,
             attack=attack,
             defense=defense,
@@ -81,3 +83,11 @@ class StatsService:
             dodge=dodge,
             hp_regeneration=hp_regeneration,
         )
+
+        # 5e étage : bonus de titres exclusifs (Champion 1v1 etc.).
+        # Appliqués APRÈS les caps standards : un Champion 1v1 peut donc
+        # dépasser le cap crit/dodge de 1 pt, c'est l'avantage du titre.
+        if title_bonuses is not None:
+            stats = title_bonuses.apply_to_stats(stats)
+
+        return stats

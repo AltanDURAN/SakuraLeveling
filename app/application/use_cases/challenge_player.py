@@ -16,6 +16,8 @@ Règles métier :
 from dataclasses import dataclass
 from datetime import datetime, UTC
 
+from app.application.services.exclusive_title_service import ExclusiveTitleService
+from app.application.services.title_bonus_resolver import resolve_title_bonuses
 from app.domain.services.cooldown_service import CooldownService
 from app.domain.services.duel_combat_service import DuelCombatService
 from app.domain.services.skill_tree_service import SkillTreeService
@@ -138,8 +140,14 @@ class ChallengePlayerUseCase:
         skill_tree_def = get_skill_tree_definition()
         skill_service = SkillTreeService(skill_tree_def)
 
-        challenger_stats = self._compute_stats(challenger_profile, skill_service)
-        target_stats = self._compute_stats(target_profile, skill_service)
+        # Stats finales (avec bonus de titres ⇒ Champion 1v1 actif s'applique)
+        session = self.duel_rank_repository.session
+        challenger_stats = self._compute_stats(
+            challenger_profile, skill_service, session,
+        )
+        target_stats = self._compute_stats(
+            target_profile, skill_service, session,
+        )
 
         # Combat (a = challenger, b = target). Démarre full HP des deux côtés.
         result = self.duel_combat_service.fight_player_vs_player(
@@ -177,6 +185,20 @@ class ChallengePlayerUseCase:
         # retours bêta. Si on les réintroduit plus tard, hook ici via
         # WeeklyQuestProgressService.on_duel_won / DailyQuestProgressService.
 
+        # Titre exclusif Champion 1v1 : revient toujours au rang 1 actuel.
+        # Idempotent — si le top 1 n'a pas changé, no-op silencieux.
+        try:
+            top_list = self.duel_rank_repository.list_top(limit=1)
+            if top_list:
+                ExclusiveTitleService(self.duel_rank_repository.session).award_to(
+                    "champion_1v1", top_list[0].player_id,
+                )
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Champion 1v1 title hook failed: %s", _e, exc_info=True,
+            )
+
         return DuelOutcome(
             success=True,
             message=(
@@ -196,16 +218,18 @@ class ChallengePlayerUseCase:
             challenger_won=challenger_won,
         )
 
-    def _compute_stats(self, profile, skill_service: SkillTreeService):
+    def _compute_stats(self, profile, skill_service: SkillTreeService, session):
         equipped_items = self.equipment_repository.list_by_player_id(profile.player.id)
         active_class = self.class_repository.get_current_class_for_player(
             profile.player.id
         )
         allocations = self.skill_allocation_repository.list_by_player(profile.player.id)
         skill_bonuses = skill_service.aggregate_bonuses(allocations)
+        title_bonuses = resolve_title_bonuses(session, profile.player.id)
         return self.stats_service.calculate_player_stats(
             profile=profile,
             equipped_items=equipped_items,
             active_class=active_class,
             skill_bonuses=skill_bonuses,
+            title_bonuses=title_bonuses,
         )

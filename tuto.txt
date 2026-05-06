@@ -135,6 +135,30 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
         300 🪙
         Revenez également demain !
 
+/title [target] et /title_set [code]
+    Affiche / change votre titre cosmétique. Tous les titres débloqués
+    appliquent leurs effets passifs en permanence (peu importe celui activé
+    pour l'affichage). Titres actuellement disponibles :
+
+        🟢 Slime Slayer / 👹 Gobelin Slayer
+            +10% dégâts infligés et -10% dégâts subis face à la famille
+            ciblée. Débloqué après 100 kills sur la famille.
+
+        👑 Champion en 1vs1 (titre exclusif — 1 seul détenteur)
+            Va automatiquement au joueur en tête du ladder /top duel_rank.
+            Bonus passif : +1% sur toutes les stats. Multiplicatif (arrondi
+            entier supérieur) sur PV/atk/def, additif sur crit/dodge/crit_dmg,
+            +1 flat sur vitesse/régénération. Le titre se transfère dès qu'un
+            autre joueur prend la 1re place et le bonus est retiré aussitôt
+            (même s'il était choisi comme titre actif visible).
+
+        🌾 Le Farmer Fou (titre exclusif — 1 seul détenteur)
+            Va au joueur qui détient le record absolu de monstres tués
+            (toutes familles confondues). En cas d'égalité, le premier arrivé
+            au record garde le titre. Bonus : +1% sur l'or et l'XP gagnés à
+            la fin d'un combat (encounter et solo). Bonus retiré dès que le
+            record est battu par un autre joueur.
+
 --------------------------------------------------------------------------------
 1.2 — MÉTIERS & RESSOURCES
 --------------------------------------------------------------------------------
