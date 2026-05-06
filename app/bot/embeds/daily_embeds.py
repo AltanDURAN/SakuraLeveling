@@ -5,14 +5,26 @@ import discord
 from app.shared.formatters import format_int as _format_int
 
 
-def build_daily_success_embed(streak: int, gold_gained: int) -> discord.Embed:
+def build_daily_success_embed(
+    streak: int,
+    gold_gained: int,
+    bonus_items: list[tuple[str, int]] | None = None,
+) -> discord.Embed:
+    lines = [
+        "Vous récupérez :",
+        f"**{_format_int(gold_gained)}** 🪙",
+    ]
+    if bonus_items:
+        lines.append("")
+        lines.append("🏷️ **Bonus de titres :**")
+        for name, qty in bonus_items:
+            lines.append(f"• **{name}** ×{qty}")
+    lines.append("")
+    lines.append("Revenez également demain !")
+
     embed = discord.Embed(
         title=f"Daily Streak {streak} 🔥 !",
-        description=(
-            "Vous récupérez :\n"
-            f"**{_format_int(gold_gained)}** 🪙\n"
-            "Revenez également demain !"
-        ),
+        description="\n".join(lines),
         color=discord.Color.gold(),
     )
     return embed

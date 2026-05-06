@@ -9,6 +9,7 @@ class PlayerCareerStats:
     damage_dealt_total: int = 0
     damage_tanked_total: int = 0
     hp_healed_total: int = 0
+    dodges_total: int = 0
     combats_fought: int = 0
     combats_won: int = 0
     combats_lost: int = 0

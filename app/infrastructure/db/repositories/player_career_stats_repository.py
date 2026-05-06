@@ -20,6 +20,7 @@ class PlayerCareerStatsRepository:
                 damage_dealt_total=0,
                 damage_tanked_total=0,
                 hp_healed_total=0,
+                dodges_total=0,
                 combats_fought=0,
                 combats_won=0,
                 combats_lost=0,
@@ -39,6 +40,7 @@ class PlayerCareerStatsRepository:
         damage_dealt: int = 0,
         damage_tanked: int = 0,
         hp_healed: int = 0,
+        dodges: int = 0,
         combats_fought: int = 0,
         combats_won: int = 0,
         combats_lost: int = 0,
@@ -54,6 +56,7 @@ class PlayerCareerStatsRepository:
                 damage_dealt_total=0,
                 damage_tanked_total=0,
                 hp_healed_total=0,
+                dodges_total=0,
                 combats_fought=0,
                 combats_won=0,
                 combats_lost=0,
@@ -70,6 +73,8 @@ class PlayerCareerStatsRepository:
             model.damage_tanked_total = (model.damage_tanked_total or 0) + damage_tanked
         if hp_healed:
             model.hp_healed_total = (model.hp_healed_total or 0) + hp_healed
+        if dodges:
+            model.dodges_total = (model.dodges_total or 0) + dodges
         if combats_fought:
             model.combats_fought = (model.combats_fought or 0) + combats_fought
         if combats_won:
@@ -94,6 +99,7 @@ class PlayerCareerStatsRepository:
             damage_dealt_total=model.damage_dealt_total,
             damage_tanked_total=model.damage_tanked_total,
             hp_healed_total=model.hp_healed_total,
+            dodges_total=model.dodges_total or 0,
             combats_fought=model.combats_fought,
             combats_won=model.combats_won,
             combats_lost=model.combats_lost,

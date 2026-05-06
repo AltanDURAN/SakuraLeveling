@@ -1,8 +1,10 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, UTC
 
 from app.domain.services.cooldown_service import CooldownService
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
+from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
+from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_career_stats_repository import (
     PlayerCareerStatsRepository,
 )
@@ -16,6 +18,9 @@ class DailyClaimResult:
     streak: int = 0
     gold_gained: int = 0
     next_available_at: datetime | None = None
+    # Items octroyés en plus de l'or par les titres (Taverne Addict, etc.).
+    # Liste de tuples (item_name, quantity) pour affichage humain.
+    bonus_items: list[tuple[str, int]] = field(default_factory=list)
 
 
 class ClaimDailyRewardUseCase:
@@ -80,6 +85,54 @@ class ClaimDailyRewardUseCase:
                 profile.player.id, gold_earned=gold_gained
             )
 
+        # Hook titre Taverne Addict : check_daily_streak puis application
+        # des bonus daily_bonus_item au prochain claim. Best effort — si
+        # n'importe quoi casse, on garde au moins l'or.
+        bonus_items: list[tuple[str, int]] = []
+        try:
+            session = self.cooldown_repository.session
+            from app.application.services.title_bonus_resolver import (
+                resolve_title_bonuses,
+            )
+            from app.application.services.title_unlock_service import (
+                TitleUnlockService,
+            )
+            from app.infrastructure.db.repositories.player_kill_repository import (
+                PlayerKillRepository,
+            )
+            from app.infrastructure.db.repositories.player_title_repository import (
+                PlayerTitleRepository,
+            )
+
+            # Étape 1 : éventuellement débloquer le titre selon le streak
+            TitleUnlockService(
+                PlayerTitleRepository(session),
+                PlayerKillRepository(session),
+            ).check_daily_streak(profile.player.id, new_streak)
+
+            # Étape 2 : appliquer les bonus daily_bonus_item des titres
+            # actuellement débloqués (incluant celui qu'on vient peut-être
+            # d'octroyer juste au-dessus).
+            title_bonuses = resolve_title_bonuses(session, profile.player.id)
+            if title_bonuses.daily_bonus_items:
+                inventory_repo = InventoryRepository(session)
+                item_repo = ItemRepository(session)
+                for item_code, qty in title_bonuses.daily_bonus_items:
+                    item = item_repo.get_by_code(item_code)
+                    if item is None or qty <= 0:
+                        continue
+                    inventory_repo.add_item(
+                        player_id=profile.player.id,
+                        item_definition_id=item.id,
+                        quantity=qty,
+                    )
+                    bonus_items.append((item.name, qty))
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Daily title bonus hook failed: %s", _e, exc_info=True,
+            )
+
         last_used_at, next_available_at = self.cooldown_service.build_next_daily_cooldown(now)
         self.cooldown_repository.upsert(
             player_id=profile.player.id,
@@ -111,4 +164,5 @@ class ClaimDailyRewardUseCase:
             streak=new_streak,
             gold_gained=gold_gained,
             next_available_at=next_available_at,
+            bonus_items=bonus_items,
         )

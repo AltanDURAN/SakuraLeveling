@@ -64,3 +64,58 @@ class TitleUnlockService:
             if self.title_repository.unlock(player_id, title.code):
                 unlocked.append(TitleUnlockedEvent(title=title))
         return unlocked
+
+    def check_kills_mob(
+        self, player_id: int, mob_code: str
+    ) -> list[TitleUnlockedEvent]:
+        """Titre Chasseur Légendaire : seuil de kills sur un mob donné.
+        Filtré par condition_target=mob_code pour ne checker que les titres
+        liés au mob qui vient d'être tué."""
+        unlocked: list[TitleUnlockedEvent] = []
+        candidates = list_for_condition("kills_mob")
+        if not candidates:
+            return unlocked
+
+        kills_per_mob = self.kill_repository.get_kills_per_mob(player_id)
+        mob_kills = kills_per_mob.get(mob_code, 0)
+
+        for title in candidates:
+            if title.condition_target != mob_code:
+                continue
+            if mob_kills < title.condition_value:
+                continue
+            if self.title_repository.unlock(player_id, title.code):
+                unlocked.append(TitleUnlockedEvent(title=title))
+        return unlocked
+
+    def check_dodges_total(
+        self, player_id: int, current_total: int
+    ) -> list[TitleUnlockedEvent]:
+        """Titre Intouchable : seuil d'esquives encaissées en encounter."""
+        unlocked: list[TitleUnlockedEvent] = []
+        candidates = list_for_condition("dodges_total")
+        if not candidates:
+            return unlocked
+
+        for title in candidates:
+            if current_total < title.condition_value:
+                continue
+            if self.title_repository.unlock(player_id, title.code):
+                unlocked.append(TitleUnlockedEvent(title=title))
+        return unlocked
+
+    def check_daily_streak(
+        self, player_id: int, current_streak: int
+    ) -> list[TitleUnlockedEvent]:
+        """Titre Taverne Addict : seuil de daily streak."""
+        unlocked: list[TitleUnlockedEvent] = []
+        candidates = list_for_condition("daily_streak")
+        if not candidates:
+            return unlocked
+
+        for title in candidates:
+            if current_streak < title.condition_value:
+                continue
+            if self.title_repository.unlock(player_id, title.code):
+                unlocked.append(TitleUnlockedEvent(title=title))
+        return unlocked

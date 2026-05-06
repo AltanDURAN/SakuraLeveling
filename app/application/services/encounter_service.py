@@ -361,8 +361,12 @@ class EncounterService:
                     base_xp * (1 + bonuses.xp_drop_percent) * (1 + farmer_pct)
                 )
 
+                # Chasseur Légendaire : multiplicateur drop rate spécifique
+                # à ce mob, multiplicatif (ne casse pas la rareté).
+                chasseur_mult = title_bonuses.drop_rate_multiplier_for_mob(mob.code)
                 dropped_items = loot_service.generate_loot(
-                    mob, drop_rate_multiplier=bonuses.drop_rate_multiplier
+                    mob,
+                    drop_rate_multiplier=bonuses.drop_rate_multiplier * chasseur_mult,
                 )
 
                 if gold > 0:
@@ -372,14 +376,27 @@ class EncounterService:
                     player_repository.add_xp(participant.player_id, xp)
 
                 kill_repository.increment(participant.player_id, mob_code)
-                # Check titres : kills_family puis kills_total. L'unlock
-                # est silencieux côté embed pour rester non-disruptif ;
-                # le joueur découvre le titre via /title.
+                # Check titres : kills_family / kills_total / kills_mob.
+                # Unlock silencieux côté embed (le joueur découvre via /title).
                 if mob.family:
                     title_unlock_service.check_kills_family(
                         participant.player_id, mob.family
                     )
                 title_unlock_service.check_kills_total(participant.player_id)
+                title_unlock_service.check_kills_mob(
+                    participant.player_id, mob_code,
+                )
+
+                # Check titre Intouchable : esquives totales tracées en
+                # carrière (career_stats.dodges_total). On lit le total
+                # APRÈS l'incrément qu'on vient de faire dans
+                # `_record_combat_career_stats`.
+                career_after = career_repository.get_or_create(
+                    participant.player_id
+                )
+                title_unlock_service.check_dodges_total(
+                    participant.player_id, career_after.dodges_total,
+                )
 
                 # Titre exclusif Farmer Fou : transfert si le candidat
                 # dépasse STRICTEMENT le détenteur actuel (ex aequo ⇒ le
@@ -480,12 +497,14 @@ class EncounterService:
         damage_dealt = contribution.damage_dealt if contribution else 0
         damage_tanked = contribution.damage_tanked if contribution else 0
         hp_healed = contribution.hp_healed if contribution else 0
+        dodges = getattr(contribution, "dodges", 0) if contribution else 0
 
         career_repository.add(
             participant.player_id,
             damage_dealt=damage_dealt,
             damage_tanked=damage_tanked,
             hp_healed=hp_healed,
+            dodges=dodges,
             combats_fought=1,
             combats_won=1 if won_combat else 0,
             combats_lost=0 if won_combat else 1,

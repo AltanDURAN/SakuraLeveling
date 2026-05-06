@@ -18,6 +18,7 @@ class PlayerCareerStatsModel(Base):
     damage_dealt_total: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     damage_tanked_total: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     hp_healed_total: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    dodges_total: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     combats_fought: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     combats_won: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     combats_lost: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

@@ -157,6 +157,7 @@ class PartyCombatService:
                 target_stats: Stats = target["stats"]
 
                 if random.random() < (target_stats.dodge / 100):
+                    contributions[target["player_id"]].dodges += 1
                     mob_action = f"{mob.name} attaque {target['name']}, mais l'attaque est esquivée."
                 else:
                     # Calcul en cascade pour pouvoir comptabiliser le "tanked"
