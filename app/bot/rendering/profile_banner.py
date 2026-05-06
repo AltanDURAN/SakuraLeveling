@@ -111,6 +111,35 @@ def _rank_color(rank_label: str) -> tuple[int, int, int]:
     return _RANK_BASE_COLOR.get(rank_label[0].upper(), (140, 140, 145))
 
 
+def _add_vignette(base: Image.Image, intensity: float = 0.55) -> None:
+    """Assombrit progressivement les bords/coins pour donner du relief
+    à l'image. Itère sur des rectangles concentriques avec alpha croissant.
+    """
+    w, h = base.size
+    overlay = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    od = ImageDraw.Draw(overlay)
+
+    # 24 anneaux concentriques. Chaque anneau a une opacité croissante
+    # vers les bords. Ça reste léger (max alpha ~50) — l'effet est subtil.
+    steps = 24
+    max_alpha = int(60 * intensity)
+    for i in range(steps):
+        ratio = i / max(1, steps - 1)
+        # Pondération exponentielle pour concentrer l'assombrissement
+        # vraiment dans les coins, pas au milieu.
+        alpha = int(max_alpha * (ratio ** 2.4))
+        if alpha <= 0:
+            continue
+        margin_x = int(w * 0.5 * (1 - ratio))
+        margin_y = int(h * 0.5 * (1 - ratio))
+        od.rectangle(
+            [(margin_x, margin_y), (w - 1 - margin_x, h - 1 - margin_y)],
+            outline=(0, 0, 0, alpha),
+            width=2,
+        )
+    base.alpha_composite(overlay)
+
+
 def _gradient_background(width: int, height: int) -> Image.Image:
     bg = Image.new("RGBA", (width, height), COLORS["bg_top"])
     draw = ImageDraw.Draw(bg)
@@ -166,28 +195,69 @@ def _draw_panel(
     border=None,
     accent: tuple[int, int, int, int] | None = None,
 ) -> None:
-    """Carte arrondie semi-transparente. Si `accent` est fourni, on dessine
-    une barre verticale colorée à gauche de la carte (4 px de large) pour
-    différencier visuellement le type de stat."""
+    """Carte arrondie semi-transparente avec léger dégradé vertical pour
+    ajouter de la profondeur (un peu plus clair en haut, plus sombre en bas).
+    Si `accent` est fourni, une barre verticale colorée à gauche de la
+    carte (5 px) marque le type de stat. Quand un accent est fourni, on
+    teinte aussi très légèrement le fond avec sa couleur, pour relier
+    visuellement la barre et la card.
+    """
     fill = fill or COLORS["panel_bg"]
     border = border or COLORS["panel_border"]
+    w, h = size
+
     overlay = Image.new("RGBA", size, (0, 0, 0, 0))
     od = ImageDraw.Draw(overlay)
+
+    # Dégradé vertical : on dessine d'abord le panel plein, puis on
+    # superpose une nappe transparente claire au sommet et sombre au
+    # bas pour un effet de relief.
     od.rounded_rectangle(
-        [(0, 0), (size[0] - 1, size[1] - 1)],
+        [(0, 0), (w - 1, h - 1)],
         radius=radius,
         fill=fill,
         outline=border,
         width=1,
     )
+
+    # Voile teinté très subtilement par la couleur d'accent (ajoute
+    # une touche de couleur au panel sans le surcharger).
+    if accent is not None:
+        ar, ag, ab, _ = accent
+        tint = Image.new("RGBA", size, (0, 0, 0, 0))
+        td = ImageDraw.Draw(tint)
+        td.rounded_rectangle(
+            [(0, 0), (w - 1, h - 1)],
+            radius=radius,
+            fill=(ar, ag, ab, 22),
+        )
+        overlay = Image.alpha_composite(overlay, tint)
+
+    # Highlight haut (clair) + ombre bas (sombre) pour profondeur
+    sheen = Image.new("RGBA", size, (0, 0, 0, 0))
+    sd = ImageDraw.Draw(sheen)
+    sd.rounded_rectangle(
+        [(0, 0), (w - 1, h // 2)],
+        radius=radius,
+        fill=(255, 255, 255, 14),
+    )
+    sd.rounded_rectangle(
+        [(0, h // 2), (w - 1, h - 1)],
+        radius=radius,
+        fill=(0, 0, 0, 28),
+    )
+    overlay = Image.alpha_composite(overlay, sheen)
+
     if accent is not None:
         # Barre verticale d'accent à gauche
         accent_w = 5
-        od.rounded_rectangle(
-            [(0, 6), (accent_w, size[1] - 7)],
+        od2 = ImageDraw.Draw(overlay)
+        od2.rounded_rectangle(
+            [(0, 6), (accent_w, h - 7)],
             radius=accent_w // 2,
             fill=accent,
         )
+
     base.alpha_composite(overlay, origin)
 
 
@@ -291,43 +361,72 @@ def _draw_rank_badge(
     rank_font,
     pwr_font,
 ) -> None:
-    """Médaille de rang : anneau coloré + lettre du rang + 'PWR XXX' en
-    petit en bas du badge. Tout est contenu DANS le badge pour ne pas
-    déborder sur la zone d'infos en dessous."""
+    """Médaille de rang avec halo coloré + anneau + cercle intérieur sombre
+    + lettre du rang + 'PWR XXX' en petit dessous. Le halo se rend dans
+    une plus grande image autour du badge pour donner un effet "néon".
+    Tout est contenu visuellement dans la zone réservée au badge.
+    """
     rc = _rank_color(rank_label)
-    badge = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    bd = ImageDraw.Draw(badge)
-    # Anneau extérieur coloré (épais pour bien ressortir)
-    bd.ellipse(
-        (0, 0, size - 1, size - 1),
-        fill=(rc[0], rc[1], rc[2], 240),
+
+    # Image plus grande que le badge pour accueillir le halo.
+    halo_extra = 22
+    canvas_size = size + 2 * halo_extra
+    canvas = Image.new("RGBA", (canvas_size, canvas_size), (0, 0, 0, 0))
+
+    # Halo : plusieurs cercles concentriques décroissants en alpha.
+    cd = ImageDraw.Draw(canvas)
+    for i in range(6, 0, -1):
+        radius_extra = i * 4
+        alpha = int(30 + (6 - i) * 12)  # plus dense au bord du badge
+        cd.ellipse(
+            (
+                halo_extra - radius_extra,
+                halo_extra - radius_extra,
+                halo_extra + size - 1 + radius_extra,
+                halo_extra + size - 1 + radius_extra,
+            ),
+            fill=(rc[0], rc[1], rc[2], alpha),
+        )
+
+    # Anneau extérieur coloré
+    cd.ellipse(
+        (halo_extra, halo_extra, halo_extra + size - 1, halo_extra + size - 1),
+        fill=(rc[0], rc[1], rc[2], 245),
         outline=(255, 255, 255, 255),
         width=6,
     )
-    # Cercle intérieur foncé pour faire ressortir la lettre
+    # Cercle intérieur foncé
     inset = 14
-    bd.ellipse(
-        (inset, inset, size - 1 - inset, size - 1 - inset),
-        fill=(0, 0, 0, 210),
+    cd.ellipse(
+        (
+            halo_extra + inset,
+            halo_extra + inset,
+            halo_extra + size - 1 - inset,
+            halo_extra + size - 1 - inset,
+        ),
+        fill=(0, 0, 0, 220),
     )
-    # Lettre du rang — légèrement remontée pour laisser de la place au PWR
-    text_w = bd.textlength(rank_label, font=rank_font)
-    text_x = (size - text_w) // 2
-    text_y = int(size * 0.10)
-    bd.text(
+
+    # Lettre du rang — légèrement remontée pour le PWR en dessous
+    text_w = cd.textlength(rank_label, font=rank_font)
+    text_x = halo_extra + (size - text_w) // 2
+    text_y = halo_extra + int(size * 0.10)
+    cd.text(
         (text_x, text_y), rank_label, font=rank_font,
         fill=COLORS["rank_text"],
     )
-    # "PWR X.XK" en petit, sous la lettre, centré
+
+    # "PWR XXX" en petit, sous la lettre, centré, doré
     pwr_text = f"PWR  {power_score}"
-    pwr_w = bd.textlength(pwr_text, font=pwr_font)
-    pwr_x = (size - pwr_w) // 2
-    pwr_y = int(size * 0.66)
-    bd.text(
+    pwr_w = cd.textlength(pwr_text, font=pwr_font)
+    pwr_x = halo_extra + (size - pwr_w) // 2
+    pwr_y = halo_extra + int(size * 0.66)
+    cd.text(
         (pwr_x, pwr_y), pwr_text, font=pwr_font,
         fill=COLORS["gold_color"],
     )
-    base.alpha_composite(badge, origin)
+
+    base.alpha_composite(canvas, (origin[0] - halo_extra, origin[1] - halo_extra))
 
 
 def _draw_section_header(
@@ -337,18 +436,40 @@ def _draw_section_header(
     font,
     line_width: int,
 ) -> None:
-    """Titre de section avec emoji + barre fine en dessous."""
+    """Titre de section avec emoji + ligne décorative en dessous.
+
+    La ligne en dessous a un dégradé alpha des deux côtés (transparent au
+    bord, opaque au centre du segment) pour un rendu plus soigné qu'un
+    trait plat.
+    """
     x, y = origin
-    width_used = draw_text_with_emojis(
+    text_w = draw_text_with_emojis(
         base, (x, y), label, font, fill=COLORS["section_label"],
     )
-    draw = ImageDraw.Draw(base)
-    # Ligne après le label, dégradée pour un effet "souligné stylé"
-    line_y = y + font.size + 8
-    draw.line(
-        [(x, line_y), (x + line_width, line_y)],
-        fill=COLORS["section_separator"], width=2,
-    )
+
+    # Ligne décorative juste après le label : commence par un trait
+    # solide aligné avec le texte, puis se prolonge en dégradé qui
+    # s'estompe vers la droite — donne un look "underline glamour".
+    line_y = y + font.size + 10
+    line_height = 2
+
+    # Trait sombre sous le label, qui s'estompe doucement
+    overlay = Image.new("RGBA", (line_width, line_height + 1), (0, 0, 0, 0))
+    od = ImageDraw.Draw(overlay)
+    fade_start = text_w + 16
+    for px in range(line_width):
+        if px < fade_start:
+            alpha = 90  # solide sous le titre
+        else:
+            # Décroît linéairement après le texte
+            ratio = 1.0 - (px - fade_start) / max(1, line_width - fade_start)
+            alpha = int(90 * max(0.0, ratio))
+        od.line(
+            [(px, 0), (px, line_height - 1)],
+            fill=(255, 255, 255, alpha),
+            width=1,
+        )
+    base.alpha_composite(overlay, (x, line_y))
 
 
 def compose_profile_banner(
@@ -373,6 +494,12 @@ def compose_profile_banner(
     active_title: str | None = None,
 ) -> None:
     bg = _gradient_background(WIDTH, HEIGHT)
+
+    # Vignette douce dans les 4 coins pour ambiance "vue plongeante",
+    # plus pro qu'un fond plat dégradé. On la rend très subtile pour
+    # ne pas perdre en lisibilité au centre.
+    _add_vignette(bg)
+
     draw = ImageDraw.Draw(bg)
 
     # Fonts. Tailles "grosses" pour rester lisibles même quand Discord
@@ -407,11 +534,14 @@ def compose_profile_banner(
         avatar_img = Image.new("RGBA", (avatar_size, avatar_size), (60, 60, 80, 255))
 
     avatar_circle = crop_to_circle(avatar_img, avatar_size)
+    # Anneau de la couleur du rang : signal visuel immédiat du tier.
+    # Le rang sert deux fois (badge + ring) — cohérent et sympa.
+    rc = _rank_color(rank_label)
     avatar_outlined = add_outline(
-        avatar_circle, outline_size=6,
-        outline_color=(255, 255, 255, 220),
+        avatar_circle, outline_size=7,
+        outline_color=(rc[0], rc[1], rc[2], 240),
     )
-    bg.alpha_composite(avatar_outlined, (avatar_x - 6, avatar_y - 6))
+    bg.alpha_composite(avatar_outlined, (avatar_x - 7, avatar_y - 7))
 
     info_x = avatar_x + avatar_size + 30
     info_y = avatar_y - 6
