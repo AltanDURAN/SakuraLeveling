@@ -5,6 +5,7 @@ from app.domain.services.health_regeneration_service import HealthRegenerationSe
 from app.domain.services.loot_service import LootService
 from app.domain.services.party_combat_service import PartyCombatService
 from app.domain.services.power_score_service import PowerScoreService
+from app.domain.services.progression_service import ProgressionService
 from app.domain.services.reward_distribution_service import RewardDistributionService
 from app.domain.services.skill_tree_service import SkillTreeService
 from app.domain.services.stats_service import StatsService
@@ -373,7 +374,29 @@ class EncounterService:
                     player_repository.add_gold(participant.player_id, gold)
                     career_repository.add(participant.player_id, gold_earned=gold)
                 if xp > 0:
-                    player_repository.add_xp(participant.player_id, xp)
+                    # Avant : `add_xp` directement → l'XP s'accumulait sans
+                    # passer par le palier de niveau (bug visible en bêta :
+                    # un joueur niveau 10 affichait XP 1051/1000). On
+                    # passe maintenant par ProgressionService comme le combat
+                    # solo, pour appliquer le level-up + gain de skill points.
+                    profile_after = player_repository.get_profile_by_player_id(
+                        participant.player_id,
+                    )
+                    if profile_after is not None:
+                        new_level, new_xp, new_skill_points = (
+                            ProgressionService().apply_level_up(
+                                current_level=profile_after.progression.level,
+                                current_xp=profile_after.progression.xp,
+                                gained_xp=xp,
+                                current_skill_points=profile_after.progression.skill_points,
+                            )
+                        )
+                        player_repository.apply_progression(
+                            player_id=participant.player_id,
+                            new_level=new_level,
+                            new_xp=new_xp,
+                            new_skill_points=new_skill_points,
+                        )
 
                 kill_repository.increment(participant.player_id, mob_code)
                 # Check titres : kills_family / kills_total / kills_mob.
