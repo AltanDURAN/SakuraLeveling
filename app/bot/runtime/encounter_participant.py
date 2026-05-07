@@ -1,14 +1,10 @@
-from dataclasses import dataclass
+"""Re-export pour rétro-compatibilité — la définition vit désormais dans
+la couche application (`app.application.services.encounter_participant`).
 
-from app.domain.value_objects.stats import Stats
+Évite la violation d'architecture : `EncounterService` (application) ne
+peut pas importer de la couche bot.
+"""
 
+from app.application.services.encounter_participant import EncounterParticipant
 
-@dataclass
-class EncounterParticipant:
-    user_id: int
-    player_id: int
-    display_name: str
-    avatar_url: str
-    current_hp: int
-    max_hp: int
-    stats: Stats
+__all__ = ["EncounterParticipant"]

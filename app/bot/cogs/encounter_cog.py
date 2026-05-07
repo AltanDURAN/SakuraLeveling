@@ -22,7 +22,19 @@ from app.domain.value_objects.stats import Stats
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.session import get_db_session
-from app.shared.paths import GENERATED_ENCOUNTERS_DIR, LANDSCAPES_ASSETS_DIR
+from app.shared.generated_cleanup import purge_old_files
+from app.shared.paths import (
+    GENERATED_ENCOUNTERS_DIR,
+    GENERATED_EQUIPMENT_DIR,
+    GENERATED_PROFILES_DIR,
+    LANDSCAPES_ASSETS_DIR,
+)
+
+
+# Durée de vie des PNG générés (encounters / profiles / équipement).
+# Les images servent une seule fois (attachment Discord), Discord en garde
+# sa propre copie sur son CDN. Au-delà de cet âge, on purge.
+_GENERATED_FILES_TTL_SECONDS = 7 * 24 * 3600
 
 
 class EncounterCog(commands.Cog):
@@ -36,12 +48,28 @@ class EncounterCog(commands.Cog):
         # le combat actif sans attendre les 5 min. Re-créé à chaque spawn.
         self._early_resolve_event: asyncio.Event | None = None
         self.encounter_loop.start()
+        self.generated_cleanup_loop.start()
         self.generated_dir = GENERATED_ENCOUNTERS_DIR
         self.generated_dir.mkdir(exist_ok=True)
         self.power_score_service = PowerScoreService()
 
     def cog_unload(self):
         self.encounter_loop.cancel()
+        self.generated_cleanup_loop.cancel()
+
+    @tasks.loop(hours=12)
+    async def generated_cleanup_loop(self) -> None:
+        """Purge périodique des PNG générés à la volée."""
+        for directory in (
+            GENERATED_ENCOUNTERS_DIR,
+            GENERATED_PROFILES_DIR,
+            GENERATED_EQUIPMENT_DIR,
+        ):
+            purge_old_files(directory, _GENERATED_FILES_TTL_SECONDS)
+
+    @generated_cleanup_loop.before_loop
+    async def before_generated_cleanup_loop(self) -> None:
+        await self.bot.wait_until_ready()
 
     async def register_participant(
         self,

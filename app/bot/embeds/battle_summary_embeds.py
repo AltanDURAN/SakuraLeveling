@@ -1,4 +1,5 @@
 import discord
+from discord.utils import escape_markdown
 
 from app.shared.formatters import format_int as _format_int
 from app.domain.value_objects.battle_summary import BattleSummary
@@ -66,7 +67,7 @@ def build_rewards_page_embed(summary: BattleSummary) -> discord.Embed:
             lines.append("_Aucune récompense (défaite)._")
 
         embed.add_field(
-            name=f"{survived_emoji} {reward.name}",
+            name=f"{survived_emoji} {escape_markdown(reward.name)}",
             value="\n".join(lines),
             inline=False,
         )
@@ -186,7 +187,7 @@ def build_details_page_embed(summary: BattleSummary) -> discord.Embed:
         ]
 
         embed.add_field(
-            name=f"{survived_emoji} {reward.name}{header_suffix}",
+            name=f"{survived_emoji} {escape_markdown(reward.name)}{header_suffix}",
             value="\n".join(lines),
             inline=False,
         )

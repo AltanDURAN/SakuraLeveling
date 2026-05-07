@@ -111,11 +111,6 @@ def _build_progress_label(
             f"vous : **{viewer_total}** (il vous manque **{gap}**)"
         )
 
-    if title.condition_type == "duels_won":
-        return f"**0/{title.condition_value}** duels gagnés (tracking à venir)"
-    if title.condition_type == "items_crafted":
-        return f"**0/{title.condition_value}** items craftés (tracking à venir)"
-
     return f"_Condition : {title.condition_type}_"
 
 

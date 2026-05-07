@@ -1,3 +1,4 @@
+from app.application.services.set_bonus_resolver import resolve_set_bonuses
 from app.domain.value_objects.stats import Stats
 from app.domain.services.stats_service import StatsService
 from app.infrastructure.db.repositories.class_repository import ClassRepository
@@ -29,8 +30,6 @@ class GetPlayerStatsUseCase:
             username=username,
             display_name=display_name,
         )
-
-        from app.application.services.set_bonus_resolver import resolve_set_bonuses
 
         equipped_items = self.equipment_repository.list_by_player_id(profile.player.id)
         active_class = self.class_repository.get_current_class_for_player(profile.player.id)

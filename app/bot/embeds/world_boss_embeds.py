@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import discord
+from discord.utils import escape_markdown
 
 from app.application.use_cases.world_boss import BossRewardEntry
 from app.domain.entities.world_boss import WorldBoss
@@ -115,8 +116,9 @@ def build_boss_defeated_embed(
     lines: list[str] = []
     for reward in rewards_sorted[:25]:  # cap à 25 pour rester lisible
         items_txt = ", ".join(f"{q}× {c}" for c, q in reward.items)
+        safe_name = escape_markdown(reward.display_name)
         lines.append(
-            f"{role_label.get(reward.role, '🎖️')} **{reward.display_name}** — "
+            f"{role_label.get(reward.role, '🎖️')} **{safe_name}** — "
             f"{reward.gold}g, {reward.xp}xp, {items_txt}"
         )
     if lines:

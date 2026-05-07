@@ -23,84 +23,16 @@ from app.infrastructure.sets.set_loader import (
     get_definition as get_set_definition,
     list_definitions as list_set_definitions,
 )
-
-
-_BONUS_EMOJIS = {
-    "defense_flat":         "🛡️",
-    "dodge_flat":           "🌀",
-    "crit_chance_flat":     "🎯",
-    "crit_damage_flat":     "💥",
-    "hp_regeneration_flat": "✨",
-    "attack_flat":          "⚔️",
-    "speed_flat":           "💨",
-    "max_hp_flat":          "❤️",
-}
-
-_SLOT_ICONS: dict[str, str] = {
-    "casque":         "⛑️",
-    "plastron":       "👕",
-    "jambieres":      "👖",
-    "bottes":         "🥾",
-    "main_droite":    "🗡️",
-    "main_gauche":    "🛡️",
-    "collier":        "📿",
-    "bracelet":       "⛓️",
-    "bague":          "💍",
-    "ceinture":       "🎗️",
-    "cape":           "🧣",
-    "boucle_oreille": "👂",
-}
-
-_SLOT_LABELS: dict[str, str] = {
-    "casque":         "Casque",
-    "plastron":       "Plastron",
-    "jambieres":      "Jambières",
-    "bottes":         "Bottes",
-    "main_droite":    "Main droite",
-    "main_gauche":    "Main gauche",
-    "collier":        "Collier",
-    "bracelet":       "Bracelet",
-    "bague":          "Bague",
-    "ceinture":       "Ceinture",
-    "cape":           "Cape",
-    "boucle_oreille": "Boucle d'oreille",
-}
-
-# Ordre canonique des slots (principaux puis secondaires)
-_SLOT_ORDER = [
-    "casque", "plastron", "jambieres", "bottes",
-    "main_droite", "main_gauche",
-    "collier", "bracelet", "bague",
-    "ceinture", "cape", "boucle_oreille",
-]
+from app.shared.emoji_mappings import (
+    bonus_emoji,
+    format_stat_bonuses_short,
+)
+from app.shared.enums import SLOT_ICONS, SLOT_ORDER
 
 
 def _format_bonus(bonus_type: str, value: int) -> str:
     """Format compact "+N {emoji}" — l'emoji remplace le label texte."""
-    emoji = _BONUS_EMOJIS.get(bonus_type, bonus_type)
-    return f"+{value} {emoji}"
-
-
-def _format_stat_bonuses_short(stat_bonuses: dict | None) -> str:
-    """Compact bonus list — l'emoji remplace le label texte (le visuel
-    suffit pour identifier la stat sans surcharger la ligne)."""
-    if not stat_bonuses:
-        return ""
-    stat_emojis = {
-        "max_hp":          "❤️",
-        "attack":          "⚔️",
-        "defense":         "🛡️",
-        "speed":           "💨",
-        "crit_chance":     "🎯",
-        "crit_damage":     "💥",
-        "dodge":           "🌀",
-        "hp_regeneration": "✨",
-    }
-    parts = [
-        f"+{v} {stat_emojis.get(k, k)}"
-        for k, v in stat_bonuses.items() if v
-    ]
-    return "  ·  ".join(parts)
+    return f"+{value} {bonus_emoji(bonus_type)}"
 
 
 class PanoplieCog(commands.Cog):
@@ -180,16 +112,16 @@ class PanoplieCog(commands.Cog):
                 by_slot.setdefault(it.equipment_slot or "?", []).append(it)
 
             piece_lines: list[str] = []
-            for slot in _SLOT_ORDER:
+            for slot in SLOT_ORDER:
                 items = by_slot.get(slot)
-                slot_icon = _SLOT_ICONS.get(slot, "•")
+                slot_icon = SLOT_ICONS.get(slot, "•")
                 if not items:
                     # Slot manquant : juste l'icône + tiret. Le label texte
                     # est redondant avec l'emoji, on l'omet.
                     piece_lines.append(f"{slot_icon} —")
                     continue
                 for it in items:
-                    bonuses = _format_stat_bonuses_short(it.stat_bonuses)
+                    bonuses = format_stat_bonuses_short(it.stat_bonuses)
                     suffix = f"  ·  {bonuses}" if bonuses else ""
                     piece_lines.append(f"{slot_icon} **{it.name}**{suffix}")
 

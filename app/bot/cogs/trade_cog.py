@@ -25,11 +25,12 @@ class TradeCog(commands.Cog):
     def cog_unload(self) -> None:
         self.expire_loop.cancel()
 
-    @tasks.loop(minutes=1)
+    @tasks.loop(minutes=5)
     async def expire_loop(self) -> None:
         """Marque les trades pending dépassés en status=expired toutes les
-        minutes. Évite que des trades restent éternellement en pending et
-        bloquent les nouvelles propositions entre les mêmes joueurs."""
+        5 minutes. Évite que des trades restent éternellement en pending et
+        bloquent les nouvelles propositions entre les mêmes joueurs (TTL 5 min,
+        donc un trade peut rester pending 5-10 min avant cleanup ; négligeable)."""
         try:
             with get_db_session() as session:
                 expired_count = TradeRepository(session).expire_overdue_pending()

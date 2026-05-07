@@ -16,15 +16,31 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 from app.bot.rendering.emoji_text import (
     draw_text_with_emojis,
     measure_text_with_emojis,
 )
+from app.bot.rendering.pillow_utils import (
+    draw_sakura_petals,
+    draw_text_with_shadow as _shared_text_shadow,
+    gradient_background,
+    try_font,
+)
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
 from app.domain.services.set_bonus_service import SetBonuses
 from app.domain.value_objects.stats import Stats
+from app.shared.emoji_mappings import (
+    bonus_emoji,
+    format_stat_bonuses_short,
+)
+from app.shared.enums import (
+    PRIMARY_SLOTS,
+    SECONDARY_SLOTS,
+    SLOT_ICONS,
+    SLOT_LABELS,
+)
 from app.shared.paths import ITEMS_ASSETS_DIR
 
 
@@ -60,91 +76,31 @@ _SLOT_ACCENT = {
     "boucle_oreille":  (255, 200, 220, 255),
 }
 
-_SLOT_LABEL = {
-    "casque":          "Casque",
-    "plastron":        "Plastron",
-    "jambieres":       "Jambières",
-    "bottes":          "Bottes",
-    "main_droite":     "Main droite",
-    "main_gauche":     "Main gauche",
-    "collier":         "Collier",
-    "bracelet":        "Bracelet",
-    "bague":           "Bague",
-    "ceinture":        "Ceinture",
-    "cape":            "Cape",
-    "boucle_oreille":  "Boucle d'oreille",
-}
+# Slot data centralisée dans `app/shared/enums.py`
+_SLOT_LABEL = SLOT_LABELS
+_SLOT_EMOJI = SLOT_ICONS
 
-_SLOT_EMOJI = {
-    "casque":          "⛑️",
-    "plastron":        "👕",
-    "jambieres":       "👖",
-    "bottes":          "🥾",
-    "main_droite":     "🗡️",
-    "main_gauche":     "🛡️",
-    "collier":         "📿",
-    "bracelet":        "⛓️",
-    "bague":           "💍",
-    "ceinture":        "🎗️",
-    "cape":            "🧣",
-    "boucle_oreille":  "👂",
-}
-
-_PRIMARY_SLOTS = ["casque", "plastron", "jambieres", "bottes",
-                  "main_droite", "main_gauche"]
-_SECONDARY_SLOTS = ["collier", "bracelet", "bague",
-                    "ceinture", "cape", "boucle_oreille"]
+_PRIMARY_SLOTS = [s.value for s in PRIMARY_SLOTS]
+_SECONDARY_SLOTS = [s.value for s in SECONDARY_SLOTS]
 
 
 def _try_font(size: int, bold: bool = False):
-    name = "DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf"
-    try:
-        return ImageFont.truetype(name, size)
-    except Exception:
-        return ImageFont.load_default()
+    """Alias local pour conserver la convention de nommage interne."""
+    return try_font(size, bold)
 
 
 def _gradient_bg(width: int, height: int) -> Image.Image:
-    bg = Image.new("RGBA", (width, height), _BG_TOP)
-    d = ImageDraw.Draw(bg)
-    for y in range(height):
-        ratio = y / max(1, height - 1)
-        r = int(_BG_TOP[0] + (_BG_BOTTOM[0] - _BG_TOP[0]) * ratio)
-        g = int(_BG_TOP[1] + (_BG_BOTTOM[1] - _BG_TOP[1]) * ratio)
-        b = int(_BG_TOP[2] + (_BG_BOTTOM[2] - _BG_TOP[2]) * ratio)
-        d.line((0, y, width, y), fill=(r, g, b, 255))
-    return bg
+    return gradient_background(width, height, _BG_TOP, _BG_BOTTOM)
 
 
 def _add_petals_decoration(base: Image.Image, seed: int) -> None:
-    """Mini-pétales en filigrane (cohérence avec la bannière /profile)."""
-    import random
-    import math
-    rng = random.Random(seed)
-    w, h = base.size
-    overlay = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    for _ in range(20):
-        size = rng.randint(34, 60)
-        cx = rng.randint(-size // 2, w + size // 2)
-        cy = rng.randint(-size // 2, h + size // 2)
-        rotation = rng.randint(0, 359)
-        pad = int(size * 1.4)
-        petal = Image.new("RGBA", (pad, pad), (0, 0, 0, 0))
-        pd = ImageDraw.Draw(petal)
-        for i in range(5):
-            angle = math.radians(-90 + i * 72)
-            ex = pad // 2 + int(size * 0.18 * math.cos(angle))
-            ey = pad // 2 + int(size * 0.18 * math.sin(angle))
-            pd.ellipse(
-                (ex - size // 6, ey - int(size * 0.28),
-                 ex + size // 6, ey + int(size * 0.28)),
-                fill=_PINK_PETAL,
-            )
-        rotated = petal.rotate(rotation, resample=Image.BICUBIC, expand=False)
-        overlay.alpha_composite(
-            rotated, (cx - rotated.width // 2, cy - rotated.height // 2),
-        )
-    base.alpha_composite(overlay)
+    """Mini-pétales en filigrane (cohérence avec la bannière /profile).
+    Palette monochrome rose plus sobre que le banner de profil."""
+    palette = [(_PINK_PETAL[0], _PINK_PETAL[1], _PINK_PETAL[2], _PINK_PETAL[3])]
+    draw_sakura_petals(
+        base, seed=seed, count=20,
+        palette=palette, size_range=(34, 60),
+    )
 
 
 def _draw_panel(
@@ -185,10 +141,7 @@ def _draw_text_with_shadow(
     draw, xy, text, font, fill=_TEXT_PRIMARY, shadow=_SHADOW,
     shadow_offset=(2, 2),
 ):
-    x, y = xy
-    sx, sy = shadow_offset
-    draw.text((x + sx, y + sy), text, font=font, fill=shadow)
-    draw.text(xy, text, font=font, fill=fill)
+    _shared_text_shadow(draw, xy, text, font, fill, shadow, shadow_offset)
 
 
 def _load_item_image(item_code: str, size: int = 180) -> Image.Image | None:
@@ -258,24 +211,9 @@ def _draw_placeholder(
 
 def _format_stat_bonuses_short(stat_bonuses: dict | None) -> str:
     """Bonus compact `+N {emoji}` — l'emoji est plus rapide à scanner que
-    "Atk" / "Def" / "Crit" et ne déborde pas de la card."""
-    if not stat_bonuses:
-        return ""
-    emojis = {
-        "max_hp":          "❤️",
-        "attack":          "⚔️",
-        "defense":         "🛡️",
-        "speed":           "💨",
-        "crit_chance":     "🎯",
-        "crit_damage":     "💥",
-        "dodge":           "🌀",
-        "hp_regeneration": "✨",
-    }
-    parts = [
-        f"+{v} {emojis.get(k, k)}"
-        for k, v in stat_bonuses.items() if v
-    ]
-    return "  ·  ".join(parts)
+    "Atk" / "Def" / "Crit" et ne déborde pas de la card. Délègue au
+    helper centralisé."""
+    return format_stat_bonuses_short(stat_bonuses)
 
 
 def _draw_slot_card(
@@ -475,7 +413,6 @@ def compose_equipment_summary_page(
     player_name: str,
     equipped_items: list[PlayerEquipmentItem],
     set_bonuses: SetBonuses,
-    sets_definitions: dict[str, dict],
     *,
     seed: int = 0,
 ) -> None:
@@ -579,9 +516,9 @@ def compose_equipment_summary_page(
     )
 
     sets_y = sets_section_y + 50
-    # Cards plus hautes pour caser proprement le titre + la sous-ligne
-    # "prochain palier" sans débordement.
-    line_height = 78
+    # Une ligne par panoplie : icône + nom + count à gauche, bonus actif
+    # à droite. Pas de sous-ligne "prochain palier" (lisibilité).
+    line_height = 52
     card_h = line_height - 8
 
     if not set_bonuses.active_sets:
@@ -596,15 +533,10 @@ def compose_equipment_summary_page(
             y = sets_y + idx * line_height
             if y + line_height > SUMMARY_HEIGHT - 50:
                 break
-            set_def = sets_definitions.get(active.family) or {}
-            tiers = sorted(
-                set_def.get("tiers", []),
-                key=lambda t: int(t.get("min_pieces", 0)),
-            )
             # Card pour la panoplie
             _draw_panel(bg, (30, y), (WIDTH - 60, card_h))
 
-            # Icône + nom + count (gauche, ligne 1)
+            # Icône + nom + count (gauche)
             head_text = (
                 f"{active.family_icon}  {active.family_name}"
                 f"  ·  {active.pieces_equipped} pièce(s)"
@@ -626,50 +558,8 @@ def compose_equipment_summary_page(
                 bf = _try_font(24, bold=True)
                 tw = measure_text_with_emojis(bonus_text, bf, bf.size)
                 draw_text_with_emojis(
-                    bg, (right_x - tw, y + 12),
+                    bg, (right_x - tw, y + 10),
                     bonus_text, bf, fill=_GOLD,
-                )
-
-            # Sous-ligne (ligne 2 dans la card) : prochain palier OU
-            # message "≥ X pièces pour activer".
-            sub_y = y + 10 + head_font.size + 4
-            if active.next_tier_pieces is not None:
-                miss = active.next_tier_pieces - active.pieces_equipped
-                next_tier = next(
-                    (t for t in tiers
-                     if int(t["min_pieces"]) == active.next_tier_pieces),
-                    None,
-                )
-                if active.active_bonus_type:
-                    if next_tier:
-                        next_label = _bonus_label_short(
-                            next_tier.get("type", ""),
-                            int(next_tier.get("value", 0)),
-                        )
-                        sub = (
-                            f"Prochain : {active.next_tier_pieces} pièces → "
-                            f"+{next_label} (-{miss})"
-                        )
-                    else:
-                        sub = ""
-                else:
-                    sub = (
-                        f"≥ {active.next_tier_pieces} pièces pour activer "
-                        f"(-{miss})"
-                    )
-                if sub:
-                    sf = _try_font(15)
-                    # `sub` contient un emoji depuis _bonus_label_short
-                    draw_text_with_emojis(
-                        bg, (50, sub_y), sub, sf, fill=_TEXT_MUTED,
-                    )
-            elif active.active_bonus_type:
-                # Au palier max
-                sf = _try_font(15)
-                _draw_text_with_shadow(
-                    draw, (50, sub_y),
-                    "✦ Palier maximum atteint", sf,
-                    fill=(255, 220, 110, 200),
                 )
 
     _draw_page_footer(bg, "Page 3 / 3 — Résumé")
@@ -690,15 +580,4 @@ def _bonus_label_short(bonus_type: str, value: int) -> str:
     """Format compact `{value} {emoji}` — l'appelant ajoute le préfixe '+'.
     L'emoji remplace le label texte ("défense" → 🛡️) pour rester compact
     et lisible en thumbnail Discord."""
-    emojis = {
-        "defense_flat":         "🛡️",
-        "dodge_flat":           "🌀",
-        "crit_chance_flat":     "🎯",
-        "crit_damage_flat":     "💥",
-        "hp_regeneration_flat": "✨",
-        "attack_flat":          "⚔️",
-        "speed_flat":           "💨",
-        "max_hp_flat":          "❤️",
-    }
-    emoji = emojis.get(bonus_type, bonus_type)
-    return f"{value} {emoji}"
+    return f"{value} {bonus_emoji(bonus_type)}"

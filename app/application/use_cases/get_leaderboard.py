@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from app.application.services.set_bonus_resolver import resolve_set_bonuses
 from app.domain.services.leaderboard_service import (
     Leaderboard,
     LeaderboardEntry,
@@ -120,8 +121,6 @@ class GetLeaderboardUseCase:
         )
 
     def _compute_for_each_player(self, value_fn) -> list[tuple[int, str, int]]:
-        from app.application.services.set_bonus_resolver import resolve_set_bonuses
-
         results: list[tuple[int, str, int]] = []
 
         profiles = self.player_repository.list_all_profiles()

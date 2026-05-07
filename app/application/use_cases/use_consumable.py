@@ -9,6 +9,7 @@ ou si l'item n'est pas marqué `category=consumable`.
 
 from dataclasses import dataclass
 
+from app.application.services.set_bonus_resolver import resolve_set_bonuses
 from app.domain.services.stats_service import StatsService
 from app.domain.services.skill_tree_service import SkillTreeService
 from app.infrastructure.db.repositories.class_repository import ClassRepository
@@ -112,7 +113,6 @@ class UseConsumableUseCase:
         skill_bonuses = SkillTreeService(get_skill_tree_definition()).aggregate_bonuses(
             allocations
         )
-        from app.application.services.set_bonus_resolver import resolve_set_bonuses
         set_bonuses = resolve_set_bonuses(equipped)
         stats = self.stats_service.calculate_player_stats(
             profile=profile,

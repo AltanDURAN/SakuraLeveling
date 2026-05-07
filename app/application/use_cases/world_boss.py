@@ -17,6 +17,7 @@ import random
 from dataclasses import dataclass, field
 from datetime import datetime, UTC, timedelta
 
+from app.application.services.set_bonus_resolver import resolve_set_bonuses
 from app.domain.entities.boss_definition import BossDefinition
 from app.domain.entities.mob_definition import MobDefinition
 from app.domain.entities.world_boss import WorldBoss, WorldBossParticipation
@@ -394,7 +395,6 @@ class FightWorldBossUseCase:
         skill_bonuses = SkillTreeService(get_skill_tree_definition()).aggregate_bonuses(
             allocations
         )
-        from app.application.services.set_bonus_resolver import resolve_set_bonuses
         set_bonuses = resolve_set_bonuses(equipped)
         base_stats = self.stats_service.calculate_player_stats(
             profile=profile,
