@@ -838,8 +838,18 @@ def compose_profile_banner(
     # Combat : valeurs principales en format compact (PV/Atk/Def peuvent
     # devenir gros en endgame), pourcentages restent en chiffres pleins
     # car ils sont bornés [0..200] selon les caps.
+    # PV : on affiche "current/max" si current est connu (sinon juste max).
+    max_hp_value = int(stats.get("max_hp", 0))
+    current_hp_value = stats.get("current_hp")
+    if current_hp_value is not None:
+        hp_display = (
+            f"{_format_compact(int(current_hp_value))}"
+            f"/{_format_compact(max_hp_value)}"
+        )
+    else:
+        hp_display = _format_compact(max_hp_value)
     combat_cards = [
-        ("❤️", "PV max", _format_compact(int(stats.get("max_hp", 0))), "hp"),
+        ("❤️", "PV", hp_display, "hp"),
         ("⚔️", "Attaque", _format_compact(int(stats.get("attack", 0))), "atk"),
         ("🛡️", "Défense", _format_compact(int(stats.get("defense", 0))), "def"),
         ("💨", "Vitesse", str(stats.get("speed", 0)), "speed"),

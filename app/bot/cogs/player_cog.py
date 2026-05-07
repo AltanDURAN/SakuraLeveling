@@ -296,6 +296,7 @@ class PlayerCog(commands.Cog):
                 skill_points=profile.progression.skill_points,
                 stats={
                     "max_hp": stats.max_hp,
+                    "current_hp": regenerated_current_hp,
                     "attack": stats.attack,
                     "defense": stats.defense,
                     "speed": stats.speed,
