@@ -96,6 +96,7 @@ class InventoryRepository:
             stat_bonuses=item_model.stat_bonuses_json,
             equipment_slot=item_model.equipment_slot,
             requires_two_hands=bool(item_model.requires_two_hands or False),
+            family=getattr(item_model, "family", "") or "",
             created_at=item_model.created_at,
             updated_at=item_model.updated_at,
         )
