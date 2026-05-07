@@ -45,6 +45,7 @@ def seed_items() -> None:
                 stat_bonuses=item_data["stat_bonuses"],
                 equipment_slot=item_data.get("equipment_slot"),
                 requires_two_hands=bool(item_data.get("requires_two_hands", False)),
+                family=item_data.get("family", ""),
             )
 
             if existing is None:

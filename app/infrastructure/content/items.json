@@ -12,7 +12,8 @@
     "icon": null,
     "stat_bonuses": null,
     "equipment_slot": null,
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": ""
   },
   {
     "code": "gobelin_tooth",
@@ -27,9 +28,9 @@
     "icon": null,
     "stat_bonuses": null,
     "equipment_slot": null,
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": ""
   },
-
   {
     "code": "iron_ingot",
     "name": "Lingot de fer",
@@ -43,7 +44,8 @@
     "icon": null,
     "stat_bonuses": null,
     "equipment_slot": null,
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": ""
   },
   {
     "code": "leather_strip",
@@ -58,7 +60,8 @@
     "icon": null,
     "stat_bonuses": null,
     "equipment_slot": null,
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": ""
   },
   {
     "code": "linen_cloth",
@@ -73,7 +76,8 @@
     "icon": null,
     "stat_bonuses": null,
     "equipment_slot": null,
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": ""
   },
   {
     "code": "polished_stone",
@@ -88,7 +92,8 @@
     "icon": null,
     "stat_bonuses": null,
     "equipment_slot": null,
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": ""
   },
   {
     "code": "wood_log",
@@ -103,9 +108,9 @@
     "icon": null,
     "stat_bonuses": null,
     "equipment_slot": null,
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": ""
   },
-
   {
     "code": "wood_sword",
     "name": "Épée en bois",
@@ -121,7 +126,8 @@
       "attack": 3
     },
     "equipment_slot": "main_droite",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": ""
   },
   {
     "code": "slime_blade",
@@ -139,7 +145,8 @@
       "max_hp": 5
     },
     "equipment_slot": "main_droite",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "slime"
   },
   {
     "code": "hunter_dagger",
@@ -157,7 +164,8 @@
       "crit_chance": 5
     },
     "equipment_slot": "main_droite",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": ""
   },
   {
     "code": "gobelin_axe",
@@ -175,7 +183,8 @@
       "crit_damage": 5
     },
     "equipment_slot": "main_droite",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "gobelin"
   },
   {
     "code": "two_handed_iron_sword",
@@ -193,9 +202,9 @@
       "crit_damage": 10
     },
     "equipment_slot": "main_droite",
-    "requires_two_hands": true
+    "requires_two_hands": true,
+    "family": ""
   },
-
   {
     "code": "wooden_shield",
     "name": "Bouclier en bois",
@@ -212,7 +221,8 @@
       "max_hp": 5
     },
     "equipment_slot": "main_gauche",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": ""
   },
   {
     "code": "iron_buckler",
@@ -230,9 +240,9 @@
       "dodge": 2
     },
     "equipment_slot": "main_gauche",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "iron"
   },
-
   {
     "code": "leather_cap",
     "name": "Casque en cuir",
@@ -249,7 +259,8 @@
       "max_hp": 3
     },
     "equipment_slot": "casque",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "leather"
   },
   {
     "code": "iron_helmet",
@@ -267,7 +278,8 @@
       "max_hp": 8
     },
     "equipment_slot": "casque",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "iron"
   },
   {
     "code": "gobelin_crown",
@@ -286,9 +298,9 @@
       "crit_chance": 3
     },
     "equipment_slot": "casque",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "gobelin"
   },
-
   {
     "code": "leather_chest",
     "name": "Plastron en cuir",
@@ -305,7 +317,8 @@
       "max_hp": 6
     },
     "equipment_slot": "plastron",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "leather"
   },
   {
     "code": "iron_chest",
@@ -323,9 +336,9 @@
       "max_hp": 12
     },
     "equipment_slot": "plastron",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "iron"
   },
-
   {
     "code": "leather_legs",
     "name": "Jambières en cuir",
@@ -343,7 +356,8 @@
       "speed": 1
     },
     "equipment_slot": "jambieres",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "leather"
   },
   {
     "code": "iron_legs",
@@ -361,9 +375,9 @@
       "max_hp": 8
     },
     "equipment_slot": "jambieres",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "iron"
   },
-
   {
     "code": "leather_boots",
     "name": "Bottes en cuir",
@@ -380,7 +394,8 @@
       "speed": 1
     },
     "equipment_slot": "bottes",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "leather"
   },
   {
     "code": "iron_boots",
@@ -398,9 +413,9 @@
       "max_hp": 5
     },
     "equipment_slot": "bottes",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "iron"
   },
-
   {
     "code": "slime_pendant",
     "name": "Pendentif de Slime",
@@ -417,7 +432,8 @@
       "hp_regeneration": 1
     },
     "equipment_slot": "collier",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "slime"
   },
   {
     "code": "leather_bracelet",
@@ -435,7 +451,8 @@
       "dodge": 1
     },
     "equipment_slot": "bracelet",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "leather"
   },
   {
     "code": "iron_ring",
@@ -453,7 +470,8 @@
       "defense": 1
     },
     "equipment_slot": "bague",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "iron"
   },
   {
     "code": "gobelin_ring",
@@ -471,7 +489,8 @@
       "crit_damage": 5
     },
     "equipment_slot": "bague",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "gobelin"
   },
   {
     "code": "leather_belt",
@@ -489,7 +508,8 @@
       "max_hp": 4
     },
     "equipment_slot": "ceinture",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "leather"
   },
   {
     "code": "linen_cape",
@@ -507,7 +527,8 @@
       "dodge": 1
     },
     "equipment_slot": "cape",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "linen"
   },
   {
     "code": "stone_earring",
@@ -525,7 +546,8 @@
       "speed": 1
     },
     "equipment_slot": "boucle_oreille",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": ""
   },
   {
     "code": "potion_soin_i",
@@ -543,7 +565,8 @@
       "value": 50
     },
     "equipment_slot": null,
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": ""
   },
   {
     "code": "potion_soin_ii",
@@ -561,7 +584,8 @@
       "value": 75
     },
     "equipment_slot": null,
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": ""
   },
   {
     "code": "potion_soin_iii",
@@ -579,9 +603,9 @@
       "value": 100
     },
     "equipment_slot": null,
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": ""
   },
-
   {
     "code": "linen_hood",
     "name": "Capuche en lin",
@@ -593,9 +617,13 @@
     "sell_price": 4,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "max_hp": 2, "dodge": 1 },
+    "stat_bonuses": {
+      "max_hp": 2,
+      "dodge": 1
+    },
     "equipment_slot": "casque",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "linen"
   },
   {
     "code": "linen_robe",
@@ -608,9 +636,13 @@
     "sell_price": 6,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "max_hp": 4, "speed": 1 },
+    "stat_bonuses": {
+      "max_hp": 4,
+      "speed": 1
+    },
     "equipment_slot": "plastron",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "linen"
   },
   {
     "code": "linen_gloves",
@@ -623,9 +655,13 @@
     "sell_price": 3,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "speed": 1, "crit_chance": 1 },
+    "stat_bonuses": {
+      "speed": 1,
+      "crit_chance": 1
+    },
     "equipment_slot": "bracelet",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "linen"
   },
   {
     "code": "slime_cloak",
@@ -638,9 +674,13 @@
     "sell_price": 14,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "max_hp": 5, "defense": 2 },
+    "stat_bonuses": {
+      "max_hp": 5,
+      "defense": 2
+    },
     "equipment_slot": "cape",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "slime"
   },
   {
     "code": "goblin_amulet",
@@ -653,9 +693,13 @@
     "sell_price": 16,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "attack": 2, "crit_chance": 1 },
+    "stat_bonuses": {
+      "attack": 2,
+      "crit_chance": 1
+    },
     "equipment_slot": "collier",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "gobelin"
   },
   {
     "code": "polished_stone_ring",
@@ -668,9 +712,13 @@
     "sell_price": 6,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "defense": 1, "max_hp": 2 },
+    "stat_bonuses": {
+      "defense": 1,
+      "max_hp": 2
+    },
     "equipment_slot": "bague",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": ""
   },
   {
     "code": "iron_gauntlets",
@@ -683,11 +731,14 @@
     "sell_price": 10,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "attack": 1, "defense": 2 },
+    "stat_bonuses": {
+      "attack": 1,
+      "defense": 2
+    },
     "equipment_slot": "bracelet",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "iron"
   },
-
   {
     "code": "iron_dagger",
     "name": "Dague en fer",
@@ -699,9 +750,14 @@
     "sell_price": 12,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "attack": 3, "speed": 2, "crit_chance": 2 },
+    "stat_bonuses": {
+      "attack": 3,
+      "speed": 2,
+      "crit_chance": 2
+    },
     "equipment_slot": "main_droite",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "iron"
   },
   {
     "code": "goblin_blade",
@@ -714,9 +770,13 @@
     "sell_price": 22,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "attack": 5, "crit_damage": 10 },
+    "stat_bonuses": {
+      "attack": 5,
+      "crit_damage": 10
+    },
     "equipment_slot": "main_droite",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "gobelin"
   },
   {
     "code": "slime_shield",
@@ -729,8 +789,658 @@
     "sell_price": 18,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "defense": 4, "max_hp": 6 },
+    "stat_bonuses": {
+      "defense": 4,
+      "max_hp": 6
+    },
     "equipment_slot": "main_gauche",
-    "requires_two_hands": false
+    "requires_two_hands": false,
+    "family": "slime"
+  },
+  {
+    "code": "iron_collier",
+    "name": "Collier en fer",
+    "description": "Pièce de la panoplie iron — bonus de set actif dès 2 pièces.",
+    "category": "necklace",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 8,
+    "buy_price": 24,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 2,
+      "max_hp": 4
+    },
+    "equipment_slot": "collier",
+    "requires_two_hands": false,
+    "family": "iron"
+  },
+  {
+    "code": "iron_ceinture",
+    "name": "Ceinture en fer",
+    "description": "Pièce de la panoplie iron — bonus de set actif dès 2 pièces.",
+    "category": "belt",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 8,
+    "buy_price": 24,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 2,
+      "max_hp": 4
+    },
+    "equipment_slot": "ceinture",
+    "requires_two_hands": false,
+    "family": "iron"
+  },
+  {
+    "code": "iron_cape",
+    "name": "Cape en fer",
+    "description": "Pièce de la panoplie iron — bonus de set actif dès 2 pièces.",
+    "category": "cape",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 8,
+    "buy_price": 24,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 2,
+      "max_hp": 4
+    },
+    "equipment_slot": "cape",
+    "requires_two_hands": false,
+    "family": "iron"
+  },
+  {
+    "code": "iron_boucle_oreille",
+    "name": "Boucle en fer",
+    "description": "Pièce de la panoplie iron — bonus de set actif dès 2 pièces.",
+    "category": "earring",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 8,
+    "buy_price": 24,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 2,
+      "max_hp": 4
+    },
+    "equipment_slot": "boucle_oreille",
+    "requires_two_hands": false,
+    "family": "iron"
+  },
+  {
+    "code": "leather_main_droite",
+    "name": "Lame en cuir",
+    "description": "Pièce de la panoplie leather — bonus de set actif dès 2 pièces.",
+    "category": "weapon",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 4,
+    "buy_price": 12,
+    "icon": null,
+    "stat_bonuses": {
+      "dodge": 1,
+      "defense": 1
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false,
+    "family": "leather"
+  },
+  {
+    "code": "leather_main_gauche",
+    "name": "Bouclier en cuir",
+    "description": "Pièce de la panoplie leather — bonus de set actif dès 2 pièces.",
+    "category": "shield",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 4,
+    "buy_price": 12,
+    "icon": null,
+    "stat_bonuses": {
+      "dodge": 1,
+      "defense": 1
+    },
+    "equipment_slot": "main_gauche",
+    "requires_two_hands": false,
+    "family": "leather"
+  },
+  {
+    "code": "leather_collier",
+    "name": "Collier en cuir",
+    "description": "Pièce de la panoplie leather — bonus de set actif dès 2 pièces.",
+    "category": "necklace",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 4,
+    "buy_price": 12,
+    "icon": null,
+    "stat_bonuses": {
+      "dodge": 1,
+      "defense": 1
+    },
+    "equipment_slot": "collier",
+    "requires_two_hands": false,
+    "family": "leather"
+  },
+  {
+    "code": "leather_bague",
+    "name": "Bague en cuir",
+    "description": "Pièce de la panoplie leather — bonus de set actif dès 2 pièces.",
+    "category": "ring",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 4,
+    "buy_price": 12,
+    "icon": null,
+    "stat_bonuses": {
+      "dodge": 1,
+      "defense": 1
+    },
+    "equipment_slot": "bague",
+    "requires_two_hands": false,
+    "family": "leather"
+  },
+  {
+    "code": "leather_cape",
+    "name": "Cape en cuir",
+    "description": "Pièce de la panoplie leather — bonus de set actif dès 2 pièces.",
+    "category": "cape",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 4,
+    "buy_price": 12,
+    "icon": null,
+    "stat_bonuses": {
+      "dodge": 1,
+      "defense": 1
+    },
+    "equipment_slot": "cape",
+    "requires_two_hands": false,
+    "family": "leather"
+  },
+  {
+    "code": "leather_boucle_oreille",
+    "name": "Boucle en cuir",
+    "description": "Pièce de la panoplie leather — bonus de set actif dès 2 pièces.",
+    "category": "earring",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 4,
+    "buy_price": 12,
+    "icon": null,
+    "stat_bonuses": {
+      "dodge": 1,
+      "defense": 1
+    },
+    "equipment_slot": "boucle_oreille",
+    "requires_two_hands": false,
+    "family": "leather"
+  },
+  {
+    "code": "slime_casque",
+    "name": "Casque de slime",
+    "description": "Pièce de la panoplie slime — bonus de set actif dès 2 pièces.",
+    "category": "helmet",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 6,
+    "buy_price": 18,
+    "icon": null,
+    "stat_bonuses": {
+      "hp_regeneration": 1,
+      "max_hp": 3
+    },
+    "equipment_slot": "casque",
+    "requires_two_hands": false,
+    "family": "slime"
+  },
+  {
+    "code": "slime_plastron",
+    "name": "Plastron de slime",
+    "description": "Pièce de la panoplie slime — bonus de set actif dès 2 pièces.",
+    "category": "chest",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 6,
+    "buy_price": 18,
+    "icon": null,
+    "stat_bonuses": {
+      "hp_regeneration": 1,
+      "max_hp": 3
+    },
+    "equipment_slot": "plastron",
+    "requires_two_hands": false,
+    "family": "slime"
+  },
+  {
+    "code": "slime_jambieres",
+    "name": "Jambières de slime",
+    "description": "Pièce de la panoplie slime — bonus de set actif dès 2 pièces.",
+    "category": "legs",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 6,
+    "buy_price": 18,
+    "icon": null,
+    "stat_bonuses": {
+      "hp_regeneration": 1,
+      "max_hp": 3
+    },
+    "equipment_slot": "jambieres",
+    "requires_two_hands": false,
+    "family": "slime"
+  },
+  {
+    "code": "slime_bottes",
+    "name": "Bottes de slime",
+    "description": "Pièce de la panoplie slime — bonus de set actif dès 2 pièces.",
+    "category": "boots",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 6,
+    "buy_price": 18,
+    "icon": null,
+    "stat_bonuses": {
+      "hp_regeneration": 1,
+      "max_hp": 3
+    },
+    "equipment_slot": "bottes",
+    "requires_two_hands": false,
+    "family": "slime"
+  },
+  {
+    "code": "slime_bracelet",
+    "name": "Bracelet de slime",
+    "description": "Pièce de la panoplie slime — bonus de set actif dès 2 pièces.",
+    "category": "bracelet",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 6,
+    "buy_price": 18,
+    "icon": null,
+    "stat_bonuses": {
+      "hp_regeneration": 1,
+      "max_hp": 3
+    },
+    "equipment_slot": "bracelet",
+    "requires_two_hands": false,
+    "family": "slime"
+  },
+  {
+    "code": "slime_bague",
+    "name": "Bague de slime",
+    "description": "Pièce de la panoplie slime — bonus de set actif dès 2 pièces.",
+    "category": "ring",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 6,
+    "buy_price": 18,
+    "icon": null,
+    "stat_bonuses": {
+      "hp_regeneration": 1,
+      "max_hp": 3
+    },
+    "equipment_slot": "bague",
+    "requires_two_hands": false,
+    "family": "slime"
+  },
+  {
+    "code": "slime_ceinture",
+    "name": "Ceinture de slime",
+    "description": "Pièce de la panoplie slime — bonus de set actif dès 2 pièces.",
+    "category": "belt",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 6,
+    "buy_price": 18,
+    "icon": null,
+    "stat_bonuses": {
+      "hp_regeneration": 1,
+      "max_hp": 3
+    },
+    "equipment_slot": "ceinture",
+    "requires_two_hands": false,
+    "family": "slime"
+  },
+  {
+    "code": "slime_boucle_oreille",
+    "name": "Boucle de slime",
+    "description": "Pièce de la panoplie slime — bonus de set actif dès 2 pièces.",
+    "category": "earring",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 6,
+    "buy_price": 18,
+    "icon": null,
+    "stat_bonuses": {
+      "hp_regeneration": 1,
+      "max_hp": 3
+    },
+    "equipment_slot": "boucle_oreille",
+    "requires_two_hands": false,
+    "family": "slime"
+  },
+  {
+    "code": "gobelin_plastron",
+    "name": "Plastron gobelin",
+    "description": "Pièce de la panoplie gobelin — bonus de set actif dès 2 pièces.",
+    "category": "chest",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 7,
+    "buy_price": 21,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 2,
+      "crit_chance": 1
+    },
+    "equipment_slot": "plastron",
+    "requires_two_hands": false,
+    "family": "gobelin"
+  },
+  {
+    "code": "gobelin_jambieres",
+    "name": "Jambières gobelin",
+    "description": "Pièce de la panoplie gobelin — bonus de set actif dès 2 pièces.",
+    "category": "legs",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 7,
+    "buy_price": 21,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 2,
+      "crit_chance": 1
+    },
+    "equipment_slot": "jambieres",
+    "requires_two_hands": false,
+    "family": "gobelin"
+  },
+  {
+    "code": "gobelin_bottes",
+    "name": "Bottes gobelin",
+    "description": "Pièce de la panoplie gobelin — bonus de set actif dès 2 pièces.",
+    "category": "boots",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 7,
+    "buy_price": 21,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 2,
+      "crit_chance": 1
+    },
+    "equipment_slot": "bottes",
+    "requires_two_hands": false,
+    "family": "gobelin"
+  },
+  {
+    "code": "gobelin_main_gauche",
+    "name": "Bouclier gobelin",
+    "description": "Pièce de la panoplie gobelin — bonus de set actif dès 2 pièces.",
+    "category": "shield",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 7,
+    "buy_price": 21,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 2,
+      "crit_chance": 1
+    },
+    "equipment_slot": "main_gauche",
+    "requires_two_hands": false,
+    "family": "gobelin"
+  },
+  {
+    "code": "gobelin_bracelet",
+    "name": "Bracelet gobelin",
+    "description": "Pièce de la panoplie gobelin — bonus de set actif dès 2 pièces.",
+    "category": "bracelet",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 7,
+    "buy_price": 21,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 2,
+      "crit_chance": 1
+    },
+    "equipment_slot": "bracelet",
+    "requires_two_hands": false,
+    "family": "gobelin"
+  },
+  {
+    "code": "gobelin_ceinture",
+    "name": "Ceinture gobelin",
+    "description": "Pièce de la panoplie gobelin — bonus de set actif dès 2 pièces.",
+    "category": "belt",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 7,
+    "buy_price": 21,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 2,
+      "crit_chance": 1
+    },
+    "equipment_slot": "ceinture",
+    "requires_two_hands": false,
+    "family": "gobelin"
+  },
+  {
+    "code": "gobelin_cape",
+    "name": "Cape gobelin",
+    "description": "Pièce de la panoplie gobelin — bonus de set actif dès 2 pièces.",
+    "category": "cape",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 7,
+    "buy_price": 21,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 2,
+      "crit_chance": 1
+    },
+    "equipment_slot": "cape",
+    "requires_two_hands": false,
+    "family": "gobelin"
+  },
+  {
+    "code": "gobelin_boucle_oreille",
+    "name": "Boucle gobelin",
+    "description": "Pièce de la panoplie gobelin — bonus de set actif dès 2 pièces.",
+    "category": "earring",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 7,
+    "buy_price": 21,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 2,
+      "crit_chance": 1
+    },
+    "equipment_slot": "boucle_oreille",
+    "requires_two_hands": false,
+    "family": "gobelin"
+  },
+  {
+    "code": "linen_jambieres",
+    "name": "Jambières en lin",
+    "description": "Pièce de la panoplie linen — bonus de set actif dès 2 pièces.",
+    "category": "legs",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 4,
+    "buy_price": 12,
+    "icon": null,
+    "stat_bonuses": {
+      "crit_damage": 2,
+      "dodge": 1
+    },
+    "equipment_slot": "jambieres",
+    "requires_two_hands": false,
+    "family": "linen"
+  },
+  {
+    "code": "linen_bottes",
+    "name": "Bottes en lin",
+    "description": "Pièce de la panoplie linen — bonus de set actif dès 2 pièces.",
+    "category": "boots",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 4,
+    "buy_price": 12,
+    "icon": null,
+    "stat_bonuses": {
+      "crit_damage": 2,
+      "dodge": 1
+    },
+    "equipment_slot": "bottes",
+    "requires_two_hands": false,
+    "family": "linen"
+  },
+  {
+    "code": "linen_main_droite",
+    "name": "Lame en lin",
+    "description": "Pièce de la panoplie linen — bonus de set actif dès 2 pièces.",
+    "category": "weapon",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 4,
+    "buy_price": 12,
+    "icon": null,
+    "stat_bonuses": {
+      "crit_damage": 2,
+      "dodge": 1
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false,
+    "family": "linen"
+  },
+  {
+    "code": "linen_main_gauche",
+    "name": "Bouclier en lin",
+    "description": "Pièce de la panoplie linen — bonus de set actif dès 2 pièces.",
+    "category": "shield",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 4,
+    "buy_price": 12,
+    "icon": null,
+    "stat_bonuses": {
+      "crit_damage": 2,
+      "dodge": 1
+    },
+    "equipment_slot": "main_gauche",
+    "requires_two_hands": false,
+    "family": "linen"
+  },
+  {
+    "code": "linen_collier",
+    "name": "Collier en lin",
+    "description": "Pièce de la panoplie linen — bonus de set actif dès 2 pièces.",
+    "category": "necklace",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 4,
+    "buy_price": 12,
+    "icon": null,
+    "stat_bonuses": {
+      "crit_damage": 2,
+      "dodge": 1
+    },
+    "equipment_slot": "collier",
+    "requires_two_hands": false,
+    "family": "linen"
+  },
+  {
+    "code": "linen_bague",
+    "name": "Bague en lin",
+    "description": "Pièce de la panoplie linen — bonus de set actif dès 2 pièces.",
+    "category": "ring",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 4,
+    "buy_price": 12,
+    "icon": null,
+    "stat_bonuses": {
+      "crit_damage": 2,
+      "dodge": 1
+    },
+    "equipment_slot": "bague",
+    "requires_two_hands": false,
+    "family": "linen"
+  },
+  {
+    "code": "linen_ceinture",
+    "name": "Ceinture en lin",
+    "description": "Pièce de la panoplie linen — bonus de set actif dès 2 pièces.",
+    "category": "belt",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 4,
+    "buy_price": 12,
+    "icon": null,
+    "stat_bonuses": {
+      "crit_damage": 2,
+      "dodge": 1
+    },
+    "equipment_slot": "ceinture",
+    "requires_two_hands": false,
+    "family": "linen"
+  },
+  {
+    "code": "linen_boucle_oreille",
+    "name": "Boucle en lin",
+    "description": "Pièce de la panoplie linen — bonus de set actif dès 2 pièces.",
+    "category": "earring",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 4,
+    "buy_price": 12,
+    "icon": null,
+    "stat_bonuses": {
+      "crit_damage": 2,
+      "dodge": 1
+    },
+    "equipment_slot": "boucle_oreille",
+    "requires_two_hands": false,
+    "family": "linen"
   }
 ]

@@ -112,11 +112,14 @@ class UseConsumableUseCase:
         skill_bonuses = SkillTreeService(get_skill_tree_definition()).aggregate_bonuses(
             allocations
         )
+        from app.application.services.set_bonus_resolver import resolve_set_bonuses
+        set_bonuses = resolve_set_bonuses(equipped)
         stats = self.stats_service.calculate_player_stats(
             profile=profile,
             equipped_items=equipped,
             active_class=active_class,
             skill_bonuses=skill_bonuses,
+            set_bonuses=set_bonuses,
         )
         max_hp = stats.max_hp
 

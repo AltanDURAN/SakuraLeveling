@@ -164,13 +164,18 @@ class PlayerCog(commands.Cog):
             from app.application.services.title_bonus_resolver import (
                 resolve_title_bonuses,
             )
+            from app.application.services.set_bonus_resolver import (
+                resolve_set_bonuses,
+            )
             title_bonuses = resolve_title_bonuses(session, profile.player.id)
+            set_bonuses = resolve_set_bonuses(equipped_items)
             stats = StatsService().calculate_player_stats(
                 profile=profile,
                 equipped_items=equipped_items,
                 active_class=active_class,
                 skill_bonuses=skill_bonuses,
                 title_bonuses=title_bonuses,
+                set_bonuses=set_bonuses,
             )
 
             power_score_service = PowerScoreService()
@@ -342,13 +347,23 @@ class PlayerCog(commands.Cog):
         view = InventoryView(target_member.display_name, items)
         await interaction.response.send_message(embed=view._build_embed(), view=view)
 
-    @app_commands.command(name="equipement", description="Afficher un équipement (12 slots, 2 pages)")
+    @app_commands.command(
+        name="equipement",
+        description="Afficher l'équipement en image (3 pages : principal / secondaire / résumé)",
+    )
     @app_commands.describe(target="Joueur dont afficher l'équipement (par défaut : vous)")
     async def equipment(
         self,
         interaction: discord.Interaction,
         target: discord.Member | None = None,
     ) -> None:
+        await interaction.response.defer()
+        from app.application.services.set_bonus_resolver import resolve_set_bonuses
+        from app.bot.views.equipment_image_view import EquipmentImageView
+        from app.infrastructure.sets.set_loader import (
+            list_definitions as list_set_definitions,
+        )
+
         with get_db_session() as session:
             profile, target_member = self._resolve_profile(interaction, target, session)
             if profile is None:
@@ -357,13 +372,35 @@ class PlayerCog(commands.Cog):
 
             equipment_repository = EquipmentRepository(session)
             equipment_items = equipment_repository.list_by_player_id(profile.player.id)
+            set_bonuses = resolve_set_bonuses(equipment_items)
+            sets_def = list_set_definitions()
 
-        view = EquipmentView(
-            target_name=target_member.display_name,
-            equipped_items=equipment_items,
-            timeout=600.0,
-        )
-        await interaction.response.send_message(embed=view.current_embed, view=view)
+        try:
+            view = EquipmentImageView(
+                player_id=profile.player.id,
+                player_name=target_member.display_name,
+                equipped_items=equipment_items,
+                set_bonuses=set_bonuses,
+                sets_definitions=sets_def,
+                timeout=600.0,
+            )
+            embed, file = view.render_current_page()
+            await interaction.followup.send(embed=embed, file=file, view=view)
+        except Exception as _e:
+            # Fallback historique : embed texte 2 pages si Pillow plante
+            import logging
+            logging.getLogger(__name__).warning(
+                "Equipment image render failed, falling back to text embed: %s",
+                _e, exc_info=True,
+            )
+            fallback = EquipmentView(
+                target_name=target_member.display_name,
+                equipped_items=equipment_items,
+                timeout=600.0,
+            )
+            await interaction.followup.send(
+                embed=fallback.current_embed, view=fallback,
+            )
 
     @app_commands.command(
         name="equipement_list",
@@ -508,11 +545,13 @@ class PlayerCog(commands.Cog):
                 allocations
             )
 
+            from app.application.services.set_bonus_resolver import resolve_set_bonuses
             current_stats = StatsService().calculate_player_stats(
                 profile=profile,
                 equipped_items=current_equipment,
                 active_class=active_class,
                 skill_bonuses=skill_bonuses,
+                set_bonuses=resolve_set_bonuses(current_equipment),
             )
             # Simule la nouvelle config : retirer l'occupant du slot, ajouter
             # le nouvel item. Pas de persistence — juste un objet domain.
@@ -532,6 +571,7 @@ class PlayerCog(commands.Cog):
                 equipped_items=simulated,
                 active_class=active_class,
                 skill_bonuses=skill_bonuses,
+                set_bonuses=resolve_set_bonuses(simulated),
             )
 
             current_in_slot_name = current_in_slot.item_definition.name

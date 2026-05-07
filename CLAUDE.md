@@ -138,6 +138,7 @@ Pour un nouveau cog : si les commandes restent dans le canal beta → poser `int
 - **Item fields** (sur `ItemDefinition`) :
   - `equipment_slot: str | None` — slot canonique où l'item s'équipe ; `None` = item non équipable (ressource).
   - `requires_two_hands: bool` — vrai pour les armes 2-mains qui occupent main_droite ET main_gauche.
+  - `family: str` — famille de panoplie ("iron", "slime", "gobelin", "leather", "linen"). Vide = item hors panoplie. Sert au calcul des bonus de set.
 - **Convention armes 1-main** : `equipment_slot="main_droite"` ; le `EquipItemUseCase` accepte aussi `main_gauche` pour l'ambidextrie. Refuse de placer la même instance dans les deux mains (besoin de 2 exemplaires distincts).
 - **Convention armes 2-mains** : stockées en `main_droite` en DB, mais `OFF_HAND` est verrouillée tant qu'une 2-mains est portée. Équiper en `main_gauche` déséquipe la 2-mains.
 - **Anti-power-creep** : on ne gagne pas de stats au craft, uniquement à l'équipement (libre de changer). Bonus de stats des items volontairement modestes.
@@ -147,7 +148,16 @@ Pour un nouveau cog : si les commandes restent dans le canal beta → poser `int
   - `/craft <recipe>` : fabrique un équipement (refuse les armes)
   - `/forge <recipe>` : forge une arme (refuse les autres)
   - `/equip <item> [slot]` : `slot` optionnel, défaut = slot canonique de l'item
-  - `/equipement [target]` : 2 pages naviguables (Principaux / Secondaires)
+  - `/equipement [target]` : 3 pages **rendues en image PNG** (Pillow) — Principaux (3×2 grid de cards), Secondaires (idem), Résumé (stats totales apportées par l'équipement + bonus de panoplies actifs avec progression). Cf. [`equipment_image.py`](app/bot/rendering/equipment_image.py). Slot vide → marqueur "VIDE", item sans image dans `assets/items/<code>.png` → placeholder avec emoji du slot, slot off_hand verrouillé par 2-mains → "🔒 ARME À 2 MAINS".
+
+## Système de panoplies (set bonuses)
+
+- **Définitions** : [`sets.json`](app/infrastructure/content/sets.json) — 5 familles avec 4 paliers (2/4/8/12 pièces). Chaque famille = un thème (iron=def, leather=dodge, slime=régen, gobelin=crit chance, linen=crit dmg). Bonus du palier le plus haut REMPLACE celui des paliers inférieurs (pas cumulatif).
+- **Migration `277fe14515ad_add_family_to_item_definitions`** : ajoute la colonne `family` sur `item_definitions`. Il faut donc passer `alembic upgrade head` après le déploiement.
+- **Service** : [`SetBonusService.aggregate(equipped_items)`](app/domain/services/set_bonus_service.py) compte les pièces par famille, sélectionne le palier max atteint, retourne un `SetBonuses` (flat additif sur défense, dodge, crit_chance, crit_damage, hp_regeneration, attack, speed, max_hp). Garde un `active_sets: list[ActiveSetBonus]` pour l'affichage `/equipement` page 3.
+- **Helper** : [`resolve_set_bonuses(equipped_items)`](app/application/services/set_bonus_resolver.py) — wrap simple à appeler partout où on calcule des stats.
+- **Wired dans `StatsService`** : 6e étage (après skill bonuses, après title bonuses, après les caps). Permet aux bonus de set de pousser légèrement au-delà des caps standards. Wired aussi dans tous les call sites : `/profile`, encounter (register + resolve), fight_mob (solo), challenge_player (duel), use_consumable, world_boss, get_player_stats, get_leaderboard, admin_cog (force_hp / heal_full), player_cog (preview /equip).
+- **Pour ajouter une nouvelle panoplie** : ajouter une entrée dans `sets.json` + tagger les items concernés avec leur `family` dans `items.json`. Pas de code à toucher.
 
 ## Système de trade entre joueurs
 

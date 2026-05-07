@@ -396,6 +396,56 @@ def write_titles_sheet(wb: Workbook) -> None:
     ws.freeze_panes = "B2"
 
 
+def write_sets_sheet(wb: Workbook) -> None:
+    try:
+        sets_def = _load("sets.json")
+    except FileNotFoundError:
+        return
+    items = _load("items.json")
+    # Comptage des items équipables par famille
+    counts: dict[str, int] = {}
+    for it in items:
+        fam = (it.get("family") or "").strip()
+        if fam and it.get("equipment_slot"):
+            counts[fam] = counts.get(fam, 0) + 1
+
+    ws = wb.create_sheet("🌸 Panoplies")
+    ws.append([
+        "Code famille", "Nom", "Icône",
+        "Items existants", "Description",
+        "Palier 2 (type/value)", "Palier 4", "Palier 8", "Palier 12",
+    ])
+    _apply_header_style(ws)
+    for code, set_def in sets_def.items():
+        tiers = sorted(
+            set_def.get("tiers", []),
+            key=lambda t: int(t.get("min_pieces", 0)),
+        )
+        tier_cells = ["—", "—", "—", "—"]
+        for tier in tiers:
+            mp = int(tier.get("min_pieces", 0))
+            label = f"{tier.get('type', '?')} +{tier.get('value', 0)}"
+            if mp == 2:
+                tier_cells[0] = label
+            elif mp == 4:
+                tier_cells[1] = label
+            elif mp == 8:
+                tier_cells[2] = label
+            elif mp == 12:
+                tier_cells[3] = label
+        ws.append([
+            code,
+            set_def.get("name", code),
+            set_def.get("icon", ""),
+            counts.get(code, 0),
+            set_def.get("description", ""),
+            *tier_cells,
+        ])
+    _autosize(ws, max_width=45)
+    _zebra(ws)
+    ws.freeze_panes = "B2"
+
+
 def write_world_bosses_sheet(wb: Workbook) -> None:
     try:
         bosses = _load("boss_definitions.json")
@@ -467,6 +517,7 @@ def main() -> None:
     write_classes_sheet(wb)
     write_skill_tree_sheet(wb)
     write_titles_sheet(wb)
+    write_sets_sheet(wb)
     write_world_bosses_sheet(wb)
     write_summary_sheet(wb)  # ajouté en premier via index=0
 

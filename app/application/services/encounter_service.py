@@ -96,7 +96,11 @@ class EncounterService:
             from app.application.services.title_bonus_resolver import (
                 resolve_title_bonuses,
             )
+            from app.application.services.set_bonus_resolver import (
+                resolve_set_bonuses,
+            )
             title_bonuses = resolve_title_bonuses(session, profile.player.id)
+            set_bonuses = resolve_set_bonuses(equipped_items)
 
             stats = StatsService().calculate_player_stats(
                 profile=profile,
@@ -104,6 +108,7 @@ class EncounterService:
                 active_class=active_class,
                 skill_bonuses=skill_bonuses,
                 title_bonuses=title_bonuses,
+                set_bonuses=set_bonuses,
             )
 
         regenerated_current_hp = self.get_regenerated_player_hp(
@@ -172,12 +177,18 @@ class EncounterService:
                 title_bonuses = title_bonus_service.aggregate(title_defs)
                 title_bonuses_by_player[participant.player_id] = title_bonuses
 
+                from app.application.services.set_bonus_resolver import (
+                    resolve_set_bonuses,
+                )
+                set_bonuses = resolve_set_bonuses(equipped_items)
+
                 stats = StatsService().calculate_player_stats(
                     profile=profile,
                     equipped_items=equipped_items,
                     active_class=active_class,
                     skill_bonuses=skill_bonuses,
                     title_bonuses=title_bonuses,
+                    set_bonuses=set_bonuses,
                 )
 
                 party.append(

@@ -38,6 +38,7 @@ class ItemRepository:
         stat_bonuses: dict | None = None,
         equipment_slot: str | None = None,
         requires_two_hands: bool = False,
+        family: str = "",
     ) -> ItemDefinition:
         model = ItemDefinitionModel(
             code=code,
@@ -53,6 +54,7 @@ class ItemRepository:
             stat_bonuses_json=stat_bonuses,
             equipment_slot=equipment_slot,
             requires_two_hands=requires_two_hands,
+            family=family,
         )
 
         self.session.add(model)
@@ -77,6 +79,7 @@ class ItemRepository:
             stat_bonuses=model.stat_bonuses_json,
             equipment_slot=model.equipment_slot,
             requires_two_hands=bool(model.requires_two_hands or False),
+            family=getattr(model, "family", "") or "",
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
@@ -96,6 +99,7 @@ class ItemRepository:
         stat_bonuses: dict | None,
         equipment_slot: str | None = None,
         requires_two_hands: bool = False,
+        family: str = "",
     ):
         stmt = select(ItemDefinitionModel).where(ItemDefinitionModel.code == code)
         model = self.session.execute(stmt).scalar_one_or_none()
@@ -115,6 +119,7 @@ class ItemRepository:
         model.stat_bonuses_json = stat_bonuses
         model.equipment_slot = equipment_slot
         model.requires_two_hands = requires_two_hands
+        model.family = family
         model.updated_at = datetime.now(UTC)
 
         self.session.commit()
