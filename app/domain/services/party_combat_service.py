@@ -63,13 +63,9 @@ class PartyCombatService:
 
                     stats: Stats = player["stats"]
 
-                    # Regen tour-par-tour : ne compte PAS comme "PV soignés" pour
-                    # la contribution. hp_healed est réservé aux soins actifs
-                    # (futur système de classe Soigneur). Le but est d'éviter
-                    # qu'un joueur tanky avec gros hp_regen monopolise la part
-                    # heal alors qu'il ne fait que se régénérer passivement.
-                    if stats.hp_regeneration > 0 and player["hp"] > 0:
-                        player["hp"] = min(player["max_hp"], player["hp"] + stats.hp_regeneration)
+                    # NOTE: hp_regeneration ne s'applique PAS en combat (V2).
+                    # La régen est purement passive entre combats (cf.
+                    # HealthRegenerationService).
 
                     # Cascade : crit AVANT défense pour conserver la même
                     # logique côté joueur et côté mob (cf. plus bas, mob → joueur).
@@ -155,8 +151,7 @@ class PartyCombatService:
                 acted = True
                 mob_gauge -= 100
 
-                if mob.hp_regeneration > 0:
-                    mob_hp = min(mob.max_hp, mob_hp + mob.hp_regeneration)
+                # NOTE: hp_regeneration des mobs ne s'applique PAS en combat (V2).
 
                 possible_targets = [player for player in alive_party if player["hp"] > 0]
                 target = random.choice(possible_targets)

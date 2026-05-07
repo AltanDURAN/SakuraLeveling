@@ -43,8 +43,7 @@ class DuelCombatService:
                 acted = True
                 a_gauge -= 100
 
-                if a_stats.hp_regeneration > 0:
-                    a_hp = min(a_stats.max_hp, a_hp + a_stats.hp_regeneration)
+                # NOTE: hp_regeneration ne s'applique PAS en combat (V2).
 
                 # Cascade : crit AVANT défense (symétrique entre tous les
                 # combats du jeu : party / solo / duel).
@@ -91,8 +90,7 @@ class DuelCombatService:
                 acted = True
                 b_gauge -= 100
 
-                if b_stats.hp_regeneration > 0:
-                    b_hp = min(b_stats.max_hp, b_hp + b_stats.hp_regeneration)
+                # NOTE: hp_regeneration ne s'applique PAS en combat (V2).
 
                 # Cascade : crit AVANT défense (cf. côté A → B plus haut).
                 raw_attack = b_stats.attack

@@ -44,6 +44,7 @@ Ordre de lecture conseillé avant patch : `pyproject.toml` → `alembic.ini` →
 ## Invariants métier (non négociables)
 
 - **`Player` n'a PAS de `current_hp`**. Les HP courants viennent de `PlayerHealthState` (stockage dédié + service de régénération).
+- **`hp_regeneration` est OUT-OF-COMBAT uniquement**. La stat ne s'applique JAMAIS pendant un combat (party / solo / duel) — elle est purement passive entre les combats, appliquée par `HealthRegenerationService` selon le temps écoulé. Ne pas réintroduire `+= hp_regeneration` dans les boucles de combat.
 - **`Stats` est le value object canonique** pour toute stat de combat : `max_hp`, `attack`, `defense`, `crit_chance`, `crit_damage`, `dodge`, `hp_regeneration`, `speed`.
 - **Conventions des pourcentages** :
   - `crit_chance`, `dodge` : entiers `0..100` (50 = 50%)

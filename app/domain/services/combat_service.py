@@ -32,8 +32,9 @@ class CombatService:
                 acted = True
                 player_gauge -= 100
 
-                if player_stats.hp_regeneration > 0:
-                    player_hp = min(player_stats.max_hp, player_hp + player_stats.hp_regeneration)
+                # NOTE: hp_regeneration ne s'applique PAS en combat (V2) —
+                # elle est purement passive (out-of-combat, via
+                # HealthRegenerationService).
 
                 # Cascade : crit AVANT défense (symétrique avec mob → joueur).
                 # Le crit s'applique au coup brut, puis la défense soustraite.
@@ -91,8 +92,7 @@ class CombatService:
                 acted = True
                 mob_gauge -= 100
 
-                if mob.hp_regeneration > 0:
-                    mob_hp = min(mob.max_hp, mob_hp + mob.hp_regeneration)
+                # NOTE: hp_regeneration ne s'applique PAS en combat (V2).
 
                 player_hp_before = player_hp
                 # Calcul en cascade : brut → crit → défense, pour tracker

@@ -171,9 +171,11 @@ def _load_item_image(item_code: str, size: int = 180) -> Image.Image | None:
 def _draw_placeholder(
     base: Image.Image, origin: tuple[int, int], size: int,
     slot: str, has_item: bool,
+    item_emoji: str | None = None,
 ) -> None:
     """Dessine un placeholder stylisé quand l'image de l'item est absente
-    (ou que le slot est vide). Utilise l'emoji du slot comme icône.
+    (ou que le slot est vide). Utilise `item_emoji` si fourni (ex : 🛡️
+    pour un bouclier dans main_droite), sinon l'emoji canonique du slot.
     """
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     od = ImageDraw.Draw(img)
@@ -185,10 +187,10 @@ def _draw_placeholder(
         outline=(255, 255, 255, 35) if has_item else (255, 255, 255, 18),
         width=2,
     )
-    # Si vide : grosse icône slot pâle. Si has_item : icône slot + indication
+    # Si vide : grosse icône slot pâle. Si has_item : icône item + indication
     # "image manquante" (label "?" en bas).
     emoji_size = int(size * 0.52)
-    label_emoji = _SLOT_EMOJI.get(slot, "•")
+    label_emoji = item_emoji or _SLOT_EMOJI.get(slot, "•")
     draw_text_with_emojis(
         img,
         ((size - emoji_size) // 2, (size - emoji_size) // 2 - 6),
@@ -283,9 +285,17 @@ def _draw_slot_card(
     if item_img is not None:
         base.alpha_composite(item_img, (img_x, img_y))
     else:
+        # Pour les slots main, l'emoji canonique (🗡️) ne reflète pas
+        # toujours la nature de l'item équipé (bouclier, 2-mains…).
+        # On passe l'emoji adapté à l'item via `item_display_emoji`.
+        item_emoji = None
+        if equipment is not None:
+            from app.shared.emoji_mappings import item_display_emoji
+            item_emoji = item_display_emoji(equipment.item_definition)
         _draw_placeholder(
             base, (img_x, img_y), img_size, slot,
             has_item=equipment is not None,
+            item_emoji=item_emoji,
         )
 
     # Nom de l'item + bonus de stats sous l'image
