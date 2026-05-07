@@ -81,15 +81,22 @@ def _format_bonus(bonus_type: str, value: int) -> str:
 
 
 def _format_stat_bonuses_short(stat_bonuses: dict | None) -> str:
+    """Compact bonus list — l'emoji remplace le label texte (le visuel
+    suffit pour identifier la stat sans surcharger la ligne)."""
     if not stat_bonuses:
         return ""
-    short_labels = {
-        "max_hp": "PV", "attack": "Atk", "defense": "Def",
-        "speed": "Vit", "crit_chance": "Crit", "crit_damage": "CDmg",
-        "dodge": "Esq", "hp_regeneration": "Régen",
+    stat_emojis = {
+        "max_hp":          "❤️",
+        "attack":          "⚔️",
+        "defense":         "🛡️",
+        "speed":           "💨",
+        "crit_chance":     "🎯",
+        "crit_damage":     "💥",
+        "dodge":           "🌀",
+        "hp_regeneration": "✨",
     }
     parts = [
-        f"+{v} {short_labels.get(k, k)}"
+        f"+{v} {stat_emojis.get(k, k)}"
         for k, v in stat_bonuses.items() if v
     ]
     return "  ·  ".join(parts)
