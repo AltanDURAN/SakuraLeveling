@@ -70,6 +70,27 @@ SLOT_ICONS: dict[str, str] = {
 }
 
 
+# Mapping ItemCategory.value → emoji (utilisé en cards d'items, autocomplete).
+# Les catégories d'items sont en anglais (cf ItemCategory) tandis que les
+# slots sont en français — d'où ce 2e mapping plutôt qu'un alias.
+CATEGORY_ICONS: dict[str, str] = {
+    "weapon":     "⚔️",
+    "shield":     "🛡️",
+    "helmet":     "⛑️",
+    "chest":      "👕",
+    "legs":       "👖",
+    "boots":      "🥾",
+    "necklace":   "📿",
+    "bracelet":   "⛓️",
+    "ring":       "💍",
+    "belt":       "🎗️",
+    "cape":       "🧣",
+    "earring":    "👂",
+    "consumable": "🧪",
+    "resource":   "🌾",
+}
+
+
 # Mapping slot → label FR (utilisé en embed).
 SLOT_LABELS: dict[str, str] = {
     EquipmentSlot.HELMET.value:    "Casque",

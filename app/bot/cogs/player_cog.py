@@ -35,7 +35,7 @@ from app.bot.embeds.daily_embeds import (
 )
 from app.bot.views.equipment_view import EquipmentView
 from app.bot.views.inventory_view import InventoryView
-from app.bot.embeds.craft_embeds import FORGE_CATEGORIES, build_craft_list_embed
+from app.bot.embeds.craft_embeds import FORGE_CATEGORIES
 from app.bot.views.recipe_list_view import RecipeListView
 from app.bot.embeds.inventory_embeds import build_inventory_embed
 from app.bot.embeds.player_embeds import build_player_profile_embed
@@ -409,6 +409,7 @@ class PlayerCog(commands.Cog):
     ) -> None:
         from app.bot.views.equipement_list_view import EquipementListView
 
+        await interaction.response.defer()
         with get_db_session() as session:
             profile, target_member = self._resolve_profile(interaction, target, session)
             if profile is None:
@@ -421,13 +422,13 @@ class PlayerCog(commands.Cog):
             equipped = equipment_repository.list_by_player_id(profile.player.id)
 
         view = EquipementListView(
+            player_id=profile.player.id,
             display_name=target_member.display_name,
             items=items,
             equipped=equipped,
         )
-        await interaction.response.send_message(
-            embed=view._build_embed(), view=view,
-        )
+        embed, file, _, _ = view.render_current()
+        await interaction.followup.send(embed=embed, file=file, view=view)
 
     @app_commands.command(name="equip", description="Équiper un item depuis votre inventaire")
     @app_commands.describe(item_code="Code de l'item (autocomplete sur votre inventaire)")
@@ -855,6 +856,7 @@ class PlayerCog(commands.Cog):
         title: str,
         color: discord.Color,
     ) -> None:
+        await interaction.response.defer()
         with get_db_session() as session:
             craft_repository = CraftRepository(session)
             item_repository = ItemRepository(session)
@@ -879,10 +881,10 @@ class PlayerCog(commands.Cog):
             item_lookup=item_lookup,
             title_prefix=title,
             color=color,
+            viewer_id=interaction.user.id,
         )
-        await interaction.response.send_message(
-            embed=view._build_embed(), view=view,
-        )
+        embed, file = view.render_current()
+        await interaction.followup.send(embed=embed, file=file, view=view)
 
     @app_commands.command(name="craft", description="Fabriquer un objet (équipement / accessoire)")
     @app_commands.describe(recipe_code="Code de la recette (autocomplete)")

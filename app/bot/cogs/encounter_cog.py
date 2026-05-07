@@ -26,6 +26,7 @@ from app.shared.generated_cleanup import purge_old_files
 from app.shared.paths import (
     GENERATED_ENCOUNTERS_DIR,
     GENERATED_EQUIPMENT_DIR,
+    GENERATED_LISTS_DIR,
     GENERATED_PROFILES_DIR,
     LANDSCAPES_ASSETS_DIR,
 )
@@ -64,6 +65,7 @@ class EncounterCog(commands.Cog):
             GENERATED_ENCOUNTERS_DIR,
             GENERATED_PROFILES_DIR,
             GENERATED_EQUIPMENT_DIR,
+            GENERATED_LISTS_DIR,
         ):
             purge_old_files(directory, _GENERATED_FILES_TTL_SECONDS)
 
