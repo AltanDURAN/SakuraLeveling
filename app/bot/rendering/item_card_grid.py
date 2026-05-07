@@ -52,15 +52,18 @@ class CardSpec:
 
     `icon_emoji` est le glyphe à dessiner si `icon_path` est None ou absent.
     `accent` colore la barre verticale gauche de la card (signal visuel).
+    `right_text` est dessiné right-aligné sur la même ligne que le nom
+    (en or, gros) — typiquement les bonus de stat ("+5 ⚔️ · +3 🛡️").
     `lines` est la liste de petits textes affichés sous le nom (chacun
-    peut contenir des emojis couleur — ils seront rendus correctement).
-    `badge` est un petit texte en haut à droite (ex: "✅", "×3").
+    peut contenir des emojis couleur — ex: ingrédients de craft).
+    `badge` est un petit texte en haut à droite extrême (ex: "✅").
     """
 
     name: str
     icon_emoji: str = "•"
     icon_path: Path | None = None
     accent: tuple[int, int, int, int] | None = None
+    right_text: str | None = None
     lines: list[str] = field(default_factory=list)
     badge: str | None = None
     code: str | None = None
@@ -139,34 +142,57 @@ def _draw_card(
 
     # Texte à droite de l'icône
     text_x = x + 14 + icon_size + 18
-    text_max_w = w - (icon_size + 14 + 18 + 16)
 
+    # Badge éventuel (✅) en extrême droite, sa largeur est réservée pour
+    # éviter que right_text marche dessus.
+    badge_w = 0
+    if card.badge:
+        bf = try_font(22, bold=True)
+        badge_w = measure_text_with_emojis(card.badge, bf, bf.size)
+        draw_text_with_emojis(
+            base, (x + w - badge_w - 16, y + (h - bf.size) // 2 - 2),
+            card.badge, bf, fill=_GOLD, shadow=_SHADOW,
+        )
+
+    # Stats (right_text) à droite, même ligne que le nom — en or, gros.
+    right_w = 0
+    if card.right_text:
+        rf = try_font(22, bold=True)
+        right_w = measure_text_with_emojis(card.right_text, rf, rf.size)
+        right_x = x + w - right_w - 16 - (badge_w + 16 if badge_w else 0)
+        draw_text_with_emojis(
+            base, (right_x, y + 14), card.right_text, rf,
+            fill=_GOLD, shadow=None,
+        )
+
+    # Nom à gauche (tronqué si déborde)
     name_font = try_font(24, bold=True)
-    name = card.name if len(card.name) <= 28 else card.name[:27] + "…"
+    available_w = w - (icon_size + 14 + 18 + 16) - right_w - (
+        badge_w + 16 if badge_w else 0
+    ) - 12
+    name = card.name
+    # Tronque approximativement par mesure plutôt que par char count fixe
+    while name and name_font.getlength(name) > available_w:
+        name = name[:-1]
+    if name != card.name:
+        name = name[:-1] + "…"
     draw_text_with_emojis(
         base, (text_x, y + 14), name, name_font,
         fill=_TEXT_PRIMARY, shadow=_SHADOW,
     )
 
-    # Lignes secondaires — fonte plus grosse pour la lisibilité des stats
-    # (l'emoji prend l'essentiel de l'œil, le texte reste compact).
-    line_y = y + 14 + 34
-    line_font = try_font(22, bold=True)
-    for raw_line in card.lines[:2]:  # max 2 lignes en mode slim
-        line = raw_line if len(raw_line) <= 70 else raw_line[:69] + "…"
+    # Ligne secondaire (1 max en mode slim) — typiquement ingrédients craft.
+    if card.lines:
+        line = card.lines[0]
+        line_font = try_font(18)
+        if line_font.getlength(line) > w - icon_size - 60:
+            # Tronque grossièrement
+            while line and line_font.getlength(line) > w - icon_size - 60:
+                line = line[:-1]
+            line = line[:-1] + "…"
         draw_text_with_emojis(
-            base, (text_x, line_y), line, line_font,
+            base, (text_x, y + 14 + 32), line, line_font,
             fill=_TEXT_SECONDARY, shadow=None,
-        )
-        line_y += 26
-
-    # Badge en haut à droite
-    if card.badge:
-        bf = try_font(22, bold=True)
-        bw = measure_text_with_emojis(card.badge, bf, bf.size)
-        draw_text_with_emojis(
-            base, (x + w - bw - 16, y + 12), card.badge, bf,
-            fill=_GOLD, shadow=_SHADOW,
         )
 
 
@@ -185,14 +211,14 @@ def compose_card_grid_page(
     `title`/`subtitle` : bandeau en haut. `seed` : layout pétales déterministe.
     """
     margin = 30
-    spacing = 10
+    spacing = 8
     header_h = 110
     footer_h = 40
-    icon_size = 84
+    icon_size = 60
 
-    # Card slim : 1 ligne nom + 1 ligne stats. Hauteur réduite vs version
-    # précédente (138 → 105).
-    card_h = 105
+    # Card slim avec stats à droite du nom : on tient une ligne nom+stats
+    # + une ligne secondaire optionnelle (ingrédients) en 70 px.
+    card_h = 70
     rows_used = min(rows, max(1, (len(cards) + cols - 1) // cols))
     height = (
         header_h + rows_used * (card_h + spacing) - spacing + footer_h + 30

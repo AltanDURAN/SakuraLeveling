@@ -57,7 +57,7 @@ _CATEGORY_ACCENT: dict[str, tuple[int, int, int, int]] = {
 }
 
 
-_PAGE_SIZE = 6  # 1 col × 6 rows (1 item par ligne)
+_PAGE_SIZE = 8  # 1 col × 8 rows (cards slim, stats à droite du nom)
 
 
 def _equipped_def_ids(equipped: list[PlayerEquipmentItem]) -> set[int]:
@@ -79,25 +79,17 @@ def _build_card(
     accent: tuple[int, int, int, int] | None,
 ) -> CardSpec:
     d = inv_item.item_definition
-    lines: list[str] = []
     bonuses_text = format_stat_bonuses_short(d.stat_bonuses)
-    if bonuses_text:
-        lines.append(bonuses_text)
-    if d.family:
-        lines.append(f"Panoplie : {d.family}")
     badge = "✅" if d.id in equipped_def_ids else None
     qty = inv_item.quantity
-    if qty > 1:
-        # On préfixe le nom avec la quantité pour la clarté
-        name = f"×{qty}  {d.name}"
-    else:
-        name = d.name
+    name = f"×{qty}  {d.name}" if qty > 1 else d.name
     return CardSpec(
         name=name,
         icon_emoji=CATEGORY_ICONS.get(d.category, "📦"),
         icon_path=item_asset_path(d.code),
         accent=accent,
-        lines=lines,
+        right_text=bonuses_text or None,
+        lines=[],  # famille dispo via /panoplie, on la zappe pour gagner en hauteur
         badge=badge,
         code=d.code,
     )
@@ -137,7 +129,7 @@ def _render_page(
     )
     compose_card_grid_page(
         str(out), title=title, subtitle=subtitle,
-        cards=cards, cols=1, rows=6, seed=player_id,
+        cards=cards, cols=1, rows=_PAGE_SIZE, seed=player_id,
     )
     return str(out), total_pages, total
 
