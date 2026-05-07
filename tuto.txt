@@ -95,13 +95,15 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
         Chaque pièce d'équipement appartient à une famille (iron, slime,
         gobelin, leather, linen) qui forme une PANOPLIE de 12 items
         (1 par slot). Plus tu équipes d'items de la même panoplie, plus
-        le bonus est élevé. Paliers : 2/4/8/12 pièces → +1/+2/+5/+8 sur
-        une stat thématique de la famille :
-            🛡️ Acier      → +X défense
-            🟫 Cuir        → +X% esquive
-            🟢 Slime       → +X régénération PV / minute
-            👹 Gobeline   → +X% chance critique
-            🧵 Lin         → +X% dégâts critiques
+        le bonus est élevé. Paliers à 2 / 4 / 8 / 12 pièces. Stat
+        thématique et progression par famille :
+
+            🛡️ Fer        → +1 / +2 / +5 / +8 défense
+            🟫 Cuir        → +4 / +8 / +20 / +32 PV max
+            🟢 Slime       → +1 / +2 / +5 / +8 régénération PV / min
+            👹 Gobeline   → +1 / +2 / +4 / +8 dégâts critiques
+            🧵 Lin         → +1 / +2 / +3 / +5 esquive
+
         Le bonus du palier le plus haut REMPLACE celui du palier inférieur
         (pas cumulatif). Le bonus s'estompe automatiquement quand tu
         descends sous le palier (déséquipe ou change de panoplie).
