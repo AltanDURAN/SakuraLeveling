@@ -691,5 +691,212 @@
       { "item_code": "slime_gel", "quantity": 2 },
       { "item_code": "polished_stone", "quantity": 1 }
     ]
+  },
+  {
+    "code": "iron_sword_recipe",
+    "name": "Épée en fer",
+    "result_item_code": "iron_sword",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "iron_ingot", "quantity": 3 },
+      { "item_code": "wood_log", "quantity": 1 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "iron_warshield_recipe",
+    "name": "Pavois en fer",
+    "result_item_code": "iron_warshield",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "iron_ingot", "quantity": 4 },
+      { "item_code": "leather_strip", "quantity": 2 }
+    ]
+  },
+  {
+    "code": "iron_greatsword_recipe",
+    "name": "Espadon en fer",
+    "result_item_code": "iron_greatsword",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "iron_ingot", "quantity": 6 },
+      { "item_code": "wood_log", "quantity": 3 },
+      { "item_code": "leather_strip", "quantity": 3 }
+    ]
+  },
+  {
+    "code": "iron_tower_shield_recipe",
+    "name": "Tour en fer",
+    "result_item_code": "iron_tower_shield",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "iron_ingot", "quantity": 9 },
+      { "item_code": "leather_strip", "quantity": 3 }
+    ]
+  },
+  {
+    "code": "slime_morningstar_recipe",
+    "name": "Morningstar visqueuse",
+    "result_item_code": "slime_morningstar",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "slime_gel", "quantity": 3 },
+      { "item_code": "wood_log", "quantity": 2 }
+    ]
+  },
+  {
+    "code": "slime_buckler_recipe",
+    "name": "Bouclier de gel",
+    "result_item_code": "slime_buckler",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "slime_gel", "quantity": 3 },
+      { "item_code": "wood_log", "quantity": 2 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "slime_greatblade_recipe",
+    "name": "Lame visqueuse colossale",
+    "result_item_code": "slime_greatblade",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "slime_gel", "quantity": 9 },
+      { "item_code": "wood_log", "quantity": 6 },
+      { "item_code": "iron_ingot", "quantity": 3 }
+    ]
+  },
+  {
+    "code": "slime_tower_shield_recipe",
+    "name": "Tour de gel",
+    "result_item_code": "slime_tower_shield",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "slime_gel", "quantity": 12 },
+      { "item_code": "wood_log", "quantity": 9 },
+      { "item_code": "leather_strip", "quantity": 3 }
+    ]
+  },
+  {
+    "code": "gobelin_buckler_recipe",
+    "name": "Rondache gobeline",
+    "result_item_code": "gobelin_buckler",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "gobelin_tooth", "quantity": 3 },
+      { "item_code": "iron_ingot", "quantity": 1 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "gobelin_greataxe_recipe",
+    "name": "Grande hache gobeline",
+    "result_item_code": "gobelin_greataxe",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "gobelin_tooth", "quantity": 12 },
+      { "item_code": "iron_ingot", "quantity": 6 },
+      { "item_code": "wood_log", "quantity": 3 }
+    ]
+  },
+  {
+    "code": "gobelin_warshield_recipe",
+    "name": "Pavois gobelin",
+    "result_item_code": "gobelin_warshield",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "gobelin_tooth", "quantity": 9 },
+      { "item_code": "iron_ingot", "quantity": 3 },
+      { "item_code": "wood_log", "quantity": 6 },
+      { "item_code": "leather_strip", "quantity": 3 }
+    ]
+  },
+  {
+    "code": "leather_dagger_recipe",
+    "name": "Dague en cuir",
+    "result_item_code": "leather_dagger",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "leather_strip", "quantity": 2 },
+      { "item_code": "wood_log", "quantity": 2 },
+      { "item_code": "iron_ingot", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "leather_buckler_recipe",
+    "name": "Rondache en cuir",
+    "result_item_code": "leather_buckler",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "leather_strip", "quantity": 2 },
+      { "item_code": "wood_log", "quantity": 2 },
+      { "item_code": "iron_ingot", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "leather_greatsword_recipe",
+    "name": "Grande lame en cuir",
+    "result_item_code": "leather_greatsword",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "leather_strip", "quantity": 9 },
+      { "item_code": "wood_log", "quantity": 6 },
+      { "item_code": "iron_ingot", "quantity": 3 }
+    ]
+  },
+  {
+    "code": "leather_tower_shield_recipe",
+    "name": "Tour en cuir",
+    "result_item_code": "leather_tower_shield",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "leather_strip", "quantity": 9 },
+      { "item_code": "wood_log", "quantity": 9 },
+      { "item_code": "iron_ingot", "quantity": 3 }
+    ]
+  },
+  {
+    "code": "linen_rapier_recipe",
+    "name": "Rapière en lin",
+    "result_item_code": "linen_rapier",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "linen_cloth", "quantity": 2 },
+      { "item_code": "wood_log", "quantity": 2 },
+      { "item_code": "iron_ingot", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "linen_aegis_recipe",
+    "name": "Égide en lin",
+    "result_item_code": "linen_aegis",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "linen_cloth", "quantity": 2 },
+      { "item_code": "wood_log", "quantity": 2 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "linen_greatblade_recipe",
+    "name": "Grande lame en lin",
+    "result_item_code": "linen_greatblade",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "linen_cloth", "quantity": 9 },
+      { "item_code": "wood_log", "quantity": 6 },
+      { "item_code": "iron_ingot", "quantity": 3 }
+    ]
+  },
+  {
+    "code": "linen_tower_shield_recipe",
+    "name": "Tour en lin",
+    "result_item_code": "linen_tower_shield",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "linen_cloth", "quantity": 9 },
+      { "item_code": "wood_log", "quantity": 9 },
+      { "item_code": "leather_strip", "quantity": 3 }
+    ]
   }
 ]

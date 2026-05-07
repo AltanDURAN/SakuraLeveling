@@ -102,8 +102,8 @@ class EquipItemUseCase:
                 return EquipResult(
                     success=False,
                     message=(
-                        f"❌ **{item_def.name}** est une arme à une main : équipez-la "
-                        f"en `main_droite` ou `main_gauche`."
+                        f"❌ **{item_def.name}** s'équipe en main : "
+                        f"choisissez `main_droite` ou `main_gauche`."
                     ),
                 )
         else:

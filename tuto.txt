@@ -126,19 +126,25 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     arme à 2 mains, `main_gauche` redevient libre automatiquement.
     Cas spécial `slot=all` : déséquipe TOUTES les pièces d'un coup.
 
-/equip_panoplie <nom>
-    Équipe en un clic toutes les pièces d'une panoplie complète (12/12).
-    Conditions :
-    - Vous devez posséder (en inventaire OU déjà équipé) au moins 12/12
-      pièces de la famille — les armes à 2 mains comptent pour 2 (elles
-      occupent main_droite ET verrouillent main_gauche).
-    - Au moins une pièce doit exister pour CHAQUE slot couvert.
+/equip_panoplie <nom> [option]
+    Équipe en un clic toutes les pièces d'une panoplie (12/12 actifs).
+    Chaque panoplie a 16 items distincts : 10 hors-main + 2 armes
+    légères + 1 arme lourde + 2 boucliers légers + 1 bouclier lourd.
+    Comme on a 12 slots, on choisit la config des mains via `option` :
+        defaut           → 1 arme légère + 1 bouclier léger (par défaut)
+        double_armes     → 2 armes légères différentes
+        double_boucliers → 2 boucliers légers différents
+        arme_lourde      → 1 arme 2-mains (verrouille main_gauche)
+        bouclier_lourd   → 1 bouclier 2-mains (idem)
+    Règles bonus de panoplie :
+    - 2-mains compte pour 2 points
+    - 2 mêmes mains identiques = 1 point ; 2 mains différentes = 2 points
     Comportement :
-    - Les pièces de la bonne famille déjà équipées sont conservées.
-    - Les slots tenus par des items hors famille sont déséquipés.
-    - Si la pièce sélectionnée pour main_droite est une 2-mains,
-      main_gauche reste vide.
-    Autocomplete sur les noms de panoplies (Fer, Cuir, Slime, …).
+    - Pièces de la bonne famille déjà équipées au bon slot → conservées.
+    - Slots tenus par hors-famille → déséquipés et remplacés.
+    Conditions :
+    - Au moins 12/12 pondéré possédé (inventaire ∪ équipé).
+    - Items requis par l'option (ex : arme_lourde exige une 2-mains).
 
 /create_set <nom>
     Sauvegarde l'équipement actuellement équipé sous un nom libre
