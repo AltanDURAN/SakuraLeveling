@@ -56,7 +56,7 @@ _CATEGORY_ACCENT: dict[str, tuple[int, int, int, int]] = {
 }
 
 
-_PAGE_SIZE = 6  # 2 cols × 3 rows : laisse de la place pour les ingrédients
+_PAGE_SIZE = 6  # 1 col × 6 rows en mode slim (1 recette par ligne)
 
 
 def _format_ingredients(
@@ -86,7 +86,6 @@ def _build_card(
         if bonuses_text:
             lines.append(bonuses_text)
     lines.append("📦 " + _format_ingredients(recipe, item_lookup))
-    lines.append(f"🔖 `{recipe.code}`")
 
     icon_emoji = CATEGORY_ICONS.get(
         result.category if result else "", "🛠️",
@@ -292,7 +291,7 @@ class RecipeListView(discord.ui.View):
         )
         compose_card_grid_page(
             str(out), title=self.title_prefix, subtitle=sub,
-            cards=cards, cols=2, rows=3, seed=self.viewer_id,
+            cards=cards, cols=1, rows=6, seed=self.viewer_id,
         )
 
         self._refresh_button_states(total_pages)

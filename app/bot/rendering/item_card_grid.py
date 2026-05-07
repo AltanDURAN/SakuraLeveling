@@ -148,16 +148,17 @@ def _draw_card(
         fill=_TEXT_PRIMARY, shadow=_SHADOW,
     )
 
-    # Lignes secondaires
-    line_y = y + 14 + 32
-    line_font = try_font(18)
-    for raw_line in card.lines[:3]:  # max 3 lignes pour rester lisible
-        line = raw_line if len(raw_line) <= 60 else raw_line[:59] + "…"
+    # Lignes secondaires — fonte plus grosse pour la lisibilité des stats
+    # (l'emoji prend l'essentiel de l'œil, le texte reste compact).
+    line_y = y + 14 + 34
+    line_font = try_font(22, bold=True)
+    for raw_line in card.lines[:2]:  # max 2 lignes en mode slim
+        line = raw_line if len(raw_line) <= 70 else raw_line[:69] + "…"
         draw_text_with_emojis(
             base, (text_x, line_y), line, line_font,
             fill=_TEXT_SECONDARY, shadow=None,
         )
-        line_y += 22
+        line_y += 26
 
     # Badge en haut à droite
     if card.badge:
@@ -175,8 +176,8 @@ def compose_card_grid_page(
     subtitle: str,
     cards: list[CardSpec],
     *,
-    cols: int = 2,
-    rows: int = 3,
+    cols: int = 1,
+    rows: int = 6,
     seed: int = 0,
 ) -> None:
     """Rend une page (max cols × rows cards). Si plus, le caller paginera.
@@ -184,13 +185,14 @@ def compose_card_grid_page(
     `title`/`subtitle` : bandeau en haut. `seed` : layout pétales déterministe.
     """
     margin = 30
-    spacing = 14
+    spacing = 10
     header_h = 110
     footer_h = 40
-    icon_size = 110
+    icon_size = 84
 
-    # Hauteur dynamique selon le nombre de rows demandé
-    card_h = 138
+    # Card slim : 1 ligne nom + 1 ligne stats. Hauteur réduite vs version
+    # précédente (138 → 105).
+    card_h = 105
     rows_used = min(rows, max(1, (len(cards) + cols - 1) // cols))
     height = (
         header_h + rows_used * (card_h + spacing) - spacing + footer_h + 30
