@@ -287,7 +287,7 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
 /forge <recipe_code>
     Forge une arme ou un bouclier. Refuse si la recette produit autre chose :
     utilisez /craft dans ce cas. Autocomplete sur les armes/boucliers.
-    Exemple : /forge two_handed_iron_sword_recipe
+    Exemple : /forge iron_greatsword_recipe
 
 /craft_panoplie <nom>
     Craft en lot toutes les pièces /craft d'une panoplie (collier, bracelet,
@@ -332,7 +332,7 @@ Règles d'équipement :
     Exemples :
         /equip iron_helmet                   → casque (slot par défaut)
         /equip wood_sword main_gauche        → arme 1-main en main gauche
-        /equip two_handed_iron_sword         → 2-mains, libère les deux mains
+        /equip iron_greatsword               → 2-mains, libère les deux mains
 
 --------------------------------------------------------------------------------
 1.4 — COMBAT

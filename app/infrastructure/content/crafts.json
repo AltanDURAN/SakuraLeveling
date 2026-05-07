@@ -139,17 +139,6 @@
     ]
   },
   {
-    "code": "two_handed_iron_sword_recipe",
-    "name": "Espadon de fer",
-    "result_item_code": "two_handed_iron_sword",
-    "result_quantity": 1,
-    "ingredients": [
-      { "item_code": "iron_ingot", "quantity": 8 },
-      { "item_code": "leather_strip", "quantity": 2 },
-      { "item_code": "wood_log", "quantity": 2 }
-    ]
-  },
-  {
     "code": "iron_helmet_recipe",
     "name": "Casque de fer",
     "result_item_code": "iron_helmet",

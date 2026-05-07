@@ -187,25 +187,6 @@
     "family": "gobelin"
   },
   {
-    "code": "two_handed_iron_sword",
-    "name": "Espadon de fer",
-    "description": "Une longue lame qui demande de tenir des deux mains.",
-    "category": "weapon",
-    "rarity": "rare",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 35,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack": 10,
-      "crit_damage": 10
-    },
-    "equipment_slot": "main_droite",
-    "requires_two_hands": true,
-    "family": ""
-  },
-  {
     "code": "wooden_shield",
     "name": "Bouclier en bois",
     "description": "Un bouclier léger, à porter en main gauche.",
