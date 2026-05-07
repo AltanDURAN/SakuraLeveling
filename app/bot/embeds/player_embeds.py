@@ -104,7 +104,7 @@ def build_player_profile_embed(
             f"💰 Or amassé : **{_format_int(career_stats.gold_earned_total)}** au total",
             f"💢 Dégâts infligés : **{_format_int(career_stats.damage_dealt_total)}**",
             f"🛡️ Dégâts encaissés : **{_format_int(career_stats.damage_tanked_total)}**",
-            f"💚 PV régénérés : **{_format_int(career_stats.hp_healed_total)}**",
+            f"💚 PV soignés : **{_format_int(career_stats.hp_healed_total)}**",
         ]
         embed.add_field(
             name="📈 Statistiques de carrière",
