@@ -101,6 +101,7 @@ git checkout main
 | `/help [command]` | `help_cog` | Liste dynamique des commandes (autocomplete) ou détail d'une commande |
 | `/title [target]`, `/title_set [code]` | `title_cog` | Voir / activer un titre (cosmétique) — effets passifs toujours actifs |
 | `/panoplie <nom>` | `panoplie_cog` | Détail d'une panoplie : paliers, bonus, pièces qui la composent (autocomplete sur les familles) |
+| `/equip_panoplie <nom>` | `player_cog` | Équipe en 1 clic toute une panoplie 12/12. Refuse si pondéré < 12 (les armes 2-mains comptent pour 2). Conserve les pièces de la bonne famille déjà équipées. |
 | `/weekly`, `/weekly_claim <code>` | `weekly_quest_cog` | 3 quêtes hebdo random tirées le lundi UTC |
 | `/brocante list/my/sell/buy/cancel` | `brocante_cog` | Marketplace P2P avec commission shop (5%) |
 | `/boss spawn <boss_code>`, `/boss list` | `world_boss_cog` | Spawn manuel admin / catalogue + auto-spawn hebdo |
@@ -155,7 +156,8 @@ Pour un nouveau cog : si les commandes restent dans le canal beta → poser `int
 
 - **Définitions** : [`sets.json`](app/infrastructure/content/sets.json) — 5 familles avec 4 paliers (2/4/8/12 pièces). Chaque famille = un thème (iron=def, leather=dodge, slime=régen, gobelin=crit chance, linen=crit dmg). Bonus du palier le plus haut REMPLACE celui des paliers inférieurs (pas cumulatif).
 - **Migration `277fe14515ad_add_family_to_item_definitions`** : ajoute la colonne `family` sur `item_definitions`. Il faut donc passer `alembic upgrade head` après le déploiement.
-- **Service** : [`SetBonusService.aggregate(equipped_items)`](app/domain/services/set_bonus_service.py) compte les pièces par famille, sélectionne le palier max atteint, retourne un `SetBonuses` (flat additif sur défense, dodge, crit_chance, crit_damage, hp_regeneration, attack, speed, max_hp). Garde un `active_sets: list[ActiveSetBonus]` pour l'affichage `/equipement` page 3.
+- **Service** : [`SetBonusService.aggregate(equipped_items)`](app/domain/services/set_bonus_service.py) compte les pièces par famille (une **arme 2-mains compte pour 2** car elle occupe `main_droite` ET verrouille `main_gauche`), sélectionne le palier max atteint, retourne un `SetBonuses` (flat additif sur défense, dodge, crit_chance, crit_damage, hp_regeneration, attack, speed, max_hp). Garde un `active_sets: list[ActiveSetBonus]` pour l'affichage `/equipement` page 3.
+- **Equip groupé** : [`EquipPanoplieUseCase`](app/application/use_cases/equip_panoplie.py) — `/equip_panoplie <nom>` valide 12/12 pondéré (2-mains = 2), construit un plan slot→item (priorité aux pièces déjà équipées de la bonne famille), déséquipe le hors-famille, équipe la cible. Si une 2-mains est sélectionnée, `main_gauche` reste vide.
 - **Helper** : [`resolve_set_bonuses(equipped_items)`](app/application/services/set_bonus_resolver.py) — wrap simple à appeler partout où on calcule des stats.
 - **Wired dans `StatsService`** : 6e étage (après skill bonuses, après title bonuses, après les caps). Permet aux bonus de set de pousser légèrement au-delà des caps standards. Wired aussi dans tous les call sites : `/profile`, encounter (register + resolve), fight_mob (solo), challenge_player (duel), use_consumable, world_boss, get_player_stats, get_leaderboard, admin_cog (force_hp / heal_full), player_cog (preview /equip).
 - **Pour ajouter une nouvelle panoplie** : ajouter une entrée dans `sets.json` + tagger les items concernés avec leur `family` dans `items.json`. Pas de code à toucher.

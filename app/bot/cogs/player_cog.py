@@ -693,6 +693,65 @@ class PlayerCog(commands.Cog):
         return choices
 
     @app_commands.command(
+        name="equip_panoplie",
+        description="Équipe en un clic toutes les pièces d'une panoplie complète (12/12)",
+    )
+    @app_commands.describe(nom="Nom de la panoplie (autocomplete)")
+    async def equip_panoplie(
+        self,
+        interaction: discord.Interaction,
+        nom: str,
+    ) -> None:
+        from app.application.use_cases.equip_panoplie import (
+            EquipPanoplieUseCase,
+        )
+
+        await interaction.response.defer()
+        with get_db_session() as session:
+            use_case = EquipPanoplieUseCase(
+                player_repository=PlayerRepository(session),
+                inventory_repository=InventoryRepository(session),
+                equipment_repository=EquipmentRepository(session),
+            )
+            result = use_case.execute(
+                discord_id=interaction.user.id,
+                username=interaction.user.name,
+                display_name=interaction.user.display_name,
+                family=nom,
+            )
+
+        await interaction.followup.send(
+            result.message, ephemeral=not result.success,
+        )
+
+    @equip_panoplie.autocomplete("nom")
+    async def equip_panoplie_autocomplete(
+        self,
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        from app.infrastructure.sets.set_loader import (
+            list_definitions as list_set_definitions,
+        )
+
+        sets_def = list_set_definitions()
+        current_lower = current.lower()
+        choices: list[app_commands.Choice[str]] = []
+        for code, set_def in sets_def.items():
+            name = set_def.get("name", code)
+            icon = set_def.get("icon", "✨")
+            if (
+                current_lower in code.lower()
+                or current_lower in name.lower()
+            ):
+                choices.append(
+                    app_commands.Choice(name=f"{icon} {name}", value=code),
+                )
+            if len(choices) >= 25:
+                break
+        return choices
+
+    @app_commands.command(
         name="fight",
         description="Défier un autre joueur en duel 1v1 (PvP, sans gain ni perte)",
     )

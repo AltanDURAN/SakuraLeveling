@@ -125,6 +125,20 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     le nom de l'item porté pour chaque entrée). Si le slot contenait une
     arme à 2 mains, `main_gauche` redevient libre automatiquement.
 
+/equip_panoplie <nom>
+    Équipe en un clic toutes les pièces d'une panoplie complète (12/12).
+    Conditions :
+    - Vous devez posséder (en inventaire OU déjà équipé) au moins 12/12
+      pièces de la famille — les armes à 2 mains comptent pour 2 (elles
+      occupent main_droite ET verrouillent main_gauche).
+    - Au moins une pièce doit exister pour CHAQUE slot couvert.
+    Comportement :
+    - Les pièces de la bonne famille déjà équipées sont conservées.
+    - Les slots tenus par des items hors famille sont déséquipés.
+    - Si la pièce sélectionnée pour main_droite est une 2-mains,
+      main_gauche reste vide.
+    Autocomplete sur les noms de panoplies (Fer, Cuir, Slime, …).
+
 /class [target]
     Affiche la classe active.
 

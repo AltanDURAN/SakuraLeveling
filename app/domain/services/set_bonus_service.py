@@ -69,13 +69,17 @@ class SetBonusService:
     def aggregate(
         self, equipped_items: list[PlayerEquipmentItem],
     ) -> SetBonuses:
-        # Compte le nombre d'items par famille (chaque item compte 1)
+        # Compte le nombre d'items par famille. Une arme à 2 mains
+        # occupe `main_droite` ET verrouille `main_gauche` — elle compte
+        # donc pour 2 dans la panoplie (sinon 12/12 avec une 2-mains
+        # serait impossible).
         counts: dict[str, int] = {}
         for item in equipped_items:
             family = (item.item_definition.family or "").strip()
             if not family:
                 continue
-            counts[family] = counts.get(family, 0) + 1
+            weight = 2 if item.item_definition.requires_two_hands else 1
+            counts[family] = counts.get(family, 0) + weight
 
         bonuses = SetBonuses()
 
