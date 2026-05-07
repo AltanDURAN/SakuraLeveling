@@ -691,6 +691,9 @@ def compose_profile_banner(
     info_font = _try_font(28, bold=True)
     label_font = _try_font(24, bold=True)
     value_font = _try_font(42, bold=True)
+    # Card PV : "current/max" peut être long (ex 1.2K/1.5K), on rétrécit
+    # pour éviter le débordement.
+    value_font_compact = _try_font(32, bold=True)
     section_font = _try_font(30, bold=True)
     rank_font = _try_font(80, bold=True)
     pwr_inner_font_size = 24  # utilisé plus bas dans l'appel au badge
@@ -864,9 +867,14 @@ def compose_profile_banner(
         col = idx % grid_cols
         x = margin + col * (card_w + spacing)
         y = combat_grid_y + row * (card_h + spacing)
+        # PV peut afficher "current/max" → fonte rétrécie pour ne pas
+        # déborder de la card.
+        card_value_font = (
+            value_font_compact if accent_key == "hp" else value_font
+        )
         _draw_stat_card(
             bg, (x, y), (card_w, card_h),
-            emoji, label, value, label_font, value_font,
+            emoji, label, value, label_font, card_value_font,
             accent_key=accent_key,
         )
 
