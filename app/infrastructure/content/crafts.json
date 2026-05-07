@@ -336,5 +336,360 @@
       { "item_code": "wood_log", "quantity": 3 },
       { "item_code": "leather_strip", "quantity": 1 }
     ]
+  },
+  {
+    "code": "gobelin_plastron_recipe",
+    "name": "Plastron gobelin",
+    "result_item_code": "gobelin_plastron",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "gobelin_tooth", "quantity": 5 },
+      { "item_code": "iron_ingot", "quantity": 2 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "gobelin_jambieres_recipe",
+    "name": "Jambières gobelin",
+    "result_item_code": "gobelin_jambieres",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "gobelin_tooth", "quantity": 4 },
+      { "item_code": "iron_ingot", "quantity": 2 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "gobelin_bottes_recipe",
+    "name": "Bottes gobelin",
+    "result_item_code": "gobelin_bottes",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "gobelin_tooth", "quantity": 3 },
+      { "item_code": "iron_ingot", "quantity": 1 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "gobelin_main_gauche_recipe",
+    "name": "Bouclier gobelin",
+    "result_item_code": "gobelin_main_gauche",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "gobelin_tooth", "quantity": 3 },
+      { "item_code": "iron_ingot", "quantity": 1 },
+      { "item_code": "wood_log", "quantity": 2 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "gobelin_bracelet_recipe",
+    "name": "Bracelet gobelin",
+    "result_item_code": "gobelin_bracelet",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "gobelin_tooth", "quantity": 2 },
+      { "item_code": "iron_ingot", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "gobelin_ceinture_recipe",
+    "name": "Ceinture gobelin",
+    "result_item_code": "gobelin_ceinture",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "gobelin_tooth", "quantity": 2 },
+      { "item_code": "iron_ingot", "quantity": 1 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "gobelin_cape_recipe",
+    "name": "Cape gobelin",
+    "result_item_code": "gobelin_cape",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "gobelin_tooth", "quantity": 4 },
+      { "item_code": "linen_cloth", "quantity": 2 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "gobelin_boucle_oreille_recipe",
+    "name": "Boucle gobelin",
+    "result_item_code": "gobelin_boucle_oreille",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "gobelin_tooth", "quantity": 2 },
+      { "item_code": "polished_stone", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "iron_collier_recipe",
+    "name": "Collier en fer",
+    "result_item_code": "iron_collier",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "iron_ingot", "quantity": 4 },
+      { "item_code": "polished_stone", "quantity": 1 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "iron_ceinture_recipe",
+    "name": "Ceinture en fer",
+    "result_item_code": "iron_ceinture",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "iron_ingot", "quantity": 2 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "iron_cape_recipe",
+    "name": "Cape en fer",
+    "result_item_code": "iron_cape",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "iron_ingot", "quantity": 4 },
+      { "item_code": "linen_cloth", "quantity": 2 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "iron_boucle_oreille_recipe",
+    "name": "Boucle en fer",
+    "result_item_code": "iron_boucle_oreille",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "iron_ingot", "quantity": 2 },
+      { "item_code": "polished_stone", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "leather_main_droite_recipe",
+    "name": "Lame en cuir",
+    "result_item_code": "leather_main_droite",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "leather_strip", "quantity": 3 },
+      { "item_code": "wood_log", "quantity": 2 },
+      { "item_code": "iron_ingot", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "leather_main_gauche_recipe",
+    "name": "Bouclier en cuir",
+    "result_item_code": "leather_main_gauche",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "leather_strip", "quantity": 3 },
+      { "item_code": "wood_log", "quantity": 3 },
+      { "item_code": "iron_ingot", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "leather_collier_recipe",
+    "name": "Collier en cuir",
+    "result_item_code": "leather_collier",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "leather_strip", "quantity": 4 },
+      { "item_code": "polished_stone", "quantity": 1 },
+      { "item_code": "linen_cloth", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "leather_bague_recipe",
+    "name": "Bague en cuir",
+    "result_item_code": "leather_bague",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "leather_strip", "quantity": 2 },
+      { "item_code": "polished_stone", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "leather_cape_recipe",
+    "name": "Cape en cuir",
+    "result_item_code": "leather_cape",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "leather_strip", "quantity": 5 },
+      { "item_code": "linen_cloth", "quantity": 2 }
+    ]
+  },
+  {
+    "code": "leather_boucle_oreille_recipe",
+    "name": "Boucle en cuir",
+    "result_item_code": "leather_boucle_oreille",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "leather_strip", "quantity": 2 },
+      { "item_code": "polished_stone", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "linen_jambieres_recipe",
+    "name": "Jambières en lin",
+    "result_item_code": "linen_jambieres",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "linen_cloth", "quantity": 4 },
+      { "item_code": "leather_strip", "quantity": 2 }
+    ]
+  },
+  {
+    "code": "linen_bottes_recipe",
+    "name": "Bottes en lin",
+    "result_item_code": "linen_bottes",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "linen_cloth", "quantity": 3 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "linen_main_droite_recipe",
+    "name": "Lame en lin",
+    "result_item_code": "linen_main_droite",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "linen_cloth", "quantity": 3 },
+      { "item_code": "wood_log", "quantity": 2 },
+      { "item_code": "iron_ingot", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "linen_main_gauche_recipe",
+    "name": "Bouclier en lin",
+    "result_item_code": "linen_main_gauche",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "linen_cloth", "quantity": 3 },
+      { "item_code": "wood_log", "quantity": 3 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "linen_collier_recipe",
+    "name": "Collier en lin",
+    "result_item_code": "linen_collier",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "linen_cloth", "quantity": 4 },
+      { "item_code": "polished_stone", "quantity": 1 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "linen_bague_recipe",
+    "name": "Bague en lin",
+    "result_item_code": "linen_bague",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "linen_cloth", "quantity": 2 },
+      { "item_code": "polished_stone", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "linen_ceinture_recipe",
+    "name": "Ceinture en lin",
+    "result_item_code": "linen_ceinture",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "linen_cloth", "quantity": 2 },
+      { "item_code": "iron_ingot", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "linen_boucle_oreille_recipe",
+    "name": "Boucle en lin",
+    "result_item_code": "linen_boucle_oreille",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "linen_cloth", "quantity": 2 },
+      { "item_code": "polished_stone", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "slime_casque_recipe",
+    "name": "Casque de slime",
+    "result_item_code": "slime_casque",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "slime_gel", "quantity": 4 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "slime_plastron_recipe",
+    "name": "Plastron de slime",
+    "result_item_code": "slime_plastron",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "slime_gel", "quantity": 5 },
+      { "item_code": "leather_strip", "quantity": 2 }
+    ]
+  },
+  {
+    "code": "slime_jambieres_recipe",
+    "name": "Jambières de slime",
+    "result_item_code": "slime_jambieres",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "slime_gel", "quantity": 4 },
+      { "item_code": "leather_strip", "quantity": 2 }
+    ]
+  },
+  {
+    "code": "slime_bottes_recipe",
+    "name": "Bottes de slime",
+    "result_item_code": "slime_bottes",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "slime_gel", "quantity": 3 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "slime_bracelet_recipe",
+    "name": "Bracelet de slime",
+    "result_item_code": "slime_bracelet",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "slime_gel", "quantity": 2 },
+      { "item_code": "iron_ingot", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "slime_bague_recipe",
+    "name": "Bague de slime",
+    "result_item_code": "slime_bague",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "slime_gel", "quantity": 2 },
+      { "item_code": "polished_stone", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "slime_ceinture_recipe",
+    "name": "Ceinture de slime",
+    "result_item_code": "slime_ceinture",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "slime_gel", "quantity": 2 },
+      { "item_code": "leather_strip", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "slime_boucle_oreille_recipe",
+    "name": "Boucle de slime",
+    "result_item_code": "slime_boucle_oreille",
+    "result_quantity": 1,
+    "ingredients": [
+      { "item_code": "slime_gel", "quantity": 2 },
+      { "item_code": "polished_stone", "quantity": 1 }
+    ]
   }
 ]
