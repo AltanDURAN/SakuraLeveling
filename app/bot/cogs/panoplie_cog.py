@@ -174,17 +174,16 @@ class PanoplieCog(commands.Cog):
             piece_lines: list[str] = []
             for slot in _SLOT_ORDER:
                 items = by_slot.get(slot)
-                slot_label = (
-                    f"{_SLOT_ICONS.get(slot, '•')} **{_SLOT_LABELS.get(slot, slot)}**"
-                )
+                slot_icon = _SLOT_ICONS.get(slot, "•")
                 if not items:
-                    piece_lines.append(f"{slot_label} : —")
+                    # Slot manquant : juste l'icône + tiret. Le label texte
+                    # est redondant avec l'emoji, on l'omet.
+                    piece_lines.append(f"{slot_icon} —")
                     continue
-                # Plusieurs items dans le même slot → une ligne par item
                 for it in items:
                     bonuses = _format_stat_bonuses_short(it.stat_bonuses)
                     suffix = f"  ·  {bonuses}" if bonuses else ""
-                    piece_lines.append(f"{slot_label} : {it.name}{suffix}")
+                    piece_lines.append(f"{slot_icon} **{it.name}**{suffix}")
 
             # Découpe en plusieurs fields si > 1000 chars (limite 1024)
             buf = ""
