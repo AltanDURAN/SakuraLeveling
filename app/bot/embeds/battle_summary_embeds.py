@@ -181,7 +181,7 @@ def build_details_page_embed(summary: BattleSummary) -> discord.Embed:
             f"{_percent_of(contribution.damage_dealt, team_dmg)}",
             f"🛡️ Dégâts encaissés : **{_format_int(contribution.damage_tanked)}**"
             f"{_percent_of(contribution.damage_tanked, team_tanked)}",
-            f"💚 PV régénérés : **{_format_int(contribution.hp_healed)}**"
+            f"💚 PV soignés : **{_format_int(contribution.hp_healed)}**"
             f"{_percent_of(contribution.hp_healed, team_healed)}",
             f"❤️ PV restants : **{contribution.final_hp}** / {contribution.max_hp}",
         ]
