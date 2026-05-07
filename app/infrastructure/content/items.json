@@ -201,7 +201,7 @@
       "defense": 3,
       "max_hp": 5
     },
-    "equipment_slot": "main_gauche",
+    "equipment_slot": "main_droite",
     "requires_two_hands": false,
     "family": ""
   },
@@ -220,7 +220,7 @@
       "defense": 5,
       "dodge": 2
     },
-    "equipment_slot": "main_gauche",
+    "equipment_slot": "main_droite",
     "requires_two_hands": false,
     "family": "iron"
   },
@@ -774,7 +774,7 @@
       "defense": 4,
       "max_hp": 6
     },
-    "equipment_slot": "main_gauche",
+    "equipment_slot": "main_droite",
     "requires_two_hands": false,
     "family": "slime"
   },
@@ -888,7 +888,7 @@
       "dodge": 1,
       "defense": 1
     },
-    "equipment_slot": "main_gauche",
+    "equipment_slot": "main_droite",
     "requires_two_hands": false,
     "family": "leather"
   },
@@ -1192,7 +1192,7 @@
       "attack": 2,
       "crit_chance": 1
     },
-    "equipment_slot": "main_gauche",
+    "equipment_slot": "main_droite",
     "requires_two_hands": false,
     "family": "gobelin"
   },
@@ -1344,7 +1344,7 @@
       "crit_damage": 2,
       "dodge": 1
     },
-    "equipment_slot": "main_gauche",
+    "equipment_slot": "main_droite",
     "requires_two_hands": false,
     "family": "linen"
   },
@@ -1435,7 +1435,11 @@
     "sell_price": 18,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "attack": 3, "defense": 1, "max_hp": 3 },
+    "stat_bonuses": {
+      "attack": 3,
+      "defense": 1,
+      "max_hp": 3
+    },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
     "family": "iron"
@@ -1451,7 +1455,10 @@
     "sell_price": 18,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "defense": 4, "max_hp": 8 },
+    "stat_bonuses": {
+      "defense": 4,
+      "max_hp": 8
+    },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
     "family": "iron"
@@ -1467,7 +1474,13 @@
     "sell_price": 60,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "attack": 9, "speed": 6, "crit_chance": 6, "defense": -5, "dodge": -2 },
+    "stat_bonuses": {
+      "attack": 9,
+      "speed": 6,
+      "crit_chance": 6,
+      "defense": -5,
+      "dodge": -2
+    },
     "equipment_slot": "main_droite",
     "requires_two_hands": true,
     "family": "iron"
@@ -1483,7 +1496,13 @@
     "sell_price": 60,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "defense": 15, "dodge": 6, "attack": -3, "speed": -2, "crit_chance": -2 },
+    "stat_bonuses": {
+      "defense": 15,
+      "dodge": 6,
+      "attack": -3,
+      "speed": -2,
+      "crit_chance": -2
+    },
     "equipment_slot": "main_droite",
     "requires_two_hands": true,
     "family": "iron"
@@ -1499,7 +1518,10 @@
     "sell_price": 22,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "attack": 4, "hp_regeneration": 2 },
+    "stat_bonuses": {
+      "attack": 4,
+      "hp_regeneration": 2
+    },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
     "family": "slime"
@@ -1515,7 +1537,10 @@
     "sell_price": 22,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "defense": 3, "hp_regeneration": 3 },
+    "stat_bonuses": {
+      "defense": 3,
+      "hp_regeneration": 3
+    },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
     "family": "slime"
@@ -1531,7 +1556,11 @@
     "sell_price": 70,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "attack": 15, "defense": -4, "max_hp": -6 },
+    "stat_bonuses": {
+      "attack": 15,
+      "defense": -4,
+      "max_hp": -6
+    },
     "equipment_slot": "main_droite",
     "requires_two_hands": true,
     "family": "slime"
@@ -1547,7 +1576,11 @@
     "sell_price": 70,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "defense": 12, "max_hp": 18, "attack": -5 },
+    "stat_bonuses": {
+      "defense": 12,
+      "max_hp": 18,
+      "attack": -5
+    },
     "equipment_slot": "main_droite",
     "requires_two_hands": true,
     "family": "slime"
@@ -1563,7 +1596,10 @@
     "sell_price": 18,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "defense": 3, "crit_chance": 2 },
+    "stat_bonuses": {
+      "defense": 3,
+      "crit_chance": 2
+    },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
     "family": "gobelin"
@@ -1579,7 +1615,12 @@
     "sell_price": 80,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "attack": 18, "crit_damage": 15, "defense": -2, "crit_chance": -2 },
+    "stat_bonuses": {
+      "attack": 18,
+      "crit_damage": 15,
+      "defense": -2,
+      "crit_chance": -2
+    },
     "equipment_slot": "main_droite",
     "requires_two_hands": true,
     "family": "gobelin"
@@ -1595,7 +1636,12 @@
     "sell_price": 60,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "defense": 9, "crit_chance": 5, "attack": -6, "crit_damage": -5 },
+    "stat_bonuses": {
+      "defense": 9,
+      "crit_chance": 5,
+      "attack": -6,
+      "crit_damage": -5
+    },
     "equipment_slot": "main_droite",
     "requires_two_hands": true,
     "family": "gobelin"
@@ -1611,7 +1657,10 @@
     "sell_price": 14,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "attack": 2, "dodge": 1 },
+    "stat_bonuses": {
+      "attack": 2,
+      "dodge": 1
+    },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
     "family": "leather"
@@ -1627,7 +1676,10 @@
     "sell_price": 14,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "defense": 2, "max_hp": 4 },
+    "stat_bonuses": {
+      "defense": 2,
+      "max_hp": 4
+    },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
     "family": "leather"
@@ -1643,7 +1695,11 @@
     "sell_price": 50,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "attack": 6, "dodge": 2, "defense": -1 },
+    "stat_bonuses": {
+      "attack": 6,
+      "dodge": 2,
+      "defense": -1
+    },
     "equipment_slot": "main_droite",
     "requires_two_hands": true,
     "family": "leather"
@@ -1659,7 +1715,11 @@
     "sell_price": 50,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "defense": 6, "dodge": 3, "attack": -2 },
+    "stat_bonuses": {
+      "defense": 6,
+      "dodge": 3,
+      "attack": -2
+    },
     "equipment_slot": "main_droite",
     "requires_two_hands": true,
     "family": "leather"
@@ -1675,7 +1735,10 @@
     "sell_price": 16,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "crit_chance": 2, "speed": 1 },
+    "stat_bonuses": {
+      "crit_chance": 2,
+      "speed": 1
+    },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
     "family": "linen"
@@ -1691,7 +1754,10 @@
     "sell_price": 16,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "dodge": 2, "defense": 1 },
+    "stat_bonuses": {
+      "dodge": 2,
+      "defense": 1
+    },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
     "family": "linen"
@@ -1707,7 +1773,12 @@
     "sell_price": 55,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "crit_damage": 6, "crit_chance": 3, "defense": -3, "dodge": -1 },
+    "stat_bonuses": {
+      "crit_damage": 6,
+      "crit_chance": 3,
+      "defense": -3,
+      "dodge": -1
+    },
     "equipment_slot": "main_droite",
     "requires_two_hands": true,
     "family": "linen"
@@ -1723,7 +1794,11 @@
     "sell_price": 55,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": { "dodge": 5, "defense": 3, "crit_damage": -2 },
+    "stat_bonuses": {
+      "dodge": 5,
+      "defense": 3,
+      "crit_damage": -2
+    },
     "equipment_slot": "main_droite",
     "requires_two_hands": true,
     "family": "linen"
