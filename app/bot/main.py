@@ -25,6 +25,7 @@ class SakuraBot(commands.Bot):
         await self.load_extension("app.bot.cogs.brocante_cog")
         await self.load_extension("app.bot.cogs.chad_cog")
         await self.load_extension("app.bot.cogs.bestiaire_cog")
+        await self.load_extension("app.bot.cogs.panoplie_cog")
         await self.tree.sync()
 
 

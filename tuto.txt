@@ -106,6 +106,13 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
         (pas cumulatif). Le bonus s'estompe automatiquement quand tu
         descends sous le palier (déséquipe ou change de panoplie).
 
+/panoplie <nom>
+    Affiche le détail d'une panoplie : description, paliers de bonus
+    (2/4/8/12 pièces avec l'effet de chaque palier), et la liste des
+    pièces qui composent la panoplie regroupées par slot. Autocomplete
+    sur les familles disponibles.
+    Exemple : /panoplie iron → détail complet de la panoplie Acier.
+
 /gold [target]
     Affiche un encart "bourse" : or actuel + or amassé en carrière (si > 0)
     + avatar du joueur. Avec un target, montre la bourse d'un autre joueur.

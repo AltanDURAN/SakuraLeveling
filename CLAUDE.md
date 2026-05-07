@@ -100,6 +100,7 @@ git checkout main
 | `/use <item_code>` | `player_cog` | Utiliser un consommable (potions de soin I/II/III en V1) |
 | `/help [command]` | `help_cog` | Liste dynamique des commandes (autocomplete) ou détail d'une commande |
 | `/title [target]`, `/title_set [code]` | `title_cog` | Voir / activer un titre (cosmétique) — effets passifs toujours actifs |
+| `/panoplie <nom>` | `panoplie_cog` | Détail d'une panoplie : paliers, bonus, pièces qui la composent (autocomplete sur les familles) |
 | `/weekly`, `/weekly_claim <code>` | `weekly_quest_cog` | 3 quêtes hebdo random tirées le lundi UTC |
 | `/brocante list/my/sell/buy/cancel` | `brocante_cog` | Marketplace P2P avec commission shop (5%) |
 | `/boss spawn <boss_code>`, `/boss list` | `world_boss_cog` | Spawn manuel admin / catalogue + auto-spawn hebdo |
