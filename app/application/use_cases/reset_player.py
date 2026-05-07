@@ -5,6 +5,10 @@ from sqlalchemy.orm import Session
 
 from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel
 from app.infrastructure.db.models.equipment_model import PlayerEquipmentItemModel
+from app.infrastructure.db.models.equipment_set_model import (
+    PlayerEquipmentSetItemModel,
+    PlayerEquipmentSetModel,
+)
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel
 from app.infrastructure.db.models.player_career_stats_model import PlayerCareerStatsModel
 from app.infrastructure.db.models.player_class_state_model import PlayerClassStateModel
@@ -52,10 +56,24 @@ class ResetPlayerUseCase:
             resources.daily_streak = 0
             resources.updated_at = now
 
+        # Sets d'équipement : DELETE en cascade via FK on the model side.
+        # On commence par récupérer les ids puis on supprime les set_items
+        # liés. ondelete=CASCADE le ferait au niveau DB mais SQLite peut
+        # ne pas l'honorer selon les pragmas — on est explicite.
+        set_ids_subquery = select(PlayerEquipmentSetModel.id).where(
+            PlayerEquipmentSetModel.player_id == player_id,
+        )
+        session.execute(
+            delete(PlayerEquipmentSetItemModel).where(
+                PlayerEquipmentSetItemModel.equipment_set_id.in_(set_ids_subquery),
+            )
+        )
+
         # Tables 1:N — DELETE par player_id
         for model_cls in (
             PlayerInventoryItemModel,
             PlayerEquipmentItemModel,
+            PlayerEquipmentSetModel,
             PlayerClassStateModel,
             PlayerQuestStateModel,
             PlayerCooldownModel,

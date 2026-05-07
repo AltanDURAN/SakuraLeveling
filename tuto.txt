@@ -119,11 +119,12 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     Affiche un encart "bourse" : or actuel + or amassé en carrière (si > 0)
     + avatar du joueur. Avec un target, montre la bourse d'un autre joueur.
 
-/unequip <slot>
+/unequip <slot|all>
     Retire l'équipement du slot spécifié sans le remplacer (laisse le slot
     vide). Autocomplete sur les slots actuellement occupés (affiche aussi
     le nom de l'item porté pour chaque entrée). Si le slot contenait une
     arme à 2 mains, `main_gauche` redevient libre automatiquement.
+    Cas spécial `slot=all` : déséquipe TOUTES les pièces d'un coup.
 
 /equip_panoplie <nom>
     Équipe en un clic toutes les pièces d'une panoplie complète (12/12).
@@ -138,6 +139,20 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     - Si la pièce sélectionnée pour main_droite est une 2-mains,
       main_gauche reste vide.
     Autocomplete sur les noms de panoplies (Fer, Cuir, Slime, …).
+
+/create_set <nom>
+    Sauvegarde l'équipement actuellement équipé sous un nom libre
+    (max 50 caractères). Permet ensuite de rappeler ce loadout via
+    /equip_set. Refuse si le nom existe déjà ou si rien n'est équipé.
+
+/delete_set <nom>
+    Supprime un set d'équipement sauvegardé. Autocomplete sur vos sets.
+
+/equip_set <nom>
+    Applique un set d'équipement précédemment sauvegardé. Refuse si
+    une pièce du set n'est plus possédée (vendue / tradée). Conserve
+    les pièces déjà équipées identiques pour éviter les écritures DB
+    inutiles. Autocomplete sur vos sets.
 
 /class [target]
     Affiche la classe active.

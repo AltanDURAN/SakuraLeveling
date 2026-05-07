@@ -103,6 +103,8 @@ git checkout main
 | `/panoplie <nom>` | `panoplie_cog` | Détail d'une panoplie : paliers, bonus, pièces qui la composent (autocomplete sur les familles) |
 | `/equip_panoplie <nom>` | `player_cog` | Équipe en 1 clic toute une panoplie 12/12. Refuse si pondéré < 12 (les armes 2-mains comptent pour 2). Conserve les pièces de la bonne famille déjà équipées. |
 | `/craft_panoplie <nom>`, `/forge_panoplie <nom>` | `player_cog` | Bulk-craft des pièces de panoplie manquantes (filtré par station forge/craft). Preview avec ingrédients utilisés + boutons Confirmer/Annuler. Liste les manquants si ressources insuffisantes. |
+| `/create_set <nom>`, `/delete_set <nom>`, `/equip_set <nom>` | `player_cog` | Loadouts personnels : sauvegarde l'équipement actuel sous un nom libre, supprime, ou rappelle un set. Tables `player_equipment_sets` + `player_equipment_set_items`. Refuse à l'equip si une pièce du set n'est plus possédée. |
+| `/unequip <slot\|all>` | `player_cog` | `slot=all` retire tout l'équipement d'un coup. |
 | `/weekly`, `/weekly_claim <code>` | `weekly_quest_cog` | 3 quêtes hebdo random tirées le lundi UTC |
 | `/brocante list/my/sell/buy/cancel` | `brocante_cog` | Marketplace P2P avec commission shop (5%) |
 | `/boss spawn <boss_code>`, `/boss list` | `world_boss_cog` | Spawn manuel admin / catalogue + auto-spawn hebdo |
