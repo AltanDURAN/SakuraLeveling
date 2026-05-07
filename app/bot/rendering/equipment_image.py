@@ -311,16 +311,45 @@ def _draw_slot_card(
         _draw_text_with_shadow(
             draw, (x + 16, name_y), name, name_font,
         )
-        bonuses_text = _format_stat_bonuses_short(item.stat_bonuses)
-        if bonuses_text:
-            bt = bonuses_text if len(bonuses_text) <= 28 else bonuses_text[:27] + "…"
-            # Le bonus contient des emojis (⚔️ 🛡️ etc.) — il faut passer
-            # par le helper qui sait rendre NotoColorEmoji, sinon les emojis
-            # apparaissent en boîtes blanches.
-            draw_text_with_emojis(
-                base, (x + 16, name_y + 30), bt, bonuses_font,
-                fill=_GOLD,
-            )
+
+        # Bonus stats : multi-lignes pour ne RIEN tronquer (max 2 lignes
+        # pour rester dans la card). On distribue les parts sur les
+        # lignes selon la largeur pixel disponible.
+        from app.shared.emoji_mappings import format_stat_bonuses_parts
+        parts = format_stat_bonuses_parts(item.stat_bonuses)
+        if parts:
+            available_w = w - 32  # marge x+16 à droite
+            sep = " · "
+            sep_w = measure_text_with_emojis(sep, bonuses_font, bonuses_font.size)
+            lines: list[list[str]] = [[]]
+            current_w = 0
+            for part in parts:
+                part_w = measure_text_with_emojis(
+                    part, bonuses_font, bonuses_font.size,
+                )
+                add_w = part_w + (sep_w if lines[-1] else 0)
+                if current_w + add_w > available_w and lines[-1]:
+                    if len(lines) >= 2:
+                        # On a déjà 2 lignes — fini, on ne dépasse pas
+                        # (les parts restantes sautent — extrêmement
+                        # rare avec un cap raisonnable).
+                        break
+                    lines.append([])
+                    current_w = part_w
+                    lines[-1].append(part)
+                else:
+                    current_w += add_w
+                    lines[-1].append(part)
+
+            line_y = name_y + 30
+            line_h = 26
+            for i, line_parts in enumerate(lines):
+                if not line_parts:
+                    continue
+                draw_text_with_emojis(
+                    base, (x + 16, line_y + i * line_h),
+                    sep.join(line_parts), bonuses_font, fill=_GOLD,
+                )
 
 
 def _draw_page_header(
