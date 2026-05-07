@@ -32,14 +32,16 @@ _SAMPLE_DEFS = {
 }
 
 
-def _eq(slot: str, code: str, family: str) -> PlayerEquipmentItem:
+def _eq(
+    slot: str, code: str, family: str, requires_two_hands: bool = False,
+) -> PlayerEquipmentItem:
     item = ItemDefinition(
         id=1, code=code, name=code, description="",
         category="helmet", rarity="common",
         stackable=False, max_stack=None,
         sell_price=1, buy_price=1, icon=None,
         stat_bonuses=None, equipment_slot=slot,
-        requires_two_hands=False, family=family,
+        requires_two_hands=requires_two_hands, family=family,
         created_at=_NOW, updated_at=_NOW,
     )
     return PlayerEquipmentItem(
@@ -169,3 +171,33 @@ def test_higher_tier_replaces_lower():
 
     # 8 pièces = palier 8 directement (+5), pas 1+2+5=8
     assert bonuses.defense_flat == 5
+
+
+def test_two_handed_weapon_counts_as_two_pieces():
+    """Une arme 2-mains occupe main_droite + verrouille main_gauche,
+    donc elle compte pour 2 dans la panoplie."""
+    service = SetBonusService(_SAMPLE_DEFS)
+    eqs = [
+        _eq("main_droite", "iron_2h", "iron", requires_two_hands=True),
+    ]
+
+    bonuses = service.aggregate(eqs)
+
+    # 1 arme 2-mains = 2 pièces → palier 2 atteint = +1 défense
+    assert bonuses.defense_flat == 1
+    iron_set = next(s for s in bonuses.active_sets if s.family == "iron")
+    assert iron_set.pieces_equipped == 2
+
+
+def test_full_panoplie_with_two_handed_weapon():
+    """11 items dont 1 2-mains = 12 pièces pondérées = palier 12."""
+    service = SetBonusService(_SAMPLE_DEFS)
+    eqs = [_eq(f"s{i}", f"i{i}", "iron") for i in range(10)]
+    eqs.append(
+        _eq("main_droite", "iron_2h", "iron", requires_two_hands=True),
+    )
+
+    bonuses = service.aggregate(eqs)
+
+    # 10 + 2 (2-mains) = 12 → palier max = +8 défense
+    assert bonuses.defense_flat == 8
