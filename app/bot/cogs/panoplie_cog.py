@@ -154,7 +154,7 @@ class PanoplieCog(commands.Cog):
             buf = ""
             field_count = 1
             base_name = (
-                f"🧩 Pièces de la panoplie ({len(items_in_family)}/12)"
+                f"🧩 Pièces de la panoplie ({len(items_in_family)}/16)"
             )
             for line in piece_lines:
                 if len(buf) + len(line) + 1 > 1000 and buf:
@@ -176,7 +176,7 @@ class PanoplieCog(commands.Cog):
                 )
         else:
             embed.add_field(
-                name="🧩 Pièces de la panoplie (0/12)",
+                name="🧩 Pièces de la panoplie (0/16)",
                 value="_Aucun item ne porte encore cette famille._",
                 inline=False,
             )
