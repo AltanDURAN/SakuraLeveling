@@ -48,13 +48,35 @@ def bonus_emoji(bonus_type: str) -> str:
     return BONUS_EMOJIS.get(bonus_type, bonus_type)
 
 
+def item_display_emoji(item) -> str:
+    """Emoji représentatif d'un item pour les listes (panoplie, etc).
+
+    - weapon 1H → 🗡️ ; weapon 2H → ⚔️
+    - shield → 🛡️
+    - sinon : emoji du slot canonique (casque, cape, etc.)
+    Le caller passe directement un `ItemDefinition` (canard typing).
+    """
+    cat = getattr(item, "category", None)
+    if cat == "shield":
+        return "🛡️"
+    if cat == "weapon":
+        return "⚔️" if getattr(item, "requires_two_hands", False) else "🗡️"
+    # Lazy import pour éviter le cycle si SLOT_ICONS bouge un jour
+    from app.shared.enums import SLOT_ICONS
+    slot = getattr(item, "equipment_slot", None) or ""
+    return SLOT_ICONS.get(slot, "📦")
+
+
 def format_stat_bonuses_short(stat_bonuses: dict | None) -> str:
-    """Bonus compact `+N {emoji}  ·  +M {emoji}` — utilisé par les
-    rendus d'items (panoplie, equipement)."""
+    """Bonus compact `+N {emoji} · -M {emoji}` — utilisé par les rendus
+    d'items (panoplie, equipement). Les valeurs négatives gardent leur
+    signe natif (pas de double "+-")."""
     if not stat_bonuses:
         return ""
-    parts = [
-        f"+{v} {stat_emoji(k)}"
-        for k, v in stat_bonuses.items() if v
-    ]
-    return "  ·  ".join(parts)
+    parts = []
+    for k, v in stat_bonuses.items():
+        if not v:
+            continue
+        sign = "+" if v > 0 else ""
+        parts.append(f"{sign}{v} {stat_emoji(k)}")
+    return " · ".join(parts)

@@ -29,6 +29,7 @@ from app.infrastructure.sets.set_loader import (
 from app.shared.emoji_mappings import (
     bonus_emoji,
     format_stat_bonuses_short,
+    item_display_emoji,
 )
 from app.shared.enums import SLOT_ICONS, SLOT_ORDER
 
@@ -142,10 +143,11 @@ class PanoplieCog(commands.Cog):
                     continue
                 for it in items:
                     bonuses = format_stat_bonuses_short(it.stat_bonuses)
-                    suffix = f"  ·  {bonuses}" if bonuses else ""
-                    owned_marker = "  ✅" if it.id in owned_def_ids else ""
+                    suffix = f" · {bonuses}" if bonuses else ""
+                    owned_marker = " ✅" if it.id in owned_def_ids else ""
+                    item_icon = item_display_emoji(it)
                     piece_lines.append(
-                        f"{slot_icon} **{it.name}**{suffix}{owned_marker}"
+                        f"{item_icon} **{it.name}**{suffix}{owned_marker}"
                     )
 
             # Découpe en plusieurs fields si > 1000 chars (limite 1024)
