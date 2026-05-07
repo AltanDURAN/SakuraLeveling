@@ -1,0 +1,62 @@
+{
+  "iron": {
+    "name": "Acier",
+    "description": "Armure lourde et fiable, taillée pour encaisser.",
+    "icon": "🛡️",
+    "color": "#9aa0aa",
+    "tiers": [
+      { "min_pieces": 2,  "type": "defense_flat",  "value": 1 },
+      { "min_pieces": 4,  "type": "defense_flat",  "value": 2 },
+      { "min_pieces": 8,  "type": "defense_flat",  "value": 5 },
+      { "min_pieces": 12, "type": "defense_flat",  "value": 8 }
+    ]
+  },
+  "leather": {
+    "name": "Cuir",
+    "description": "Souple et discret — favorise l'esquive.",
+    "icon": "🟫",
+    "color": "#a07040",
+    "tiers": [
+      { "min_pieces": 2,  "type": "dodge_flat", "value": 1 },
+      { "min_pieces": 4,  "type": "dodge_flat", "value": 2 },
+      { "min_pieces": 8,  "type": "dodge_flat", "value": 5 },
+      { "min_pieces": 12, "type": "dodge_flat", "value": 8 }
+    ]
+  },
+  "slime": {
+    "name": "Slime",
+    "description": "Imprégnée de gelée régénératrice.",
+    "icon": "🟢",
+    "color": "#8fdc70",
+    "tiers": [
+      { "min_pieces": 2,  "type": "hp_regeneration_flat", "value": 1 },
+      { "min_pieces": 4,  "type": "hp_regeneration_flat", "value": 2 },
+      { "min_pieces": 8,  "type": "hp_regeneration_flat", "value": 5 },
+      { "min_pieces": 12, "type": "hp_regeneration_flat", "value": 8 }
+    ]
+  },
+  "gobelin": {
+    "name": "Gobeline",
+    "description": "Affutée par les fourbes habitudes des gobelins.",
+    "icon": "👹",
+    "color": "#7ba85a",
+    "tiers": [
+      { "min_pieces": 2,  "type": "crit_chance_flat", "value": 1 },
+      { "min_pieces": 4,  "type": "crit_chance_flat", "value": 2 },
+      { "min_pieces": 8,  "type": "crit_chance_flat", "value": 5 },
+      { "min_pieces": 12, "type": "crit_chance_flat", "value": 8 }
+    ]
+  },
+  "linen": {
+    "name": "Lin",
+    "description": "Tissu léger imprégné d'aura magique.",
+    "icon": "🧵",
+    "color": "#dcc8a0",
+    "tiers": [
+      { "min_pieces": 2,  "type": "crit_damage_flat", "value": 1 },
+      { "min_pieces": 4,  "type": "crit_damage_flat", "value": 2 },
+      { "min_pieces": 8,  "type": "crit_damage_flat", "value": 5 },
+      { "min_pieces": 12, "type": "crit_damage_flat", "value": 8 }
+    ]
+  }
+}

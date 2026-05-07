@@ -24,6 +24,10 @@ class ItemDefinition:
     equipment_slot: str | None = None
     # Vrai pour les armes à 2 mains qui occupent MAIN_HAND + OFF_HAND.
     requires_two_hands: bool = False
+    # Famille / panoplie de l'item (ex : "iron", "slime", "gobelin"). Vide
+    # pour les items hors panoplie. Sert à calculer les bonus de set
+    # (cf. SetBonusService et `sets.json`).
+    family: str = ""
 
     @property
     def is_equipable(self) -> bool:

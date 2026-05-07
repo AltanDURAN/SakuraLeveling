@@ -119,12 +119,14 @@ class AdminCog(commands.Cog):
                 label = "Skill points"
 
             elif resource == "current_hp":
+                from app.application.services.set_bonus_resolver import resolve_set_bonuses
                 equipped = EquipmentRepository(session).list_by_player_id(profile.player.id)
                 active_class = ClassRepository(session).get_current_class_for_player(
                     profile.player.id
                 )
                 stats = StatsService().calculate_player_stats(
                     profile=profile, equipped_items=equipped, active_class=active_class,
+                    set_bonuses=resolve_set_bonuses(equipped),
                 )
                 health_repo = PlayerHealthRepository(session)
                 state = health_repo.get_or_create(
@@ -379,12 +381,14 @@ class AdminCog(commands.Cog):
                     f"❌ {target.display_name} n'a pas encore de profil.", ephemeral=True
                 )
                 return
+            from app.application.services.set_bonus_resolver import resolve_set_bonuses
             equipped = EquipmentRepository(session).list_by_player_id(profile.player.id)
             active_class = ClassRepository(session).get_current_class_for_player(
                 profile.player.id
             )
             stats = StatsService().calculate_player_stats(
                 profile=profile, equipped_items=equipped, active_class=active_class,
+                set_bonuses=resolve_set_bonuses(equipped),
             )
             health_repo = PlayerHealthRepository(session)
             health_repo.get_or_create(profile.player.id, default_current_hp=stats.max_hp)

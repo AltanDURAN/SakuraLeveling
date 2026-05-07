@@ -219,6 +219,7 @@ class ChallengePlayerUseCase:
         )
 
     def _compute_stats(self, profile, skill_service: SkillTreeService, session):
+        from app.application.services.set_bonus_resolver import resolve_set_bonuses
         equipped_items = self.equipment_repository.list_by_player_id(profile.player.id)
         active_class = self.class_repository.get_current_class_for_player(
             profile.player.id
@@ -226,10 +227,12 @@ class ChallengePlayerUseCase:
         allocations = self.skill_allocation_repository.list_by_player(profile.player.id)
         skill_bonuses = skill_service.aggregate_bonuses(allocations)
         title_bonuses = resolve_title_bonuses(session, profile.player.id)
+        set_bonuses = resolve_set_bonuses(equipped_items)
         return self.stats_service.calculate_player_stats(
             profile=profile,
             equipped_items=equipped_items,
             active_class=active_class,
             skill_bonuses=skill_bonuses,
             title_bonuses=title_bonuses,
+            set_bonuses=set_bonuses,
         )

@@ -94,12 +94,22 @@ class FightMobUseCase:
         except Exception:
             title_bonuses = None
 
+        # Bonus de panoplie depuis l'équipement courant.
+        try:
+            from app.application.services.set_bonus_resolver import (
+                resolve_set_bonuses,
+            )
+            set_bonuses = resolve_set_bonuses(equipped_items)
+        except Exception:
+            set_bonuses = None
+
         player_stats = self.stats_service.calculate_player_stats(
             profile=profile,
             equipped_items=equipped_items,
             active_class=active_class,
             skill_bonuses=skill_bonuses,
             title_bonuses=title_bonuses,
+            set_bonuses=set_bonuses,
         )
 
         result = self.combat_service.fight_player_vs_mob(

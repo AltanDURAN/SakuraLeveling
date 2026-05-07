@@ -23,6 +23,7 @@ class ItemDefinitionModel(Base):
     stat_bonuses_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     equipment_slot: Mapped[str | None] = mapped_column(String(50), nullable=True)
     requires_two_hands: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    family: Mapped[str] = mapped_column(String(50), nullable=False, default="")
 
     created_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))

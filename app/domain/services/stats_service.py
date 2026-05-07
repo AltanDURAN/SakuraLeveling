@@ -1,6 +1,7 @@
 from app.domain.entities.class_definition import ClassDefinition
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
 from app.domain.entities.player_profile import PlayerProfile
+from app.domain.services.set_bonus_service import SetBonuses
 from app.domain.services.title_bonus_service import TitleBonuses
 from app.domain.value_objects.skill_bonuses import SkillBonuses
 from app.domain.value_objects.stats import Stats
@@ -14,6 +15,7 @@ class StatsService:
         active_class: ClassDefinition | None = None,
         skill_bonuses: SkillBonuses | None = None,
         title_bonuses: TitleBonuses | None = None,
+        set_bonuses: SetBonuses | None = None,
     ) -> Stats:
         level = profile.progression.level
 
@@ -89,5 +91,21 @@ class StatsService:
         # dépasser le cap crit/dodge de 1 pt, c'est l'avantage du titre.
         if title_bonuses is not None:
             stats = title_bonuses.apply_to_stats(stats)
+
+        # 6e étage : bonus de panoplie (set). Additif flat, appliqué
+        # encore après les titres → peut dépasser légèrement les caps,
+        # c'est l'intérêt de compléter une panoplie complète.
+        if set_bonuses is not None:
+            stats = Stats(
+                max_hp=stats.max_hp + set_bonuses.max_hp_flat,
+                attack=stats.attack + set_bonuses.attack_flat,
+                defense=stats.defense + set_bonuses.defense_flat,
+                speed=stats.speed + set_bonuses.speed_flat,
+                crit_chance=stats.crit_chance + set_bonuses.crit_chance_flat,
+                crit_damage=stats.crit_damage + set_bonuses.crit_damage_flat,
+                dodge=stats.dodge + set_bonuses.dodge_flat,
+                hp_regeneration=stats.hp_regeneration
+                + set_bonuses.hp_regeneration_flat,
+            )
 
         return stats

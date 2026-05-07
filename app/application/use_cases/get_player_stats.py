@@ -30,11 +30,15 @@ class GetPlayerStatsUseCase:
             display_name=display_name,
         )
 
+        from app.application.services.set_bonus_resolver import resolve_set_bonuses
+
         equipped_items = self.equipment_repository.list_by_player_id(profile.player.id)
         active_class = self.class_repository.get_current_class_for_player(profile.player.id)
+        set_bonuses = resolve_set_bonuses(equipped_items)
 
         return self.stats_service.calculate_player_stats(
             profile=profile,
             equipped_items=equipped_items,
             active_class=active_class,
+            set_bonuses=set_bonuses,
         )

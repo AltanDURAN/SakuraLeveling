@@ -70,20 +70,41 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     ses doublons sans polluer /inventory.
 
 /equipement [target]
-    Affiche l'équipement porté sur 12 slots, en 2 pages naviguables avec
-    les flèches ⬅️ ➡️ :
-        Page 1 (Principaux) : casque, plastron, jambières, bottes,
-                              main droite, main gauche
-        Page 2 (Secondaires) : collier, bracelet, bague, ceinture, cape,
-                               boucle d'oreille
-    Chaque slot affiche son icône, son nom, l'objet équipé (ou "vide")
-    et les bonus apportés. Si une arme à 2 mains est équipée, la main
-    gauche apparaît "verrouillée par l'arme à 2 mains".
-    Avec un target, vue lecture seule sur l'équipement d'un autre joueur.
+    Affiche l'équipement porté sous forme d'IMAGE PNG générée à la volée
+    par Pillow. Trois pages naviguables avec ⬅️ ➡️ :
+        Page 1 — Principaux : casque, plastron, jambières, bottes,
+                              main droite, main gauche (3×2)
+        Page 2 — Secondaires : collier, bracelet, bague, ceinture, cape,
+                               boucle d'oreille (3×2)
+        Page 3 — Résumé : stats totales apportées par l'équipement +
+                          bonus de panoplies actifs avec progression
+                          vers le prochain palier
+
+    Chaque slot affiche :
+        • L'image de l'item (depuis assets/items/<code>.png) si elle
+          existe, sinon un placeholder stylisé avec l'icône du slot.
+        • Le nom de l'item et ses bonus de stats.
+    Slots vides → marqueur "VIDE" lisible. Si une arme à 2 mains est
+    équipée, la main gauche affiche "🔒 ARME À 2 MAINS".
 
     Note : les armes à 1 main n'ont pas de "main préférée" — équiper
     sans préciser de slot remplit la première main libre (droite, sinon
     gauche). Les armes à 2 mains occupent toujours les deux mains.
+
+    Système de panoplie (set bonus) :
+        Chaque pièce d'équipement appartient à une famille (iron, slime,
+        gobelin, leather, linen) qui forme une PANOPLIE de 12 items
+        (1 par slot). Plus tu équipes d'items de la même panoplie, plus
+        le bonus est élevé. Paliers : 2/4/8/12 pièces → +1/+2/+5/+8 sur
+        une stat thématique de la famille :
+            🛡️ Acier      → +X défense
+            🟫 Cuir        → +X% esquive
+            🟢 Slime       → +X régénération PV / minute
+            👹 Gobeline   → +X% chance critique
+            🧵 Lin         → +X% dégâts critiques
+        Le bonus du palier le plus haut REMPLACE celui du palier inférieur
+        (pas cumulatif). Le bonus s'estompe automatiquement quand tu
+        descends sous le palier (déséquipe ou change de panoplie).
 
 /gold [target]
     Affiche un encart "bourse" : or actuel + or amassé en carrière (si > 0)

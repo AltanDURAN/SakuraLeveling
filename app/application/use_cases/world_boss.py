@@ -394,11 +394,14 @@ class FightWorldBossUseCase:
         skill_bonuses = SkillTreeService(get_skill_tree_definition()).aggregate_bonuses(
             allocations
         )
+        from app.application.services.set_bonus_resolver import resolve_set_bonuses
+        set_bonuses = resolve_set_bonuses(equipped)
         base_stats = self.stats_service.calculate_player_stats(
             profile=profile,
             equipped_items=equipped,
             active_class=active_class,
             skill_bonuses=skill_bonuses,
+            set_bonuses=set_bonuses,
         )
         num_participants = self.world_boss_repository.count_joined(boss.id)
         boosted_stats = self.scaling_service.apply_team_bonus(base_stats, num_participants)
