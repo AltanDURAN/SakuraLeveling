@@ -720,13 +720,24 @@ class PlayerCog(commands.Cog):
 
     @app_commands.command(
         name="equip_panoplie",
-        description="Équipe en un clic toutes les pièces d'une panoplie complète (12/12)",
+        description="Équipe en un clic toutes les pièces d'une panoplie (12/12)",
     )
-    @app_commands.describe(nom="Nom de la panoplie (autocomplete)")
+    @app_commands.describe(
+        nom="Nom de la panoplie (autocomplete)",
+        option="Configuration des mains (par défaut : arme légère + bouclier)",
+    )
+    @app_commands.choices(option=[
+        app_commands.Choice(name="defaut (1 arme légère + 1 bouclier léger)", value="defaut"),
+        app_commands.Choice(name="double_armes (2 armes légères)", value="double_armes"),
+        app_commands.Choice(name="double_boucliers (2 boucliers légers)", value="double_boucliers"),
+        app_commands.Choice(name="arme_lourde (arme 2 mains)", value="arme_lourde"),
+        app_commands.Choice(name="bouclier_lourd (bouclier 2 mains)", value="bouclier_lourd"),
+    ])
     async def equip_panoplie(
         self,
         interaction: discord.Interaction,
         nom: str,
+        option: str | None = None,
     ) -> None:
         from app.application.use_cases.equip_panoplie import (
             EquipPanoplieUseCase,
@@ -744,6 +755,7 @@ class PlayerCog(commands.Cog):
                 username=interaction.user.name,
                 display_name=interaction.user.display_name,
                 family=nom,
+                option=option,
             )
 
         await interaction.followup.send(

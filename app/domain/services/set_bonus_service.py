@@ -69,17 +69,42 @@ class SetBonusService:
     def aggregate(
         self, equipped_items: list[PlayerEquipmentItem],
     ) -> SetBonuses:
-        # Compte le nombre d'items par famille. Une arme à 2 mains
-        # occupe `main_droite` ET verrouille `main_gauche` — elle compte
-        # donc pour 2 dans la panoplie (sinon 12/12 avec une 2-mains
-        # serait impossible).
-        counts: dict[str, int] = {}
+        # Compte le nombre de pièces par famille. Règles :
+        # - Pour les slots NON-main : 1 item équipé = 1 point
+        # - Pour les slots main_droite/main_gauche : on compte les
+        #   `item_definition_id` UNIQUES (équiper 2 fois la même arme
+        #   ne vaut donc qu'1 point), 2 items différents valent 2.
+        # - Une arme/bouclier 2-mains occupe main_droite + verrouille
+        #   main_gauche → vaut 2 points (l'item lui-même + le slot
+        #   verrouillé).
+        non_main_counts: dict[str, int] = {}
+        main_unique_ids: dict[str, set[int]] = {}
+        main_2h_extras: dict[str, int] = {}
+
         for item in equipped_items:
             family = (item.item_definition.family or "").strip()
             if not family:
                 continue
-            weight = 2 if item.item_definition.requires_two_hands else 1
-            counts[family] = counts.get(family, 0) + weight
+            if item.slot in ("main_droite", "main_gauche"):
+                main_unique_ids.setdefault(family, set()).add(
+                    item.item_definition.id,
+                )
+                if item.item_definition.requires_two_hands:
+                    main_2h_extras[family] = (
+                        main_2h_extras.get(family, 0) + 1
+                    )
+            else:
+                non_main_counts[family] = non_main_counts.get(family, 0) + 1
+
+        counts: dict[str, int] = {}
+        for family in (
+            set(non_main_counts) | set(main_unique_ids) | set(main_2h_extras)
+        ):
+            counts[family] = (
+                non_main_counts.get(family, 0)
+                + len(main_unique_ids.get(family, set()))
+                + main_2h_extras.get(family, 0)
+            )
 
         bonuses = SetBonuses()
 

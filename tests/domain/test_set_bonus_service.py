@@ -201,3 +201,49 @@ def test_full_panoplie_with_two_handed_weapon():
 
     # 10 + 2 (2-mains) = 12 → palier max = +8 défense
     assert bonuses.defense_flat == 8
+
+
+def _eq_with_id(
+    slot: str, code: str, family: str, def_id: int,
+    requires_two_hands: bool = False,
+) -> PlayerEquipmentItem:
+    item = ItemDefinition(
+        id=def_id, code=code, name=code, description="",
+        category="weapon", rarity="common",
+        stackable=False, max_stack=None,
+        sell_price=1, buy_price=1, icon=None,
+        stat_bonuses=None, equipment_slot=slot,
+        requires_two_hands=requires_two_hands, family=family,
+        created_at=_NOW, updated_at=_NOW,
+    )
+    return PlayerEquipmentItem(
+        id=def_id, player_id=1, slot=slot, item_definition=item,
+        created_at=_NOW, updated_at=_NOW,
+    )
+
+
+def test_two_same_main_items_count_as_one():
+    """2 mêmes armes en main_droite + main_gauche ne valent que 1 point."""
+    service = SetBonusService(_SAMPLE_DEFS)
+    # même item_definition_id sur les 2 mains
+    eqs = [
+        _eq_with_id("main_droite", "iron_dagger", "iron", def_id=1),
+        _eq_with_id("main_gauche", "iron_dagger", "iron", def_id=1),
+    ]
+    bonuses = service.aggregate(eqs)
+    # 1 unique main item = 1 point → pas de palier
+    iron_set = next(s for s in bonuses.active_sets if s.family == "iron")
+    assert iron_set.pieces_equipped == 1
+
+
+def test_two_different_main_items_count_as_two():
+    """2 armes DIFFÉRENTES en main_droite + main_gauche valent 2."""
+    service = SetBonusService(_SAMPLE_DEFS)
+    eqs = [
+        _eq_with_id("main_droite", "iron_dagger", "iron", def_id=1),
+        _eq_with_id("main_gauche", "iron_sword", "iron", def_id=2),
+    ]
+    bonuses = service.aggregate(eqs)
+    iron_set = next(s for s in bonuses.active_sets if s.family == "iron")
+    assert iron_set.pieces_equipped == 2
+    assert bonuses.defense_flat == 1  # palier 2 atteint

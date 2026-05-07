@@ -228,8 +228,11 @@ def test_two_handed_weapon_counts_as_two(_, session):
     )
     _give(session, pid, weapon_id)
 
+    # L'option par défaut exige 1H+bouclier 1H. Avec une 2H seule, il
+    # faut explicitement demander option="arme_lourde".
     result = _make_use_case(session).execute(
         discord_id=1, username="alpha", display_name="Alpha", family="iron",
+        option="arme_lourde",
     )
 
     assert result.success is True
@@ -297,3 +300,110 @@ def test_unknown_family_fails(_, session):
     )
     assert result.success is False
     assert "introuvable" in result.message
+
+
+@patch(
+    "app.application.use_cases.equip_panoplie.list_set_definitions",
+    return_value=_FAKE_SETS,
+)
+def test_double_armes_requires_two_distinct_weapons(_, session):
+    """option=double_armes doit refuser si une seule arme légère."""
+    pid = _create_player(session)
+    # 10 items hors mains
+    for slot in _TWELVE_SLOTS:
+        if slot in ("main_droite", "main_gauche"):
+            continue
+        cat = _SLOT_TO_CATEGORY[slot]
+        item_id = _create_item(
+            session, f"iron_{slot}", cat, slot, "iron",
+        )
+        _give(session, pid, item_id)
+    # 1 seule arme + 1 bouclier (pas 2 armes différentes)
+    w1 = _create_item(session, "iron_dagger", "weapon", "main_droite", "iron")
+    s1 = _create_item(session, "iron_buckler", "shield", "main_droite", "iron")
+    _give(session, pid, w1)
+    _give(session, pid, s1)
+
+    result = _make_use_case(session).execute(
+        discord_id=1, username="alpha", display_name="Alpha", family="iron",
+        option="double_armes",
+    )
+    assert result.success is False
+    assert "double_armes" in result.message
+
+
+@patch(
+    "app.application.use_cases.equip_panoplie.list_set_definitions",
+    return_value=_FAKE_SETS,
+)
+def test_double_armes_equips_two_distinct_weapons(_, session):
+    pid = _create_player(session)
+    for slot in _TWELVE_SLOTS:
+        if slot in ("main_droite", "main_gauche"):
+            continue
+        cat = _SLOT_TO_CATEGORY[slot]
+        _give(session, pid, _create_item(
+            session, f"iron_{slot}", cat, slot, "iron",
+        ))
+    w1 = _create_item(session, "iron_dagger", "weapon", "main_droite", "iron")
+    w2 = _create_item(session, "iron_sword", "weapon", "main_droite", "iron")
+    _give(session, pid, w1)
+    _give(session, pid, w2)
+
+    result = _make_use_case(session).execute(
+        discord_id=1, username="alpha", display_name="Alpha", family="iron",
+        option="double_armes",
+    )
+    assert result.success is True
+    eq = EquipmentRepository(session).list_by_player_id(pid)
+    main_codes = sorted(
+        e.item_definition.code for e in eq
+        if e.slot in ("main_droite", "main_gauche")
+    )
+    assert main_codes == ["iron_dagger", "iron_sword"]
+
+
+@patch(
+    "app.application.use_cases.equip_panoplie.list_set_definitions",
+    return_value=_FAKE_SETS,
+)
+def test_bouclier_lourd_blocks_main_gauche(_, session):
+    pid = _create_player(session)
+    for slot in _TWELVE_SLOTS:
+        if slot in ("main_droite", "main_gauche"):
+            continue
+        cat = _SLOT_TO_CATEGORY[slot]
+        _give(session, pid, _create_item(
+            session, f"iron_{slot}", cat, slot, "iron",
+        ))
+    # 1 bouclier 2H seul (pondéré 2 = 12/12 avec 10 autres)
+    s2h = _create_item(
+        session, "iron_tower", "shield", "main_droite", "iron",
+        requires_two_hands=True,
+    )
+    _give(session, pid, s2h)
+
+    result = _make_use_case(session).execute(
+        discord_id=1, username="alpha", display_name="Alpha", family="iron",
+        option="bouclier_lourd",
+    )
+    assert result.success is True
+    eq = EquipmentRepository(session).list_by_player_id(pid)
+    main_slots = [e.slot for e in eq if e.slot in ("main_droite", "main_gauche")]
+    assert main_slots == ["main_droite"]
+    md = next(e for e in eq if e.slot == "main_droite")
+    assert md.item_definition.code == "iron_tower"
+
+
+@patch(
+    "app.application.use_cases.equip_panoplie.list_set_definitions",
+    return_value=_FAKE_SETS,
+)
+def test_invalid_option_rejected(_, session):
+    pid = _create_player(session)
+    result = _make_use_case(session).execute(
+        discord_id=1, username="alpha", display_name="Alpha", family="iron",
+        option="vol_plane",
+    )
+    assert result.success is False
+    assert "Option" in result.message
