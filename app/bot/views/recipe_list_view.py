@@ -56,7 +56,7 @@ _CATEGORY_ACCENT: dict[str, tuple[int, int, int, int]] = {
 }
 
 
-_PAGE_SIZE = 6  # 1 col × 6 rows en mode slim (1 recette par ligne)
+_PAGE_SIZE = 8  # 1 col × 8 rows en mode slim (stats à droite du nom)
 
 
 def _format_ingredients(
@@ -80,12 +80,10 @@ def _build_card(
     if recipe.result_quantity > 1:
         name = f"×{recipe.result_quantity}  {name}"
 
-    lines: list[str] = []
-    if result:
-        bonuses_text = format_stat_bonuses_short(result.stat_bonuses)
-        if bonuses_text:
-            lines.append(bonuses_text)
-    lines.append("📦 " + _format_ingredients(recipe, item_lookup))
+    bonuses_text = (
+        format_stat_bonuses_short(result.stat_bonuses) if result else ""
+    )
+    ingredients_line = "📦 " + _format_ingredients(recipe, item_lookup)
 
     icon_emoji = CATEGORY_ICONS.get(
         result.category if result else "", "🛠️",
@@ -95,7 +93,8 @@ def _build_card(
         icon_emoji=icon_emoji,
         icon_path=item_asset_path(result.code) if result else None,
         accent=accent,
-        lines=lines,
+        right_text=bonuses_text or None,
+        lines=[ingredients_line],
         code=recipe.code,
     )
 
@@ -291,7 +290,7 @@ class RecipeListView(discord.ui.View):
         )
         compose_card_grid_page(
             str(out), title=self.title_prefix, subtitle=sub,
-            cards=cards, cols=1, rows=6, seed=self.viewer_id,
+            cards=cards, cols=1, rows=_PAGE_SIZE, seed=self.viewer_id,
         )
 
         self._refresh_button_states(total_pages)
