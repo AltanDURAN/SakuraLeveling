@@ -67,16 +67,22 @@ def item_display_emoji(item) -> str:
     return SLOT_ICONS.get(slot, "📦")
 
 
-def format_stat_bonuses_short(stat_bonuses: dict | None) -> str:
-    """Bonus compact `+N {emoji} · -M {emoji}` — utilisé par les rendus
-    d'items (panoplie, equipement). Les valeurs négatives gardent leur
-    signe natif (pas de double "+-")."""
+def format_stat_bonuses_parts(stat_bonuses: dict | None) -> list[str]:
+    """Liste des parts compactes (`+N emoji`) — utile pour le rendu
+    multi-lignes (équipement card 1/2). Les valeurs négatives gardent
+    leur signe natif (pas de double "+-")."""
     if not stat_bonuses:
-        return ""
-    parts = []
+        return []
+    parts: list[str] = []
     for k, v in stat_bonuses.items():
         if not v:
             continue
         sign = "+" if v > 0 else ""
         parts.append(f"{sign}{v} {stat_emoji(k)}")
-    return " · ".join(parts)
+    return parts
+
+
+def format_stat_bonuses_short(stat_bonuses: dict | None) -> str:
+    """Bonus compact `+N {emoji} · -M {emoji}` — utilisé par les rendus
+    où une seule ligne suffit (panoplie embed, etc.)."""
+    return " · ".join(format_stat_bonuses_parts(stat_bonuses))
