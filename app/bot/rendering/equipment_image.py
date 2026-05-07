@@ -292,7 +292,7 @@ def _draw_slot_card(
     if equipment is not None:
         item = equipment.item_definition
         name_font = _try_font(24, bold=True)
-        bonuses_font = _try_font(19, bold=True)
+        bonuses_font = _try_font(23, bold=True)
         draw = ImageDraw.Draw(base)
 
         name_y = img_y + img_size + 12
@@ -303,7 +303,7 @@ def _draw_slot_card(
         )
         bonuses_text = _format_stat_bonuses_short(item.stat_bonuses)
         if bonuses_text:
-            bt = bonuses_text if len(bonuses_text) <= 32 else bonuses_text[:31] + "…"
+            bt = bonuses_text if len(bonuses_text) <= 28 else bonuses_text[:27] + "…"
             # Le bonus contient des emojis (⚔️ 🛡️ etc.) — il faut passer
             # par le helper qui sait rendre NotoColorEmoji, sinon les emojis
             # apparaissent en boîtes blanches.
@@ -518,7 +518,7 @@ def compose_equipment_summary_page(
     sets_y = sets_section_y + 50
     # Une ligne par panoplie : icône + nom + count à gauche, bonus actif
     # à droite. Pas de sous-ligne "prochain palier" (lisibilité).
-    line_height = 52
+    line_height = 64
     card_h = line_height - 8
 
     if not set_bonuses.active_sets:
@@ -541,9 +541,9 @@ def compose_equipment_summary_page(
                 f"{active.family_icon}  {active.family_name}"
                 f"  ·  {active.pieces_equipped} pièce(s)"
             )
-            head_font = _try_font(22, bold=True)
+            head_font = _try_font(28, bold=True)
             draw_text_with_emojis(
-                bg, (50, y + 10), head_text, head_font,
+                bg, (50, y + 14), head_text, head_font,
                 fill=_TEXT_PRIMARY,
             )
 
@@ -555,10 +555,10 @@ def compose_equipment_summary_page(
                     active.active_bonus_type, active.active_bonus_value,
                 )
                 bonus_text = f"+{bonus_label}"
-                bf = _try_font(24, bold=True)
+                bf = _try_font(30, bold=True)
                 tw = measure_text_with_emojis(bonus_text, bf, bf.size)
                 draw_text_with_emojis(
-                    bg, (right_x - tw, y + 10),
+                    bg, (right_x - tw, y + 13),
                     bonus_text, bf, fill=_GOLD,
                 )
 
