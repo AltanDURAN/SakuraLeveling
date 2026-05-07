@@ -88,7 +88,7 @@ def build_inventory_embed(
         body = "_Aucun item dans cette catégorie._"
     else:
         lines = [
-            f"`{i.item_definition.code}` — {i.item_definition.name} **×{i.quantity}**"
+            f"{i.item_definition.name} **×{i.quantity}**"
             for i in page_items_sorted
         ]
         body = "\n".join(lines)
@@ -100,11 +100,4 @@ def build_inventory_embed(
     item_word = "item" if n <= 1 else "items"
     embed.set_author(name=f"{page_emoji} {page_label} ({n} {item_word})")
 
-    nav_parts: list[str] = []
-    for key, label, emoji in PAGES:
-        count = len(_filter_items_for_page(items, key))
-        marker = "**" if key == page_key else ""
-        nav_parts.append(f"{marker}{emoji} {label} ({count}){marker}")
-    if nav_parts:
-        embed.set_footer(text=" | ".join(nav_parts) + " · Équipements via /equipement_list")
     return embed
