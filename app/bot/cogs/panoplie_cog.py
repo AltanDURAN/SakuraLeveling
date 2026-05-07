@@ -17,7 +17,10 @@ from discord import app_commands
 from discord.ext import commands
 
 from app.infrastructure.config.settings import settings
+from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
+from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
+from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
 from app.infrastructure.sets.set_loader import (
     get_definition as get_set_definition,
@@ -70,8 +73,25 @@ class PanoplieCog(commands.Cog):
             )
             return
 
+        # Récupère aussi inventaire + équipement du viewer pour cocher les
+        # pièces déjà possédées (✅ à droite de chaque ligne).
+        owned_def_ids: set[int] = set()
         with get_db_session() as session:
             all_items = ItemRepository(session).list_all()
+            profile = PlayerRepository(session).get_by_discord_id(
+                interaction.user.id,
+            )
+            if profile is not None:
+                inv = InventoryRepository(session).list_by_player_id(
+                    profile.player.id,
+                )
+                eq = EquipmentRepository(session).list_by_player_id(
+                    profile.player.id,
+                )
+                owned_def_ids = (
+                    {i.item_definition.id for i in inv}
+                    | {e.item_definition.id for e in eq}
+                )
 
         items_in_family = [
             it for it in all_items
@@ -123,7 +143,10 @@ class PanoplieCog(commands.Cog):
                 for it in items:
                     bonuses = format_stat_bonuses_short(it.stat_bonuses)
                     suffix = f"  ·  {bonuses}" if bonuses else ""
-                    piece_lines.append(f"{slot_icon} **{it.name}**{suffix}")
+                    owned_marker = "  ✅" if it.id in owned_def_ids else ""
+                    piece_lines.append(
+                        f"{slot_icon} **{it.name}**{suffix}{owned_marker}"
+                    )
 
             # Découpe en plusieurs fields si > 1000 chars (limite 1024)
             buf = ""
