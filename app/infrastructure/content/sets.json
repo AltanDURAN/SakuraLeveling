@@ -1,26 +1,26 @@
 {
   "iron": {
-    "name": "Acier",
+    "name": "Fer",
     "description": "Armure lourde et fiable, taillée pour encaisser.",
     "icon": "🛡️",
     "color": "#9aa0aa",
     "tiers": [
-      { "min_pieces": 2,  "type": "defense_flat",  "value": 1 },
-      { "min_pieces": 4,  "type": "defense_flat",  "value": 2 },
-      { "min_pieces": 8,  "type": "defense_flat",  "value": 5 },
-      { "min_pieces": 12, "type": "defense_flat",  "value": 8 }
+      { "min_pieces": 2,  "type": "defense_flat", "value": 1 },
+      { "min_pieces": 4,  "type": "defense_flat", "value": 2 },
+      { "min_pieces": 8,  "type": "defense_flat", "value": 5 },
+      { "min_pieces": 12, "type": "defense_flat", "value": 8 }
     ]
   },
   "leather": {
     "name": "Cuir",
-    "description": "Souple et discret — favorise l'esquive.",
+    "description": "Souple et résistant, renforce la vitalité du porteur.",
     "icon": "🟫",
     "color": "#a07040",
     "tiers": [
-      { "min_pieces": 2,  "type": "dodge_flat", "value": 1 },
-      { "min_pieces": 4,  "type": "dodge_flat", "value": 2 },
-      { "min_pieces": 8,  "type": "dodge_flat", "value": 5 },
-      { "min_pieces": 12, "type": "dodge_flat", "value": 8 }
+      { "min_pieces": 2,  "type": "max_hp_flat", "value": 4 },
+      { "min_pieces": 4,  "type": "max_hp_flat", "value": 8 },
+      { "min_pieces": 8,  "type": "max_hp_flat", "value": 20 },
+      { "min_pieces": 12, "type": "max_hp_flat", "value": 32 }
     ]
   },
   "slime": {
@@ -37,26 +37,26 @@
   },
   "gobelin": {
     "name": "Gobeline",
-    "description": "Affutée par les fourbes habitudes des gobelins.",
+    "description": "Affutée par les fourbes habitudes des gobelins — frappe rare mais brutale.",
     "icon": "👹",
     "color": "#7ba85a",
     "tiers": [
-      { "min_pieces": 2,  "type": "crit_chance_flat", "value": 1 },
-      { "min_pieces": 4,  "type": "crit_chance_flat", "value": 2 },
-      { "min_pieces": 8,  "type": "crit_chance_flat", "value": 5 },
-      { "min_pieces": 12, "type": "crit_chance_flat", "value": 8 }
+      { "min_pieces": 2,  "type": "crit_damage_flat", "value": 1 },
+      { "min_pieces": 4,  "type": "crit_damage_flat", "value": 2 },
+      { "min_pieces": 8,  "type": "crit_damage_flat", "value": 4 },
+      { "min_pieces": 12, "type": "crit_damage_flat", "value": 8 }
     ]
   },
   "linen": {
     "name": "Lin",
-    "description": "Tissu léger imprégné d'aura magique.",
+    "description": "Tissu léger qui favorise l'agilité et l'esquive.",
     "icon": "🧵",
     "color": "#dcc8a0",
     "tiers": [
-      { "min_pieces": 2,  "type": "crit_damage_flat", "value": 1 },
-      { "min_pieces": 4,  "type": "crit_damage_flat", "value": 2 },
-      { "min_pieces": 8,  "type": "crit_damage_flat", "value": 5 },
-      { "min_pieces": 12, "type": "crit_damage_flat", "value": 8 }
+      { "min_pieces": 2,  "type": "dodge_flat", "value": 1 },
+      { "min_pieces": 4,  "type": "dodge_flat", "value": 2 },
+      { "min_pieces": 8,  "type": "dodge_flat", "value": 3 },
+      { "min_pieces": 12, "type": "dodge_flat", "value": 5 }
     ]
   }
 }
