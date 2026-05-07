@@ -49,7 +49,45 @@ WEAPON_HAND_SLOTS: list[EquipmentSlot] = [
 ]
 
 
-class ItemCategory(str, Enum):
+# Ordre canonique d'affichage : principaux puis secondaires.
+SLOT_ORDER: list[str] = [s.value for s in (PRIMARY_SLOTS + SECONDARY_SLOTS)]
+
+
+# Mapping slot → emoji (utilisé en embed et en image).
+SLOT_ICONS: dict[str, str] = {
+    EquipmentSlot.HELMET.value:    "⛑️",
+    EquipmentSlot.CHEST.value:     "👕",
+    EquipmentSlot.LEGS.value:      "👖",
+    EquipmentSlot.BOOTS.value:     "🥾",
+    EquipmentSlot.MAIN_HAND.value: "🗡️",
+    EquipmentSlot.OFF_HAND.value:  "🛡️",
+    EquipmentSlot.NECKLACE.value:  "📿",
+    EquipmentSlot.BRACELET.value:  "⛓️",
+    EquipmentSlot.RING.value:      "💍",
+    EquipmentSlot.BELT.value:      "🎗️",
+    EquipmentSlot.CAPE.value:      "🧣",
+    EquipmentSlot.EARRING.value:   "👂",
+}
+
+
+# Mapping slot → label FR (utilisé en embed).
+SLOT_LABELS: dict[str, str] = {
+    EquipmentSlot.HELMET.value:    "Casque",
+    EquipmentSlot.CHEST.value:     "Plastron",
+    EquipmentSlot.LEGS.value:      "Jambières",
+    EquipmentSlot.BOOTS.value:     "Bottes",
+    EquipmentSlot.MAIN_HAND.value: "Main droite",
+    EquipmentSlot.OFF_HAND.value:  "Main gauche",
+    EquipmentSlot.NECKLACE.value:  "Collier",
+    EquipmentSlot.BRACELET.value:  "Bracelet",
+    EquipmentSlot.RING.value:      "Bague",
+    EquipmentSlot.BELT.value:      "Ceinture",
+    EquipmentSlot.CAPE.value:      "Cape",
+    EquipmentSlot.EARRING.value:   "Boucle d'oreille",
+}
+
+
+class ItemCategory(StrEnum):
     RESOURCE = "resource"
     WEAPON = "weapon"
     SHIELD = "shield"

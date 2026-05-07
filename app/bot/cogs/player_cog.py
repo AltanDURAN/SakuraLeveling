@@ -5,6 +5,7 @@ from discord import app_commands
 from discord.ext import commands
 from datetime import datetime, UTC
 
+from app.application.services.set_bonus_resolver import resolve_set_bonuses
 from app.domain.entities.player_profile import PlayerProfile
 from app.shared.formatters import format_int as _format_int
 from app.application.use_cases.change_player_class import ChangePlayerClassUseCase
@@ -358,11 +359,7 @@ class PlayerCog(commands.Cog):
         target: discord.Member | None = None,
     ) -> None:
         await interaction.response.defer()
-        from app.application.services.set_bonus_resolver import resolve_set_bonuses
         from app.bot.views.equipment_image_view import EquipmentImageView
-        from app.infrastructure.sets.set_loader import (
-            list_definitions as list_set_definitions,
-        )
 
         with get_db_session() as session:
             profile, target_member = self._resolve_profile(interaction, target, session)
@@ -373,7 +370,6 @@ class PlayerCog(commands.Cog):
             equipment_repository = EquipmentRepository(session)
             equipment_items = equipment_repository.list_by_player_id(profile.player.id)
             set_bonuses = resolve_set_bonuses(equipment_items)
-            sets_def = list_set_definitions()
 
         try:
             view = EquipmentImageView(
@@ -381,7 +377,6 @@ class PlayerCog(commands.Cog):
                 player_name=target_member.display_name,
                 equipped_items=equipment_items,
                 set_bonuses=set_bonuses,
-                sets_definitions=sets_def,
                 timeout=600.0,
             )
             embed, file = view.render_current_page()
@@ -545,7 +540,6 @@ class PlayerCog(commands.Cog):
                 allocations
             )
 
-            from app.application.services.set_bonus_resolver import resolve_set_bonuses
             current_stats = StatsService().calculate_player_stats(
                 profile=profile,
                 equipped_items=current_equipment,

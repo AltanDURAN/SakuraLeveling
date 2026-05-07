@@ -19,8 +19,9 @@ class TitleDefinition:
     # Condition de débloquage. Les types supportés :
     #   "kills_family"  : target=family (ex "slime"), value=count requis
     #   "kills_total"   : value=count requis (toutes familles confondues)
-    #   "duels_won"     : value=count requis
-    #   "items_crafted" : value=count requis
+    #   "kills_mob"     : target=mob_code, value=count requis
+    #   "dodges_total"  : value=count d'esquives requis (encounters)
+    #   "daily_streak"  : value=streak quotidien requis
     #   "duel_top1"     : exclusif — détenu par le rang 1 du ladder 1v1
     #   "kills_record"  : exclusif — détenu par le record absolu de kills
     condition_type: str

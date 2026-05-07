@@ -1,4 +1,5 @@
 import discord
+from discord.utils import escape_markdown
 
 from app.domain.services.leaderboard_service import Leaderboard
 
@@ -19,7 +20,8 @@ def build_leaderboard_embed(leaderboard: Leaderboard) -> discord.Embed:
     lines: list[str] = []
     for rank, entry in enumerate(leaderboard.entries, start=1):
         prefix = _RANK_EMOJI.get(rank, f"`#{rank:>2}`")
-        lines.append(f"{prefix} **{entry.display_name}** — `{entry.formatted_value}`")
+        safe_name = escape_markdown(entry.display_name)
+        lines.append(f"{prefix} **{safe_name}** — `{entry.formatted_value}`")
 
     embed.description = "\n".join(lines)
     embed.set_footer(text=f"Top {len(leaderboard.entries)}")

@@ -39,8 +39,13 @@ def get_definition() -> SkillTreeDefinition:
     """Charge l'arbre depuis le JSON. Cache module-level (chargé une fois)."""
     global _cached_definition
     if _cached_definition is None:
-        with _CONTENT_PATH.open("r", encoding="utf-8") as f:
-            raw = json.load(f)
+        try:
+            with _CONTENT_PATH.open("r", encoding="utf-8") as f:
+                raw = json.load(f)
+        except json.JSONDecodeError as e:
+            raise RuntimeError(
+                f"skill_tree.json invalide ({_CONTENT_PATH}): {e}"
+            ) from e
         skills = {code: _parse_node(code, data) for code, data in raw["skills"].items()}
         _cached_definition = SkillTreeDefinition(
             root=raw["root"],

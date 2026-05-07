@@ -27,7 +27,6 @@ def _render_page(
     player_name: str,
     equipped_items: list[PlayerEquipmentItem],
     set_bonuses: SetBonuses,
-    sets_definitions: dict[str, dict],
 ) -> str:
     """Rend la page demandée et renvoie le chemin disque."""
     GENERATED_EQUIPMENT_DIR.mkdir(parents=True, exist_ok=True)
@@ -48,7 +47,6 @@ def _render_page(
             player_name=player_name,
             equipped_items=equipped_items,
             set_bonuses=set_bonuses,
-            sets_definitions=sets_definitions,
             seed=player_id,
         )
     return str(out)
@@ -64,7 +62,6 @@ class EquipmentImageView(discord.ui.View):
         player_name: str,
         equipped_items: list[PlayerEquipmentItem],
         set_bonuses: SetBonuses,
-        sets_definitions: dict[str, dict],
         timeout: float = 600.0,
     ) -> None:
         super().__init__(timeout=timeout)
@@ -72,7 +69,6 @@ class EquipmentImageView(discord.ui.View):
         self.player_name = player_name
         self.equipped_items = equipped_items
         self.set_bonuses = set_bonuses
-        self.sets_definitions = sets_definitions
         self.page_index = 0
         self._refresh_buttons()
 
@@ -90,7 +86,6 @@ class EquipmentImageView(discord.ui.View):
             self.player_name,
             self.equipped_items,
             self.set_bonuses,
-            self.sets_definitions,
         )
         filename = path.rsplit("/", 1)[-1]
         embed = discord.Embed(color=discord.Color.dark_blue())

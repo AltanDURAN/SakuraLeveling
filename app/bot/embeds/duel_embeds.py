@@ -11,6 +11,7 @@ les mêmes max_hp).
 """
 
 import discord
+from discord.utils import escape_markdown
 
 from app.domain.value_objects.duel_result import DuelResult, DuelTurnLog
 
@@ -38,6 +39,8 @@ def build_duel_intro_embed(
     challenger_max_hp: int,
     target_max_hp: int,
 ) -> discord.Embed:
+    challenger_name = escape_markdown(challenger_name)
+    target_name = escape_markdown(target_name)
     embed = discord.Embed(
         title=f"⚔️ Duel — {challenger_name} vs {target_name}",
         description="Le duel commence... Aucun PV réel ne sera perdu.",
@@ -63,6 +66,8 @@ def build_duel_turn_embed(
     result: DuelResult,
     turn_log: DuelTurnLog,
 ) -> discord.Embed:
+    challenger_name = escape_markdown(challenger_name)
+    target_name = escape_markdown(target_name)
     actor_name = challenger_name if turn_log.actor == "a" else target_name
     target_of_hit = target_name if turn_log.actor == "a" else challenger_name
 
@@ -111,6 +116,8 @@ def build_duel_result_embed(
     challenger_new_position: int,
     target_new_position: int,
 ) -> discord.Embed:
+    challenger_name = escape_markdown(challenger_name)
+    target_name = escape_markdown(target_name)
     color = discord.Color.green() if challenger_won else discord.Color.red()
     title_emoji = "🏆" if challenger_won else "💀"
     winner_name = challenger_name if challenger_won else target_name

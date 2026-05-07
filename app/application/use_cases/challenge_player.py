@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from datetime import datetime, UTC
 
 from app.application.services.exclusive_title_service import ExclusiveTitleService
+from app.application.services.set_bonus_resolver import resolve_set_bonuses
 from app.application.services.title_bonus_resolver import resolve_title_bonuses
 from app.domain.services.cooldown_service import CooldownService
 from app.domain.services.duel_combat_service import DuelCombatService
@@ -219,7 +220,6 @@ class ChallengePlayerUseCase:
         )
 
     def _compute_stats(self, profile, skill_service: SkillTreeService, session):
-        from app.application.services.set_bonus_resolver import resolve_set_bonuses
         equipped_items = self.equipment_repository.list_by_player_id(profile.player.id)
         active_class = self.class_repository.get_current_class_for_player(
             profile.player.id

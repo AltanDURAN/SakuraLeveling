@@ -41,6 +41,12 @@ from app.bot.rendering.image_utils import (
     crop_to_circle,
     download_image,
 )
+from app.bot.rendering.pillow_utils import (
+    draw_sakura_petals,
+    draw_text_with_shadow as _shared_text_shadow,
+    gradient_background,
+    try_font,
+)
 
 
 WIDTH = 1024
@@ -116,74 +122,8 @@ def _draw_sakura_petals(
     seed: int = 42,
     count: int = 28,
 ) -> None:
-    """Décor de fond : pétales de sakura roses dispersés en filigrane.
-
-    Chaque pétale est dessiné à la main (forme de goutte / pétale stylisé)
-    avec une rotation aléatoire et une couleur rose pâle à très basse
-    opacité — assez visible pour donner un sentiment "anime/sakura" mais
-    sans gêner la lisibilité du contenu par-dessus.
-
-    `seed` : permet d'avoir un layout déterministe par joueur si on
-    passe le player_id en seed. Sinon (42 par défaut) tous les profils
-    auront la même disposition.
-    """
-    import random
-    rng = random.Random(seed)
-    w, h = base.size
-    overlay = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-
-    # Palette : roses pâles avec légère variation pour texture.
-    # Opacité augmentée par rapport à la 1re version (~32) — les pétales
-    # doivent être visibles sans masquer le contenu.
-    palettes = [
-        (255, 200, 215, 80),
-        (255, 180, 200, 70),
-        (255, 220, 230, 65),
-        (250, 170, 200, 75),
-    ]
-
-    for _ in range(count):
-        size = rng.randint(36, 72)
-        cx = rng.randint(-size // 2, w + size // 2)
-        cy = rng.randint(-size // 2, h + size // 2)
-        rotation = rng.randint(0, 359)
-        color = rng.choice(palettes)
-
-        # Petit canvas pour le pétale + rotation
-        pad = int(size * 1.4)
-        petal = Image.new("RGBA", (pad, pad), (0, 0, 0, 0))
-        pd = ImageDraw.Draw(petal)
-        # Forme : 5 ellipses fines superposées en éventail (mini-fleur)
-        # → look "fleur de cerisier" plutôt qu'un seul pétale ovale
-        center_x = pad // 2
-        center_y = pad // 2
-        petal_w = size // 3
-        petal_h = int(size * 0.55)
-        for i in range(5):
-            import math
-            angle = math.radians(-90 + i * 72)
-            ex = center_x + int(size * 0.18 * math.cos(angle))
-            ey = center_y + int(size * 0.18 * math.sin(angle))
-            # Ellipse alignée verticalement, on fait pivoter le canvas
-            # entier après. C'est suffisant pour donner une silhouette
-            # de fleur 5 pétales.
-            pd.ellipse(
-                (
-                    ex - petal_w // 2,
-                    ey - petal_h // 2,
-                    ex + petal_w // 2,
-                    ey + petal_h // 2,
-                ),
-                fill=color,
-            )
-
-        rotated = petal.rotate(rotation, resample=Image.BICUBIC, expand=False)
-        overlay.alpha_composite(
-            rotated,
-            (cx - rotated.width // 2, cy - rotated.height // 2),
-        )
-
-    base.alpha_composite(overlay)
+    """Décor de fond : pétales de sakura en filigrane (palette par défaut)."""
+    draw_sakura_petals(base, seed=seed, count=count)
 
 
 def _add_vignette(base: Image.Image, intensity: float = 0.55) -> None:
@@ -216,30 +156,13 @@ def _add_vignette(base: Image.Image, intensity: float = 0.55) -> None:
 
 
 def _gradient_background(width: int, height: int) -> Image.Image:
-    bg = Image.new("RGBA", (width, height), COLORS["bg_top"])
-    draw = ImageDraw.Draw(bg)
-    top = COLORS["bg_top"]
-    bottom = COLORS["bg_bottom"]
-    for y in range(height):
-        ratio = y / max(1, height - 1)
-        r = int(top[0] + (bottom[0] - top[0]) * ratio)
-        g = int(top[1] + (bottom[1] - top[1]) * ratio)
-        b = int(top[2] + (bottom[2] - top[2]) * ratio)
-        draw.line((0, y, width, y), fill=(r, g, b, 255))
-    return bg
+    return gradient_background(
+        width, height, COLORS["bg_top"], COLORS["bg_bottom"],
+    )
 
 
 def _try_font(size: int, bold: bool = False) -> ImageFont.ImageFont:
-    candidates = [
-        "DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf",
-        "DejaVuSans.ttf",
-    ]
-    for name in candidates:
-        try:
-            return ImageFont.truetype(name, size)
-        except Exception:
-            continue
-    return ImageFont.load_default()
+    return try_font(size, bold)
 
 
 def _draw_text_with_shadow(
@@ -251,10 +174,7 @@ def _draw_text_with_shadow(
     shadow=COLORS["shadow"],
     shadow_offset: tuple[int, int] = (2, 2),
 ) -> None:
-    x, y = xy
-    sx, sy = shadow_offset
-    draw.text((x + sx, y + sy), text, font=font, fill=shadow)
-    draw.text(xy, text, font=font, fill=fill)
+    _shared_text_shadow(draw, xy, text, font, fill, shadow, shadow_offset)
 
 
 def _format_int(n: int) -> str:

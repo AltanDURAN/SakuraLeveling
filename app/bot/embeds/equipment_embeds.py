@@ -3,38 +3,13 @@
 import discord
 
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
-from app.shared.enums import EquipmentSlot, PRIMARY_SLOTS, SECONDARY_SLOTS
-
-
-SLOT_ICONS: dict[str, str] = {
-    EquipmentSlot.HELMET.value: "⛑️",
-    EquipmentSlot.CHEST.value: "👕",
-    EquipmentSlot.LEGS.value: "👖",
-    EquipmentSlot.BOOTS.value: "🥾",
-    EquipmentSlot.MAIN_HAND.value: "🗡️",
-    EquipmentSlot.OFF_HAND.value: "🛡️",
-    EquipmentSlot.NECKLACE.value: "📿",
-    EquipmentSlot.BRACELET.value: "⛓️",
-    EquipmentSlot.RING.value: "💍",
-    EquipmentSlot.BELT.value: "🎗️",
-    EquipmentSlot.CAPE.value: "🧣",
-    EquipmentSlot.EARRING.value: "👂",
-}
-
-SLOT_LABELS: dict[str, str] = {
-    EquipmentSlot.HELMET.value: "Casque",
-    EquipmentSlot.CHEST.value: "Plastron",
-    EquipmentSlot.LEGS.value: "Jambières",
-    EquipmentSlot.BOOTS.value: "Bottes",
-    EquipmentSlot.MAIN_HAND.value: "Main droite",
-    EquipmentSlot.OFF_HAND.value: "Main gauche",
-    EquipmentSlot.NECKLACE.value: "Collier",
-    EquipmentSlot.BRACELET.value: "Bracelet",
-    EquipmentSlot.RING.value: "Bague",
-    EquipmentSlot.BELT.value: "Ceinture",
-    EquipmentSlot.CAPE.value: "Cape",
-    EquipmentSlot.EARRING.value: "Boucle d'oreille",
-}
+from app.shared.enums import (
+    EquipmentSlot,
+    PRIMARY_SLOTS,
+    SECONDARY_SLOTS,
+    SLOT_ICONS,
+    SLOT_LABELS,
+)
 
 
 def _format_stat_bonuses(stat_bonuses: dict | None) -> str:

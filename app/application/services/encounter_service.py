@@ -1,6 +1,6 @@
 from datetime import datetime, UTC
 
-from app.bot.runtime.encounter_participant import EncounterParticipant
+from app.application.services.encounter_participant import EncounterParticipant
 from app.domain.services.health_regeneration_service import HealthRegenerationService
 from app.domain.services.loot_service import LootService
 from app.domain.services.party_combat_service import PartyCombatService

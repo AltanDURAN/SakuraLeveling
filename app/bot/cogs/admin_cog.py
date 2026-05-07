@@ -2,6 +2,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from app.application.services.set_bonus_resolver import resolve_set_bonuses
 from app.application.use_cases.reset_player import ResetPlayerUseCase
 from app.bot.checks.admin_check import admin_only
 from app.shared.enums import EquipmentSlot
@@ -119,7 +120,6 @@ class AdminCog(commands.Cog):
                 label = "Skill points"
 
             elif resource == "current_hp":
-                from app.application.services.set_bonus_resolver import resolve_set_bonuses
                 equipped = EquipmentRepository(session).list_by_player_id(profile.player.id)
                 active_class = ClassRepository(session).get_current_class_for_player(
                     profile.player.id
@@ -381,7 +381,6 @@ class AdminCog(commands.Cog):
                     f"❌ {target.display_name} n'a pas encore de profil.", ephemeral=True
                 )
                 return
-            from app.application.services.set_bonus_resolver import resolve_set_bonuses
             equipped = EquipmentRepository(session).list_by_player_id(profile.player.id)
             active_class = ClassRepository(session).get_current_class_for_player(
                 profile.player.id
