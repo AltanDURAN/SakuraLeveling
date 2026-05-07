@@ -26,8 +26,8 @@ from app.shared.paths import ITEMS_ASSETS_DIR
 
 
 WIDTH = 1024
-GRID_HEIGHT = 760    # pages 1 & 2 (3×2 grid)
-SUMMARY_HEIGHT = 920  # page 3 (stats + set bonuses)
+GRID_HEIGHT = 820    # pages 1 & 2 (3×2 grid avec fontes généreuses)
+SUMMARY_HEIGHT = 960  # page 3 (stats + set bonuses)
 
 
 _BG_TOP = (12, 14, 28, 255)
@@ -282,18 +282,19 @@ def _draw_slot_card(
     x, y = origin
     w, h = size
 
-    # Header : emoji + label slot
+    # Header : emoji + label slot. Fonte généreuse pour rester lisible
+    # quand Discord compresse en thumbnail (~360 px).
     header_label = f"{_SLOT_EMOJI.get(slot, '•')}  {_SLOT_LABEL.get(slot, slot)}"
-    header_font = _try_font(20, bold=True)
+    header_font = _try_font(24, bold=True)
     draw_text_with_emojis(
         base, (x + 18, y + 14), header_label, header_font,
-        fill=_TEXT_SECONDARY,
+        fill=_TEXT_PRIMARY,
     )
 
     # Image de l'item (ou placeholder)
-    img_size = min(180, w - 30, h - 110)
+    img_size = min(180, w - 30, h - 130)
     img_x = x + (w - img_size) // 2
-    img_y = y + 50
+    img_y = y + 56
 
     if two_handed_locked:
         # Slot main_gauche verrouillé par une arme 2-mains : placeholder
@@ -342,21 +343,21 @@ def _draw_slot_card(
     # Nom de l'item + bonus de stats sous l'image
     if equipment is not None:
         item = equipment.item_definition
-        name_font = _try_font(20, bold=True)
-        bonuses_font = _try_font(15)
+        name_font = _try_font(24, bold=True)
+        bonuses_font = _try_font(19, bold=True)
         draw = ImageDraw.Draw(base)
 
-        name_y = img_y + img_size + 10
-        # Tronque à ~22 chars pour rester dans la card
-        name = item.name if len(item.name) <= 22 else item.name[:21] + "…"
+        name_y = img_y + img_size + 12
+        # Tronque légèrement plus court pour fitter avec la fonte 24
+        name = item.name if len(item.name) <= 20 else item.name[:19] + "…"
         _draw_text_with_shadow(
             draw, (x + 16, name_y), name, name_font,
         )
         bonuses_text = _format_stat_bonuses_short(item.stat_bonuses)
         if bonuses_text:
-            bt = bonuses_text if len(bonuses_text) <= 36 else bonuses_text[:35] + "…"
+            bt = bonuses_text if len(bonuses_text) <= 32 else bonuses_text[:31] + "…"
             _draw_text_with_shadow(
-                draw, (x + 16, name_y + 24), bt, bonuses_font,
+                draw, (x + 16, name_y + 30), bt, bonuses_font,
                 fill=_GOLD,
             )
 
@@ -364,17 +365,21 @@ def _draw_slot_card(
 def _draw_page_header(
     base: Image.Image, player_name: str, page_title: str,
 ) -> None:
-    draw = ImageDraw.Draw(base)
+    """Bandeau du haut. Utilise `draw_text_with_emojis` pour que les
+    glyphes color emoji (⚔️ 📦 💍 📊 …) s'affichent correctement —
+    sinon DejaVuSans rend les emojis en boîtes vides."""
     name_font = _try_font(34, bold=True)
     sub_font = _try_font(22, bold=True)
-    _draw_text_with_shadow(
-        draw, (30, 24), f"⚔️  Équipement de {player_name}".strip(), name_font,
+    draw_text_with_emojis(
+        base, (30, 24), f"⚔️  Équipement de {player_name}".strip(), name_font,
+        fill=_TEXT_PRIMARY, shadow=_SHADOW,
     )
-    _draw_text_with_shadow(
-        draw, (30, 64), page_title, sub_font,
-        fill=_TEXT_SECONDARY,
+    draw_text_with_emojis(
+        base, (30, 64), page_title, sub_font,
+        fill=_TEXT_SECONDARY, shadow=_SHADOW,
     )
     # Ligne de séparation
+    draw = ImageDraw.Draw(base)
     draw.line(
         [(30, 100), (WIDTH - 30, 100)],
         fill=(255, 255, 255, 60), width=2,
@@ -491,28 +496,29 @@ def compose_equipment_summary_page(
     totals["hp_regeneration"] += set_bonuses.hp_regeneration_flat
 
     # Section "Stats apportées par l'équipement"
-    section_font = _try_font(24, bold=True)
+    section_font = _try_font(26, bold=True)
     section_y = 130
     draw = ImageDraw.Draw(bg)
-    _draw_text_with_shadow(
-        draw, (30, section_y), "📈  STATS APPORTÉES (équipement + panoplies)",
-        section_font, fill=_TEXT_SECONDARY,
+    draw_text_with_emojis(
+        bg, (30, section_y),
+        "📈  STATS APPORTÉES (équipement + panoplies)",
+        section_font, fill=_TEXT_SECONDARY, shadow=_SHADOW,
     )
     draw.line(
-        [(30, section_y + 36), (WIDTH - 30, section_y + 36)],
+        [(30, section_y + 40), (WIDTH - 30, section_y + 40)],
         fill=(255, 255, 255, 50), width=2,
     )
 
-    # Grille 4×2 des stats totales
+    # Grille 4×2 des stats totales — cards plus hautes pour fontes plus grosses
     margin = 30
     spacing = 12
-    grid_y = section_y + 50
+    grid_y = section_y + 54
     cols = 4
     card_w = (WIDTH - 2 * margin - (cols - 1) * spacing) // cols
-    card_h = 90
+    card_h = 110
 
-    label_font = _try_font(18, bold=True)
-    value_font = _try_font(34, bold=True)
+    label_font = _try_font(24, bold=True)
+    value_font = _try_font(38, bold=True)
 
     stat_cards = [
         ("❤️", "PV", _signed(totals["max_hp"]), "hp"),
@@ -530,8 +536,8 @@ def compose_equipment_summary_page(
         x = margin + col * (card_w + spacing)
         y = grid_y + row * (card_h + spacing)
         _draw_panel(bg, (x, y), (card_w, card_h))
-        # emoji à gauche
-        emoji_size = 40
+        # emoji à gauche, plus gros pour matcher la card élargie
+        emoji_size = 48
         draw_text_with_emojis(
             bg, (x + 14, y + (card_h - emoji_size) // 2 + 4),
             emoji, _try_font(emoji_size),
@@ -540,22 +546,22 @@ def compose_equipment_summary_page(
         # label haut, valeur bas
         text_x = x + 14 + emoji_size + 12
         _draw_text_with_shadow(
-            draw, (text_x, y + 14), label, label_font,
+            draw, (text_x, y + 16), label, label_font,
             fill=_TEXT_SECONDARY,
         )
         _draw_text_with_shadow(
-            draw, (text_x, y + 14 + label_font.size + 6),
+            draw, (text_x, y + 16 + label_font.size + 8),
             value, value_font,
         )
 
     # ----- Section "Bonus de panoplie" -----
     sets_section_y = grid_y + 2 * (card_h + spacing) + 22
-    _draw_text_with_shadow(
-        draw, (30, sets_section_y), "🌸  BONUS DE PANOPLIE",
-        section_font, fill=_TEXT_SECONDARY,
+    draw_text_with_emojis(
+        bg, (30, sets_section_y), "🌸  BONUS DE PANOPLIE",
+        section_font, fill=_TEXT_SECONDARY, shadow=_SHADOW,
     )
     draw.line(
-        [(30, sets_section_y + 36), (WIDTH - 30, sets_section_y + 36)],
+        [(30, sets_section_y + 40), (WIDTH - 30, sets_section_y + 40)],
         fill=(255, 255, 255, 50), width=2,
     )
 
