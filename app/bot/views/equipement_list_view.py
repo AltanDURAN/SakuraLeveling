@@ -142,27 +142,49 @@ def _render_page(
     return str(out), total_pages, total
 
 
-class _PageButton(discord.ui.Button):
-    def __init__(self, page_key: str, label: str, emoji: str, count: int) -> None:
+class _PrevCategoryButton(discord.ui.Button):
+    def __init__(self) -> None:
         super().__init__(
-            style=discord.ButtonStyle.secondary,
-            label=f"{label} ({count})",
-            emoji=emoji,
+            style=discord.ButtonStyle.secondary, emoji="◀", row=0,
         )
-        self.page_key = page_key
 
     async def callback(self, interaction: discord.Interaction) -> None:
         view: EquipementListView = self.view  # type: ignore[assignment]
-        view.current_page = self.page_key
-        view.page_index = 0
-        view._refresh_styles()
+        view._shift_category(-1)
+        await view._send_update(interaction)
+
+
+class _CategoryLabelButton(discord.ui.Button):
+    """Bouton désactivé qui sert juste à afficher la catégorie courante."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            style=discord.ButtonStyle.primary,
+            label="—",
+            disabled=True, row=0,
+        )
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer()
+
+
+class _NextCategoryButton(discord.ui.Button):
+    def __init__(self) -> None:
+        super().__init__(
+            style=discord.ButtonStyle.secondary, emoji="▶", row=0,
+        )
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        view: EquipementListView = self.view  # type: ignore[assignment]
+        view._shift_category(+1)
         await view._send_update(interaction)
 
 
 class _PrevPageButton(discord.ui.Button):
     def __init__(self) -> None:
         super().__init__(
-            style=discord.ButtonStyle.primary, emoji="⬅️", row=4,
+            style=discord.ButtonStyle.secondary,
+            emoji="⬅️", row=1,
         )
 
     async def callback(self, interaction: discord.Interaction) -> None:
@@ -172,10 +194,24 @@ class _PrevPageButton(discord.ui.Button):
         await view._send_update(interaction)
 
 
+class _PageLabelButton(discord.ui.Button):
+    """Bouton désactivé affichant la pagination interne (page X/Y)."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            style=discord.ButtonStyle.secondary,
+            label="1/1", disabled=True, row=1,
+        )
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer()
+
+
 class _NextPageButton(discord.ui.Button):
     def __init__(self) -> None:
         super().__init__(
-            style=discord.ButtonStyle.primary, emoji="➡️", row=4,
+            style=discord.ButtonStyle.secondary,
+            emoji="➡️", row=1,
         )
 
     async def callback(self, interaction: discord.Interaction) -> None:
@@ -200,6 +236,10 @@ class EquipementListView(discord.ui.View):
         self.equipped = equipped
         self.page_index = 0
 
+        # Liste des catégories dans l'ordre canonique de PAGES — toutes
+        # affichables (compteur 0 inclus) pour garder la nav prévisible.
+        self.category_keys: list[str] = [c for c, _, _ in PAGES]
+
         present_categories = {
             i.item_definition.category for i in items
             if any(c == i.item_definition.category for c, _, _ in PAGES)
@@ -209,40 +249,63 @@ class EquipementListView(discord.ui.View):
             PAGES[0][0],
         )
 
-        # 12 boutons catégorie (rows 0-3, max 5 par row → 4 rows × 3 boutons)
-        for cat, label, emoji in PAGES:
-            count = sum(
-                1 for i in items if i.item_definition.category == cat
-            )
-            self.add_item(_PageButton(
-                page_key=cat, label=label, emoji=emoji, count=count,
-            ))
+        # Row 0 : navigation catégorie (◀ label ▶)
+        self.prev_cat_btn = _PrevCategoryButton()
+        self.cat_label_btn = _CategoryLabelButton()
+        self.next_cat_btn = _NextCategoryButton()
+        self.add_item(self.prev_cat_btn)
+        self.add_item(self.cat_label_btn)
+        self.add_item(self.next_cat_btn)
 
-        # Boutons pagination interne
-        self.prev_btn = _PrevPageButton()
-        self.next_btn = _NextPageButton()
-        self.add_item(self.prev_btn)
-        self.add_item(self.next_btn)
+        # Row 1 : pagination interne (◀ X/Y ▶) — affichée toujours, désactivée
+        # quand 1 seule page.
+        self.prev_page_btn = _PrevPageButton()
+        self.page_label_btn = _PageLabelButton()
+        self.next_page_btn = _NextPageButton()
+        self.add_item(self.prev_page_btn)
+        self.add_item(self.page_label_btn)
+        self.add_item(self.next_page_btn)
 
-        self._refresh_styles()
+    def _shift_category(self, delta: int) -> None:
+        """Avance/recule d'une catégorie dans l'ordre canonique."""
+        n = len(self.category_keys)
+        if n == 0:
+            return
+        try:
+            idx = self.category_keys.index(self.current_page)
+        except ValueError:
+            idx = 0
+        new_idx = (idx + delta) % n
+        self.current_page = self.category_keys[new_idx]
+        self.page_index = 0
 
-    def _refresh_styles(self) -> None:
-        for child in self.children:
-            if isinstance(child, _PageButton):
-                child.style = (
-                    discord.ButtonStyle.primary
-                    if child.page_key == self.current_page
-                    else discord.ButtonStyle.secondary
-                )
+    def _category_meta(self, key: str) -> tuple[str, str, int]:
+        label, emoji = next(
+            ((lbl, em) for cat, lbl, em in PAGES if cat == key),
+            ("Items", "📦"),
+        )
+        count = sum(
+            1 for i in self.items if i.item_definition.category == key
+        )
+        return label, emoji, count
+
+    def _refresh_button_states(self, total_pages: int) -> None:
+        # Mise à jour du label catégorie (toujours actif côté style).
+        label, emoji, count = self._category_meta(self.current_page)
+        self.cat_label_btn.label = f"{label} ({count})"
+        self.cat_label_btn.emoji = emoji
+
+        # Pagination interne
+        self.page_label_btn.label = f"{self.page_index + 1}/{total_pages}"
+        self.prev_page_btn.disabled = self.page_index == 0
+        self.next_page_btn.disabled = self.page_index >= total_pages - 1
 
     def render_current(self) -> tuple[discord.Embed, discord.File, int, int]:
         path, total_pages, total = _render_page(
             self.player_id, self.display_name, self.items, self.equipped,
             self.current_page, self.page_index,
         )
-        # Désactive les boutons de pagination si pas pertinent
-        self.prev_btn.disabled = self.page_index == 0
-        self.next_btn.disabled = self.page_index >= total_pages - 1
+        self._refresh_button_states(total_pages)
 
         filename = path.rsplit("/", 1)[-1]
         embed = discord.Embed(color=discord.Color.dark_blue())
