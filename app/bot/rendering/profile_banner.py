@@ -111,6 +111,68 @@ def _rank_color(rank_label: str) -> tuple[int, int, int]:
     return _RANK_BASE_COLOR.get(rank_label[0].upper(), (140, 140, 145))
 
 
+def _build_sakura_petal_polygon(
+    cx: float, cy: float, w: float, h: float,
+    n_samples: int = 36,
+) -> list[tuple[float, float]]:
+    """Génère le polygone d'un pétale de sakura stylisé centré sur
+    `(cx, cy)`, avec un bbox `w × h`. Le long axe est VERTICAL et la
+    pointe (= encoche/cleft caractéristique) est en HAUT.
+
+    Construction :
+    - profil de largeur paramétré par `t ∈ [0, 1]` (0 = base, 1 = encoche)
+    - bombement entre `t=0.4` et `t=0.7`, rétrécissement vers la pointe
+    - dans la zone du sommet (`t ≥ 0.85`), 2 lobes symétriques séparés par
+      un creux en V → silhouette typique d'une fleur de cerisier
+    - on échantillonne le contour droit puis on miroir-mappe pour le gauche
+    """
+    import math
+    pts: list[tuple[float, float]] = []
+    bottom_y = cy + h / 2
+    cleft_y = cy - h / 2 + h * 0.10  # creux du V (légèrement sous le haut)
+    apex_y = cy - h / 2               # sommet du lobe
+
+    for i in range(n_samples + 1):
+        t = i / n_samples
+
+        if t < 0.85:
+            # Tronc du pétale : profil de largeur sinusoïdal
+            #   - rond à la base
+            #   - bulle au tiers supérieur du tronc
+            #   - rétrécit en approchant des lobes
+            y = bottom_y - (bottom_y - apex_y) * (t / 0.85) * 0.95
+            if t < 0.07:
+                width = (w / 2) * 0.32 * (t / 0.07) ** 0.5
+            elif t < 0.55:
+                s = (t - 0.07) / 0.48
+                width = (w / 2) * (0.32 + 0.68 * math.sin(s * math.pi / 2))
+            else:  # 0.55 → 0.85
+                s = (t - 0.55) / 0.30
+                width = (w / 2) * (1.00 - 0.30 * s)
+        else:
+            # Zone des lobes + cleft : on remonte jusqu'à l'apex puis on
+            # redescend dans le V central.
+            s = (t - 0.85) / 0.15  # 0 → 1 dans cette zone
+            # Largeur sinusoïdale qui s'estompe au cleft (s=1 → x=0)
+            width = (w / 2) * 0.55 * math.cos(s * math.pi / 2)
+            if s < 0.55:
+                # Montée vers le sommet du lobe
+                ss = s / 0.55
+                y = apex_y + (h * 0.07) * (1 - math.sin(ss * math.pi / 2))
+            else:
+                # Redescente dans le creux du V
+                ss = (s - 0.55) / 0.45
+                y = apex_y + (cleft_y - apex_y) * ss
+
+        pts.append((cx + width, y))
+
+    # Mirror — on parcourt à l'envers pour fermer le polygone proprement.
+    for px, py in reversed(pts[:-1]):
+        pts.append((2 * cx - px, py))
+
+    return [(int(round(x)), int(round(y))) for x, y in pts]
+
+
 def _draw_sakura_petals(
     base: Image.Image,
     seed: int = 42,
@@ -132,12 +194,14 @@ def _draw_sakura_petals(
     w, h = base.size
     overlay = Image.new("RGBA", (w, h), (0, 0, 0, 0))
 
-    # Palette : roses pâles avec légère variation pour texture
+    # Palette : roses pâles avec légère variation pour texture.
+    # Opacité augmentée par rapport à la 1re version (~32) — les pétales
+    # doivent être visibles sans masquer le contenu.
     palettes = [
-        (255, 200, 215, 36),
-        (255, 180, 200, 30),
-        (255, 220, 230, 28),
-        (250, 170, 200, 32),
+        (255, 200, 215, 80),
+        (255, 180, 200, 70),
+        (255, 220, 230, 65),
+        (250, 170, 200, 75),
     ]
 
     for _ in range(count):
@@ -584,10 +648,10 @@ def _draw_rank_badge(
     # Highlight ajoute un soupçon de rouge/rose chaud en haut du pétale
     highlight = (255, 170, 195, 130)
 
-    petal_w = int(size * 0.42)
-    petal_h = int(size * 0.55)
+    petal_w = int(size * 0.50)
+    petal_h = int(size * 0.62)
     # Distance du centre du pétale au centre de la fleur
-    distance = int(size * 0.28)
+    distance = int(size * 0.30)
 
     for i in range(5):
         angle_deg = -90 + i * 72  # premier pétale en haut, sens horaire
@@ -595,32 +659,29 @@ def _draw_rank_badge(
         px = cx + int(distance * math.cos(angle_rad))
         py = cy + int(distance * math.sin(angle_rad))
 
-        # On rend chaque pétale dans une image temporaire qu'on tourne.
         pad = max(petal_w, petal_h) * 2
         petal = Image.new("RGBA", (pad, pad), (0, 0, 0, 0))
         pd = ImageDraw.Draw(petal)
-        # Pétale = ellipse haute + encoche au sommet pour effet "fleur".
-        # On dessine 2 ellipses se chevauchant légèrement avec un dégradé.
         pcx, pcy = pad // 2, pad // 2
+
+        # Polygon "vraie" silhouette de pétale de sakura : profil large
+        # qui se rétrécit vers la pointe et qui se TERMINE par une encoche
+        # en V (le "cleft" caractéristique des fleurs de cerisier).
+        polygon = _build_sakura_petal_polygon(pcx, pcy, petal_w, petal_h)
+        pd.polygon(polygon, fill=petal_color, outline=petal_outline)
+
+        # Veines/highlight plus chaudes au cœur du pétale, donne un effet
+        # 3D anime sans alourdir.
+        veins_w = petal_w // 3
+        veins_h = petal_h // 2
         pd.ellipse(
-            (pcx - petal_w // 2, pcy - petal_h // 2,
-             pcx + petal_w // 2, pcy + petal_h // 2),
-            fill=petal_color,
-            outline=petal_outline,
-            width=3,
-        )
-        # Touche rosée plus chaude au sommet du pétale (effet anime)
-        inner_w = petal_w // 2
-        inner_h = petal_h // 2
-        pd.ellipse(
-            (pcx - inner_w // 2, pcy - inner_h - 4,
-             pcx + inner_w // 2, pcy + inner_h // 2 - 4),
+            (pcx - veins_w // 2, pcy - veins_h + 4,
+             pcx + veins_w // 2, pcy + 6),
             fill=highlight,
         )
 
-        # Rotation : pointer la pointe vers l'extérieur. Le pétale est
-        # vertical par défaut (long axis Y), donc l'angle de rotation
-        # pour qu'il pointe à `angle_deg` du centre est `angle_deg + 90`.
+        # Rotation : pointer la pointe vers l'extérieur (axe long vertical
+        # par défaut, donc rotation = angle_deg + 90).
         rotated = petal.rotate(
             -(angle_deg + 90),
             resample=Image.BICUBIC,
@@ -987,8 +1048,12 @@ def compose_profile_banner(
          _format_compact(int(career.get("hp_healed_total", 0))), "healed"),
         ("🌀", "Esquives",
          _format_compact(int(career.get("dodges_total", 0))), "dodge"),
-        ("🏆", "V / D",
-         f"{_format_compact(won)} / {_format_compact(lost)}", "trophy"),
+        # Winrate en pourcentage (au lieu de "87 / 20"). Plus parlant
+        # d'un coup d'œil et tient toujours dans la card. Affiche "—" si
+        # le joueur n'a pas encore combattu (évite division par zéro).
+        ("🏆", "Winrate",
+         f"{round(100 * won / fought)}%" if fought > 0 else "—",
+         "trophy"),
     ]
 
     for idx, (emoji, label, value, accent_key) in enumerate(career_cards):
