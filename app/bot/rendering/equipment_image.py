@@ -18,7 +18,10 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-from app.bot.rendering.emoji_text import draw_text_with_emojis
+from app.bot.rendering.emoji_text import (
+    draw_text_with_emojis,
+    measure_text_with_emojis,
+)
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
 from app.domain.services.set_bonus_service import SetBonuses
 from app.domain.value_objects.stats import Stats
@@ -254,15 +257,22 @@ def _draw_placeholder(
 
 
 def _format_stat_bonuses_short(stat_bonuses: dict | None) -> str:
+    """Bonus compact `+N {emoji}` — l'emoji est plus rapide à scanner que
+    "Atk" / "Def" / "Crit" et ne déborde pas de la card."""
     if not stat_bonuses:
         return ""
-    labels = {
-        "max_hp": "PV", "attack": "Atk", "defense": "Def",
-        "speed": "Vit", "crit_chance": "Crit", "crit_damage": "CDmg",
-        "dodge": "Esq", "hp_regeneration": "Régen",
+    emojis = {
+        "max_hp":          "❤️",
+        "attack":          "⚔️",
+        "defense":         "🛡️",
+        "speed":           "💨",
+        "crit_chance":     "🎯",
+        "crit_damage":     "💥",
+        "dodge":           "🌀",
+        "hp_regeneration": "✨",
     }
     parts = [
-        f"+{v} {labels.get(k, k)}"
+        f"+{v} {emojis.get(k, k)}"
         for k, v in stat_bonuses.items() if v
     ]
     return "  ·  ".join(parts)
@@ -356,8 +366,11 @@ def _draw_slot_card(
         bonuses_text = _format_stat_bonuses_short(item.stat_bonuses)
         if bonuses_text:
             bt = bonuses_text if len(bonuses_text) <= 32 else bonuses_text[:31] + "…"
-            _draw_text_with_shadow(
-                draw, (x + 16, name_y + 30), bt, bonuses_font,
+            # Le bonus contient des emojis (⚔️ 🛡️ etc.) — il faut passer
+            # par le helper qui sait rendre NotoColorEmoji, sinon les emojis
+            # apparaissent en boîtes blanches.
+            draw_text_with_emojis(
+                base, (x + 16, name_y + 30), bt, bonuses_font,
                 fill=_GOLD,
             )
 
@@ -602,7 +615,8 @@ def compose_equipment_summary_page(
                 fill=_TEXT_PRIMARY,
             )
 
-            # Bonus actif (droite, gros, en doré)
+            # Bonus actif (droite, gros, en doré). Contient un emoji,
+            # donc on passe par draw_text_with_emojis pour le rendu couleur.
             right_x = WIDTH - 30 - 18
             if active.active_bonus_type:
                 bonus_label = _bonus_label_short(
@@ -610,9 +624,9 @@ def compose_equipment_summary_page(
                 )
                 bonus_text = f"+{bonus_label}"
                 bf = _try_font(24, bold=True)
-                tw = draw.textlength(bonus_text, font=bf)
-                _draw_text_with_shadow(
-                    draw, (right_x - int(tw), y + 12),
+                tw = measure_text_with_emojis(bonus_text, bf, bf.size)
+                draw_text_with_emojis(
+                    bg, (right_x - tw, y + 12),
                     bonus_text, bf, fill=_GOLD,
                 )
 
@@ -645,8 +659,9 @@ def compose_equipment_summary_page(
                     )
                 if sub:
                     sf = _try_font(15)
-                    _draw_text_with_shadow(
-                        draw, (50, sub_y), sub, sf, fill=_TEXT_MUTED,
+                    # `sub` contient un emoji depuis _bonus_label_short
+                    draw_text_with_emojis(
+                        bg, (50, sub_y), sub, sf, fill=_TEXT_MUTED,
                     )
             elif active.active_bonus_type:
                 # Au palier max
@@ -672,14 +687,18 @@ def _signed(n: int) -> str:
 
 
 def _bonus_label_short(bonus_type: str, value: int) -> str:
-    labels = {
-        "defense_flat": f"{value} défense",
-        "dodge_flat": f"{value}% esquive",
-        "crit_chance_flat": f"{value}% crit",
-        "crit_damage_flat": f"{value}% dégâts crit",
-        "hp_regeneration_flat": f"{value} régen",
-        "attack_flat": f"{value} attaque",
-        "speed_flat": f"{value} vitesse",
-        "max_hp_flat": f"{value} PV",
+    """Format compact `{value} {emoji}` — l'appelant ajoute le préfixe '+'.
+    L'emoji remplace le label texte ("défense" → 🛡️) pour rester compact
+    et lisible en thumbnail Discord."""
+    emojis = {
+        "defense_flat":         "🛡️",
+        "dodge_flat":           "🌀",
+        "crit_chance_flat":     "🎯",
+        "crit_damage_flat":     "💥",
+        "hp_regeneration_flat": "✨",
+        "attack_flat":          "⚔️",
+        "speed_flat":           "💨",
+        "max_hp_flat":          "❤️",
     }
-    return labels.get(bonus_type, f"{value} {bonus_type}")
+    emoji = emojis.get(bonus_type, bonus_type)
+    return f"{value} {emoji}"

@@ -25,15 +25,15 @@ from app.infrastructure.sets.set_loader import (
 )
 
 
-_BONUS_LABELS = {
-    "defense_flat":         "défense",
-    "dodge_flat":           "% esquive",
-    "crit_chance_flat":     "% chance critique",
-    "crit_damage_flat":     "% dégâts critiques",
-    "hp_regeneration_flat": "régénération PV / min",
-    "attack_flat":          "attaque",
-    "speed_flat":           "vitesse",
-    "max_hp_flat":          "PV max",
+_BONUS_EMOJIS = {
+    "defense_flat":         "🛡️",
+    "dodge_flat":           "🌀",
+    "crit_chance_flat":     "🎯",
+    "crit_damage_flat":     "💥",
+    "hp_regeneration_flat": "✨",
+    "attack_flat":          "⚔️",
+    "speed_flat":           "💨",
+    "max_hp_flat":          "❤️",
 }
 
 _SLOT_ICONS: dict[str, str] = {
@@ -76,8 +76,9 @@ _SLOT_ORDER = [
 
 
 def _format_bonus(bonus_type: str, value: int) -> str:
-    label = _BONUS_LABELS.get(bonus_type, bonus_type)
-    return f"+{value} {label}"
+    """Format compact "+N {emoji}" — l'emoji remplace le label texte."""
+    emoji = _BONUS_EMOJIS.get(bonus_type, bonus_type)
+    return f"+{value} {emoji}"
 
 
 def _format_stat_bonuses_short(stat_bonuses: dict | None) -> str:
