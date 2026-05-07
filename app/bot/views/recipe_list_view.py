@@ -57,7 +57,6 @@ _CATEGORY_ACCENT: dict[str, tuple[int, int, int, int]] = {
 
 
 _PAGE_SIZE = 6  # 2 cols × 3 rows : laisse de la place pour les ingrédients
-_MAX_BUTTONS = 12
 
 
 def _format_ingredients(
@@ -102,37 +101,45 @@ def _build_card(
     )
 
 
-class _CategoryButton(discord.ui.Button):
-    def __init__(
-        self,
-        category: str,
-        label: str,
-        emoji: str,
-        count: int,
-        is_active: bool,
-    ) -> None:
+class _PrevCategoryButton(discord.ui.Button):
+    def __init__(self) -> None:
         super().__init__(
-            style=(
-                discord.ButtonStyle.primary if is_active
-                else discord.ButtonStyle.secondary
-            ),
-            label=f"{label} ({count})",
-            emoji=emoji,
+            style=discord.ButtonStyle.secondary, emoji="◀", row=0,
         )
-        self.category = category
 
     async def callback(self, interaction: discord.Interaction) -> None:
         view: RecipeListView = self.view  # type: ignore[assignment]
-        view.current_category = self.category
-        view.page_index = 0
-        view._refresh_styles()
+        view._shift_category(-1)
+        await view._send_update(interaction)
+
+
+class _CategoryLabelButton(discord.ui.Button):
+    def __init__(self) -> None:
+        super().__init__(
+            style=discord.ButtonStyle.primary,
+            label="—", disabled=True, row=0,
+        )
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer()
+
+
+class _NextCategoryButton(discord.ui.Button):
+    def __init__(self) -> None:
+        super().__init__(
+            style=discord.ButtonStyle.secondary, emoji="▶", row=0,
+        )
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        view: RecipeListView = self.view  # type: ignore[assignment]
+        view._shift_category(+1)
         await view._send_update(interaction)
 
 
 class _PrevPageButton(discord.ui.Button):
     def __init__(self) -> None:
         super().__init__(
-            style=discord.ButtonStyle.primary, emoji="⬅️", row=4,
+            style=discord.ButtonStyle.secondary, emoji="⬅️", row=1,
         )
 
     async def callback(self, interaction: discord.Interaction) -> None:
@@ -142,10 +149,21 @@ class _PrevPageButton(discord.ui.Button):
         await view._send_update(interaction)
 
 
+class _PageLabelButton(discord.ui.Button):
+    def __init__(self) -> None:
+        super().__init__(
+            style=discord.ButtonStyle.secondary,
+            label="1/1", disabled=True, row=1,
+        )
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer()
+
+
 class _NextPageButton(discord.ui.Button):
     def __init__(self) -> None:
         super().__init__(
-            style=discord.ButtonStyle.primary, emoji="➡️", row=4,
+            style=discord.ButtonStyle.secondary, emoji="➡️", row=1,
         )
 
     async def callback(self, interaction: discord.Interaction) -> None:
@@ -171,7 +189,6 @@ class RecipeListView(discord.ui.View):
         self.color = color
         self.viewer_id = viewer_id
         self.page_index = 0
-        self.current_category: str | None = None
 
         # Compteurs par catégorie
         self._by_cat: dict[str, int] = {}
@@ -180,49 +197,72 @@ class RecipeListView(discord.ui.View):
             if cat:
                 self._by_cat[cat] = self._by_cat.get(cat, 0) + 1
 
-        # Catégorie par défaut : première dans CATEGORY_LABELS qui a des recettes
-        for cat in CATEGORY_LABELS.keys():
-            if cat in self._by_cat:
-                self.current_category = cat
-                break
+        # Liste des catégories navigables (uniquement celles qui ont au
+        # moins 1 recette) — ordre canonique de CATEGORY_LABELS.
+        self.category_keys: list[str] = [
+            cat for cat in CATEGORY_LABELS.keys() if cat in self._by_cat
+        ]
+        # Catégorie par défaut : la première
+        self.current_category: str | None = (
+            self.category_keys[0] if self.category_keys else None
+        )
 
-        # Boutons de catégorie
-        added = 0
-        for cat, (label, emoji) in CATEGORY_LABELS.items():
-            if cat not in self._by_cat:
-                continue
-            if added >= _MAX_BUTTONS:
-                break
-            self.add_item(_CategoryButton(
-                category=cat, label=label, emoji=emoji,
-                count=self._by_cat[cat],
-                is_active=(cat == self.current_category),
-            ))
-            added += 1
+        # Row 0 : navigation catégorie (◀ label ▶)
+        self.prev_cat_btn = _PrevCategoryButton()
+        self.cat_label_btn = _CategoryLabelButton()
+        self.next_cat_btn = _NextCategoryButton()
+        self.add_item(self.prev_cat_btn)
+        self.add_item(self.cat_label_btn)
+        self.add_item(self.next_cat_btn)
 
-        # Pagination interne
-        self.prev_btn = _PrevPageButton()
-        self.next_btn = _NextPageButton()
-        self.add_item(self.prev_btn)
-        self.add_item(self.next_btn)
+        # Row 1 : pagination interne
+        self.prev_page_btn = _PrevPageButton()
+        self.page_label_btn = _PageLabelButton()
+        self.next_page_btn = _NextPageButton()
+        self.add_item(self.prev_page_btn)
+        self.add_item(self.page_label_btn)
+        self.add_item(self.next_page_btn)
+
+        # Désactive les flèches catégorie si on n'a qu'une seule catégorie
+        if len(self.category_keys) <= 1:
+            self.prev_cat_btn.disabled = True
+            self.next_cat_btn.disabled = True
 
     def _cat_of(self, recipe: CraftRecipe) -> str | None:
         item = self.item_lookup.get(recipe.result_item_code)
         return item.category if item else None
+
+    def _shift_category(self, delta: int) -> None:
+        n = len(self.category_keys)
+        if n == 0 or self.current_category is None:
+            return
+        try:
+            idx = self.category_keys.index(self.current_category)
+        except ValueError:
+            idx = 0
+        new_idx = (idx + delta) % n
+        self.current_category = self.category_keys[new_idx]
+        self.page_index = 0
 
     def _filtered(self) -> list[CraftRecipe]:
         if self.current_category is None:
             return list(self.recipes)
         return [r for r in self.recipes if self._cat_of(r) == self.current_category]
 
-    def _refresh_styles(self) -> None:
-        for child in self.children:
-            if isinstance(child, _CategoryButton):
-                child.style = (
-                    discord.ButtonStyle.primary
-                    if child.category == self.current_category
-                    else discord.ButtonStyle.secondary
-                )
+    def _refresh_button_states(self, total_pages: int) -> None:
+        cat = self.current_category
+        if cat in CATEGORY_LABELS:
+            label, emoji = CATEGORY_LABELS[cat]
+            count = self._by_cat.get(cat, 0)
+            self.cat_label_btn.label = f"{label} ({count})"
+            self.cat_label_btn.emoji = emoji
+        else:
+            self.cat_label_btn.label = "Aucune catégorie"
+            self.cat_label_btn.emoji = "📂"
+
+        self.page_label_btn.label = f"{self.page_index + 1}/{total_pages}"
+        self.prev_page_btn.disabled = self.page_index == 0
+        self.next_page_btn.disabled = self.page_index >= total_pages - 1
 
     def render_current(self) -> tuple[discord.Embed, discord.File]:
         GENERATED_LISTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -246,7 +286,6 @@ class RecipeListView(discord.ui.View):
         if total_pages > 1:
             sub += f"  —  page {self.page_index + 1}/{total_pages}"
 
-        # Nom de fichier basé sur viewer + catégorie + page (overwrites volontaires)
         out = (
             GENERATED_LISTS_DIR
             / f"recipes_{self.viewer_id}_{cat}_p{self.page_index + 1}.png"
@@ -256,9 +295,7 @@ class RecipeListView(discord.ui.View):
             cards=cards, cols=2, rows=3, seed=self.viewer_id,
         )
 
-        # Désactive les flèches si pas de pagination interne
-        self.prev_btn.disabled = self.page_index == 0
-        self.next_btn.disabled = self.page_index >= total_pages - 1
+        self._refresh_button_states(total_pages)
 
         filename = str(out).rsplit("/", 1)[-1]
         embed = discord.Embed(color=self.color)
