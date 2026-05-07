@@ -102,6 +102,7 @@ git checkout main
 | `/title [target]`, `/title_set [code]` | `title_cog` | Voir / activer un titre (cosmétique) — effets passifs toujours actifs |
 | `/panoplie <nom>` | `panoplie_cog` | Détail d'une panoplie : paliers, bonus, pièces qui la composent (autocomplete sur les familles) |
 | `/equip_panoplie <nom>` | `player_cog` | Équipe en 1 clic toute une panoplie 12/12. Refuse si pondéré < 12 (les armes 2-mains comptent pour 2). Conserve les pièces de la bonne famille déjà équipées. |
+| `/craft_panoplie <nom>`, `/forge_panoplie <nom>` | `player_cog` | Bulk-craft des pièces de panoplie manquantes (filtré par station forge/craft). Preview avec ingrédients utilisés + boutons Confirmer/Annuler. Liste les manquants si ressources insuffisantes. |
 | `/weekly`, `/weekly_claim <code>` | `weekly_quest_cog` | 3 quêtes hebdo random tirées le lundi UTC |
 | `/brocante list/my/sell/buy/cancel` | `brocante_cog` | Marketplace P2P avec commission shop (5%) |
 | `/boss spawn <boss_code>`, `/boss list` | `world_boss_cog` | Spawn manuel admin / catalogue + auto-spawn hebdo |

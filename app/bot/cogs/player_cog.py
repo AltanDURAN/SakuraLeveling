@@ -907,6 +907,107 @@ class PlayerCog(commands.Cog):
             color=discord.Color.red(),
         )
 
+    @app_commands.command(
+        name="craft_panoplie",
+        description="Craft toutes les pièces /craft d'une panoplie (preview + confirmation)",
+    )
+    @app_commands.describe(nom="Nom de la panoplie (autocomplete)")
+    async def craft_panoplie(
+        self, interaction: discord.Interaction, nom: str,
+    ) -> None:
+        await self._send_panoplie_craft_preview(
+            interaction, family=nom, station="craft",
+        )
+
+    @app_commands.command(
+        name="forge_panoplie",
+        description="Forge toutes les pièces /forge d'une panoplie (preview + confirmation)",
+    )
+    @app_commands.describe(nom="Nom de la panoplie (autocomplete)")
+    async def forge_panoplie(
+        self, interaction: discord.Interaction, nom: str,
+    ) -> None:
+        await self._send_panoplie_craft_preview(
+            interaction, family=nom, station="forge",
+        )
+
+    @craft_panoplie.autocomplete("nom")
+    @forge_panoplie.autocomplete("nom")
+    async def _panoplie_name_autocomplete(
+        self,
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        from app.infrastructure.sets.set_loader import (
+            list_definitions as list_set_definitions,
+        )
+
+        sets_def = list_set_definitions()
+        current_lower = current.lower()
+        choices: list[app_commands.Choice[str]] = []
+        for code, set_def in sets_def.items():
+            name = set_def.get("name", code)
+            icon = set_def.get("icon", "✨")
+            if (
+                current_lower in code.lower()
+                or current_lower in name.lower()
+            ):
+                choices.append(
+                    app_commands.Choice(name=f"{icon} {name}", value=code),
+                )
+            if len(choices) >= 25:
+                break
+        return choices
+
+    async def _send_panoplie_craft_preview(
+        self,
+        interaction: discord.Interaction,
+        family: str,
+        station: str,
+    ) -> None:
+        from app.application.use_cases.panoplie_crafts import (
+            BuildPanoplieCraftPlanUseCase,
+        )
+        from app.bot.views.panoplie_craft_view import (
+            PanoplieCraftConfirmView,
+            build_plan_embed,
+        )
+
+        await interaction.response.defer()
+        with get_db_session() as session:
+            use_case = BuildPanoplieCraftPlanUseCase(
+                player_repository=PlayerRepository(session),
+                inventory_repository=InventoryRepository(session),
+                equipment_repository=EquipmentRepository(session),
+                item_repository=ItemRepository(session),
+                craft_repository=CraftRepository(session),
+            )
+            plan, error = use_case.execute(
+                discord_id=interaction.user.id,
+                username=interaction.user.name,
+                display_name=interaction.user.display_name,
+                family=family,
+                station=station,
+            )
+
+        if error is not None:
+            await interaction.followup.send(error, ephemeral=True)
+            return
+
+        embed = build_plan_embed(plan)
+        # Plan vide → pas besoin de View
+        if plan.is_empty:
+            await interaction.followup.send(embed=embed)
+            return
+
+        view = PanoplieCraftConfirmView(
+            plan=plan,
+            viewer_id=interaction.user.id,
+            username=interaction.user.name,
+            display_name=interaction.user.display_name,
+        )
+        await interaction.followup.send(embed=embed, view=view)
+
     async def _send_recipe_list(
         self,
         interaction: discord.Interaction,
