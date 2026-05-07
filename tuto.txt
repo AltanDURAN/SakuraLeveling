@@ -268,6 +268,18 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     utilisez /craft dans ce cas. Autocomplete sur les armes/boucliers.
     Exemple : /forge two_handed_iron_sword_recipe
 
+/craft_panoplie <nom>
+    Craft en lot toutes les pièces /craft d'une panoplie (collier, bracelet,
+    bague, ceinture, cape, boucle d'oreille) que vous ne possédez pas déjà.
+    Affiche d'abord un récap : pièces produites + ingrédients consommés.
+    - Si ressources OK : bouton "Crafter" (vert) + "Annuler" (gris)
+    - Si insuffisant : liste des ingrédients manquants avec quantités
+    Aucun ingrédient n'est consommé tant que vous n'avez pas confirmé.
+
+/forge_panoplie <nom>
+    Idem que /craft_panoplie mais pour les pièces /forge (armes, boucliers,
+    casques, plastrons, jambières, bottes). Bouton "Forger" en confirmation.
+
 --------------------------------------------------------------------------------
 1.3 — ÉQUIPEMENT
 --------------------------------------------------------------------------------
