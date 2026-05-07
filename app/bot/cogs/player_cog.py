@@ -634,14 +634,35 @@ class PlayerCog(commands.Cog):
 
     @app_commands.command(
         name="unequip",
-        description="Déséquiper un emplacement (laisse-le vide, sans rééquiper)",
+        description="Déséquiper un emplacement (ou tout, avec slot=all)",
     )
-    @app_commands.describe(slot="Emplacement à vider (autocomplete : seulement ceux occupés)")
+    @app_commands.describe(slot="`all` pour tout retirer, sinon le slot ciblé (autocomplete)")
     async def unequip(
         self,
         interaction: discord.Interaction,
         slot: str,
     ) -> None:
+        # Cas spécial : slot="all" → vide tous les emplacements
+        if slot.strip().lower() == "all":
+            from app.application.use_cases.equipment_sets import (
+                UnequipAllUseCase,
+            )
+
+            with get_db_session() as session:
+                use_case = UnequipAllUseCase(
+                    player_repository=PlayerRepository(session),
+                    equipment_repository=EquipmentRepository(session),
+                )
+                result = use_case.execute(
+                    discord_id=interaction.user.id,
+                    username=interaction.user.name,
+                    display_name=interaction.user.display_name,
+                )
+            await interaction.response.send_message(
+                result.message, ephemeral=not result.success,
+            )
+            return
+
         with get_db_session() as session:
             profile = PlayerRepository(session).get_or_create_by_discord_id(
                 discord_id=interaction.user.id,
@@ -672,8 +693,7 @@ class PlayerCog(commands.Cog):
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        """Liste uniquement les slots actuellement occupés du joueur,
-        avec le nom de l'item porté pour rendre le choix explicite."""
+        """Liste les slots actuellement occupés + l'option spéciale 'all'."""
         with get_db_session() as session:
             profile = PlayerRepository(session).get_by_discord_id(interaction.user.id)
             if profile is None:
@@ -683,6 +703,12 @@ class PlayerCog(commands.Cog):
 
         current_lower = current.lower()
         choices: list[app_commands.Choice[str]] = []
+
+        # Option spéciale : tout déséquiper d'un coup (en tête de liste)
+        all_label = f"all — Tout retirer ({len(equipped)} pièce(s))"
+        if not current_lower or current_lower in "all":
+            choices.append(app_commands.Choice(name=all_label[:100], value="all"))
+
         for entry in equipped:
             label = f"{entry.slot} — {entry.item_definition.name}"[:100]
             if current_lower and current_lower not in entry.slot.lower():
@@ -747,6 +773,134 @@ class PlayerCog(commands.Cog):
                 choices.append(
                     app_commands.Choice(name=f"{icon} {name}", value=code),
                 )
+            if len(choices) >= 25:
+                break
+        return choices
+
+    # ---------------------- Sets d'équipement (loadouts) -----------------
+
+    @app_commands.command(
+        name="create_set",
+        description="Sauvegarde l'équipement actuel sous un nom (loadout réutilisable)",
+    )
+    @app_commands.describe(nom="Nom du set (max 50 caractères, libre)")
+    async def create_set(
+        self, interaction: discord.Interaction, nom: str,
+    ) -> None:
+        from app.application.use_cases.equipment_sets import (
+            CreateEquipmentSetUseCase,
+        )
+        from app.infrastructure.db.repositories.equipment_set_repository import (
+            EquipmentSetRepository,
+        )
+
+        with get_db_session() as session:
+            use_case = CreateEquipmentSetUseCase(
+                player_repository=PlayerRepository(session),
+                equipment_repository=EquipmentRepository(session),
+                equipment_set_repository=EquipmentSetRepository(session),
+            )
+            result = use_case.execute(
+                discord_id=interaction.user.id,
+                username=interaction.user.name,
+                display_name=interaction.user.display_name,
+                name=nom,
+            )
+        await interaction.response.send_message(
+            result.message, ephemeral=not result.success,
+        )
+
+    @app_commands.command(
+        name="delete_set",
+        description="Supprime un set d'équipement sauvegardé",
+    )
+    @app_commands.describe(nom="Nom du set à supprimer (autocomplete)")
+    async def delete_set(
+        self, interaction: discord.Interaction, nom: str,
+    ) -> None:
+        from app.application.use_cases.equipment_sets import (
+            DeleteEquipmentSetUseCase,
+        )
+        from app.infrastructure.db.repositories.equipment_set_repository import (
+            EquipmentSetRepository,
+        )
+
+        with get_db_session() as session:
+            use_case = DeleteEquipmentSetUseCase(
+                player_repository=PlayerRepository(session),
+                equipment_set_repository=EquipmentSetRepository(session),
+            )
+            result = use_case.execute(
+                discord_id=interaction.user.id,
+                username=interaction.user.name,
+                display_name=interaction.user.display_name,
+                name=nom,
+            )
+        await interaction.response.send_message(
+            result.message, ephemeral=not result.success,
+        )
+
+    @app_commands.command(
+        name="equip_set",
+        description="Applique un set d'équipement sauvegardé",
+    )
+    @app_commands.describe(nom="Nom du set à équiper (autocomplete)")
+    async def equip_set(
+        self, interaction: discord.Interaction, nom: str,
+    ) -> None:
+        from app.application.use_cases.equipment_sets import (
+            EquipSavedSetUseCase,
+        )
+        from app.infrastructure.db.repositories.equipment_set_repository import (
+            EquipmentSetRepository,
+        )
+
+        await interaction.response.defer()
+        with get_db_session() as session:
+            use_case = EquipSavedSetUseCase(
+                player_repository=PlayerRepository(session),
+                equipment_repository=EquipmentRepository(session),
+                equipment_set_repository=EquipmentSetRepository(session),
+                inventory_repository=InventoryRepository(session),
+            )
+            result = use_case.execute(
+                discord_id=interaction.user.id,
+                username=interaction.user.name,
+                display_name=interaction.user.display_name,
+                name=nom,
+            )
+        await interaction.followup.send(
+            result.message, ephemeral=not result.success,
+        )
+
+    @delete_set.autocomplete("nom")
+    @equip_set.autocomplete("nom")
+    async def _set_name_autocomplete(
+        self,
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        from app.infrastructure.db.repositories.equipment_set_repository import (
+            EquipmentSetRepository,
+        )
+
+        with get_db_session() as session:
+            profile = PlayerRepository(session).get_by_discord_id(
+                interaction.user.id,
+            )
+            if profile is None:
+                return []
+            sets = EquipmentSetRepository(session).list_for_player(
+                profile.player.id,
+            )
+
+        current_lower = current.lower()
+        choices: list[app_commands.Choice[str]] = []
+        for s in sets:
+            if current_lower and current_lower not in s.name.lower():
+                continue
+            label = f"{s.name} ({len(s.items)} pièces)"[:100]
+            choices.append(app_commands.Choice(name=label, value=s.name))
             if len(choices) >= 25:
                 break
         return choices
