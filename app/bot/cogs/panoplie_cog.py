@@ -143,18 +143,8 @@ class PanoplieCog(commands.Cog):
             description=set_def.get("description", "—"),
             color=discord.Color.from_str(set_def.get("color", "#a07040")),
         )
-        embed.add_field(
-            name="Code technique",
-            value=f"`{nom}`",
-            inline=True,
-        )
-        embed.add_field(
-            name="Pièces existantes",
-            value=f"**{len(items_in_family)}** / 12",
-            inline=True,
-        )
 
-        # ----- Paliers -----
+        # ----- Paliers (compact, sur 4 lignes) -----
         tiers = sorted(
             set_def.get("tiers", []),
             key=lambda t: int(t.get("min_pieces", 0)),
@@ -172,79 +162,61 @@ class PanoplieCog(commands.Cog):
                 value="\n".join(lines),
                 inline=False,
             )
-            embed.add_field(
-                name="⚙️ Règle",
-                value=(
-                    "Le palier le plus haut **remplace** ceux du dessous "
-                    "(non cumulatif). Le bonus s'estompe automatiquement "
-                    "si tu redescends sous un palier."
-                ),
-                inline=False,
-            )
 
-        # ----- Pièces de la panoplie (groupées par slot) -----
+        # ----- Pièces de la panoplie (1 ligne / pièce, ordre canonique) -----
+        # Le compteur (X/12) est intégré au titre de la rubrique pour ne
+        # pas dupliquer l'info en field séparé.
         if items_in_family:
-            # Index par slot pour grouper proprement dans l'ordre canonique
             by_slot: dict[str, list] = {}
             for it in items_in_family:
                 by_slot.setdefault(it.equipment_slot or "?", []).append(it)
 
-            chunks: list[str] = []
+            piece_lines: list[str] = []
             for slot in _SLOT_ORDER:
                 items = by_slot.get(slot)
+                slot_label = (
+                    f"{_SLOT_ICONS.get(slot, '•')} **{_SLOT_LABELS.get(slot, slot)}**"
+                )
                 if not items:
-                    chunks.append(
-                        f"{_SLOT_ICONS.get(slot, '•')} **{_SLOT_LABELS.get(slot, slot)}** : "
-                        f"_aucune pièce dans cette panoplie_"
-                    )
+                    piece_lines.append(f"{slot_label} : —")
                     continue
-                # Une ou plusieurs pièces (rare mais possible) pour ce slot
-                lines = []
+                # Plusieurs items dans le même slot → une ligne par item
                 for it in items:
                     bonuses = _format_stat_bonuses_short(it.stat_bonuses)
                     suffix = f"  ·  {bonuses}" if bonuses else ""
-                    lines.append(f"`{it.code}` — {it.name}{suffix}")
-                chunks.append(
-                    f"{_SLOT_ICONS.get(slot, '•')} **{_SLOT_LABELS.get(slot, slot)}**\n  "
-                    + "\n  ".join(lines)
-                )
+                    piece_lines.append(f"{slot_label} : {it.name}{suffix}")
 
-            # Découpe en plusieurs fields si > 1024 chars (limite Discord)
+            # Découpe en plusieurs fields si > 1000 chars (limite 1024)
             buf = ""
             field_count = 1
-            for chunk in chunks:
-                if len(buf) + len(chunk) + 2 > 1000 and buf:
+            base_name = (
+                f"🧩 Pièces de la panoplie ({len(items_in_family)}/12)"
+            )
+            for line in piece_lines:
+                if len(buf) + len(line) + 1 > 1000 and buf:
                     embed.add_field(
-                        name=("🧩 Pièces de la panoplie"
-                              if field_count == 1
+                        name=(base_name if field_count == 1
                               else f"🧩 Pièces (suite {field_count})"),
                         value=buf,
                         inline=False,
                     )
                     buf = ""
                     field_count += 1
-                buf += ("\n\n" if buf else "") + chunk
+                buf += ("\n" if buf else "") + line
             if buf:
                 embed.add_field(
-                    name=("🧩 Pièces de la panoplie"
-                          if field_count == 1
+                    name=(base_name if field_count == 1
                           else f"🧩 Pièces (suite {field_count})"),
                     value=buf,
                     inline=False,
                 )
         else:
             embed.add_field(
-                name="🧩 Pièces de la panoplie",
+                name="🧩 Pièces de la panoplie (0/12)",
                 value="_Aucun item ne porte encore cette famille._",
                 inline=False,
             )
 
-        embed.set_footer(
-            text=(
-                "Astuce : /equipement → page 3 pour voir les bonus de "
-                "panoplie actifs sur ton personnage."
-            ),
-        )
         await interaction.response.send_message(embed=embed)
 
     @panoplie.autocomplete("nom")
