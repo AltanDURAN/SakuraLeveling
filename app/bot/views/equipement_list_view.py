@@ -57,7 +57,7 @@ _CATEGORY_ACCENT: dict[str, tuple[int, int, int, int]] = {
 }
 
 
-_PAGE_SIZE = 9  # 3 cols × 3 rows
+_PAGE_SIZE = 6  # 1 col × 6 rows (1 item par ligne)
 
 
 def _equipped_def_ids(equipped: list[PlayerEquipmentItem]) -> set[int]:
@@ -137,7 +137,7 @@ def _render_page(
     )
     compose_card_grid_page(
         str(out), title=title, subtitle=subtitle,
-        cards=cards, cols=3, rows=3, seed=player_id,
+        cards=cards, cols=1, rows=6, seed=player_id,
     )
     return str(out), total_pages, total
 
