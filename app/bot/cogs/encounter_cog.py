@@ -159,6 +159,36 @@ class EncounterCog(commands.Cog):
 
     @tasks.loop(seconds=10)
     async def encounter_loop(self):
+        try:
+            await self._encounter_loop_body()
+        except Exception:
+            # Filet de sécurité : ne laisse JAMAIS l'exception remonter,
+            # sinon discord.ext.tasks arrête la boucle (= plus aucun
+            # spawn naturel jusqu'au prochain restart du bot). On log et
+            # on retente au prochain tick (10 s). Les erreurs transitoires
+            # (503 Discord, timeout réseau) sont absorbées.
+            import logging
+            logging.getLogger(__name__).exception(
+                "encounter_loop tick failed — sera retenté"
+            )
+            # Si la boucle a planté avant de poser next_spawn_at, on évite
+            # de retry instantanément en posant un cooldown court.
+            if self.active_encounter is None:
+                self.next_spawn_at = datetime.now(UTC) + timedelta(seconds=30)
+
+    @encounter_loop.error
+    async def _encounter_loop_error(self, error: Exception) -> None:
+        """Filet de dernière chance : si malgré tout la boucle s'arrête
+        (le décorateur @tasks.loop la stoppe sur exception non rattrapée),
+        on relogue et on la relance."""
+        import logging
+        logging.getLogger(__name__).exception(
+            "encounter_loop crashed unexpectedly, restarting: %s", error,
+        )
+        if not self.encounter_loop.is_running():
+            self.encounter_loop.restart()
+
+    async def _encounter_loop_body(self):
         channel = self.bot.get_channel(settings.encounter_channel_id)
         if channel is None:
             return
