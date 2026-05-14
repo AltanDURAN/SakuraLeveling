@@ -53,3 +53,4 @@ class WorldBossParticipation:
     fights_count: int
     created_at: datetime
     updated_at: datetime
+    voted_to_start: bool = False
