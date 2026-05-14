@@ -134,6 +134,12 @@ class PanoplieCog(commands.Cog):
 
             piece_lines: list[str] = []
             for slot in SLOT_ORDER:
+                # Convention V2 : tous les items main (arme + bouclier)
+                # ont equipment_slot="main_droite". Le slot main_gauche
+                # n'a jamais d'item canonique → on ne l'affiche pas du
+                # tout (sinon on aurait toujours une ligne "🛡️ —" inutile).
+                if slot == "main_gauche":
+                    continue
                 items = by_slot.get(slot)
                 slot_icon = SLOT_ICONS.get(slot, "•")
                 if not items:
