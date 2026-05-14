@@ -1476,6 +1476,78 @@ class PlayerCog(commands.Cog):
         return choices
 
     @app_commands.command(
+        name="cd",
+        description="Voir les cooldowns d'un joueur (daily, world boss, etc.)",
+    )
+    @app_commands.describe(target="Joueur ciblé (par défaut : vous)")
+    async def cd(
+        self,
+        interaction: discord.Interaction,
+        target: discord.Member | None = None,
+    ) -> None:
+        from datetime import datetime, UTC
+
+        # Labels lisibles pour chaque action_key connue. Si l'action_key
+        # n'est pas mappée, on l'affiche brut (utile pour debug).
+        ACTION_LABELS: dict[str, str] = {
+            "daily":              "🌅 Récompense quotidienne (/daily)",
+            "world_boss_fight":   "👑 Combat du world boss",
+            "skill_tree_reset":   "🌳 Reset de l'arbre de compétences",
+            "duel_challenge":     "⚔️ Défi 1v1 (/fight)",
+        }
+
+        with get_db_session() as session:
+            profile, target_member = self._resolve_profile(interaction, target, session)
+            if profile is None:
+                await self._send_no_profile_error(interaction, target_member)
+                return
+
+            cooldowns = CooldownRepository(session).list_for_player(
+                profile.player.id,
+            )
+
+        now = datetime.now(UTC)
+        # On garde uniquement les cooldowns encore actifs
+        active: list[tuple[str, datetime]] = []
+        for cd in cooldowns:
+            if cd.next_available_at is None:
+                continue
+            next_at = cd.next_available_at
+            if next_at.tzinfo is None:
+                next_at = next_at.replace(tzinfo=UTC)
+            if next_at <= now:
+                continue
+            active.append((cd.action_key, next_at))
+
+        is_self = target_member.id == interaction.user.id
+        owner = "Vos" if is_self else f"Les"
+        suffix = "" if is_self else f" de {target_member.display_name}"
+        title = f"⏳ {owner} cooldowns{suffix}"
+
+        embed = discord.Embed(
+            title=title,
+            color=discord.Color.blurple(),
+        )
+
+        if not active:
+            embed.description = (
+                "✅ Aucun cooldown en cours — tout est disponible !"
+            )
+            await interaction.response.send_message(embed=embed)
+            return
+
+        # Sort by next_available (le plus proche en premier)
+        active.sort(key=lambda x: x[1])
+        lines: list[str] = []
+        for action_key, next_at in active:
+            label = ACTION_LABELS.get(action_key, f"`{action_key}`")
+            ts = int(next_at.timestamp())
+            lines.append(f"{label} — <t:{ts}:R> (<t:{ts}:f>)")
+        embed.description = "\n".join(lines)
+        embed.set_footer(text=f"{len(active)} cooldown(s) actif(s)")
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(
         name="gold",
         description="Voir votre or (ou celui d'un autre joueur)",
     )

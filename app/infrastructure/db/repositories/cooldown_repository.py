@@ -23,6 +23,16 @@ class CooldownRepository:
 
         return self._to_domain(model)
 
+    def list_for_player(self, player_id: int) -> list[Cooldown]:
+        """Tous les cooldowns d'un joueur (actifs ET passés)."""
+        stmt = select(PlayerCooldownModel).where(
+            PlayerCooldownModel.player_id == player_id,
+        ).order_by(PlayerCooldownModel.action_key.asc())
+        return [
+            self._to_domain(m)
+            for m in self.session.execute(stmt).scalars().all()
+        ]
+
     def upsert(
         self,
         player_id: int,
