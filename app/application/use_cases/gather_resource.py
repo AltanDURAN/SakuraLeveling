@@ -58,31 +58,6 @@ class GatherResourceUseCase:
             new_xp,
         )
 
-        # Quêtes : on_gather (hebdo + quotidienne, best effort)
-        try:
-            from app.application.use_cases.weekly_quests import (
-                WeeklyQuestProgressService,
-            )
-            from app.application.use_cases.daily_quests import (
-                DailyQuestProgressService,
-            )
-            from app.infrastructure.db.repositories.weekly_quest_repository import (
-                WeeklyQuestRepository,
-            )
-            from app.infrastructure.db.repositories.daily_quest_repository import (
-                DailyQuestRepository,
-            )
-            session = self.inventory_repository.session
-            WeeklyQuestProgressService(WeeklyQuestRepository(session)).on_gather(
-                profile.player.id, count=1,
-            )
-            DailyQuestProgressService(DailyQuestRepository(session)).on_gather(
-                profile.player.id, count=1,
-            )
-        except Exception as _e:
-            import logging
-            logging.getLogger(__name__).warning(
-                "Quest progress hook failed: %s", _e, exc_info=True,
-            )
+        # NOTE: hook quête on_gather retiré (V2 : pas de quête de récolte).
 
         return True, f"+{quantity} {item_code} | +{gained_xp} XP métier"

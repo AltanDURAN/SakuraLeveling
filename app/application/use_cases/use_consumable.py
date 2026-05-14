@@ -135,23 +135,7 @@ class UseConsumableUseCase:
         hp_after = min(max_hp, hp_before + heal_amount)
         self.health_repository.update_current_hp(profile.player.id, hp_after)
 
-        # Quête quotidienne : on_consumable_used (best effort)
-        try:
-            from app.application.use_cases.daily_quests import (
-                DailyQuestProgressService,
-            )
-            from app.infrastructure.db.repositories.daily_quest_repository import (
-                DailyQuestRepository,
-            )
-            session = self.inventory_repository.session
-            DailyQuestProgressService(DailyQuestRepository(session)).on_consumable_used(
-                profile.player.id, count=1,
-            )
-        except Exception as _e:
-            import logging
-            logging.getLogger(__name__).warning(
-                "Quest progress hook failed: %s", _e, exc_info=True,
-            )
+        # NOTE: hook quête on_consumable_used retiré (V2).
 
         return UseConsumableResult(
             success=True,

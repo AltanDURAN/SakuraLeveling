@@ -141,17 +141,26 @@ class ClaimDailyRewardUseCase:
             next_available_at=next_available_at,
         )
 
-        # Quête hebdo : daily_streak (best effort)
+        # Quêtes V2 : on_daily_claimed (compte +1 par claim, daily ET weekly)
         try:
             from app.application.use_cases.weekly_quests import (
                 WeeklyQuestProgressService,
             )
+            from app.application.use_cases.daily_quests import (
+                DailyQuestProgressService,
+            )
             from app.infrastructure.db.repositories.weekly_quest_repository import (
                 WeeklyQuestRepository,
             )
+            from app.infrastructure.db.repositories.daily_quest_repository import (
+                DailyQuestRepository,
+            )
             session = self.cooldown_repository.session
             WeeklyQuestProgressService(WeeklyQuestRepository(session)).on_daily_claimed(
-                profile.player.id, current_streak=new_streak,
+                profile.player.id,
+            )
+            DailyQuestProgressService(DailyQuestRepository(session)).on_daily_claimed(
+                profile.player.id,
             )
         except Exception as _e:
             import logging

@@ -104,32 +104,8 @@ class CraftItemUseCase:
             quantity=recipe.result_quantity,
         )
 
-        # Quêtes hebdo + quotidiennes : on_craft (best effort)
-        try:
-            from app.application.use_cases.weekly_quests import (
-                WeeklyQuestProgressService,
-            )
-            from app.application.use_cases.daily_quests import (
-                DailyQuestProgressService,
-            )
-            from app.infrastructure.db.repositories.weekly_quest_repository import (
-                WeeklyQuestRepository,
-            )
-            from app.infrastructure.db.repositories.daily_quest_repository import (
-                DailyQuestRepository,
-            )
-            session = self.inventory_repository.session
-            WeeklyQuestProgressService(WeeklyQuestRepository(session)).on_craft(
-                profile.player.id, count=recipe.result_quantity,
-            )
-            DailyQuestProgressService(DailyQuestRepository(session)).on_craft(
-                profile.player.id, count=recipe.result_quantity,
-            )
-        except Exception as _e:
-            import logging
-            logging.getLogger(__name__).warning(
-                "Quest progress hook failed: %s", _e, exc_info=True,
-            )
+        # NOTE: les hooks quêtes craft/gather/consumable ont été retirés
+        # (V2 : seules les quêtes de combat / kills / drops sont actives).
 
         return CraftFailure(
             success=True,
