@@ -119,6 +119,12 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     Affiche un encart "bourse" : or actuel + or amassé en carrière (si > 0)
     + avatar du joueur. Avec un target, montre la bourse d'un autre joueur.
 
+/cd [target]
+    Liste les cooldowns en cours d'un joueur : prochain /daily, prochain
+    combat de world boss, reset de l'arbre de compétences, défi 1v1, etc.
+    Affiche un timestamp relatif (ex : <t:...:R>) + l'horodatage absolu.
+    Si aucun cooldown actif → "Tout est disponible !".
+
 /unequip <slot|all>
     Retire l'équipement du slot spécifié sans le remplacer (laisse le slot
     vide). Autocomplete sur les slots actuellement occupés (affiche aussi
