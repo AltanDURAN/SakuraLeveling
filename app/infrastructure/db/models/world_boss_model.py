@@ -47,6 +47,9 @@ class WorldBossParticipationModel(Base):
     )
 
     joined: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Système de vote : combat collectif lancé une fois que tous les
+    # joined ont voted_to_start=True.
+    voted_to_start: Mapped[bool] = mapped_column(Boolean, default=False)
     damage_dealt: Mapped[int] = mapped_column(Integer, default=0)
     damage_tanked: Mapped[int] = mapped_column(Integer, default=0)
     hp_healed: Mapped[int] = mapped_column(Integer, default=0)

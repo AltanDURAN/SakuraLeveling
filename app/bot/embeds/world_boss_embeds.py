@@ -34,6 +34,7 @@ def build_boss_dashboard_embed(
     num_participants: int,
     team_bonus_pct: int,
     num_fought: int = 0,
+    votes: int = 0,
 ) -> discord.Embed:
     color = (
         discord.Color.dark_purple()
@@ -45,8 +46,9 @@ def build_boss_dashboard_embed(
         title=f"{title_emoji} World Boss : {boss.name}",
         description=(
             "Combat à l'usure : le boss ne regagne **jamais** de PV.\n"
-            "Cliquez **Rejoindre** pour vous inscrire au raid, puis "
-            "**Lancer le combat** quand vous êtes prêt (1 combat / jour)."
+            "🤝 **Rejoindre** pour vous inscrire, puis 🗳️ **Voter pour lancer** "
+            "quand vous êtes prêt. Combat lancé quand **tous** les inscrits "
+            "ont voté."
         ),
         color=color,
     )
@@ -72,6 +74,10 @@ def build_boss_dashboard_embed(
     participant_lines = [f"**{num_participants}** {inscrit_word}"]
     if num_fought > 0:
         participant_lines.append(f"dont **{num_fought}** {combattu_word}")
+    if num_participants > 0:
+        participant_lines.append(
+            f"🗳️ Votes : **{votes}/{num_participants}**"
+        )
     participant_lines.append(f"Bonus d'équipe : **+{team_bonus_pct}%**")
     embed.add_field(
         name="🤝 Participants",

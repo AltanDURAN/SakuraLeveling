@@ -306,6 +306,76 @@ class LeaveWorldBossUseCase:
         return JoinLeaveResult(True, "🚪 Vous quittez le raid.")
 
 
+# ---------- 2.5 Vote ----------
+
+
+@dataclass
+class VoteResult:
+    success: bool
+    message: str
+    votes: int = 0
+    total: int = 0
+    should_launch: bool = False
+    boss_id: int | None = None
+
+
+class VoteForFightWorldBossUseCase:
+    """Marque le participant comme ayant voté pour lancer le combat.
+
+    Le combat se lance automatiquement (par le caller) lorsque
+    `should_launch=True` — c'est-à-dire dès que tous les `joined` ont
+    voté `voted_to_start=True` (unanimité requise).
+    """
+
+    def __init__(
+        self,
+        world_boss_repository: WorldBossRepository,
+        player_repository: PlayerRepository,
+    ) -> None:
+        self.world_boss_repository = world_boss_repository
+        self.player_repository = player_repository
+
+    def execute(self, discord_id: int) -> VoteResult:
+        boss = self.world_boss_repository.get_active()
+        if boss is None or not boss.is_alive:
+            return VoteResult(False, "❌ Aucun world boss actif.")
+
+        profile = self.player_repository.get_by_discord_id(discord_id)
+        if profile is None:
+            return VoteResult(False, "❌ Vous n'avez pas de profil joueur.")
+
+        participation = self.world_boss_repository.get_participation(
+            boss.id, profile.player.id,
+        )
+        if participation is None or not participation.joined:
+            return VoteResult(
+                False, "❌ Vous devez d'abord rejoindre le raid (🤝).",
+            )
+
+        if participation.voted_to_start:
+            return VoteResult(
+                False, "✅ Vous avez déjà voté pour lancer le combat.",
+                votes=self.world_boss_repository.count_voted(boss.id),
+                total=self.world_boss_repository.count_joined(boss.id),
+                boss_id=boss.id,
+            )
+
+        self.world_boss_repository.set_voted(
+            boss.id, profile.player.id, voted=True,
+        )
+        votes = self.world_boss_repository.count_voted(boss.id)
+        total = self.world_boss_repository.count_joined(boss.id)
+        should_launch = total > 0 and votes >= total
+        msg = (
+            f"🗳️ Vote enregistré : **{votes}/{total}**."
+            + ("  Combat lancé !" if should_launch else "")
+        )
+        return VoteResult(
+            True, msg, votes=votes, total=total,
+            should_launch=should_launch, boss_id=boss.id,
+        )
+
+
 # ---------- 3. Fight ----------
 
 
@@ -540,6 +610,247 @@ class FightWorldBossUseCase:
             boss_max_hp=boss.max_hp,
             team_bonus_pct=team_bonus_pct,
             boss_defeated=defeated,
+        )
+
+
+# ---------- 3bis. Combat collectif (système de vote) ----------
+
+
+@dataclass
+class PartyFightBossResult:
+    success: bool
+    message: str
+    total_damage_dealt: int = 0
+    total_damage_tanked: int = 0
+    boss_remaining_hp: int = 0
+    boss_max_hp: int = 0
+    boss_defeated: bool = False
+    voter_count: int = 0
+    skipped_cooldown: int = 0
+
+
+class LaunchPartyFightWorldBossUseCase:
+    """Lance un combat collectif entre tous les voteurs joined et le boss.
+
+    Workflow :
+    1. Liste les voteurs (joined=True ET voted_to_start=True)
+    2. Filtre ceux qui ne sont plus en cooldown daily
+    3. Pour chaque voteur : calcule stats (boost team + bonus skill + sets)
+    4. Lance PartyCombatService.fight_party_vs_mob
+    5. Distribue les métriques : damage_dealt/tanked/hp_healed per voteur
+    6. Apply damage agrégé au boss + cooldown daily + joined=False par voteur
+    7. Si boss tué → mark_defeated (le caller s'occupe de complete_boss)
+    """
+
+    def __init__(
+        self,
+        world_boss_repository: WorldBossRepository,
+        player_repository: PlayerRepository,
+        equipment_repository: EquipmentRepository,
+        class_repository: ClassRepository,
+        skill_allocation_repository: PlayerSkillAllocationRepository,
+        cooldown_repository: CooldownRepository,
+        stats_service: StatsService,
+        scaling_service: WorldBossScalingService,
+        cooldown_service: CooldownService,
+        modifier_service: BossModifierService | None = None,
+    ) -> None:
+        self.world_boss_repository = world_boss_repository
+        self.player_repository = player_repository
+        self.equipment_repository = equipment_repository
+        self.class_repository = class_repository
+        self.skill_allocation_repository = skill_allocation_repository
+        self.cooldown_repository = cooldown_repository
+        self.stats_service = stats_service
+        self.scaling_service = scaling_service
+        self.cooldown_service = cooldown_service
+        self.modifier_service = modifier_service or BossModifierService()
+
+    def execute(self, boss_id: int) -> PartyFightBossResult:
+        from app.domain.services.party_combat_service import PartyCombatService
+
+        boss = self.world_boss_repository.get_by_id(boss_id)
+        if boss is None or not boss.is_alive:
+            return PartyFightBossResult(False, "❌ Boss inactif.")
+
+        voters = self.world_boss_repository.list_voters(boss_id)
+        if not voters:
+            return PartyFightBossResult(False, "❌ Aucun voteur.")
+
+        now = datetime.now(UTC)
+        eligible: list[tuple[WorldBossParticipation, dict]] = []
+        skipped = 0
+        num_joined = self.world_boss_repository.count_joined(boss_id)
+
+        # Modifiers du boss (immunity threshold, enrage, crit immunity)
+        boss_def = get_boss_definition(boss.code)
+        modifiers = boss_def.modifiers if boss_def is not None else {}
+        adjustments = self.modifier_service.compute_adjustments(
+            modifiers=modifiers,
+            boss_max_hp=boss.max_hp,
+            boss_current_hp=boss.current_hp,
+            boss_attack=boss.attack,
+            player_crit_chance=0,  # spécifique par voteur, on recalcule plus bas
+        )
+
+        for v in voters:
+            # Cooldown daily
+            cd = self.cooldown_repository.get_by_player_and_action(
+                v.player_id, BOSS_FIGHT_COOLDOWN_KEY,
+            )
+            if not self.cooldown_service.is_available(cd, now):
+                skipped += 1
+                continue
+
+            profile = self.player_repository.get_profile_by_player_id(v.player_id)
+            if profile is None:
+                continue
+            equipped = self.equipment_repository.list_by_player_id(v.player_id)
+            active_class = self.class_repository.get_current_class_for_player(v.player_id)
+            allocations = self.skill_allocation_repository.list_by_player(v.player_id)
+            skill_bonuses = SkillTreeService(
+                get_skill_tree_definition()
+            ).aggregate_bonuses(allocations)
+            set_bonuses = resolve_set_bonuses(equipped)
+            base_stats = self.stats_service.calculate_player_stats(
+                profile=profile,
+                equipped_items=equipped,
+                active_class=active_class,
+                skill_bonuses=skill_bonuses,
+                set_bonuses=set_bonuses,
+            )
+            boosted = self.scaling_service.apply_team_bonus(base_stats, num_joined)
+            # Si crit immunity : neutralise crit_chance
+            if adjustments.player_crit_chance == 0 and modifiers.get("crit_immunity"):
+                boosted = type(boosted)(
+                    max_hp=boosted.max_hp, attack=boosted.attack,
+                    defense=boosted.defense, speed=boosted.speed,
+                    crit_chance=0, crit_damage=boosted.crit_damage,
+                    dodge=boosted.dodge, hp_regeneration=boosted.hp_regeneration,
+                )
+            eligible.append((v, {
+                "player_id": v.player_id,
+                "user_id": v.player_id,  # fallback
+                "name": profile.player.display_name,
+                "avatar_url": "",
+                "stats": boosted,
+                "current_hp": boosted.max_hp,
+                "max_hp": boosted.max_hp,
+            }))
+
+        if not eligible:
+            # Tous en cooldown — reset les votes pour laisser la place
+            # à d'autres joueurs / un nouveau tour de vote.
+            self.world_boss_repository.reset_votes_for_voters(boss_id)
+            return PartyFightBossResult(
+                False,
+                "❌ Tous les voteurs ont déjà combattu aujourd'hui — votes annulés.",
+                skipped_cooldown=skipped,
+            )
+
+        # Combat collectif
+        boss_as_mob = _boss_to_mob_definition(
+            boss, overridden_attack=adjustments.boss_attack,
+        )
+        party = [payload for _, payload in eligible]
+        battle_result = PartyCombatService().fight_party_vs_mob(
+            party=party, mob=boss_as_mob,
+        )
+
+        # Damage agrégé = sum des damage_dealt des contributions (déjà
+        # net du crit / défense). On applique l'immunity threshold global.
+        contribs_by_id = {
+            c.player_id: c for c in battle_result.contributions
+        }
+        raw_damage_total = sum(c.damage_dealt for c in battle_result.contributions)
+        damage_total = self.modifier_service.filter_incoming_damage(
+            raw_damage_total, adjustments.damage_immunity_threshold,
+        )
+        self.world_boss_repository.apply_damage(boss_id, damage_total)
+        total_tanked = 0
+        # Distribution des métriques par voteur
+        for participation, _ in eligible:
+            contrib = contribs_by_id.get(participation.player_id)
+            if contrib is None:
+                continue
+            total_tanked += contrib.damage_tanked
+            self.world_boss_repository.add_combat_metrics(
+                boss_id, participation.player_id,
+                damage_dealt=contrib.damage_dealt,
+                damage_tanked=contrib.damage_tanked,
+                hp_healed=contrib.hp_healed,
+            )
+            # Pose cooldown daily
+            next_avail = _next_midnight_utc(now)
+            self.cooldown_repository.upsert(
+                participation.player_id, BOSS_FIGHT_COOLDOWN_KEY, now, next_avail,
+            )
+            # Quêtes : on_damage_dealt + on_damage_tanked
+            try:
+                from app.application.use_cases.weekly_quests import (
+                    WeeklyQuestProgressService,
+                )
+                from app.application.use_cases.daily_quests import (
+                    DailyQuestProgressService,
+                )
+                from app.infrastructure.db.repositories.weekly_quest_repository import (
+                    WeeklyQuestRepository,
+                )
+                from app.infrastructure.db.repositories.daily_quest_repository import (
+                    DailyQuestRepository,
+                )
+                session = self.world_boss_repository.session
+                _wqp = WeeklyQuestProgressService(WeeklyQuestRepository(session))
+                _dqp = DailyQuestProgressService(DailyQuestRepository(session))
+                if contrib.damage_dealt > 0:
+                    _wqp.on_damage_dealt(participation.player_id, contrib.damage_dealt)
+                    _dqp.on_damage_dealt(participation.player_id, contrib.damage_dealt)
+                if contrib.damage_tanked > 0:
+                    _wqp.on_damage_tanked(participation.player_id, contrib.damage_tanked)
+                    _dqp.on_damage_tanked(participation.player_id, contrib.damage_tanked)
+            except Exception as _e:
+                import logging
+                logging.getLogger(__name__).warning(
+                    "Quest hook (party boss) failed: %s", _e, exc_info=True,
+                )
+            # Retire de la file (joined=False) et reset vote
+            self.world_boss_repository.upsert_participation(
+                boss_id, participation.player_id, joined=False,
+            )
+            self.world_boss_repository.set_voted(
+                boss_id, participation.player_id, voted=False,
+            )
+
+        # Reset votes des éventuels non-voteurs restés joined (au cas où)
+        self.world_boss_repository.reset_votes_for_voters(boss_id)
+
+        boss_after = self.world_boss_repository.get_by_id(boss_id)
+        defeated = boss_after.current_hp <= 0
+        if defeated:
+            self.world_boss_repository.mark_defeated(boss_id)
+
+        msg = (
+            f"⚔️ Raid collectif contre **{boss.name}** terminé "
+            f"({len(eligible)} combattants).\n"
+            f"💥 Dégâts totaux : **{damage_total:,}** "
+            f"({total_tanked:,} encaissés)\n"
+            f"📊 PV restants du boss : **{boss_after.current_hp:,} / {boss.max_hp:,}**"
+        )
+        if skipped > 0:
+            msg += f"\n_({skipped} voteur(s) ignoré(s) — déjà combattu(s) aujourd'hui.)_"
+        if defeated:
+            msg += f"\n🏆 **{boss.name}** est vaincu !"
+
+        return PartyFightBossResult(
+            success=True,
+            message=msg,
+            total_damage_dealt=damage_total,
+            total_damage_tanked=total_tanked,
+            boss_remaining_hp=boss_after.current_hp,
+            boss_max_hp=boss.max_hp,
+            boss_defeated=defeated,
+            voter_count=len(eligible),
+            skipped_cooldown=skipped,
         )
 
 

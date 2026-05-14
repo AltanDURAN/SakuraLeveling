@@ -204,6 +204,58 @@ class WorldBossRepository:
     def count_joined(self, boss_id: int) -> int:
         return len(self.list_joined_participants(boss_id))
 
+    # ---------- vote ----------
+
+    def set_voted(
+        self, boss_id: int, player_id: int, voted: bool,
+    ) -> WorldBossParticipation | None:
+        """Marque (ou démarque) le participant comme ayant voté pour
+        lancer le combat. Renvoie la participation mise à jour."""
+        existing = self.session.execute(
+            select(WorldBossParticipationModel).where(
+                WorldBossParticipationModel.boss_id == boss_id,
+                WorldBossParticipationModel.player_id == player_id,
+            )
+        ).scalar_one_or_none()
+        if existing is None:
+            return None
+        existing.voted_to_start = voted
+        existing.updated_at = datetime.now(UTC)
+        self.session.commit()
+        return self._participation_to_domain(existing)
+
+    def count_voted(self, boss_id: int) -> int:
+        stmt = select(WorldBossParticipationModel).where(
+            WorldBossParticipationModel.boss_id == boss_id,
+            WorldBossParticipationModel.joined.is_(True),
+            WorldBossParticipationModel.voted_to_start.is_(True),
+        )
+        return len(self.session.execute(stmt).scalars().all())
+
+    def list_voters(self, boss_id: int) -> list[WorldBossParticipation]:
+        """Liste les participants encore `joined` ET qui ont `voted_to_start`."""
+        stmt = select(WorldBossParticipationModel).where(
+            WorldBossParticipationModel.boss_id == boss_id,
+            WorldBossParticipationModel.joined.is_(True),
+            WorldBossParticipationModel.voted_to_start.is_(True),
+        )
+        return [
+            self._participation_to_domain(m)
+            for m in self.session.execute(stmt).scalars().all()
+        ]
+
+    def reset_votes_for_voters(self, boss_id: int) -> None:
+        """Réinitialise `voted_to_start=False` pour tous les participants
+        encore joined. Appelé après combat lancé pour réarmer un éventuel
+        prochain vote (les voteurs eux sont sortis via joined=False)."""
+        from sqlalchemy import update
+        self.session.execute(
+            update(WorldBossParticipationModel)
+            .where(WorldBossParticipationModel.boss_id == boss_id)
+            .values(voted_to_start=False)
+        )
+        self.session.commit()
+
     def list_participations_with_metrics(
         self, boss_id: int
     ) -> list[WorldBossParticipation]:
@@ -255,4 +307,5 @@ class WorldBossRepository:
             fights_count=model.fights_count,
             created_at=model.created_at,
             updated_at=model.updated_at,
+            voted_to_start=bool(getattr(model, "voted_to_start", False)),
         )

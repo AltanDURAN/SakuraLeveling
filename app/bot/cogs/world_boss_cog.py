@@ -26,6 +26,7 @@ from app.application.use_cases.world_boss import (
     CompleteWorldBossUseCase,
     FightWorldBossUseCase,
     JoinWorldBossUseCase,
+    LaunchPartyFightWorldBossUseCase,
     LeaveWorldBossUseCase,
     SpawnRandomWorldBossUseCase,
     SpawnWorldBossUseCase,
@@ -139,47 +140,37 @@ class WorldBossView(discord.ui.View):
                 await cog.refresh_boss_message(boss_id)
 
     @discord.ui.button(
-        label="Lancer le combat",
+        label="Voter pour lancer",
         style=discord.ButtonStyle.primary,
-        emoji="⚔️",
-        custom_id="world_boss:fight",
+        emoji="🗳️",
+        custom_id="world_boss:vote",
     )
-    async def fight_button(
+    async def vote_button(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
+        from app.application.use_cases.world_boss import (
+            VoteForFightWorldBossUseCase,
+        )
         await interaction.response.defer(ephemeral=True)
         with get_db_session() as session:
-            use_case = FightWorldBossUseCase(
+            use_case = VoteForFightWorldBossUseCase(
                 world_boss_repository=WorldBossRepository(session),
                 player_repository=PlayerRepository(session),
-                equipment_repository=EquipmentRepository(session),
-                class_repository=ClassRepository(session),
-                skill_allocation_repository=PlayerSkillAllocationRepository(session),
-                cooldown_repository=CooldownRepository(session),
-                stats_service=StatsService(),
-                scaling_service=WorldBossScalingService(),
-                combat_service=CombatService(),
-                cooldown_service=CooldownService(),
-                modifier_service=BossModifierService(),
             )
-            result = use_case.execute(
-                discord_id=interaction.user.id,
-                username=interaction.user.name,
-                display_name=interaction.user.display_name,
-            )
+            result = use_case.execute(discord_id=interaction.user.id)
         await interaction.followup.send(result.message, ephemeral=True)
-        if result.success:
-            cog = self._resolve_cog(interaction)
-            boss_id = await self._resolve_active_boss_id()
-            if cog and boss_id:
-                await cog.refresh_boss_message(boss_id)
-            if result.boss_defeated and cog:
-                # boss_id ici peut être None (déjà passé en defeated) — on
-                # le retrouve depuis le get_latest_defeated.
-                with get_db_session() as session:
-                    last = WorldBossRepository(session).get_latest_defeated()
-                if last:
-                    await cog.complete_boss(last.id)
+
+        cog = self._resolve_cog(interaction)
+        if cog is None:
+            return
+        # Toujours refresh le message pour mettre à jour le compteur
+        # de votes (X/Y) côté View.
+        if result.boss_id:
+            await cog.refresh_boss_message(result.boss_id)
+
+        if result.success and result.should_launch and result.boss_id:
+            # Tous les inscrits ont voté → lancer combat collectif
+            await cog.launch_party_fight(result.boss_id)
 
 
 class WorldBossCog(commands.Cog):
@@ -336,12 +327,26 @@ class WorldBossCog(commands.Cog):
                 boss = repo.get_by_id(boss_id)
                 if boss is None or boss.channel_message_id is None:
                     return
-                num = repo.count_joined(boss_id)
+                participants = repo.list_joined_participants(boss_id)
+                num = len(participants)
+                votes = repo.count_voted(boss_id)
                 fought = sum(
                     1
                     for p in repo.list_participations_with_metrics(boss_id)
                     if p.fights_count > 0
                 )
+                # Charge display names des participants pour la banner
+                player_payload: list[dict] = []
+                for part in participants:
+                    profile = PlayerRepository(session).get_profile_by_player_id(
+                        part.player_id,
+                    )
+                    name = profile.player.display_name if profile else f"#{part.player_id}"
+                    player_payload.append({
+                        "name": name, "avatar_url": "",
+                        "current_hp": part.damage_dealt and 1 or 1,
+                        "max_hp": 1,
+                    })
 
             scaling = WorldBossScalingService()
             bonus_pct = int(
@@ -355,11 +360,90 @@ class WorldBossCog(commands.Cog):
                 message = await channel.fetch_message(boss.channel_message_id)
             except discord.NotFound:
                 return
-            embed = build_boss_dashboard_embed(boss, num, bonus_pct, num_fought=fought)
+
+            # Rendu PNG comme un spawn d'encounter naturel
+            from app.bot.rendering.fight_scene import compose_players_banner
+            from app.shared.paths import (
+                LANDSCAPES_ASSETS_DIR, GENERATED_ENCOUNTERS_DIR,
+                MOBS_ASSETS_DIR,
+            )
+            mob_image_name = boss.image_name
+            if not mob_image_name or not (MOBS_ASSETS_DIR / mob_image_name).exists():
+                mob_image_name = "boss_default.png"
+            out = GENERATED_ENCOUNTERS_DIR / f"world_boss_{boss.id}.png"
+            out.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                compose_players_banner(
+                    players=player_payload,
+                    mob={
+                        "name": boss.name,
+                        "image_name": mob_image_name,
+                        "current_hp": boss.current_hp,
+                        "max_hp": boss.max_hp,
+                        "attack": boss.attack,
+                        "defense": boss.defense,
+                        "speed": boss.speed,
+                        "crit_chance": boss.crit_chance,
+                        "crit_damage": boss.crit_damage,
+                        "dodge": boss.dodge,
+                        "hp_regeneration": 0,
+                    },
+                    output_path=str(out),
+                    background_path=str(
+                        LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
+                    ),
+                    players_power_score="",
+                )
+                attachment = discord.File(str(out), filename=out.name)
+            except Exception:
+                attachment = None
+
+            embed = build_boss_dashboard_embed(
+                boss, num, bonus_pct, num_fought=fought,
+                votes=votes,
+            )
+            if attachment is not None:
+                embed.set_image(url=f"attachment://{out.name}")
             view = WorldBossView(self) if boss.is_alive else None
-            await message.edit(embed=embed, view=view)
+            if attachment is not None:
+                await message.edit(
+                    embed=embed, view=view, attachments=[attachment],
+                )
+            else:
+                await message.edit(embed=embed, view=view, attachments=[])
         except Exception:
-            pass
+            import logging
+            logging.getLogger(__name__).exception(
+                "refresh_boss_message failed",
+            )
+
+    async def launch_party_fight(self, boss_id: int) -> None:
+        """Lance le combat collectif quand tous les voteurs sont prêts."""
+        try:
+            with get_db_session() as session:
+                use_case = LaunchPartyFightWorldBossUseCase(
+                    world_boss_repository=WorldBossRepository(session),
+                    player_repository=PlayerRepository(session),
+                    equipment_repository=EquipmentRepository(session),
+                    class_repository=ClassRepository(session),
+                    skill_allocation_repository=PlayerSkillAllocationRepository(session),
+                    cooldown_repository=CooldownRepository(session),
+                    stats_service=StatsService(),
+                    scaling_service=WorldBossScalingService(),
+                    cooldown_service=CooldownService(),
+                    modifier_service=BossModifierService(),
+                )
+                result = use_case.execute(boss_id)
+
+            channel = _get_boss_channel(self.bot)
+            if channel is not None:
+                await channel.send(result.message)
+            await self.refresh_boss_message(boss_id)
+            if result.boss_defeated:
+                await self.complete_boss(boss_id)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception("launch_party_fight failed")
 
     async def complete_boss(self, boss_id: int) -> None:
         with get_db_session() as session:
