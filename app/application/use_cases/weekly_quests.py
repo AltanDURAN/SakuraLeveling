@@ -362,6 +362,17 @@ class WeeklyQuestProgressService:
         if amount <= 0:
             return
         week_start = get_current_week_start()
+        # Auto-assign si le joueur n'a pas encore consulté `/weekly` cette
+        # semaine. Sans ça, ses actions ne seraient pas comptées tant
+        # qu'il n'a pas explicitement consulté ses quêtes.
+        if not self.quest_repository.has_assignments_for_week(
+            player_id, week_start,
+        ):
+            picks = pick_random_assignment(count=3)
+            self.quest_repository.assign(
+                player_id, week_start, [d.code for d in picks],
+            )
+
         candidates: list[WeeklyQuestDefinition] = list_for_objective_type(objective_type)
         if target_filter is not None:
             candidates = [d for d in candidates if d.objective_target == target_filter]
@@ -403,6 +414,13 @@ class WeeklyQuestProgressService:
         if current_streak <= 0:
             return
         week_start = get_current_week_start()
+        if not self.quest_repository.has_assignments_for_week(
+            player_id, week_start,
+        ):
+            picks = pick_random_assignment(count=3)
+            self.quest_repository.assign(
+                player_id, week_start, [d.code for d in picks],
+            )
         for d in list_for_objective_type("daily_streak"):
             self.quest_repository.set_progress_at_least(
                 player_id=player_id,

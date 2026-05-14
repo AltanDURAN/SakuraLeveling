@@ -237,6 +237,17 @@ class DailyQuestProgressService:
         if amount <= 0:
             return []
         day_start = get_current_day_start()
+        # Auto-assign si le joueur n'a pas encore consulté `/daily_quests`
+        # aujourd'hui. Sans ça, ses kills/crafts/etc. ne seraient pas comptés
+        # tant qu'il n'a pas explicitement consulté ses quêtes.
+        if not self.quest_repository.has_assignments_for_day(
+            player_id, day_start,
+        ):
+            picks = pick_random_assignment(count=3)
+            self.quest_repository.assign(
+                player_id, day_start, [d.code for d in picks],
+            )
+
         candidates = list_for_objective_type(objective_type)
         if target_filter is not None:
             candidates = [d for d in candidates if d.objective_target == target_filter]
