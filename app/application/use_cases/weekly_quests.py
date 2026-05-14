@@ -34,14 +34,21 @@ from app.infrastructure.weekly_quests.quest_loader import (
 
 
 def get_current_week_start(now: datetime | None = None) -> datetime:
-    """Retourne le lundi 00:00 UTC de la semaine de `now`."""
+    """Retourne le lundi 00:00 heure de Paris de la semaine de `now`,
+    converti en UTC pour le stockage SQLite. Cohérent avec le reset du
+    /daily à minuit Paris."""
+    from zoneinfo import ZoneInfo
+    paris = ZoneInfo("Europe/Paris")
     now = now or datetime.now(UTC)
     if now.tzinfo is None:
         now = now.replace(tzinfo=UTC)
+    now_paris = now.astimezone(paris)
     # weekday() : lundi=0 ... dimanche=6
-    days_since_monday = now.weekday()
-    monday = now - timedelta(days=days_since_monday)
-    return monday.replace(hour=0, minute=0, second=0, microsecond=0)
+    days_since_monday = now_paris.weekday()
+    monday_paris = (now_paris - timedelta(days=days_since_monday)).replace(
+        hour=0, minute=0, second=0, microsecond=0,
+    )
+    return monday_paris.astimezone(UTC)
 
 
 @dataclass

@@ -29,10 +29,19 @@ from app.infrastructure.db.repositories.player_repository import PlayerRepositor
 
 
 def get_current_day_start(now: datetime | None = None) -> datetime:
+    """Retourne aujourd'hui 00:00 heure de Paris (CEST/CET selon DST),
+    converti en UTC pour le stockage SQLite. Cohérent avec le reset du
+    /daily à minuit Paris."""
+    from zoneinfo import ZoneInfo
+    paris = ZoneInfo("Europe/Paris")
     now = now or datetime.now(UTC)
     if now.tzinfo is None:
         now = now.replace(tzinfo=UTC)
-    return now.replace(hour=0, minute=0, second=0, microsecond=0)
+    now_paris = now.astimezone(paris)
+    midnight_paris = now_paris.replace(
+        hour=0, minute=0, second=0, microsecond=0,
+    )
+    return midnight_paris.astimezone(UTC)
 
 
 @dataclass

@@ -83,12 +83,17 @@ def _seed_potions(session) -> None:
 
 
 def test_get_current_week_start_is_monday():
-    # Vendredi 2026-05-08 → lundi 2026-05-04
+    """Reset hebdo = lundi 00:00 heure de Paris (= dimanche 22:00 UTC
+    en été, dimanche 23:00 UTC en hiver).
+
+    Vendredi 2026-05-08 14:30 UTC (heure d'été CEST=UTC+2) →
+    lundi 5 mai 00:00 Paris == dimanche 4 mai 22:00 UTC.
+    """
     friday = datetime(2026, 5, 8, 14, 30, tzinfo=UTC)
     week_start = get_current_week_start(friday)
-    assert week_start.weekday() == 0  # lundi
-    assert week_start.day == 4
-    assert week_start.hour == 0
+    assert week_start.weekday() == 6  # dimanche en UTC (= lundi 00:00 Paris)
+    assert week_start.day == 3        # dim 3 mai 22h UTC
+    assert week_start.hour == 22      # CEST = UTC+2 → minuit Paris = 22h UTC
 
 
 def test_pick_random_assignment_returns_3_distinct():
