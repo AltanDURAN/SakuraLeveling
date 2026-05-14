@@ -16,6 +16,7 @@ wrappant le boss dans une `MobDefinition` éphémère.
 import random
 from dataclasses import dataclass, field
 from datetime import datetime, UTC, timedelta
+from zoneinfo import ZoneInfo
 
 from app.application.services.set_bonus_resolver import resolve_set_bonuses
 from app.domain.entities.boss_definition import BossDefinition
@@ -50,14 +51,22 @@ from app.infrastructure.world_boss.boss_definition_loader import (
 
 BOSS_FIGHT_COOLDOWN_KEY = "world_boss_fight"
 BOSS_RESPAWN_COOLDOWN_DAYS = 7  # 7 jours après défaite avant un nouveau spawn
-DAILY_RESET_HOUR_UTC = 0  # reset à minuit UTC
+# Reset à minuit heure de Paris (CEST/CET selon saison, DST géré
+# automatiquement par zoneinfo). Stocké en UTC.
+_PARIS = ZoneInfo("Europe/Paris")
 
 
 def _next_midnight_utc(now: datetime) -> datetime:
-    tomorrow = (now + timedelta(days=1)).replace(
-        hour=DAILY_RESET_HOUR_UTC, minute=0, second=0, microsecond=0
+    """Prochain minuit heure de Paris (DST géré), reconverti en UTC."""
+    now_aware = (
+        now.astimezone(UTC) if now.tzinfo is not None
+        else now.replace(tzinfo=UTC)
     )
-    return tomorrow
+    now_paris = now_aware.astimezone(_PARIS)
+    tomorrow_paris = (now_paris + timedelta(days=1)).replace(
+        hour=0, minute=0, second=0, microsecond=0,
+    )
+    return tomorrow_paris.astimezone(UTC)
 
 
 def _normalize_utc(dt: datetime) -> datetime:
