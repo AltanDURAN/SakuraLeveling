@@ -285,17 +285,12 @@ def _draw_slot_card(
     if item_img is not None:
         base.alpha_composite(item_img, (img_x, img_y))
     else:
-        # Pour les slots main, l'emoji canonique (🗡️) ne reflète pas
-        # toujours la nature de l'item équipé (bouclier, 2-mains…).
-        # On passe l'emoji adapté à l'item via `item_display_emoji`.
-        item_emoji = None
-        if equipment is not None:
-            from app.shared.emoji_mappings import item_display_emoji
-            item_emoji = item_display_emoji(equipment.item_definition)
+        # Placeholder = emoji du slot (🗡️ pour main droite, 🛡️ pour
+        # main gauche, etc.) — visuel cohérent indépendamment de l'item
+        # équipé. Le nom de l'item dessous précise le contenu réel.
         _draw_placeholder(
             base, (img_x, img_y), img_size, slot,
             has_item=equipment is not None,
-            item_emoji=item_emoji,
         )
 
     # Nom de l'item + bonus de stats sous l'image
