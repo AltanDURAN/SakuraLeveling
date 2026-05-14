@@ -193,6 +193,7 @@ class FightMobUseCase:
             mob, drop_rate_multiplier=drop_multiplier * chasseur_mult,
         )
 
+        items_total = 0
         for item_code, quantity in dropped_items:
             item = self.item_repository.get_by_code(item_code)
             if item is None:
@@ -202,6 +203,51 @@ class FightMobUseCase:
                 player_id=profile.player.id,
                 item_definition_id=item.id,
                 quantity=quantity,
+            )
+            items_total += quantity
+
+        # Quêtes V2 : kill / xp / gold / damage / items (best effort)
+        try:
+            from app.application.use_cases.weekly_quests import (
+                WeeklyQuestProgressService,
+            )
+            from app.application.use_cases.daily_quests import (
+                DailyQuestProgressService,
+            )
+            from app.infrastructure.db.repositories.weekly_quest_repository import (
+                WeeklyQuestRepository,
+            )
+            from app.infrastructure.db.repositories.daily_quest_repository import (
+                DailyQuestRepository,
+            )
+            session = self.inventory_repository.session
+            _wqp = WeeklyQuestProgressService(WeeklyQuestRepository(session))
+            _dqp = DailyQuestProgressService(DailyQuestRepository(session))
+            _wqp.on_kill(profile.player.id, mob.family or "", mob.code, count=1)
+            _dqp.on_kill(profile.player.id, mob.family or "", mob.code, count=1)
+            if final_gold > 0:
+                _wqp.on_gold_earned(profile.player.id, final_gold)
+                _dqp.on_gold_earned(profile.player.id, final_gold)
+            if final_xp > 0:
+                _wqp.on_xp_earned(profile.player.id, final_xp)
+                _dqp.on_xp_earned(profile.player.id, final_xp)
+            damage_dealt_total = sum(
+                t.player_damage_dealt for t in result.turn_logs
+            )
+            damage_tanked_total = result.player_total_raw_damage_taken
+            if damage_dealt_total > 0:
+                _wqp.on_damage_dealt(profile.player.id, damage_dealt_total)
+                _dqp.on_damage_dealt(profile.player.id, damage_dealt_total)
+            if damage_tanked_total > 0:
+                _wqp.on_damage_tanked(profile.player.id, damage_tanked_total)
+                _dqp.on_damage_tanked(profile.player.id, damage_tanked_total)
+            if items_total > 0:
+                _wqp.on_items_dropped(profile.player.id, items_total)
+                _dqp.on_items_dropped(profile.player.id, items_total)
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Quest progress hooks (solo) failed: %s", _e, exc_info=True,
             )
 
         player_quests = self.quest_repository.list_definitions()

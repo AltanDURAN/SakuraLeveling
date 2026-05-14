@@ -471,12 +471,36 @@ class EncounterService:
                 )
                 _wqp = WeeklyQuestProgressService(WeeklyQuestRepository(session))
                 _dqp = DailyQuestProgressService(DailyQuestRepository(session))
-                _wqp.on_kill(participant.player_id, mob.family or "", count=1)
-                _dqp.on_kill(participant.player_id, mob.family or "", count=1)
+                # Kill : family + mob spécifique
+                _wqp.on_kill(
+                    participant.player_id, mob.family or "", mob_code, count=1,
+                )
+                _dqp.on_kill(
+                    participant.player_id, mob.family or "", mob_code, count=1,
+                )
                 if gold > 0:
                     _wqp.on_gold_earned(participant.player_id, gold)
                     _dqp.on_gold_earned(participant.player_id, gold)
+                if xp > 0:
+                    _wqp.on_xp_earned(participant.player_id, xp)
+                    _dqp.on_xp_earned(participant.player_id, xp)
+                # Damage dealt / tanked depuis la contribution combat
+                if contribution.damage_dealt > 0:
+                    _wqp.on_damage_dealt(
+                        participant.player_id, contribution.damage_dealt,
+                    )
+                    _dqp.on_damage_dealt(
+                        participant.player_id, contribution.damage_dealt,
+                    )
+                if contribution.damage_tanked > 0:
+                    _wqp.on_damage_tanked(
+                        participant.player_id, contribution.damage_tanked,
+                    )
+                    _dqp.on_damage_tanked(
+                        participant.player_id, contribution.damage_tanked,
+                    )
 
+                items_total = 0
                 for item_code, quantity in dropped_items:
                     item = item_repository.get_by_code(item_code)
                     if item is None:
@@ -486,6 +510,10 @@ class EncounterService:
                         item_definition_id=item.id,
                         quantity=quantity,
                     )
+                    items_total += quantity
+                if items_total > 0:
+                    _wqp.on_items_dropped(participant.player_id, items_total)
+                    _dqp.on_items_dropped(participant.player_id, items_total)
 
                 rewards.append(
                     PlayerReward(

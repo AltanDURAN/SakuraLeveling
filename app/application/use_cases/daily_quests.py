@@ -263,28 +263,46 @@ class DailyQuestProgressService:
                 newly_completed.append(d)
         return newly_completed
 
-    def on_kill(self, player_id: int, family: str, count: int = 1) -> list[WeeklyQuestDefinition]:
-        out = self._process_event(player_id, "kill_total", count)
+    def on_kill(
+        self, player_id: int, family: str, mob_code: str = "", count: int = 1,
+    ) -> list[WeeklyQuestDefinition]:
+        out: list[WeeklyQuestDefinition] = []
         if family:
             out += self._process_event(
-                player_id, "kill_family", count, target_filter=family
+                player_id, "kill_family", count, target_filter=family,
+            )
+        if mob_code:
+            out += self._process_event(
+                player_id, "kill_mob", count, target_filter=mob_code,
             )
         return out
 
-    def on_duel_won(self, player_id: int, count: int = 1) -> list[WeeklyQuestDefinition]:
-        return self._process_event(player_id, "duel_win", count)
+    def on_daily_claimed(
+        self, player_id: int, count: int = 1,
+    ) -> list[WeeklyQuestDefinition]:
+        return self._process_event(player_id, "daily_claim", count)
 
-    def on_craft(self, player_id: int, count: int = 1) -> list[WeeklyQuestDefinition]:
-        return self._process_event(player_id, "craft_any", count)
-
-    def on_gather(self, player_id: int, count: int = 1) -> list[WeeklyQuestDefinition]:
-        return self._process_event(player_id, "gather_count", count)
-
-    def on_gold_earned(self, player_id: int, amount: int) -> list[WeeklyQuestDefinition]:
+    def on_gold_earned(
+        self, player_id: int, amount: int,
+    ) -> list[WeeklyQuestDefinition]:
         return self._process_event(player_id, "gold_earned", amount)
 
-    def on_boss_damage(self, player_id: int, damage: int) -> list[WeeklyQuestDefinition]:
-        return self._process_event(player_id, "boss_damage", damage)
+    def on_xp_earned(
+        self, player_id: int, amount: int,
+    ) -> list[WeeklyQuestDefinition]:
+        return self._process_event(player_id, "xp_earned", amount)
 
-    def on_consumable_used(self, player_id: int, count: int = 1) -> list[WeeklyQuestDefinition]:
-        return self._process_event(player_id, "consumable_used", count)
+    def on_items_dropped(
+        self, player_id: int, count: int,
+    ) -> list[WeeklyQuestDefinition]:
+        return self._process_event(player_id, "items_dropped", count)
+
+    def on_damage_dealt(
+        self, player_id: int, amount: int,
+    ) -> list[WeeklyQuestDefinition]:
+        return self._process_event(player_id, "damage_dealt", amount)
+
+    def on_damage_tanked(
+        self, player_id: int, amount: int,
+    ) -> list[WeeklyQuestDefinition]:
+        return self._process_event(player_id, "damage_tanked", amount)

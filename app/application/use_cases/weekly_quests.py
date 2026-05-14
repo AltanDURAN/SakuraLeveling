@@ -388,44 +388,32 @@ class WeeklyQuestProgressService:
 
     # ---------- API événementielle (1 méthode par hook) ----------
 
-    def on_kill(self, player_id: int, family: str, count: int = 1) -> None:
-        self._process_event(player_id, "kill_total", count)
+    def on_kill(
+        self, player_id: int, family: str, mob_code: str = "", count: int = 1,
+    ) -> None:
         if family:
-            self._process_event(player_id, "kill_family", count, target_filter=family)
+            self._process_event(
+                player_id, "kill_family", count, target_filter=family,
+            )
+        if mob_code:
+            self._process_event(
+                player_id, "kill_mob", count, target_filter=mob_code,
+            )
 
-    def on_duel_won(self, player_id: int, count: int = 1) -> None:
-        self._process_event(player_id, "duel_win", count)
-
-    def on_craft(self, player_id: int, count: int = 1) -> None:
-        self._process_event(player_id, "craft_any", count)
-
-    def on_gather(self, player_id: int, count: int = 1) -> None:
-        self._process_event(player_id, "gather_count", count)
+    def on_daily_claimed(self, player_id: int, count: int = 1) -> None:
+        self._process_event(player_id, "daily_claim", count)
 
     def on_gold_earned(self, player_id: int, amount: int) -> None:
         self._process_event(player_id, "gold_earned", amount)
 
-    def on_boss_damage(self, player_id: int, damage: int) -> None:
-        self._process_event(player_id, "boss_damage", damage)
+    def on_xp_earned(self, player_id: int, amount: int) -> None:
+        self._process_event(player_id, "xp_earned", amount)
 
-    def on_daily_claimed(self, player_id: int, current_streak: int) -> None:
-        """daily_streak utilise set_progress_at_least (atteindre N, pas
-        cumuler). On loop sur les définitions matchantes."""
-        if current_streak <= 0:
-            return
-        week_start = get_current_week_start()
-        if not self.quest_repository.has_assignments_for_week(
-            player_id, week_start,
-        ):
-            picks = pick_random_assignment(count=3)
-            self.quest_repository.assign(
-                player_id, week_start, [d.code for d in picks],
-            )
-        for d in list_for_objective_type("daily_streak"):
-            self.quest_repository.set_progress_at_least(
-                player_id=player_id,
-                week_start=week_start,
-                quest_code=d.code,
-                value=current_streak,
-                objective_quantity=d.objective_quantity,
-            )
+    def on_items_dropped(self, player_id: int, count: int) -> None:
+        self._process_event(player_id, "items_dropped", count)
+
+    def on_damage_dealt(self, player_id: int, amount: int) -> None:
+        self._process_event(player_id, "damage_dealt", amount)
+
+    def on_damage_tanked(self, player_id: int, amount: int) -> None:
+        self._process_event(player_id, "damage_tanked", amount)

@@ -469,7 +469,8 @@ class FightWorldBossUseCase:
             hp_healed=hp_healed,
         )
 
-        # Quêtes hebdo + quotidiennes : on_boss_damage (best effort)
+        # Quêtes V2 : on_damage_dealt + on_damage_tanked (les boss sont
+        # des "monstres" pour le compteur). on_boss_damage retiré.
         try:
             from app.application.use_cases.weekly_quests import (
                 WeeklyQuestProgressService,
@@ -484,12 +485,14 @@ class FightWorldBossUseCase:
                 DailyQuestRepository,
             )
             session = self.world_boss_repository.session
-            WeeklyQuestProgressService(WeeklyQuestRepository(session)).on_boss_damage(
-                profile.player.id, damage_dealt,
-            )
-            DailyQuestProgressService(DailyQuestRepository(session)).on_boss_damage(
-                profile.player.id, damage_dealt,
-            )
+            _wqp = WeeklyQuestProgressService(WeeklyQuestRepository(session))
+            _dqp = DailyQuestProgressService(DailyQuestRepository(session))
+            if damage_dealt > 0:
+                _wqp.on_damage_dealt(profile.player.id, damage_dealt)
+                _dqp.on_damage_dealt(profile.player.id, damage_dealt)
+            if damage_tanked > 0:
+                _wqp.on_damage_tanked(profile.player.id, damage_tanked)
+                _dqp.on_damage_tanked(profile.player.id, damage_tanked)
         except Exception as _e:
             import logging
             logging.getLogger(__name__).warning(
