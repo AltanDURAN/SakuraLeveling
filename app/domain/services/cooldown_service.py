@@ -1,6 +1,12 @@
 from datetime import datetime, timedelta, UTC
+from zoneinfo import ZoneInfo
 
 from app.domain.value_objects.cooldown import Cooldown
+
+
+# Reset du /daily à minuit heure de Paris (DST automatique). Le bot
+# tourne en UTC sur le VPS mais les joueurs vivent en France.
+_PARIS = ZoneInfo("Europe/Paris")
 
 
 def _normalize(dt: datetime) -> datetime:
@@ -20,15 +26,27 @@ class CooldownService:
         return _normalize(now) >= _normalize(cooldown.next_available_at)
 
     def build_next_daily_cooldown(self, now: datetime) -> tuple[datetime, datetime]:
-        """Reset à minuit UTC : la prochaine récup' est dispo dès le lendemain
-        00:00 UTC, peu importe l'heure de la réclamation. Réclamer à 23:59
-        autorise une nouvelle récup' dès 00:00, soit 1 minute plus tard."""
+        """Reset à minuit heure de Paris (CET/CEST selon la saison) : la
+        prochaine récup' est dispo dès le lendemain 00:00 Paris. Stocké
+        en UTC (DST géré automatiquement par zoneinfo).
+
+        Exemples (heure d'été CEST = UTC+2) :
+        - Récup à 14h30 UTC (16h30 Paris) → next = 22h UTC (00h Paris)
+        - Récup à 23h UTC (01h Paris, déjà demain Paris !) → next = 22h UTC
+        """
         last_used_at = now
-        now_utc = now.astimezone(UTC) if now.tzinfo is not None else now.replace(tzinfo=UTC)
-        next_midnight = (now_utc + timedelta(days=1)).replace(
-            hour=0, minute=0, second=0, microsecond=0
+        now_aware = (
+            now.astimezone(UTC) if now.tzinfo is not None
+            else now.replace(tzinfo=UTC)
         )
-        return last_used_at, next_midnight
+        # On convertit en heure Paris pour calculer "demain 00:00 local",
+        # puis on repasse en UTC pour stockage.
+        now_paris = now_aware.astimezone(_PARIS)
+        next_midnight_paris = (now_paris + timedelta(days=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0,
+        )
+        next_midnight_utc = next_midnight_paris.astimezone(UTC)
+        return last_used_at, next_midnight_utc
 
     def build_next_skill_reset_cooldown(
         self, now: datetime, days: int = 7
