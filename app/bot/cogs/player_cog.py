@@ -1493,8 +1493,9 @@ class PlayerCog(commands.Cog):
             "daily":              "🌅 Récompense quotidienne (/daily)",
             "world_boss_fight":   "👑 Combat du world boss",
             "skill_tree_reset":   "🌳 Reset de l'arbre de compétences",
-            "duel_challenge":     "⚔️ Défi 1v1 (/fight)",
         }
+        # Cooldowns trop courts pour être pertinents dans cet affichage.
+        HIDDEN_COOLDOWNS = {"duel_challenge"}
 
         with get_db_session() as session:
             profile, target_member = self._resolve_profile(interaction, target, session)
@@ -1507,9 +1508,11 @@ class PlayerCog(commands.Cog):
             )
 
         now = datetime.now(UTC)
-        # On garde uniquement les cooldowns encore actifs
+        # On garde uniquement les cooldowns encore actifs et non cachés
         active: list[tuple[str, datetime]] = []
         for cd in cooldowns:
+            if cd.action_key in HIDDEN_COOLDOWNS:
+                continue
             if cd.next_available_at is None:
                 continue
             next_at = cd.next_available_at
