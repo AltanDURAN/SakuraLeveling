@@ -285,12 +285,19 @@ def _draw_slot_card(
     if item_img is not None:
         base.alpha_composite(item_img, (img_x, img_y))
     else:
-        # Placeholder = emoji du slot (🗡️ pour main droite, 🛡️ pour
-        # main gauche, etc.) — visuel cohérent indépendamment de l'item
-        # équipé. Le nom de l'item dessous précise le contenu réel.
+        # Placeholder (image absente) : on affiche l'emoji adapté à
+        # l'item équipé — 🗡️ pour une arme 1H, ⚔️ pour une 2H, 🛡️
+        # pour un bouclier — pour ne pas montrer une épée alors qu'un
+        # bouclier est équipé en main_droite. Le header de la card
+        # conserve l'emoji fixe du slot (🗡️ MD / 🛡️ MG).
+        item_emoji = None
+        if equipment is not None:
+            from app.shared.emoji_mappings import item_display_emoji
+            item_emoji = item_display_emoji(equipment.item_definition)
         _draw_placeholder(
             base, (img_x, img_y), img_size, slot,
             has_item=equipment is not None,
+            item_emoji=item_emoji,
         )
 
     # Nom de l'item + bonus de stats sous l'image
