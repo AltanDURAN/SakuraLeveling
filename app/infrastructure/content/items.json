@@ -664,7 +664,7 @@
     "family": "slime"
   },
   {
-    "code": "goblin_amulet",
+    "code": "gobelin_amulet",
     "name": "Amulette gobeline",
     "description": "Petits crocs de gobelin enfilés sur une lanière de cuir.",
     "category": "necklace",
@@ -741,7 +741,7 @@
     "family": "iron"
   },
   {
-    "code": "goblin_blade",
+    "code": "gobelin_blade",
     "name": "Lame gobeline",
     "description": "Lame ébréchée mais redoutable, taillée d'os de gobelin.",
     "category": "weapon",

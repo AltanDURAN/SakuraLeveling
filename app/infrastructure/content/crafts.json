@@ -263,9 +263,9 @@
     ]
   },
   {
-    "code": "goblin_amulet_recipe",
+    "code": "gobelin_amulet_recipe",
     "name": "Amulette gobeline",
-    "result_item_code": "goblin_amulet",
+    "result_item_code": "gobelin_amulet",
     "result_quantity": 1,
     "ingredients": [
       { "item_code": "gobelin_tooth", "quantity": 5 },
@@ -305,9 +305,9 @@
     ]
   },
   {
-    "code": "goblin_blade_recipe",
+    "code": "gobelin_blade_recipe",
     "name": "Lame gobeline",
-    "result_item_code": "goblin_blade",
+    "result_item_code": "gobelin_blade",
     "result_quantity": 1,
     "ingredients": [
       { "item_code": "gobelin_tooth", "quantity": 4 },

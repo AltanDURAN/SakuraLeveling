@@ -108,6 +108,14 @@ SLOT_LABELS: dict[str, str] = {
 }
 
 
+# Catégories d'items qui passent par la FORGE (armes + boucliers + armures
+# métalliques classiques). Tout le reste tombe dans /craft.
+FORGE_CATEGORIES: set[str] = {
+    "weapon", "shield",
+    "helmet", "chest", "legs", "boots",
+}
+
+
 class ItemCategory(StrEnum):
     RESOURCE = "resource"
     WEAPON = "weapon"
