@@ -300,6 +300,42 @@ class WorldBossCog(commands.Cog):
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
+    @boss.command(
+        name="stop",
+        description="[Admin] Arrête le world boss en cours (pas de récompenses distribuées)",
+    )
+    @admin_only
+    async def boss_stop(self, interaction: discord.Interaction) -> None:
+        """Stoppe le boss actif : marque defeated, supprime le message
+        Discord, sans distribuer de récompenses. Pour cleanup / debug."""
+        await interaction.response.defer(ephemeral=True)
+        with get_db_session() as session:
+            repo = WorldBossRepository(session)
+            boss = repo.get_active()
+            if boss is None or not boss.is_alive:
+                await interaction.followup.send(
+                    "ℹ️ Aucun world boss actif à arrêter.", ephemeral=True,
+                )
+                return
+            repo.mark_defeated(boss.id)
+            boss_name = boss.name
+            message_id = boss.channel_message_id
+
+        # Supprime le message Discord du boss (s'il existe encore)
+        if message_id is not None:
+            channel = _get_boss_channel(self.bot)
+            if channel is not None:
+                try:
+                    msg = await channel.fetch_message(message_id)
+                    await msg.delete()
+                except (discord.NotFound, discord.Forbidden):
+                    pass
+
+        await interaction.followup.send(
+            f"🛑 World boss **{boss_name}** arrêté (aucune récompense distribuée).",
+            ephemeral=True,
+        )
+
     # ---------- helpers ----------
 
     async def _post_boss_message(self, boss) -> discord.Message | None:
