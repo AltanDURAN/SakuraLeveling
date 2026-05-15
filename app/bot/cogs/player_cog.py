@@ -35,7 +35,7 @@ from app.bot.embeds.daily_embeds import (
 )
 from app.bot.views.equipment_view import EquipmentView
 from app.bot.views.inventory_view import InventoryView
-from app.bot.embeds.craft_embeds import FORGE_CATEGORIES
+from app.shared.enums import FORGE_CATEGORIES
 from app.bot.views.recipe_list_view import RecipeListView
 from app.bot.embeds.inventory_embeds import build_inventory_embed
 from app.bot.embeds.player_embeds import build_player_profile_embed
@@ -408,7 +408,7 @@ class PlayerCog(commands.Cog):
         interaction: discord.Interaction,
         target: discord.Member | None = None,
     ) -> None:
-        from app.bot.views.equipement_list_view import EquipementListView
+        from app.bot.views.equipment_list_view import EquipmentListView
 
         await interaction.response.defer()
         with get_db_session() as session:
@@ -422,7 +422,7 @@ class PlayerCog(commands.Cog):
             items = inventory_repository.list_by_player_id(profile.player.id)
             equipped = equipment_repository.list_by_player_id(profile.player.id)
 
-        view = EquipementListView(
+        view = EquipmentListView(
             player_id=profile.player.id,
             display_name=target_member.display_name,
             items=items,

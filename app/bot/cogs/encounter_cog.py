@@ -6,7 +6,7 @@ from discord.ext import commands, tasks
 
 from app.application.services.encounter_service import EncounterService
 from app.bot.embeds.battle_summary_embeds import build_rewards_page_embed
-from app.bot.embeds.encounter_combat_log_embed import (
+from app.bot.embeds.encounter_combat_log_embeds import (
     build_combat_log_embed,
     format_turn_action,
 )

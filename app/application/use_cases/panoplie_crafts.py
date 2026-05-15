@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from app.bot.embeds.craft_embeds import FORGE_CATEGORIES
+from app.shared.enums import FORGE_CATEGORIES
 from app.domain.entities.craft_recipe import CraftRecipe
 from app.domain.entities.item_definition import ItemDefinition
 from app.infrastructure.db.repositories.craft_repository import CraftRepository

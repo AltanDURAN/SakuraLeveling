@@ -141,7 +141,7 @@ class _PrevCategoryButton(discord.ui.Button):
         )
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        view: EquipementListView = self.view  # type: ignore[assignment]
+        view: EquipmentListView = self.view  # type: ignore[assignment]
         view._shift_category(-1)
         await view._send_update(interaction)
 
@@ -167,7 +167,7 @@ class _NextCategoryButton(discord.ui.Button):
         )
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        view: EquipementListView = self.view  # type: ignore[assignment]
+        view: EquipmentListView = self.view  # type: ignore[assignment]
         view._shift_category(+1)
         await view._send_update(interaction)
 
@@ -180,7 +180,7 @@ class _PrevPageButton(discord.ui.Button):
         )
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        view: EquipementListView = self.view  # type: ignore[assignment]
+        view: EquipmentListView = self.view  # type: ignore[assignment]
         if view.page_index > 0:
             view.page_index -= 1
         await view._send_update(interaction)
@@ -207,12 +207,12 @@ class _NextPageButton(discord.ui.Button):
         )
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        view: EquipementListView = self.view  # type: ignore[assignment]
+        view: EquipmentListView = self.view  # type: ignore[assignment]
         view.page_index += 1
         await view._send_update(interaction)
 
 
-class EquipementListView(discord.ui.View):
+class EquipmentListView(discord.ui.View):
     def __init__(
         self,
         player_id: int,
