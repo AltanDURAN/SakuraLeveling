@@ -108,7 +108,7 @@ git checkout main
 | `/unequip <slot\|all>` | `player_cog` | `slot=all` retire tout l'équipement d'un coup. |
 | `/weekly`, `/weekly_claim <code>` | `weekly_quest_cog` | 3 quêtes hebdo random tirées le lundi UTC |
 | `/brocante list/my/sell/buy/cancel` | `brocante_cog` | Marketplace P2P avec commission shop (5%) |
-| `/boss spawn <boss_code>`, `/boss list` | `world_boss_cog` | Spawn manuel admin / catalogue + auto-spawn hebdo |
+| `/boss spawn <boss_code>`, `/boss list`, `/boss stop` | `world_boss_cog` | Spawn manuel admin / catalogue + auto-spawn hebdo. `stop` arrête le boss actif sans distribuer de récompenses (cleanup/debug). |
 
 ## Système d'administration
 
