@@ -1,7 +1,14 @@
 from datetime import datetime, UTC
 
 from app.application.services.encounter_participant import EncounterParticipant
+from app.application.services.exclusive_title_service import ExclusiveTitleService
+from app.application.services.set_bonus_resolver import resolve_set_bonuses
+from app.application.services.title_bonus_resolver import resolve_title_bonuses
+from app.application.services.title_unlock_service import TitleUnlockService
+from app.application.use_cases.daily_quests import DailyQuestProgressService
+from app.application.use_cases.weekly_quests import WeeklyQuestProgressService
 from app.domain.services.health_regeneration_service import HealthRegenerationService
+from app.domain.services.title_bonus_service import TitleBonusService
 from app.domain.services.loot_service import LootService
 from app.domain.services.party_combat_service import PartyCombatService
 from app.domain.services.power_score_service import PowerScoreService
@@ -23,11 +30,19 @@ from app.infrastructure.db.repositories.player_career_stats_repository import (
 from app.infrastructure.db.repositories.player_health_repository import PlayerHealthRepository
 from app.infrastructure.db.repositories.player_kill_repository import PlayerKillRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
+from app.infrastructure.db.repositories.daily_quest_repository import DailyQuestRepository
 from app.infrastructure.db.repositories.player_skill_allocation_repository import (
     PlayerSkillAllocationRepository,
 )
+from app.infrastructure.db.repositories.player_title_repository import PlayerTitleRepository
+from app.infrastructure.db.repositories.weekly_quest_repository import WeeklyQuestRepository
 from app.infrastructure.db.session import get_db_session
-from app.infrastructure.skill_tree.skill_tree_loader import get_definition as get_skill_tree_definition
+from app.infrastructure.skill_tree.skill_tree_loader import (
+    get_definition as get_skill_tree_definition,
+)
+from app.infrastructure.titles.title_loader import (
+    get_definition as get_title_def,
+)
 
 
 class EncounterService:
@@ -93,12 +108,6 @@ class EncounterService:
                 allocations
             )
 
-            from app.application.services.title_bonus_resolver import (
-                resolve_title_bonuses,
-            )
-            from app.application.services.set_bonus_resolver import (
-                resolve_set_bonuses,
-            )
             title_bonuses = resolve_title_bonuses(session, profile.player.id)
             set_bonuses = resolve_set_bonuses(equipped_items)
 
@@ -134,12 +143,6 @@ class EncounterService:
     def resolve_active_encounter(self, encounter):
         if encounter is None:
             return None
-
-        from app.domain.services.title_bonus_service import TitleBonusService
-        from app.infrastructure.db.repositories.player_title_repository import (
-            PlayerTitleRepository,
-        )
-        from app.infrastructure.titles.title_loader import get_definition as get_title_def
 
         with get_db_session() as session:
             player_repository = PlayerRepository(session)
@@ -177,9 +180,6 @@ class EncounterService:
                 title_bonuses = title_bonus_service.aggregate(title_defs)
                 title_bonuses_by_player[participant.player_id] = title_bonuses
 
-                from app.application.services.set_bonus_resolver import (
-                    resolve_set_bonuses,
-                )
                 set_bonuses = resolve_set_bonuses(equipped_items)
 
                 stats = StatsService().calculate_player_stats(
@@ -313,10 +313,6 @@ class EncounterService:
             item_repository = ItemRepository(session)
             career_repository = PlayerCareerStatsRepository(session)
             skill_allocation_repository = PlayerSkillAllocationRepository(session)
-            from app.application.services.title_unlock_service import TitleUnlockService
-            from app.infrastructure.db.repositories.player_title_repository import (
-                PlayerTitleRepository,
-            )
             title_unlock_service = TitleUnlockService(
                 title_repository=PlayerTitleRepository(session),
                 kill_repository=kill_repository,
@@ -358,9 +354,6 @@ class EncounterService:
 
                 # Bonus du titre Farmer Fou (+1% gold/xp). N'affecte que le
                 # détenteur — les coéquipiers n'en bénéficient pas.
-                from app.application.services.title_bonus_resolver import (
-                    resolve_title_bonuses,
-                )
                 title_bonuses = resolve_title_bonuses(session, participant.player_id)
                 farmer_pct = title_bonuses.gold_xp_bonus_pct / 100.0
 
@@ -436,9 +429,6 @@ class EncounterService:
                 # dépasse STRICTEMENT le détenteur actuel (ex aequo ⇒ le
                 # premier arrivé garde — comportement décidé côté beta).
                 try:
-                    from app.application.services.exclusive_title_service import (
-                        ExclusiveTitleService,
-                    )
                     excl = ExclusiveTitleService(session)
                     holder_id = excl.current_holder("farmer_fou")
                     candidate_total = kill_repository.get_total_kills(
@@ -457,18 +447,6 @@ class EncounterService:
                     )
 
                 # Progress quêtes hebdo + quotidiennes (best effort)
-                from app.application.use_cases.weekly_quests import (
-                    WeeklyQuestProgressService,
-                )
-                from app.application.use_cases.daily_quests import (
-                    DailyQuestProgressService,
-                )
-                from app.infrastructure.db.repositories.weekly_quest_repository import (
-                    WeeklyQuestRepository,
-                )
-                from app.infrastructure.db.repositories.daily_quest_repository import (
-                    DailyQuestRepository,
-                )
                 _wqp = WeeklyQuestProgressService(WeeklyQuestRepository(session))
                 _dqp = DailyQuestProgressService(DailyQuestRepository(session))
                 # Kill : family + mob spécifique
