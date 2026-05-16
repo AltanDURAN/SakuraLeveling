@@ -1,0 +1,22 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Connexion — Sakura Admin{% endblock %}
+
+{% block content %}
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="login-logo">🌸</div>
+        <h1 class="login-title">Sakura Admin</h1>
+        <p class="login-subtitle">
+            Connectez-vous avec votre compte Discord pour gérer le contenu du bot.
+        </p>
+        <a href="{{ auth_url }}" class="btn btn-primary btn-discord">
+            <span class="btn-icon">🎮</span>
+            Se connecter avec Discord
+        </a>
+        <p class="login-help">
+            Seuls les comptes Discord listés dans la config admin du bot peuvent accéder à cette interface.
+        </p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Mobs — Sakura Admin{% endblock %}
+
+{% block content %}
+<section class="list-page">
+    <header class="list-header">
+        <div>
+            <a href="/admin" class="breadcrumb">← Dashboard</a>
+            <h1>👹 Mobs <span class="count-pill">{{ mobs|length }}</span></h1>
+        </div>
+        <a href="/admin/mobs/new" class="btn btn-primary">+ Nouveau mob</a>
+    </header>
+
+    <form class="filter-bar" method="get" action="/admin/mobs">
+        <input type="text" name="q" value="{{ filter_q }}"
+               placeholder="🔍 Recherche par code ou nom" class="input">
+        <select name="family" class="input">
+            <option value="">Toutes familles</option>
+            {% for fam in all_families %}
+                <option value="{{ fam }}" {% if filter_family == fam %}selected{% endif %}>
+                    {{ fam }}
+                </option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-secondary">Filtrer</button>
+        {% if filter_q or filter_family %}
+            <a href="/admin/mobs" class="btn btn-ghost">Reset</a>
+        {% endif %}
+    </form>
+
+    {% if mobs %}
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Nom</th>
+                    <th>Famille</th>
+                    <th>PV</th>
+                    <th>Atk</th>
+                    <th>Def</th>
+                    <th>Vit</th>
+                    <th>XP</th>
+                    <th>Or</th>
+                    <th>Spawn</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mob in mobs %}
+                <tr>
+                    <td><code>{{ mob.code }}</code></td>
+                    <td>{{ mob.name }}</td>
+                    <td>{{ mob.family or "—" }}</td>
+                    <td>{{ mob.max_hp }}</td>
+                    <td>{{ mob.attack }}</td>
+                    <td>{{ mob.defense }}</td>
+                    <td>{{ mob.speed }}</td>
+                    <td>{{ mob.xp_reward }}</td>
+                    <td>{{ mob.gold_reward }}</td>
+                    <td>{{ mob.spawn_weight }}</td>
+                    <td>
+                        <a href="/admin/mobs/{{ mob.code }}/edit" class="btn btn-small">Éditer</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>Aucun mob correspondant aux filtres.</p>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

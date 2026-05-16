@@ -1,0 +1,122 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Dashboard — Sakura Admin{% endblock %}
+
+{% block content %}
+<section class="dashboard">
+    <header class="dashboard-header">
+        <h1>🌸 Dashboard</h1>
+        <p class="dashboard-sub">Centre de pilotage du contenu de SakuraLeveling.</p>
+    </header>
+
+    <div class="entity-grid">
+        <a class="entity-card entity-card--active" href="/admin/items">
+            <div class="entity-icon">📦</div>
+            <div class="entity-body">
+                <h2>Items</h2>
+                <p>Définitions d'items : armes, armures, ressources, consommables.</p>
+                <span class="entity-count">{{ items_count }} item(s)</span>
+            </div>
+        </a>
+
+        <a class="entity-card entity-card--active" href="/admin/mobs">
+            <div class="entity-icon">👹</div>
+            <div class="entity-body">
+                <h2>Mobs</h2>
+                <p>Définitions des monstres : stats, drops, familles, spawn weight.</p>
+                <span class="entity-count">{{ mobs_count }} mob(s)</span>
+            </div>
+        </a>
+
+        <a class="entity-card entity-card--stub" href="/admin/classes">
+            <div class="entity-icon">🧬</div>
+            <div class="entity-body">
+                <h2>Classes</h2>
+                <p>Classes de personnage et bonus.</p>
+                <span class="entity-badge">À venir</span>
+            </div>
+        </a>
+
+        <a class="entity-card entity-card--stub" href="/admin/crafts">
+            <div class="entity-icon">🛠️</div>
+            <div class="entity-body">
+                <h2>Recettes</h2>
+                <p>Craft et forge.</p>
+                <span class="entity-badge">À venir</span>
+            </div>
+        </a>
+
+        <a class="entity-card entity-card--stub" href="/admin/skill-tree">
+            <div class="entity-icon">🌳</div>
+            <div class="entity-body">
+                <h2>Skill Tree</h2>
+                <p>Arbre de compétences : nœuds, effets, prérequis.</p>
+                <span class="entity-badge">À venir</span>
+            </div>
+        </a>
+
+        <a class="entity-card entity-card--stub" href="/admin/panoplies">
+            <div class="entity-icon">🌸</div>
+            <div class="entity-body">
+                <h2>Panoplies</h2>
+                <p>Sets : iron, slime, gobelin, leather, linen.</p>
+                <span class="entity-badge">À venir</span>
+            </div>
+        </a>
+
+        <a class="entity-card entity-card--stub" href="/admin/titles">
+            <div class="entity-icon">🏷️</div>
+            <div class="entity-body">
+                <h2>Titres</h2>
+                <p>Titres exclusifs et déblocables.</p>
+                <span class="entity-badge">À venir</span>
+            </div>
+        </a>
+
+        <a class="entity-card entity-card--stub" href="/admin/quests">
+            <div class="entity-icon">📜</div>
+            <div class="entity-body">
+                <h2>Quêtes</h2>
+                <p>Quotidiennes et hebdomadaires.</p>
+                <span class="entity-badge">À venir</span>
+            </div>
+        </a>
+
+        <a class="entity-card entity-card--stub" href="/admin/world-bosses">
+            <div class="entity-icon">🐉</div>
+            <div class="entity-body">
+                <h2>World Bosses</h2>
+                <p>Boss hebdo et modifiers.</p>
+                <span class="entity-badge">À venir</span>
+            </div>
+        </a>
+
+        <a class="entity-card entity-card--stub" href="/admin/shop">
+            <div class="entity-icon">🏪</div>
+            <div class="entity-body">
+                <h2>Shop</h2>
+                <p>Items vendus + prix dynamique.</p>
+                <span class="entity-badge">À venir</span>
+            </div>
+        </a>
+
+        <a class="entity-card entity-card--stub" href="/admin/actions">
+            <div class="entity-icon">⚡</div>
+            <div class="entity-body">
+                <h2>Actions admin</h2>
+                <p>give_gold, reset_player, spawn_encounter, …</p>
+                <span class="entity-badge">À venir</span>
+            </div>
+        </a>
+
+        <a class="entity-card entity-card--stub" href="/admin/players">
+            <div class="entity-icon">👥</div>
+            <div class="entity-body">
+                <h2>Joueurs</h2>
+                <p>Voir / modifier les profils.</p>
+                <span class="entity-badge">À venir</span>
+            </div>
+        </a>
+    </div>
+</section>
+{% endblock %}

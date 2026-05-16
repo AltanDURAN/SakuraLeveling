@@ -1,0 +1,20 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ entity_label }} — À venir{% endblock %}
+
+{% block content %}
+<section class="stub-page">
+    <a href="/admin" class="breadcrumb">← Dashboard</a>
+    <div class="stub-card">
+        <h1>{{ entity_label }}</h1>
+        <p class="stub-desc">{{ entity_description }}</p>
+        <div class="stub-badge">🚧 À venir</div>
+        <p class="stub-help">
+            Cette section n'est pas encore implémentée en interface web. Pour
+            le moment, modifier ces données passe par les JSON dans
+            <code>app/infrastructure/content/</code> + reseed ou via les
+            commandes <code>/admin</code> du bot Discord.
+        </p>
+    </div>
+</section>
+{% endblock %}

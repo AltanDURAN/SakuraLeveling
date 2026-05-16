@@ -1,0 +1,81 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Items — Sakura Admin{% endblock %}
+
+{% block content %}
+<section class="list-page">
+    <header class="list-header">
+        <div>
+            <a href="/admin" class="breadcrumb">← Dashboard</a>
+            <h1>📦 Items <span class="count-pill">{{ items|length }}</span></h1>
+        </div>
+        <a href="/admin/items/new" class="btn btn-primary">+ Nouvel item</a>
+    </header>
+
+    <form class="filter-bar" method="get" action="/admin/items">
+        <input type="text" name="q" value="{{ filter_q }}"
+               placeholder="🔍 Recherche par code ou nom" class="input">
+        <select name="category" class="input">
+            <option value="">Toutes catégories</option>
+            {% for cat in all_categories %}
+                <option value="{{ cat }}" {% if filter_category == cat %}selected{% endif %}>
+                    {{ cat }}
+                </option>
+            {% endfor %}
+        </select>
+        <select name="family" class="input">
+            <option value="">Toutes familles</option>
+            {% for fam in all_families %}
+                <option value="{{ fam }}" {% if filter_family == fam %}selected{% endif %}>
+                    {{ fam }}
+                </option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-secondary">Filtrer</button>
+        {% if filter_q or filter_category or filter_family %}
+            <a href="/admin/items" class="btn btn-ghost">Reset</a>
+        {% endif %}
+    </form>
+
+    {% if items %}
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Nom</th>
+                    <th>Catégorie</th>
+                    <th>Rareté</th>
+                    <th>Famille</th>
+                    <th>Slot</th>
+                    <th>Vente</th>
+                    <th>Achat</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td><code>{{ item.code }}</code></td>
+                    <td>{{ item.name }}</td>
+                    <td><span class="tag tag-{{ item.category }}">{{ item.category }}</span></td>
+                    <td><span class="rarity rarity-{{ item.rarity }}">{{ item.rarity }}</span></td>
+                    <td>{{ item.family or "—" }}</td>
+                    <td>{{ item.equipment_slot or "—" }}</td>
+                    <td>{{ item.sell_price }}</td>
+                    <td>{{ item.buy_price if item.buy_price is not none else "—" }}</td>
+                    <td>
+                        <a href="/admin/items/{{ item.code }}/edit" class="btn btn-small">Éditer</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>Aucun item correspondant aux filtres.</p>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{% if mob %}Éditer {{ mob.code }}{% else %}Nouveau mob{% endif %} — Sakura Admin{% endblock %}
+
+{% macro field(name, label, current, errors, type='text', placeholder='') %}
+<label class="field">
+    <span class="field-label">{{ label }}</span>
+    <input type="{{ type }}" name="{{ name }}" class="input"
+           value="{{ current }}" placeholder="{{ placeholder }}">
+    {% if errors.get(name) %}<span class="field-error">{{ errors[name] }}</span>{% endif %}
+</label>
+{% endmacro %}
+
+{% block content %}
+{% set fd = form_data if form_data is defined else {} %}
+<section class="form-page">
+    <a href="/admin/mobs" class="breadcrumb">← Mobs</a>
+    <h1>
+        {% if mob %}Éditer <code>{{ mob.code }}</code>{% else %}Nouveau mob{% endif %}
+    </h1>
+
+    <form method="post"
+          action="{% if mob %}/admin/mobs/{{ mob.code }}{% else %}/admin/mobs{% endif %}"
+          class="form-grid">
+
+        <div class="form-section">
+            <h2 class="form-section-title">Identité</h2>
+            <div class="form-row">
+                {% if mob %}
+                    <label class="field">
+                        <span class="field-label">Code</span>
+                        <input type="text" class="input" value="{{ mob.code }}" disabled>
+                    </label>
+                {% else %}
+                    {{ field('code', 'Code (unique)', fd.get('code', ''), errors, placeholder='ex: goblin_warrior') }}
+                {% endif %}
+                {{ field('name', 'Nom', fd.get('name', mob.name if mob else ''), errors, placeholder='Gobelin guerrier') }}
+                {{ field('family', 'Famille', fd.get('family', mob.family if mob else 'unknown'), errors, placeholder='gobelin / slime / …') }}
+            </div>
+            <label class="field">
+                <span class="field-label">Description</span>
+                <textarea name="description" class="input textarea" rows="2">{{ fd.get('description', mob.description if mob else '') }}</textarea>
+            </label>
+            {{ field('image_name', 'Image (asset local sous assets/mobs/)', fd.get('image_name', mob.image_name if mob else ''), errors, placeholder='goblin_warrior.png') }}
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Stats de combat</h2>
+            <div class="form-row form-row-stats">
+                {{ field('max_hp', 'PV max', fd.get('max_hp', mob.max_hp if mob else 30), errors, type='number') }}
+                {% if mob %}
+                    {{ field('current_hp', 'PV courants', fd.get('current_hp', mob.current_hp), errors, type='number') }}
+                {% endif %}
+                {{ field('attack', 'Attaque', fd.get('attack', mob.attack if mob else 5), errors, type='number') }}
+                {{ field('defense', 'Défense', fd.get('defense', mob.defense if mob else 2), errors, type='number') }}
+                {{ field('speed', 'Vitesse', fd.get('speed', mob.speed if mob else 5), errors, type='number') }}
+            </div>
+            <div class="form-row form-row-stats">
+                {{ field('crit_chance', 'Crit %', fd.get('crit_chance', mob.crit_chance if mob else 0), errors, type='number') }}
+                {{ field('crit_damage', 'Crit dmg (100=neutre)', fd.get('crit_damage', mob.crit_damage if mob else 100), errors, type='number') }}
+                {{ field('dodge', 'Esquive %', fd.get('dodge', mob.dodge if mob else 0), errors, type='number') }}
+                {{ field('hp_regeneration', 'Régen PV', fd.get('hp_regeneration', mob.hp_regeneration if mob else 0), errors, type='number') }}
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Récompenses & spawn</h2>
+            <div class="form-row">
+                {{ field('xp_reward', 'XP', fd.get('xp_reward', mob.xp_reward if mob else 5), errors, type='number') }}
+                {{ field('gold_reward', 'Or', fd.get('gold_reward', mob.gold_reward if mob else 5), errors, type='number') }}
+                {{ field('spawn_weight', 'Poids de spawn', fd.get('spawn_weight', mob.spawn_weight if mob else 1), errors, type='number') }}
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Loot table (JSON)</h2>
+            <p class="form-section-help">
+                Liste d'objets <code>{"item_code": "...", "drop_rate": 0.10, "quantity": 1}</code>.
+                Laisser vide ou <code>[]</code> pour aucun drop.
+            </p>
+            <label class="field">
+                <textarea name="loot_table" class="input textarea textarea-code" rows="8"
+                          placeholder='[{"item_code": "slime_jelly", "drop_rate": 0.30, "quantity": 1}]'>{% if loot_table_json is defined %}{{ loot_table_json }}{% else %}{{ fd.get('loot_table', '') }}{% endif %}</textarea>
+            </label>
+        </div>
+
+        <div class="form-actions">
+            <a href="/admin/mobs" class="btn btn-ghost">Annuler</a>
+            <button type="submit" class="btn btn-primary">
+                {% if mob %}Enregistrer{% else %}Créer le mob{% endif %}
+            </button>
+        </div>
+    </form>
+</section>
+{% endblock %}

@@ -561,6 +561,24 @@ Toutes les commandes admin sont éphémères (réponse visible uniquement par
 l'admin). Elles fonctionnent depuis n'importe quel canal (pas de restriction
 beta channel sur le cog admin).
 
+INTERFACE WEB ADMIN
+    En complément des commandes Discord, une webapp d'administration permet
+    de gérer le contenu du jeu via le navigateur :
+
+        http://<vps-ip>:8001/admin       (en prod, depuis le VPS)
+        http://localhost:8001/admin      (en dev local)
+
+    Authentification : OAuth2 Discord (cliquer "Se connecter avec Discord").
+    Seuls les comptes listés dans ADMIN_DISCORD_IDS peuvent accéder.
+
+    Périmètre V1 actif :
+        • Items (créer / éditer)
+        • Mobs (créer / éditer)
+    Le reste (classes, recettes, skill tree, panoplies, titres, quêtes,
+    world bosses, shop, joueurs) apparaît en "à venir" et reste gérable
+    via les JSON dans app/infrastructure/content/ + reseed, ou via les
+    commandes /admin ci-dessous.
+
 --------------------------------------------------------------------------------
 2.1 — GESTION DES JOUEURS
 --------------------------------------------------------------------------------

@@ -40,6 +40,10 @@ from app.infrastructure.db.session import get_db_session
 from app.infrastructure.skill_tree.skill_tree_loader import (
     get_definition as get_skill_tree_definition,
 )
+from webapp.admin.routers.auth_router import router as admin_auth_router
+from webapp.admin.routers.dashboard_router import router as admin_dashboard_router
+from webapp.admin.routers.items_router import router as admin_items_router
+from webapp.admin.routers.mobs_router import router as admin_mobs_router
 
 
 WEBAPP_DIR = Path(__file__).resolve().parent
@@ -53,6 +57,14 @@ _logger = logging.getLogger(__name__)
 app = FastAPI(title="SakuraLeveling — Skill Tree Viewer")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+# Routers admin — montés avant les routes publiques pour que /admin/* matche
+# en priorité (sinon /admin/{slug} du dashboard router gobble nos sous-routes).
+# L'ordre des inclusions compte : auth → items → mobs → dashboard (fallback).
+app.include_router(admin_auth_router)
+app.include_router(admin_items_router)
+app.include_router(admin_mobs_router)
+app.include_router(admin_dashboard_router)
 
 
 @app.exception_handler(Exception)
@@ -264,8 +276,14 @@ async def skill_api(discord_id: int):
 
 def main() -> None:
     import uvicorn
+    import os
 
-    uvicorn.run("webapp.main:app", host="127.0.0.1", port=8000, reload=False)
+    # Port configurable via env (WEBAPP_PORT). Default 8001 pour cohérence
+    # avec OAUTH_REDIRECT_URI=.../localhost:8001/admin/auth/callback.
+    port = int(os.environ.get("WEBAPP_PORT", "8001"))
+    # 0.0.0.0 pour permettre l'accès depuis l'IP publique du VPS.
+    host = os.environ.get("WEBAPP_HOST", "0.0.0.0")
+    uvicorn.run("webapp.main:app", host=host, port=port, reload=False)
 
 
 if __name__ == "__main__":
