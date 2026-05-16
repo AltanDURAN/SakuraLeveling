@@ -17,6 +17,18 @@ class Settings(BaseSettings):
     webapp_base_url: str = "http://localhost:8000"
     admin_discord_ids: str = ""
 
+    # Discord OAuth2 — utilisé par la webapp admin pour authentifier les
+    # utilisateurs via leur compte Discord. Récupère client_id/secret
+    # depuis la Discord Developer Portal (section OAuth2 de l'app).
+    discord_client_id: str = ""
+    discord_client_secret: str = ""
+    # URL publique du redirect OAuth (à enregistrer dans Discord Portal
+    # > OAuth2 > Redirects). Ex : http://151.80.233.231:8001/admin/auth/callback
+    oauth_redirect_uri: str = "http://localhost:8001/admin/auth/callback"
+    # Clé pour signer les cookies de session admin. Générer avec
+    # `python -c "import secrets; print(secrets.token_urlsafe(32))"`.
+    admin_session_secret: str = "dev-secret-change-in-prod"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

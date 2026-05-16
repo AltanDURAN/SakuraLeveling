@@ -1,0 +1,134 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{% if item %}Éditer {{ item.code }}{% else %}Nouvel item{% endif %} — Sakura Admin{% endblock %}
+
+{% macro field(name, label, current, errors, type='text', placeholder='') %}
+<label class="field">
+    <span class="field-label">{{ label }}</span>
+    <input type="{{ type }}" name="{{ name }}" class="input"
+           value="{{ current }}" placeholder="{{ placeholder }}">
+    {% if errors.get(name) %}<span class="field-error">{{ errors[name] }}</span>{% endif %}
+</label>
+{% endmacro %}
+
+{% block content %}
+{% set fd = form_data if form_data is defined else {} %}
+<section class="form-page">
+    <a href="/admin/items" class="breadcrumb">← Items</a>
+    <h1>
+        {% if item %}Éditer <code>{{ item.code }}</code>{% else %}Nouvel item{% endif %}
+    </h1>
+
+    <form method="post"
+          action="{% if item %}/admin/items/{{ item.code }}{% else %}/admin/items{% endif %}"
+          class="form-grid">
+
+        <div class="form-section">
+            <h2 class="form-section-title">Identité</h2>
+            <div class="form-row">
+                {% if item %}
+                    <label class="field">
+                        <span class="field-label">Code</span>
+                        <input type="text" class="input" value="{{ item.code }}" disabled>
+                    </label>
+                {% else %}
+                    {{ field('code', 'Code (unique)', fd.get('code', ''), errors, placeholder='ex: iron_sword') }}
+                {% endif %}
+                {{ field('name', 'Nom', fd.get('name', item.name if item else ''), errors, placeholder='Épée de fer') }}
+            </div>
+            <label class="field">
+                <span class="field-label">Description</span>
+                <textarea name="description" class="input textarea" rows="2">{{ fd.get('description', item.description if item else '') }}</textarea>
+            </label>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Classification</h2>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Catégorie</span>
+                    <select name="category" class="input">
+                        {% set current_cat = fd.get('category', item.category if item else '') %}
+                        {% for cat in categories %}
+                            <option value="{{ cat }}" {% if current_cat == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if errors.get('category') %}<span class="field-error">{{ errors['category'] }}</span>{% endif %}
+                </label>
+                <label class="field">
+                    <span class="field-label">Rareté</span>
+                    <select name="rarity" class="input">
+                        {% set current_rar = fd.get('rarity', item.rarity if item else 'common') %}
+                        {% for rar in rarities %}
+                            <option value="{{ rar }}" {% if current_rar == rar %}selected{% endif %}>{{ rar }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                {{ field('family', 'Famille (panoplie)', fd.get('family', item.family if item else ''), errors, placeholder='iron / slime / …') }}
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Équipement</h2>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Slot d'équipement</span>
+                    <select name="equipment_slot" class="input">
+                        {% set current_slot = fd.get('equipment_slot', item.equipment_slot if item else '') %}
+                        {% for slot in slots %}
+                            <option value="{{ slot or '' }}" {% if (current_slot or '') == (slot or '') %}selected{% endif %}>
+                                {{ slot or '(aucun)' }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="field field-checkbox">
+                    <input type="checkbox" name="requires_two_hands"
+                           {% if fd.get('requires_two_hands') == 'on' or (item and item.requires_two_hands) %}checked{% endif %}>
+                    <span>Arme à 2 mains</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Économie</h2>
+            <div class="form-row">
+                <label class="field field-checkbox">
+                    <input type="checkbox" name="stackable"
+                           {% if fd.get('stackable') == 'on' or (item and item.stackable) %}checked{% endif %}>
+                    <span>Stackable</span>
+                </label>
+                {{ field('max_stack', 'Max stack', fd.get('max_stack', item.max_stack if item and item.max_stack else ''), errors, type='number', placeholder='vide = illimité') }}
+                {{ field('sell_price', 'Prix de vente', fd.get('sell_price', item.sell_price if item else 0), errors, type='number') }}
+                {{ field('buy_price', "Prix d'achat", fd.get('buy_price', item.buy_price if item and item.buy_price is not none else ''), errors, type='number', placeholder='vide = non achetable') }}
+            </div>
+            {{ field('icon', 'Icône (emoji ou nom asset)', fd.get('icon', item.icon if item and item.icon else ''), errors, placeholder='⚔️ ou iron_sword.png') }}
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Bonus de stats</h2>
+            <p class="form-section-help">
+                Bonus appliqués quand l'item est équipé. Laisser à 0 si pas de bonus.
+            </p>
+            <div class="form-row stat-bonus-row">
+                {% set sb = stat_bonuses or {} %}
+                {% for stat in supported_stats %}
+                    <label class="field field-stat">
+                        <span class="field-label">{{ stat }}</span>
+                        <input type="number" name="stat_bonus_{{ stat }}"
+                               class="input input-small"
+                               value="{{ sb.get(stat, 0) }}">
+                    </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="/admin/items" class="btn btn-ghost">Annuler</a>
+            <button type="submit" class="btn btn-primary">
+                {% if item %}Enregistrer{% else %}Créer l'item{% endif %}
+            </button>
+        </div>
+    </form>
+</section>
+{% endblock %}

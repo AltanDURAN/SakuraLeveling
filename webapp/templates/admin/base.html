@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr" x-data="{ theme: localStorage.getItem('sakura-admin-theme') || 'light' }"
+      x-bind:data-theme="theme">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sakura Admin{% endblock %}</title>
+    <link rel="stylesheet" href="/static/admin/admin.css">
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+</head>
+<body>
+    {% if user %}
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a href="/admin" class="brand">
+                <span class="brand-mark">🌸</span>
+                <span class="brand-text">Sakura Admin</span>
+            </a>
+            <nav class="topnav">
+                <a href="/admin" class="topnav-link">Dashboard</a>
+                <a href="/admin/items" class="topnav-link">Items</a>
+                <a href="/admin/mobs" class="topnav-link">Mobs</a>
+            </nav>
+            <div class="topbar-actions">
+                <button class="theme-toggle" type="button"
+                        x-on:click="theme = (theme === 'light' ? 'dark' : 'light'); localStorage.setItem('sakura-admin-theme', theme)">
+                    <span x-show="theme === 'light'">🌙</span>
+                    <span x-show="theme === 'dark'">☀️</span>
+                </button>
+                <span class="user-chip" title="Discord ID : {{ user.discord_id }}">
+                    {{ user.display_name }}
+                </span>
+                <a href="/admin/logout" class="logout-link">Déconnexion</a>
+            </div>
+        </div>
+    </header>
+    {% endif %}
+
+    <main class="page-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="page-footer">
+        <span>🌸 SakuraLeveling — admin interne</span>
+    </footer>
+</body>
+</html>

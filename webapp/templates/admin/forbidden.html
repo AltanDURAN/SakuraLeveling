@@ -1,0 +1,25 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Accès refusé — Sakura Admin{% endblock %}
+
+{% block content %}
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="login-logo">🚫</div>
+        <h1 class="login-title">Accès refusé</h1>
+        <p class="login-subtitle">
+            Connecté en tant que <strong>{{ user.display_name }}</strong>
+            (Discord ID : <code>{{ user.discord_id }}</code>) — mais ce compte
+            n'est pas dans la liste des administrateurs.
+        </p>
+        <p class="login-help">
+            Demandez à un admin existant d'ajouter votre Discord ID dans le
+            fichier <code>.env</code> du bot (variable <code>ADMIN_DISCORD_IDS</code>),
+            puis reconnectez-vous.
+        </p>
+        <div class="form-actions" style="justify-content: center;">
+            <a href="/admin/logout" class="btn btn-ghost">Se déconnecter</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

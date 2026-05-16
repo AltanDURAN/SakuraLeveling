@@ -5,9 +5,13 @@
 
 ##############################
 ### Lancer le site web      ###
-###  (arbre de compétences)  ###
+###  (skill tree + admin)    ###
     python -m webapp.main
-###  → http://localhost:8000  ###
+###  → http://localhost:8001  ###
+###    /                       → accueil
+###    /bestiary               → bestiaire public
+###    /skill/<discord_id>     → arbre de compétences d'un joueur
+###    /admin                  → interface admin (OAuth Discord)
 ##############################
 
 #################################################
