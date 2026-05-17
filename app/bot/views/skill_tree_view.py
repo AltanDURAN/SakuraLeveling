@@ -122,8 +122,10 @@ class SkillTreeView(discord.ui.View):
             )
             return
 
+        # Limite à 25 = max d'options Discord (plus haute → tronqué silencieusement).
+        # Garde cohérent avec ce que le PNG/SVG montre comme débloquable.
         candidates = SkillTreeService(self.definition).compute_unlockable_skills(
-            state.allocations, limit=5
+            state.allocations, limit=25
         )
         if not candidates:
             await interaction.response.send_message(

@@ -186,6 +186,33 @@ def test_unlockable_skills_respects_limit():
     assert len(candidates) == 1
 
 
+def test_unlockable_skills_default_limit_matches_discord_select_max():
+    """Régression : la limite par défaut doit être assez haute pour ne pas
+    cacher un nœud que le rendu SVG montre comme débloquable. Discord plafonne
+    les Select Menus à 25 options. Ne pas baisser cette valeur sans paginer
+    le menu côté bot."""
+    defn = _build_simple_tree()
+    svc = SkillTreeService(defn)
+
+    # On ne passe PAS de limit explicite : doit utiliser le défaut.
+    candidates = svc.compute_unlockable_skills({"root": 1, "atk": 1, "def": 1})
+
+    # Tous les nœuds débloquables doivent être présents (pas de troncature
+    # silencieuse). Dans un vrai arbre de 20+ nœuds, ce serait critique.
+    state_unlockable = [
+        n.code for n in defn
+        if svc.compute_node_state(
+            {"root": 1, "atk": 1, "def": 1}, n.code
+        ) in ("unlockable", "in_progress")
+    ]
+    candidate_codes = [n.code for n in candidates]
+    for code in state_unlockable:
+        assert code in candidate_codes, (
+            f"`{code}` est marqué débloquable par compute_node_state "
+            f"mais absent de compute_unlockable_skills"
+        )
+
+
 # ---------- validate_investment ----------
 
 
