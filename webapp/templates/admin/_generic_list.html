@@ -25,6 +25,9 @@
                 <p class="form-section-help" style="margin: 0;">{{ source_label }}</p>
             {% endif %}
         </div>
+        {% if new_url %}
+            <a href="{{ new_url }}" class="btn btn-primary">+ {{ new_label or 'Nouveau' }}</a>
+        {% endif %}
     </header>
 
     <form class="filter-bar" method="get">

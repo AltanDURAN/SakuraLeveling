@@ -1,0 +1,94 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Nouvelle quête — Sakura Admin{% endblock %}
+
+{% block content %}
+{% set fd = form_data or {} %}
+<section class="form-page">
+    <a href="/admin/quests" class="breadcrumb">← Quêtes</a>
+    <h1>Nouvelle quête ({{ 'hebdomadaire' if scope == 'weekly' else 'quotidienne' }})</h1>
+    <div class="form-section-help" style="background: #fff5d5; padding: 0.8rem 1.2rem; border-radius: 8px;">
+        ⚠️ Modifie <code>{{ 'weekly_quests.json' if scope == 'weekly' else 'daily_quests.json' }}</code>. Restart du bot requis.
+    </div>
+
+    <form method="post" action="/admin/quests" class="form-grid">
+        <input type="hidden" name="scope" value="{{ scope }}">
+
+        <div class="form-section">
+            <h2 class="form-section-title">Identité</h2>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Code</span>
+                    <input type="text" name="code" class="input" value="{{ fd.get('code', '') }}" placeholder="ex: kill_slime_20" required>
+                    {% if errors.get('code') %}<span class="field-error">{{ errors['code'] }}</span>{% endif %}
+                </label>
+                <label class="field">
+                    <span class="field-label">Nom</span>
+                    <input type="text" name="name" class="input" value="{{ fd.get('name', '') }}" required>
+                    {% if errors.get('name') %}<span class="field-error">{{ errors['name'] }}</span>{% endif %}
+                </label>
+                <label class="field">
+                    <span class="field-label">Tier</span>
+                    <select name="tier" class="input">
+                        {% for t in ['easy', 'medium', 'hard'] %}
+                            <option value="{{ t }}" {% if fd.get('tier', 'easy') == t %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            </div>
+            <label class="field">
+                <span class="field-label">Description</span>
+                <textarea name="description" class="input textarea" rows="2">{{ fd.get('description', '') }}</textarea>
+            </label>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Objectif</h2>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Type</span>
+                    <select name="objective_type" class="input">
+                        {% for t in ['kill_family', 'kill_mob', 'daily_claim', 'xp_earned', 'gold_earned', 'items_dropped', 'damage_dealt', 'damage_tanked'] %}
+                            <option value="{{ t }}" {% if fd.get('objective_type') == t %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="field">
+                    <span class="field-label">Cible</span>
+                    <input type="text" name="objective_target" class="input" value="{{ fd.get('objective_target', '') }}" placeholder="ex: slime / gobelin_warrior">
+                </label>
+                <label class="field">
+                    <span class="field-label">Quantité</span>
+                    <input type="number" name="objective_quantity" class="input" value="{{ fd.get('objective_quantity', 5) }}" min="1" required>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Récompenses</h2>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Or</span>
+                    <input type="number" name="reward_gold" class="input" value="{{ fd.get('reward_gold', 100) }}">
+                </label>
+                <label class="field">
+                    <span class="field-label">XP</span>
+                    <input type="number" name="reward_xp" class="input" value="{{ fd.get('reward_xp', 50) }}">
+                </label>
+            </div>
+            <p class="form-section-help">
+                Items en récompense — format : <code>potion_soin_i:1, gold_coin:3</code>
+            </p>
+            <label class="field">
+                <input type="text" name="reward_items" class="input" value="{{ fd.get('reward_items', '') }}"
+                       placeholder="potion_soin_i:1">
+            </label>
+        </div>
+
+        <div class="form-actions">
+            <a href="/admin/quests?scope={{ scope }}" class="btn btn-ghost">Annuler</a>
+            <button type="submit" class="btn btn-primary">Créer la quête</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

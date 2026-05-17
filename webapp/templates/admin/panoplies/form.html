@@ -1,0 +1,58 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Nouvelle panoplie — Sakura Admin{% endblock %}
+
+{% block content %}
+{% set fd = form_data or {} %}
+<section class="form-page">
+    <a href="/admin/panoplies" class="breadcrumb">← Panoplies</a>
+    <h1>Nouvelle panoplie</h1>
+    <div class="form-section-help" style="background: #fff5d5; padding: 0.8rem 1.2rem; border-radius: 8px;">
+        ⚠️ Modifie <code>sets.json</code>. Restart du bot requis. Pour que les pièces soient liées : tagger les items via <code>item.family = "&lt;code&gt;"</code>.
+    </div>
+
+    <form method="post" action="/admin/panoplies" class="form-grid">
+        <div class="form-section">
+            <h2 class="form-section-title">Identité</h2>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Famille (code unique)</span>
+                    <input type="text" name="family" class="input" value="{{ fd.get('family', '') }}" placeholder="ex: dragonite" required>
+                    {% if errors.get('family') %}<span class="field-error">{{ errors['family'] }}</span>{% endif %}
+                </label>
+                <label class="field">
+                    <span class="field-label">Nom</span>
+                    <input type="text" name="name" class="input" value="{{ fd.get('name', '') }}" placeholder="Panoplie Dragonite">
+                </label>
+            </div>
+            <label class="field">
+                <span class="field-label">Description</span>
+                <textarea name="description" class="input textarea" rows="2">{{ fd.get('description', '') }}</textarea>
+            </label>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Bonus par palier</h2>
+            <p class="form-section-help">
+                Bonus du palier le plus haut REMPLACE celui des paliers inférieurs (pas cumulatif).<br>
+                Format : <code>defense=10, attack=5</code> par palier.
+            </p>
+            <div class="form-row">
+                <label class="field"><span class="field-label">2 pièces</span>
+                    <input type="text" name="tier_2" class="input" value="{{ fd.get('tier_2', '') }}" placeholder="defense=5"></label>
+                <label class="field"><span class="field-label">4 pièces</span>
+                    <input type="text" name="tier_4" class="input" value="{{ fd.get('tier_4', '') }}" placeholder="defense=10, attack=3"></label>
+                <label class="field"><span class="field-label">8 pièces</span>
+                    <input type="text" name="tier_8" class="input" value="{{ fd.get('tier_8', '') }}" placeholder="defense=20, attack=8"></label>
+                <label class="field"><span class="field-label">12 pièces</span>
+                    <input type="text" name="tier_12" class="input" value="{{ fd.get('tier_12', '') }}" placeholder="defense=40, attack=15, max_hp=50"></label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="/admin/panoplies" class="btn btn-ghost">Annuler</a>
+            <button type="submit" class="btn btn-primary">Créer la panoplie</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

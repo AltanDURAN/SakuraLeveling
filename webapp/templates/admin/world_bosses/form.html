@@ -1,0 +1,93 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Nouveau world boss — Sakura Admin{% endblock %}
+
+{% block content %}
+{% set fd = form_data or {} %}
+<section class="form-page">
+    <a href="/admin/world-bosses" class="breadcrumb">← World Bosses</a>
+    <h1>Nouveau world boss</h1>
+    <div class="form-section-help" style="background: #fff5d5; padding: 0.8rem 1.2rem; border-radius: 8px;">
+        ⚠️ Modifie <code>boss_definitions.json</code>. Restart du bot requis.
+    </div>
+
+    <form method="post" action="/admin/world-bosses" class="form-grid">
+        <div class="form-section">
+            <h2 class="form-section-title">Identité</h2>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Code</span>
+                    <input type="text" name="code" class="input" value="{{ fd.get('code', '') }}" placeholder="ex: gobelin_overlord" required>
+                    {% if errors.get('code') %}<span class="field-error">{{ errors['code'] }}</span>{% endif %}
+                </label>
+                <label class="field">
+                    <span class="field-label">Nom</span>
+                    <input type="text" name="name" class="input" value="{{ fd.get('name', '') }}" required>
+                    {% if errors.get('name') %}<span class="field-error">{{ errors['name'] }}</span>{% endif %}
+                </label>
+                <label class="field">
+                    <span class="field-label">Tier</span>
+                    <select name="tier" class="input">
+                        {% for t in ['intro', 'beginner', 'intermediate', 'advanced', 'endgame'] %}
+                            <option value="{{ t }}" {% if fd.get('tier', 'intro') == t %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            </div>
+            <label class="field">
+                <span class="field-label">Description</span>
+                <textarea name="description" class="input textarea" rows="2">{{ fd.get('description', '') }}</textarea>
+            </label>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Image (asset local)</span>
+                    <input type="text" name="image_name" class="input" value="{{ fd.get('image_name', 'boss_default.png') }}" placeholder="boss_default.png">
+                </label>
+                <label class="field">
+                    <span class="field-label">Poids de spawn</span>
+                    <input type="number" name="spawn_weight" class="input" value="{{ fd.get('spawn_weight', 100) }}">
+                </label>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Stats</h2>
+            <div class="form-row form-row-stats">
+                <label class="field"><span class="field-label">PV</span><input type="number" name="max_hp" class="input" value="{{ fd.get('max_hp', 10000) }}"></label>
+                <label class="field"><span class="field-label">Attaque</span><input type="number" name="attack" class="input" value="{{ fd.get('attack', 50) }}"></label>
+                <label class="field"><span class="field-label">Défense</span><input type="number" name="defense" class="input" value="{{ fd.get('defense', 20) }}"></label>
+                <label class="field"><span class="field-label">Vitesse</span><input type="number" name="speed" class="input" value="{{ fd.get('speed', 5) }}"></label>
+            </div>
+            <div class="form-row form-row-stats">
+                <label class="field"><span class="field-label">Crit %</span><input type="number" name="crit_chance" class="input" value="{{ fd.get('crit_chance', 0) }}"></label>
+                <label class="field"><span class="field-label">Crit dmg</span><input type="number" name="crit_damage" class="input" value="{{ fd.get('crit_damage', 100) }}"></label>
+                <label class="field"><span class="field-label">Esquive %</span><input type="number" name="dodge" class="input" value="{{ fd.get('dodge', 0) }}"></label>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Modifiers (optionnel)</h2>
+            <p class="form-section-help">
+                Format <code>key=value</code> séparé par virgules.<br>
+                Modifiers supportés : <code>damage_immunity_threshold</code> (int), <code>enrage_below_pct</code> + <code>enrage_attack_multiplier</code>, <code>crit_immunity</code> (mettre 1 ou 0).
+            </p>
+            <label class="field">
+                <input type="text" name="modifiers" class="input" value="{{ fd.get('modifiers', '') }}"
+                       placeholder="damage_immunity_threshold=5, enrage_below_pct=20">
+            </label>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Lore</h2>
+            <label class="field">
+                <textarea name="lore" class="input textarea" rows="3">{{ fd.get('lore', '') }}</textarea>
+            </label>
+        </div>
+
+        <div class="form-actions">
+            <a href="/admin/world-bosses" class="btn btn-ghost">Annuler</a>
+            <button type="submit" class="btn btn-primary">Créer le boss</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

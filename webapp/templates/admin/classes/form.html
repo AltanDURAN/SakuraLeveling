@@ -1,0 +1,63 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Nouvelle classe — Sakura Admin{% endblock %}
+
+{% block content %}
+{% set fd = form_data or {} %}
+<section class="form-page">
+    <a href="/admin/classes" class="breadcrumb">← Classes</a>
+    <h1>Nouvelle classe</h1>
+    <div class="form-section-help" style="background: #fff5d5; padding: 0.8rem 1.2rem; border-radius: 8px;">
+        ⚠️ Modifie <code>classes.json</code>. Le bot Discord devra être redémarré pour voir la nouvelle classe.
+    </div>
+
+    <form method="post" action="/admin/classes" class="form-grid">
+        <div class="form-section">
+            <h2 class="form-section-title">Identité</h2>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Code</span>
+                    <input type="text" name="code" class="input" value="{{ fd.get('code', '') }}" placeholder="ex: paladin" required>
+                    {% if errors.get('code') %}<span class="field-error">{{ errors['code'] }}</span>{% endif %}
+                </label>
+                <label class="field">
+                    <span class="field-label">Nom</span>
+                    <input type="text" name="name" class="input" value="{{ fd.get('name', '') }}" placeholder="Paladin" required>
+                    {% if errors.get('name') %}<span class="field-error">{{ errors['name'] }}</span>{% endif %}
+                </label>
+            </div>
+            <label class="field">
+                <span class="field-label">Description</span>
+                <textarea name="description" class="input textarea" rows="2">{{ fd.get('description', '') }}</textarea>
+            </label>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Bonus de stats</h2>
+            <p class="form-section-help">
+                Format : <code>max_hp=20, attack=3, defense=2</code>
+            </p>
+            <label class="field">
+                <input type="text" name="stat_bonuses" class="input" value="{{ fd.get('stat_bonuses', '') }}"
+                       placeholder="max_hp=20, attack=3, defense=2">
+            </label>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Déblocage (optionnel)</h2>
+            <p class="form-section-help">
+                Format : <code>profession_level:mining:2</code> ou <code>level:5</code>, séparé par virgules.
+            </p>
+            <label class="field">
+                <input type="text" name="unlock" class="input" value="{{ fd.get('unlock', '') }}"
+                       placeholder="profession_level:mining:2">
+            </label>
+        </div>
+
+        <div class="form-actions">
+            <a href="/admin/classes" class="btn btn-ghost">Annuler</a>
+            <button type="submit" class="btn btn-primary">Créer la classe</button>
+        </div>
+    </form>
+</section>
+{% endblock %}
