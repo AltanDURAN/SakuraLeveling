@@ -14,8 +14,9 @@
 
     <form class="filter-bar" method="get" action="/admin/mobs">
         <input type="text" name="q" value="{{ filter_q }}"
-               placeholder="🔍 Recherche par code ou nom" class="input">
-        <select name="family" class="input">
+               placeholder="🔍 Recherche par code ou nom" class="input"
+               onchange="this.form.submit()">
+        <select name="family" class="input" onchange="this.form.submit()">
             <option value="">Toutes familles</option>
             {% for fam in all_families %}
                 <option value="{{ fam }}" {% if filter_family == fam %}selected{% endif %}>
@@ -23,7 +24,6 @@
                 </option>
             {% endfor %}
         </select>
-        <button type="submit" class="btn btn-secondary">Filtrer</button>
         {% if filter_q or filter_family %}
             <a href="/admin/mobs" class="btn btn-ghost">Reset</a>
         {% endif %}
@@ -31,19 +31,19 @@
 
     {% if mobs %}
     <div class="table-wrapper">
-        <table class="data-table">
+        <table class="data-table" data-sortable>
             <thead>
                 <tr>
-                    <th>Code</th>
-                    <th>Nom</th>
-                    <th>Famille</th>
-                    <th>PV</th>
-                    <th>Atk</th>
-                    <th>Def</th>
-                    <th>Vit</th>
-                    <th>XP</th>
-                    <th>Or</th>
-                    <th>Spawn</th>
+                    <th data-sort-key="code">Code</th>
+                    <th data-sort-key="name">Nom</th>
+                    <th data-sort-key="family">Famille</th>
+                    <th data-sort-key="hp">PV</th>
+                    <th data-sort-key="atk">Atk</th>
+                    <th data-sort-key="def">Def</th>
+                    <th data-sort-key="spd">Vit</th>
+                    <th data-sort-key="xp">XP</th>
+                    <th data-sort-key="gold">Or</th>
+                    <th data-sort-key="spawn">Spawn</th>
                     <th></th>
                 </tr>
             </thead>

@@ -1,0 +1,77 @@
+{% extends "admin/base.html" %}
+
+{# Template générique pour les listings read-only (entités JSON-backed).
+   Le router passe :
+     - title : str — titre de la page
+     - icon : str — emoji du dashboard
+     - columns : list[(label, key, formatter)] où formatter est optionnel
+     - rows : list[dict] dont les clés correspondent aux `key` des columns
+     - filter_q : str — valeur du filtre texte courant
+     - source_label : str | None — texte sous l'header (ex: "Définitions dans skill_tree.json")
+     - filter_groups : list[dict] | None — filtres select supplémentaires :
+         [{name, current, options: list[(value, label)]}]
+     - detail_html : dict[row_key, str] | None — HTML détaillé déplié par ligne
+#}
+
+{% block title %}{{ title }} — Sakura Admin{% endblock %}
+
+{% block content %}
+<section class="list-page">
+    <header class="list-header">
+        <div>
+            <a href="/admin" class="breadcrumb">← Dashboard</a>
+            <h1>{{ icon }} {{ title }} <span class="count-pill">{{ rows|length }}</span></h1>
+            {% if source_label %}
+                <p class="form-section-help" style="margin: 0;">{{ source_label }}</p>
+            {% endif %}
+        </div>
+    </header>
+
+    <form class="filter-bar" method="get">
+        <input type="text" name="q" value="{{ filter_q or '' }}"
+               placeholder="🔍 Recherche dans toutes les colonnes" class="input"
+               onchange="this.form.submit()">
+        {% for group in (filter_groups or []) %}
+        <select name="{{ group.name }}" class="input" onchange="this.form.submit()">
+            <option value="">{{ group.placeholder }}</option>
+            {% for value, label in group.options %}
+                <option value="{{ value }}" {% if group.current == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        {% endfor %}
+        {% if filter_q or (filter_groups and (filter_groups | selectattr('current') | list)) %}
+            <a href="?" class="btn btn-ghost">Reset</a>
+        {% endif %}
+    </form>
+
+    {% if rows %}
+    <div class="table-wrapper">
+        <table class="data-table" data-sortable>
+            <thead>
+                <tr>
+                    {% for col in columns %}
+                        <th data-sort-key="{{ col.key }}">{{ col.label }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    {% for col in columns %}
+                        <td>
+                            {% set value = row.get(col.key) %}
+                            {% if value is none %}—{% else %}{{ value }}{% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>Aucune entrée correspondant aux filtres.</p>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

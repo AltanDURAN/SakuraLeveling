@@ -1,0 +1,101 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{% if shop_item %}Éditer shop item{% else %}Nouvel item au shop{% endif %} — Sakura Admin{% endblock %}
+
+{% block content %}
+{% set fd = form_data if form_data is defined else {} %}
+<section class="form-page">
+    <a href="/admin/shop" class="breadcrumb">← Shop</a>
+    <h1>
+        {% if shop_item %}
+            Éditer <code>{{ shop_item.item_definition.code }}</code>
+        {% else %}
+            Nouvel item au shop
+        {% endif %}
+    </h1>
+
+    <form method="post"
+          action="{% if shop_item %}/admin/shop/{{ shop_item.id }}{% else %}/admin/shop{% endif %}"
+          class="form-grid">
+
+        <div class="form-section">
+            <h2 class="form-section-title">Identité</h2>
+            {% if shop_item %}
+                <label class="field">
+                    <span class="field-label">Item</span>
+                    <input type="text" class="input"
+                           value="{{ shop_item.item_definition.name }} ({{ shop_item.item_definition.code }})"
+                           disabled>
+                </label>
+            {% else %}
+                <label class="field">
+                    <span class="field-label">Item à ajouter</span>
+                    <select name="item_code" class="input" required>
+                        <option value="">— Choisir —</option>
+                        {% for it in available_items %}
+                            <option value="{{ it.code }}" {% if fd.get('item_code') == it.code %}selected{% endif %}>
+                                {{ it.name }} ({{ it.code }}, {{ it.category }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% if errors.get('item_code') %}<span class="field-error">{{ errors['item_code'] }}</span>{% endif %}
+                </label>
+            {% endif %}
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Prix</h2>
+            <p class="form-section-help">
+                Achat = prix fixe payé par le joueur. Vente = fourchette
+                dynamique selon le stock actuel (max quand stock vide, min
+                quand stock ≥ threshold).
+            </p>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Prix d'achat</span>
+                    <input type="number" name="buy_price" class="input"
+                           value="{{ fd.get('buy_price', shop_item.buy_price if shop_item else 0) }}">
+                </label>
+                <label class="field">
+                    <span class="field-label">Vente max</span>
+                    <input type="number" name="max_sell_price" class="input"
+                           value="{{ fd.get('max_sell_price', shop_item.max_sell_price if shop_item else 0) }}">
+                </label>
+                <label class="field">
+                    <span class="field-label">Vente min</span>
+                    <input type="number" name="min_sell_price" class="input"
+                           value="{{ fd.get('min_sell_price', shop_item.min_sell_price if shop_item else 0) }}">
+                </label>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Stock</h2>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Stock courant</span>
+                    <input type="number" name="current_stock" class="input"
+                           value="{{ fd.get('current_stock', shop_item.current_stock if shop_item else 0) }}">
+                </label>
+                <label class="field">
+                    <span class="field-label">Threshold</span>
+                    <input type="number" name="stock_threshold" class="input"
+                           value="{{ fd.get('stock_threshold', shop_item.stock_threshold if shop_item else 100) }}">
+                </label>
+                <label class="field field-checkbox">
+                    <input type="checkbox" name="enabled"
+                           {% if fd.get('enabled') == 'on' or (shop_item and shop_item.enabled) or (not shop_item and not fd) %}checked{% endif %}>
+                    <span>Activé</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="/admin/shop" class="btn btn-ghost">Annuler</a>
+            <button type="submit" class="btn btn-primary">
+                {% if shop_item %}Enregistrer{% else %}Créer{% endif %}
+            </button>
+        </div>
+    </form>
+</section>
+{% endblock %}
