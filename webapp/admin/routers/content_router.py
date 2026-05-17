@@ -868,6 +868,48 @@ async def skills_create(request: Request, user: AdminUser = Depends(require_admi
 
 
 # --- Crafts (DB + sync JSON) ---
+
+# Labels FR pour les catégories d'items dans le form de craft. L'ordre
+# détermine l'affichage dans le select.
+CATEGORY_LABELS_FR: list[tuple[str, str]] = [
+    ("resource", "Ressources"),
+    ("weapon", "Armes"),
+    ("shield", "Boucliers"),
+    ("helmet", "Casques"),
+    ("chest", "Plastrons"),
+    ("legs", "Jambières"),
+    ("boots", "Bottes"),
+    ("necklace", "Colliers"),
+    ("bracelet", "Bracelets"),
+    ("ring", "Bagues"),
+    ("belt", "Ceintures"),
+    ("cape", "Capes"),
+    ("earring", "Boucles d'oreilles"),
+    ("consumable", "Consommables"),
+]
+
+
+def _craft_form_context(items):
+    """Construit items_by_category + labels pour le template."""
+    items_by_cat: dict[str, list[dict]] = {}
+    for it in items:
+        items_by_cat.setdefault(it.category, []).append({
+            "code": it.code, "name": it.name,
+        })
+    # Tri alphabétique des items dans chaque catégorie
+    for cat in items_by_cat:
+        items_by_cat[cat].sort(key=lambda x: x["name"])
+    return {
+        "categories": [
+            {"code": cat, "label": label}
+            for cat, label in CATEGORY_LABELS_FR
+            if cat in items_by_cat
+        ],
+        "items_by_category": items_by_cat,
+        "items": [{"code": it.code, "name": it.name, "category": it.category} for it in items],
+    }
+
+
 @router.get("/crafts/new", response_class=HTMLResponse)
 async def crafts_new_form(request: Request, user: AdminUser = Depends(require_admin)):
     with get_db_session() as session:
@@ -876,7 +918,7 @@ async def crafts_new_form(request: Request, user: AdminUser = Depends(require_ad
         request, "admin/crafts/form.html",
         context={
             "user": user, "errors": {}, "form_data": {},
-            "items": [{"code": it.code, "name": it.name} for it in items],
+            **_craft_form_context(items),
         },
     )
 
@@ -889,7 +931,13 @@ async def crafts_create(request: Request, user: AdminUser = Depends(require_admi
     from sqlalchemy import select
     from datetime import datetime, UTC
 
-    fd = {k: str(v) for k, v in (await request.form()).items()}
+    form = await request.form()
+    # Champs scalaires
+    fd: dict[str, str] = {}
+    for k in ("code", "name", "result_item_code", "result_quantity",
+              "result_category"):
+        fd[k] = str(form.get(k, ""))
+
     errors = {}
     code = fd.get("code", "").strip()
     name = fd.get("name", "").strip()
@@ -902,28 +950,43 @@ async def crafts_create(request: Request, user: AdminUser = Depends(require_admi
     if not result_code:
         errors["result_item_code"] = "Item résultat requis."
 
-    # ingredients format: "iron_ore:3, coal:1"
+    # Ingrédients : champs répétés ingredient_category[], ingredient_item_code[],
+    # ingredient_quantity[]. On les zippe par index.
+    ing_codes = form.getlist("ingredient_item_code")
+    ing_qtys = form.getlist("ingredient_quantity")
     ingredients = []
-    for chunk in fd.get("ingredients", "").replace(";", ",").split(","):
-        if ":" not in chunk:
+    for ic, qty in zip(ing_codes, ing_qtys):
+        ic = (ic or "").strip()
+        if not ic:
             continue
-        ic, qty = chunk.split(":", 1)
         try:
-            ingredients.append((ic.strip(), int(qty.strip())))
-        except ValueError:
+            q = int(qty)
+            if q < 1:
+                continue
+        except (ValueError, TypeError):
             continue
+        ingredients.append((ic, q))
 
     if not ingredients:
-        errors["ingredients"] = "Au moins 1 ingrédient requis (format `code:qty`)."
+        errors["ingredients"] = "Au moins 1 ingrédient requis."
 
     if errors:
         with get_db_session() as session:
             items = ItemRepository(session).list_all()
+        # Reconstruit la liste des rows ingrédients pour re-pré-remplir
+        ingredients_rows = [
+            {"category": c, "item_code": ic, "quantity": q}
+            for c, ic, q in zip(
+                form.getlist("ingredient_category"),
+                ing_codes, ing_qtys,
+            )
+        ]
         return get_templates().TemplateResponse(
             request, "admin/crafts/form.html",
             context={
                 "user": user, "errors": errors, "form_data": fd,
-                "items": [{"code": it.code, "name": it.name} for it in items],
+                "ingredients_rows": ingredients_rows,
+                **_craft_form_context(items),
             },
             status_code=400,
         )

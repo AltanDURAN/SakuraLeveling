@@ -4,7 +4,9 @@
 
 {% block content %}
 {% set fd = form_data or {} %}
-<section class="form-page">
+{% set initial_rows = ingredients_rows if ingredients_rows is defined and ingredients_rows else [{'category': '', 'item_code': '', 'quantity': 1}] %}
+<section class="form-page"
+         x-data='craftForm({{ items_by_category|tojson }}, {{ initial_rows|tojson }})'>
     <a href="/admin/crafts" class="breadcrumb">← Recettes</a>
     <h1>Nouvelle recette</h1>
     <div class="form-section-help" style="background: #d5f5e0; padding: 0.8rem 1.2rem; border-radius: 8px;">
@@ -31,33 +33,77 @@
 
         <div class="form-section">
             <h2 class="form-section-title">Résultat</h2>
-            <div class="form-row">
+            <div class="form-row" style="grid-template-columns: 1fr 2fr 1fr;">
+                <label class="field">
+                    <span class="field-label">Type</span>
+                    <select x-model="result.category" class="input">
+                        <option value="">— Choisir un type —</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat.code }}">{{ cat.label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
                 <label class="field">
                     <span class="field-label">Item produit</span>
-                    <input list="item-codes" type="text" name="result_item_code" class="input" value="{{ fd.get('result_item_code', '') }}" placeholder="ex: dragonite_sword" required>
+                    <select name="result_item_code" class="input" required
+                            :disabled="!result.category">
+                        <option value="">— Choisir un item —</option>
+                        <template x-for="it in itemsForCategory(result.category)" :key="it.code">
+                            <option :value="it.code"
+                                    :selected="it.code === result.item_code"
+                                    x-text="it.name"></option>
+                        </template>
+                    </select>
                     {% if errors.get('result_item_code') %}<span class="field-error">{{ errors['result_item_code'] }}</span>{% endif %}
                 </label>
                 <label class="field">
                     <span class="field-label">Quantité produite</span>
-                    <input type="number" name="result_quantity" class="input" value="{{ fd.get('result_quantity', 1) }}" min="1">
+                    <input type="number" name="result_quantity" class="input"
+                           value="{{ fd.get('result_quantity', 1) }}" min="1" required>
                 </label>
             </div>
-            <datalist id="item-codes">
-                {% for it in items %}<option value="{{ it.code }}">{{ it.name }}</option>{% endfor %}
-            </datalist>
         </div>
 
         <div class="form-section">
             <h2 class="form-section-title">Ingrédients</h2>
             <p class="form-section-help">
-                Format : <code>code:qty</code> séparés par virgules. L'item doit exister.<br>
-                Ex : <code>iron_ingot:3, leather:2, gobelin_tooth:1</code>
+                Une ligne par ingrédient. Choisis un type pour activer la liste d'items.
             </p>
-            <label class="field">
-                <input type="text" name="ingredients" class="input" value="{{ fd.get('ingredients', '') }}"
-                       placeholder="iron_ingot:3, leather:2" required>
-                {% if errors.get('ingredients') %}<span class="field-error">{{ errors['ingredients'] }}</span>{% endif %}
-            </label>
+            {% if errors.get('ingredients') %}
+                <p class="field-error">{{ errors['ingredients'] }}</p>
+            {% endif %}
+
+            <div class="ingredient-rows">
+                <template x-for="(row, idx) in rows" :key="idx">
+                    <div class="ingredient-row">
+                        <select name="ingredient_category" class="input" x-model="row.category">
+                            <option value="">— Type —</option>
+                            {% for cat in categories %}
+                                <option value="{{ cat.code }}">{{ cat.label }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <select name="ingredient_item_code" class="input"
+                                x-model="row.item_code" :disabled="!row.category">
+                            <option value="">— Item —</option>
+                            <template x-for="it in itemsForCategory(row.category)" :key="it.code">
+                                <option :value="it.code" x-text="it.name"></option>
+                            </template>
+                        </select>
+
+                        <input type="number" name="ingredient_quantity" class="input"
+                               x-model.number="row.quantity" min="1" placeholder="qté">
+
+                        <button type="button" class="btn btn-ghost btn-small"
+                                @click="removeRow(idx)"
+                                :disabled="rows.length === 1"
+                                title="Retirer cette ligne">×</button>
+                    </div>
+                </template>
+            </div>
+
+            <button type="button" class="btn btn-secondary" style="margin-top: 0.8rem;"
+                    @click="addRow()">+ Ajouter un ingrédient</button>
         </div>
 
         <div class="form-actions">
@@ -66,4 +112,55 @@
         </div>
     </form>
 </section>
+
+<script>
+function craftForm(itemsByCategory, initialRows) {
+    return {
+        itemsByCategory: itemsByCategory,
+        rows: initialRows.length ? initialRows.map(r => ({
+            category: r.category || '',
+            item_code: r.item_code || '',
+            quantity: r.quantity || 1,
+        })) : [{category: '', item_code: '', quantity: 1}],
+        result: {category: '', item_code: ''},
+        itemsForCategory(cat) {
+            if (!cat) return [];
+            return this.itemsByCategory[cat] || [];
+        },
+        addRow() {
+            this.rows.push({category: '', item_code: '', quantity: 1});
+        },
+        removeRow(idx) {
+            if (this.rows.length > 1) this.rows.splice(idx, 1);
+        },
+    };
+}
+</script>
+
+<style>
+.ingredient-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+.ingredient-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr 100px 40px;
+    gap: 0.6rem;
+    align-items: center;
+}
+.ingredient-row .btn-ghost.btn-small {
+    color: var(--danger);
+    font-size: 1.1rem;
+    width: 40px;
+    padding: 0.4rem 0;
+}
+.ingredient-row .btn-ghost.btn-small:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+@media (max-width: 720px) {
+    .ingredient-row { grid-template-columns: 1fr 1fr 80px 32px; }
+}
+</style>
 {% endblock %}
