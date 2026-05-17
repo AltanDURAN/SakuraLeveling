@@ -72,3 +72,49 @@ def add_skill_node(code: str, node: dict) -> None:
         raise ValueError(f"Skill `{code}` existe déjà")
     data["skills"][code] = node
     atomic_write_json("skill_tree.json", data)
+
+
+def update_skill_node(code: str, node: dict) -> None:
+    """Remplace un nœud existant. Code et node doivent matcher."""
+    data = load_json("skill_tree.json", default={"skills": {}})
+    if code not in (data.get("skills") or {}):
+        raise ValueError(f"Skill `{code}` introuvable")
+    data["skills"][code] = node
+    atomic_write_json("skill_tree.json", data)
+
+
+def find_in_list_by_key(filename: str, value: str, key: str = "code") -> dict | None:
+    """Trouve une entrée dans une liste JSON par clé."""
+    data = load_json(filename, default=[]) or []
+    if not isinstance(data, list):
+        return None
+    for entry in data:
+        if isinstance(entry, dict) and entry.get(key) == value:
+            return entry
+    return None
+
+
+def update_in_list_by_key(filename: str, value: str, new_entry: dict, key: str = "code") -> None:
+    """Remplace une entrée dans une liste JSON en matchant sur key."""
+    data = load_json(filename, default=[]) or []
+    if not isinstance(data, list):
+        raise ValueError(f"{filename} n'est pas une liste JSON")
+    found = False
+    for i, entry in enumerate(data):
+        if isinstance(entry, dict) and entry.get(key) == value:
+            data[i] = new_entry
+            found = True
+            break
+    if not found:
+        raise ValueError(f"Entrée `{value}` introuvable dans {filename}")
+    atomic_write_json(filename, data)
+
+
+def delete_in_list_by_key(filename: str, value: str, key: str = "code") -> None:
+    data = load_json(filename, default=[]) or []
+    if not isinstance(data, list):
+        raise ValueError(f"{filename} n'est pas une liste JSON")
+    new_data = [e for e in data if not (isinstance(e, dict) and e.get(key) == value)]
+    if len(new_data) == len(data):
+        raise ValueError(f"Entrée `{value}` introuvable dans {filename}")
+    atomic_write_json(filename, new_data)

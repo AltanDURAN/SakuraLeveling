@@ -1,23 +1,23 @@
 {% extends "admin/base.html" %}
 
-{% block title %}Nouvelle panoplie — Sakura Admin{% endblock %}
+{% block title %}{% if edit_code %}Éditer {{ edit_code }}{% else %}Nouvelle panoplie{% endif %} — Sakura Admin{% endblock %}
 
 {% block content %}
 {% set fd = form_data or {} %}
 <section class="form-page">
     <a href="/admin/panoplies" class="breadcrumb">← Panoplies</a>
-    <h1>Nouvelle panoplie</h1>
+    <h1>{% if edit_code %}Éditer <code>{{ edit_code }}</code>{% else %}Nouvelle panoplie{% endif %}</h1>
     <div class="form-section-help" style="background: #fff5d5; padding: 0.8rem 1.2rem; border-radius: 8px;">
         ⚠️ Modifie <code>sets.json</code>. Restart du bot requis. Pour que les pièces soient liées : tagger les items via <code>item.family = "&lt;code&gt;"</code>.
     </div>
 
-    <form method="post" action="/admin/panoplies" class="form-grid">
+    <form method="post" action="{% if edit_code %}/admin/panoplies/{{ edit_code }}{% else %}/admin/panoplies{% endif %}" class="form-grid">
         <div class="form-section">
             <h2 class="form-section-title">Identité</h2>
             <div class="form-row">
                 <label class="field">
                     <span class="field-label">Famille (code unique)</span>
-                    <input type="text" name="family" class="input" value="{{ fd.get('family', '') }}" placeholder="ex: dragonite" required>
+                    <input type="text" name="family" class="input" value="{{ fd.get('family', '') }}" placeholder="ex: dragonite" {% if edit_code %}disabled{% else %}required{% endif %}>
                     {% if errors.get('family') %}<span class="field-error">{{ errors['family'] }}</span>{% endif %}
                 </label>
                 <label class="field">
@@ -51,7 +51,9 @@
 
         <div class="form-actions">
             <a href="/admin/panoplies" class="btn btn-ghost">Annuler</a>
-            <button type="submit" class="btn btn-primary">Créer la panoplie</button>
+            <button type="submit" class="btn btn-primary">
+                {% if edit_code %}Enregistrer{% else %}Créer la panoplie{% endif %}
+            </button>
         </div>
     </form>
 </section>

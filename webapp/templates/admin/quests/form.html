@@ -1,17 +1,22 @@
 {% extends "admin/base.html" %}
 
-{% block title %}Nouvelle quête — Sakura Admin{% endblock %}
+{% block title %}{% if edit_code %}Éditer {{ edit_code }}{% else %}Nouvelle quête{% endif %} — Sakura Admin{% endblock %}
 
 {% block content %}
 {% set fd = form_data or {} %}
 <section class="form-page">
-    <a href="/admin/quests" class="breadcrumb">← Quêtes</a>
-    <h1>Nouvelle quête ({{ 'hebdomadaire' if scope == 'weekly' else 'quotidienne' }})</h1>
+    <a href="/admin/quests?scope={{ scope }}" class="breadcrumb">← Quêtes</a>
+    <h1>
+        {% if edit_code %}Éditer <code>{{ edit_code }}</code>{% else %}Nouvelle quête{% endif %}
+        ({{ 'hebdomadaire' if scope == 'weekly' else 'quotidienne' }})
+    </h1>
     <div class="form-section-help" style="background: #fff5d5; padding: 0.8rem 1.2rem; border-radius: 8px;">
         ⚠️ Modifie <code>{{ 'weekly_quests.json' if scope == 'weekly' else 'daily_quests.json' }}</code>. Restart du bot requis.
     </div>
 
-    <form method="post" action="/admin/quests" class="form-grid">
+    <form method="post"
+          action="{% if edit_code %}/admin/quests/{{ scope }}/{{ edit_code }}{% else %}/admin/quests{% endif %}"
+          class="form-grid">
         <input type="hidden" name="scope" value="{{ scope }}">
 
         <div class="form-section">
@@ -19,7 +24,7 @@
             <div class="form-row">
                 <label class="field">
                     <span class="field-label">Code</span>
-                    <input type="text" name="code" class="input" value="{{ fd.get('code', '') }}" placeholder="ex: kill_slime_20" required>
+                    <input type="text" name="code" class="input" value="{{ fd.get('code', '') }}" placeholder="ex: kill_slime_20" {% if edit_code %}disabled{% else %}required{% endif %}>
                     {% if errors.get('code') %}<span class="field-error">{{ errors['code'] }}</span>{% endif %}
                 </label>
                 <label class="field">
@@ -87,7 +92,9 @@
 
         <div class="form-actions">
             <a href="/admin/quests?scope={{ scope }}" class="btn btn-ghost">Annuler</a>
-            <button type="submit" class="btn btn-primary">Créer la quête</button>
+            <button type="submit" class="btn btn-primary">
+                {% if edit_code %}Enregistrer{% else %}Créer la quête{% endif %}
+            </button>
         </div>
     </form>
 </section>

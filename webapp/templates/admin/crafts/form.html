@@ -1,26 +1,27 @@
 {% extends "admin/base.html" %}
 
-{% block title %}Nouvelle recette — Sakura Admin{% endblock %}
+{% block title %}{% if edit_code %}Éditer {{ edit_code }}{% else %}Nouvelle recette{% endif %} — Sakura Admin{% endblock %}
 
 {% block content %}
 {% set fd = form_data or {} %}
 {% set initial_rows = ingredients_rows if ingredients_rows is defined and ingredients_rows else [{'category': '', 'item_code': '', 'quantity': 1}] %}
+{% set initial_result = {'category': fd.get('result_category', ''), 'item_code': fd.get('result_item_code', '')} %}
 <section class="form-page"
-         x-data='craftForm({{ items_by_category|tojson }}, {{ initial_rows|tojson }})'>
+         x-data='craftForm({{ items_by_category|tojson }}, {{ initial_rows|tojson }}, {{ initial_result|tojson }})'>
     <a href="/admin/crafts" class="breadcrumb">← Recettes</a>
-    <h1>Nouvelle recette</h1>
+    <h1>{% if edit_code %}Éditer <code>{{ edit_code }}</code>{% else %}Nouvelle recette{% endif %}</h1>
     <div class="form-section-help" style="background: #d5f5e0; padding: 0.8rem 1.2rem; border-radius: 8px;">
         ✅ Écrit directement en DB (<code>craft_recipes</code> + <code>craft_recipe_ingredients</code>). Pas de restart bot nécessaire.<br>
         La station (forge / craft) est inférée automatiquement depuis la catégorie de l'item résultat.
     </div>
 
-    <form method="post" action="/admin/crafts" class="form-grid">
+    <form method="post" action="{% if edit_code %}/admin/crafts/{{ edit_code }}{% else %}/admin/crafts{% endif %}" class="form-grid">
         <div class="form-section">
             <h2 class="form-section-title">Identité</h2>
             <div class="form-row">
                 <label class="field">
                     <span class="field-label">Code</span>
-                    <input type="text" name="code" class="input" value="{{ fd.get('code', '') }}" placeholder="ex: dragonite_sword_recipe" required>
+                    <input type="text" name="code" class="input" value="{{ fd.get('code', '') }}" placeholder="ex: dragonite_sword_recipe" {% if edit_code %}disabled{% else %}required{% endif %}>
                     {% if errors.get('code') %}<span class="field-error">{{ errors['code'] }}</span>{% endif %}
                 </label>
                 <label class="field">
@@ -46,12 +47,10 @@
                 <label class="field">
                     <span class="field-label">Item produit</span>
                     <select name="result_item_code" class="input" required
-                            :disabled="!result.category">
+                            x-model="result.item_code" :disabled="!result.category">
                         <option value="">— Choisir un item —</option>
                         <template x-for="it in itemsForCategory(result.category)" :key="it.code">
-                            <option :value="it.code"
-                                    :selected="it.code === result.item_code"
-                                    x-text="it.name"></option>
+                            <option :value="it.code" x-text="it.name"></option>
                         </template>
                     </select>
                     {% if errors.get('result_item_code') %}<span class="field-error">{{ errors['result_item_code'] }}</span>{% endif %}
@@ -108,13 +107,15 @@
 
         <div class="form-actions">
             <a href="/admin/crafts" class="btn btn-ghost">Annuler</a>
-            <button type="submit" class="btn btn-primary">Créer la recette</button>
+            <button type="submit" class="btn btn-primary">
+                {% if edit_code %}Enregistrer{% else %}Créer la recette{% endif %}
+            </button>
         </div>
     </form>
 </section>
 
 <script>
-function craftForm(itemsByCategory, initialRows) {
+function craftForm(itemsByCategory, initialRows, initialResult) {
     return {
         itemsByCategory: itemsByCategory,
         rows: initialRows.length ? initialRows.map(r => ({
@@ -122,7 +123,10 @@ function craftForm(itemsByCategory, initialRows) {
             item_code: r.item_code || '',
             quantity: r.quantity || 1,
         })) : [{category: '', item_code: '', quantity: 1}],
-        result: {category: '', item_code: ''},
+        result: {
+            category: (initialResult && initialResult.category) || '',
+            item_code: (initialResult && initialResult.item_code) || '',
+        },
         itemsForCategory(cat) {
             if (!cat) return [];
             return this.itemsByCategory[cat] || [];
