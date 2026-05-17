@@ -134,11 +134,16 @@ class SkillTreeService:
     # ---------- Liste des compétences débloquables ----------
 
     def compute_unlockable_skills(
-        self, allocations: dict[str, int], limit: int = 5
+        self, allocations: dict[str, int], limit: int = 25
     ) -> list[SkillNode]:
         """Renvoie les nœuds que le joueur peut investir maintenant : prérequis
         remplis ET niveau actuel < max_level. Trié par profondeur (parents avant
         enfants) puis par code, plafonné à `limit`.
+
+        La limite par défaut est 25 (max d'options dans un Discord Select Menu)
+        pour rester cohérent avec le rendu visuel de l'arbre : si l'image montre
+        un nœud "débloquable" mais qu'on le tronque ici, le joueur ne peut pas
+        le sélectionner, et on a un bug de divergence front/back.
         """
         candidates: list[SkillNode] = []
         for node in self.definition:
