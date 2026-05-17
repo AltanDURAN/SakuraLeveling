@@ -14,8 +14,9 @@
 
     <form class="filter-bar" method="get" action="/admin/items">
         <input type="text" name="q" value="{{ filter_q }}"
-               placeholder="🔍 Recherche par code ou nom" class="input">
-        <select name="category" class="input">
+               placeholder="🔍 Recherche par code ou nom" class="input"
+               onchange="this.form.submit()">
+        <select name="category" class="input" onchange="this.form.submit()">
             <option value="">Toutes catégories</option>
             {% for cat in all_categories %}
                 <option value="{{ cat }}" {% if filter_category == cat %}selected{% endif %}>
@@ -23,7 +24,7 @@
                 </option>
             {% endfor %}
         </select>
-        <select name="family" class="input">
+        <select name="family" class="input" onchange="this.form.submit()">
             <option value="">Toutes familles</option>
             {% for fam in all_families %}
                 <option value="{{ fam }}" {% if filter_family == fam %}selected{% endif %}>
@@ -31,7 +32,6 @@
                 </option>
             {% endfor %}
         </select>
-        <button type="submit" class="btn btn-secondary">Filtrer</button>
         {% if filter_q or filter_category or filter_family %}
             <a href="/admin/items" class="btn btn-ghost">Reset</a>
         {% endif %}
@@ -39,17 +39,17 @@
 
     {% if items %}
     <div class="table-wrapper">
-        <table class="data-table">
+        <table class="data-table" data-sortable>
             <thead>
                 <tr>
-                    <th>Code</th>
-                    <th>Nom</th>
-                    <th>Catégorie</th>
-                    <th>Rareté</th>
-                    <th>Famille</th>
-                    <th>Slot</th>
-                    <th>Vente</th>
-                    <th>Achat</th>
+                    <th data-sort-key="code">Code</th>
+                    <th data-sort-key="name">Nom</th>
+                    <th data-sort-key="category">Catégorie</th>
+                    <th data-sort-key="rarity">Rareté</th>
+                    <th data-sort-key="family">Famille</th>
+                    <th data-sort-key="slot">Slot</th>
+                    <th data-sort-key="sell">Vente</th>
+                    <th data-sort-key="buy">Achat</th>
                     <th></th>
                 </tr>
             </thead>

@@ -1,0 +1,75 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Shop — Sakura Admin{% endblock %}
+
+{% block content %}
+<section class="list-page">
+    <header class="list-header">
+        <div>
+            <a href="/admin" class="breadcrumb">← Dashboard</a>
+            <h1>🏪 Shop <span class="count-pill">{{ rows|length }}</span></h1>
+        </div>
+        <a href="/admin/shop/new" class="btn btn-primary">+ Nouvel item au shop</a>
+    </header>
+
+    <form class="filter-bar" method="get" action="/admin/shop">
+        <input type="text" name="q" value="{{ filter_q }}"
+               placeholder="🔍 Recherche par code ou nom" class="input"
+               onchange="this.form.submit()">
+        <select name="enabled" class="input" onchange="this.form.submit()">
+            <option value="">Tous (actifs + désactivés)</option>
+            <option value="1" {% if filter_enabled == "1" %}selected{% endif %}>Actifs seulement</option>
+            <option value="0" {% if filter_enabled == "0" %}selected{% endif %}>Désactivés seulement</option>
+        </select>
+        {% if filter_q or filter_enabled %}
+            <a href="/admin/shop" class="btn btn-ghost">Reset</a>
+        {% endif %}
+    </form>
+
+    {% if rows %}
+    <div class="table-wrapper">
+        <table class="data-table" data-sortable>
+            <thead>
+                <tr>
+                    <th data-sort-key="code">Code</th>
+                    <th data-sort-key="name">Nom</th>
+                    <th data-sort-key="cat">Catégorie</th>
+                    <th data-sort-key="buy">Achat</th>
+                    <th data-sort-key="max">Vente max</th>
+                    <th data-sort-key="min">Vente min</th>
+                    <th data-sort-key="stock">Stock</th>
+                    <th data-sort-key="thr">Threshold</th>
+                    <th data-sort-key="en">Actif</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in rows %}
+                <tr>
+                    <td><code>{{ r.item_code }}</code></td>
+                    <td>{{ r.item_name }}</td>
+                    <td>{{ r.category }}</td>
+                    <td>{{ r.buy_price }}</td>
+                    <td>{{ r.max_sell }}</td>
+                    <td>{{ r.min_sell }}</td>
+                    <td>{{ r.current_stock }}</td>
+                    <td>{{ r.stock_threshold }}</td>
+                    <td>{{ r.enabled }}</td>
+                    <td>
+                        <a href="/admin/shop/{{ r.id }}/edit" class="btn btn-small">Éditer</a>
+                        <form method="post" action="/admin/shop/{{ r.id }}/delete" style="display:inline" onsubmit="return confirm('Supprimer {{ r.item_code }} du shop ?');">
+                            <button type="submit" class="btn btn-small btn-ghost" style="color: var(--danger);">×</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>Aucun item du shop correspondant aux filtres.</p>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

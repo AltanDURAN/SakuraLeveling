@@ -1,0 +1,119 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Actions admin — Sakura Admin{% endblock %}
+
+{% block content %}
+<section class="form-page">
+    <a href="/admin" class="breadcrumb">← Dashboard</a>
+    <h1>⚡ Actions admin</h1>
+    <p class="form-section-help">
+        Actions rapides qui touchent directement la DB. Le bot Discord n'est
+        pas mis au courant en temps réel — un /profile rafraîchira l'info.
+    </p>
+
+    {% if flash_message %}
+        <div class="form-section" style="background: var(--accent-soft); border-color: var(--accent);">
+            ✅ {{ flash_message }}
+        </div>
+    {% endif %}
+    {% if flash_error %}
+        <div class="form-section" style="background: #fce4e7; border-color: var(--danger); color: var(--danger);">
+            ❌ {{ flash_error }}
+        </div>
+    {% endif %}
+
+    {% set target_field %}
+        <label class="field">
+            <span class="field-label">Joueur (Discord ID ou nom)</span>
+            <input list="players-list" name="target" class="input"
+                   placeholder="Discord ID ou nom" required>
+        </label>
+    {% endset %}
+
+    <datalist id="players-list">
+        {% for p in profiles %}
+            <option value="{{ p.discord_id }}">{{ p.display_name }} ({{ p.username }})</option>
+        {% endfor %}
+    </datalist>
+
+    <div class="entity-grid" style="grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));">
+
+        <form method="post" action="/admin/actions/give_gold" class="form-section">
+            <h2 class="form-section-title">💰 Donner de l'or</h2>
+            <div class="form-row">{{ target_field }}
+                <label class="field">
+                    <span class="field-label">Montant (peut être négatif)</span>
+                    <input type="number" name="amount" class="input" value="100" required>
+                </label>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Donner</button>
+            </div>
+        </form>
+
+        <form method="post" action="/admin/actions/give_xp" class="form-section">
+            <h2 class="form-section-title">✨ Donner de l'XP</h2>
+            <div class="form-row">{{ target_field }}
+                <label class="field">
+                    <span class="field-label">XP</span>
+                    <input type="number" name="amount" class="input" value="100" required>
+                </label>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Donner</button>
+            </div>
+        </form>
+
+        <form method="post" action="/admin/actions/set_level" class="form-section">
+            <h2 class="form-section-title">📈 Définir le niveau</h2>
+            <p class="form-section-help">XP remis à 0 pour le nouveau niveau.</p>
+            <div class="form-row">{{ target_field }}
+                <label class="field">
+                    <span class="field-label">Niveau cible</span>
+                    <input type="number" name="level" class="input" value="10" min="1" required>
+                </label>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Appliquer</button>
+            </div>
+        </form>
+
+        <form method="post" action="/admin/actions/give_skill_points" class="form-section">
+            <h2 class="form-section-title">🌳 Donner des skill points</h2>
+            <div class="form-row">{{ target_field }}
+                <label class="field">
+                    <span class="field-label">Skill points (peut être négatif)</span>
+                    <input type="number" name="amount" class="input" value="5" required>
+                </label>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Donner</button>
+            </div>
+        </form>
+
+        <form method="post" action="/admin/actions/give_item" class="form-section">
+            <h2 class="form-section-title">📦 Donner un item</h2>
+            <div class="form-row">{{ target_field }}
+                <label class="field">
+                    <span class="field-label">Item</span>
+                    <input list="items-list" name="item_code" class="input"
+                           placeholder="ex: iron_sword" required>
+                </label>
+                <label class="field">
+                    <span class="field-label">Quantité</span>
+                    <input type="number" name="quantity" class="input" value="1" min="1" required>
+                </label>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Donner</button>
+            </div>
+        </form>
+    </div>
+
+    <datalist id="items-list">
+        {% for it in items %}
+            <option value="{{ it.code }}">{{ it.name }}</option>
+        {% endfor %}
+    </datalist>
+</section>
+{% endblock %}

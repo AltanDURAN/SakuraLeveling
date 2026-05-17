@@ -1,0 +1,72 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Joueurs — Sakura Admin{% endblock %}
+
+{% block content %}
+<section class="list-page">
+    <header class="list-header">
+        <div>
+            <a href="/admin" class="breadcrumb">← Dashboard</a>
+            <h1>👥 Joueurs <span class="count-pill">{{ rows|length }}</span></h1>
+        </div>
+    </header>
+
+    <form class="filter-bar" method="get" action="/admin/players">
+        <input type="text" name="q" value="{{ filter_q }}"
+               placeholder="🔍 Recherche par Discord ID, username ou display name"
+               class="input" onchange="this.form.submit()">
+        {% if filter_q %}
+            <a href="/admin/players" class="btn btn-ghost">Reset</a>
+        {% endif %}
+    </form>
+
+    {% if rows %}
+    <div class="table-wrapper">
+        <table class="data-table" data-sortable>
+            <thead>
+                <tr>
+                    <th data-sort-key="id">ID</th>
+                    <th data-sort-key="discord">Discord ID</th>
+                    <th data-sort-key="name">Nom</th>
+                    <th data-sort-key="level">Niveau</th>
+                    <th data-sort-key="xp">XP</th>
+                    <th data-sort-key="sp">Skill points</th>
+                    <th data-sort-key="gold">Or</th>
+                    <th data-sort-key="streak">Streak</th>
+                    <th data-sort-key="seen">Dernière connexion</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in rows %}
+                <tr>
+                    <td>{{ r.id }}</td>
+                    <td><code>{{ r.discord_id }}</code></td>
+                    <td>{{ r.display_name }} <span style="color: var(--text-faint); font-size: 0.85em;">({{ r.username }})</span></td>
+                    <td>{{ r.level }}</td>
+                    <td>{{ r.xp }}</td>
+                    <td>{{ r.skill_points }}</td>
+                    <td>{{ r.gold }}</td>
+                    <td>{{ r.daily_streak }}</td>
+                    <td>{{ r.last_seen }}</td>
+                    <td>
+                        <form method="post" action="/admin/players/{{ r.id }}/reset"
+                              style="display:inline"
+                              onsubmit="return confirm('⚠️ RESET COMPLET de {{ r.display_name }} ?\n\nTout sera remis à zéro sauf l\'identité Discord. Irréversible.');">
+                            <button type="submit" class="btn btn-small" style="background: var(--danger); color: white;">
+                                Reset
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>Aucun joueur correspondant aux filtres.</p>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

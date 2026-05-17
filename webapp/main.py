@@ -40,10 +40,14 @@ from app.infrastructure.db.session import get_db_session
 from app.infrastructure.skill_tree.skill_tree_loader import (
     get_definition as get_skill_tree_definition,
 )
+from webapp.admin.routers.actions_router import router as admin_actions_router
 from webapp.admin.routers.auth_router import router as admin_auth_router
+from webapp.admin.routers.content_router import router as admin_content_router
 from webapp.admin.routers.dashboard_router import router as admin_dashboard_router
 from webapp.admin.routers.items_router import router as admin_items_router
 from webapp.admin.routers.mobs_router import router as admin_mobs_router
+from webapp.admin.routers.players_router import router as admin_players_router
+from webapp.admin.routers.shop_router import router as admin_shop_router
 
 
 WEBAPP_DIR = Path(__file__).resolve().parent
@@ -64,6 +68,10 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 app.include_router(admin_auth_router)
 app.include_router(admin_items_router)
 app.include_router(admin_mobs_router)
+app.include_router(admin_shop_router)
+app.include_router(admin_players_router)
+app.include_router(admin_actions_router)
+app.include_router(admin_content_router)
 app.include_router(admin_dashboard_router)
 
 
