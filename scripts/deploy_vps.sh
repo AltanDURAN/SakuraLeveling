@@ -30,6 +30,14 @@ git checkout "$BRANCH"
 git pull origin "$BRANCH"
 echo "    HEAD : $(git rev-parse --short HEAD) — $(git log -1 --pretty=%s)"
 
+echo "==> 2.5. Sync deps (pyproject.toml → .venv)"
+# Garde le .venv synchro avec les deps déclarées dans pyproject.toml.
+# `pip install -e .` re-résout l'arbre de deps à chaque déploiement et
+# n'installe que ce qui manque (idempotent et rapide si rien n'a changé).
+# Évite le piège du "ModuleNotFoundError" après ajout d'une dep sur main.
+.venv/bin/pip install -e . --quiet 2>&1 | tail -5 || \
+    { echo "    pip install KO, on continue quand même"; }
+
 echo "==> 3. Alembic upgrade head"
 .venv/bin/alembic current
 .venv/bin/alembic upgrade head

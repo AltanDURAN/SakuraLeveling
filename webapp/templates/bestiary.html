@@ -12,7 +12,7 @@
         <h1>📖 Bestiaire</h1>
         <p class="subtitle">
             {{ mobs|length }} monstre{% if mobs|length != 1 %}s{% endif %} répertorié{% if mobs|length != 1 %}s{% endif %}.
-            Triés par famille puis par PV.
+            Triés par score de puissance (du plus fort au plus faible).
         </p>
     </header>
 
@@ -53,7 +53,7 @@
                 <ul>
                     {% for entry in mob.loot_table %}
                     <li>
-                        <code>{{ entry.item_code }}</code>
+                        {{ entry.item_name }}
                         ×{{ entry.min_quantity }}{% if entry.max_quantity != entry.min_quantity %}–{{ entry.max_quantity }}{% endif %}
                         <span class="drop-rate">({{ (entry.drop_rate * 100)|round|int }}%)</span>
                     </li>

@@ -162,19 +162,22 @@ async def skill_page(request: Request, discord_id: int):
 @app.get("/bestiary", response_class=HTMLResponse)
 async def bestiary_page(request: Request):
     """Catalogue public des monstres du jeu."""
+    from app.infrastructure.db.repositories.item_repository import ItemRepository
+
     pss = PowerScoreService()
 
     with get_db_session() as session:
         mobs = MobRepository(session).list_all()
-
-    # Tri : famille puis PV décroissant pour avoir une lecture cohérente
-    mobs_sorted = sorted(
-        mobs, key=lambda m: (m.family or "zzz", -m.max_hp),
-    )
+        # Lookup table code → name pour résoudre les drops en nom lisible.
+        items_by_code = {it.code: it.name for it in ItemRepository(session).list_all()}
 
     rendered_mobs = []
-    for m in mobs_sorted:
+    for m in mobs:
         score = pss.calculate_from_mob(m)
+        loot_resolved = [
+            {**entry, "item_name": items_by_code.get(entry.get("item_code", ""), entry.get("item_code", ""))}
+            for entry in (m.loot_table or [])
+        ]
         rendered_mobs.append({
             "code": m.code,
             "name": m.name,
@@ -189,10 +192,14 @@ async def bestiary_page(request: Request):
             "dodge": m.dodge,
             "xp_reward": m.xp_reward,
             "gold_reward": m.gold_reward,
-            "loot_table": m.loot_table or [],
+            "loot_table": loot_resolved,
+            "power_score_raw": score,
             "power_score": pss.format_score(score),
             "rank": pss.compute_rank(score),
         })
+
+    # Tri par power score décroissant (du plus fort au plus faible).
+    rendered_mobs.sort(key=lambda r: -r["power_score_raw"])
 
     return templates.TemplateResponse(
         request,
