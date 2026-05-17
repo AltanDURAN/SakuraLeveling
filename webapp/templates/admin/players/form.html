@@ -1,0 +1,53 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Éditer {{ profile.player.display_name }} — Sakura Admin{% endblock %}
+
+{% block content %}
+<section class="form-page">
+    <a href="/admin/players" class="breadcrumb">← Joueurs</a>
+    <h1>Éditer <code>{{ profile.player.display_name }}</code> <span style="color: var(--text-faint); font-size: 0.7em;">(Discord {{ profile.player.discord_id }})</span></h1>
+    <p class="form-section-help">
+        Modifie directement la DB. Le bot Discord verra les changements à la
+        prochaine commande (les caches sont par requête, pas globaux).
+    </p>
+
+    <form method="post" action="/admin/players/{{ profile.player.id }}" class="form-grid">
+        <div class="form-section">
+            <h2 class="form-section-title">Progression</h2>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Niveau</span>
+                    <input type="number" name="level" class="input" value="{{ profile.progression.level }}" min="1" required>
+                </label>
+                <label class="field">
+                    <span class="field-label">XP</span>
+                    <input type="number" name="xp" class="input" value="{{ profile.progression.xp }}" min="0">
+                </label>
+                <label class="field">
+                    <span class="field-label">Skill points</span>
+                    <input type="number" name="skill_points" class="input" value="{{ profile.progression.skill_points }}" min="0">
+                </label>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Ressources</h2>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Or</span>
+                    <input type="number" name="gold" class="input" value="{{ profile.resources.gold }}" min="0">
+                </label>
+                <label class="field">
+                    <span class="field-label">Daily streak</span>
+                    <input type="number" name="daily_streak" class="input" value="{{ profile.resources.daily_streak }}" min="0">
+                </label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="/admin/players" class="btn btn-ghost">Annuler</a>
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

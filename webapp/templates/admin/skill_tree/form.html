@@ -1,24 +1,24 @@
 {% extends "admin/base.html" %}
 
-{% block title %}Nouveau skill — Sakura Admin{% endblock %}
+{% block title %}{% if edit_code %}Éditer {{ edit_code }}{% else %}Nouveau skill{% endif %} — Sakura Admin{% endblock %}
 
 {% block content %}
 {% set fd = form_data or {} %}
 <section class="form-page">
     <a href="/admin/skill-tree" class="breadcrumb">← Skill Tree</a>
-    <h1>Nouveau nœud de compétence</h1>
+    <h1>{% if edit_code %}Éditer <code>{{ edit_code }}</code>{% else %}Nouveau nœud de compétence{% endif %}</h1>
     <div class="form-section-help" style="background: #fff5d5; padding: 0.8rem 1.2rem; border-radius: 8px;">
         ⚠️ Modifie <code>skill_tree.json</code>. Restart du bot requis.<br>
         Convention : <code>values</code> dans les effets = valeurs <strong>cumulatives</strong> au niveau N (lvl 1 → values[0]).
     </div>
 
-    <form method="post" action="/admin/skill-tree" class="form-grid">
+    <form method="post" action="{% if edit_code %}/admin/skill-tree/{{ edit_code }}{% else %}/admin/skill-tree{% endif %}" class="form-grid">
         <div class="form-section">
             <h2 class="form-section-title">Identité</h2>
             <div class="form-row">
                 <label class="field">
                     <span class="field-label">Code</span>
-                    <input type="text" name="code" class="input" value="{{ fd.get('code', '') }}" placeholder="ex: force_brute" required>
+                    <input type="text" name="code" class="input" value="{{ fd.get('code', '') }}" placeholder="ex: force_brute" {% if edit_code %}disabled{% else %}required{% endif %}>
                     {% if errors.get('code') %}<span class="field-error">{{ errors['code'] }}</span>{% endif %}
                 </label>
                 <label class="field">
@@ -92,7 +92,9 @@
 
         <div class="form-actions">
             <a href="/admin/skill-tree" class="btn btn-ghost">Annuler</a>
-            <button type="submit" class="btn btn-primary">Créer le skill</button>
+            <button type="submit" class="btn btn-primary">
+                {% if edit_code %}Enregistrer{% else %}Créer le skill{% endif %}
+            </button>
         </div>
     </form>
 </section>

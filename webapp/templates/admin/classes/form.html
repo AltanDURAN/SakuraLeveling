@@ -1,23 +1,23 @@
 {% extends "admin/base.html" %}
 
-{% block title %}Nouvelle classe — Sakura Admin{% endblock %}
+{% block title %}{% if edit_code %}Éditer {{ edit_code }}{% else %}Nouvelle classe{% endif %} — Sakura Admin{% endblock %}
 
 {% block content %}
 {% set fd = form_data or {} %}
 <section class="form-page">
     <a href="/admin/classes" class="breadcrumb">← Classes</a>
-    <h1>Nouvelle classe</h1>
+    <h1>{% if edit_code %}Éditer <code>{{ edit_code }}</code>{% else %}Nouvelle classe{% endif %}</h1>
     <div class="form-section-help" style="background: #fff5d5; padding: 0.8rem 1.2rem; border-radius: 8px;">
-        ⚠️ Modifie <code>classes.json</code>. Le bot Discord devra être redémarré pour voir la nouvelle classe.
+        ⚠️ Modifie <code>classes.json</code>. Restart bot Discord requis pour voir les changements.
     </div>
 
-    <form method="post" action="/admin/classes" class="form-grid">
+    <form method="post" action="{% if edit_code %}/admin/classes/{{ edit_code }}{% else %}/admin/classes{% endif %}" class="form-grid">
         <div class="form-section">
             <h2 class="form-section-title">Identité</h2>
             <div class="form-row">
                 <label class="field">
                     <span class="field-label">Code</span>
-                    <input type="text" name="code" class="input" value="{{ fd.get('code', '') }}" placeholder="ex: paladin" required>
+                    <input type="text" name="code" class="input" value="{{ fd.get('code', '') }}" placeholder="ex: paladin" {% if edit_code %}disabled{% else %}required{% endif %}>
                     {% if errors.get('code') %}<span class="field-error">{{ errors['code'] }}</span>{% endif %}
                 </label>
                 <label class="field">
@@ -56,7 +56,9 @@
 
         <div class="form-actions">
             <a href="/admin/classes" class="btn btn-ghost">Annuler</a>
-            <button type="submit" class="btn btn-primary">Créer la classe</button>
+            <button type="submit" class="btn btn-primary">
+                {% if edit_code %}Enregistrer{% else %}Créer la classe{% endif %}
+            </button>
         </div>
     </form>
 </section>

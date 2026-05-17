@@ -50,8 +50,9 @@
                     <td>{{ r.daily_streak }}</td>
                     <td>{{ r.last_seen }}</td>
                     <td>
+                        <a href="/admin/players/{{ r.id }}/edit" class="btn btn-small">Éditer</a>
                         <form method="post" action="/admin/players/{{ r.id }}/reset"
-                              style="display:inline"
+                              style="display:inline; margin-left: 0.3rem;"
                               onsubmit="return confirm('⚠️ RESET COMPLET de {{ r.display_name }} ?\n\nTout sera remis à zéro sauf l\'identité Discord. Irréversible.');">
                             <button type="submit" class="btn btn-small" style="background: var(--danger); color: white;">
                                 Reset
