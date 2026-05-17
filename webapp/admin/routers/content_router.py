@@ -1,9 +1,15 @@
-"""Routes admin read-only pour le contenu JSON-backed (classes, skill tree,
-panoplies, titres, quêtes, world bosses) + le DB-backed read-only (crafts).
+"""Routes admin pour le contenu JSON-backed (classes, skill tree, panoplies,
+titres, quêtes, world bosses) + le DB-backed (crafts).
 
-V1 : pas d'édition depuis le web — le contenu vit dans
-`app/infrastructure/content/*.json` et passe par le seeder. Cette interface
-sert à consulter rapidement ce qui est en jeu.
+Listings : read complet via filtres + tri.
+Création : ajout d'une entrée via form, écriture atomique dans le JSON.
+Édition / suppression : non implémentées en V1 (le contenu peut toujours
+être édité à la main dans `app/infrastructure/content/`).
+
+⚠️ Les loaders de contenu (skill_tree_loader, title_loader, …) cachent le
+JSON en mémoire au démarrage. Le bot Discord doit être redémarré pour voir
+les nouvelles entrées. Le webapp les voit immédiatement (relit à chaque
+requête).
 """
 
 from __future__ import annotations
@@ -12,12 +18,18 @@ import json
 import logging
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Depends, Request, status, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse
 
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.session import get_db_session
 from webapp.admin.auth import AdminUser, require_admin
+from webapp.admin.json_writer import (
+    add_skill_node,
+    append_to_list,
+    load_json as _writer_load,
+    upsert_to_dict,
+)
 
 
 _logger = logging.getLogger(__name__)
@@ -38,6 +50,72 @@ def _load_json(filename: str):
         return None
     with open(path, encoding="utf-8") as f:
         return json.load(f)
+
+
+def _parse_int(raw, default=0):
+    if raw is None:
+        return default
+    raw = str(raw).strip()
+    if not raw:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        return default
+
+
+def _parse_kv_pairs(raw: str) -> dict[str, int]:
+    """Parse 'max_hp=20, attack=3' → {'max_hp': 20, 'attack': 3}."""
+    out: dict[str, int] = {}
+    if not raw:
+        return out
+    for chunk in raw.replace(";", ",").split(","):
+        if "=" not in chunk:
+            continue
+        k, v = chunk.split("=", 1)
+        k = k.strip()
+        try:
+            out[k] = int(v.strip())
+        except ValueError:
+            try:
+                out[k] = float(v.strip())
+            except ValueError:
+                continue
+    return out
+
+
+def _parse_csv(raw: str) -> list[str]:
+    """Parse 'a, b , c' → ['a', 'b', 'c']."""
+    if not raw:
+        return []
+    return [x.strip() for x in raw.split(",") if x.strip()]
+
+
+def _parse_int_list(raw: str) -> list[int]:
+    """Parse '1, 2, 3, 5' → [1, 2, 3, 5]."""
+    out = []
+    for x in _parse_csv(raw):
+        try:
+            out.append(int(x))
+        except ValueError:
+            pass
+    return out
+
+
+def _parse_reward_items(raw: str) -> list[list]:
+    """Parse 'potion_soin_i:1, gold_coin:5' → [['potion_soin_i', 1], ['gold_coin', 5]]."""
+    out = []
+    if not raw:
+        return out
+    for chunk in raw.replace(";", ",").split(","):
+        if ":" not in chunk:
+            continue
+        code, qty = chunk.split(":", 1)
+        try:
+            out.append([code.strip(), int(qty.strip())])
+        except ValueError:
+            continue
+    return out
 
 
 def _filter_rows(rows: list[dict], q: str | None, extra_filters: dict | None = None) -> list[dict]:
@@ -88,7 +166,8 @@ async def classes_list(
     return _render(
         request, user,
         title="Classes", icon="🧬",
-        source_label="Définitions : app/infrastructure/content/classes.json",
+        new_url="/admin/classes/new", new_label="Nouvelle classe",
+        source_label="Définitions : app/infrastructure/content/classes.json — ⚠️ restart bot requis après ajout",
         filter_q=q or "",
         columns=[
             {"label": "Code", "key": "code"},
@@ -153,7 +232,8 @@ async def crafts_list(
     return _render(
         request, user,
         title="Recettes", icon="🛠️",
-        source_label="Stockées en DB (craft_recipes). Source : app/infrastructure/content/crafts.json (seed).",
+        new_url="/admin/crafts/new", new_label="Nouvelle recette",
+        source_label="Stockées en DB (craft_recipes). Édition directe — pas de restart bot.",
         filter_q=q or "",
         filter_groups=[{
             "name": "station",
@@ -201,7 +281,8 @@ async def skill_tree_list(
     return _render(
         request, user,
         title="Skill Tree", icon="🌳",
-        source_label=f"Définitions : app/infrastructure/content/skill_tree.json (root = {data.get('root', '?')})",
+        new_url="/admin/skill-tree/new", new_label="Nouveau skill",
+        source_label=f"Définitions : app/infrastructure/content/skill_tree.json (root = {data.get('root', '?')}) — ⚠️ restart bot requis après ajout",
         filter_q=q or "",
         columns=[
             {"label": "Icon", "key": "icon"},
@@ -261,7 +342,8 @@ async def panoplies_list(
     return _render(
         request, user,
         title="Panoplies", icon="🌸",
-        source_label="Définitions : app/infrastructure/content/sets.json — pièces taggées via item.family",
+        new_url="/admin/panoplies/new", new_label="Nouvelle panoplie",
+        source_label="Définitions : app/infrastructure/content/sets.json — pièces taggées via item.family — ⚠️ restart bot requis",
         filter_q=q or "",
         columns=[
             {"label": "Famille", "key": "family"},
@@ -304,7 +386,8 @@ async def titles_list(
     return _render(
         request, user,
         title="Titres", icon="🏷️",
-        source_label="Définitions : app/infrastructure/content/titles.json",
+        new_url="/admin/titles/new", new_label="Nouveau titre",
+        source_label="Définitions : app/infrastructure/content/titles.json — ⚠️ restart bot requis après ajout",
         filter_q=q or "",
         filter_groups=[{
             "name": "condition_type",
@@ -363,9 +446,11 @@ async def quests_list(
         request, user,
         title=f"Quêtes — {'Hebdomadaires' if scope == 'weekly' else 'Quotidiennes'}",
         icon="📜",
+        new_url=f"/admin/quests/new?scope={scope}",
+        new_label=f"Nouvelle quête {'hebdo' if scope == 'weekly' else 'quotidienne'}",
         source_label=(
             f"Définitions : app/infrastructure/content/{filename} "
-            f"— passer ?scope=weekly pour basculer."
+            f"— ⚠️ restart bot requis après ajout."
         ),
         filter_q=q or "",
         filter_groups=[{
@@ -425,7 +510,8 @@ async def world_bosses_list(
     return _render(
         request, user,
         title="World Bosses", icon="🐉",
-        source_label="Définitions : app/infrastructure/content/boss_definitions.json",
+        new_url="/admin/world-bosses/new", new_label="Nouveau boss",
+        source_label="Définitions : app/infrastructure/content/boss_definitions.json — ⚠️ restart bot requis",
         filter_q=q or "",
         filter_groups=[{
             "name": "tier",
@@ -446,3 +532,436 @@ async def world_bosses_list(
         ],
         rows=filtered,
     )
+
+
+# ============ Create forms ============
+
+# --- Classes ---
+@router.get("/classes/new", response_class=HTMLResponse)
+async def classes_new_form(request: Request, user: AdminUser = Depends(require_admin)):
+    return get_templates().TemplateResponse(
+        request, "admin/classes/form.html",
+        context={"user": user, "errors": {}, "form_data": {}},
+    )
+
+
+@router.post("/classes")
+async def classes_create(request: Request, user: AdminUser = Depends(require_admin)):
+    fd = {k: str(v) for k, v in (await request.form()).items()}
+    errors = {}
+    code = fd.get("code", "").strip()
+    name = fd.get("name", "").strip()
+    if not code:
+        errors["code"] = "Code requis."
+    if not name:
+        errors["name"] = "Nom requis."
+    existing = _writer_load("classes.json", default=[]) or []
+    if any(c.get("code") == code for c in existing):
+        errors["code"] = f"Code `{code}` existe déjà."
+    if errors:
+        return get_templates().TemplateResponse(
+            request, "admin/classes/form.html",
+            context={"user": user, "errors": errors, "form_data": fd},
+            status_code=400,
+        )
+    entry = {
+        "code": code,
+        "name": name,
+        "description": fd.get("description", "").strip(),
+        "stat_bonuses": _parse_kv_pairs(fd.get("stat_bonuses", "")),
+    }
+    unlock = fd.get("unlock", "").strip()
+    if unlock:
+        # Format attendu : "profession_level:mining:2" ou "level:5"
+        reqs = []
+        for chunk in unlock.split(","):
+            parts = [p.strip() for p in chunk.split(":")]
+            if parts[0] == "profession_level" and len(parts) == 3:
+                reqs.append({
+                    "type": "profession_level",
+                    "profession_code": parts[1],
+                    "level": int(parts[2]),
+                })
+            elif parts[0] == "level" and len(parts) == 2:
+                reqs.append({"type": "level", "level": int(parts[1])})
+        entry["unlock_requirements"] = reqs
+    append_to_list("classes.json", entry)
+    return RedirectResponse(f"/admin/classes?q={code}", status_code=303)
+
+
+# --- Titres ---
+@router.get("/titles/new", response_class=HTMLResponse)
+async def titles_new_form(request: Request, user: AdminUser = Depends(require_admin)):
+    return get_templates().TemplateResponse(
+        request, "admin/titles/form.html",
+        context={"user": user, "errors": {}, "form_data": {}},
+    )
+
+
+@router.post("/titles")
+async def titles_create(request: Request, user: AdminUser = Depends(require_admin)):
+    fd = {k: str(v) for k, v in (await request.form()).items()}
+    errors = {}
+    code = fd.get("code", "").strip()
+    name = fd.get("name", "").strip()
+    if not code:
+        errors["code"] = "Code requis."
+    if not name:
+        errors["name"] = "Nom requis."
+    existing = _writer_load("titles.json", default=[]) or []
+    if any(t.get("code") == code for t in existing):
+        errors["code"] = f"Code `{code}` existe déjà."
+    if errors:
+        return get_templates().TemplateResponse(
+            request, "admin/titles/form.html",
+            context={"user": user, "errors": errors, "form_data": fd},
+            status_code=400,
+        )
+    # effects format : "type:target:value, type::value"
+    effects = []
+    for chunk in fd.get("effects", "").split(","):
+        parts = [p.strip() for p in chunk.split(":")]
+        if len(parts) == 3 and parts[0]:
+            try:
+                value = int(parts[2]) if parts[2] else 0
+            except ValueError:
+                value = parts[2]
+            effects.append({"type": parts[0], "target": parts[1] or None, "value": value})
+        elif len(parts) == 2 and parts[0]:
+            try:
+                value = int(parts[1]) if parts[1] else 0
+            except ValueError:
+                value = parts[1]
+            effects.append({"type": parts[0], "value": value})
+    entry = {
+        "code": code,
+        "name": name,
+        "description": fd.get("description", "").strip(),
+        "icon": fd.get("icon", "").strip(),
+        "condition_type": fd.get("condition_type", "").strip(),
+        "condition_target": fd.get("condition_target", "").strip() or None,
+        "condition_value": _parse_int(fd.get("condition_value"), 0),
+        "effects": effects,
+    }
+    append_to_list("titles.json", entry)
+    return RedirectResponse(f"/admin/titles?q={code}", status_code=303)
+
+
+# --- Quêtes (daily + weekly) ---
+@router.get("/quests/new", response_class=HTMLResponse)
+async def quests_new_form(
+    request: Request, user: AdminUser = Depends(require_admin),
+    scope: str = "daily",
+):
+    return get_templates().TemplateResponse(
+        request, "admin/quests/form.html",
+        context={"user": user, "errors": {}, "form_data": {}, "scope": scope},
+    )
+
+
+@router.post("/quests")
+async def quests_create(request: Request, user: AdminUser = Depends(require_admin)):
+    fd = {k: str(v) for k, v in (await request.form()).items()}
+    scope = fd.get("scope", "daily")
+    filename = "weekly_quests.json" if scope == "weekly" else "daily_quests.json"
+    errors = {}
+    code = fd.get("code", "").strip()
+    name = fd.get("name", "").strip()
+    if not code:
+        errors["code"] = "Code requis."
+    if not name:
+        errors["name"] = "Nom requis."
+    existing = _writer_load(filename, default=[]) or []
+    if any(q.get("code") == code for q in existing):
+        errors["code"] = f"Code `{code}` existe déjà dans {filename}."
+    if errors:
+        return get_templates().TemplateResponse(
+            request, "admin/quests/form.html",
+            context={"user": user, "errors": errors, "form_data": fd, "scope": scope},
+            status_code=400,
+        )
+    entry = {
+        "code": code,
+        "name": name,
+        "description": fd.get("description", "").strip(),
+        "objective_type": fd.get("objective_type", "").strip(),
+        "objective_target": fd.get("objective_target", "").strip() or None,
+        "objective_quantity": _parse_int(fd.get("objective_quantity"), 1),
+        "reward_gold": _parse_int(fd.get("reward_gold"), 0),
+        "reward_xp": _parse_int(fd.get("reward_xp"), 0),
+        "reward_items": _parse_reward_items(fd.get("reward_items", "")),
+        "tier": fd.get("tier", "easy").strip() or "easy",
+    }
+    append_to_list(filename, entry)
+    return RedirectResponse(f"/admin/quests?q={code}&scope={scope}", status_code=303)
+
+
+# --- World Bosses ---
+@router.get("/world-bosses/new", response_class=HTMLResponse)
+async def bosses_new_form(request: Request, user: AdminUser = Depends(require_admin)):
+    return get_templates().TemplateResponse(
+        request, "admin/world_bosses/form.html",
+        context={"user": user, "errors": {}, "form_data": {}},
+    )
+
+
+@router.post("/world-bosses")
+async def bosses_create(request: Request, user: AdminUser = Depends(require_admin)):
+    fd = {k: str(v) for k, v in (await request.form()).items()}
+    errors = {}
+    code = fd.get("code", "").strip()
+    name = fd.get("name", "").strip()
+    if not code:
+        errors["code"] = "Code requis."
+    if not name:
+        errors["name"] = "Nom requis."
+    existing = _writer_load("boss_definitions.json", default=[]) or []
+    if any(b.get("code") == code for b in existing):
+        errors["code"] = f"Code `{code}` existe déjà."
+    if errors:
+        return get_templates().TemplateResponse(
+            request, "admin/world_bosses/form.html",
+            context={"user": user, "errors": errors, "form_data": fd},
+            status_code=400,
+        )
+    # modifiers format : "damage_immunity_threshold=5, enrage_below_pct=20"
+    modifiers = _parse_kv_pairs(fd.get("modifiers", ""))
+    entry = {
+        "code": code,
+        "name": name,
+        "description": fd.get("description", "").strip(),
+        "image_name": fd.get("image_name", "").strip(),
+        "tier": fd.get("tier", "intro").strip() or "intro",
+        "spawn_weight": _parse_int(fd.get("spawn_weight"), 100),
+        "max_hp": _parse_int(fd.get("max_hp"), 10000),
+        "attack": _parse_int(fd.get("attack"), 50),
+        "defense": _parse_int(fd.get("defense"), 20),
+        "speed": _parse_int(fd.get("speed"), 5),
+        "crit_chance": _parse_int(fd.get("crit_chance"), 0),
+        "crit_damage": _parse_int(fd.get("crit_damage"), 100),
+        "dodge": _parse_int(fd.get("dodge"), 0),
+        "modifiers": modifiers,
+        "lore": fd.get("lore", "").strip(),
+    }
+    append_to_list("boss_definitions.json", entry)
+    return RedirectResponse(f"/admin/world-bosses?q={code}", status_code=303)
+
+
+# --- Panoplies ---
+@router.get("/panoplies/new", response_class=HTMLResponse)
+async def panoplies_new_form(request: Request, user: AdminUser = Depends(require_admin)):
+    return get_templates().TemplateResponse(
+        request, "admin/panoplies/form.html",
+        context={"user": user, "errors": {}, "form_data": {}},
+    )
+
+
+@router.post("/panoplies")
+async def panoplies_create(request: Request, user: AdminUser = Depends(require_admin)):
+    fd = {k: str(v) for k, v in (await request.form()).items()}
+    errors = {}
+    family = fd.get("family", "").strip().lower()
+    if not family:
+        errors["family"] = "Famille (code) requis."
+    existing = _writer_load("sets.json", default={}) or {}
+    if isinstance(existing, dict) and family in existing:
+        errors["family"] = f"Famille `{family}` existe déjà."
+    if errors:
+        return get_templates().TemplateResponse(
+            request, "admin/panoplies/form.html",
+            context={"user": user, "errors": errors, "form_data": fd},
+            status_code=400,
+        )
+    # Tiers : 2/4/8/12 pièces, bonus parsé via kv pairs
+    tiers = {}
+    for n in ("2", "4", "8", "12"):
+        raw = fd.get(f"tier_{n}", "").strip()
+        if raw:
+            tiers[n] = _parse_kv_pairs(raw)
+    entry = {
+        "name": fd.get("name", "").strip() or family.capitalize(),
+        "description": fd.get("description", "").strip(),
+        "tiers": tiers,
+    }
+    # sets.json est parfois une liste (legacy), parfois un dict. On force dict.
+    if not isinstance(existing, dict):
+        existing = {k: {} for k in (existing or [])}
+    existing[family] = entry
+    from webapp.admin.json_writer import atomic_write_json
+    atomic_write_json("sets.json", existing)
+    return RedirectResponse(f"/admin/panoplies?q={family}", status_code=303)
+
+
+# --- Skill Tree node ---
+@router.get("/skill-tree/new", response_class=HTMLResponse)
+async def skills_new_form(request: Request, user: AdminUser = Depends(require_admin)):
+    data = _writer_load("skill_tree.json", default={"skills": {}}) or {"skills": {}}
+    existing_codes = sorted((data.get("skills") or {}).keys())
+    return get_templates().TemplateResponse(
+        request, "admin/skill_tree/form.html",
+        context={
+            "user": user, "errors": {}, "form_data": {},
+            "existing_codes": existing_codes,
+        },
+    )
+
+
+@router.post("/skill-tree")
+async def skills_create(request: Request, user: AdminUser = Depends(require_admin)):
+    fd = {k: str(v) for k, v in (await request.form()).items()}
+    errors = {}
+    code = fd.get("code", "").strip()
+    name = fd.get("name", "").strip()
+    if not code:
+        errors["code"] = "Code requis."
+    if not name:
+        errors["name"] = "Nom requis."
+    data = _writer_load("skill_tree.json", default={"skills": {}}) or {"skills": {}}
+    if code in (data.get("skills") or {}):
+        errors["code"] = f"Skill `{code}` existe déjà."
+    if errors:
+        existing_codes = sorted((data.get("skills") or {}).keys())
+        return get_templates().TemplateResponse(
+            request, "admin/skill_tree/form.html",
+            context={
+                "user": user, "errors": errors, "form_data": fd,
+                "existing_codes": existing_codes,
+            },
+            status_code=400,
+        )
+
+    # Effects : "type:val1,val2,val3 / type:val1,val2"
+    effects = []
+    for chunk in fd.get("effects", "").split("/"):
+        chunk = chunk.strip()
+        if not chunk or ":" not in chunk:
+            continue
+        type_, values_str = chunk.split(":", 1)
+        values = []
+        for v in values_str.split(","):
+            v = v.strip()
+            try:
+                values.append(int(v))
+            except ValueError:
+                try:
+                    values.append(float(v))
+                except ValueError:
+                    continue
+        if values:
+            effects.append({"type": type_.strip(), "values": values})
+
+    node = {
+        "name": name,
+        "description": fd.get("description", "").strip(),
+        "icon": fd.get("icon", "").strip() or "✨",
+        "max_level": _parse_int(fd.get("max_level"), 5),
+        "costs": _parse_int_list(fd.get("costs", "1,1,1,1,1")) or [1],
+        "effects": effects,
+        "prerequisites": _parse_csv(fd.get("prerequisites", "")),
+        "position": {
+            "x": _parse_int(fd.get("position_x"), 0),
+            "y": _parse_int(fd.get("position_y"), 0),
+        },
+    }
+    add_skill_node(code, node)
+    return RedirectResponse(f"/admin/skill-tree?q={code}", status_code=303)
+
+
+# --- Crafts (DB + sync JSON) ---
+@router.get("/crafts/new", response_class=HTMLResponse)
+async def crafts_new_form(request: Request, user: AdminUser = Depends(require_admin)):
+    with get_db_session() as session:
+        items = ItemRepository(session).list_all()
+    return get_templates().TemplateResponse(
+        request, "admin/crafts/form.html",
+        context={
+            "user": user, "errors": {}, "form_data": {},
+            "items": [{"code": it.code, "name": it.name} for it in items],
+        },
+    )
+
+
+@router.post("/crafts")
+async def crafts_create(request: Request, user: AdminUser = Depends(require_admin)):
+    from app.infrastructure.db.models.craft_model import (
+        CraftRecipeModel, CraftRecipeIngredientModel,
+    )
+    from sqlalchemy import select
+    from datetime import datetime, UTC
+
+    fd = {k: str(v) for k, v in (await request.form()).items()}
+    errors = {}
+    code = fd.get("code", "").strip()
+    name = fd.get("name", "").strip()
+    result_code = fd.get("result_item_code", "").strip()
+    result_qty = _parse_int(fd.get("result_quantity"), 1)
+    if not code:
+        errors["code"] = "Code requis."
+    if not name:
+        errors["name"] = "Nom requis."
+    if not result_code:
+        errors["result_item_code"] = "Item résultat requis."
+
+    # ingredients format: "iron_ore:3, coal:1"
+    ingredients = []
+    for chunk in fd.get("ingredients", "").replace(";", ",").split(","):
+        if ":" not in chunk:
+            continue
+        ic, qty = chunk.split(":", 1)
+        try:
+            ingredients.append((ic.strip(), int(qty.strip())))
+        except ValueError:
+            continue
+
+    if not ingredients:
+        errors["ingredients"] = "Au moins 1 ingrédient requis (format `code:qty`)."
+
+    if errors:
+        with get_db_session() as session:
+            items = ItemRepository(session).list_all()
+        return get_templates().TemplateResponse(
+            request, "admin/crafts/form.html",
+            context={
+                "user": user, "errors": errors, "form_data": fd,
+                "items": [{"code": it.code, "name": it.name} for it in items],
+            },
+            status_code=400,
+        )
+
+    with get_db_session() as session:
+        repo = ItemRepository(session)
+        result_item = repo.get_by_code(result_code)
+        if result_item is None:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Item résultat `{result_code}` introuvable.")
+        # Verif existence code
+        existing = session.execute(
+            select(CraftRecipeModel).where(CraftRecipeModel.code == code)
+        ).scalar_one_or_none()
+        if existing is not None:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Recette `{code}` existe déjà.")
+        # Insert recipe
+        now = datetime.now(UTC)
+        recipe = CraftRecipeModel(
+            code=code, name=name,
+            result_item_definition_id=result_item.id,
+            result_quantity=result_qty,
+            created_at=now, updated_at=now,
+        )
+        session.add(recipe)
+        session.flush()
+        # Insert ingredients
+        for ing_code, ing_qty in ingredients:
+            ing_item = repo.get_by_code(ing_code)
+            if ing_item is None:
+                raise HTTPException(
+                    status.HTTP_400_BAD_REQUEST,
+                    f"Ingrédient `{ing_code}` introuvable.",
+                )
+            session.add(CraftRecipeIngredientModel(
+                craft_recipe_id=recipe.id,
+                item_definition_id=ing_item.id,
+                quantity=ing_qty,
+            ))
+        session.commit()
+
+    return RedirectResponse(f"/admin/crafts?q={code}", status_code=303)

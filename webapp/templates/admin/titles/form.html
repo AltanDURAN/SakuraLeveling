@@ -1,0 +1,79 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Nouveau titre — Sakura Admin{% endblock %}
+
+{% block content %}
+{% set fd = form_data or {} %}
+<section class="form-page">
+    <a href="/admin/titles" class="breadcrumb">← Titres</a>
+    <h1>Nouveau titre</h1>
+    <div class="form-section-help" style="background: #fff5d5; padding: 0.8rem 1.2rem; border-radius: 8px;">
+        ⚠️ Modifie <code>titles.json</code>. Restart du bot requis.
+    </div>
+
+    <form method="post" action="/admin/titles" class="form-grid">
+        <div class="form-section">
+            <h2 class="form-section-title">Identité</h2>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Code</span>
+                    <input type="text" name="code" class="input" value="{{ fd.get('code', '') }}" placeholder="ex: chasseur_legendaire_gobelin" required>
+                    {% if errors.get('code') %}<span class="field-error">{{ errors['code'] }}</span>{% endif %}
+                </label>
+                <label class="field">
+                    <span class="field-label">Nom</span>
+                    <input type="text" name="name" class="input" value="{{ fd.get('name', '') }}" placeholder="Chasseur Légendaire de Gobelins" required>
+                    {% if errors.get('name') %}<span class="field-error">{{ errors['name'] }}</span>{% endif %}
+                </label>
+                <label class="field">
+                    <span class="field-label">Icon</span>
+                    <input type="text" name="icon" class="input" value="{{ fd.get('icon', '') }}" placeholder="🏹">
+                </label>
+            </div>
+            <label class="field">
+                <span class="field-label">Description</span>
+                <textarea name="description" class="input textarea" rows="2">{{ fd.get('description', '') }}</textarea>
+            </label>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Condition de déblocage</h2>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Type</span>
+                    <select name="condition_type" class="input">
+                        {% for c in ['kills_family', 'kills_total', 'kills_mob', 'dodges_total', 'daily_streak', 'champion_1v1', 'farmer_fou'] %}
+                            <option value="{{ c }}" {% if fd.get('condition_type') == c %}selected{% endif %}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="field">
+                    <span class="field-label">Cible (famille, mob_code…)</span>
+                    <input type="text" name="condition_target" class="input" value="{{ fd.get('condition_target', '') }}" placeholder="ex: gobelin">
+                </label>
+                <label class="field">
+                    <span class="field-label">Seuil</span>
+                    <input type="number" name="condition_value" class="input" value="{{ fd.get('condition_value', 100) }}">
+                </label>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Effets passifs</h2>
+            <p class="form-section-help">
+                Format : <code>type:target:value</code> séparé par virgules. Cible vide si pas applicable.<br>
+                Ex : <code>damage_bonus_vs_family:gobelin:10, gold_xp_bonus_pct::5</code>
+            </p>
+            <label class="field">
+                <input type="text" name="effects" class="input" value="{{ fd.get('effects', '') }}"
+                       placeholder="damage_bonus_vs_family:gobelin:10">
+            </label>
+        </div>
+
+        <div class="form-actions">
+            <a href="/admin/titles" class="btn btn-ghost">Annuler</a>
+            <button type="submit" class="btn btn-primary">Créer le titre</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

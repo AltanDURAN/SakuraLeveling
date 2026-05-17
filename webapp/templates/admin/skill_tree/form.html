@@ -1,0 +1,99 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Nouveau skill — Sakura Admin{% endblock %}
+
+{% block content %}
+{% set fd = form_data or {} %}
+<section class="form-page">
+    <a href="/admin/skill-tree" class="breadcrumb">← Skill Tree</a>
+    <h1>Nouveau nœud de compétence</h1>
+    <div class="form-section-help" style="background: #fff5d5; padding: 0.8rem 1.2rem; border-radius: 8px;">
+        ⚠️ Modifie <code>skill_tree.json</code>. Restart du bot requis.<br>
+        Convention : <code>values</code> dans les effets = valeurs <strong>cumulatives</strong> au niveau N (lvl 1 → values[0]).
+    </div>
+
+    <form method="post" action="/admin/skill-tree" class="form-grid">
+        <div class="form-section">
+            <h2 class="form-section-title">Identité</h2>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Code</span>
+                    <input type="text" name="code" class="input" value="{{ fd.get('code', '') }}" placeholder="ex: force_brute" required>
+                    {% if errors.get('code') %}<span class="field-error">{{ errors['code'] }}</span>{% endif %}
+                </label>
+                <label class="field">
+                    <span class="field-label">Nom</span>
+                    <input type="text" name="name" class="input" value="{{ fd.get('name', '') }}" required>
+                    {% if errors.get('name') %}<span class="field-error">{{ errors['name'] }}</span>{% endif %}
+                </label>
+                <label class="field">
+                    <span class="field-label">Icon</span>
+                    <input type="text" name="icon" class="input" value="{{ fd.get('icon', '') }}" placeholder="💪">
+                </label>
+            </div>
+            <label class="field">
+                <span class="field-label">Description</span>
+                <textarea name="description" class="input textarea" rows="2">{{ fd.get('description', '') }}</textarea>
+            </label>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Progression</h2>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Max level</span>
+                    <input type="number" name="max_level" class="input" value="{{ fd.get('max_level', 5) }}" min="1" required>
+                </label>
+                <label class="field">
+                    <span class="field-label">Coûts (par niveau)</span>
+                    <input type="text" name="costs" class="input" value="{{ fd.get('costs', '1, 2, 3, 4, 5') }}" placeholder="1, 2, 3, 4, 5">
+                </label>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Prérequis</h2>
+            <p class="form-section-help">
+                Codes de skills déjà investis (au moins lvl 1). Séparés par virgules. Vide pour racine.
+            </p>
+            <label class="field">
+                <input list="skill-codes" type="text" name="prerequisites" class="input" value="{{ fd.get('prerequisites', '') }}" placeholder="combat_root">
+            </label>
+            <datalist id="skill-codes">
+                {% for c in existing_codes %}<option value="{{ c }}">{% endfor %}
+            </datalist>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Effets</h2>
+            <p class="form-section-help">
+                Un effet par ligne (séparés par <code>/</code>), format : <code>type:val1,val2,val3</code> (valeurs cumulatives, autant que max_level).<br>
+                Types supportés : <code>atk_percent</code>, <code>def_percent</code>, <code>hp_max_percent</code>, <code>crit_chance_flat</code>, <code>crit_damage_flat</code>, <code>dodge_flat</code>, <code>speed_flat</code>, <code>hp_regeneration_flat</code>, <code>xp_drop_percent</code>, <code>gold_drop_percent</code>, <code>drop_rate_multiplier</code>.
+            </p>
+            <label class="field">
+                <textarea name="effects" class="input textarea textarea-code" rows="3"
+                          placeholder="atk_percent:1,3,6,10,15">{{ fd.get('effects', '') }}</textarea>
+            </label>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Position visuelle (SVG)</h2>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">X</span>
+                    <input type="number" name="position_x" class="input" value="{{ fd.get('position_x', 0) }}">
+                </label>
+                <label class="field">
+                    <span class="field-label">Y</span>
+                    <input type="number" name="position_y" class="input" value="{{ fd.get('position_y', 0) }}">
+                </label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="/admin/skill-tree" class="btn btn-ghost">Annuler</a>
+            <button type="submit" class="btn btn-primary">Créer le skill</button>
+        </div>
+    </form>
+</section>
+{% endblock %}
