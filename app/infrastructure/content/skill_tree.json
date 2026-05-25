@@ -35,7 +35,7 @@
     },
     "atq_1": {
       "name": "Force 1",
-      "description": "+5 par niveau (cumulatif, max 3).",
+      "description": "+5 Attaque par niveau · max +15 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -63,7 +63,7 @@
     },
     "atq_2": {
       "name": "Force 1",
-      "description": "+5 par niveau (cumulatif, max 3).",
+      "description": "+5 Attaque par niveau · max +15 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -91,7 +91,7 @@
     },
     "atq_3": {
       "name": "Force 1",
-      "description": "+5 par niveau (cumulatif, max 3).",
+      "description": "+5 Attaque par niveau · max +15 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -119,7 +119,7 @@
     },
     "atq_4": {
       "name": "Force 1",
-      "description": "+5 par niveau (cumulatif, max 3).",
+      "description": "+5 Attaque par niveau · max +15 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -147,7 +147,7 @@
     },
     "atq_5": {
       "name": "Force 1",
-      "description": "+5 par niveau (cumulatif, max 3).",
+      "description": "+5 Attaque par niveau · max +15 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -175,7 +175,7 @@
     },
     "atq_6": {
       "name": "Frappe affûtée",
-      "description": "Nœud spécial : +1 atk percent (1 amélioration).",
+      "description": "Nœud spécial : +1% Attaque (1 amélioration, 3 pts).",
       "icon": "💥",
       "max_level": 1,
       "costs": [
@@ -199,7 +199,7 @@
     },
     "atq_7": {
       "name": "Force 2",
-      "description": "+6 par niveau (cumulatif, max 3).",
+      "description": "+6 Attaque par niveau · max +18 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -227,7 +227,7 @@
     },
     "atq_8": {
       "name": "Force 2",
-      "description": "+6 par niveau (cumulatif, max 3).",
+      "description": "+6 Attaque par niveau · max +18 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -255,7 +255,7 @@
     },
     "atq_9": {
       "name": "Force 2",
-      "description": "+6 par niveau (cumulatif, max 3).",
+      "description": "+6 Attaque par niveau · max +18 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -283,7 +283,7 @@
     },
     "atq_10": {
       "name": "Force 2",
-      "description": "+6 par niveau (cumulatif, max 3).",
+      "description": "+6 Attaque par niveau · max +18 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -311,7 +311,7 @@
     },
     "atq_11": {
       "name": "Force 2",
-      "description": "+6 par niveau (cumulatif, max 3).",
+      "description": "+6 Attaque par niveau · max +18 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -339,7 +339,7 @@
     },
     "atq_12": {
       "name": "Œil vif",
-      "description": "Nœud spécial : +1 crit chance flat (1 amélioration).",
+      "description": "Nœud spécial : +1% de chance de critique (1 amélioration, 3 pts).",
       "icon": "🎯",
       "max_level": 1,
       "costs": [
@@ -363,7 +363,7 @@
     },
     "atq_13": {
       "name": "Force 3",
-      "description": "+7 par niveau (cumulatif, max 3).",
+      "description": "+7 Attaque par niveau · max +21 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -391,7 +391,7 @@
     },
     "atq_14": {
       "name": "Force 3",
-      "description": "+7 par niveau (cumulatif, max 3).",
+      "description": "+7 Attaque par niveau · max +21 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -419,7 +419,7 @@
     },
     "atq_15": {
       "name": "Force 3",
-      "description": "+7 par niveau (cumulatif, max 3).",
+      "description": "+7 Attaque par niveau · max +21 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -447,7 +447,7 @@
     },
     "atq_16": {
       "name": "Force 3",
-      "description": "+7 par niveau (cumulatif, max 3).",
+      "description": "+7 Attaque par niveau · max +21 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -475,7 +475,7 @@
     },
     "atq_17": {
       "name": "Force 3",
-      "description": "+7 par niveau (cumulatif, max 3).",
+      "description": "+7 Attaque par niveau · max +21 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -503,7 +503,7 @@
     },
     "atq_18": {
       "name": "Célérité",
-      "description": "Nœud spécial : +1 speed flat (1 amélioration).",
+      "description": "Nœud spécial : +1 Vitesse (1 amélioration, 3 pts).",
       "icon": "💨",
       "max_level": 1,
       "costs": [
@@ -527,7 +527,7 @@
     },
     "atq_19": {
       "name": "Force 4",
-      "description": "+8 par niveau (cumulatif, max 3).",
+      "description": "+8 Attaque par niveau · max +24 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -555,7 +555,7 @@
     },
     "atq_20": {
       "name": "Force 4",
-      "description": "+8 par niveau (cumulatif, max 3).",
+      "description": "+8 Attaque par niveau · max +24 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -583,7 +583,7 @@
     },
     "atq_21": {
       "name": "Force 4",
-      "description": "+8 par niveau (cumulatif, max 3).",
+      "description": "+8 Attaque par niveau · max +24 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -611,7 +611,7 @@
     },
     "atq_22": {
       "name": "Force 4",
-      "description": "+8 par niveau (cumulatif, max 3).",
+      "description": "+8 Attaque par niveau · max +24 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -639,7 +639,7 @@
     },
     "atq_23": {
       "name": "Force 4",
-      "description": "+8 par niveau (cumulatif, max 3).",
+      "description": "+8 Attaque par niveau · max +24 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -667,7 +667,7 @@
     },
     "atq_24": {
       "name": "Coup dévastateur",
-      "description": "Nœud spécial : +5 crit damage flat (1 amélioration).",
+      "description": "Nœud spécial : +5% de dégâts critiques (1 amélioration, 3 pts).",
       "icon": "🔥",
       "max_level": 1,
       "costs": [
@@ -691,7 +691,7 @@
     },
     "atq_25": {
       "name": "Force 5",
-      "description": "+9 par niveau (cumulatif, max 3).",
+      "description": "+9 Attaque par niveau · max +27 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -719,7 +719,7 @@
     },
     "atq_26": {
       "name": "Force 5",
-      "description": "+9 par niveau (cumulatif, max 3).",
+      "description": "+9 Attaque par niveau · max +27 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -747,7 +747,7 @@
     },
     "atq_27": {
       "name": "Force 5",
-      "description": "+9 par niveau (cumulatif, max 3).",
+      "description": "+9 Attaque par niveau · max +27 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -775,7 +775,7 @@
     },
     "atq_28": {
       "name": "Force 5",
-      "description": "+9 par niveau (cumulatif, max 3).",
+      "description": "+9 Attaque par niveau · max +27 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -803,7 +803,7 @@
     },
     "atq_29": {
       "name": "Force 5",
-      "description": "+9 par niveau (cumulatif, max 3).",
+      "description": "+9 Attaque par niveau · max +27 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -831,7 +831,7 @@
     },
     "atq_30": {
       "name": "Frappe affûtée",
-      "description": "Nœud spécial : +1 atk percent (1 amélioration).",
+      "description": "Nœud spécial : +1% Attaque (1 amélioration, 3 pts).",
       "icon": "💥",
       "max_level": 1,
       "costs": [
@@ -855,7 +855,7 @@
     },
     "atq_31": {
       "name": "Force 6",
-      "description": "+10 par niveau (cumulatif, max 3).",
+      "description": "+10 Attaque par niveau · max +30 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -883,7 +883,7 @@
     },
     "atq_32": {
       "name": "Force 6",
-      "description": "+10 par niveau (cumulatif, max 3).",
+      "description": "+10 Attaque par niveau · max +30 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -911,7 +911,7 @@
     },
     "atq_33": {
       "name": "Force 6",
-      "description": "+10 par niveau (cumulatif, max 3).",
+      "description": "+10 Attaque par niveau · max +30 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -939,7 +939,7 @@
     },
     "atq_34": {
       "name": "Force 6",
-      "description": "+10 par niveau (cumulatif, max 3).",
+      "description": "+10 Attaque par niveau · max +30 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -967,7 +967,7 @@
     },
     "atq_35": {
       "name": "Force 6",
-      "description": "+10 par niveau (cumulatif, max 3).",
+      "description": "+10 Attaque par niveau · max +30 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -995,7 +995,7 @@
     },
     "atq_36": {
       "name": "Œil vif",
-      "description": "Nœud spécial : +1 crit chance flat (1 amélioration).",
+      "description": "Nœud spécial : +1% de chance de critique (1 amélioration, 3 pts).",
       "icon": "🎯",
       "max_level": 1,
       "costs": [
@@ -1019,7 +1019,7 @@
     },
     "atq_37": {
       "name": "Force 7",
-      "description": "+11 par niveau (cumulatif, max 3).",
+      "description": "+11 Attaque par niveau · max +33 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -1047,7 +1047,7 @@
     },
     "atq_38": {
       "name": "Force 7",
-      "description": "+11 par niveau (cumulatif, max 3).",
+      "description": "+11 Attaque par niveau · max +33 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -1075,7 +1075,7 @@
     },
     "atq_39": {
       "name": "Force 7",
-      "description": "+11 par niveau (cumulatif, max 3).",
+      "description": "+11 Attaque par niveau · max +33 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -1103,7 +1103,7 @@
     },
     "atq_40": {
       "name": "Force 7",
-      "description": "+11 par niveau (cumulatif, max 3).",
+      "description": "+11 Attaque par niveau · max +33 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -1131,7 +1131,7 @@
     },
     "atq_41": {
       "name": "Force 7",
-      "description": "+11 par niveau (cumulatif, max 3).",
+      "description": "+11 Attaque par niveau · max +33 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -1159,7 +1159,7 @@
     },
     "atq_42": {
       "name": "Célérité",
-      "description": "Nœud spécial : +1 speed flat (1 amélioration).",
+      "description": "Nœud spécial : +1 Vitesse (1 amélioration, 3 pts).",
       "icon": "💨",
       "max_level": 1,
       "costs": [
@@ -1183,7 +1183,7 @@
     },
     "atq_43": {
       "name": "Force 8",
-      "description": "+12 par niveau (cumulatif, max 3).",
+      "description": "+12 Attaque par niveau · max +36 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -1211,7 +1211,7 @@
     },
     "atq_44": {
       "name": "Force 8",
-      "description": "+12 par niveau (cumulatif, max 3).",
+      "description": "+12 Attaque par niveau · max +36 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -1239,7 +1239,7 @@
     },
     "atq_45": {
       "name": "Force 8",
-      "description": "+12 par niveau (cumulatif, max 3).",
+      "description": "+12 Attaque par niveau · max +36 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -1267,7 +1267,7 @@
     },
     "atq_46": {
       "name": "Force 8",
-      "description": "+12 par niveau (cumulatif, max 3).",
+      "description": "+12 Attaque par niveau · max +36 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -1295,7 +1295,7 @@
     },
     "atq_47": {
       "name": "Force 8",
-      "description": "+12 par niveau (cumulatif, max 3).",
+      "description": "+12 Attaque par niveau · max +36 Attaque (3 niveaux, 1 pt/niveau).",
       "icon": "⚔️",
       "max_level": 3,
       "costs": [
@@ -1323,7 +1323,7 @@
     },
     "atq_48": {
       "name": "Coup dévastateur",
-      "description": "Nœud spécial : +5 crit damage flat (1 amélioration).",
+      "description": "Nœud spécial : +5% de dégâts critiques (1 amélioration, 3 pts).",
       "icon": "🔥",
       "max_level": 1,
       "costs": [
@@ -1364,7 +1364,7 @@
     },
     "def_1": {
       "name": "Armure 1",
-      "description": "+5 par niveau (cumulatif, max 3).",
+      "description": "+5 Défense par niveau · max +15 Défense (3 niveaux, 1 pt/niveau).",
       "icon": "🛡️",
       "max_level": 3,
       "costs": [
@@ -1392,7 +1392,7 @@
     },
     "def_2": {
       "name": "Vitalité 1",
-      "description": "+100 par niveau (cumulatif, max 3).",
+      "description": "+100 PV max par niveau · max +300 PV max (3 niveaux, 1 pt/niveau).",
       "icon": "❤️",
       "max_level": 3,
       "costs": [
@@ -1420,7 +1420,7 @@
     },
     "def_3": {
       "name": "Armure 1",
-      "description": "+5 par niveau (cumulatif, max 3).",
+      "description": "+5 Défense par niveau · max +15 Défense (3 niveaux, 1 pt/niveau).",
       "icon": "🛡️",
       "max_level": 3,
       "costs": [
@@ -1448,7 +1448,7 @@
     },
     "def_4": {
       "name": "Vitalité 1",
-      "description": "+100 par niveau (cumulatif, max 3).",
+      "description": "+100 PV max par niveau · max +300 PV max (3 niveaux, 1 pt/niveau).",
       "icon": "❤️",
       "max_level": 3,
       "costs": [
@@ -1476,7 +1476,7 @@
     },
     "def_5": {
       "name": "Armure 1",
-      "description": "+5 par niveau (cumulatif, max 3).",
+      "description": "+5 Défense par niveau · max +15 Défense (3 niveaux, 1 pt/niveau).",
       "icon": "🛡️",
       "max_level": 3,
       "costs": [
@@ -1504,7 +1504,7 @@
     },
     "def_6": {
       "name": "Peau de pierre",
-      "description": "Nœud spécial : +1 def percent (1 amélioration).",
+      "description": "Nœud spécial : +1% Défense (1 amélioration, 3 pts).",
       "icon": "🪨",
       "max_level": 1,
       "costs": [
@@ -1528,7 +1528,7 @@
     },
     "def_7": {
       "name": "Vitalité 2",
-      "description": "+120 par niveau (cumulatif, max 3).",
+      "description": "+120 PV max par niveau · max +360 PV max (3 niveaux, 1 pt/niveau).",
       "icon": "❤️",
       "max_level": 3,
       "costs": [
@@ -1556,7 +1556,7 @@
     },
     "def_8": {
       "name": "Armure 2",
-      "description": "+6 par niveau (cumulatif, max 3).",
+      "description": "+6 Défense par niveau · max +18 Défense (3 niveaux, 1 pt/niveau).",
       "icon": "🛡️",
       "max_level": 3,
       "costs": [
@@ -1584,7 +1584,7 @@
     },
     "def_9": {
       "name": "Vitalité 2",
-      "description": "+120 par niveau (cumulatif, max 3).",
+      "description": "+120 PV max par niveau · max +360 PV max (3 niveaux, 1 pt/niveau).",
       "icon": "❤️",
       "max_level": 3,
       "costs": [
@@ -1612,7 +1612,7 @@
     },
     "def_10": {
       "name": "Armure 2",
-      "description": "+6 par niveau (cumulatif, max 3).",
+      "description": "+6 Défense par niveau · max +18 Défense (3 niveaux, 1 pt/niveau).",
       "icon": "🛡️",
       "max_level": 3,
       "costs": [
@@ -1640,7 +1640,7 @@
     },
     "def_11": {
       "name": "Vitalité 2",
-      "description": "+120 par niveau (cumulatif, max 3).",
+      "description": "+120 PV max par niveau · max +360 PV max (3 niveaux, 1 pt/niveau).",
       "icon": "❤️",
       "max_level": 3,
       "costs": [
@@ -1668,7 +1668,7 @@
     },
     "def_12": {
       "name": "Endurance",
-      "description": "Nœud spécial : +1 hp max percent (1 amélioration).",
+      "description": "Nœud spécial : +1% PV max (1 amélioration, 3 pts).",
       "icon": "💗",
       "max_level": 1,
       "costs": [
@@ -1692,7 +1692,7 @@
     },
     "def_13": {
       "name": "Armure 3",
-      "description": "+7 par niveau (cumulatif, max 3).",
+      "description": "+7 Défense par niveau · max +21 Défense (3 niveaux, 1 pt/niveau).",
       "icon": "🛡️",
       "max_level": 3,
       "costs": [
@@ -1720,7 +1720,7 @@
     },
     "def_14": {
       "name": "Vitalité 3",
-      "description": "+140 par niveau (cumulatif, max 3).",
+      "description": "+140 PV max par niveau · max +420 PV max (3 niveaux, 1 pt/niveau).",
       "icon": "❤️",
       "max_level": 3,
       "costs": [
@@ -1748,7 +1748,7 @@
     },
     "def_15": {
       "name": "Armure 3",
-      "description": "+7 par niveau (cumulatif, max 3).",
+      "description": "+7 Défense par niveau · max +21 Défense (3 niveaux, 1 pt/niveau).",
       "icon": "🛡️",
       "max_level": 3,
       "costs": [
@@ -1776,7 +1776,7 @@
     },
     "def_16": {
       "name": "Vitalité 3",
-      "description": "+140 par niveau (cumulatif, max 3).",
+      "description": "+140 PV max par niveau · max +420 PV max (3 niveaux, 1 pt/niveau).",
       "icon": "❤️",
       "max_level": 3,
       "costs": [
@@ -1804,7 +1804,7 @@
     },
     "def_17": {
       "name": "Armure 3",
-      "description": "+7 par niveau (cumulatif, max 3).",
+      "description": "+7 Défense par niveau · max +21 Défense (3 niveaux, 1 pt/niveau).",
       "icon": "🛡️",
       "max_level": 3,
       "costs": [
@@ -1832,7 +1832,7 @@
     },
     "def_18": {
       "name": "Esquive",
-      "description": "Nœud spécial : +1 dodge flat (1 amélioration).",
+      "description": "Nœud spécial : +1% d'esquive (1 amélioration, 3 pts).",
       "icon": "🌀",
       "max_level": 1,
       "costs": [
@@ -1856,7 +1856,7 @@
     },
     "def_19": {
       "name": "Vitalité 4",
-      "description": "+160 par niveau (cumulatif, max 3).",
+      "description": "+160 PV max par niveau · max +480 PV max (3 niveaux, 1 pt/niveau).",
       "icon": "❤️",
       "max_level": 3,
       "costs": [
@@ -1884,7 +1884,7 @@
     },
     "def_20": {
       "name": "Armure 4",
-      "description": "+8 par niveau (cumulatif, max 3).",
+      "description": "+8 Défense par niveau · max +24 Défense (3 niveaux, 1 pt/niveau).",
       "icon": "🛡️",
       "max_level": 3,
       "costs": [
@@ -1912,7 +1912,7 @@
     },
     "def_21": {
       "name": "Vitalité 4",
-      "description": "+160 par niveau (cumulatif, max 3).",
+      "description": "+160 PV max par niveau · max +480 PV max (3 niveaux, 1 pt/niveau).",
       "icon": "❤️",
       "max_level": 3,
       "costs": [
@@ -1940,7 +1940,7 @@
     },
     "def_22": {
       "name": "Armure 4",
-      "description": "+8 par niveau (cumulatif, max 3).",
+      "description": "+8 Défense par niveau · max +24 Défense (3 niveaux, 1 pt/niveau).",
       "icon": "🛡️",
       "max_level": 3,
       "costs": [
@@ -1968,7 +1968,7 @@
     },
     "def_23": {
       "name": "Vitalité 4",
-      "description": "+160 par niveau (cumulatif, max 3).",
+      "description": "+160 PV max par niveau · max +480 PV max (3 niveaux, 1 pt/niveau).",
       "icon": "❤️",
       "max_level": 3,
       "costs": [
@@ -1996,7 +1996,7 @@
     },
     "def_24": {
       "name": "Régénération",
-      "description": "Nœud spécial : +1 hp regeneration flat (1 amélioration).",
+      "description": "Nœud spécial : +1 Régénération de PV (1 amélioration, 3 pts).",
       "icon": "💚",
       "max_level": 1,
       "costs": [
@@ -2020,7 +2020,7 @@
     },
     "def_25": {
       "name": "Armure 5",
-      "description": "+9 par niveau (cumulatif, max 3).",
+      "description": "+9 Défense par niveau · max +27 Défense (3 niveaux, 1 pt/niveau).",
       "icon": "🛡️",
       "max_level": 3,
       "costs": [
@@ -2048,7 +2048,7 @@
     },
     "def_26": {
       "name": "Vitalité 5",
-      "description": "+180 par niveau (cumulatif, max 3).",
+      "description": "+180 PV max par niveau · max +540 PV max (3 niveaux, 1 pt/niveau).",
       "icon": "❤️",
       "max_level": 3,
       "costs": [
@@ -2076,7 +2076,7 @@
     },
     "def_27": {
       "name": "Armure 5",
-      "description": "+9 par niveau (cumulatif, max 3).",
+      "description": "+9 Défense par niveau · max +27 Défense (3 niveaux, 1 pt/niveau).",
       "icon": "🛡️",
       "max_level": 3,
       "costs": [
@@ -2104,7 +2104,7 @@
     },
     "def_28": {
       "name": "Vitalité 5",
-      "description": "+180 par niveau (cumulatif, max 3).",
+      "description": "+180 PV max par niveau · max +540 PV max (3 niveaux, 1 pt/niveau).",
       "icon": "❤️",
       "max_level": 3,
       "costs": [
@@ -2132,7 +2132,7 @@
     },
     "def_29": {
       "name": "Armure 5",
-      "description": "+9 par niveau (cumulatif, max 3).",
+      "description": "+9 Défense par niveau · max +27 Défense (3 niveaux, 1 pt/niveau).",
       "icon": "🛡️",
       "max_level": 3,
       "costs": [
@@ -2160,7 +2160,7 @@
     },
     "def_30": {
       "name": "Peau de pierre",
-      "description": "Nœud spécial : +1 def percent (1 amélioration).",
+      "description": "Nœud spécial : +1% Défense (1 amélioration, 3 pts).",
       "icon": "🪨",
       "max_level": 1,
       "costs": [
@@ -2184,7 +2184,7 @@
     },
     "def_31": {
       "name": "Vitalité 6",
-      "description": "+200 par niveau (cumulatif, max 3).",
+      "description": "+200 PV max par niveau · max +600 PV max (3 niveaux, 1 pt/niveau).",
       "icon": "❤️",
       "max_level": 3,
       "costs": [
@@ -2212,7 +2212,7 @@
     },
     "def_32": {
       "name": "Armure 6",
-      "description": "+10 par niveau (cumulatif, max 3).",
+      "description": "+10 Défense par niveau · max +30 Défense (3 niveaux, 1 pt/niveau).",
       "icon": "🛡️",
       "max_level": 3,
       "costs": [
@@ -2240,7 +2240,7 @@
     },
     "def_33": {
       "name": "Vitalité 6",
-      "description": "+200 par niveau (cumulatif, max 3).",
+      "description": "+200 PV max par niveau · max +600 PV max (3 niveaux, 1 pt/niveau).",
       "icon": "❤️",
       "max_level": 3,
       "costs": [
@@ -2268,7 +2268,7 @@
     },
     "def_34": {
       "name": "Armure 6",
-      "description": "+10 par niveau (cumulatif, max 3).",
+      "description": "+10 Défense par niveau · max +30 Défense (3 niveaux, 1 pt/niveau).",
       "icon": "🛡️",
       "max_level": 3,
       "costs": [
@@ -2296,7 +2296,7 @@
     },
     "def_35": {
       "name": "Vitalité 6",
-      "description": "+200 par niveau (cumulatif, max 3).",
+      "description": "+200 PV max par niveau · max +600 PV max (3 niveaux, 1 pt/niveau).",
       "icon": "❤️",
       "max_level": 3,
       "costs": [
@@ -2324,7 +2324,7 @@
     },
     "def_36": {
       "name": "Endurance",
-      "description": "Nœud spécial : +1 hp max percent (1 amélioration).",
+      "description": "Nœud spécial : +1% PV max (1 amélioration, 3 pts).",
       "icon": "💗",
       "max_level": 1,
       "costs": [
@@ -2348,7 +2348,7 @@
     },
     "def_37": {
       "name": "Armure 7",
-      "description": "+11 par niveau (cumulatif, max 3).",
+      "description": "+11 Défense par niveau · max +33 Défense (3 niveaux, 1 pt/niveau).",
       "icon": "🛡️",
       "max_level": 3,
       "costs": [
@@ -2376,7 +2376,7 @@
     },
     "def_38": {
       "name": "Vitalité 7",
-      "description": "+220 par niveau (cumulatif, max 3).",
+      "description": "+220 PV max par niveau · max +660 PV max (3 niveaux, 1 pt/niveau).",
       "icon": "❤️",
       "max_level": 3,
       "costs": [
@@ -2404,7 +2404,7 @@
     },
     "def_39": {
       "name": "Armure 7",
-      "description": "+11 par niveau (cumulatif, max 3).",
+      "description": "+11 Défense par niveau · max +33 Défense (3 niveaux, 1 pt/niveau).",
       "icon": "🛡️",
       "max_level": 3,
       "costs": [
@@ -2432,7 +2432,7 @@
     },
     "def_40": {
       "name": "Vitalité 7",
-      "description": "+220 par niveau (cumulatif, max 3).",
+      "description": "+220 PV max par niveau · max +660 PV max (3 niveaux, 1 pt/niveau).",
       "icon": "❤️",
       "max_level": 3,
       "costs": [
@@ -2460,7 +2460,7 @@
     },
     "def_41": {
       "name": "Armure 7",
-      "description": "+11 par niveau (cumulatif, max 3).",
+      "description": "+11 Défense par niveau · max +33 Défense (3 niveaux, 1 pt/niveau).",
       "icon": "🛡️",
       "max_level": 3,
       "costs": [
@@ -2488,7 +2488,7 @@
     },
     "def_42": {
       "name": "Esquive",
-      "description": "Nœud spécial : +1 dodge flat (1 amélioration).",
+      "description": "Nœud spécial : +1% d'esquive (1 amélioration, 3 pts).",
       "icon": "🌀",
       "max_level": 1,
       "costs": [
@@ -2512,7 +2512,7 @@
     },
     "def_43": {
       "name": "Vitalité 8",
-      "description": "+240 par niveau (cumulatif, max 3).",
+      "description": "+240 PV max par niveau · max +720 PV max (3 niveaux, 1 pt/niveau).",
       "icon": "❤️",
       "max_level": 3,
       "costs": [
@@ -2540,7 +2540,7 @@
     },
     "def_44": {
       "name": "Armure 8",
-      "description": "+12 par niveau (cumulatif, max 3).",
+      "description": "+12 Défense par niveau · max +36 Défense (3 niveaux, 1 pt/niveau).",
       "icon": "🛡️",
       "max_level": 3,
       "costs": [
@@ -2568,7 +2568,7 @@
     },
     "def_45": {
       "name": "Vitalité 8",
-      "description": "+240 par niveau (cumulatif, max 3).",
+      "description": "+240 PV max par niveau · max +720 PV max (3 niveaux, 1 pt/niveau).",
       "icon": "❤️",
       "max_level": 3,
       "costs": [
@@ -2596,7 +2596,7 @@
     },
     "def_46": {
       "name": "Armure 8",
-      "description": "+12 par niveau (cumulatif, max 3).",
+      "description": "+12 Défense par niveau · max +36 Défense (3 niveaux, 1 pt/niveau).",
       "icon": "🛡️",
       "max_level": 3,
       "costs": [
@@ -2624,7 +2624,7 @@
     },
     "def_47": {
       "name": "Vitalité 8",
-      "description": "+240 par niveau (cumulatif, max 3).",
+      "description": "+240 PV max par niveau · max +720 PV max (3 niveaux, 1 pt/niveau).",
       "icon": "❤️",
       "max_level": 3,
       "costs": [
@@ -2652,7 +2652,7 @@
     },
     "def_48": {
       "name": "Régénération",
-      "description": "Nœud spécial : +1 hp regeneration flat (1 amélioration).",
+      "description": "Nœud spécial : +1 Régénération de PV (1 amélioration, 3 pts).",
       "icon": "💚",
       "max_level": 1,
       "costs": [
@@ -2693,7 +2693,7 @@
     },
     "uti_1": {
       "name": "Chance 1",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% de chance de butin par niveau · max +3% de chance de butin (3 niveaux, 1 pt/niveau).",
       "icon": "🎁",
       "max_level": 3,
       "costs": [
@@ -2721,7 +2721,7 @@
     },
     "uti_2": {
       "name": "Bourse 1",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'or gagné par niveau · max +3% d'or gagné (3 niveaux, 1 pt/niveau).",
       "icon": "💰",
       "max_level": 3,
       "costs": [
@@ -2749,7 +2749,7 @@
     },
     "uti_3": {
       "name": "Sagesse 1",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'XP gagnée par niveau · max +3% d'XP gagnée (3 niveaux, 1 pt/niveau).",
       "icon": "✨",
       "max_level": 3,
       "costs": [
@@ -2777,7 +2777,7 @@
     },
     "uti_4": {
       "name": "Chance 1",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% de chance de butin par niveau · max +3% de chance de butin (3 niveaux, 1 pt/niveau).",
       "icon": "🎁",
       "max_level": 3,
       "costs": [
@@ -2805,7 +2805,7 @@
     },
     "uti_5": {
       "name": "Bourse 1",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'or gagné par niveau · max +3% d'or gagné (3 niveaux, 1 pt/niveau).",
       "icon": "💰",
       "max_level": 3,
       "costs": [
@@ -2833,7 +2833,7 @@
     },
     "uti_6": {
       "name": "Fortune",
-      "description": "Nœud spécial : +2 gold drop percent (1 amélioration).",
+      "description": "Nœud spécial : +2% d'or gagné (1 amélioration, 3 pts).",
       "icon": "💰",
       "max_level": 1,
       "costs": [
@@ -2857,7 +2857,7 @@
     },
     "uti_7": {
       "name": "Sagesse 2",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'XP gagnée par niveau · max +3% d'XP gagnée (3 niveaux, 1 pt/niveau).",
       "icon": "✨",
       "max_level": 3,
       "costs": [
@@ -2885,7 +2885,7 @@
     },
     "uti_8": {
       "name": "Chance 2",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% de chance de butin par niveau · max +3% de chance de butin (3 niveaux, 1 pt/niveau).",
       "icon": "🎁",
       "max_level": 3,
       "costs": [
@@ -2913,7 +2913,7 @@
     },
     "uti_9": {
       "name": "Bourse 2",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'or gagné par niveau · max +3% d'or gagné (3 niveaux, 1 pt/niveau).",
       "icon": "💰",
       "max_level": 3,
       "costs": [
@@ -2941,7 +2941,7 @@
     },
     "uti_10": {
       "name": "Sagesse 2",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'XP gagnée par niveau · max +3% d'XP gagnée (3 niveaux, 1 pt/niveau).",
       "icon": "✨",
       "max_level": 3,
       "costs": [
@@ -2969,7 +2969,7 @@
     },
     "uti_11": {
       "name": "Chance 2",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% de chance de butin par niveau · max +3% de chance de butin (3 niveaux, 1 pt/niveau).",
       "icon": "🎁",
       "max_level": 3,
       "costs": [
@@ -2997,7 +2997,7 @@
     },
     "uti_12": {
       "name": "Érudition",
-      "description": "Nœud spécial : +2 xp drop percent (1 amélioration).",
+      "description": "Nœud spécial : +2% d'XP gagnée (1 amélioration, 3 pts).",
       "icon": "✨",
       "max_level": 1,
       "costs": [
@@ -3021,7 +3021,7 @@
     },
     "uti_13": {
       "name": "Bourse 3",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'or gagné par niveau · max +3% d'or gagné (3 niveaux, 1 pt/niveau).",
       "icon": "💰",
       "max_level": 3,
       "costs": [
@@ -3049,7 +3049,7 @@
     },
     "uti_14": {
       "name": "Sagesse 3",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'XP gagnée par niveau · max +3% d'XP gagnée (3 niveaux, 1 pt/niveau).",
       "icon": "✨",
       "max_level": 3,
       "costs": [
@@ -3077,7 +3077,7 @@
     },
     "uti_15": {
       "name": "Chance 3",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% de chance de butin par niveau · max +3% de chance de butin (3 niveaux, 1 pt/niveau).",
       "icon": "🎁",
       "max_level": 3,
       "costs": [
@@ -3105,7 +3105,7 @@
     },
     "uti_16": {
       "name": "Bourse 3",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'or gagné par niveau · max +3% d'or gagné (3 niveaux, 1 pt/niveau).",
       "icon": "💰",
       "max_level": 3,
       "costs": [
@@ -3133,7 +3133,7 @@
     },
     "uti_17": {
       "name": "Sagesse 3",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'XP gagnée par niveau · max +3% d'XP gagnée (3 niveaux, 1 pt/niveau).",
       "icon": "✨",
       "max_level": 3,
       "costs": [
@@ -3161,7 +3161,7 @@
     },
     "uti_18": {
       "name": "Pillage",
-      "description": "Nœud spécial : +2 drop rate multiplier (1 amélioration).",
+      "description": "Nœud spécial : +2% de chance de butin (1 amélioration, 3 pts).",
       "icon": "🎁",
       "max_level": 1,
       "costs": [
@@ -3185,7 +3185,7 @@
     },
     "uti_19": {
       "name": "Chance 4",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% de chance de butin par niveau · max +3% de chance de butin (3 niveaux, 1 pt/niveau).",
       "icon": "🎁",
       "max_level": 3,
       "costs": [
@@ -3213,7 +3213,7 @@
     },
     "uti_20": {
       "name": "Bourse 4",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'or gagné par niveau · max +3% d'or gagné (3 niveaux, 1 pt/niveau).",
       "icon": "💰",
       "max_level": 3,
       "costs": [
@@ -3241,7 +3241,7 @@
     },
     "uti_21": {
       "name": "Sagesse 4",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'XP gagnée par niveau · max +3% d'XP gagnée (3 niveaux, 1 pt/niveau).",
       "icon": "✨",
       "max_level": 3,
       "costs": [
@@ -3269,7 +3269,7 @@
     },
     "uti_22": {
       "name": "Chance 4",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% de chance de butin par niveau · max +3% de chance de butin (3 niveaux, 1 pt/niveau).",
       "icon": "🎁",
       "max_level": 3,
       "costs": [
@@ -3297,7 +3297,7 @@
     },
     "uti_23": {
       "name": "Bourse 4",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'or gagné par niveau · max +3% d'or gagné (3 niveaux, 1 pt/niveau).",
       "icon": "💰",
       "max_level": 3,
       "costs": [
@@ -3325,7 +3325,7 @@
     },
     "uti_24": {
       "name": "Fortune",
-      "description": "Nœud spécial : +2 gold drop percent (1 amélioration).",
+      "description": "Nœud spécial : +2% d'or gagné (1 amélioration, 3 pts).",
       "icon": "💰",
       "max_level": 1,
       "costs": [
@@ -3349,7 +3349,7 @@
     },
     "uti_25": {
       "name": "Sagesse 5",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'XP gagnée par niveau · max +3% d'XP gagnée (3 niveaux, 1 pt/niveau).",
       "icon": "✨",
       "max_level": 3,
       "costs": [
@@ -3377,7 +3377,7 @@
     },
     "uti_26": {
       "name": "Chance 5",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% de chance de butin par niveau · max +3% de chance de butin (3 niveaux, 1 pt/niveau).",
       "icon": "🎁",
       "max_level": 3,
       "costs": [
@@ -3405,7 +3405,7 @@
     },
     "uti_27": {
       "name": "Bourse 5",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'or gagné par niveau · max +3% d'or gagné (3 niveaux, 1 pt/niveau).",
       "icon": "💰",
       "max_level": 3,
       "costs": [
@@ -3433,7 +3433,7 @@
     },
     "uti_28": {
       "name": "Sagesse 5",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'XP gagnée par niveau · max +3% d'XP gagnée (3 niveaux, 1 pt/niveau).",
       "icon": "✨",
       "max_level": 3,
       "costs": [
@@ -3461,7 +3461,7 @@
     },
     "uti_29": {
       "name": "Chance 5",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% de chance de butin par niveau · max +3% de chance de butin (3 niveaux, 1 pt/niveau).",
       "icon": "🎁",
       "max_level": 3,
       "costs": [
@@ -3489,7 +3489,7 @@
     },
     "uti_30": {
       "name": "Érudition",
-      "description": "Nœud spécial : +2 xp drop percent (1 amélioration).",
+      "description": "Nœud spécial : +2% d'XP gagnée (1 amélioration, 3 pts).",
       "icon": "✨",
       "max_level": 1,
       "costs": [
@@ -3513,7 +3513,7 @@
     },
     "uti_31": {
       "name": "Bourse 6",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'or gagné par niveau · max +3% d'or gagné (3 niveaux, 1 pt/niveau).",
       "icon": "💰",
       "max_level": 3,
       "costs": [
@@ -3541,7 +3541,7 @@
     },
     "uti_32": {
       "name": "Sagesse 6",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'XP gagnée par niveau · max +3% d'XP gagnée (3 niveaux, 1 pt/niveau).",
       "icon": "✨",
       "max_level": 3,
       "costs": [
@@ -3569,7 +3569,7 @@
     },
     "uti_33": {
       "name": "Chance 6",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% de chance de butin par niveau · max +3% de chance de butin (3 niveaux, 1 pt/niveau).",
       "icon": "🎁",
       "max_level": 3,
       "costs": [
@@ -3597,7 +3597,7 @@
     },
     "uti_34": {
       "name": "Bourse 6",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'or gagné par niveau · max +3% d'or gagné (3 niveaux, 1 pt/niveau).",
       "icon": "💰",
       "max_level": 3,
       "costs": [
@@ -3625,7 +3625,7 @@
     },
     "uti_35": {
       "name": "Sagesse 6",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'XP gagnée par niveau · max +3% d'XP gagnée (3 niveaux, 1 pt/niveau).",
       "icon": "✨",
       "max_level": 3,
       "costs": [
@@ -3653,7 +3653,7 @@
     },
     "uti_36": {
       "name": "Pillage",
-      "description": "Nœud spécial : +2 drop rate multiplier (1 amélioration).",
+      "description": "Nœud spécial : +2% de chance de butin (1 amélioration, 3 pts).",
       "icon": "🎁",
       "max_level": 1,
       "costs": [
@@ -3677,7 +3677,7 @@
     },
     "uti_37": {
       "name": "Chance 7",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% de chance de butin par niveau · max +3% de chance de butin (3 niveaux, 1 pt/niveau).",
       "icon": "🎁",
       "max_level": 3,
       "costs": [
@@ -3705,7 +3705,7 @@
     },
     "uti_38": {
       "name": "Bourse 7",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'or gagné par niveau · max +3% d'or gagné (3 niveaux, 1 pt/niveau).",
       "icon": "💰",
       "max_level": 3,
       "costs": [
@@ -3733,7 +3733,7 @@
     },
     "uti_39": {
       "name": "Sagesse 7",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'XP gagnée par niveau · max +3% d'XP gagnée (3 niveaux, 1 pt/niveau).",
       "icon": "✨",
       "max_level": 3,
       "costs": [
@@ -3761,7 +3761,7 @@
     },
     "uti_40": {
       "name": "Chance 7",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% de chance de butin par niveau · max +3% de chance de butin (3 niveaux, 1 pt/niveau).",
       "icon": "🎁",
       "max_level": 3,
       "costs": [
@@ -3789,7 +3789,7 @@
     },
     "uti_41": {
       "name": "Bourse 7",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'or gagné par niveau · max +3% d'or gagné (3 niveaux, 1 pt/niveau).",
       "icon": "💰",
       "max_level": 3,
       "costs": [
@@ -3817,7 +3817,7 @@
     },
     "uti_42": {
       "name": "Fortune",
-      "description": "Nœud spécial : +2 gold drop percent (1 amélioration).",
+      "description": "Nœud spécial : +2% d'or gagné (1 amélioration, 3 pts).",
       "icon": "💰",
       "max_level": 1,
       "costs": [
@@ -3841,7 +3841,7 @@
     },
     "uti_43": {
       "name": "Sagesse 8",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'XP gagnée par niveau · max +3% d'XP gagnée (3 niveaux, 1 pt/niveau).",
       "icon": "✨",
       "max_level": 3,
       "costs": [
@@ -3869,7 +3869,7 @@
     },
     "uti_44": {
       "name": "Chance 8",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% de chance de butin par niveau · max +3% de chance de butin (3 niveaux, 1 pt/niveau).",
       "icon": "🎁",
       "max_level": 3,
       "costs": [
@@ -3897,7 +3897,7 @@
     },
     "uti_45": {
       "name": "Bourse 8",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'or gagné par niveau · max +3% d'or gagné (3 niveaux, 1 pt/niveau).",
       "icon": "💰",
       "max_level": 3,
       "costs": [
@@ -3925,7 +3925,7 @@
     },
     "uti_46": {
       "name": "Sagesse 8",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% d'XP gagnée par niveau · max +3% d'XP gagnée (3 niveaux, 1 pt/niveau).",
       "icon": "✨",
       "max_level": 3,
       "costs": [
@@ -3953,7 +3953,7 @@
     },
     "uti_47": {
       "name": "Chance 8",
-      "description": "+1 par niveau (cumulatif, max 3).",
+      "description": "+1% de chance de butin par niveau · max +3% de chance de butin (3 niveaux, 1 pt/niveau).",
       "icon": "🎁",
       "max_level": 3,
       "costs": [
@@ -3981,7 +3981,7 @@
     },
     "uti_48": {
       "name": "Érudition",
-      "description": "Nœud spécial : +2 xp drop percent (1 amélioration).",
+      "description": "Nœud spécial : +2% d'XP gagnée (1 amélioration, 3 pts).",
       "icon": "✨",
       "max_level": 1,
       "costs": [

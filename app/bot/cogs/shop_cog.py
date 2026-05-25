@@ -38,8 +38,9 @@ class ShopCog(commands.Cog):
             shop_items = shop_repository.list_all(only_enabled=True)
 
         view = ShopView(shop_items)
+        embed, file = view.render_current()
         await interaction.response.send_message(
-            embed=view._build_embed(), view=view,
+            embed=embed, file=file, view=view,
         )
 
     @app_commands.command(name="buy", description="Acheter un objet à la boutique")

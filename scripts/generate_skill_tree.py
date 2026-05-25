@@ -92,6 +92,30 @@ def simple_values(base: int, ramp: int, anneau: int) -> list[int]:
     return [v, 2 * v, 3 * v]
 
 
+# Libellé clair (stat + unité) par type d'effet. {v} = valeur.
+_EFFECT_PHRASE: dict[str, str] = {
+    "atk_flat": "+{v} Attaque",
+    "def_flat": "+{v} Défense",
+    "hp_max_flat": "+{v} PV max",
+    "atk_percent": "+{v}% Attaque",
+    "def_percent": "+{v}% Défense",
+    "hp_max_percent": "+{v}% PV max",
+    "crit_chance_flat": "+{v}% de chance de critique",
+    "crit_damage_flat": "+{v}% de dégâts critiques",
+    "dodge_flat": "+{v}% d'esquive",
+    "speed_flat": "+{v} Vitesse",
+    "hp_regeneration_flat": "+{v} Régénération de PV",
+    "gold_drop_percent": "+{v}% d'or gagné",
+    "xp_drop_percent": "+{v}% d'XP gagnée",
+    "drop_rate_multiplier": "+{v}% de chance de butin",
+}
+
+
+def effect_phrase(effect: str, value) -> str:
+    """Phrase claire pour un effet, ex : 'atk_flat', 5 → '+5 Attaque'."""
+    return _EFFECT_PHRASE.get(effect, "+{v} " + effect).format(v=value)
+
+
 # Définition des branches : (préfixe, nom, icône racine, angle°,
 #   cycle de simples [(effect, base, ramp, icon)], cycle de spéciaux).
 BRANCHES = {
@@ -191,9 +215,13 @@ def build() -> dict:
                 seq += 1
                 code = f"{prefix}_{seq}"
                 x, y = positions[seq]
+                _per = base + ramp * (anneau - 1)
                 skills[code] = {
                     "name": f"{label} {anneau}",
-                    "description": f"+{base + ramp*(anneau-1)} par niveau (cumulatif, max 3).",
+                    "description": (
+                        f"{effect_phrase(effect, _per)} par niveau "
+                        f"· max {effect_phrase(effect, 3 * _per)} (3 niveaux, 1 pt/niveau)."
+                    ),
                     "icon": icon,
                     "max_level": 3,
                     "costs": [1, 1, 1],
@@ -217,7 +245,10 @@ def build() -> dict:
             x, y = positions[seq]
             skills[code] = {
                 "name": label,
-                "description": f"Nœud spécial : +{val} {effect.replace('_', ' ')} (1 amélioration).",
+                "description": (
+                    f"Nœud spécial : {effect_phrase(effect, val)} "
+                    f"(1 amélioration, 3 pts)."
+                ),
                 "icon": icon,
                 "max_level": 1,
                 "costs": [3],
