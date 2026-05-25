@@ -26,35 +26,60 @@ SIMPLE_PER_RING = 5
 OUT = Path(__file__).resolve().parents[1] / "app/infrastructure/content/skill_tree.json"
 
 # Disposition en TRISKÈLE celtique : 3 bras à 120°, chacun s'ENROULE en spirale
-# qui se referme vers l'extérieur (œil de la spirale décalé du centre). Chaque
-# bras tourne autour d'un "centre d'enroulement" C situé à distance D du centre
-# global, sur l'angle du bras. Le nœud part près du centre global (racine),
-# sweep large, puis s'enroule serré autour de C (l'œil) — comme le symbole.
-R0 = 150        # distance racine de branche au centre global
-CURL_D = 1180   # distance de l'œil d'enroulement au centre global
-CURL_TURNS = 1.75   # nombre de tours d'enroulement par bras
-CURL_DIR = 1.0  # sens (identique pour les 3 bras → triskèle cohérent)
+# autour d'un "œil" décalé du centre. Les nœuds sont posés à ESPACEMENT D'ARC
+# CONSTANT le long de la spirale (jamais superposés, côte à côte), et l'œil
+# garde un rayon minimal pour ne pas s'effondrer en un point.
+R0 = 150          # distance racine de branche au centre global
+CURL_D = 1180     # distance de l'œil d'enroulement au centre global
+CURL_TURNS = 2.0  # nombre de tours d'enroulement par bras
+CURL_DIR = 1.0    # sens (identique pour les 3 bras)
+RHO_MIN = 95      # rayon minimal de l'œil (évite l'empilement au centre du curl)
 
 
-def spiral_pos(base_angle_deg: float, seq: int, total: int) -> tuple[int, int]:
-    """Position (x, y) du nœud n°`seq` (0 = racine) d'un bras de triskèle.
-
-    Le bras s'enroule autour de l'œil C (à distance CURL_D, angle du bras) :
-    rayon local décroissant de (CURL_D−R0) vers 0, angle local tournant de
-    CURL_TURNS tours. À seq=0 le nœud est à R0 du centre global ; à seq=total
-    il atteint l'œil (enroulement serré).
-    """
+def _arm_curve_point(base_angle_deg: float, s: float) -> tuple[float, float]:
+    """Point continu de la spirale d'un bras, paramètre s ∈ [0, 1]
+    (0 = racine près du centre global, 1 = cœur de l'œil)."""
     theta = math.radians(base_angle_deg)
-    t = seq / total if total else 0.0
     rho_max = CURL_D - R0
-    local_radius = rho_max * (1 - t)
-    # Départ pointé du côté du centre global (theta+π), puis enroulement.
-    local_angle = (theta + math.pi) + CURL_DIR * (2 * math.pi * CURL_TURNS) * t
+    local_radius = rho_max - (rho_max - RHO_MIN) * s
+    local_angle = (theta + math.pi) + CURL_DIR * (2 * math.pi * CURL_TURNS) * s
     cx = CURL_D * math.cos(theta)
     cy = CURL_D * math.sin(theta)
-    x = cx + local_radius * math.cos(local_angle)
-    y = cy + local_radius * math.sin(local_angle)
-    return round(x), round(y)
+    return cx + local_radius * math.cos(local_angle), cy + local_radius * math.sin(local_angle)
+
+
+def arm_positions(base_angle_deg: float, total: int) -> list[tuple[int, int]]:
+    """Positions des nœuds 0..total d'un bras, équidistantes EN LONGUEUR D'ARC.
+
+    On échantillonne finement la spirale, on calcule la longueur cumulée, puis
+    on place total+1 nœuds à intervalles d'arc égaux → espacement constant,
+    aucun chevauchement même dans l'enroulement serré de l'œil.
+    """
+    samples = 6000
+    pts = [_arm_curve_point(base_angle_deg, j / samples) for j in range(samples + 1)]
+    cum = [0.0]
+    for j in range(1, len(pts)):
+        dx = pts[j][0] - pts[j - 1][0]
+        dy = pts[j][1] - pts[j - 1][1]
+        cum.append(cum[-1] + math.hypot(dx, dy))
+    total_len = cum[-1]
+
+    result: list[tuple[int, int]] = []
+    k = 0
+    for i in range(total + 1):
+        target = total_len * i / total if total else 0.0
+        while k < len(cum) - 1 and cum[k + 1] < target:
+            k += 1
+        # interpolation linéaire entre l'échantillon k et k+1
+        if k >= len(pts) - 1:
+            px, py = pts[-1]
+        else:
+            seg = cum[k + 1] - cum[k]
+            frac = (target - cum[k]) / seg if seg > 0 else 0.0
+            px = pts[k][0] + (pts[k + 1][0] - pts[k][0]) * frac
+            py = pts[k][1] + (pts[k + 1][1] - pts[k][1]) * frac
+        result.append((round(px), round(py)))
+    return result
 
 # Combien de nœuds "vitesse" au total (FINIE — sinon stunlock). Au-delà, le
 # slot spécial vitesse de la branche attaque devient crit_damage (tail-safe).
@@ -139,9 +164,12 @@ def build() -> dict:
         simples = cfg["simples"]
         speciaux = cfg["speciaux"]
 
+        # Positions équidistantes (longueur d'arc) du bras entier, indexées par seq.
+        positions = arm_positions(base_angle, total_per_arm)
+
         # Racine de branche (passerelle) — seq 0 du bras spiralé.
         root_code = f"voie_{prefix}"
-        rx, ry = spiral_pos(base_angle, 0, total_per_arm)
+        rx, ry = positions[0]
         skills[root_code] = {
             "name": cfg["name"],
             "description": f"Entrée de la {cfg['name'].lower()}.",
@@ -162,7 +190,7 @@ def build() -> dict:
                 effect, base, ramp, icon, label = simples[(anneau * SIMPLE_PER_RING + n) % len(simples)]
                 seq += 1
                 code = f"{prefix}_{seq}"
-                x, y = spiral_pos(base_angle, seq, total_per_arm)
+                x, y = positions[seq]
                 skills[code] = {
                     "name": f"{label} {anneau}",
                     "description": f"+{base + ramp*(anneau-1)} par niveau (cumulatif, max 3).",
@@ -186,7 +214,7 @@ def build() -> dict:
                     speed_count += 1
             seq += 1
             code = f"{prefix}_{seq}"
-            x, y = spiral_pos(base_angle, seq, total_per_arm)
+            x, y = positions[seq]
             skills[code] = {
                 "name": label,
                 "description": f"Nœud spécial : +{val} {effect.replace('_', ' ')} (1 amélioration).",
