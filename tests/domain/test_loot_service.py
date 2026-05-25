@@ -156,3 +156,55 @@ def test_multiplier_preserves_rare_drops_proportionally():
     # Avec multiplicatif (1.1%), on doit avoir ~11 drops sur 1000.
     # Si c'était additif (11%), on aurait ~110 drops. Donc < 50 prouve le multiplicatif.
     assert drops_count < 50
+
+
+# ---------- Drop commun de famille (couche V2) ----------
+
+
+def _make_mob_family(family: str, xp_reward: int) -> MobDefinition:
+    now = datetime.now(UTC)
+    return MobDefinition(
+        id=1, code="m", name="m", description="", image_name=None,
+        family=family, max_hp=10, current_hp=10, attack=1, defense=0,
+        xp_reward=xp_reward, gold_reward=1, spawn_weight=1, speed=1,
+        crit_chance=0, crit_damage=100, dodge=0, hp_regeneration=0,
+        loot_table=[], created_at=now, updated_at=now,
+    )
+
+
+_FAMILY_DROPS = {"gobelin": {"item_code": "gobelin_tooth", "drop_rate": 1.0}}
+
+
+def test_family_common_drop_always_with_rate_one():
+    service = LootService()
+    mob = _make_mob_family("gobelin", xp_reward=50)
+
+    drops = service.generate_loot(mob, family_drops=_FAMILY_DROPS)
+    assert len(drops) == 1
+    assert drops[0][0] == "gobelin_tooth"
+
+
+def test_family_common_drop_quantity_scales_with_power():
+    service = LootService()
+    weak = _make_mob_family("gobelin", xp_reward=19)    # qty_max = 1
+    strong = _make_mob_family("gobelin", xp_reward=300)  # qty_max ~4
+
+    weak_qtys = {service.generate_loot(weak, family_drops=_FAMILY_DROPS)[0][1] for _ in range(200)}
+    strong_qtys = {service.generate_loot(strong, family_drops=_FAMILY_DROPS)[0][1] for _ in range(200)}
+
+    assert weak_qtys == {1}            # mob faible : toujours 1
+    assert max(strong_qtys) >= 3       # mob fort : peut lâcher 3-4
+
+
+def test_family_drop_ignored_for_unknown_family():
+    service = LootService()
+    mob = _make_mob_family("inconnue", xp_reward=50)
+
+    assert service.generate_loot(mob, family_drops=_FAMILY_DROPS) == []
+
+
+def test_no_family_drops_param_means_no_common_drop():
+    service = LootService()
+    mob = _make_mob_family("gobelin", xp_reward=50)
+
+    assert service.generate_loot(mob) == []

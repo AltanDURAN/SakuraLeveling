@@ -10,6 +10,7 @@ from app.application.use_cases.weekly_quests import WeeklyQuestProgressService
 from app.domain.services.health_regeneration_service import HealthRegenerationService
 from app.domain.services.title_bonus_service import TitleBonusService
 from app.domain.services.loot_service import LootService
+from app.infrastructure.loot.family_drop_loader import get_family_drops
 from app.domain.services.party_combat_service import PartyCombatService
 from app.domain.services.power_score_service import PowerScoreService
 from app.domain.services.progression_service import ProgressionService
@@ -371,6 +372,7 @@ class EncounterService:
                 dropped_items = loot_service.generate_loot(
                     mob,
                     drop_rate_multiplier=bonuses.drop_rate_multiplier * chasseur_mult,
+                    family_drops=get_family_drops(),
                 )
 
                 if gold > 0:

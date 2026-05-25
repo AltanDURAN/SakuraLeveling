@@ -1,0 +1,4 @@
+{
+  "slime": {"item_code": "slime_gel", "drop_rate": 0.75},
+  "gobelin": {"item_code": "gobelin_tooth", "drop_rate": 0.75}
+}
