@@ -140,7 +140,7 @@ def test_contribution_dead_players_get_zero_share():
 # ---------- Distribution de l'or ----------
 
 
-def test_gold_pool_scales_with_survivor_count():
+def test_gold_pool_is_fixed_not_scaled_by_party_size():
     service = RewardDistributionService()
 
     solo = service.distribute_gold(
@@ -155,9 +155,11 @@ def test_gold_pool_scales_with_survivor_count():
         ],
     )
 
+    # Pool FIXE = 50, PAS ×survivants. Solo prend tout, duo se le partage.
     assert solo[1] == 50
-    assert duo[1] == 50
-    assert duo[2] == 50
+    assert abs(duo[1] - 25) <= 1
+    assert abs(duo[2] - 25) <= 1
+    assert duo[1] + duo[2] <= 50
 
 
 def test_gold_distributed_by_contribution_score_dps_vs_tank_equal():
@@ -172,7 +174,7 @@ def test_gold_distributed_by_contribution_score_dps_vs_tank_equal():
         ],
     )
 
-    pool = 100 * 2  # 200
+    pool = 100  # pool fixe
     assert abs(rewards[1] - pool * 0.5) <= 1
     assert abs(rewards[2] - pool * 0.5) <= 1
 
@@ -188,10 +190,10 @@ def test_gold_versatile_player_gets_more():
         ],
     )
 
-    # P1 = 75%, P2 = 25% du pool 200 → 150 vs 50
+    # P1 = 75%, P2 = 25% du pool fixe 100 → 75 vs 25
     assert rewards[1] > rewards[2]
-    assert abs(rewards[1] - 150) <= 1
-    assert abs(rewards[2] - 50) <= 1
+    assert abs(rewards[1] - 75) <= 1
+    assert abs(rewards[2] - 25) <= 1
 
 
 def test_gold_skips_dead_players():
@@ -206,7 +208,7 @@ def test_gold_skips_dead_players():
     )
 
     assert rewards[2] == 0
-    # Pool = 100 × 1 survivant = 100, tout va au survivant
+    # Pool fixe = 100, tout va à l'unique survivant
     assert rewards[1] == 100
 
 
@@ -238,68 +240,45 @@ def test_gold_zero_reward_returns_zero():
 # ---------- Distribution de l'XP ----------
 
 
-def test_xp_weak_player_gains_more_than_strong():
+def test_xp_is_equal_for_everyone_no_power_variance():
     service = RewardDistributionService()
-
-    contributions = [_make_contribution(1), _make_contribution(2)]
 
     rewards = service.distribute_xp(
         mob_xp_reward=100,
-        mob_power=1000,
-        player_powers={1: 500, 2: 2000},
-        contributions=contributions,
+        contributions=[_make_contribution(1), _make_contribution(2)],
     )
 
-    # P1 (faible) ratio 1000/500 = 2.0 → 200 XP
-    # P2 (fort) ratio 1000/2000 = 0.5 → 50 XP
-    assert rewards[1] == 200
-    assert rewards[2] == 50
-    assert rewards[1] > rewards[2]
+    # Aucune variance de puissance : chacun reçoit le montant plein, à égalité.
+    assert rewards[1] == 100
+    assert rewards[2] == 100
 
 
-def test_xp_clamps_to_max_when_player_extremely_weak():
+def test_xp_full_amount_to_each_participant_even_in_big_group():
     service = RewardDistributionService()
 
     rewards = service.distribute_xp(
-        mob_xp_reward=100,
-        mob_power=10_000,
-        player_powers={1: 1},
-        contributions=[_make_contribution(1)],
+        mob_xp_reward=250,
+        contributions=[_make_contribution(i) for i in range(1, 6)],
     )
 
-    # ratio = 10000/1 = 10000, clampé à 2.5 → 250 XP
-    assert rewards[1] == 250
+    # Groupe de 5 : chacun le plein (l'XP totale créée est ×5, assumé).
+    assert all(v == 250 for v in rewards.values())
 
 
-def test_xp_clamps_to_min_when_player_extremely_strong():
+def test_xp_granted_to_dead_players_too():
     service = RewardDistributionService()
 
     rewards = service.distribute_xp(
         mob_xp_reward=100,
-        mob_power=10,
-        player_powers={1: 10_000},
-        contributions=[_make_contribution(1)],
-    )
-
-    # ratio = 10/10000 ≈ 0.001, clampé à 0.5 → 50 XP
-    assert rewards[1] == 50
-
-
-def test_xp_skips_dead_players():
-    service = RewardDistributionService()
-
-    rewards = service.distribute_xp(
-        mob_xp_reward=100,
-        mob_power=1000,
-        player_powers={1: 1000, 2: 1000},
         contributions=[
             _make_contribution(1, survived=True),
             _make_contribution(2, survived=False),
         ],
     )
 
+    # Le mort gagne l'XP (changement V2) — seul l'or lui est refusé (ailleurs).
     assert rewards[1] == 100
-    assert rewards[2] == 0
+    assert rewards[2] == 100
 
 
 def test_xp_zero_reward_returns_zero():
@@ -307,8 +286,6 @@ def test_xp_zero_reward_returns_zero():
 
     rewards = service.distribute_xp(
         mob_xp_reward=0,
-        mob_power=1000,
-        player_powers={1: 500},
         contributions=[_make_contribution(1)],
     )
 

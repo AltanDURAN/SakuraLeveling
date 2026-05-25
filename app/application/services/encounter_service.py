@@ -285,13 +285,6 @@ class EncounterService:
                 base_gold_reward=mob.gold_reward,
             )
 
-        mob_power = power_score_service.calculate_from_mob(mob)
-        player_powers: dict[int, int] = {}
-        for participant in encounter.participants.values():
-            player_powers[participant.player_id] = power_score_service.calculate_from_stats(
-                participant.stats
-            )
-
         contribution_shares = reward_distribution_service.compute_contribution_shares(
             contributions=result.contributions,
         )
@@ -299,10 +292,9 @@ class EncounterService:
             mob_gold_reward=mob.gold_reward,
             contributions=result.contributions,
         )
+        # XP : même montant plein pour tous, morts inclus (pas de variance).
         xp_per_player = reward_distribution_service.distribute_xp(
             mob_xp_reward=mob.xp_reward,
-            mob_power=mob_power,
-            player_powers=player_powers,
             contributions=result.contributions,
         )
 
@@ -330,22 +322,6 @@ class EncounterService:
                     won_combat=survived,
                 )
 
-                if not survived:
-                    rewards.append(
-                        PlayerReward(
-                            player_id=participant.player_id,
-                            user_id=participant.user_id,
-                            name=participant.display_name,
-                            avatar_url=participant.avatar_url,
-                            gold=0,
-                            xp=0,
-                            items=[],
-                            contribution=contribution,
-                            contribution_share=0.0,
-                        )
-                    )
-                    continue
-
                 # Bonus de l'arbre de compétences (xp/gold/drop) propres à ce joueur
                 allocations = skill_allocation_repository.list_by_player(
                     participant.player_id
@@ -357,13 +333,36 @@ class EncounterService:
                 title_bonuses = resolve_title_bonuses(session, participant.player_id)
                 farmer_pct = title_bonuses.gold_xp_bonus_pct / 100.0
 
-                base_gold = gold_per_player.get(participant.player_id, 0)
                 base_xp = xp_per_player.get(participant.player_id, 0)
-                gold = round(
-                    base_gold * (1 + bonuses.gold_drop_percent) * (1 + farmer_pct)
-                )
                 xp = round(
                     base_xp * (1 + bonuses.xp_drop_percent) * (1 + farmer_pct)
+                )
+
+                # L'XP est gagnée par TOUS les participants, morts inclus
+                # (le mob est vaincu) — appliquée via le palier de niveau.
+                self._grant_xp(player_repository, participant.player_id, xp)
+
+                if not survived:
+                    # Mort en combat : XP oui (déjà appliquée), mais PAS d'or,
+                    # PAS de loot, PAS de crédit de kill (pénalité de mort).
+                    rewards.append(
+                        PlayerReward(
+                            player_id=participant.player_id,
+                            user_id=participant.user_id,
+                            name=participant.display_name,
+                            avatar_url=participant.avatar_url,
+                            gold=0,
+                            xp=xp,
+                            items=[],
+                            contribution=contribution,
+                            contribution_share=0.0,
+                        )
+                    )
+                    continue
+
+                base_gold = gold_per_player.get(participant.player_id, 0)
+                gold = round(
+                    base_gold * (1 + bonuses.gold_drop_percent) * (1 + farmer_pct)
                 )
 
                 # Chasseur Légendaire : multiplicateur drop rate spécifique
@@ -377,30 +376,6 @@ class EncounterService:
                 if gold > 0:
                     player_repository.add_gold(participant.player_id, gold)
                     career_repository.add(participant.player_id, gold_earned=gold)
-                if xp > 0:
-                    # Avant : `add_xp` directement → l'XP s'accumulait sans
-                    # passer par le palier de niveau (bug visible en bêta :
-                    # un joueur niveau 10 affichait XP 1051/1000). On
-                    # passe maintenant par ProgressionService comme le combat
-                    # solo, pour appliquer le level-up + gain de skill points.
-                    profile_after = player_repository.get_profile_by_player_id(
-                        participant.player_id,
-                    )
-                    if profile_after is not None:
-                        new_level, new_xp, new_skill_points = (
-                            ProgressionService().apply_level_up(
-                                current_level=profile_after.progression.level,
-                                current_xp=profile_after.progression.xp,
-                                gained_xp=xp,
-                                current_skill_points=profile_after.progression.skill_points,
-                            )
-                        )
-                        player_repository.apply_progression(
-                            player_id=participant.player_id,
-                            new_level=new_level,
-                            new_xp=new_xp,
-                            new_skill_points=new_skill_points,
-                        )
 
                 kill_repository.increment(participant.player_id, mob_code)
                 # Check titres : kills_family / kills_total / kills_mob.
@@ -520,6 +495,32 @@ class EncounterService:
             base_gold_reward=mob.gold_reward,
         )
     
+    @staticmethod
+    def _grant_xp(player_repository, player_id: int, xp: int) -> None:
+        """Applique un gain d'XP en passant par le palier de niveau.
+
+        Mutualisé entre survivants et morts (les morts gagnent l'XP aussi).
+        Passe par ProgressionService pour gérer level-up + skill points,
+        au lieu d'un `add_xp` brut qui empilerait l'XP au-delà du palier.
+        """
+        if xp <= 0:
+            return
+        profile_after = player_repository.get_profile_by_player_id(player_id)
+        if profile_after is None:
+            return
+        new_level, new_xp, new_skill_points = ProgressionService().apply_level_up(
+            current_level=profile_after.progression.level,
+            current_xp=profile_after.progression.xp,
+            gained_xp=xp,
+            current_skill_points=profile_after.progression.skill_points,
+        )
+        player_repository.apply_progression(
+            player_id=player_id,
+            new_level=new_level,
+            new_xp=new_xp,
+            new_skill_points=new_skill_points,
+        )
+
     def _record_combat_career_stats(
         self,
         career_repository: PlayerCareerStatsRepository,

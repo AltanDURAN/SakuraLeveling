@@ -199,36 +199,47 @@ def test_compute_rank_starts_at_f_minus_for_low_scores():
 
     assert service.compute_rank(0) == "F-"
     assert service.compute_rank(1) == "F-"
-    assert service.compute_rank(199) == "F-"
+    assert service.compute_rank(309) == "F-"
 
 
 def test_compute_rank_thresholds_are_strict():
     """Score == borne ne donne PAS le rang inférieur — il bascule au suivant."""
     service = PowerScoreService()
 
-    # 200 = borne F- → on bascule sur F
-    assert service.compute_rank(199) == "F-"
-    assert service.compute_rank(200) == "F"
-    # 1000 = borne F+ → on bascule sur E-
-    assert service.compute_rank(999) == "F+"
-    assert service.compute_rank(1_000) == "E-"
+    # 310 = borne F- → on bascule sur F
+    assert service.compute_rank(309) == "F-"
+    assert service.compute_rank(310) == "F"
+    # 800 = borne F+ → on bascule sur E-
+    assert service.compute_rank(799) == "F+"
+    assert service.compute_rank(800) == "E-"
 
 
 def test_compute_rank_letter_progression():
     service = PowerScoreService()
 
     # Score == borne ⇒ bascule sur le rang du dessus (lookup strict)
-    assert service.compute_rank(499) == "F"
-    assert service.compute_rank(500) == "F+"
-    assert service.compute_rank(1_500) == "E-"
-    assert service.compute_rank(49_999) == "D"
-    assert service.compute_rank(50_000) == "D+"
-    assert service.compute_rank(500_000) == "C+"
-    assert service.compute_rank(5_000_000) == "B+"
-    assert service.compute_rank(50_000_000) == "A+"
-    assert service.compute_rank(500_000_000) == "S+"
-    assert service.compute_rank(5_000_000_000) == "SS+"
-    assert service.compute_rank(50_000_000_000) == "SSS+"
+    assert service.compute_rank(524) == "F"
+    assert service.compute_rank(525) == "F+"
+    assert service.compute_rank(1_124) == "E-"
+    assert service.compute_rank(1_125) == "E"
+    assert service.compute_rank(13_599) == "S"
+    assert service.compute_rank(13_600) == "S+"
+    assert service.compute_rank(649_999) == "SSS"
+    assert service.compute_rank(650_000) == "SSS+"
+
+
+def test_compute_rank_level_100_reference_is_s():
+    """Régression : le joueur de référence (build équilibré) au niveau ~100
+    doit être rang S — c'est la définition de l'endgame 'actuel'."""
+    service = PowerScoreService()
+
+    ref_l100 = build_stats(
+        max_hp=100 + 16 * 100,
+        attack=int(10 + 1.45 * 100),
+        defense=int(8 + 0.52 * 100),
+        speed=10, crit_chance=5, crit_damage=150, dodge=0,
+    )
+    assert service.compute_rank_from_stats(ref_l100) == "S"
 
 
 def test_compute_rank_caps_at_sss_plus():
