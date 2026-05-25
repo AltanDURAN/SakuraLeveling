@@ -27,7 +27,16 @@
         {{ svg | safe }}
     </div>
 
+    <div class="tree-controls">
+        <button id="zoom-in" class="tree-ctrl-btn" aria-label="Zoomer">+</button>
+        <button id="zoom-out" class="tree-ctrl-btn" aria-label="Dézoomer">−</button>
+        <button id="zoom-reset" class="tree-ctrl-btn" aria-label="Recentrer">⟳</button>
+    </div>
+
+    <p class="tree-hint">👆 Glisse pour te déplacer · pince ou +/− pour zoomer · touche un nœud pour les détails</p>
+
     <aside id="tooltip" class="tooltip" hidden>
+        <button class="tooltip-close" aria-label="Fermer">✕</button>
         <h3 class="tooltip-title"></h3>
         <p class="tooltip-state"></p>
         <p class="tooltip-description"></p>
