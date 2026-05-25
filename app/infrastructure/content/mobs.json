@@ -87,33 +87,6 @@
     "image_name": "gobelin_chaman.png"
   },
   {
-    "code": "gobelin_assassin",
-    "name": "Gobelin Assassin",
-    "family": "gobelin",
-    "description": "Une créature discrète.",
-    "max_hp": 286,
-    "current_hp": 286,
-    "attack": 28,
-    "defense": 16,
-    "crit_chance": 20,
-    "crit_damage": 150,
-    "dodge": 0,
-    "hp_regeneration": 0,
-    "speed": 9,
-    "xp_reward": 144,
-    "gold_reward": 69,
-    "spawn_weight": 10,
-    "loot_table": [
-      {
-        "item_code": "sang_gobelin_hq",
-        "drop_rate": 0.15,
-        "min_quantity": 1,
-        "max_quantity": 1
-      }
-    ],
-    "image_name": "gobelin_assassin.png"
-  },
-  {
     "code": "gobelin_ballon",
     "name": "Gobelin Ballon",
     "family": "gobelin",
@@ -199,5 +172,32 @@
       }
     ],
     "image_name": "gobelin_superieur.png"
+  },
+  {
+    "code": "gobelin_assassin",
+    "name": "Gobelin Assassin",
+    "family": "gobelin",
+    "description": "Une créature discrète.",
+    "max_hp": 564,
+    "current_hp": 564,
+    "attack": 53,
+    "defense": 31,
+    "crit_chance": 20,
+    "crit_damage": 150,
+    "dodge": 0,
+    "hp_regeneration": 0,
+    "speed": 9,
+    "xp_reward": 325,
+    "gold_reward": 156,
+    "spawn_weight": 10,
+    "loot_table": [
+      {
+        "item_code": "sang_gobelin_hq",
+        "drop_rate": 0.15,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
+    "image_name": "gobelin_assassin.png"
   }
 ]
