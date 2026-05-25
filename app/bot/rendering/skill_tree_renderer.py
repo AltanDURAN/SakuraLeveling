@@ -100,8 +100,14 @@ def _edge_color(child_state: str, parent_level: int) -> str:
     return COLORS["edge_locked"]
 
 
-def _compute_view_box(definition: SkillTreeDefinition) -> tuple[int, int, int, int]:
-    """Calcule (min_x, min_y, width, height) qui englobe tous les nœuds."""
+# Taille du cadre "focus" (unités SVG) : on ne montre qu'une PORTION de l'arbre
+# autour de la zone d'action du joueur, à une échelle assez grande pour que les
+# cases restent lisibles (au lieu de comprimer les 148 nœuds en timbres-poste).
+FOCUS_WINDOW = 1900
+
+
+def _compute_view_box_full(definition: SkillTreeDefinition) -> tuple[int, int, int, int]:
+    """ViewBox englobant TOUT l'arbre (vue d'ensemble — pour le web zoomable)."""
     xs = [n.position.x for n in definition.skills.values()]
     ys = [n.position.y for n in definition.skills.values()]
     min_x = min(xs) - PADDING
@@ -111,20 +117,59 @@ def _compute_view_box(definition: SkillTreeDefinition) -> tuple[int, int, int, i
     return min_x, min_y, max_x - min_x, max_y - min_y
 
 
-def _render_header(state: SkillTreeState, view_x: int, view_width: int) -> str:
-    """Bandeau supérieur : pseudo, points dispo / dépensés."""
+def _compute_view_box_focus(
+    state: SkillTreeState,
+    definition: SkillTreeDefinition,
+) -> tuple[int, int, int, int]:
+    """ViewBox CADRÉ sur la zone d'action du joueur (nœuds investis + débloquables
+    + le centre pour l'orientation), à échelle fixe et lisible. Le cadre suit
+    la frontière de progression : centré au début, il glisse le long du bras
+    au fil des investissements."""
+    service = SkillTreeService(definition)
+    pts: list[tuple[int, int]] = []
+    for node in definition.skills.values():
+        lvl = state.allocations.get(node.code, 0)
+        st = service.compute_node_state(state.allocations, node.code)
+        if lvl > 0 or st == "unlockable":
+            pts.append((node.position.x, node.position.y))
+
+    root = definition.get(definition.root)
+    if root is not None:
+        pts.append((root.position.x, root.position.y))
+    if not pts:
+        pts = [(0, 0)]
+
+    cx = sum(p[0] for p in pts) / len(pts)
+    cy = sum(p[1] for p in pts) / len(pts)
+    half = FOCUS_WINDOW / 2
+    return (
+        int(cx - half),
+        int(cy - half - HEADER_HEIGHT),
+        FOCUS_WINDOW,
+        FOCUS_WINDOW + HEADER_HEIGHT,
+    )
+
+
+def _render_header(
+    state: SkillTreeState, view_x: int, view_y: int, view_width: int
+) -> str:
+    """Bandeau supérieur : pseudo, points dispo / dépensés.
+
+    Positionné en HAUT de la viewBox courante (view_y), pas en absolu — sinon
+    avec le cadrage focus le texte tombe au milieu de l'arbre."""
     title = escape(f"Arbre de {state.player_display_name}")
     spent_text = escape(
         f"Points disponibles : {state.available_points}   "
         f"·   Dépensés : {state.spent_points}"
     )
+    cx = view_x + view_width // 2
     return f"""
-        <text x="{view_x + view_width // 2}" y="-{PADDING + 30}"
+        <text x="{cx}" y="{view_y + 44}"
               text-anchor="middle"
               font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
               font-size="28" font-weight="700"
               fill="{COLORS['header_text']}">{title}</text>
-        <text x="{view_x + view_width // 2}" y="-{PADDING}"
+        <text x="{cx}" y="{view_y + 74}"
               text-anchor="middle"
               font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
               font-size="16" font-weight="500"
@@ -215,16 +260,25 @@ def _render_edges(
 def render_to_svg(
     state: SkillTreeState,
     definition: SkillTreeDefinition,
+    focus: bool = True,
 ) -> str:
-    """Construit le SVG entier (à inliner dans une page HTML ou convertir en PNG)."""
+    """Construit le SVG entier (à inliner dans une page HTML ou convertir en PNG).
+
+    `focus=True` (défaut, image Discord) : cadre une PORTION de l'arbre autour de
+    la zone d'action du joueur, à grande échelle (cases lisibles).
+    `focus=False` (web zoomable) : vue d'ensemble du triskèle complet.
+    """
     service = SkillTreeService(definition)
     states = {
         node.code: service.compute_node_state(state.allocations, node.code)
         for node in definition.skills.values()
     }
 
-    view_x, view_y, view_w, view_h = _compute_view_box(definition)
-    header = _render_header(state, view_x, view_w)
+    if focus:
+        view_x, view_y, view_w, view_h = _compute_view_box_focus(state, definition)
+    else:
+        view_x, view_y, view_w, view_h = _compute_view_box_full(definition)
+    header = _render_header(state, view_x, view_y, view_w)
     edges = _render_edges(definition, states, state.allocations)
     nodes = "\n".join(
         _render_node(
@@ -256,11 +310,15 @@ def render_to_svg(
 def render_to_png(
     state: SkillTreeState,
     definition: SkillTreeDefinition,
-    width: int = 1200,
-    height: int = 1000,
+    width: int = 1100,
+    height: int = 1150,
 ) -> bytes:
-    """Convertit le SVG en bytes PNG via cairosvg (utilisé pour Discord)."""
-    svg = render_to_svg(state, definition)
+    """Convertit le SVG en bytes PNG via cairosvg (Discord).
+
+    Vue CADRÉE (focus) par défaut : dimensions ~carrées pour coller au cadre
+    FOCUS_WINDOW et garder des cases lisibles, sans distorsion.
+    """
+    svg = render_to_svg(state, definition, focus=True)
     return cairosvg.svg2png(
         bytestring=svg.encode("utf-8"),
         output_width=width,

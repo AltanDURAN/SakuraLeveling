@@ -117,7 +117,9 @@ async def skill_page(request: Request, discord_id: int):
             detail=f"Aucun joueur trouvé pour le Discord ID {discord_id}.",
         )
 
-    svg = render_to_svg(state, definition)
+    # Web : vue d'ensemble du triskèle complet (la page est zoomable/pannable),
+    # contrairement à l'image Discord qui est cadrée sur la zone d'action.
+    svg = render_to_svg(state, definition, focus=False)
     service = SkillTreeService(definition)
 
     nodes_payload = []
