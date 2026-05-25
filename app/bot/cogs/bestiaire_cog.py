@@ -9,6 +9,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from app.bot.views.bestiaire_view import BestiaireView
+from app.domain.services.power_score_service import PowerScoreService
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.session import get_db_session
@@ -45,11 +46,16 @@ class BestiaireCog(commands.Cog):
             )
             return
 
-        # Tri par famille puis par PV pour un ordre stable et logique
-        mobs_sorted = sorted(mobs, key=lambda m: (m.family or "zzz", m.max_hp))
+        # Tri par SCORE DE PUISSANCE croissant (du plus faible au plus fort).
+        pss = PowerScoreService()
+        mobs_sorted = sorted(mobs, key=lambda m: pss.calculate_from_mob(m))
 
         view = BestiaireView(author_id=interaction.user.id, mobs=mobs_sorted)
-        await interaction.response.send_message(embed=view._build_embed(), view=view)
+        embed, file = view.render_current()
+        await interaction.response.send_message(
+            embed=embed, file=file if file is not None else discord.utils.MISSING,
+            view=view,
+        )
 
 
 async def setup(bot: commands.Bot) -> None:

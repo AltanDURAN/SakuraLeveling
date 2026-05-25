@@ -209,7 +209,8 @@ async def bestiary_page(request: Request):
         })
 
     # Tri par power score décroissant (du plus fort au plus faible).
-    rendered_mobs.sort(key=lambda r: -r["power_score_raw"])
+    # Tri par score de puissance CROISSANT (du plus faible au plus fort).
+    rendered_mobs.sort(key=lambda r: r["power_score_raw"])
 
     return templates.TemplateResponse(
         request,
