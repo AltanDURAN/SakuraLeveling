@@ -40,22 +40,6 @@
     "enabled": true
   },
   {
-    "item_code": "slime_gel",
-    "buy_price": 4,
-    "max_sell_price": 2,
-    "min_sell_price": 0,
-    "stock_threshold": 100,
-    "enabled": true
-  },
-  {
-    "item_code": "gobelin_tooth",
-    "buy_price": 4,
-    "max_sell_price": 2,
-    "min_sell_price": 0,
-    "stock_threshold": 100,
-    "enabled": true
-  },
-  {
     "item_code": "potion_soin_i",
     "buy_price": 30,
     "max_sell_price": 8,

@@ -1,22 +1,20 @@
-"""Vue paginée du /shop par catégorie d'item.
+"""Vue paginée du /shop par catégorie d'item — achat uniquement (V2).
 
-Plus de wall-of-text : un bouton par grande catégorie (Armes, Armure,
-Accessoires, Consommables, Ressources). On ouvre par défaut sur la
-première catégorie qui contient au moins un article. Pas de bouton "Tout"
-(retiré pour rester cohérent avec /craft_list / /forge_list / /inventory).
+La vente n'existe plus : on ne peut qu'acheter. Les drops de mob ne sont pas
+en boutique (ils servent au craft). Présentation soignée : un onglet par
+grande catégorie, items avec icône + rareté + description + prix.
 """
 
 from __future__ import annotations
 
 import discord
 
-from app.shared.formatters import format_int as _format_int
 from app.domain.entities.shop_item import ShopItem
-from app.domain.services.shop_pricing_service import ShopPricingService
+from app.shared.enums import CATEGORY_ICONS
+from app.shared.formatters import format_int as _format_int
 
 
-# Définition des pages : (label affiché sur le bouton, emoji, set de
-# catégories d'item incluses dans la page).
+# Pages : (label bouton, emoji, catégories incluses).
 _PAGES: list[tuple[str, str, frozenset[str]]] = [
     ("Armes", "⚔️", frozenset({"weapon"})),
     ("Boucliers", "🛡️", frozenset({"shield"})),
@@ -26,6 +24,15 @@ _PAGES: list[tuple[str, str, frozenset[str]]] = [
     ("Ressources", "📦", frozenset({"resource"})),
 ]
 
+# Pastille de rareté (lisibilité visuelle d'un coup d'œil).
+_RARITY_DOT: dict[str, str] = {
+    "common": "⚪",
+    "uncommon": "🟢",
+    "rare": "🔵",
+    "epic": "🟣",
+    "legendary": "🟠",
+}
+
 
 def _build_page_embed(
     page_label: str,
@@ -33,47 +40,41 @@ def _build_page_embed(
     items: list[ShopItem],
 ) -> discord.Embed:
     embed = discord.Embed(
-        title=f"🏪 Boutique — {page_emoji} {page_label}",
-        color=discord.Color.gold(),
+        title=f"🏪  Boutique",
+        description=f"### {page_emoji}  {page_label}",
+        color=discord.Color.from_rgb(228, 178, 92),  # or chaud
     )
 
     if not items:
-        embed.description = "_Aucun article dans cette catégorie._"
+        embed.description += "\n\n_Aucun article dans cette catégorie pour le moment._"
         return embed
 
-    pricing_service = ShopPricingService()
+    # Tri : par prix croissant (les articles abordables d'abord).
+    items = sorted(items, key=lambda s: s.buy_price)
+
     for shop_item in items:
         item_def = shop_item.item_definition
-        current_sell = pricing_service.current_sell_price(shop_item)
+        emoji = CATEGORY_ICONS.get(item_def.category, "📦")
+        dot = _RARITY_DOT.get(item_def.rarity, "⚪")
 
-        if shop_item.stock_threshold > 0:
-            saturation = min(
-                100, round(100 * shop_item.current_stock / shop_item.stock_threshold)
-            )
-        else:
-            saturation = 0
+        desc = (item_def.description or "").strip()
+        if len(desc) > 90:
+            desc = desc[:87] + "…"
 
-        sell_range = (
-            f"{shop_item.min_sell_price}–{shop_item.max_sell_price}"
-            if shop_item.max_sell_price != shop_item.min_sell_price
-            else f"{shop_item.max_sell_price}"
+        value_lines = []
+        if desc:
+            value_lines.append(f"_{desc}_")
+        value_lines.append(
+            f"💰 **{_format_int(shop_item.buy_price)}** or   ·   `/buy {item_def.code}`"
         )
 
-        lines = [
-            f"💰 Achat : **{_format_int(shop_item.buy_price)}** or / unité",
-            f"💵 Vente : **{_format_int(current_sell)}** or / unité (plage {sell_range})",
-            f"📦 Stock : **{shop_item.current_stock}** ({saturation}% saturé)",
-        ]
-
         embed.add_field(
-            name=f"📦 {item_def.name} (`{item_def.code}`)",
-            value="\n".join(lines),
+            name=f"{emoji}  {item_def.name}  {dot}",
+            value="\n".join(value_lines),
             inline=False,
         )
 
-    embed.set_footer(
-        text="Utilisez /buy <item> <qté> ou /sell <item> <qté>."
-    )
+    embed.set_footer(text="🛒  Achetez avec  /buy <objet> <quantité>   ·   La revente n'existe pas.")
     return embed
 
 
@@ -108,7 +109,7 @@ class _PageButton(discord.ui.Button):
 
 
 class ShopView(discord.ui.View):
-    """Vue publique (lecture seule) — n'importe qui peut naviguer."""
+    """Vue publique (lecture seule) — n'importe qui peut naviguer entre onglets."""
 
     def __init__(
         self,
@@ -118,7 +119,6 @@ class ShopView(discord.ui.View):
         super().__init__(timeout=timeout)
         self.shop_items = [s for s in shop_items if s.enabled]
 
-        # Page courante = première catégorie non-vide
         counts: dict[str, int] = {}
         for s in self.shop_items:
             cat = s.item_definition.category
@@ -128,10 +128,7 @@ class ShopView(discord.ui.View):
         self.current_page_label = ""
         self.current_page_emoji = ""
 
-        # On ne crée AUCUN bouton pour les catégories vides — pas de
-        # "Armes (0)" qui ne sert qu'à occuper de la place. Ça maintient
-        # la vue toujours utile : seuls les onglets ayant au moins un
-        # article apparaissent.
+        # Seuls les onglets non vides apparaissent.
         for label, emoji, cat_set in _PAGES:
             page_count = sum(counts.get(c, 0) for c in cat_set)
             if page_count == 0:
@@ -162,12 +159,12 @@ class ShopView(discord.ui.View):
     def _build_embed(self) -> discord.Embed:
         if not self.shop_items:
             return discord.Embed(
-                title="🏪 Boutique",
+                title="🏪  Boutique",
                 description=(
-                    "La boutique est vide pour le moment. "
+                    "La boutique est vide pour le moment.\n"
                     "Demandez à un admin d'y ajouter des articles."
                 ),
-                color=discord.Color.gold(),
+                color=discord.Color.from_rgb(228, 178, 92),
             )
         return _build_page_embed(
             self.current_page_label,
