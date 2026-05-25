@@ -402,21 +402,20 @@ Note : les morts en combat ne reçoivent ni or, ni XP, ni drops, ni kill credit.
 1.5 — RÉPARTITION DES RÉCOMPENSES (combat de groupe)
 --------------------------------------------------------------------------------
 
-Or : pool = mob.gold_reward × nb_survivants, partagé selon le score de
-     contribution multi-métriques (role-agnostic). Pour chaque métrique active
-     dans l'équipe (dégâts infligés, dégâts tankés, PV régénérés), chaque
-     survivant gagne (sa_part / total_équipe) points. Score final = somme.
-     → Un Tank pur, un Healer pur ou un DPS pur gagnent tous 1 point dans
-       leur spécialité ; un polyvalent cumule.
+Or : pool FIXE = mob.gold_reward (PAS ×nb_survivants), partagé entre les
+     survivants selon le score de contribution multi-métriques (dégâts
+     infligés, dégâts tankés, PV soignés). En groupe, chacun touche une part
+     plus petite mais on tue plus vite → l'or/heure reste ≈ celui du solo.
+     C'est le régulateur de l'économie. Mort en combat → 0 or.
 
-XP : multiplicateur = clamp(mob_power / player_power, 0.5, 2.5). Les joueurs
-     plus faibles que le mob gagnent plus d'XP (apprentissage). Plafonné à
-     ×2.5 max et ×0.5 min.
+XP : montant PLEIN, identique pour tous les participants (aucune variance de
+     puissance), MORTS INCLUS. Un joueur mort gagne l'XP (et peut level-up)
+     mais ni or ni loot. En groupe, chacun reçoit le plein montant.
 
-Drops : roll indépendant via la table de loot du mob, pour chaque survivant.
-        N'est PAS affecté par les dégâts ou les contributions.
+Drops : roll indépendant pour chaque survivant + drop commun de famille
+        (quantité croissante avec la puissance du mob).
 
-Kill counter : tous les survivants reçoivent +1 sur le compteur du mob tué.
+Kill counter : tous les survivants reçoivent +1 (les morts n'ont pas le kill).
 
 /use <item_code>
     Utiliser un consommable de votre inventaire (autocomplete sur les
