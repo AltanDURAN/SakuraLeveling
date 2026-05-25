@@ -60,7 +60,7 @@ ASSIGN: dict[str, tuple[int, str]] = {
     "gobelin":            (8,  "standard"),   # F
     "gobelin_combattant": (13, "standard"),   # F+
     "gobelin_chaman":     (23, "brute"),      # E  (caster glass)
-    "gobelin_assassin":   (23, "rapide"),     # E
+    "gobelin_assassin":   (52, "rapide"),     # C — assassin d'élite (~2K puissance)
     "gobelin_ballon":     (28, "standard"),   # E+
     "gobelin_geant":      (33, "blinde"),     # D- (tank)
     "gobelin_runique":    (38, "brute"),      # D
