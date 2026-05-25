@@ -25,19 +25,36 @@ ANNEAUX = 8          # anneaux par branche (≈ niveau 144 pour un mono-branche)
 SIMPLE_PER_RING = 5
 OUT = Path(__file__).resolve().parents[1] / "app/infrastructure/content/skill_tree.json"
 
-# Disposition en TRISKÈLE : 3 bras espacés de 120°, chacun spiralé dans le même
-# sens (l'angle tourne avec la profondeur). R0 = rayon de la racine de branche,
-# DR = rayon gagné par nœud, SPIRAL_DEG = rotation par nœud (courbe les bras).
-R0 = 150
-DR = 70
-SPIRAL_DEG = 4
+# Disposition en TRISKÈLE celtique : 3 bras à 120°, chacun s'ENROULE en spirale
+# qui se referme vers l'extérieur (œil de la spirale décalé du centre). Chaque
+# bras tourne autour d'un "centre d'enroulement" C situé à distance D du centre
+# global, sur l'angle du bras. Le nœud part près du centre global (racine),
+# sweep large, puis s'enroule serré autour de C (l'œil) — comme le symbole.
+R0 = 150        # distance racine de branche au centre global
+CURL_D = 1180   # distance de l'œil d'enroulement au centre global
+CURL_TURNS = 1.75   # nombre de tours d'enroulement par bras
+CURL_DIR = 1.0  # sens (identique pour les 3 bras → triskèle cohérent)
 
 
-def spiral_pos(base_angle_deg: float, seq: int) -> tuple[int, int]:
-    """Position (x, y) du nœud n°`seq` (0 = racine) d'un bras de triskèle."""
-    angle = math.radians(base_angle_deg + seq * SPIRAL_DEG)
-    radius = R0 + seq * DR
-    return round(radius * math.cos(angle)), round(radius * math.sin(angle))
+def spiral_pos(base_angle_deg: float, seq: int, total: int) -> tuple[int, int]:
+    """Position (x, y) du nœud n°`seq` (0 = racine) d'un bras de triskèle.
+
+    Le bras s'enroule autour de l'œil C (à distance CURL_D, angle du bras) :
+    rayon local décroissant de (CURL_D−R0) vers 0, angle local tournant de
+    CURL_TURNS tours. À seq=0 le nœud est à R0 du centre global ; à seq=total
+    il atteint l'œil (enroulement serré).
+    """
+    theta = math.radians(base_angle_deg)
+    t = seq / total if total else 0.0
+    rho_max = CURL_D - R0
+    local_radius = rho_max * (1 - t)
+    # Départ pointé du côté du centre global (theta+π), puis enroulement.
+    local_angle = (theta + math.pi) + CURL_DIR * (2 * math.pi * CURL_TURNS) * t
+    cx = CURL_D * math.cos(theta)
+    cy = CURL_D * math.sin(theta)
+    x = cx + local_radius * math.cos(local_angle)
+    y = cy + local_radius * math.sin(local_angle)
+    return round(x), round(y)
 
 # Combien de nœuds "vitesse" au total (FINIE — sinon stunlock). Au-delà, le
 # slot spécial vitesse de la branche attaque devient crit_damage (tail-safe).
@@ -113,6 +130,10 @@ def build() -> dict:
         "position": {"x": 0, "y": 0},
     }
 
+    # Nombre total de nœuds par bras (racine seq=0 + anneaux), pour normaliser
+    # l'enroulement (seq=total → œil de la spirale).
+    total_per_arm = ANNEAUX * (SIMPLE_PER_RING + 1)
+
     for prefix, cfg in BRANCHES.items():
         base_angle = cfg["angle"]
         simples = cfg["simples"]
@@ -120,7 +141,7 @@ def build() -> dict:
 
         # Racine de branche (passerelle) — seq 0 du bras spiralé.
         root_code = f"voie_{prefix}"
-        rx, ry = spiral_pos(base_angle, 0)
+        rx, ry = spiral_pos(base_angle, 0, total_per_arm)
         skills[root_code] = {
             "name": cfg["name"],
             "description": f"Entrée de la {cfg['name'].lower()}.",
@@ -141,7 +162,7 @@ def build() -> dict:
                 effect, base, ramp, icon, label = simples[(anneau * SIMPLE_PER_RING + n) % len(simples)]
                 seq += 1
                 code = f"{prefix}_{seq}"
-                x, y = spiral_pos(base_angle, seq)
+                x, y = spiral_pos(base_angle, seq, total_per_arm)
                 skills[code] = {
                     "name": f"{label} {anneau}",
                     "description": f"+{base + ramp*(anneau-1)} par niveau (cumulatif, max 3).",
@@ -165,7 +186,7 @@ def build() -> dict:
                     speed_count += 1
             seq += 1
             code = f"{prefix}_{seq}"
-            x, y = spiral_pos(base_angle, seq)
+            x, y = spiral_pos(base_angle, seq, total_per_arm)
             skills[code] = {
                 "name": label,
                 "description": f"Nœud spécial : +{val} {effect.replace('_', ' ')} (1 amélioration).",
