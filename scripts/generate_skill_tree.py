@@ -121,9 +121,9 @@ def effect_phrase(effect: str, value) -> str:
 BRANCHES = {
     "atq": {
         "name": "Voie de l'Attaque",
-        "root_icon": "⚔️",
+        "root_icon": "💪",
         "angle": 270,  # vers le haut
-        "simples": [("atk_flat", 5, 1, "⚔️", "Force")],
+        "simples": [("atk_flat", 5, 1, "💪", "Force")],
         "speciaux": [
             ("atk_percent", 1, "💥", "Frappe affûtée"),
             ("crit_chance_flat", 1, "🎯", "Œil vif"),

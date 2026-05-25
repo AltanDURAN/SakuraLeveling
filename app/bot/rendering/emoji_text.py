@@ -46,8 +46,10 @@ _EMOJI_PATTERN = re.compile(
     "("
     "[\U0001F300-\U0001F9FF]"     # symbols, pictographs, supplemental
     "|[\U0001FA00-\U0001FAFF]"    # symbols and pictographs extended-A
-    "|[☀-⛿]"            # miscellaneous symbols
-    "|[✀-➿]"            # dingbats
+    "|[⌀-⏿]"            # misc technical (⌛ ⏳ …)
+    "|[☀-⛿]"            # miscellaneous symbols (U+2600–26FF, ⚔ ⚙ …)
+    "|[✀-➿]"            # dingbats (U+2700–27BF, ❤ ✨ …)
+    "|[⬀-⯿]"            # misc symbols & arrows (⭐ ⬆ …)
     "|[\U0001F1E6-\U0001F1FF]"    # flags
     ")"
     "(?:️)?"                 # variation selector ignoré

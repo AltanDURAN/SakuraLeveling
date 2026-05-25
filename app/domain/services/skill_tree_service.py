@@ -160,8 +160,15 @@ class SkillTreeService:
     def _prerequisites_satisfied(
         self, allocations: dict[str, int], node: SkillNode
     ) -> bool:
+        """Un nœud n'est débloquable que si CHAQUE prérequis est COMPLÈTEMENT
+        maxé (pas juste niveau 1). Comme l'arbre est une chaîne stricte, exiger
+        que le parent immédiat soit maxé revient à exiger que TOUTES les cases
+        précédentes (jusqu'au centre) soient maxées."""
         for prereq_code in node.prerequisites:
-            if allocations.get(prereq_code, 0) <= 0:
+            prereq = self.definition.get(prereq_code)
+            if prereq is None:
+                continue
+            if allocations.get(prereq_code, 0) < prereq.max_level:
                 return False
         return True
 
@@ -232,14 +239,19 @@ class SkillTreeService:
             )
 
         if not self._prerequisites_satisfied(allocations, node):
-            missing = [
-                self.definition.get(p).name if self.definition.get(p) else p
-                for p in node.prerequisites
-                if allocations.get(p, 0) <= 0
-            ]
+            missing = []
+            for p in node.prerequisites:
+                prereq = self.definition.get(p)
+                if prereq is None:
+                    continue
+                if allocations.get(p, 0) < prereq.max_level:
+                    missing.append(
+                        f"{prereq.name} ({allocations.get(p, 0)}/{prereq.max_level})"
+                    )
             return (
                 False,
-                f"Prérequis manquants pour **{node.name}** : {', '.join(missing)}.",
+                f"**{node.name}** est verrouillé : la/les case(s) précédente(s) "
+                f"doivent être MAXÉES d'abord → {', '.join(missing)}.",
                 0,
             )
 
