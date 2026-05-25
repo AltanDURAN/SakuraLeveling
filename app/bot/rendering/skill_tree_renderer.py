@@ -79,25 +79,22 @@ def _node_state_colors(state: str) -> tuple[str, str, str]:
     )
 
 
-def _edge_color(child_state: str, parent_level: int) -> str:
+def _edge_color(child_state: str, parent_maxed: bool) -> str:
     """Couleur d'une arête (parent → enfant).
 
-    Quand l'enfant est verrouillé ET que le parent n'a aucun niveau
-    investi (parent_level==0), on bascule sur du rouge pour signaler
-    le prérequis manquant. Si l'enfant est juste 'unlockable' ou
-    plus avancé, c'est qu'au moins ce parent-là est satisfait — on
-    garde la couleur progressive habituelle.
+    Règle V2 : un nœud n'est améliorable que si la case précédente est
+    COMPLÈTEMENT maxée. Donc tant que le parent n'est PAS maxé, le lien vers
+    l'enfant est ROUGE (case inaccessible). Une fois le parent maxé, le lien
+    prend la couleur progressive selon l'état de l'enfant.
     """
+    if not parent_maxed:
+        return COLORS["edge_blocked_by_prereq"]
     if child_state == "maxed":
         return COLORS["edge_maxed"]
     if child_state == "in_progress":
         return COLORS["edge_in_progress"]
-    if child_state == "unlockable":
-        return COLORS["edge_unlockable"]
-    # child_state == "locked"
-    if parent_level <= 0:
-        return COLORS["edge_blocked_by_prereq"]
-    return COLORS["edge_locked"]
+    # parent maxé → enfant au minimum débloquable
+    return COLORS["edge_unlockable"]
 
 
 # Taille du cadre "focus" (unités SVG) : on ne montre qu'une PORTION de l'arbre
@@ -181,6 +178,7 @@ def _render_node(
     node: SkillNode,
     state: str,
     current_level: int,
+    show_icon: bool = True,
 ) -> str:
     fill, stroke, text_color = _node_state_colors(state)
     cx = node.position.x
@@ -218,9 +216,9 @@ def _render_node(
                         transform="translate(2, 3)"/>
                 <circle r="{NODE_RADIUS}" fill="{fill}" stroke="{stroke}"
                         stroke-width="3"/>
-                <text x="0" y="6" text-anchor="middle"
+                {f'''<text x="0" y="6" text-anchor="middle"
                       font-size="22" fill="{text_color}"
-                      font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI Emoji', sans-serif">{icon}</text>
+                      font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI Emoji', sans-serif">{icon}</text>''' if show_icon else ''}
                 <text x="0" y="{NODE_RADIUS + 18}" text-anchor="middle"
                       font-size="12" font-weight="600" fill="{text_color}"
                       font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">{escape(node.name)}</text>
@@ -245,8 +243,8 @@ def _render_edges(
             if parent is None:
                 continue
             child_state = states.get(node.code, "locked")
-            parent_level = allocations.get(prereq_code, 0)
-            color = _edge_color(child_state, parent_level)
+            parent_maxed = allocations.get(prereq_code, 0) >= parent.max_level
+            color = _edge_color(child_state, parent_maxed)
             x1, y1 = parent.position.x, parent.position.y
             x2, y2 = node.position.x, node.position.y
             edges.append(
@@ -261,12 +259,15 @@ def render_to_svg(
     state: SkillTreeState,
     definition: SkillTreeDefinition,
     focus: bool = True,
+    icons_in_svg: bool = True,
 ) -> str:
     """Construit le SVG entier (à inliner dans une page HTML ou convertir en PNG).
 
     `focus=True` (défaut, image Discord) : cadre une PORTION de l'arbre autour de
     la zone d'action du joueur, à grande échelle (cases lisibles).
     `focus=False` (web zoomable) : vue d'ensemble du triskèle complet.
+    `icons_in_svg=False` : n'inclut PAS les emojis (cairosvg ne sait pas rendre
+    les emojis couleur → carrés vides). Le PNG les recompose ensuite via Pillow.
     """
     service = SkillTreeService(definition)
     states = {
@@ -285,6 +286,7 @@ def render_to_svg(
             node=node,
             state=states[node.code],
             current_level=state.allocations.get(node.code, 0),
+            show_icon=icons_in_svg,
         )
         for node in definition.skills.values()
     )
@@ -313,14 +315,58 @@ def render_to_png(
     width: int = 1100,
     height: int = 1150,
 ) -> bytes:
-    """Convertit le SVG en bytes PNG via cairosvg (Discord).
+    """Convertit le SVG en bytes PNG via cairosvg (Discord), puis RECOMPOSE les
+    emojis des nœuds avec Pillow.
 
-    Vue CADRÉE (focus) par défaut : dimensions ~carrées pour coller au cadre
-    FOCUS_WINDOW et garder des cases lisibles, sans distorsion.
+    cairosvg/cairo ne savent pas rendre les emojis couleur (COLR/CBDT) → ils
+    sortaient en carrés vides. On rend donc le SVG SANS les icônes, puis on
+    dessine chaque emoji par-dessus via NotoColorEmoji (même chemin que les
+    cards /shop et /equipement, qui eux marchent).
+
+    Vue CADRÉE (focus) : dimensions ~carrées pour coller au cadre FOCUS_WINDOW.
     """
-    svg = render_to_svg(state, definition, focus=True)
-    return cairosvg.svg2png(
+    import io
+
+    from PIL import Image
+
+    from app.bot.rendering.emoji_text import draw_text_with_emojis
+    from app.bot.rendering.pillow_utils import try_font
+
+    svg = render_to_svg(state, definition, focus=True, icons_in_svg=False)
+    png = cairosvg.svg2png(
         bytestring=svg.encode("utf-8"),
         output_width=width,
         output_height=height,
     )
+
+    img = Image.open(io.BytesIO(png)).convert("RGBA")
+
+    # Mapping coordonnées monde (viewBox) → pixels. preserveAspectRatio
+    # xMidYMid meet → échelle uniforme + centrage (letterbox).
+    vx, vy, vw, vh = _compute_view_box_focus(state, definition)
+    scale = min(width / vw, height / vh)
+    off_x = (width - vw * scale) / 2
+    off_y = (height - vh * scale) / 2
+
+    emoji_px = max(16, int(NODE_RADIUS * scale * 1.05))
+    for node in definition.skills.values():
+        nx, ny = node.position.x, node.position.y
+        # Ne dessine que les nœuds dans le cadre visible (+ marge).
+        if not (vx - 50 <= nx <= vx + vw + 50 and vy - 50 <= ny <= vy + vh + 50):
+            continue
+        px = off_x + (nx - vx) * scale
+        py = off_y + (ny - vy) * scale
+        icon = node.icon or "•"
+        draw_text_with_emojis(
+            img,
+            (int(px - emoji_px / 2), int(py - emoji_px / 2)),
+            icon,
+            try_font(emoji_px),
+            fill=(255, 255, 255, 245),
+            shadow=(0, 0, 0, 0),
+            emoji_size=emoji_px,
+        )
+
+    buf = io.BytesIO()
+    img.convert("RGB").save(buf, format="PNG")
+    return buf.getvalue()

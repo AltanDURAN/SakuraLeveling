@@ -285,7 +285,8 @@ def test_validate_rejects_when_prerequisites_missing():
     ok, msg, cost = svc.validate_investment({}, 100, "atk")
 
     assert ok is False
-    assert "prérequis" in msg.lower() or "prerequis" in msg.lower()
+    # Le parent (root) n'est pas maxé → message de verrouillage.
+    assert "verrouillé" in msg.lower() or "max" in msg.lower()
 
 
 def test_validate_rejects_when_at_max_level():
@@ -342,3 +343,40 @@ def test_total_refund_empty_allocations_is_zero():
     svc = SkillTreeService(defn)
 
     assert svc.compute_total_refund({}) == 0
+
+
+# ---------- Prérequis : parent COMPLÈTEMENT maxé (V2) ----------
+
+
+def test_node_locked_when_parent_not_fully_maxed():
+    """atk (max 3) à lvl 1 ne suffit PAS à débloquer atk2 : il faut atk maxé."""
+    defn = _build_simple_tree()
+    svc = SkillTreeService(defn)
+
+    # atk au niveau 1 (pas maxé) → atk2 reste verrouillé
+    assert svc.compute_node_state({"root": 1, "atk": 1}, "atk2") == "locked"
+    assert svc.compute_node_state({"root": 1, "atk": 2}, "atk2") == "locked"
+    # atk maxé (3/3) → atk2 débloquable
+    assert svc.compute_node_state({"root": 1, "atk": 3}, "atk2") == "unlockable"
+
+
+def test_validate_refuses_when_parent_not_maxed():
+    defn = _build_simple_tree()
+    svc = SkillTreeService(defn)
+
+    ok, msg, _ = svc.validate_investment({"root": 1, "atk": 2}, 99, "atk2")
+    assert ok is False
+    assert "MAX" in msg.upper()
+
+    ok2, _, _ = svc.validate_investment({"root": 1, "atk": 3}, 99, "atk2")
+    assert ok2 is True
+
+
+def test_unlockable_skills_requires_maxed_parents():
+    defn = _build_simple_tree()
+    svc = SkillTreeService(defn)
+
+    # root maxé (1/1) → atk et def débloquables ; atk2 non (atk pas maxé)
+    codes = [n.code for n in svc.compute_unlockable_skills({"root": 1})]
+    assert "atk" in codes and "def" in codes
+    assert "atk2" not in codes
