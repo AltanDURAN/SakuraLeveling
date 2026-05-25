@@ -123,7 +123,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 3
+      "attack": 4
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
@@ -141,8 +141,8 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 5,
-      "max_hp": 5
+      "attack": 6,
+      "max_hp": 6
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
@@ -160,7 +160,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 3,
+      "attack": 4,
       "crit_chance": 5
     },
     "equipment_slot": "main_droite",
@@ -179,8 +179,8 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 6,
-      "crit_damage": 5
+      "attack": 7,
+      "crit_damage": 8
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
@@ -198,8 +198,8 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 3,
-      "max_hp": 5
+      "defense": 5,
+      "max_hp": 6
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
@@ -217,7 +217,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 5,
+      "defense": 6,
       "dodge": 2
     },
     "equipment_slot": "main_droite",
@@ -275,7 +275,7 @@
     "icon": null,
     "stat_bonuses": {
       "defense": 2,
-      "max_hp": 5,
+      "max_hp": 6,
       "crit_chance": 3
     },
     "equipment_slot": "casque",
@@ -409,8 +409,8 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 8,
-      "hp_regeneration": 1
+      "max_hp": 10,
+      "hp_regeneration": 2
     },
     "equipment_slot": "collier",
     "requires_two_hands": false,
@@ -466,8 +466,8 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "crit_chance": 2,
-      "crit_damage": 5
+      "crit_chance": 3,
+      "crit_damage": 6
     },
     "equipment_slot": "bague",
     "requires_two_hands": false,
@@ -656,7 +656,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 5,
+      "max_hp": 8,
       "defense": 2
     },
     "equipment_slot": "cape",
@@ -675,8 +675,8 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 2,
-      "crit_chance": 1
+      "attack": 3,
+      "crit_chance": 2
     },
     "equipment_slot": "collier",
     "requires_two_hands": false,
@@ -732,7 +732,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 3,
+      "attack": 5,
       "speed": 2,
       "crit_chance": 2
     },
@@ -752,8 +752,9 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 5,
-      "crit_damage": 10
+      "attack": 6,
+      "crit_chance": 3,
+      "crit_damage": 6
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
@@ -771,8 +772,8 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 4,
-      "max_hp": 6
+      "defense": 5,
+      "max_hp": 8
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
@@ -866,8 +867,8 @@
     "buy_price": 12,
     "icon": null,
     "stat_bonuses": {
-      "dodge": 1,
-      "defense": 1
+      "attack": 5,
+      "dodge": 1
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
@@ -885,8 +886,8 @@
     "buy_price": 12,
     "icon": null,
     "stat_bonuses": {
-      "dodge": 1,
-      "defense": 1
+      "defense": 4,
+      "dodge": 2
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
@@ -980,8 +981,9 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
+      "max_hp": 8,
       "hp_regeneration": 1,
-      "max_hp": 3
+      "defense": 1
     },
     "equipment_slot": "casque",
     "requires_two_hands": false,
@@ -999,8 +1001,9 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
+      "max_hp": 10,
       "hp_regeneration": 1,
-      "max_hp": 3
+      "defense": 1
     },
     "equipment_slot": "plastron",
     "requires_two_hands": false,
@@ -1018,8 +1021,8 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "hp_regeneration": 1,
-      "max_hp": 3
+      "max_hp": 8,
+      "hp_regeneration": 1
     },
     "equipment_slot": "jambieres",
     "requires_two_hands": false,
@@ -1037,8 +1040,8 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "hp_regeneration": 1,
-      "max_hp": 3
+      "max_hp": 6,
+      "hp_regeneration": 1
     },
     "equipment_slot": "bottes",
     "requires_two_hands": false,
@@ -1056,8 +1059,8 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "hp_regeneration": 1,
-      "max_hp": 3
+      "max_hp": 6,
+      "hp_regeneration": 1
     },
     "equipment_slot": "bracelet",
     "requires_two_hands": false,
@@ -1075,8 +1078,8 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "hp_regeneration": 1,
-      "max_hp": 3
+      "max_hp": 6,
+      "hp_regeneration": 2
     },
     "equipment_slot": "bague",
     "requires_two_hands": false,
@@ -1094,8 +1097,8 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "hp_regeneration": 1,
-      "max_hp": 3
+      "max_hp": 6,
+      "hp_regeneration": 1
     },
     "equipment_slot": "ceinture",
     "requires_two_hands": false,
@@ -1113,8 +1116,8 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "hp_regeneration": 1,
-      "max_hp": 3
+      "max_hp": 6,
+      "hp_regeneration": 1
     },
     "equipment_slot": "boucle_oreille",
     "requires_two_hands": false,
@@ -1132,8 +1135,9 @@
     "buy_price": 21,
     "icon": null,
     "stat_bonuses": {
-      "attack": 2,
-      "crit_chance": 1
+      "attack": 4,
+      "crit_chance": 2,
+      "max_hp": 4
     },
     "equipment_slot": "plastron",
     "requires_two_hands": false,
@@ -1151,8 +1155,8 @@
     "buy_price": 21,
     "icon": null,
     "stat_bonuses": {
-      "attack": 2,
-      "crit_chance": 1
+      "attack": 3,
+      "crit_chance": 2
     },
     "equipment_slot": "jambieres",
     "requires_two_hands": false,
@@ -1171,7 +1175,8 @@
     "icon": null,
     "stat_bonuses": {
       "attack": 2,
-      "crit_chance": 1
+      "crit_chance": 1,
+      "speed": 1
     },
     "equipment_slot": "bottes",
     "requires_two_hands": false,
@@ -1189,8 +1194,8 @@
     "buy_price": 21,
     "icon": null,
     "stat_bonuses": {
-      "attack": 2,
-      "crit_chance": 1
+      "defense": 5,
+      "crit_chance": 2
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
@@ -1208,7 +1213,7 @@
     "buy_price": 21,
     "icon": null,
     "stat_bonuses": {
-      "attack": 2,
+      "attack": 3,
       "crit_chance": 1
     },
     "equipment_slot": "bracelet",
@@ -1227,7 +1232,7 @@
     "buy_price": 21,
     "icon": null,
     "stat_bonuses": {
-      "attack": 2,
+      "attack": 3,
       "crit_chance": 1
     },
     "equipment_slot": "ceinture",
@@ -1247,7 +1252,7 @@
     "icon": null,
     "stat_bonuses": {
       "attack": 2,
-      "crit_chance": 1
+      "crit_chance": 2
     },
     "equipment_slot": "cape",
     "requires_two_hands": false,
@@ -1266,7 +1271,7 @@
     "icon": null,
     "stat_bonuses": {
       "attack": 2,
-      "crit_chance": 1
+      "crit_chance": 2
     },
     "equipment_slot": "boucle_oreille",
     "requires_two_hands": false,
@@ -1322,7 +1327,8 @@
     "buy_price": 12,
     "icon": null,
     "stat_bonuses": {
-      "crit_damage": 2,
+      "attack": 4,
+      "crit_damage": 5,
       "dodge": 1
     },
     "equipment_slot": "main_droite",
@@ -1341,7 +1347,8 @@
     "buy_price": 12,
     "icon": null,
     "stat_bonuses": {
-      "crit_damage": 2,
+      "defense": 3,
+      "crit_damage": 3,
       "dodge": 1
     },
     "equipment_slot": "main_droite",
@@ -1436,9 +1443,9 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 3,
-      "defense": 1,
-      "max_hp": 3
+      "attack": 6,
+      "defense": 2,
+      "max_hp": 4
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
@@ -1456,7 +1463,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 4,
+      "defense": 6,
       "max_hp": 8
     },
     "equipment_slot": "main_droite",
@@ -1475,9 +1482,9 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 9,
-      "speed": 6,
-      "crit_chance": 6,
+      "attack": 14,
+      "speed": 5,
+      "crit_chance": 5,
       "defense": -5,
       "dodge": -2
     },
@@ -1498,10 +1505,9 @@
     "icon": null,
     "stat_bonuses": {
       "defense": 15,
-      "dodge": 6,
-      "attack": -3,
-      "speed": -2,
-      "crit_chance": -2
+      "dodge": 5,
+      "attack": -4,
+      "speed": -2
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": true,
@@ -1519,8 +1525,9 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 4,
-      "hp_regeneration": 2
+      "attack": 5,
+      "hp_regeneration": 2,
+      "max_hp": 4
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
@@ -1538,8 +1545,9 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 3,
-      "hp_regeneration": 3
+      "defense": 4,
+      "hp_regeneration": 3,
+      "max_hp": 4
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
@@ -1558,8 +1566,8 @@
     "icon": null,
     "stat_bonuses": {
       "attack": 15,
-      "defense": -4,
-      "max_hp": -6
+      "max_hp": -8,
+      "defense": -4
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": true,
@@ -1577,8 +1585,8 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 12,
-      "max_hp": 18,
+      "defense": 13,
+      "max_hp": 20,
       "attack": -5
     },
     "equipment_slot": "main_droite",
@@ -1597,7 +1605,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 3,
+      "defense": 6,
       "crit_chance": 2
     },
     "equipment_slot": "main_droite",
@@ -1616,10 +1624,10 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 18,
-      "crit_damage": 15,
-      "defense": -2,
-      "crit_chance": -2
+      "attack": 17,
+      "crit_damage": 14,
+      "crit_chance": -2,
+      "defense": -3
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": true,
@@ -1637,10 +1645,10 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 9,
-      "crit_chance": 5,
-      "attack": -6,
-      "crit_damage": -5
+      "defense": 13,
+      "crit_chance": 4,
+      "attack": -5,
+      "crit_damage": -4
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": true,
@@ -1658,8 +1666,8 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 2,
-      "dodge": 1
+      "attack": 5,
+      "dodge": 2
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
@@ -1677,8 +1685,8 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 2,
-      "max_hp": 4
+      "defense": 4,
+      "max_hp": 5
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
@@ -1696,9 +1704,9 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 6,
-      "dodge": 2,
-      "defense": -1
+      "attack": 13,
+      "dodge": 3,
+      "defense": -2
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": true,
@@ -1716,9 +1724,9 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 6,
-      "dodge": 3,
-      "attack": -2
+      "defense": 11,
+      "dodge": 4,
+      "attack": -3
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": true,
@@ -1736,7 +1744,8 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "crit_chance": 2,
+      "attack": 5,
+      "crit_chance": 3,
       "speed": 1
     },
     "equipment_slot": "main_droite",
@@ -1755,8 +1764,9 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
+      "defense": 4,
       "dodge": 2,
-      "defense": 1
+      "crit_damage": 2
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
@@ -1774,7 +1784,8 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "crit_damage": 6,
+      "attack": 12,
+      "crit_damage": 10,
       "crit_chance": 3,
       "defense": -3,
       "dodge": -1
@@ -1795,12 +1806,682 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "dodge": 5,
-      "defense": 3,
+      "dodge": 6,
+      "defense": 6,
       "crit_damage": -2
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": true,
     "family": "linen"
+  },
+  {
+    "code": "sang_gobelin_hq",
+    "name": "Sang de gobelin de haute qualité",
+    "description": "Sang rare prélevé sur les gobelins d'élite. Infuse l'équipement gobelin.",
+    "category": "resource",
+    "rarity": "rare",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": null,
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": ""
+  },
+  {
+    "code": "sang_slime",
+    "name": "Sang de slime",
+    "description": "Essence visqueuse rare distillée des slimes. Infuse l'équipement slime.",
+    "category": "resource",
+    "rarity": "rare",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": null,
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": ""
+  },
+  {
+    "code": "infuseur",
+    "name": "Infuseur",
+    "description": "Catalyseur d'infusion. Permet d'améliorer un équipement de panoplie. Achetable en boutique.",
+    "category": "resource",
+    "rarity": "uncommon",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": 1000,
+    "icon": null,
+    "stat_bonuses": null,
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": ""
+  },
+  {
+    "code": "gobelin_axe_plus",
+    "name": "Hache gobeline +",
+    "description": "Hache fruste taillée par les gobelins. Une main. — version infusée (améliorée).",
+    "category": "weapon",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 36,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 11,
+      "crit_damage": 12
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false,
+    "family": "gobelin_plus"
+  },
+  {
+    "code": "gobelin_crown_plus",
+    "name": "Couronne gobeline +",
+    "description": "Couronne tribale, légère et étrange. — version infusée (améliorée).",
+    "category": "helmet",
+    "rarity": "epic",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 44,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 3,
+      "max_hp": 9,
+      "crit_chance": 5
+    },
+    "equipment_slot": "casque",
+    "requires_two_hands": false,
+    "family": "gobelin_plus"
+  },
+  {
+    "code": "gobelin_ring_plus",
+    "name": "Bague gobeline +",
+    "description": "Bague de tribu, vibrante d'une étrange énergie. — version infusée (améliorée).",
+    "category": "ring",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 28,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "crit_chance": 5,
+      "crit_damage": 9
+    },
+    "equipment_slot": "bague",
+    "requires_two_hands": false,
+    "family": "gobelin_plus"
+  },
+  {
+    "code": "gobelin_amulet_plus",
+    "name": "Amulette gobeline +",
+    "description": "Petits crocs de gobelin enfilés sur une lanière de cuir. — version infusée (améliorée).",
+    "category": "necklace",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 32,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 5,
+      "crit_chance": 3
+    },
+    "equipment_slot": "collier",
+    "requires_two_hands": false,
+    "family": "gobelin_plus"
+  },
+  {
+    "code": "gobelin_blade_plus",
+    "name": "Lame gobeline +",
+    "description": "Lame ébréchée mais redoutable, taillée d'os de gobelin. — version infusée (améliorée).",
+    "category": "weapon",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 44,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 9,
+      "crit_chance": 5,
+      "crit_damage": 9
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false,
+    "family": "gobelin_plus"
+  },
+  {
+    "code": "gobelin_plastron_plus",
+    "name": "Plastron gobelin +",
+    "description": "Pièce de la panoplie gobelin — bonus de set actif dès 2 pièces. — version infusée (améliorée).",
+    "category": "chest",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 14,
+    "buy_price": 21,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 6,
+      "crit_chance": 3,
+      "max_hp": 6
+    },
+    "equipment_slot": "plastron",
+    "requires_two_hands": false,
+    "family": "gobelin_plus"
+  },
+  {
+    "code": "gobelin_jambieres_plus",
+    "name": "Jambières gobelin +",
+    "description": "Pièce de la panoplie gobelin — bonus de set actif dès 2 pièces. — version infusée (améliorée).",
+    "category": "legs",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 14,
+    "buy_price": 21,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 5,
+      "crit_chance": 3
+    },
+    "equipment_slot": "jambieres",
+    "requires_two_hands": false,
+    "family": "gobelin_plus"
+  },
+  {
+    "code": "gobelin_bottes_plus",
+    "name": "Bottes gobelin +",
+    "description": "Pièce de la panoplie gobelin — bonus de set actif dès 2 pièces. — version infusée (améliorée).",
+    "category": "boots",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 14,
+    "buy_price": 21,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 3,
+      "crit_chance": 2,
+      "speed": 2
+    },
+    "equipment_slot": "bottes",
+    "requires_two_hands": false,
+    "family": "gobelin_plus"
+  },
+  {
+    "code": "gobelin_main_gauche_plus",
+    "name": "Bouclier gobelin +",
+    "description": "Pièce de la panoplie gobelin — bonus de set actif dès 2 pièces. — version infusée (améliorée).",
+    "category": "shield",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 14,
+    "buy_price": 21,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 8,
+      "crit_chance": 3
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false,
+    "family": "gobelin_plus"
+  },
+  {
+    "code": "gobelin_bracelet_plus",
+    "name": "Bracelet gobelin +",
+    "description": "Pièce de la panoplie gobelin — bonus de set actif dès 2 pièces. — version infusée (améliorée).",
+    "category": "bracelet",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 14,
+    "buy_price": 21,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 5,
+      "crit_chance": 2
+    },
+    "equipment_slot": "bracelet",
+    "requires_two_hands": false,
+    "family": "gobelin_plus"
+  },
+  {
+    "code": "gobelin_ceinture_plus",
+    "name": "Ceinture gobelin +",
+    "description": "Pièce de la panoplie gobelin — bonus de set actif dès 2 pièces. — version infusée (améliorée).",
+    "category": "belt",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 14,
+    "buy_price": 21,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 5,
+      "crit_chance": 2
+    },
+    "equipment_slot": "ceinture",
+    "requires_two_hands": false,
+    "family": "gobelin_plus"
+  },
+  {
+    "code": "gobelin_cape_plus",
+    "name": "Cape gobelin +",
+    "description": "Pièce de la panoplie gobelin — bonus de set actif dès 2 pièces. — version infusée (améliorée).",
+    "category": "cape",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 14,
+    "buy_price": 21,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 3,
+      "crit_chance": 3
+    },
+    "equipment_slot": "cape",
+    "requires_two_hands": false,
+    "family": "gobelin_plus"
+  },
+  {
+    "code": "gobelin_boucle_oreille_plus",
+    "name": "Boucle gobelin +",
+    "description": "Pièce de la panoplie gobelin — bonus de set actif dès 2 pièces. — version infusée (améliorée).",
+    "category": "earring",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 14,
+    "buy_price": 21,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 3,
+      "crit_chance": 3
+    },
+    "equipment_slot": "boucle_oreille",
+    "requires_two_hands": false,
+    "family": "gobelin_plus"
+  },
+  {
+    "code": "gobelin_buckler_plus",
+    "name": "Rondache gobeline +",
+    "description": "Variante du bouclier gobelin — orientée crit + défense. — version infusée (améliorée).",
+    "category": "shield",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 36,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 9,
+      "crit_chance": 3
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false,
+    "family": "gobelin_plus"
+  },
+  {
+    "code": "gobelin_greataxe_plus",
+    "name": "Grande hache gobeline +",
+    "description": "2 mains — crit massifs, on se découvre complètement. — version infusée (améliorée).",
+    "category": "weapon",
+    "rarity": "epic",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 160,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 26,
+      "crit_damage": 21,
+      "crit_chance": -2,
+      "defense": -3
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": true,
+    "family": "gobelin_plus"
+  },
+  {
+    "code": "gobelin_warshield_plus",
+    "name": "Pavois gobelin +",
+    "description": "Bouclier gobelin 2 mains — défense brute + crit, on tape moins fort. — version infusée (améliorée).",
+    "category": "shield",
+    "rarity": "epic",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 120,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 20,
+      "crit_chance": 6,
+      "attack": -5,
+      "crit_damage": -4
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": true,
+    "family": "gobelin_plus"
+  },
+  {
+    "code": "slime_blade_plus",
+    "name": "Lame visqueuse +",
+    "description": "Une épée recouverte d'une étrange matière gélatineuse. Une main. — version infusée (améliorée).",
+    "category": "weapon",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 24,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 9,
+      "max_hp": 9
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false,
+    "family": "slime_plus"
+  },
+  {
+    "code": "slime_pendant_plus",
+    "name": "Pendentif de Slime +",
+    "description": "Un collier orné d'une perle gélatineuse. — version infusée (améliorée).",
+    "category": "necklace",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 20,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 15,
+      "hp_regeneration": 3
+    },
+    "equipment_slot": "collier",
+    "requires_two_hands": false,
+    "family": "slime_plus"
+  },
+  {
+    "code": "slime_cloak_plus",
+    "name": "Cape gluante +",
+    "description": "Cape recouverte d'une pellicule de gel de slime — collante mais étonnamment résistante. — version infusée (améliorée).",
+    "category": "cape",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 28,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 12,
+      "defense": 3
+    },
+    "equipment_slot": "cape",
+    "requires_two_hands": false,
+    "family": "slime_plus"
+  },
+  {
+    "code": "slime_shield_plus",
+    "name": "Bouclier visqueux +",
+    "description": "Bouclier en bois enveloppé de gel de slime — absorbe les chocs comme une éponge. — version infusée (améliorée).",
+    "category": "shield",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 36,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 8,
+      "max_hp": 12
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false,
+    "family": "slime_plus"
+  },
+  {
+    "code": "slime_casque_plus",
+    "name": "Casque de slime +",
+    "description": "Pièce de la panoplie slime — bonus de set actif dès 2 pièces. — version infusée (améliorée).",
+    "category": "helmet",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 12,
+    "buy_price": 18,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 12,
+      "hp_regeneration": 2,
+      "defense": 2
+    },
+    "equipment_slot": "casque",
+    "requires_two_hands": false,
+    "family": "slime_plus"
+  },
+  {
+    "code": "slime_plastron_plus",
+    "name": "Plastron de slime +",
+    "description": "Pièce de la panoplie slime — bonus de set actif dès 2 pièces. — version infusée (améliorée).",
+    "category": "chest",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 12,
+    "buy_price": 18,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 15,
+      "hp_regeneration": 2,
+      "defense": 2
+    },
+    "equipment_slot": "plastron",
+    "requires_two_hands": false,
+    "family": "slime_plus"
+  },
+  {
+    "code": "slime_jambieres_plus",
+    "name": "Jambières de slime +",
+    "description": "Pièce de la panoplie slime — bonus de set actif dès 2 pièces. — version infusée (améliorée).",
+    "category": "legs",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 12,
+    "buy_price": 18,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 12,
+      "hp_regeneration": 2
+    },
+    "equipment_slot": "jambieres",
+    "requires_two_hands": false,
+    "family": "slime_plus"
+  },
+  {
+    "code": "slime_bottes_plus",
+    "name": "Bottes de slime +",
+    "description": "Pièce de la panoplie slime — bonus de set actif dès 2 pièces. — version infusée (améliorée).",
+    "category": "boots",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 12,
+    "buy_price": 18,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 9,
+      "hp_regeneration": 2
+    },
+    "equipment_slot": "bottes",
+    "requires_two_hands": false,
+    "family": "slime_plus"
+  },
+  {
+    "code": "slime_bracelet_plus",
+    "name": "Bracelet de slime +",
+    "description": "Pièce de la panoplie slime — bonus de set actif dès 2 pièces. — version infusée (améliorée).",
+    "category": "bracelet",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 12,
+    "buy_price": 18,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 9,
+      "hp_regeneration": 2
+    },
+    "equipment_slot": "bracelet",
+    "requires_two_hands": false,
+    "family": "slime_plus"
+  },
+  {
+    "code": "slime_bague_plus",
+    "name": "Bague de slime +",
+    "description": "Pièce de la panoplie slime — bonus de set actif dès 2 pièces. — version infusée (améliorée).",
+    "category": "ring",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 12,
+    "buy_price": 18,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 9,
+      "hp_regeneration": 3
+    },
+    "equipment_slot": "bague",
+    "requires_two_hands": false,
+    "family": "slime_plus"
+  },
+  {
+    "code": "slime_ceinture_plus",
+    "name": "Ceinture de slime +",
+    "description": "Pièce de la panoplie slime — bonus de set actif dès 2 pièces. — version infusée (améliorée).",
+    "category": "belt",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 12,
+    "buy_price": 18,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 9,
+      "hp_regeneration": 2
+    },
+    "equipment_slot": "ceinture",
+    "requires_two_hands": false,
+    "family": "slime_plus"
+  },
+  {
+    "code": "slime_boucle_oreille_plus",
+    "name": "Boucle de slime +",
+    "description": "Pièce de la panoplie slime — bonus de set actif dès 2 pièces. — version infusée (améliorée).",
+    "category": "earring",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 12,
+    "buy_price": 18,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 9,
+      "hp_regeneration": 2
+    },
+    "equipment_slot": "boucle_oreille",
+    "requires_two_hands": false,
+    "family": "slime_plus"
+  },
+  {
+    "code": "slime_morningstar_plus",
+    "name": "Morningstar visqueuse +",
+    "description": "Variante régen de la lame visqueuse — atk soutenue + un peu de régen. — version infusée (améliorée).",
+    "category": "weapon",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 44,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 8,
+      "hp_regeneration": 3,
+      "max_hp": 6
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false,
+    "family": "slime_plus"
+  },
+  {
+    "code": "slime_buckler_plus",
+    "name": "Bouclier de gel +",
+    "description": "Variante régen du bouclier visqueux — moins de PV, plus de régen. — version infusée (améliorée).",
+    "category": "shield",
+    "rarity": "uncommon",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 44,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 6,
+      "hp_regeneration": 5,
+      "max_hp": 6
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false,
+    "family": "slime_plus"
+  },
+  {
+    "code": "slime_greatblade_plus",
+    "name": "Lame visqueuse colossale +",
+    "description": "2 mains — frappe massive, on perd en résilience. — version infusée (améliorée).",
+    "category": "weapon",
+    "rarity": "epic",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 140,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 23,
+      "max_hp": -8,
+      "defense": -4
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": true,
+    "family": "slime_plus"
+  },
+  {
+    "code": "slime_tower_shield_plus",
+    "name": "Tour de gel +",
+    "description": "Bouclier 2 mains — pure défense, on n'attaque presque plus. — version infusée (améliorée).",
+    "category": "shield",
+    "rarity": "epic",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 140,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 20,
+      "max_hp": 30,
+      "attack": -5
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": true,
+    "family": "slime_plus"
   }
 ]
