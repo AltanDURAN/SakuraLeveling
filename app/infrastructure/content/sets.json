@@ -5,10 +5,26 @@
     "icon": "🛡️",
     "color": "#9aa0aa",
     "tiers": [
-      { "min_pieces": 2,  "type": "defense_flat", "value": 1 },
-      { "min_pieces": 4,  "type": "defense_flat", "value": 2 },
-      { "min_pieces": 8,  "type": "defense_flat", "value": 5 },
-      { "min_pieces": 12, "type": "defense_flat", "value": 8 }
+      {
+        "min_pieces": 2,
+        "type": "defense_flat",
+        "value": 1
+      },
+      {
+        "min_pieces": 4,
+        "type": "defense_flat",
+        "value": 2
+      },
+      {
+        "min_pieces": 8,
+        "type": "defense_flat",
+        "value": 5
+      },
+      {
+        "min_pieces": 12,
+        "type": "defense_flat",
+        "value": 8
+      }
     ]
   },
   "leather": {
@@ -17,10 +33,26 @@
     "icon": "🟫",
     "color": "#a07040",
     "tiers": [
-      { "min_pieces": 2,  "type": "max_hp_flat", "value": 4 },
-      { "min_pieces": 4,  "type": "max_hp_flat", "value": 8 },
-      { "min_pieces": 8,  "type": "max_hp_flat", "value": 20 },
-      { "min_pieces": 12, "type": "max_hp_flat", "value": 32 }
+      {
+        "min_pieces": 2,
+        "type": "max_hp_flat",
+        "value": 4
+      },
+      {
+        "min_pieces": 4,
+        "type": "max_hp_flat",
+        "value": 8
+      },
+      {
+        "min_pieces": 8,
+        "type": "max_hp_flat",
+        "value": 20
+      },
+      {
+        "min_pieces": 12,
+        "type": "max_hp_flat",
+        "value": 32
+      }
     ]
   },
   "slime": {
@@ -29,10 +61,26 @@
     "icon": "🟢",
     "color": "#8fdc70",
     "tiers": [
-      { "min_pieces": 2,  "type": "hp_regeneration_flat", "value": 1 },
-      { "min_pieces": 4,  "type": "hp_regeneration_flat", "value": 2 },
-      { "min_pieces": 8,  "type": "hp_regeneration_flat", "value": 5 },
-      { "min_pieces": 12, "type": "hp_regeneration_flat", "value": 8 }
+      {
+        "min_pieces": 2,
+        "type": "hp_regeneration_flat",
+        "value": 1
+      },
+      {
+        "min_pieces": 4,
+        "type": "hp_regeneration_flat",
+        "value": 2
+      },
+      {
+        "min_pieces": 8,
+        "type": "hp_regeneration_flat",
+        "value": 5
+      },
+      {
+        "min_pieces": 12,
+        "type": "hp_regeneration_flat",
+        "value": 8
+      }
     ]
   },
   "gobelin": {
@@ -41,10 +89,26 @@
     "icon": "👹",
     "color": "#7ba85a",
     "tiers": [
-      { "min_pieces": 2,  "type": "crit_damage_flat", "value": 1 },
-      { "min_pieces": 4,  "type": "crit_damage_flat", "value": 2 },
-      { "min_pieces": 8,  "type": "crit_damage_flat", "value": 4 },
-      { "min_pieces": 12, "type": "crit_damage_flat", "value": 8 }
+      {
+        "min_pieces": 2,
+        "type": "crit_damage_flat",
+        "value": 1
+      },
+      {
+        "min_pieces": 4,
+        "type": "crit_damage_flat",
+        "value": 2
+      },
+      {
+        "min_pieces": 8,
+        "type": "crit_damage_flat",
+        "value": 4
+      },
+      {
+        "min_pieces": 12,
+        "type": "crit_damage_flat",
+        "value": 8
+      }
     ]
   },
   "linen": {
@@ -53,10 +117,82 @@
     "icon": "🧵",
     "color": "#dcc8a0",
     "tiers": [
-      { "min_pieces": 2,  "type": "dodge_flat", "value": 1 },
-      { "min_pieces": 4,  "type": "dodge_flat", "value": 2 },
-      { "min_pieces": 8,  "type": "dodge_flat", "value": 3 },
-      { "min_pieces": 12, "type": "dodge_flat", "value": 5 }
+      {
+        "min_pieces": 2,
+        "type": "dodge_flat",
+        "value": 1
+      },
+      {
+        "min_pieces": 4,
+        "type": "dodge_flat",
+        "value": 2
+      },
+      {
+        "min_pieces": 8,
+        "type": "dodge_flat",
+        "value": 3
+      },
+      {
+        "min_pieces": 12,
+        "type": "dodge_flat",
+        "value": 5
+      }
+    ]
+  },
+  "gobelin_plus": {
+    "name": "Gobeline +",
+    "description": "Panoplie gobeline infusée — frappe critique renforcée.",
+    "icon": "👹",
+    "color": "#9bd96a",
+    "tiers": [
+      {
+        "min_pieces": 2,
+        "type": "crit_damage_flat",
+        "value": 2
+      },
+      {
+        "min_pieces": 4,
+        "type": "crit_damage_flat",
+        "value": 4
+      },
+      {
+        "min_pieces": 8,
+        "type": "crit_damage_flat",
+        "value": 7
+      },
+      {
+        "min_pieces": 12,
+        "type": "crit_damage_flat",
+        "value": 12
+      }
+    ]
+  },
+  "slime_plus": {
+    "name": "Slime +",
+    "description": "Panoplie slime infusée — régénération renforcée.",
+    "icon": "🟢",
+    "color": "#a7f084",
+    "tiers": [
+      {
+        "min_pieces": 2,
+        "type": "hp_regeneration_flat",
+        "value": 2
+      },
+      {
+        "min_pieces": 4,
+        "type": "hp_regeneration_flat",
+        "value": 4
+      },
+      {
+        "min_pieces": 8,
+        "type": "hp_regeneration_flat",
+        "value": 8
+      },
+      {
+        "min_pieces": 12,
+        "type": "hp_regeneration_flat",
+        "value": 12
+      }
     ]
   }
 }

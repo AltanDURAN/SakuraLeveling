@@ -5,8 +5,14 @@
     "result_item_code": "leather_cap",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "leather_strip", "quantity": 3 },
-      { "item_code": "linen_cloth", "quantity": 1 }
+      {
+        "item_code": "leather_strip",
+        "quantity": 3
+      },
+      {
+        "item_code": "linen_cloth",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -15,8 +21,14 @@
     "result_item_code": "leather_chest",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "leather_strip", "quantity": 5 },
-      { "item_code": "linen_cloth", "quantity": 2 }
+      {
+        "item_code": "leather_strip",
+        "quantity": 5
+      },
+      {
+        "item_code": "linen_cloth",
+        "quantity": 2
+      }
     ]
   },
   {
@@ -25,8 +37,14 @@
     "result_item_code": "leather_legs",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "leather_strip", "quantity": 4 },
-      { "item_code": "linen_cloth", "quantity": 2 }
+      {
+        "item_code": "leather_strip",
+        "quantity": 4
+      },
+      {
+        "item_code": "linen_cloth",
+        "quantity": 2
+      }
     ]
   },
   {
@@ -35,7 +53,10 @@
     "result_item_code": "leather_boots",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "leather_strip", "quantity": 3 }
+      {
+        "item_code": "leather_strip",
+        "quantity": 3
+      }
     ]
   },
   {
@@ -44,8 +65,14 @@
     "result_item_code": "leather_belt",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "leather_strip", "quantity": 2 },
-      { "item_code": "iron_ingot", "quantity": 1 }
+      {
+        "item_code": "leather_strip",
+        "quantity": 2
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -54,7 +81,10 @@
     "result_item_code": "leather_bracelet",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "leather_strip", "quantity": 2 }
+      {
+        "item_code": "leather_strip",
+        "quantity": 2
+      }
     ]
   },
   {
@@ -63,8 +93,14 @@
     "result_item_code": "linen_cape",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "linen_cloth", "quantity": 4 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "linen_cloth",
+        "quantity": 4
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -73,18 +109,26 @@
     "result_item_code": "stone_earring",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "polished_stone", "quantity": 2 },
-      { "item_code": "iron_ingot", "quantity": 1 }
+      {
+        "item_code": "polished_stone",
+        "quantity": 2
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 1
+      }
     ]
   },
-
   {
     "code": "wood_sword_recipe",
     "name": "Épée en bois",
     "result_item_code": "wood_sword",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "wood_log", "quantity": 3 }
+      {
+        "item_code": "wood_log",
+        "quantity": 3
+      }
     ]
   },
   {
@@ -93,8 +137,14 @@
     "result_item_code": "wooden_shield",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "wood_log", "quantity": 4 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "wood_log",
+        "quantity": 4
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -103,8 +153,14 @@
     "result_item_code": "iron_buckler",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "iron_ingot", "quantity": 3 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "iron_ingot",
+        "quantity": 3
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -113,8 +169,14 @@
     "result_item_code": "slime_blade",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "slime_gel", "quantity": 3 },
-      { "item_code": "wood_sword", "quantity": 1 }
+      {
+        "item_code": "slime_gel",
+        "quantity": 3
+      },
+      {
+        "item_code": "wood_sword",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -123,8 +185,14 @@
     "result_item_code": "hunter_dagger",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "iron_ingot", "quantity": 2 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "iron_ingot",
+        "quantity": 2
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -133,9 +201,18 @@
     "result_item_code": "gobelin_axe",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "gobelin_tooth", "quantity": 4 },
-      { "item_code": "iron_ingot", "quantity": 2 },
-      { "item_code": "wood_log", "quantity": 1 }
+      {
+        "item_code": "gobelin_tooth",
+        "quantity": 4
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 2
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -144,8 +221,14 @@
     "result_item_code": "iron_helmet",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "iron_ingot", "quantity": 4 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "iron_ingot",
+        "quantity": 4
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -154,8 +237,14 @@
     "result_item_code": "iron_chest",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "iron_ingot", "quantity": 6 },
-      { "item_code": "leather_strip", "quantity": 2 }
+      {
+        "item_code": "iron_ingot",
+        "quantity": 6
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 2
+      }
     ]
   },
   {
@@ -164,8 +253,14 @@
     "result_item_code": "iron_legs",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "iron_ingot", "quantity": 5 },
-      { "item_code": "leather_strip", "quantity": 2 }
+      {
+        "item_code": "iron_ingot",
+        "quantity": 5
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 2
+      }
     ]
   },
   {
@@ -174,8 +269,14 @@
     "result_item_code": "iron_boots",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "iron_ingot", "quantity": 4 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "iron_ingot",
+        "quantity": 4
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -184,19 +285,30 @@
     "result_item_code": "gobelin_crown",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "gobelin_tooth", "quantity": 6 },
-      { "item_code": "polished_stone", "quantity": 2 },
-      { "item_code": "iron_ingot", "quantity": 1 }
+      {
+        "item_code": "gobelin_tooth",
+        "quantity": 6
+      },
+      {
+        "item_code": "polished_stone",
+        "quantity": 2
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 1
+      }
     ]
   },
-
   {
     "code": "iron_ring_recipe",
     "name": "Anneau de fer",
     "result_item_code": "iron_ring",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "iron_ingot", "quantity": 2 }
+      {
+        "item_code": "iron_ingot",
+        "quantity": 2
+      }
     ]
   },
   {
@@ -205,9 +317,18 @@
     "result_item_code": "gobelin_ring",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "gobelin_tooth", "quantity": 3 },
-      { "item_code": "iron_ingot", "quantity": 1 },
-      { "item_code": "polished_stone", "quantity": 1 }
+      {
+        "item_code": "gobelin_tooth",
+        "quantity": 3
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 1
+      },
+      {
+        "item_code": "polished_stone",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -216,20 +337,34 @@
     "result_item_code": "slime_pendant",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "slime_gel", "quantity": 5 },
-      { "item_code": "polished_stone", "quantity": 1 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "slime_gel",
+        "quantity": 5
+      },
+      {
+        "item_code": "polished_stone",
+        "quantity": 1
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
-
   {
     "code": "linen_hood_recipe",
     "name": "Capuche en lin",
     "result_item_code": "linen_hood",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "linen_cloth", "quantity": 4 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "linen_cloth",
+        "quantity": 4
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -238,8 +373,14 @@
     "result_item_code": "linen_robe",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "linen_cloth", "quantity": 6 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "linen_cloth",
+        "quantity": 6
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -248,7 +389,10 @@
     "result_item_code": "linen_gloves",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "linen_cloth", "quantity": 3 }
+      {
+        "item_code": "linen_cloth",
+        "quantity": 3
+      }
     ]
   },
   {
@@ -257,9 +401,18 @@
     "result_item_code": "slime_cloak",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "slime_gel", "quantity": 5 },
-      { "item_code": "linen_cloth", "quantity": 3 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "slime_gel",
+        "quantity": 5
+      },
+      {
+        "item_code": "linen_cloth",
+        "quantity": 3
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -268,9 +421,18 @@
     "result_item_code": "gobelin_amulet",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "gobelin_tooth", "quantity": 5 },
-      { "item_code": "polished_stone", "quantity": 2 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "gobelin_tooth",
+        "quantity": 5
+      },
+      {
+        "item_code": "polished_stone",
+        "quantity": 2
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -279,7 +441,10 @@
     "result_item_code": "polished_stone_ring",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "polished_stone", "quantity": 3 }
+      {
+        "item_code": "polished_stone",
+        "quantity": 3
+      }
     ]
   },
   {
@@ -288,20 +453,34 @@
     "result_item_code": "iron_gauntlets",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "iron_ingot", "quantity": 4 },
-      { "item_code": "leather_strip", "quantity": 2 }
+      {
+        "item_code": "iron_ingot",
+        "quantity": 4
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 2
+      }
     ]
   },
-
   {
     "code": "iron_dagger_recipe",
     "name": "Dague en fer",
     "result_item_code": "iron_dagger",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "iron_ingot", "quantity": 2 },
-      { "item_code": "wood_log", "quantity": 1 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "iron_ingot",
+        "quantity": 2
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 1
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -310,9 +489,18 @@
     "result_item_code": "gobelin_blade",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "gobelin_tooth", "quantity": 4 },
-      { "item_code": "iron_ingot", "quantity": 2 },
-      { "item_code": "wood_log", "quantity": 1 }
+      {
+        "item_code": "gobelin_tooth",
+        "quantity": 4
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 2
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -321,9 +509,18 @@
     "result_item_code": "slime_shield",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "slime_gel", "quantity": 4 },
-      { "item_code": "wood_log", "quantity": 3 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "slime_gel",
+        "quantity": 4
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 3
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -332,9 +529,18 @@
     "result_item_code": "gobelin_plastron",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "gobelin_tooth", "quantity": 5 },
-      { "item_code": "iron_ingot", "quantity": 2 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "gobelin_tooth",
+        "quantity": 5
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 2
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -343,9 +549,18 @@
     "result_item_code": "gobelin_jambieres",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "gobelin_tooth", "quantity": 4 },
-      { "item_code": "iron_ingot", "quantity": 2 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "gobelin_tooth",
+        "quantity": 4
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 2
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -354,9 +569,18 @@
     "result_item_code": "gobelin_bottes",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "gobelin_tooth", "quantity": 3 },
-      { "item_code": "iron_ingot", "quantity": 1 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "gobelin_tooth",
+        "quantity": 3
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 1
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -365,10 +589,22 @@
     "result_item_code": "gobelin_main_gauche",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "gobelin_tooth", "quantity": 3 },
-      { "item_code": "iron_ingot", "quantity": 1 },
-      { "item_code": "wood_log", "quantity": 2 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "gobelin_tooth",
+        "quantity": 3
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 1
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 2
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -377,8 +613,14 @@
     "result_item_code": "gobelin_bracelet",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "gobelin_tooth", "quantity": 2 },
-      { "item_code": "iron_ingot", "quantity": 1 }
+      {
+        "item_code": "gobelin_tooth",
+        "quantity": 2
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -387,9 +629,18 @@
     "result_item_code": "gobelin_ceinture",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "gobelin_tooth", "quantity": 2 },
-      { "item_code": "iron_ingot", "quantity": 1 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "gobelin_tooth",
+        "quantity": 2
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 1
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -398,9 +649,18 @@
     "result_item_code": "gobelin_cape",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "gobelin_tooth", "quantity": 4 },
-      { "item_code": "linen_cloth", "quantity": 2 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "gobelin_tooth",
+        "quantity": 4
+      },
+      {
+        "item_code": "linen_cloth",
+        "quantity": 2
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -409,8 +669,14 @@
     "result_item_code": "gobelin_boucle_oreille",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "gobelin_tooth", "quantity": 2 },
-      { "item_code": "polished_stone", "quantity": 1 }
+      {
+        "item_code": "gobelin_tooth",
+        "quantity": 2
+      },
+      {
+        "item_code": "polished_stone",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -419,9 +685,18 @@
     "result_item_code": "iron_collier",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "iron_ingot", "quantity": 4 },
-      { "item_code": "polished_stone", "quantity": 1 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "iron_ingot",
+        "quantity": 4
+      },
+      {
+        "item_code": "polished_stone",
+        "quantity": 1
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -430,8 +705,14 @@
     "result_item_code": "iron_ceinture",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "iron_ingot", "quantity": 2 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "iron_ingot",
+        "quantity": 2
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -440,9 +721,18 @@
     "result_item_code": "iron_cape",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "iron_ingot", "quantity": 4 },
-      { "item_code": "linen_cloth", "quantity": 2 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "iron_ingot",
+        "quantity": 4
+      },
+      {
+        "item_code": "linen_cloth",
+        "quantity": 2
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -451,8 +741,14 @@
     "result_item_code": "iron_boucle_oreille",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "iron_ingot", "quantity": 2 },
-      { "item_code": "polished_stone", "quantity": 1 }
+      {
+        "item_code": "iron_ingot",
+        "quantity": 2
+      },
+      {
+        "item_code": "polished_stone",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -461,9 +757,18 @@
     "result_item_code": "leather_main_droite",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "leather_strip", "quantity": 3 },
-      { "item_code": "wood_log", "quantity": 2 },
-      { "item_code": "iron_ingot", "quantity": 1 }
+      {
+        "item_code": "leather_strip",
+        "quantity": 3
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 2
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -472,9 +777,18 @@
     "result_item_code": "leather_main_gauche",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "leather_strip", "quantity": 3 },
-      { "item_code": "wood_log", "quantity": 3 },
-      { "item_code": "iron_ingot", "quantity": 1 }
+      {
+        "item_code": "leather_strip",
+        "quantity": 3
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 3
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -483,9 +797,18 @@
     "result_item_code": "leather_collier",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "leather_strip", "quantity": 4 },
-      { "item_code": "polished_stone", "quantity": 1 },
-      { "item_code": "linen_cloth", "quantity": 1 }
+      {
+        "item_code": "leather_strip",
+        "quantity": 4
+      },
+      {
+        "item_code": "polished_stone",
+        "quantity": 1
+      },
+      {
+        "item_code": "linen_cloth",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -494,8 +817,14 @@
     "result_item_code": "leather_bague",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "leather_strip", "quantity": 2 },
-      { "item_code": "polished_stone", "quantity": 1 }
+      {
+        "item_code": "leather_strip",
+        "quantity": 2
+      },
+      {
+        "item_code": "polished_stone",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -504,8 +833,14 @@
     "result_item_code": "leather_cape",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "leather_strip", "quantity": 5 },
-      { "item_code": "linen_cloth", "quantity": 2 }
+      {
+        "item_code": "leather_strip",
+        "quantity": 5
+      },
+      {
+        "item_code": "linen_cloth",
+        "quantity": 2
+      }
     ]
   },
   {
@@ -514,8 +849,14 @@
     "result_item_code": "leather_boucle_oreille",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "leather_strip", "quantity": 2 },
-      { "item_code": "polished_stone", "quantity": 1 }
+      {
+        "item_code": "leather_strip",
+        "quantity": 2
+      },
+      {
+        "item_code": "polished_stone",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -524,8 +865,14 @@
     "result_item_code": "linen_jambieres",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "linen_cloth", "quantity": 4 },
-      { "item_code": "leather_strip", "quantity": 2 }
+      {
+        "item_code": "linen_cloth",
+        "quantity": 4
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 2
+      }
     ]
   },
   {
@@ -534,8 +881,14 @@
     "result_item_code": "linen_bottes",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "linen_cloth", "quantity": 3 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "linen_cloth",
+        "quantity": 3
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -544,9 +897,18 @@
     "result_item_code": "linen_main_droite",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "linen_cloth", "quantity": 3 },
-      { "item_code": "wood_log", "quantity": 2 },
-      { "item_code": "iron_ingot", "quantity": 1 }
+      {
+        "item_code": "linen_cloth",
+        "quantity": 3
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 2
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -555,9 +917,18 @@
     "result_item_code": "linen_main_gauche",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "linen_cloth", "quantity": 3 },
-      { "item_code": "wood_log", "quantity": 3 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "linen_cloth",
+        "quantity": 3
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 3
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -566,9 +937,18 @@
     "result_item_code": "linen_collier",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "linen_cloth", "quantity": 4 },
-      { "item_code": "polished_stone", "quantity": 1 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "linen_cloth",
+        "quantity": 4
+      },
+      {
+        "item_code": "polished_stone",
+        "quantity": 1
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -577,8 +957,14 @@
     "result_item_code": "linen_bague",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "linen_cloth", "quantity": 2 },
-      { "item_code": "polished_stone", "quantity": 1 }
+      {
+        "item_code": "linen_cloth",
+        "quantity": 2
+      },
+      {
+        "item_code": "polished_stone",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -587,8 +973,14 @@
     "result_item_code": "linen_ceinture",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "linen_cloth", "quantity": 2 },
-      { "item_code": "iron_ingot", "quantity": 1 }
+      {
+        "item_code": "linen_cloth",
+        "quantity": 2
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -597,8 +989,14 @@
     "result_item_code": "linen_boucle_oreille",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "linen_cloth", "quantity": 2 },
-      { "item_code": "polished_stone", "quantity": 1 }
+      {
+        "item_code": "linen_cloth",
+        "quantity": 2
+      },
+      {
+        "item_code": "polished_stone",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -607,8 +1005,14 @@
     "result_item_code": "slime_casque",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "slime_gel", "quantity": 4 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "slime_gel",
+        "quantity": 4
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -617,8 +1021,14 @@
     "result_item_code": "slime_plastron",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "slime_gel", "quantity": 5 },
-      { "item_code": "leather_strip", "quantity": 2 }
+      {
+        "item_code": "slime_gel",
+        "quantity": 5
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 2
+      }
     ]
   },
   {
@@ -627,8 +1037,14 @@
     "result_item_code": "slime_jambieres",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "slime_gel", "quantity": 4 },
-      { "item_code": "leather_strip", "quantity": 2 }
+      {
+        "item_code": "slime_gel",
+        "quantity": 4
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 2
+      }
     ]
   },
   {
@@ -637,8 +1053,14 @@
     "result_item_code": "slime_bottes",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "slime_gel", "quantity": 3 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "slime_gel",
+        "quantity": 3
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -647,8 +1069,14 @@
     "result_item_code": "slime_bracelet",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "slime_gel", "quantity": 2 },
-      { "item_code": "iron_ingot", "quantity": 1 }
+      {
+        "item_code": "slime_gel",
+        "quantity": 2
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -657,8 +1085,14 @@
     "result_item_code": "slime_bague",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "slime_gel", "quantity": 2 },
-      { "item_code": "polished_stone", "quantity": 1 }
+      {
+        "item_code": "slime_gel",
+        "quantity": 2
+      },
+      {
+        "item_code": "polished_stone",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -667,8 +1101,14 @@
     "result_item_code": "slime_ceinture",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "slime_gel", "quantity": 2 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "slime_gel",
+        "quantity": 2
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -677,8 +1117,14 @@
     "result_item_code": "slime_boucle_oreille",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "slime_gel", "quantity": 2 },
-      { "item_code": "polished_stone", "quantity": 1 }
+      {
+        "item_code": "slime_gel",
+        "quantity": 2
+      },
+      {
+        "item_code": "polished_stone",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -687,9 +1133,18 @@
     "result_item_code": "iron_sword",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "iron_ingot", "quantity": 3 },
-      { "item_code": "wood_log", "quantity": 1 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "iron_ingot",
+        "quantity": 3
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 1
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -698,8 +1153,14 @@
     "result_item_code": "iron_warshield",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "iron_ingot", "quantity": 4 },
-      { "item_code": "leather_strip", "quantity": 2 }
+      {
+        "item_code": "iron_ingot",
+        "quantity": 4
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 2
+      }
     ]
   },
   {
@@ -708,9 +1169,18 @@
     "result_item_code": "iron_greatsword",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "iron_ingot", "quantity": 6 },
-      { "item_code": "wood_log", "quantity": 3 },
-      { "item_code": "leather_strip", "quantity": 3 }
+      {
+        "item_code": "iron_ingot",
+        "quantity": 6
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 3
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 3
+      }
     ]
   },
   {
@@ -719,8 +1189,14 @@
     "result_item_code": "iron_tower_shield",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "iron_ingot", "quantity": 9 },
-      { "item_code": "leather_strip", "quantity": 3 }
+      {
+        "item_code": "iron_ingot",
+        "quantity": 9
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 3
+      }
     ]
   },
   {
@@ -729,8 +1205,14 @@
     "result_item_code": "slime_morningstar",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "slime_gel", "quantity": 3 },
-      { "item_code": "wood_log", "quantity": 2 }
+      {
+        "item_code": "slime_gel",
+        "quantity": 3
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 2
+      }
     ]
   },
   {
@@ -739,9 +1221,18 @@
     "result_item_code": "slime_buckler",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "slime_gel", "quantity": 3 },
-      { "item_code": "wood_log", "quantity": 2 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "slime_gel",
+        "quantity": 3
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 2
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -750,9 +1241,18 @@
     "result_item_code": "slime_greatblade",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "slime_gel", "quantity": 9 },
-      { "item_code": "wood_log", "quantity": 6 },
-      { "item_code": "iron_ingot", "quantity": 3 }
+      {
+        "item_code": "slime_gel",
+        "quantity": 9
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 6
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 3
+      }
     ]
   },
   {
@@ -761,9 +1261,18 @@
     "result_item_code": "slime_tower_shield",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "slime_gel", "quantity": 12 },
-      { "item_code": "wood_log", "quantity": 9 },
-      { "item_code": "leather_strip", "quantity": 3 }
+      {
+        "item_code": "slime_gel",
+        "quantity": 12
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 9
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 3
+      }
     ]
   },
   {
@@ -772,9 +1281,18 @@
     "result_item_code": "gobelin_buckler",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "gobelin_tooth", "quantity": 3 },
-      { "item_code": "iron_ingot", "quantity": 1 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "gobelin_tooth",
+        "quantity": 3
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 1
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -783,9 +1301,18 @@
     "result_item_code": "gobelin_greataxe",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "gobelin_tooth", "quantity": 12 },
-      { "item_code": "iron_ingot", "quantity": 6 },
-      { "item_code": "wood_log", "quantity": 3 }
+      {
+        "item_code": "gobelin_tooth",
+        "quantity": 12
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 6
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 3
+      }
     ]
   },
   {
@@ -794,10 +1321,22 @@
     "result_item_code": "gobelin_warshield",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "gobelin_tooth", "quantity": 9 },
-      { "item_code": "iron_ingot", "quantity": 3 },
-      { "item_code": "wood_log", "quantity": 6 },
-      { "item_code": "leather_strip", "quantity": 3 }
+      {
+        "item_code": "gobelin_tooth",
+        "quantity": 9
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 3
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 6
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 3
+      }
     ]
   },
   {
@@ -806,9 +1345,18 @@
     "result_item_code": "leather_dagger",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "leather_strip", "quantity": 2 },
-      { "item_code": "wood_log", "quantity": 2 },
-      { "item_code": "iron_ingot", "quantity": 1 }
+      {
+        "item_code": "leather_strip",
+        "quantity": 2
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 2
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -817,9 +1365,18 @@
     "result_item_code": "leather_buckler",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "leather_strip", "quantity": 2 },
-      { "item_code": "wood_log", "quantity": 2 },
-      { "item_code": "iron_ingot", "quantity": 1 }
+      {
+        "item_code": "leather_strip",
+        "quantity": 2
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 2
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -828,9 +1385,18 @@
     "result_item_code": "leather_greatsword",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "leather_strip", "quantity": 9 },
-      { "item_code": "wood_log", "quantity": 6 },
-      { "item_code": "iron_ingot", "quantity": 3 }
+      {
+        "item_code": "leather_strip",
+        "quantity": 9
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 6
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 3
+      }
     ]
   },
   {
@@ -839,9 +1405,18 @@
     "result_item_code": "leather_tower_shield",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "leather_strip", "quantity": 9 },
-      { "item_code": "wood_log", "quantity": 9 },
-      { "item_code": "iron_ingot", "quantity": 3 }
+      {
+        "item_code": "leather_strip",
+        "quantity": 9
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 9
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 3
+      }
     ]
   },
   {
@@ -850,9 +1425,18 @@
     "result_item_code": "linen_rapier",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "linen_cloth", "quantity": 2 },
-      { "item_code": "wood_log", "quantity": 2 },
-      { "item_code": "iron_ingot", "quantity": 1 }
+      {
+        "item_code": "linen_cloth",
+        "quantity": 2
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 2
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -861,9 +1445,18 @@
     "result_item_code": "linen_aegis",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "linen_cloth", "quantity": 2 },
-      { "item_code": "wood_log", "quantity": 2 },
-      { "item_code": "leather_strip", "quantity": 1 }
+      {
+        "item_code": "linen_cloth",
+        "quantity": 2
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 2
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 1
+      }
     ]
   },
   {
@@ -872,9 +1465,18 @@
     "result_item_code": "linen_greatblade",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "linen_cloth", "quantity": 9 },
-      { "item_code": "wood_log", "quantity": 6 },
-      { "item_code": "iron_ingot", "quantity": 3 }
+      {
+        "item_code": "linen_cloth",
+        "quantity": 9
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 6
+      },
+      {
+        "item_code": "iron_ingot",
+        "quantity": 3
+      }
     ]
   },
   {
@@ -883,9 +1485,658 @@
     "result_item_code": "linen_tower_shield",
     "result_quantity": 1,
     "ingredients": [
-      { "item_code": "linen_cloth", "quantity": 9 },
-      { "item_code": "wood_log", "quantity": 9 },
-      { "item_code": "leather_strip", "quantity": 3 }
+      {
+        "item_code": "linen_cloth",
+        "quantity": 9
+      },
+      {
+        "item_code": "wood_log",
+        "quantity": 9
+      },
+      {
+        "item_code": "leather_strip",
+        "quantity": 3
+      }
+    ]
+  },
+  {
+    "code": "gobelin_axe_plus_recipe",
+    "name": "Hache gobeline +",
+    "result_item_code": "gobelin_axe_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "gobelin_axe",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_gobelin_hq",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "gobelin_crown_plus_recipe",
+    "name": "Couronne gobeline +",
+    "result_item_code": "gobelin_crown_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "gobelin_crown",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_gobelin_hq",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "gobelin_ring_plus_recipe",
+    "name": "Bague gobeline +",
+    "result_item_code": "gobelin_ring_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "gobelin_ring",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_gobelin_hq",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "gobelin_amulet_plus_recipe",
+    "name": "Amulette gobeline +",
+    "result_item_code": "gobelin_amulet_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "gobelin_amulet",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_gobelin_hq",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "gobelin_blade_plus_recipe",
+    "name": "Lame gobeline +",
+    "result_item_code": "gobelin_blade_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "gobelin_blade",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_gobelin_hq",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "gobelin_plastron_plus_recipe",
+    "name": "Plastron gobelin +",
+    "result_item_code": "gobelin_plastron_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "gobelin_plastron",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_gobelin_hq",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "gobelin_jambieres_plus_recipe",
+    "name": "Jambières gobelin +",
+    "result_item_code": "gobelin_jambieres_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "gobelin_jambieres",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_gobelin_hq",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "gobelin_bottes_plus_recipe",
+    "name": "Bottes gobelin +",
+    "result_item_code": "gobelin_bottes_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "gobelin_bottes",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_gobelin_hq",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "gobelin_main_gauche_plus_recipe",
+    "name": "Bouclier gobelin +",
+    "result_item_code": "gobelin_main_gauche_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "gobelin_main_gauche",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_gobelin_hq",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "gobelin_bracelet_plus_recipe",
+    "name": "Bracelet gobelin +",
+    "result_item_code": "gobelin_bracelet_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "gobelin_bracelet",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_gobelin_hq",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "gobelin_ceinture_plus_recipe",
+    "name": "Ceinture gobelin +",
+    "result_item_code": "gobelin_ceinture_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "gobelin_ceinture",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_gobelin_hq",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "gobelin_cape_plus_recipe",
+    "name": "Cape gobelin +",
+    "result_item_code": "gobelin_cape_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "gobelin_cape",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_gobelin_hq",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "gobelin_boucle_oreille_plus_recipe",
+    "name": "Boucle gobelin +",
+    "result_item_code": "gobelin_boucle_oreille_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "gobelin_boucle_oreille",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_gobelin_hq",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "gobelin_buckler_plus_recipe",
+    "name": "Rondache gobeline +",
+    "result_item_code": "gobelin_buckler_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "gobelin_buckler",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_gobelin_hq",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "gobelin_greataxe_plus_recipe",
+    "name": "Grande hache gobeline +",
+    "result_item_code": "gobelin_greataxe_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "gobelin_greataxe",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_gobelin_hq",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "gobelin_warshield_plus_recipe",
+    "name": "Pavois gobelin +",
+    "result_item_code": "gobelin_warshield_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "gobelin_warshield",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_gobelin_hq",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "slime_blade_plus_recipe",
+    "name": "Lame visqueuse +",
+    "result_item_code": "slime_blade_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "slime_blade",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_slime",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "slime_pendant_plus_recipe",
+    "name": "Pendentif de Slime +",
+    "result_item_code": "slime_pendant_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "slime_pendant",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_slime",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "slime_cloak_plus_recipe",
+    "name": "Cape gluante +",
+    "result_item_code": "slime_cloak_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "slime_cloak",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_slime",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "slime_shield_plus_recipe",
+    "name": "Bouclier visqueux +",
+    "result_item_code": "slime_shield_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "slime_shield",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_slime",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "slime_casque_plus_recipe",
+    "name": "Casque de slime +",
+    "result_item_code": "slime_casque_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "slime_casque",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_slime",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "slime_plastron_plus_recipe",
+    "name": "Plastron de slime +",
+    "result_item_code": "slime_plastron_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "slime_plastron",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_slime",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "slime_jambieres_plus_recipe",
+    "name": "Jambières de slime +",
+    "result_item_code": "slime_jambieres_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "slime_jambieres",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_slime",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "slime_bottes_plus_recipe",
+    "name": "Bottes de slime +",
+    "result_item_code": "slime_bottes_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "slime_bottes",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_slime",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "slime_bracelet_plus_recipe",
+    "name": "Bracelet de slime +",
+    "result_item_code": "slime_bracelet_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "slime_bracelet",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_slime",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "slime_bague_plus_recipe",
+    "name": "Bague de slime +",
+    "result_item_code": "slime_bague_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "slime_bague",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_slime",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "slime_ceinture_plus_recipe",
+    "name": "Ceinture de slime +",
+    "result_item_code": "slime_ceinture_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "slime_ceinture",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_slime",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "slime_boucle_oreille_plus_recipe",
+    "name": "Boucle de slime +",
+    "result_item_code": "slime_boucle_oreille_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "slime_boucle_oreille",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_slime",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "slime_morningstar_plus_recipe",
+    "name": "Morningstar visqueuse +",
+    "result_item_code": "slime_morningstar_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "slime_morningstar",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_slime",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "slime_buckler_plus_recipe",
+    "name": "Bouclier de gel +",
+    "result_item_code": "slime_buckler_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "slime_buckler",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_slime",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "slime_greatblade_plus_recipe",
+    "name": "Lame visqueuse colossale +",
+    "result_item_code": "slime_greatblade_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "slime_greatblade",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_slime",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "slime_tower_shield_plus_recipe",
+    "name": "Tour de gel +",
+    "result_item_code": "slime_tower_shield_plus",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "slime_tower_shield",
+        "quantity": 1
+      },
+      {
+        "item_code": "sang_slime",
+        "quantity": 1
+      },
+      {
+        "item_code": "infuseur",
+        "quantity": 1
+      }
     ]
   }
 ]

@@ -62,5 +62,13 @@
     "min_sell_price": 15,
     "stock_threshold": 20,
     "enabled": true
+  },
+  {
+    "item_code": "infuseur",
+    "buy_price": 1000,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
   }
 ]

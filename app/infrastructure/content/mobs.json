@@ -16,7 +16,14 @@
     "xp_reward": 19,
     "gold_reward": 9,
     "spawn_weight": 60,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "sang_slime",
+        "drop_rate": 0.15,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
     "image_name": "slime.png"
   },
   {
@@ -96,7 +103,14 @@
     "xp_reward": 144,
     "gold_reward": 69,
     "spawn_weight": 10,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "sang_gobelin_hq",
+        "drop_rate": 0.15,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
     "image_name": "gobelin_assassin.png"
   },
   {
@@ -176,7 +190,14 @@
     "xp_reward": 300,
     "gold_reward": 144,
     "spawn_weight": 10,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "sang_gobelin_hq",
+        "drop_rate": 0.15,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
     "image_name": "gobelin_superieur.png"
   }
 ]
