@@ -179,13 +179,14 @@ def test_stats_service_applies_class_and_equipment_bonuses_together():
         active_class=active_class,
     )
 
-    # Base niveau 2 = hp 110, atk 12, def 6
+    # V2 : le niveau ne donne AUCUNE stat de base. Base constante hp 100,
+    # atk 10, def 5 quel que soit le niveau.
     # Classe = +20 hp, +3 atk, +2 def
     # Équipement = +9 atk
-    assert stats.max_hp == 130
+    assert stats.max_hp == 120
     assert stats.hp_regeneration == 5
-    assert stats.attack == 24
-    assert stats.defense == 8
+    assert stats.attack == 22
+    assert stats.defense == 7
     assert stats.speed == 5
     
 def test_stats_service_applies_advanced_bonuses():
@@ -395,7 +396,7 @@ def test_stats_service_skill_bonuses_combine_correctly():
     """Tous les bonus de l'arbre s'appliquent ensemble, ordre flat puis %."""
     from app.domain.value_objects.skill_bonuses import SkillBonuses
 
-    profile = build_player_profile(level=2)  # base hp 110, atk 12, def 6
+    profile = build_player_profile(level=2)  # base CONSTANTE hp 100, atk 10, def 5
     service = StatsService()
     bonuses = SkillBonuses(
         atk_percent=0.10,
@@ -415,11 +416,35 @@ def test_stats_service_skill_bonuses_combine_correctly():
         skill_bonuses=bonuses,
     )
 
-    assert stats.attack == round(12 * 1.10)
-    assert stats.defense == round(6 * 1.05)
-    assert stats.max_hp == round(110 * 1.15)
+    assert stats.attack == round(10 * 1.10)
+    assert stats.defense == round(5 * 1.05)
+    assert stats.max_hp == round(100 * 1.15)
     assert stats.crit_chance == 5 + 2
     assert stats.crit_damage == 150 + 10
     assert stats.dodge == 0 + 3
     assert stats.speed == 5 + 1
     assert stats.hp_regeneration == 5 + 2
+
+
+def test_stats_service_skill_flat_nodes_are_the_growth_engine():
+    """V2 : les nœuds plats de l'arbre portent toute la croissance.
+    Le flat s'ajoute à la base, puis le % multiplie le total."""
+    from app.domain.value_objects.skill_bonuses import SkillBonuses
+
+    profile = build_player_profile(level=100)
+    service = StatsService()
+    # Simule un niveau 100 ayant investi ses points dans les nœuds plats.
+    bonuses = SkillBonuses(
+        atk_flat=145, def_flat=55, hp_max_flat=1600,
+        atk_percent=0.10,  # un peu de % par-dessus
+    )
+
+    stats = service.calculate_player_stats(
+        profile=profile, equipped_items=[], active_class=None,
+        skill_bonuses=bonuses,
+    )
+
+    # attack = (base 10 + flat 145) × 1.10
+    assert stats.attack == round((10 + 145) * 1.10)
+    assert stats.defense == 5 + 55
+    assert stats.max_hp == 100 + 1600
