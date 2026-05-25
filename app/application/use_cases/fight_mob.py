@@ -1,5 +1,6 @@
 from app.domain.services.combat_service import CombatService
 from app.domain.services.loot_service import LootService
+from app.infrastructure.loot.family_drop_loader import get_family_drops
 from app.domain.services.progression_service import ProgressionService
 from app.domain.services.quest_service import QuestService
 from app.domain.services.skill_tree_service import SkillTreeService
@@ -191,6 +192,7 @@ class FightMobUseCase:
         chasseur_mult = title_bonuses.drop_rate_multiplier_for_mob(mob.code) if title_bonuses else 1.0
         dropped_items = self.loot_service.generate_loot(
             mob, drop_rate_multiplier=drop_multiplier * chasseur_mult,
+            family_drops=get_family_drops(),
         )
 
         items_total = 0

@@ -79,9 +79,14 @@ def _create_player(
     name: str,
     level: int = 1,
     attack: int = 10,
+    allocations: dict[str, int] | None = None,
 ) -> int:
-    """Crée un joueur avec progression et ressources. Le `level` détermine
-    la base de stats via StatsService (level → max_hp, attack via ProgressionService)."""
+    """Crée un joueur avec progression et ressources.
+
+    V2 : le niveau ne donne AUCUNE stat — la puissance vient de l'arbre.
+    Pour rendre un joueur fort, passer `allocations` (skill_code → level)
+    qui injecte des nœuds plats (atk_flat / hp_max_flat / def_flat).
+    """
     now = datetime.now(UTC)
     player = PlayerModel(
         discord_id=discord_id, username=name.lower(), display_name=name,
@@ -100,8 +105,22 @@ def _create_player(
             created_at=now, updated_at=now,
         ),
     ])
+    for skill_code, lvl in (allocations or {}).items():
+        session.add(PlayerSkillAllocationModel(
+            player_id=player.id, skill_code=skill_code, level=lvl,
+            created_at=now, updated_at=now,
+        ))
     session.commit()
     return player.id
+
+
+# Allocations qui rendent un joueur nettement plus fort (nœuds plats réels de
+# l'arbre V2 : +ATK et +PV/DEF). Utilisé pour les duels où "fort vs faible".
+_STRONG_ALLOC = {
+    "aventurier": 1,
+    "voie_atq": 1, "atq_1": 3, "atq_2": 3, "atq_3": 3,  # +ATK plat
+    "voie_def": 1, "def_1": 3, "def_2": 3, "def_3": 3,  # +PV/+DEF plat
+}
 
 
 def _build_use_case(session):
@@ -174,8 +193,8 @@ def test_better_ranked_challenger_is_refused(session):
 def test_weaker_challenger_wins_swaps_positions(session):
     """Bob (challenger #2, faible) bat Alice (#1, faible aussi mais...) → swap."""
     random.seed(0)
-    _create_player(session, 1, "Alice")  # level 1, faible
-    _create_player(session, 2, "Bob", level=50)  # level 50, beaucoup plus fort
+    _create_player(session, 1, "Alice")  # faible (aucune allocation)
+    _create_player(session, 2, "Bob", allocations=_STRONG_ALLOC)  # bien plus fort
 
     repo = PlayerDuelRankRepository(session)
     repo.get_or_create(_get_player_id(session, 1))  # Alice #1
@@ -207,7 +226,7 @@ def test_weaker_challenger_wins_swaps_positions(session):
 def test_weaker_challenger_loses_keeps_positions(session):
     """Bob (challenger #2, faible) défie Alice (#1, très forte) → Alice gagne, ladder inchangé."""
     random.seed(0)
-    _create_player(session, 1, "Alice", level=50)  # forte
+    _create_player(session, 1, "Alice", allocations=_STRONG_ALLOC)  # forte
     _create_player(session, 2, "Bob")  # faible
 
     repo = PlayerDuelRankRepository(session)

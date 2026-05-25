@@ -17,11 +17,13 @@ class StatsService:
         title_bonuses: TitleBonuses | None = None,
         set_bonuses: SetBonuses | None = None,
     ) -> Stats:
-        level = profile.progression.level
-
-        max_hp = 100 + (level - 1) * 10
-        attack = 10 + (level - 1) * 2
-        defense = 5 + (level - 1) * 1
+        # V2 : AUCUNE stat gagnée au level-up. Les stats de base sont
+        # CONSTANTES (valeurs de départ niveau 1) — toute la croissance vient
+        # de l'arbre de compétences (1 point/niveau dépensé dans des nœuds
+        # plats infinis), de l'équipement, de la classe et des titres.
+        max_hp = 100
+        attack = 10
+        defense = 5
 
         crit_chance = 5
         crit_damage = 150
@@ -59,12 +61,20 @@ class StatsService:
         # Appliqué après équipement/classe et AVANT les caps finaux pour que
         # crit_chance / dodge restent bornés.
         if skill_bonuses is not None:
+            # Nœuds plats de l'arbre — le moteur de croissance principal en V2.
+            attack += skill_bonuses.atk_flat
+            defense += skill_bonuses.def_flat
+            max_hp += skill_bonuses.hp_max_flat
+
             crit_chance += skill_bonuses.crit_chance_flat
             crit_damage += skill_bonuses.crit_damage_flat
             dodge += skill_bonuses.dodge_flat
             speed += skill_bonuses.speed_flat
             hp_regeneration += skill_bonuses.hp_regeneration_flat
 
+            # Multiplicateurs % de l'arbre (déjà plafonnés dans aggregate_bonuses :
+            # atk/def/hp ≤ +200%). S'appliquent sur le total flat (base + équipement
+            # + nœuds plats de l'arbre).
             max_hp = round(max_hp * (1 + skill_bonuses.hp_max_percent))
             attack = round(attack * (1 + skill_bonuses.atk_percent))
             defense = round(defense * (1 + skill_bonuses.def_percent))

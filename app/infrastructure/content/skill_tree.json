@@ -3,7 +3,7 @@
   "skills": {
     "aventurier": {
       "name": "Aventurier",
-      "description": "Le commencement de votre voyage. Toutes les voies partent d'ici.",
+      "description": "Le commencement de votre voyage. Les trois voies partent d'ici.",
       "icon": "⭐",
       "max_level": 1,
       "costs": [
@@ -16,9 +16,9 @@
         "y": 0
       }
     },
-    "combat_root": {
-      "name": "Voie du Combat",
-      "description": "Discipline du combat rapproché : porter des coups, encaisser, frapper plus vite.",
+    "voie_atq": {
+      "name": "Voie de l'Attaque",
+      "description": "Entrée de la voie de l'attaque.",
       "icon": "⚔️",
       "max_level": 1,
       "costs": [
@@ -29,141 +29,1325 @@
         "aventurier"
       ],
       "position": {
-        "x": -800,
-        "y": 220
+        "x": 0,
+        "y": -140
       }
     },
-    "force_brute": {
-      "name": "Force Brute",
-      "description": "Augmente votre attaque (multiplicatif). +1/3/6/10/15%.",
-      "icon": "💪",
-      "max_level": 5,
+    "atq_1": {
+      "name": "Force 1",
+      "description": "+5 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
       "costs": [
         1,
-        2,
-        3,
-        4,
-        5
+        1,
+        1
       ],
       "effects": [
         {
-          "type": "atk_percent",
+          "type": "atk_flat",
           "values": [
-            1,
-            3,
-            6,
+            5,
             10,
             15
           ]
         }
       ],
       "prerequisites": [
-        "combat_root"
+        "voie_atq"
       ],
       "position": {
-        "x": -1000,
-        "y": 440
+        "x": 0,
+        "y": -218
       }
     },
-    "armes_aiguisees": {
-      "name": "Armes Aiguisées",
-      "description": "Augmente votre chance de coup critique. +1/2/3/4/5%.",
-      "icon": "🗡️",
-      "max_level": 5,
+    "atq_2": {
+      "name": "Force 1",
+      "description": "+5 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
       "costs": [
         1,
         1,
-        2,
-        3,
-        4
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            5,
+            10,
+            15
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_1"
+      ],
+      "position": {
+        "x": 0,
+        "y": -296
+      }
+    },
+    "atq_3": {
+      "name": "Force 1",
+      "description": "+5 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            5,
+            10,
+            15
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_2"
+      ],
+      "position": {
+        "x": 0,
+        "y": -374
+      }
+    },
+    "atq_4": {
+      "name": "Force 1",
+      "description": "+5 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            5,
+            10,
+            15
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_3"
+      ],
+      "position": {
+        "x": 0,
+        "y": -452
+      }
+    },
+    "atq_5": {
+      "name": "Force 1",
+      "description": "+5 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            5,
+            10,
+            15
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_4"
+      ],
+      "position": {
+        "x": 0,
+        "y": -530
+      }
+    },
+    "atq_6": {
+      "name": "Frappe affûtée",
+      "description": "Nœud spécial : +1 atk percent (1 amélioration).",
+      "icon": "💥",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "atk_percent",
+          "values": [
+            1
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_5"
+      ],
+      "position": {
+        "x": 0,
+        "y": -608
+      }
+    },
+    "atq_7": {
+      "name": "Force 2",
+      "description": "+6 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            6,
+            12,
+            18
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_6"
+      ],
+      "position": {
+        "x": 0,
+        "y": -686
+      }
+    },
+    "atq_8": {
+      "name": "Force 2",
+      "description": "+6 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            6,
+            12,
+            18
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_7"
+      ],
+      "position": {
+        "x": 0,
+        "y": -764
+      }
+    },
+    "atq_9": {
+      "name": "Force 2",
+      "description": "+6 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            6,
+            12,
+            18
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_8"
+      ],
+      "position": {
+        "x": 0,
+        "y": -842
+      }
+    },
+    "atq_10": {
+      "name": "Force 2",
+      "description": "+6 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            6,
+            12,
+            18
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_9"
+      ],
+      "position": {
+        "x": 0,
+        "y": -920
+      }
+    },
+    "atq_11": {
+      "name": "Force 2",
+      "description": "+6 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            6,
+            12,
+            18
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_10"
+      ],
+      "position": {
+        "x": 0,
+        "y": -998
+      }
+    },
+    "atq_12": {
+      "name": "Œil vif",
+      "description": "Nœud spécial : +1 crit chance flat (1 amélioration).",
+      "icon": "🎯",
+      "max_level": 1,
+      "costs": [
+        3
       ],
       "effects": [
         {
           "type": "crit_chance_flat",
           "values": [
-            1,
-            2,
-            3,
-            4,
-            5
+            1
           ]
         }
       ],
       "prerequisites": [
-        "combat_root"
+        "atq_11"
       ],
       "position": {
-        "x": -600,
-        "y": 440
+        "x": 0,
+        "y": -1076
       }
     },
-    "coups_critiques": {
-      "name": "Coups Critiques",
-      "description": "Augmente les dégâts de vos coups critiques. +5/10/15/20/25%.",
-      "icon": "💥",
-      "max_level": 5,
+    "atq_13": {
+      "name": "Force 3",
+      "description": "+7 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
       "costs": [
         1,
-        2,
-        2,
-        3,
-        4
+        1,
+        1
       ],
       "effects": [
         {
-          "type": "crit_damage_flat",
+          "type": "atk_flat",
           "values": [
-            5,
-            10,
-            15,
-            20,
-            25
+            7,
+            14,
+            21
           ]
         }
       ],
       "prerequisites": [
-        "armes_aiguisees"
+        "atq_12"
       ],
       "position": {
-        "x": -1000,
-        "y": 660
+        "x": 0,
+        "y": -1154
       }
     },
-    "frappe_eclair": {
-      "name": "Frappe Éclair",
-      "description": "Augmente votre vitesse de combat. +1/2/3/4/5.",
-      "icon": "⚡",
-      "max_level": 5,
+    "atq_14": {
+      "name": "Force 3",
+      "description": "+7 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
       "costs": [
         1,
-        2,
-        3,
-        4,
-        5
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            7,
+            14,
+            21
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_13"
+      ],
+      "position": {
+        "x": 0,
+        "y": -1232
+      }
+    },
+    "atq_15": {
+      "name": "Force 3",
+      "description": "+7 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            7,
+            14,
+            21
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_14"
+      ],
+      "position": {
+        "x": 0,
+        "y": -1310
+      }
+    },
+    "atq_16": {
+      "name": "Force 3",
+      "description": "+7 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            7,
+            14,
+            21
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_15"
+      ],
+      "position": {
+        "x": 0,
+        "y": -1388
+      }
+    },
+    "atq_17": {
+      "name": "Force 3",
+      "description": "+7 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            7,
+            14,
+            21
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_16"
+      ],
+      "position": {
+        "x": 0,
+        "y": -1466
+      }
+    },
+    "atq_18": {
+      "name": "Célérité",
+      "description": "Nœud spécial : +1 speed flat (1 amélioration).",
+      "icon": "💨",
+      "max_level": 1,
+      "costs": [
+        3
       ],
       "effects": [
         {
           "type": "speed_flat",
           "values": [
-            1,
-            2,
-            3,
-            4,
+            1
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_17"
+      ],
+      "position": {
+        "x": 0,
+        "y": -1544
+      }
+    },
+    "atq_19": {
+      "name": "Force 4",
+      "description": "+8 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            8,
+            16,
+            24
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_18"
+      ],
+      "position": {
+        "x": 0,
+        "y": -1622
+      }
+    },
+    "atq_20": {
+      "name": "Force 4",
+      "description": "+8 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            8,
+            16,
+            24
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_19"
+      ],
+      "position": {
+        "x": 0,
+        "y": -1700
+      }
+    },
+    "atq_21": {
+      "name": "Force 4",
+      "description": "+8 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            8,
+            16,
+            24
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_20"
+      ],
+      "position": {
+        "x": 0,
+        "y": -1778
+      }
+    },
+    "atq_22": {
+      "name": "Force 4",
+      "description": "+8 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            8,
+            16,
+            24
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_21"
+      ],
+      "position": {
+        "x": 0,
+        "y": -1856
+      }
+    },
+    "atq_23": {
+      "name": "Force 4",
+      "description": "+8 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            8,
+            16,
+            24
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_22"
+      ],
+      "position": {
+        "x": 0,
+        "y": -1934
+      }
+    },
+    "atq_24": {
+      "name": "Coup dévastateur",
+      "description": "Nœud spécial : +5 crit damage flat (1 amélioration).",
+      "icon": "🔥",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "crit_damage_flat",
+          "values": [
             5
           ]
         }
       ],
       "prerequisites": [
-        "force_brute"
+        "atq_23"
       ],
       "position": {
-        "x": -600,
-        "y": 660
+        "x": 0,
+        "y": -2012
       }
     },
-    "survie_root": {
-      "name": "Voie de la Survie",
-      "description": "Endurance et résistance : tenir là où d'autres tombent.",
+    "atq_25": {
+      "name": "Force 5",
+      "description": "+9 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            9,
+            18,
+            27
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_24"
+      ],
+      "position": {
+        "x": 0,
+        "y": -2090
+      }
+    },
+    "atq_26": {
+      "name": "Force 5",
+      "description": "+9 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            9,
+            18,
+            27
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_25"
+      ],
+      "position": {
+        "x": 0,
+        "y": -2168
+      }
+    },
+    "atq_27": {
+      "name": "Force 5",
+      "description": "+9 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            9,
+            18,
+            27
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_26"
+      ],
+      "position": {
+        "x": 0,
+        "y": -2246
+      }
+    },
+    "atq_28": {
+      "name": "Force 5",
+      "description": "+9 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            9,
+            18,
+            27
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_27"
+      ],
+      "position": {
+        "x": 0,
+        "y": -2324
+      }
+    },
+    "atq_29": {
+      "name": "Force 5",
+      "description": "+9 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            9,
+            18,
+            27
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_28"
+      ],
+      "position": {
+        "x": 0,
+        "y": -2402
+      }
+    },
+    "atq_30": {
+      "name": "Frappe affûtée",
+      "description": "Nœud spécial : +1 atk percent (1 amélioration).",
+      "icon": "💥",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "atk_percent",
+          "values": [
+            1
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_29"
+      ],
+      "position": {
+        "x": 0,
+        "y": -2480
+      }
+    },
+    "atq_31": {
+      "name": "Force 6",
+      "description": "+10 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            10,
+            20,
+            30
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_30"
+      ],
+      "position": {
+        "x": 0,
+        "y": -2558
+      }
+    },
+    "atq_32": {
+      "name": "Force 6",
+      "description": "+10 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            10,
+            20,
+            30
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_31"
+      ],
+      "position": {
+        "x": 0,
+        "y": -2636
+      }
+    },
+    "atq_33": {
+      "name": "Force 6",
+      "description": "+10 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            10,
+            20,
+            30
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_32"
+      ],
+      "position": {
+        "x": 0,
+        "y": -2714
+      }
+    },
+    "atq_34": {
+      "name": "Force 6",
+      "description": "+10 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            10,
+            20,
+            30
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_33"
+      ],
+      "position": {
+        "x": 0,
+        "y": -2792
+      }
+    },
+    "atq_35": {
+      "name": "Force 6",
+      "description": "+10 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            10,
+            20,
+            30
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_34"
+      ],
+      "position": {
+        "x": 0,
+        "y": -2870
+      }
+    },
+    "atq_36": {
+      "name": "Œil vif",
+      "description": "Nœud spécial : +1 crit chance flat (1 amélioration).",
+      "icon": "🎯",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "crit_chance_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_35"
+      ],
+      "position": {
+        "x": 0,
+        "y": -2948
+      }
+    },
+    "atq_37": {
+      "name": "Force 7",
+      "description": "+11 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            11,
+            22,
+            33
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_36"
+      ],
+      "position": {
+        "x": 0,
+        "y": -3026
+      }
+    },
+    "atq_38": {
+      "name": "Force 7",
+      "description": "+11 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            11,
+            22,
+            33
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_37"
+      ],
+      "position": {
+        "x": 0,
+        "y": -3104
+      }
+    },
+    "atq_39": {
+      "name": "Force 7",
+      "description": "+11 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            11,
+            22,
+            33
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_38"
+      ],
+      "position": {
+        "x": 0,
+        "y": -3182
+      }
+    },
+    "atq_40": {
+      "name": "Force 7",
+      "description": "+11 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            11,
+            22,
+            33
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_39"
+      ],
+      "position": {
+        "x": 0,
+        "y": -3260
+      }
+    },
+    "atq_41": {
+      "name": "Force 7",
+      "description": "+11 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            11,
+            22,
+            33
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_40"
+      ],
+      "position": {
+        "x": 0,
+        "y": -3338
+      }
+    },
+    "atq_42": {
+      "name": "Célérité",
+      "description": "Nœud spécial : +1 speed flat (1 amélioration).",
+      "icon": "💨",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "speed_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_41"
+      ],
+      "position": {
+        "x": 0,
+        "y": -3416
+      }
+    },
+    "atq_43": {
+      "name": "Force 8",
+      "description": "+12 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            12,
+            24,
+            36
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_42"
+      ],
+      "position": {
+        "x": 0,
+        "y": -3494
+      }
+    },
+    "atq_44": {
+      "name": "Force 8",
+      "description": "+12 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            12,
+            24,
+            36
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_43"
+      ],
+      "position": {
+        "x": 0,
+        "y": -3572
+      }
+    },
+    "atq_45": {
+      "name": "Force 8",
+      "description": "+12 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            12,
+            24,
+            36
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_44"
+      ],
+      "position": {
+        "x": 0,
+        "y": -3650
+      }
+    },
+    "atq_46": {
+      "name": "Force 8",
+      "description": "+12 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            12,
+            24,
+            36
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_45"
+      ],
+      "position": {
+        "x": 0,
+        "y": -3728
+      }
+    },
+    "atq_47": {
+      "name": "Force 8",
+      "description": "+12 par niveau (cumulatif, max 3).",
+      "icon": "⚔️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "atk_flat",
+          "values": [
+            12,
+            24,
+            36
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_46"
+      ],
+      "position": {
+        "x": 0,
+        "y": -3806
+      }
+    },
+    "atq_48": {
+      "name": "Coup dévastateur",
+      "description": "Nœud spécial : +5 crit damage flat (1 amélioration).",
+      "icon": "🔥",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "crit_damage_flat",
+          "values": [
+            5
+          ]
+        }
+      ],
+      "prerequisites": [
+        "atq_47"
+      ],
+      "position": {
+        "x": 0,
+        "y": -3884
+      }
+    },
+    "voie_def": {
+      "name": "Voie de la Défense",
+      "description": "Entrée de la voie de la défense.",
       "icon": "🛡️",
       "max_level": 1,
       "costs": [
@@ -174,142 +1358,1326 @@
         "aventurier"
       ],
       "position": {
-        "x": 0,
-        "y": 220
+        "x": 121,
+        "y": 70
       }
     },
-    "vitalite": {
-      "name": "Vitalité",
-      "description": "Augmente vos points de vie maximum (multiplicatif). +2/5/10/17/25%.",
-      "icon": "❤️",
-      "max_level": 5,
+    "def_1": {
+      "name": "Armure 1",
+      "description": "+5 par niveau (cumulatif, max 3).",
+      "icon": "🛡️",
+      "max_level": 3,
       "costs": [
         1,
-        2,
-        3,
-        4,
-        5
+        1,
+        1
       ],
       "effects": [
         {
-          "type": "hp_max_percent",
+          "type": "def_flat",
           "values": [
-            2,
             5,
-            10,
-            17,
-            25
-          ]
-        }
-      ],
-      "prerequisites": [
-        "survie_root"
-      ],
-      "position": {
-        "x": -200,
-        "y": 440
-      }
-    },
-    "peau_de_pierre": {
-      "name": "Peau de Pierre",
-      "description": "Augmente votre défense (multiplicatif). +1/3/6/10/15%.",
-      "icon": "🪨",
-      "max_level": 5,
-      "costs": [
-        1,
-        2,
-        3,
-        4,
-        5
-      ],
-      "effects": [
-        {
-          "type": "def_percent",
-          "values": [
-            1,
-            3,
-            6,
             10,
             15
           ]
         }
       ],
       "prerequisites": [
-        "survie_root"
+        "voie_def"
       ],
       "position": {
-        "x": 200,
-        "y": 440
+        "x": 189,
+        "y": 109
       }
     },
-    "instinct_evasion": {
-      "name": "Instinct d'Évasion",
-      "description": "Augmente votre chance d'esquiver une attaque. +1/2/3/4/5%.",
-      "icon": "🌀",
-      "max_level": 5,
+    "def_2": {
+      "name": "Vitalité 1",
+      "description": "+100 par niveau (cumulatif, max 3).",
+      "icon": "❤️",
+      "max_level": 3,
       "costs": [
         1,
         1,
-        2,
-        3,
-        4
+        1
+      ],
+      "effects": [
+        {
+          "type": "hp_max_flat",
+          "values": [
+            100,
+            200,
+            300
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_1"
+      ],
+      "position": {
+        "x": 256,
+        "y": 148
+      }
+    },
+    "def_3": {
+      "name": "Armure 1",
+      "description": "+5 par niveau (cumulatif, max 3).",
+      "icon": "🛡️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "def_flat",
+          "values": [
+            5,
+            10,
+            15
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_2"
+      ],
+      "position": {
+        "x": 324,
+        "y": 187
+      }
+    },
+    "def_4": {
+      "name": "Vitalité 1",
+      "description": "+100 par niveau (cumulatif, max 3).",
+      "icon": "❤️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "hp_max_flat",
+          "values": [
+            100,
+            200,
+            300
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_3"
+      ],
+      "position": {
+        "x": 391,
+        "y": 226
+      }
+    },
+    "def_5": {
+      "name": "Armure 1",
+      "description": "+5 par niveau (cumulatif, max 3).",
+      "icon": "🛡️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "def_flat",
+          "values": [
+            5,
+            10,
+            15
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_4"
+      ],
+      "position": {
+        "x": 459,
+        "y": 265
+      }
+    },
+    "def_6": {
+      "name": "Peau de pierre",
+      "description": "Nœud spécial : +1 def percent (1 amélioration).",
+      "icon": "🪨",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "def_percent",
+          "values": [
+            1
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_5"
+      ],
+      "position": {
+        "x": 527,
+        "y": 304
+      }
+    },
+    "def_7": {
+      "name": "Vitalité 2",
+      "description": "+120 par niveau (cumulatif, max 3).",
+      "icon": "❤️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "hp_max_flat",
+          "values": [
+            120,
+            240,
+            360
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_6"
+      ],
+      "position": {
+        "x": 594,
+        "y": 343
+      }
+    },
+    "def_8": {
+      "name": "Armure 2",
+      "description": "+6 par niveau (cumulatif, max 3).",
+      "icon": "🛡️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "def_flat",
+          "values": [
+            6,
+            12,
+            18
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_7"
+      ],
+      "position": {
+        "x": 662,
+        "y": 382
+      }
+    },
+    "def_9": {
+      "name": "Vitalité 2",
+      "description": "+120 par niveau (cumulatif, max 3).",
+      "icon": "❤️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "hp_max_flat",
+          "values": [
+            120,
+            240,
+            360
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_8"
+      ],
+      "position": {
+        "x": 729,
+        "y": 421
+      }
+    },
+    "def_10": {
+      "name": "Armure 2",
+      "description": "+6 par niveau (cumulatif, max 3).",
+      "icon": "🛡️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "def_flat",
+          "values": [
+            6,
+            12,
+            18
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_9"
+      ],
+      "position": {
+        "x": 797,
+        "y": 460
+      }
+    },
+    "def_11": {
+      "name": "Vitalité 2",
+      "description": "+120 par niveau (cumulatif, max 3).",
+      "icon": "❤️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "hp_max_flat",
+          "values": [
+            120,
+            240,
+            360
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_10"
+      ],
+      "position": {
+        "x": 864,
+        "y": 499
+      }
+    },
+    "def_12": {
+      "name": "Endurance",
+      "description": "Nœud spécial : +1 hp max percent (1 amélioration).",
+      "icon": "💗",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "hp_max_percent",
+          "values": [
+            1
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_11"
+      ],
+      "position": {
+        "x": 932,
+        "y": 538
+      }
+    },
+    "def_13": {
+      "name": "Armure 3",
+      "description": "+7 par niveau (cumulatif, max 3).",
+      "icon": "🛡️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "def_flat",
+          "values": [
+            7,
+            14,
+            21
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_12"
+      ],
+      "position": {
+        "x": 999,
+        "y": 577
+      }
+    },
+    "def_14": {
+      "name": "Vitalité 3",
+      "description": "+140 par niveau (cumulatif, max 3).",
+      "icon": "❤️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "hp_max_flat",
+          "values": [
+            140,
+            280,
+            420
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_13"
+      ],
+      "position": {
+        "x": 1067,
+        "y": 616
+      }
+    },
+    "def_15": {
+      "name": "Armure 3",
+      "description": "+7 par niveau (cumulatif, max 3).",
+      "icon": "🛡️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "def_flat",
+          "values": [
+            7,
+            14,
+            21
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_14"
+      ],
+      "position": {
+        "x": 1134,
+        "y": 655
+      }
+    },
+    "def_16": {
+      "name": "Vitalité 3",
+      "description": "+140 par niveau (cumulatif, max 3).",
+      "icon": "❤️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "hp_max_flat",
+          "values": [
+            140,
+            280,
+            420
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_15"
+      ],
+      "position": {
+        "x": 1202,
+        "y": 694
+      }
+    },
+    "def_17": {
+      "name": "Armure 3",
+      "description": "+7 par niveau (cumulatif, max 3).",
+      "icon": "🛡️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "def_flat",
+          "values": [
+            7,
+            14,
+            21
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_16"
+      ],
+      "position": {
+        "x": 1270,
+        "y": 733
+      }
+    },
+    "def_18": {
+      "name": "Esquive",
+      "description": "Nœud spécial : +1 dodge flat (1 amélioration).",
+      "icon": "🌀",
+      "max_level": 1,
+      "costs": [
+        3
       ],
       "effects": [
         {
           "type": "dodge_flat",
           "values": [
-            1,
-            2,
-            3,
-            4,
-            5
+            1
           ]
         }
       ],
       "prerequisites": [
-        "vitalite"
+        "def_17"
       ],
       "position": {
-        "x": -200,
-        "y": 660
+        "x": 1337,
+        "y": 772
       }
     },
-    "regeneration_rapide": {
-      "name": "Régénération Rapide",
-      "description": "Augmente la régénération de PV. +1/2/4/6/9 PV/min.",
-      "icon": "💚",
-      "max_level": 5,
+    "def_19": {
+      "name": "Vitalité 4",
+      "description": "+160 par niveau (cumulatif, max 3).",
+      "icon": "❤️",
+      "max_level": 3,
       "costs": [
         1,
-        2,
-        2,
-        3,
-        4
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "hp_max_flat",
+          "values": [
+            160,
+            320,
+            480
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_18"
+      ],
+      "position": {
+        "x": 1405,
+        "y": 811
+      }
+    },
+    "def_20": {
+      "name": "Armure 4",
+      "description": "+8 par niveau (cumulatif, max 3).",
+      "icon": "🛡️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "def_flat",
+          "values": [
+            8,
+            16,
+            24
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_19"
+      ],
+      "position": {
+        "x": 1472,
+        "y": 850
+      }
+    },
+    "def_21": {
+      "name": "Vitalité 4",
+      "description": "+160 par niveau (cumulatif, max 3).",
+      "icon": "❤️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "hp_max_flat",
+          "values": [
+            160,
+            320,
+            480
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_20"
+      ],
+      "position": {
+        "x": 1540,
+        "y": 889
+      }
+    },
+    "def_22": {
+      "name": "Armure 4",
+      "description": "+8 par niveau (cumulatif, max 3).",
+      "icon": "🛡️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "def_flat",
+          "values": [
+            8,
+            16,
+            24
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_21"
+      ],
+      "position": {
+        "x": 1607,
+        "y": 928
+      }
+    },
+    "def_23": {
+      "name": "Vitalité 4",
+      "description": "+160 par niveau (cumulatif, max 3).",
+      "icon": "❤️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "hp_max_flat",
+          "values": [
+            160,
+            320,
+            480
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_22"
+      ],
+      "position": {
+        "x": 1675,
+        "y": 967
+      }
+    },
+    "def_24": {
+      "name": "Régénération",
+      "description": "Nœud spécial : +1 hp regeneration flat (1 amélioration).",
+      "icon": "💚",
+      "max_level": 1,
+      "costs": [
+        3
       ],
       "effects": [
         {
           "type": "hp_regeneration_flat",
           "values": [
-            1,
-            2,
-            4,
-            6,
-            9
+            1
           ]
         }
       ],
       "prerequisites": [
-        "peau_de_pierre"
+        "def_23"
       ],
       "position": {
-        "x": 200,
-        "y": 660
+        "x": 1742,
+        "y": 1006
       }
     },
-    "chasseur_root": {
-      "name": "Voie du Chasseur",
-      "description": "Trouver plus, gagner plus : optimisation des récoltes de combat.",
-      "icon": "🏹",
+    "def_25": {
+      "name": "Armure 5",
+      "description": "+9 par niveau (cumulatif, max 3).",
+      "icon": "🛡️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "def_flat",
+          "values": [
+            9,
+            18,
+            27
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_24"
+      ],
+      "position": {
+        "x": 1810,
+        "y": 1045
+      }
+    },
+    "def_26": {
+      "name": "Vitalité 5",
+      "description": "+180 par niveau (cumulatif, max 3).",
+      "icon": "❤️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "hp_max_flat",
+          "values": [
+            180,
+            360,
+            540
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_25"
+      ],
+      "position": {
+        "x": 1878,
+        "y": 1084
+      }
+    },
+    "def_27": {
+      "name": "Armure 5",
+      "description": "+9 par niveau (cumulatif, max 3).",
+      "icon": "🛡️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "def_flat",
+          "values": [
+            9,
+            18,
+            27
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_26"
+      ],
+      "position": {
+        "x": 1945,
+        "y": 1123
+      }
+    },
+    "def_28": {
+      "name": "Vitalité 5",
+      "description": "+180 par niveau (cumulatif, max 3).",
+      "icon": "❤️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "hp_max_flat",
+          "values": [
+            180,
+            360,
+            540
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_27"
+      ],
+      "position": {
+        "x": 2013,
+        "y": 1162
+      }
+    },
+    "def_29": {
+      "name": "Armure 5",
+      "description": "+9 par niveau (cumulatif, max 3).",
+      "icon": "🛡️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "def_flat",
+          "values": [
+            9,
+            18,
+            27
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_28"
+      ],
+      "position": {
+        "x": 2080,
+        "y": 1201
+      }
+    },
+    "def_30": {
+      "name": "Peau de pierre",
+      "description": "Nœud spécial : +1 def percent (1 amélioration).",
+      "icon": "🪨",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "def_percent",
+          "values": [
+            1
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_29"
+      ],
+      "position": {
+        "x": 2148,
+        "y": 1240
+      }
+    },
+    "def_31": {
+      "name": "Vitalité 6",
+      "description": "+200 par niveau (cumulatif, max 3).",
+      "icon": "❤️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "hp_max_flat",
+          "values": [
+            200,
+            400,
+            600
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_30"
+      ],
+      "position": {
+        "x": 2215,
+        "y": 1279
+      }
+    },
+    "def_32": {
+      "name": "Armure 6",
+      "description": "+10 par niveau (cumulatif, max 3).",
+      "icon": "🛡️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "def_flat",
+          "values": [
+            10,
+            20,
+            30
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_31"
+      ],
+      "position": {
+        "x": 2283,
+        "y": 1318
+      }
+    },
+    "def_33": {
+      "name": "Vitalité 6",
+      "description": "+200 par niveau (cumulatif, max 3).",
+      "icon": "❤️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "hp_max_flat",
+          "values": [
+            200,
+            400,
+            600
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_32"
+      ],
+      "position": {
+        "x": 2350,
+        "y": 1357
+      }
+    },
+    "def_34": {
+      "name": "Armure 6",
+      "description": "+10 par niveau (cumulatif, max 3).",
+      "icon": "🛡️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "def_flat",
+          "values": [
+            10,
+            20,
+            30
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_33"
+      ],
+      "position": {
+        "x": 2418,
+        "y": 1396
+      }
+    },
+    "def_35": {
+      "name": "Vitalité 6",
+      "description": "+200 par niveau (cumulatif, max 3).",
+      "icon": "❤️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "hp_max_flat",
+          "values": [
+            200,
+            400,
+            600
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_34"
+      ],
+      "position": {
+        "x": 2485,
+        "y": 1435
+      }
+    },
+    "def_36": {
+      "name": "Endurance",
+      "description": "Nœud spécial : +1 hp max percent (1 amélioration).",
+      "icon": "💗",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "hp_max_percent",
+          "values": [
+            1
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_35"
+      ],
+      "position": {
+        "x": 2553,
+        "y": 1474
+      }
+    },
+    "def_37": {
+      "name": "Armure 7",
+      "description": "+11 par niveau (cumulatif, max 3).",
+      "icon": "🛡️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "def_flat",
+          "values": [
+            11,
+            22,
+            33
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_36"
+      ],
+      "position": {
+        "x": 2621,
+        "y": 1513
+      }
+    },
+    "def_38": {
+      "name": "Vitalité 7",
+      "description": "+220 par niveau (cumulatif, max 3).",
+      "icon": "❤️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "hp_max_flat",
+          "values": [
+            220,
+            440,
+            660
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_37"
+      ],
+      "position": {
+        "x": 2688,
+        "y": 1552
+      }
+    },
+    "def_39": {
+      "name": "Armure 7",
+      "description": "+11 par niveau (cumulatif, max 3).",
+      "icon": "🛡️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "def_flat",
+          "values": [
+            11,
+            22,
+            33
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_38"
+      ],
+      "position": {
+        "x": 2756,
+        "y": 1591
+      }
+    },
+    "def_40": {
+      "name": "Vitalité 7",
+      "description": "+220 par niveau (cumulatif, max 3).",
+      "icon": "❤️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "hp_max_flat",
+          "values": [
+            220,
+            440,
+            660
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_39"
+      ],
+      "position": {
+        "x": 2823,
+        "y": 1630
+      }
+    },
+    "def_41": {
+      "name": "Armure 7",
+      "description": "+11 par niveau (cumulatif, max 3).",
+      "icon": "🛡️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "def_flat",
+          "values": [
+            11,
+            22,
+            33
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_40"
+      ],
+      "position": {
+        "x": 2891,
+        "y": 1669
+      }
+    },
+    "def_42": {
+      "name": "Esquive",
+      "description": "Nœud spécial : +1 dodge flat (1 amélioration).",
+      "icon": "🌀",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "dodge_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_41"
+      ],
+      "position": {
+        "x": 2958,
+        "y": 1708
+      }
+    },
+    "def_43": {
+      "name": "Vitalité 8",
+      "description": "+240 par niveau (cumulatif, max 3).",
+      "icon": "❤️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "hp_max_flat",
+          "values": [
+            240,
+            480,
+            720
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_42"
+      ],
+      "position": {
+        "x": 3026,
+        "y": 1747
+      }
+    },
+    "def_44": {
+      "name": "Armure 8",
+      "description": "+12 par niveau (cumulatif, max 3).",
+      "icon": "🛡️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "def_flat",
+          "values": [
+            12,
+            24,
+            36
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_43"
+      ],
+      "position": {
+        "x": 3093,
+        "y": 1786
+      }
+    },
+    "def_45": {
+      "name": "Vitalité 8",
+      "description": "+240 par niveau (cumulatif, max 3).",
+      "icon": "❤️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "hp_max_flat",
+          "values": [
+            240,
+            480,
+            720
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_44"
+      ],
+      "position": {
+        "x": 3161,
+        "y": 1825
+      }
+    },
+    "def_46": {
+      "name": "Armure 8",
+      "description": "+12 par niveau (cumulatif, max 3).",
+      "icon": "🛡️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "def_flat",
+          "values": [
+            12,
+            24,
+            36
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_45"
+      ],
+      "position": {
+        "x": 3229,
+        "y": 1864
+      }
+    },
+    "def_47": {
+      "name": "Vitalité 8",
+      "description": "+240 par niveau (cumulatif, max 3).",
+      "icon": "❤️",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "hp_max_flat",
+          "values": [
+            240,
+            480,
+            720
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_46"
+      ],
+      "position": {
+        "x": 3296,
+        "y": 1903
+      }
+    },
+    "def_48": {
+      "name": "Régénération",
+      "description": "Nœud spécial : +1 hp regeneration flat (1 amélioration).",
+      "icon": "💚",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "hp_regeneration_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
+      "prerequisites": [
+        "def_47"
+      ],
+      "position": {
+        "x": 3364,
+        "y": 1942
+      }
+    },
+    "voie_uti": {
+      "name": "Voie Utilitaire",
+      "description": "Entrée de la voie utilitaire.",
+      "icon": "🎒",
       "max_level": 1,
       "costs": [
         1
@@ -319,85 +2687,19 @@
         "aventurier"
       ],
       "position": {
-        "x": 800,
-        "y": 220
+        "x": -121,
+        "y": 70
       }
     },
-    "traqueur_aguerri": {
-      "name": "Traqueur Aguerri",
-      "description": "Augmente l'XP gagnée sur les monstres. +2/5/10/17/25%.",
-      "icon": "🎯",
-      "max_level": 5,
+    "uti_1": {
+      "name": "Chance 1",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "🎁",
+      "max_level": 3,
       "costs": [
         1,
-        2,
-        3,
-        4,
-        5
-      ],
-      "effects": [
-        {
-          "type": "xp_drop_percent",
-          "values": [
-            2,
-            5,
-            10,
-            17,
-            25
-          ]
-        }
-      ],
-      "prerequisites": [
-        "chasseur_root"
-      ],
-      "position": {
-        "x": 600,
-        "y": 440
-      }
-    },
-    "bourse_remplie": {
-      "name": "Bourse Remplie",
-      "description": "Augmente l'or gagné sur les monstres. +2/5/10/17/25%.",
-      "icon": "💰",
-      "max_level": 5,
-      "costs": [
         1,
-        2,
-        3,
-        4,
-        5
-      ],
-      "effects": [
-        {
-          "type": "gold_drop_percent",
-          "values": [
-            2,
-            5,
-            10,
-            17,
-            25
-          ]
-        }
-      ],
-      "prerequisites": [
-        "chasseur_root"
-      ],
-      "position": {
-        "x": 1000,
-        "y": 440
-      }
-    },
-    "chance_pillarde": {
-      "name": "Chance Pillarde",
-      "description": "Augmente vos chances de drop d'objets (multiplicatif sur le taux de base). +1/2/3/4/5%.",
-      "icon": "🍀",
-      "max_level": 5,
-      "costs": [
-        1,
-        2,
-        3,
-        4,
-        5
+        1
       ],
       "effects": [
         {
@@ -405,193 +2707,1300 @@
           "values": [
             1,
             2,
-            3,
-            4,
-            5
+            3
           ]
         }
       ],
       "prerequisites": [
-        "chasseur_root"
+        "voie_uti"
       ],
       "position": {
-        "x": 1000,
-        "y": 660
+        "x": -189,
+        "y": 109
       }
     },
-    "oeil_du_lynx": {
-      "name": "Œil du Lynx",
-      "description": "Augmente votre chance de coup critique. +2/4/6%.",
-      "icon": "👁️",
+    "uti_2": {
+      "name": "Bourse 1",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "💰",
       "max_level": 3,
       "costs": [
-        2,
-        3,
-        4
+        1,
+        1,
+        1
       ],
       "effects": [
         {
-          "type": "crit_chance_flat",
-          "values": [
-            2,
-            4,
-            6
-          ]
-        }
-      ],
-      "prerequisites": [
-        "traqueur_aguerri"
-      ],
-      "position": {
-        "x": 600,
-        "y": 660
-      }
-    },
-    "chasseur_silencieux": {
-      "name": "Chasseur Silencieux",
-      "description": "Augmente la vitesse en combat. +1/2/4.",
-      "icon": "🐾",
-      "max_level": 3,
-      "costs": [
-        2,
-        3,
-        4
-      ],
-      "effects": [
-        {
-          "type": "speed_flat",
+          "type": "gold_drop_percent",
           "values": [
             1,
             2,
-            4
+            3
           ]
         }
       ],
       "prerequisites": [
-        "bourse_remplie"
+        "uti_1"
       ],
       "position": {
-        "x": 900,
-        "y": 770
+        "x": -256,
+        "y": 148
       }
     },
-    "maitrise_combat": {
-      "name": "Maîtrise du Combat",
-      "description": "Bonus combiné offensif et défensif. +3/8/15% atk et def.",
-      "icon": "🛡️⚔️",
-      "max_level": 3,
-      "costs": [
-        3,
-        5,
-        7
-      ],
-      "effects": [
-        {
-          "type": "atk_percent",
-          "values": [
-            3,
-            8,
-            15
-          ]
-        },
-        {
-          "type": "def_percent",
-          "values": [
-            3,
-            8,
-            15
-          ]
-        }
-      ],
-      "prerequisites": [
-        "coups_critiques",
-        "frappe_eclair"
-      ],
-      "position": {
-        "x": -800,
-        "y": 880
-      }
-    },
-    "endurance_legendaire": {
-      "name": "Endurance Légendaire",
-      "description": "PV et régénération massifs. +5/12/20% HP, +2/5/10 régen.",
-      "icon": "🌳",
-      "max_level": 3,
-      "costs": [
-        3,
-        5,
-        7
-      ],
-      "effects": [
-        {
-          "type": "hp_max_percent",
-          "values": [
-            5,
-            12,
-            20
-          ]
-        },
-        {
-          "type": "hp_regeneration_flat",
-          "values": [
-            2,
-            5,
-            10
-          ]
-        }
-      ],
-      "prerequisites": [
-        "instinct_evasion",
-        "regeneration_rapide"
-      ],
-      "position": {
-        "x": 0,
-        "y": 880
-      }
-    },
-    "fortune_du_chasseur": {
-      "name": "Fortune du Chasseur",
-      "description": "XP, or et drops cumulés. +3/8/15% sur chaque.",
+    "uti_3": {
+      "name": "Sagesse 1",
+      "description": "+1 par niveau (cumulatif, max 3).",
       "icon": "✨",
       "max_level": 3,
       "costs": [
-        3,
-        5,
-        7
+        1,
+        1,
+        1
       ],
       "effects": [
         {
           "type": "xp_drop_percent",
           "values": [
-            3,
-            8,
-            15
-          ]
-        },
-        {
-          "type": "gold_drop_percent",
-          "values": [
-            3,
-            8,
-            15
-          ]
-        },
-        {
-          "type": "drop_rate_multiplier",
-          "values": [
             1,
-            3,
-            5
+            2,
+            3
           ]
         }
       ],
       "prerequisites": [
-        "oeil_du_lynx",
-        "chasseur_silencieux"
+        "uti_2"
       ],
       "position": {
-        "x": 800,
-        "y": 880
+        "x": -324,
+        "y": 187
+      }
+    },
+    "uti_4": {
+      "name": "Chance 1",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "🎁",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "drop_rate_multiplier",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_3"
+      ],
+      "position": {
+        "x": -391,
+        "y": 226
+      }
+    },
+    "uti_5": {
+      "name": "Bourse 1",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "💰",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "gold_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_4"
+      ],
+      "position": {
+        "x": -459,
+        "y": 265
+      }
+    },
+    "uti_6": {
+      "name": "Fortune",
+      "description": "Nœud spécial : +2 gold drop percent (1 amélioration).",
+      "icon": "💰",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "gold_drop_percent",
+          "values": [
+            2
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_5"
+      ],
+      "position": {
+        "x": -527,
+        "y": 304
+      }
+    },
+    "uti_7": {
+      "name": "Sagesse 2",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "✨",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "xp_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_6"
+      ],
+      "position": {
+        "x": -594,
+        "y": 343
+      }
+    },
+    "uti_8": {
+      "name": "Chance 2",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "🎁",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "drop_rate_multiplier",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_7"
+      ],
+      "position": {
+        "x": -662,
+        "y": 382
+      }
+    },
+    "uti_9": {
+      "name": "Bourse 2",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "💰",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "gold_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_8"
+      ],
+      "position": {
+        "x": -729,
+        "y": 421
+      }
+    },
+    "uti_10": {
+      "name": "Sagesse 2",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "✨",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "xp_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_9"
+      ],
+      "position": {
+        "x": -797,
+        "y": 460
+      }
+    },
+    "uti_11": {
+      "name": "Chance 2",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "🎁",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "drop_rate_multiplier",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_10"
+      ],
+      "position": {
+        "x": -864,
+        "y": 499
+      }
+    },
+    "uti_12": {
+      "name": "Érudition",
+      "description": "Nœud spécial : +2 xp drop percent (1 amélioration).",
+      "icon": "✨",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "xp_drop_percent",
+          "values": [
+            2
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_11"
+      ],
+      "position": {
+        "x": -932,
+        "y": 538
+      }
+    },
+    "uti_13": {
+      "name": "Bourse 3",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "💰",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "gold_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_12"
+      ],
+      "position": {
+        "x": -999,
+        "y": 577
+      }
+    },
+    "uti_14": {
+      "name": "Sagesse 3",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "✨",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "xp_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_13"
+      ],
+      "position": {
+        "x": -1067,
+        "y": 616
+      }
+    },
+    "uti_15": {
+      "name": "Chance 3",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "🎁",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "drop_rate_multiplier",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_14"
+      ],
+      "position": {
+        "x": -1134,
+        "y": 655
+      }
+    },
+    "uti_16": {
+      "name": "Bourse 3",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "💰",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "gold_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_15"
+      ],
+      "position": {
+        "x": -1202,
+        "y": 694
+      }
+    },
+    "uti_17": {
+      "name": "Sagesse 3",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "✨",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "xp_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_16"
+      ],
+      "position": {
+        "x": -1270,
+        "y": 733
+      }
+    },
+    "uti_18": {
+      "name": "Pillage",
+      "description": "Nœud spécial : +2 drop rate multiplier (1 amélioration).",
+      "icon": "🎁",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "drop_rate_multiplier",
+          "values": [
+            2
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_17"
+      ],
+      "position": {
+        "x": -1337,
+        "y": 772
+      }
+    },
+    "uti_19": {
+      "name": "Chance 4",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "🎁",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "drop_rate_multiplier",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_18"
+      ],
+      "position": {
+        "x": -1405,
+        "y": 811
+      }
+    },
+    "uti_20": {
+      "name": "Bourse 4",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "💰",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "gold_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_19"
+      ],
+      "position": {
+        "x": -1472,
+        "y": 850
+      }
+    },
+    "uti_21": {
+      "name": "Sagesse 4",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "✨",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "xp_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_20"
+      ],
+      "position": {
+        "x": -1540,
+        "y": 889
+      }
+    },
+    "uti_22": {
+      "name": "Chance 4",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "🎁",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "drop_rate_multiplier",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_21"
+      ],
+      "position": {
+        "x": -1607,
+        "y": 928
+      }
+    },
+    "uti_23": {
+      "name": "Bourse 4",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "💰",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "gold_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_22"
+      ],
+      "position": {
+        "x": -1675,
+        "y": 967
+      }
+    },
+    "uti_24": {
+      "name": "Fortune",
+      "description": "Nœud spécial : +2 gold drop percent (1 amélioration).",
+      "icon": "💰",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "gold_drop_percent",
+          "values": [
+            2
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_23"
+      ],
+      "position": {
+        "x": -1742,
+        "y": 1006
+      }
+    },
+    "uti_25": {
+      "name": "Sagesse 5",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "✨",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "xp_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_24"
+      ],
+      "position": {
+        "x": -1810,
+        "y": 1045
+      }
+    },
+    "uti_26": {
+      "name": "Chance 5",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "🎁",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "drop_rate_multiplier",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_25"
+      ],
+      "position": {
+        "x": -1878,
+        "y": 1084
+      }
+    },
+    "uti_27": {
+      "name": "Bourse 5",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "💰",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "gold_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_26"
+      ],
+      "position": {
+        "x": -1945,
+        "y": 1123
+      }
+    },
+    "uti_28": {
+      "name": "Sagesse 5",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "✨",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "xp_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_27"
+      ],
+      "position": {
+        "x": -2013,
+        "y": 1162
+      }
+    },
+    "uti_29": {
+      "name": "Chance 5",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "🎁",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "drop_rate_multiplier",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_28"
+      ],
+      "position": {
+        "x": -2080,
+        "y": 1201
+      }
+    },
+    "uti_30": {
+      "name": "Érudition",
+      "description": "Nœud spécial : +2 xp drop percent (1 amélioration).",
+      "icon": "✨",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "xp_drop_percent",
+          "values": [
+            2
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_29"
+      ],
+      "position": {
+        "x": -2148,
+        "y": 1240
+      }
+    },
+    "uti_31": {
+      "name": "Bourse 6",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "💰",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "gold_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_30"
+      ],
+      "position": {
+        "x": -2215,
+        "y": 1279
+      }
+    },
+    "uti_32": {
+      "name": "Sagesse 6",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "✨",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "xp_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_31"
+      ],
+      "position": {
+        "x": -2283,
+        "y": 1318
+      }
+    },
+    "uti_33": {
+      "name": "Chance 6",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "🎁",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "drop_rate_multiplier",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_32"
+      ],
+      "position": {
+        "x": -2350,
+        "y": 1357
+      }
+    },
+    "uti_34": {
+      "name": "Bourse 6",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "💰",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "gold_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_33"
+      ],
+      "position": {
+        "x": -2418,
+        "y": 1396
+      }
+    },
+    "uti_35": {
+      "name": "Sagesse 6",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "✨",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "xp_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_34"
+      ],
+      "position": {
+        "x": -2485,
+        "y": 1435
+      }
+    },
+    "uti_36": {
+      "name": "Pillage",
+      "description": "Nœud spécial : +2 drop rate multiplier (1 amélioration).",
+      "icon": "🎁",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "drop_rate_multiplier",
+          "values": [
+            2
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_35"
+      ],
+      "position": {
+        "x": -2553,
+        "y": 1474
+      }
+    },
+    "uti_37": {
+      "name": "Chance 7",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "🎁",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "drop_rate_multiplier",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_36"
+      ],
+      "position": {
+        "x": -2621,
+        "y": 1513
+      }
+    },
+    "uti_38": {
+      "name": "Bourse 7",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "💰",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "gold_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_37"
+      ],
+      "position": {
+        "x": -2688,
+        "y": 1552
+      }
+    },
+    "uti_39": {
+      "name": "Sagesse 7",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "✨",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "xp_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_38"
+      ],
+      "position": {
+        "x": -2756,
+        "y": 1591
+      }
+    },
+    "uti_40": {
+      "name": "Chance 7",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "🎁",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "drop_rate_multiplier",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_39"
+      ],
+      "position": {
+        "x": -2823,
+        "y": 1630
+      }
+    },
+    "uti_41": {
+      "name": "Bourse 7",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "💰",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "gold_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_40"
+      ],
+      "position": {
+        "x": -2891,
+        "y": 1669
+      }
+    },
+    "uti_42": {
+      "name": "Fortune",
+      "description": "Nœud spécial : +2 gold drop percent (1 amélioration).",
+      "icon": "💰",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "gold_drop_percent",
+          "values": [
+            2
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_41"
+      ],
+      "position": {
+        "x": -2958,
+        "y": 1708
+      }
+    },
+    "uti_43": {
+      "name": "Sagesse 8",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "✨",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "xp_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_42"
+      ],
+      "position": {
+        "x": -3026,
+        "y": 1747
+      }
+    },
+    "uti_44": {
+      "name": "Chance 8",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "🎁",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "drop_rate_multiplier",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_43"
+      ],
+      "position": {
+        "x": -3093,
+        "y": 1786
+      }
+    },
+    "uti_45": {
+      "name": "Bourse 8",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "💰",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "gold_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_44"
+      ],
+      "position": {
+        "x": -3161,
+        "y": 1825
+      }
+    },
+    "uti_46": {
+      "name": "Sagesse 8",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "✨",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "xp_drop_percent",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_45"
+      ],
+      "position": {
+        "x": -3229,
+        "y": 1864
+      }
+    },
+    "uti_47": {
+      "name": "Chance 8",
+      "description": "+1 par niveau (cumulatif, max 3).",
+      "icon": "🎁",
+      "max_level": 3,
+      "costs": [
+        1,
+        1,
+        1
+      ],
+      "effects": [
+        {
+          "type": "drop_rate_multiplier",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_46"
+      ],
+      "position": {
+        "x": -3296,
+        "y": 1903
+      }
+    },
+    "uti_48": {
+      "name": "Érudition",
+      "description": "Nœud spécial : +2 xp drop percent (1 amélioration).",
+      "icon": "✨",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "xp_drop_percent",
+          "values": [
+            2
+          ]
+        }
+      ],
+      "prerequisites": [
+        "uti_47"
+      ],
+      "position": {
+        "x": -3364,
+        "y": 1942
       }
     }
   }

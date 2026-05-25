@@ -6,6 +6,11 @@ from app.domain.value_objects.skill_bonuses import SkillBonuses
 # Mapping effet du JSON -> attribut de SkillBonuses. Les types absents sont
 # poliment ignorés (permet d'étendre l'arbre sans casser les anciens loaders).
 _EFFECT_FIELD_MAP: dict[str, str] = {
+    # Nœuds plats (moteur infini)
+    "atk_flat": "atk_flat",
+    "def_flat": "def_flat",
+    "hp_max_flat": "hp_max_flat",
+    # Nœuds % (plafonnés)
     "atk_percent": "atk_percent",
     "def_percent": "def_percent",
     "hp_max_percent": "hp_max_percent",
@@ -19,6 +24,15 @@ _EFFECT_FIELD_MAP: dict[str, str] = {
     "drop_rate_multiplier": "drop_rate_multiplier",
 }
 
+# Plafonds anti-explosion (règle d'équilibrage V2). Les % de stat ne peuvent
+# pas dépasser +200% (×3) ; les % d'économie +100% ; le multiplicateur de drop
+# ×2. Les nœuds PLATS (atk/def/hp_max) ne sont JAMAIS plafonnés — ils sont le
+# moteur de progression infinie. Au-delà du cap, prendre des nœuds % est inutile
+# (le contenu de l'arbre front-load les % et bascule sur le flat dans le tail).
+_PCT_STAT_CAP = 2.0       # +200% sur atk/def/hp_max
+_PCT_ECONOMY_CAP = 1.0    # +100% sur xp/gold drop
+_DROP_MULT_CAP = 2.0      # ×2 sur le drop rate
+
 
 class SkillTreeService:
     """Logique pure de l'arbre de compétences : agrégation de bonus, validation
@@ -30,7 +44,10 @@ class SkillTreeService:
     # ---------- Agrégation des bonus ----------
 
     def aggregate_bonuses(self, allocations: dict[str, int]) -> SkillBonuses:
-        """Somme les effets de tous les niveaux investis."""
+        """Somme les effets de tous les niveaux investis, puis plafonne les %."""
+        atk_flat = 0
+        def_flat = 0
+        hp_max_flat = 0
         atk_percent = 0.0
         def_percent = 0.0
         hp_max_percent = 0.0
@@ -63,6 +80,12 @@ class SkillTreeService:
                 cumulative = effect.values[idx]
 
                 match effect.type:
+                    case "atk_flat":
+                        atk_flat += int(cumulative)
+                    case "def_flat":
+                        def_flat += int(cumulative)
+                    case "hp_max_flat":
+                        hp_max_flat += int(cumulative)
                     case "atk_percent":
                         atk_percent += cumulative / 100.0
                     case "def_percent":
@@ -89,7 +112,18 @@ class SkillTreeService:
                         # +5% de chance = drop_rate_multiplier = 1.05.
                         drop_rate_multiplier += cumulative / 100.0
 
+        # Plafonds anti-explosion sur les % (les flats restent illimités).
+        atk_percent = min(atk_percent, _PCT_STAT_CAP)
+        def_percent = min(def_percent, _PCT_STAT_CAP)
+        hp_max_percent = min(hp_max_percent, _PCT_STAT_CAP)
+        xp_drop_percent = min(xp_drop_percent, _PCT_ECONOMY_CAP)
+        gold_drop_percent = min(gold_drop_percent, _PCT_ECONOMY_CAP)
+        drop_rate_multiplier = min(drop_rate_multiplier, _DROP_MULT_CAP)
+
         return SkillBonuses(
+            atk_flat=atk_flat,
+            def_flat=def_flat,
+            hp_max_flat=hp_max_flat,
             atk_percent=atk_percent,
             def_percent=def_percent,
             hp_max_percent=hp_max_percent,

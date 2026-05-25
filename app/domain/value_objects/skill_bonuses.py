@@ -17,6 +17,12 @@ class SkillBonuses:
       chaque entrée de loot table. Préserve la rareté des items rares.
     """
 
+    # Nœuds PLATS : le moteur infini de l'arbre en V2 (croissance linéaire,
+    # sans plafond — c'est ici qu'on absorbe les points illimités).
+    atk_flat: int = 0
+    def_flat: int = 0
+    hp_max_flat: int = 0
+    # Nœuds % (multiplicateurs) : plafonnés en amont (aggregate_bonuses).
     atk_percent: float = 0.0
     def_percent: float = 0.0
     hp_max_percent: float = 0.0
@@ -43,9 +49,9 @@ class SkillBonuses:
 
         Caps existants (gérés en amont par StatsService) : crit_chance ≤ 75, dodge ≤ 50.
         """
-        new_max_hp = round(stats.max_hp * (1 + self.hp_max_percent))
-        new_attack = round(stats.attack * (1 + self.atk_percent))
-        new_defense = round(stats.defense * (1 + self.def_percent))
+        new_max_hp = round((stats.max_hp + self.hp_max_flat) * (1 + self.hp_max_percent))
+        new_attack = round((stats.attack + self.atk_flat) * (1 + self.atk_percent))
+        new_defense = round((stats.defense + self.def_flat) * (1 + self.def_percent))
 
         new_crit_chance = stats.crit_chance + self.crit_chance_flat
         new_crit_damage = stats.crit_damage + self.crit_damage_flat

@@ -94,6 +94,58 @@ def test_aggregate_bonuses_empty_allocations_returns_neutral():
     assert bonuses.drop_rate_multiplier == 1.0
 
 
+def test_aggregate_bonuses_flat_nodes_accumulate_uncapped():
+    """Les nœuds plats (moteur infini) ne sont jamais plafonnés."""
+    nodes = {
+        "root": _make_node("root", max_level=1, costs=[0]),
+        "atk_flat": _make_node(
+            "atk_flat", max_level=3, costs=[1, 1, 1],
+            effects=[SkillEffect(type="atk_flat", values=[5, 10, 15])],
+            prerequisites=["root"],
+        ),
+    }
+    defn = SkillTreeDefinition(root="root", skills=nodes)
+    svc = SkillTreeService(defn)
+
+    bonuses = svc.aggregate_bonuses({"root": 1, "atk_flat": 3})
+    assert bonuses.atk_flat == 15  # cumulatif lvl 3
+    assert bonuses.atk_percent == 0.0
+
+
+def test_aggregate_bonuses_caps_percent_at_200():
+    """Le % de stat est plafonné à +200% (×3), peu importe le cumul."""
+    nodes = {
+        "root": _make_node("root", max_level=1, costs=[0]),
+        # un nœud qui donnerait +500% sans le cap
+        "atk_pct": _make_node(
+            "atk_pct", max_level=1, costs=[1],
+            effects=[SkillEffect(type="atk_percent", values=[500])],
+            prerequisites=["root"],
+        ),
+    }
+    defn = SkillTreeDefinition(root="root", skills=nodes)
+    svc = SkillTreeService(defn)
+
+    bonuses = svc.aggregate_bonuses({"root": 1, "atk_pct": 1})
+    assert bonuses.atk_percent == 2.0  # capé à +200%
+
+
+def test_aggregate_bonuses_caps_economy_at_100():
+    nodes = {
+        "root": _make_node("root", max_level=1, costs=[0]),
+        "gold": _make_node(
+            "gold", max_level=1, costs=[1],
+            effects=[SkillEffect(type="gold_drop_percent", values=[300])],
+            prerequisites=["root"],
+        ),
+    }
+    defn = SkillTreeDefinition(root="root", skills=nodes)
+    svc = SkillTreeService(defn)
+
+    bonuses = svc.aggregate_bonuses({"root": 1, "gold": 1})
+    assert bonuses.gold_drop_percent == 1.0  # capé à +100%
+
+
 def test_aggregate_bonuses_ignores_unknown_skill_code():
     defn = _build_simple_tree()
     svc = SkillTreeService(defn)
