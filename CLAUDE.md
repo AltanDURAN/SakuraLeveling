@@ -104,7 +104,7 @@ git checkout main
 | `/admin end_encounter` | `admin_cog` | **Admin uniquement** — annule l'encounter actif |
 | `/admin shop_add`, `/admin shop_set`, `/admin shop_remove`, `/admin shop_set_stock` | `admin_cog` | **Admin uniquement** — gestion du shop (autocomplete sur item_code) |
 | (webapp) `/admin` | webapp | **Admin uniquement** — interface web pour CRUD items/mobs (OAuth Discord, port 8001). Voir section Skill Tree pour détails. |
-| `/shop`, `/buy <item> <qty>`, `/sell <item> <qty>` | `shop_cog` | Shop joueur paginé par catégorie (achat prix fixe, vente prix dynamique selon saturation) |
+| `/shop`, `/buy <item> <qty>` | `shop_cog` | Shop joueur paginé par catégorie — **achat uniquement** (prix fixe). Pas de vente (V2). Les drops de mob ne sont PAS en boutique. |
 | `/skill [target]` | `skill_cog` | Arbre de compétences avec image, boutons Investir/Vue web/Reset (cooldown 7j) |
 | `/use <item_code>` | `player_cog` | Utiliser un consommable (potions de soin I/II/III en V1) |
 | `/help [command]` | `help_cog` | Liste dynamique des commandes (autocomplete) ou détail d'une commande |
@@ -191,11 +191,10 @@ Pour un nouveau cog : si les commandes restent dans le canal beta → poser `int
 
 ## Système de shop
 
-- **Modèle** : table `shop_items` (item_definition_id unique, buy_price, max_sell_price, min_sell_price, stock_threshold, current_stock, enabled).
-- **Achat** (joueur → shop) : prix fixe `buy_price`, stock illimité côté shop (l'admin alimente). Pas d'effet sur `current_stock`.
-- **Vente** (joueur → shop) : prix dynamique entre `max_sell_price` (stock vide) et `min_sell_price` (stock ≥ `stock_threshold`), interpolation linéaire. Le `total_sell_amount` simule la dégradation par unité (vendre 1000 d'un coup ne donne pas 1000 × prix max).
-- **Drop dégressif** : chaque vente incrémente `current_stock` ; admin peut reset manuellement via `/admin shop_set_stock`.
-- **Service** : `ShopPricingService` (domain) calcule `current_sell_price` et `total_sell_amount`. **Use cases** : `BuyFromShopUseCase`, `SellToShopUseCase` (application).
+- **V2 — achat uniquement, pas de vente.** Le joueur ne peut QUE acheter. La revente joueur→shop a été retirée (`/sell` supprimé, `SellToShopView`/embed retirés). Les **drops de mob** (slime_gel, gobelin_tooth, cf `family_drops.json`) ne sont **PAS** en boutique — ils ne servent qu'au craft. Les ressources de gather (bois, lin, cuir, pierre, fer) et les potions restent achetables.
+- **Modèle** : table `shop_items` (item_definition_id unique, buy_price, enabled ; les champs `max_sell_price`/`min_sell_price`/`stock_threshold`/`current_stock` subsistent mais ne servent plus côté joueur — encore lus par l'admin webapp/cog).
+- **Achat** (joueur → shop) : prix fixe `buy_price`, stock illimité. **Use case** : `BuyFromShopUseCase`.
+- **UI** : [`shop_view.py`](app/bot/views/shop_view.py) — onglets par catégorie, items avec icône + pastille de rareté + description + prix + hint `/buy`. Achat-only. `SellToShopUseCase`/`ShopPricingService.current_sell_price` subsistent (utilisés par l'admin) mais plus par le joueur.
 
 ## Système d'arbre de compétences
 

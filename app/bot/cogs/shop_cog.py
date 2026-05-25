@@ -3,25 +3,18 @@ from discord import app_commands
 from discord.ext import commands
 
 from app.application.use_cases.buy_from_shop import BuyFromShopUseCase
-from app.application.use_cases.sell_to_shop import SellToShopUseCase
-from app.bot.embeds.shop_embeds import (
-    build_buy_result_embed,
-    build_sell_result_embed,
-)
+from app.bot.embeds.shop_embeds import build_buy_result_embed
 from app.bot.views.shop_view import ShopView
 from app.domain.services.shop_pricing_service import ShopPricingService
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
-from app.infrastructure.db.repositories.item_repository import ItemRepository
-from app.infrastructure.db.repositories.player_career_stats_repository import (
-    PlayerCareerStatsRepository,
-)
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.shop_repository import ShopRepository
 from app.infrastructure.db.session import get_db_session
 
 
 class ShopCog(commands.Cog):
-    """Shop joueur : consulter, acheter et vendre."""
+    """Shop joueur : consulter et acheter. La vente n'existe pas (V2) — les
+    drops de mob ne se revendent pas, ils servent uniquement au craft."""
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
@@ -42,7 +35,7 @@ class ShopCog(commands.Cog):
     async def shop(self, interaction: discord.Interaction) -> None:
         with get_db_session() as session:
             shop_repository = ShopRepository(session)
-            shop_items = shop_repository.list_all(only_enabled=False)
+            shop_items = shop_repository.list_all(only_enabled=True)
 
         view = ShopView(shop_items)
         await interaction.response.send_message(
@@ -83,44 +76,7 @@ class ShopCog(commands.Cog):
         )
         await interaction.followup.send(embed=embed, ephemeral=not result.success)
 
-    @app_commands.command(name="sell", description="Vendre un objet à la boutique")
-    @app_commands.describe(item_code="Code de l'objet à vendre", quantity="Quantité à vendre")
-    async def sell(
-        self,
-        interaction: discord.Interaction,
-        item_code: str,
-        quantity: app_commands.Range[int, 1, 9999] = 1,
-    ) -> None:
-        await interaction.response.defer()
-
-        with get_db_session() as session:
-            use_case = SellToShopUseCase(
-                player_repository=PlayerRepository(session),
-                inventory_repository=InventoryRepository(session),
-                item_repository=ItemRepository(session),
-                shop_repository=ShopRepository(session),
-                shop_pricing_service=ShopPricingService(),
-                career_stats_repository=PlayerCareerStatsRepository(session),
-            )
-            result = use_case.execute(
-                discord_id=interaction.user.id,
-                username=interaction.user.name,
-                display_name=interaction.user.display_name,
-                item_code=item_code,
-                quantity=quantity,
-            )
-
-        embed = build_sell_result_embed(
-            success=result.success,
-            message=result.message,
-            total_gain=result.total_gain,
-            item_name=result.item_name,
-            quantity=result.quantity,
-        )
-        await interaction.followup.send(embed=embed, ephemeral=not result.success)
-
     @buy.autocomplete("item_code")
-    @sell.autocomplete("item_code")
     async def shop_item_autocomplete(
         self,
         interaction: discord.Interaction,

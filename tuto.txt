@@ -463,28 +463,20 @@ Kill counter : tous les survivants reçoivent +1 (les morts n'ont pas le kill).
 
 /shop
     Affiche les articles disponibles à la boutique, paginé par catégorie.
-    Seuls les onglets ayant au moins un article apparaissent — pas de
-    bouton "Armes (0)" inutile si aucune arme n'est en vente. Boutons
+    ACHAT UNIQUEMENT — on ne peut plus rien vendre au shop.
+    Seuls les onglets ayant au moins un article apparaissent. Boutons
     possibles : Armes, Boucliers, Armure, Accessoires, Consommables,
-    Ressources. Ouvre par défaut sur la première catégorie disponible.
-    Pour chaque entrée :
-        • Prix d'achat (fixe, défini par l'admin)
-        • Prix de vente actuel (dynamique, dépend du stock)
-        • Stock actuel et taux de saturation
-    Plus le stock est haut, plus le prix de vente est bas (le marché est saturé).
+    Ressources. Chaque entrée affiche icône, rareté, description et prix
+    d'achat, avec un raccourci /buy.
+    Note : les DROPS DE MOB (dent de gobelin, gelée de slime…) ne sont PAS
+    en boutique — ils servent uniquement au craft, pas à être achetés/vendus.
 
 /buy <item_code> [quantity=1]
     Achète une quantité d'un objet à la boutique. Prix fixe (admin-défini).
     Stock toujours disponible côté shop. Échec si gold insuffisant.
-    Exemple : /buy slime_gel 5
+    Exemple : /buy potion_soin_i 5
 
-/sell <item_code> [quantity=1]
-    Vend une quantité d'un objet à la boutique. Prix dynamique.
-    Important : si vous vendez en lot, chaque unité fait baisser le prix de
-    la suivante (anti-exploit du dump massif). Vendre 10 gelées d'un coup
-    rapporte donc moins que 10 × le prix actuel.
-    Échec si vous n'avez pas la quantité dans l'inventaire.
-    Exemple : /sell slime_gel 3
+(La commande /sell n'existe plus : la revente au shop a été retirée.)
 
 --------------------------------------------------------------------------------
 1.8 — ÉCHANGES ENTRE JOUEURS
@@ -765,16 +757,12 @@ Le message du boss embarque 3 boutons :
 2.4 — WORKFLOW ADMIN TYPE
 --------------------------------------------------------------------------------
 
-Tester un nouveau flow shop :
+Tester un nouveau flow shop (achat uniquement) :
     /admin reset_player @MoiTest          # repart de zéro
     /admin give_gold @MoiTest 1000        # bourse
-    /admin shop_add slime_gel 15 8 2 100  # ajout shop
-    /admin give_item @MoiTest slime_gel 50
+    /admin shop_add potion_soin_i 30 0 0 100  # ajout shop
     /shop                                 # voir le shop
-    /sell slime_gel 30                    # tester la vente
-    /shop                                 # voir l'effet sur les prix
-    /buy slime_gel 5                      # tester l'achat
-    /admin shop_set_stock slime_gel 0     # reset le stock
+    /buy potion_soin_i 5                  # tester l'achat
 
 Tester un combat de groupe :
     /admin spawn_encounter                # spawn forcé d'un mob
