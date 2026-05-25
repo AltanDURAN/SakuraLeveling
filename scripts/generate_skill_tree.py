@@ -25,6 +25,20 @@ ANNEAUX = 8          # anneaux par branche (≈ niveau 144 pour un mono-branche)
 SIMPLE_PER_RING = 5
 OUT = Path(__file__).resolve().parents[1] / "app/infrastructure/content/skill_tree.json"
 
+# Disposition en TRISKÈLE : 3 bras espacés de 120°, chacun spiralé dans le même
+# sens (l'angle tourne avec la profondeur). R0 = rayon de la racine de branche,
+# DR = rayon gagné par nœud, SPIRAL_DEG = rotation par nœud (courbe les bras).
+R0 = 150
+DR = 70
+SPIRAL_DEG = 4
+
+
+def spiral_pos(base_angle_deg: float, seq: int) -> tuple[int, int]:
+    """Position (x, y) du nœud n°`seq` (0 = racine) d'un bras de triskèle."""
+    angle = math.radians(base_angle_deg + seq * SPIRAL_DEG)
+    radius = R0 + seq * DR
+    return round(radius * math.cos(angle)), round(radius * math.sin(angle))
+
 # Combien de nœuds "vitesse" au total (FINIE — sinon stunlock). Au-delà, le
 # slot spécial vitesse de la branche attaque devient crit_damage (tail-safe).
 SPEED_NODES_MAX = 6
@@ -100,13 +114,13 @@ def build() -> dict:
     }
 
     for prefix, cfg in BRANCHES.items():
-        angle = math.radians(cfg["angle"])
-        dx, dy = math.cos(angle), math.sin(angle)
+        base_angle = cfg["angle"]
         simples = cfg["simples"]
         speciaux = cfg["speciaux"]
 
-        # Racine de branche (passerelle)
+        # Racine de branche (passerelle) — seq 0 du bras spiralé.
         root_code = f"voie_{prefix}"
+        rx, ry = spiral_pos(base_angle, 0)
         skills[root_code] = {
             "name": cfg["name"],
             "description": f"Entrée de la {cfg['name'].lower()}.",
@@ -115,7 +129,7 @@ def build() -> dict:
             "costs": [1],
             "effects": [],
             "prerequisites": ["aventurier"],
-            "position": {"x": round(140 * dx), "y": round(140 * dy)},
+            "position": {"x": rx, "y": ry},
         }
 
         prev = root_code
@@ -127,7 +141,7 @@ def build() -> dict:
                 effect, base, ramp, icon, label = simples[(anneau * SIMPLE_PER_RING + n) % len(simples)]
                 seq += 1
                 code = f"{prefix}_{seq}"
-                radius = 140 + seq * 78
+                x, y = spiral_pos(base_angle, seq)
                 skills[code] = {
                     "name": f"{label} {anneau}",
                     "description": f"+{base + ramp*(anneau-1)} par niveau (cumulatif, max 3).",
@@ -136,7 +150,7 @@ def build() -> dict:
                     "costs": [1, 1, 1],
                     "effects": [{"type": effect, "values": simple_values(base, ramp, anneau)}],
                     "prerequisites": [prev],
-                    "position": {"x": round(radius * dx), "y": round(radius * dy)},
+                    "position": {"x": x, "y": y},
                 }
                 prev = code
 
@@ -151,7 +165,7 @@ def build() -> dict:
                     speed_count += 1
             seq += 1
             code = f"{prefix}_{seq}"
-            radius = 140 + seq * 78
+            x, y = spiral_pos(base_angle, seq)
             skills[code] = {
                 "name": label,
                 "description": f"Nœud spécial : +{val} {effect.replace('_', ' ')} (1 amélioration).",
@@ -160,7 +174,7 @@ def build() -> dict:
                 "costs": [3],
                 "effects": [{"type": effect, "values": [val]}],
                 "prerequisites": [prev],
-                "position": {"x": round(radius * dx), "y": round(radius * dy)},
+                "position": {"x": x, "y": y},
             }
             prev = code
 
