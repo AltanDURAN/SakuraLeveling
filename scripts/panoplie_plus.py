@@ -1,18 +1,19 @@
-"""Rééquilibrage des armes/équipements + système de panoplies "+".
+"""Rééquilibrage des panoplies (power score ÉGAL entre familles) + système "+".
 
-- Rééquilibre les stats des armes/boucliers (toutes familles) et des
-  équipements gobelin/slime, cohérent avec l'équilibrage V2 (modeste, parité
-  attaque/défense).
-- Crée les ressources : sang de gobelin de haute qualité, sang de slime, infuseur.
-- Ajoute les drops rares (5× plus rares qu'une dent/slime ball, 0 ou 1) :
-  sang_gobelin_hq sur gobelin_superieur + gobelin_assassin, sang_slime sur slime.
-- Génère les versions "+" (gobelin_plus / slime_plus) : stats de l'item de base
-  légèrement augmentées (×1.5), famille dédiée, rareté supérieure.
-- Recettes : chaque "+" = item de base ×1 + sang ×1 + infuseur ×1 (forge/craft).
-- Bonus de panoplie gobelin_plus / slime_plus (légèrement > base).
-- Infuseur au /shop à 1000 or.
+Objectif (retour joueurs) : deux panoplies différentes doivent donner ~le même
+SCORE DE PUISSANCE, tout en gardant leur ARCHÉTYPE (fer=def, gobelin=crit,
+slime=PV/régen, cuir=esquive, lin=dégâts crit). Les stats rares (vitesse, crit,
+esquive) restent limitées sans rendre une panoplie plus forte.
 
-Idempotent : relançable. .venv/bin/python scripts/panoplie_plus.py
+Le score de puissance valorise très inégalement les stats (1 DEF = 25 PV
+effectifs ; PV/régen/dég.crit ≈ 0 par point). On calibre donc les TOTAUX de
+chaque famille pour qu'un set complet (12 pièces + bonus) sur un débutant
+donne ~le même score. Vérification imprimée en fin de script.
+
+Aussi : armes/boucliers re-statés (toutes familles), versions "+" gobelin/slime
+(stats ×1.5), ressources (sang gobelin/slime, infuseur), drops, infuseur au shop.
+
+Idempotent. .venv/bin/python scripts/panoplie_plus.py
 """
 
 from __future__ import annotations
@@ -22,98 +23,153 @@ import math
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1] / "app/infrastructure/content"
-ITEMS = ROOT / "items.json"
-CRAFTS = ROOT / "crafts.json"
-SETS = ROOT / "sets.json"
-SHOP = ROOT / "shop_items.json"
-MOBS = ROOT / "mobs.json"
+ITEMS, CRAFTS, SETS, SHOP, MOBS = (ROOT / f for f in
+    ["items.json", "crafts.json", "sets.json", "shop_items.json", "mobs.json"])
 
 _RARITY_UP = {"common": "uncommon", "uncommon": "rare", "rare": "epic",
               "epic": "legendary", "legendary": "legendary"}
 
 
-def _load(p):
-    return json.load(open(p, encoding="utf-8"))
+def _load(p): return json.load(open(p, encoding="utf-8"))
+def _save(p, d): json.dump(d, open(p, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 
 
-def _save(p, data):
-    json.dump(data, open(p, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-
-
-# ============ 1. Rééquilibrage des stats (par code) ============
-# Armes (1 main) : stat offensive principale + thème de famille.
-# Armes (2 mains) : ~2.3× + malus thématique.
-WEAPON_STATS = {
-    "wood_sword": {"attack": 4},
-    "hunter_dagger": {"attack": 4, "crit_chance": 5},
-    "gobelin_axe": {"attack": 7, "crit_damage": 8},
-    "gobelin_blade": {"attack": 6, "crit_chance": 3, "crit_damage": 6},
-    "gobelin_greataxe": {"attack": 17, "crit_damage": 14, "crit_chance": -2, "defense": -3},
-    "slime_blade": {"attack": 6, "max_hp": 6},
-    "slime_morningstar": {"attack": 5, "hp_regeneration": 2, "max_hp": 4},
-    "slime_greatblade": {"attack": 15, "max_hp": -8, "defense": -4},
-    "iron_dagger": {"attack": 5, "speed": 2, "crit_chance": 2},
-    "iron_sword": {"attack": 6, "defense": 2, "max_hp": 4},
-    "iron_greatsword": {"attack": 14, "speed": 5, "crit_chance": 5, "defense": -5, "dodge": -2},
-    "leather_main_droite": {"attack": 5, "dodge": 1},
-    "leather_dagger": {"attack": 5, "dodge": 2},
-    "leather_greatsword": {"attack": 13, "dodge": 3, "defense": -2},
-    "linen_main_droite": {"attack": 4, "crit_damage": 5, "dodge": 1},
-    "linen_rapier": {"attack": 5, "crit_chance": 3, "speed": 1},
-    "linen_greatblade": {"attack": 12, "crit_damage": 10, "crit_chance": 3, "defense": -3, "dodge": -1},
+# ---- Slots & poids de répartition du thème sur armures/accessoires ----
+ARMOR_ACC = {  # slot -> poids
+    "casque": 1.0, "plastron": 1.2, "jambieres": 1.0, "bottes": 0.8,
+    "collier": 0.95, "bague": 0.95, "bracelet": 0.7, "ceinture": 0.7,
+    "cape": 0.8, "boucle_oreille": 0.7,
 }
-# Boucliers (1 main) : défense + thème. (2 mains) : ~2.2× + malus.
-SHIELD_STATS = {
-    "wooden_shield": {"defense": 5, "max_hp": 6},
-    "iron_buckler": {"defense": 6, "dodge": 2},
-    "iron_warshield": {"defense": 6, "max_hp": 8},
-    "iron_tower_shield": {"defense": 15, "dodge": 5, "attack": -4, "speed": -2},
-    "slime_shield": {"defense": 5, "max_hp": 8},
-    "slime_buckler": {"defense": 4, "hp_regeneration": 3, "max_hp": 4},
-    "slime_tower_shield": {"defense": 13, "max_hp": 20, "attack": -5},
-    "gobelin_main_gauche": {"defense": 5, "crit_chance": 2},
-    "gobelin_buckler": {"defense": 6, "crit_chance": 2},
-    "gobelin_warshield": {"defense": 13, "crit_chance": 4, "attack": -5, "crit_damage": -4},
-    "leather_main_gauche": {"defense": 4, "dodge": 2},
-    "leather_buckler": {"defense": 4, "max_hp": 5},
-    "leather_tower_shield": {"defense": 11, "dodge": 4, "attack": -3},
-    "linen_main_gauche": {"defense": 3, "crit_damage": 3, "dodge": 1},
-    "linen_aegis": {"defense": 4, "dodge": 2, "crit_damage": 2},
-    "linen_tower_shield": {"dodge": 6, "defense": 6, "crit_damage": -2},
+_W_SUM = sum(ARMOR_ACC.values())
+
+# Arme 1-main et bouclier 1-main par famille (cœur universel attaque/défense +
+# une touche thématique pour que toute arme tape et tout bouclier protège).
+# Cœur UNIVERSEL (attaque 6 / défense 5 identiques) + petite touche thématique,
+# pour que toute arme tape et tout bouclier protège, sans déséquilibrer.
+WEAPON_1H = {
+    "iron":    {"attack": 6, "defense": 1},
+    "gobelin": {"attack": 6, "crit_chance": 2},
+    "slime":   {"attack": 6, "max_hp": 4},
+    "leather": {"attack": 6, "dodge": 1},
+    "linen":   {"attack": 6, "crit_damage": 4},
 }
-# Équipements gobelin/slime (hors armes/boucliers), par slot.
-GOBELIN_EQUIP = {
-    "casque": {"defense": 2, "max_hp": 6, "crit_chance": 3},
-    "plastron": {"attack": 4, "crit_chance": 2, "max_hp": 4},
-    "jambieres": {"attack": 3, "crit_chance": 2},
-    "bottes": {"attack": 2, "crit_chance": 1, "speed": 1},
-    "collier": {"attack": 3, "crit_chance": 2},
-    "bracelet": {"attack": 3, "crit_chance": 1},
-    "bague": {"crit_chance": 3, "crit_damage": 6},
-    "ceinture": {"attack": 3, "crit_chance": 1},
-    "cape": {"attack": 2, "crit_chance": 2},
-    "boucle_oreille": {"attack": 2, "crit_chance": 2},
+SHIELD_1H = {
+    "iron":    {"defense": 5, "max_hp": 4},
+    "gobelin": {"defense": 5, "crit_chance": 1},
+    "slime":   {"defense": 5, "max_hp": 6},
+    "leather": {"defense": 5, "dodge": 2},
+    "linen":   {"defense": 5, "crit_damage": 2},
 }
-SLIME_EQUIP = {
-    "casque": {"max_hp": 8, "hp_regeneration": 1, "defense": 1},
-    "plastron": {"max_hp": 10, "hp_regeneration": 1, "defense": 1},
-    "jambieres": {"max_hp": 8, "hp_regeneration": 1},
-    "bottes": {"max_hp": 6, "hp_regeneration": 1},
-    "collier": {"max_hp": 10, "hp_regeneration": 2},
-    "bracelet": {"max_hp": 6, "hp_regeneration": 1},
-    "bague": {"max_hp": 6, "hp_regeneration": 2},
-    "ceinture": {"max_hp": 6, "hp_regeneration": 1},
-    "cape": {"max_hp": 8, "defense": 2},
-    "boucle_oreille": {"max_hp": 6, "hp_regeneration": 1},
+# Thème réparti sur les 10 slots armures/accessoires (totaux calibrés pour
+# un power score égal — voir vérification). Distribué par poids ARMOR_ACC.
+THEME_TOTAL = {
+    "iron":    {"defense": 6, "max_hp": 64},
+    "gobelin": {"attack": 6, "crit_chance": 6, "crit_damage": 6},
+    "slime":   {"max_hp": 200, "hp_regeneration": 6},
+    "leather": {"dodge": 16, "max_hp": 150},
+    "linen":   {"crit_damage": 44, "crit_chance": 16, "attack": 4},
+}
+# Bonus de set (12 pièces) — thématique. Tiers 2/4/8/12.
+SET_BONUS = {
+    "iron":    ("defense_flat", [1, 2, 3, 4]),
+    "gobelin": ("crit_chance_flat", [1, 1, 2, 3]),
+    "slime":   ("hp_regeneration_flat", [3, 6, 10, 15]),
+    "leather": ("dodge_flat", [1, 2, 3, 4]),
+    "linen":   ("crit_damage_flat", [2, 4, 6, 10]),
+}
+SET_META = {
+    "iron":    ("Fer", "Armure lourde et fiable, taillée pour encaisser.", "🛡️", "#9aa0aa"),
+    "gobelin": ("Gobeline", "Fourbe et vicieuse : frappe critique accrue.", "👹", "#7ba85a"),
+    "slime":   ("Slime", "Imprégnée de gelée régénératrice.", "🟢", "#8fdc70"),
+    "leather": ("Cuir", "Souple et légère, favorise l'esquive.", "🟫", "#a07040"),
+    "linen":   ("Lin", "Tissée pour amplifier les coups critiques.", "⬜", "#d8d0c0"),
 }
 
 
-def plus_stats(sb: dict | None) -> dict:
-    """Stats du '+' : positifs ×1.5 (arrondi sup), négatifs conservés."""
+TARGET_POWER = 230  # power score visé pour un set complet sur un débutant
+
+_STAT_KEY = {"attack": "atk", "defense": "deff", "max_hp": "hp",
+             "crit_chance": "cc", "crit_damage": "cd", "dodge": "dodge", "speed": "spd"}
+
+
+def _power(atk, deff, hp, cc, cd, dodge, spd):
+    crit = (cc / 100) * max(0, cd - 100) / 100
+    off = atk * (1 + crit) * (1 + spd / 100)
+    ehp = (hp + deff * 25) / max(0.01, 1 - dodge / 100)
+    return off * ehp / 42
+
+
+def theme_for_slot_dict(theme, slot):
+    """Répartit un dict de totaux thème sur un slot (arrondi simple, 0 permis)."""
     out = {}
-    for k, v in (sb or {}).items():
-        out[k] = math.ceil(v * 1.5) if v > 0 else v
+    w = ARMOR_ACC[slot] / _W_SUM
+    for stat, total in theme.items():
+        val = round(total * w)
+        if val:
+            out[stat] = val
     return out
+
+
+def _distributed_total(theme):
+    """Somme RÉELLE du thème après répartition+arrondi sur les 10 slots."""
+    agg = {}
+    for slot in ARMOR_ACC:
+        for k, v in theme_for_slot_dict(theme, slot).items():
+            agg[k] = agg.get(k, 0) + v
+    return agg
+
+
+def _set_totals(fam, theme_distributed):
+    """Stats totales : base + arme1H + bouclier1H + thème distribué + bonus set."""
+    tot = dict(atk=10, deff=5, hp=100, cc=5, cd=150, dodge=0, spd=5)
+    for sb in [WEAPON_1H[fam], SHIELD_1H[fam], theme_distributed]:
+        for k, v in sb.items():
+            if _STAT_KEY.get(k):
+                tot[_STAT_KEY[k]] += v
+    typ, vals = SET_BONUS[fam]
+    sk = _STAT_KEY.get(typ.replace("_flat", ""))
+    if sk:
+        tot[sk] += vals[-1]
+    return tot
+
+
+def _autotune_theme():
+    """Échelonne THEME_TOTAL (binary search, sur les totaux DISTRIBUÉS réels)
+    pour que chaque set complet atteigne TARGET_POWER → power score égal."""
+    for fam, theme in THEME_TOTAL.items():
+        lo, hi = 0.0, 8.0
+        for _ in range(44):
+            mid = (lo + hi) / 2
+            scaled = {k: v * mid for k, v in theme.items()}
+            dist = _distributed_total(scaled)
+            if _power(**_set_totals(fam, dist)) < TARGET_POWER:
+                lo = mid
+            else:
+                hi = mid
+        f = (lo + hi) / 2
+        THEME_TOTAL[fam] = {k: round(v * f) for k, v in theme.items()}
+
+
+def theme_for_slot(family, slot):
+    return theme_for_slot_dict(THEME_TOTAL[family], slot)
+
+
+def two_hand(stats_1h, malus_stat, malus_val):
+    """Version 2-mains ≈ ×1.9 + un malus (occupe 2 slots)."""
+    out = {k: math.ceil(v * 1.9) for k, v in stats_1h.items()}
+    out[malus_stat] = out.get(malus_stat, 0) - malus_val
+    return out
+
+
+def plus_stats(sb):
+    return {k: (math.ceil(v * 1.5) if v > 0 else v) for k, v in (sb or {}).items()}
+
+
+# Malus 2-mains par famille (stat, valeur)
+TWO_HAND_MALUS = {
+    "iron": ("speed", 2), "gobelin": ("crit_chance", 2), "slime": ("defense", 3),
+    "leather": ("defense", 2), "linen": ("defense", 3),
+}
 
 
 def main() -> None:
@@ -124,136 +180,113 @@ def main() -> None:
         if entry["code"] in by_code:
             by_code[entry["code"]].update(entry)
         else:
-            items.append(entry)
-            by_code[entry["code"]] = entry
+            items.append(entry); by_code[entry["code"]] = entry
 
     def resource(code, name, desc, rarity, buy_price=None):
-        ensure_item({
-            "code": code, "name": name, "description": desc,
+        ensure_item({"code": code, "name": name, "description": desc,
             "category": "resource", "rarity": rarity, "stackable": True,
-            "max_stack": None, "sell_price": 0, "buy_price": buy_price,
-            "icon": None, "stat_bonuses": None, "equipment_slot": None,
-            "requires_two_hands": False, "family": "",
-        })
+            "max_stack": None, "sell_price": 0, "buy_price": buy_price, "icon": None,
+            "stat_bonuses": None, "equipment_slot": None,
+            "requires_two_hands": False, "family": ""})
 
     # 1. Ressources
     resource("sang_gobelin_hq", "Sang de gobelin de haute qualité",
-             "Sang rare prélevé sur les gobelins d'élite. Infuse l'équipement gobelin.",
-             "rare")
+             "Sang rare prélevé sur les gobelins d'élite. Infuse l'équipement gobelin.", "rare")
     resource("sang_slime", "Sang de slime",
-             "Essence visqueuse rare distillée des slimes. Infuse l'équipement slime.",
-             "rare")
+             "Essence visqueuse rare distillée des slimes. Infuse l'équipement slime.", "rare")
     resource("infuseur", "Infuseur",
-             "Catalyseur d'infusion. Permet d'améliorer un équipement de panoplie. Achetable en boutique.",
+             "Catalyseur d'infusion. Améliore un équipement de panoplie. Achetable en boutique.",
              "uncommon", buy_price=1000)
 
-    # 2. Rééquilibrage armes/boucliers
-    for code, sb in {**WEAPON_STATS, **SHIELD_STATS}.items():
-        if code in by_code:
-            by_code[code]["stat_bonuses"] = sb
-
-    # 3. Rééquilibrage équipements gobelin/slime (hors armes/boucliers)
+    # 2. Rééquilibrage de TOUS les équipements de famille
+    _autotune_theme()   # calibre THEME_TOTAL pour un power score égal
+    FAMILIES = ("iron", "gobelin", "slime", "leather", "linen")
     for it in items:
-        if it.get("category") in ("weapon", "shield"):
+        fam, slot, cat = it.get("family"), it.get("equipment_slot"), it.get("category")
+        if fam not in FAMILIES:
             continue
-        fam, slot = it.get("family"), it.get("equipment_slot")
-        if fam == "gobelin" and slot in GOBELIN_EQUIP:
-            it["stat_bonuses"] = dict(GOBELIN_EQUIP[slot])
-        elif fam == "slime" and slot in SLIME_EQUIP:
-            it["stat_bonuses"] = dict(SLIME_EQUIP[slot])
+        is_2h = bool(it.get("requires_two_hands"))
+        if cat == "weapon":
+            base = WEAPON_1H[fam]
+            it["stat_bonuses"] = (two_hand(base, *TWO_HAND_MALUS[fam]) if is_2h else dict(base))
+        elif cat == "shield":
+            base = SHIELD_1H[fam]
+            # 2-mains bouclier : malus en attaque
+            it["stat_bonuses"] = (two_hand(base, "attack", 4) if is_2h else dict(base))
+        elif slot in ARMOR_ACC:
+            it["stat_bonuses"] = theme_for_slot(fam, slot)
 
-    # 4. Versions "+" (gobelin_plus / slime_plus) + recettes
+    # 3. Versions "+" gobelin/slime + recettes
     plus_recipes = []
     for fam, sang in [("gobelin", "sang_gobelin_hq"), ("slime", "sang_slime")]:
-        base_items = [i for i in list(items) if i.get("family") == fam]
-        for base in base_items:
+        for base in [i for i in list(items) if i.get("family") == fam]:
             pcode = base["code"] + "_plus"
-            ensure_item({
-                **base,
-                "code": pcode,
-                "name": base["name"] + " +",
+            ensure_item({**base, "code": pcode, "name": base["name"] + " +",
                 "description": base["description"] + " — version infusée (améliorée).",
                 "rarity": _RARITY_UP.get(base.get("rarity", "common"), "rare"),
                 "family": fam + "_plus",
                 "stat_bonuses": plus_stats(base.get("stat_bonuses")),
-                "sell_price": int((base.get("sell_price") or 0) * 2),
-            })
-            plus_recipes.append({
-                "code": pcode + "_recipe",
-                "name": base["name"] + " +",
-                "result_item_code": pcode,
-                "result_quantity": 1,
-                "ingredients": [
-                    {"item_code": base["code"], "quantity": 1},
-                    {"item_code": sang, "quantity": 1},
-                    {"item_code": "infuseur", "quantity": 1},
-                ],
-            })
-
+                "sell_price": int((base.get("sell_price") or 0) * 2)})
+            plus_recipes.append({"code": pcode + "_recipe", "name": base["name"] + " +",
+                "result_item_code": pcode, "result_quantity": 1,
+                "ingredients": [{"item_code": base["code"], "quantity": 1},
+                                {"item_code": sang, "quantity": 1},
+                                {"item_code": "infuseur", "quantity": 1}]})
     _save(ITEMS, items)
 
-    # 5. Recettes : retire les anciennes "+_recipe", ajoute les nouvelles
-    crafts = _load(CRAFTS)
-    crafts = [r for r in crafts if not r["code"].endswith("_plus_recipe")]
+    # 4. Recettes "+"
+    crafts = [r for r in _load(CRAFTS) if not r["code"].endswith("_plus_recipe")]
     crafts += plus_recipes
     _save(CRAFTS, crafts)
 
-    # 6. Bonus de panoplie "+" (légèrement supérieurs au base)
+    # 5. Bonus de set (base + versions "+" légèrement supérieures)
     sets = _load(SETS)
-    sets["gobelin_plus"] = {
-        "name": "Gobeline +", "description": "Panoplie gobeline infusée — frappe critique renforcée.",
-        "icon": "👹", "color": "#9bd96a",
-        "tiers": [
-            {"min_pieces": 2, "type": "crit_damage_flat", "value": 2},
-            {"min_pieces": 4, "type": "crit_damage_flat", "value": 4},
-            {"min_pieces": 8, "type": "crit_damage_flat", "value": 7},
-            {"min_pieces": 12, "type": "crit_damage_flat", "value": 12},
-        ],
-    }
-    sets["slime_plus"] = {
-        "name": "Slime +", "description": "Panoplie slime infusée — régénération renforcée.",
-        "icon": "🟢", "color": "#a7f084",
-        "tiers": [
-            {"min_pieces": 2, "type": "hp_regeneration_flat", "value": 2},
-            {"min_pieces": 4, "type": "hp_regeneration_flat", "value": 4},
-            {"min_pieces": 8, "type": "hp_regeneration_flat", "value": 8},
-            {"min_pieces": 12, "type": "hp_regeneration_flat", "value": 12},
-        ],
-    }
+    for fam in FAMILIES:
+        typ, vals = SET_BONUS[fam]
+        name, desc, icon, color = SET_META[fam]
+        sets[fam] = {"name": name, "description": desc, "icon": icon, "color": color,
+            "tiers": [{"min_pieces": mp, "type": typ, "value": v}
+                      for mp, v in zip([2, 4, 8, 12], vals)]}
+    for fam, base in [("gobelin", "gobelin"), ("slime", "slime")]:
+        typ, vals = SET_BONUS[base]
+        name, desc, icon, color = SET_META[base]
+        sets[fam + "_plus"] = {"name": name + " +",
+            "description": desc + " Version infusée.", "icon": icon, "color": color,
+            "tiers": [{"min_pieces": mp, "type": typ, "value": math.ceil(v * 1.4)}
+                      for mp, v in zip([2, 4, 8, 12], vals)]}
     _save(SETS, sets)
 
-    # 7. Infuseur au shop (1000 or)
+    # 6. Infuseur au shop (1000 or)
     shop = _load(SHOP)
     if not any(s["item_code"] == "infuseur" for s in shop):
-        shop.append({
-            "item_code": "infuseur", "buy_price": 1000,
-            "max_sell_price": 0, "min_sell_price": 0,
-            "stock_threshold": 100, "enabled": True,
-        })
+        shop.append({"item_code": "infuseur", "buy_price": 1000, "max_sell_price": 0,
+                     "min_sell_price": 0, "stock_threshold": 100, "enabled": True})
     _save(SHOP, shop)
 
-    # 8. Drops rares (0 ou 1, ~5× plus rares qu'une dent à 0.75 → 0.15)
+    # 7. Drops rares (0/1, ~5× plus rares qu'une dent/slime ball → 0.15)
     mobs = _load(MOBS)
     mob_by = {m["code"]: m for m in mobs}
-
-    def add_drop(mob_code, item_code, rate):
-        m = mob_by.get(mob_code)
-        if not m:
-            return
-        lt = [e for e in (m.get("loot_table") or []) if e.get("item_code") != item_code]
-        lt.append({"item_code": item_code, "drop_rate": rate,
-                   "min_quantity": 1, "max_quantity": 1})
+    def add_drop(mc, ic, rate):
+        m = mob_by.get(mc)
+        if not m: return
+        lt = [e for e in (m.get("loot_table") or []) if e.get("item_code") != ic]
+        lt.append({"item_code": ic, "drop_rate": rate, "min_quantity": 1, "max_quantity": 1})
         m["loot_table"] = lt
-
     add_drop("gobelin_superieur", "sang_gobelin_hq", 0.15)
     add_drop("gobelin_assassin", "sang_gobelin_hq", 0.15)
     add_drop("slime", "sang_slime", 0.15)
     _save(MOBS, mobs)
 
-    n_plus = sum(1 for i in items if str(i.get("family", "")).endswith("_plus"))
-    print(f"✅ {len(WEAPON_STATS)} armes + {len(SHIELD_STATS)} boucliers rééquilibrés")
-    print(f"✅ {n_plus} items '+' générés, {len(plus_recipes)} recettes")
-    print("✅ ressources (sang gobelin/slime, infuseur) + drops + shop + sets")
+    _verify(FAMILIES)
+
+
+def _verify(families):
+    """Power score d'un set complet (débutant + 12 pièces + bonus), par famille."""
+    base = _power(atk=10, deff=5, hp=100, cc=5, cd=150, dodge=0, spd=5)
+    print(f"\n{'famille':10s} {'power set complet':>18s}  (base seul = %.0f)" % base)
+    for fam in families:
+        dist = _distributed_total(THEME_TOTAL[fam])
+        print(f"{fam:10s} {round(_power(**_set_totals(fam, dist)), 1):>18}")
 
 
 if __name__ == "__main__":

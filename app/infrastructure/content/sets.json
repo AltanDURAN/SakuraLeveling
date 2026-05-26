@@ -18,104 +18,20 @@
       {
         "min_pieces": 8,
         "type": "defense_flat",
-        "value": 5
+        "value": 3
       },
       {
         "min_pieces": 12,
         "type": "defense_flat",
-        "value": 8
+        "value": 4
       }
     ]
   },
   "leather": {
     "name": "Cuir",
-    "description": "Souple et résistant, renforce la vitalité du porteur.",
+    "description": "Souple et légère, favorise l'esquive.",
     "icon": "🟫",
     "color": "#a07040",
-    "tiers": [
-      {
-        "min_pieces": 2,
-        "type": "max_hp_flat",
-        "value": 4
-      },
-      {
-        "min_pieces": 4,
-        "type": "max_hp_flat",
-        "value": 8
-      },
-      {
-        "min_pieces": 8,
-        "type": "max_hp_flat",
-        "value": 20
-      },
-      {
-        "min_pieces": 12,
-        "type": "max_hp_flat",
-        "value": 32
-      }
-    ]
-  },
-  "slime": {
-    "name": "Slime",
-    "description": "Imprégnée de gelée régénératrice.",
-    "icon": "🟢",
-    "color": "#8fdc70",
-    "tiers": [
-      {
-        "min_pieces": 2,
-        "type": "hp_regeneration_flat",
-        "value": 1
-      },
-      {
-        "min_pieces": 4,
-        "type": "hp_regeneration_flat",
-        "value": 2
-      },
-      {
-        "min_pieces": 8,
-        "type": "hp_regeneration_flat",
-        "value": 5
-      },
-      {
-        "min_pieces": 12,
-        "type": "hp_regeneration_flat",
-        "value": 8
-      }
-    ]
-  },
-  "gobelin": {
-    "name": "Gobeline",
-    "description": "Affutée par les fourbes habitudes des gobelins — frappe rare mais brutale.",
-    "icon": "👹",
-    "color": "#7ba85a",
-    "tiers": [
-      {
-        "min_pieces": 2,
-        "type": "crit_damage_flat",
-        "value": 1
-      },
-      {
-        "min_pieces": 4,
-        "type": "crit_damage_flat",
-        "value": 2
-      },
-      {
-        "min_pieces": 8,
-        "type": "crit_damage_flat",
-        "value": 4
-      },
-      {
-        "min_pieces": 12,
-        "type": "crit_damage_flat",
-        "value": 8
-      }
-    ]
-  },
-  "linen": {
-    "name": "Lin",
-    "description": "Tissu léger qui favorise l'agilité et l'esquive.",
-    "icon": "🧵",
-    "color": "#dcc8a0",
     "tiers": [
       {
         "min_pieces": 2,
@@ -135,63 +51,147 @@
       {
         "min_pieces": 12,
         "type": "dodge_flat",
-        "value": 5
+        "value": 4
+      }
+    ]
+  },
+  "slime": {
+    "name": "Slime",
+    "description": "Imprégnée de gelée régénératrice.",
+    "icon": "🟢",
+    "color": "#8fdc70",
+    "tiers": [
+      {
+        "min_pieces": 2,
+        "type": "hp_regeneration_flat",
+        "value": 3
+      },
+      {
+        "min_pieces": 4,
+        "type": "hp_regeneration_flat",
+        "value": 6
+      },
+      {
+        "min_pieces": 8,
+        "type": "hp_regeneration_flat",
+        "value": 10
+      },
+      {
+        "min_pieces": 12,
+        "type": "hp_regeneration_flat",
+        "value": 15
+      }
+    ]
+  },
+  "gobelin": {
+    "name": "Gobeline",
+    "description": "Fourbe et vicieuse : frappe critique accrue.",
+    "icon": "👹",
+    "color": "#7ba85a",
+    "tiers": [
+      {
+        "min_pieces": 2,
+        "type": "crit_chance_flat",
+        "value": 1
+      },
+      {
+        "min_pieces": 4,
+        "type": "crit_chance_flat",
+        "value": 1
+      },
+      {
+        "min_pieces": 8,
+        "type": "crit_chance_flat",
+        "value": 2
+      },
+      {
+        "min_pieces": 12,
+        "type": "crit_chance_flat",
+        "value": 3
+      }
+    ]
+  },
+  "linen": {
+    "name": "Lin",
+    "description": "Tissée pour amplifier les coups critiques.",
+    "icon": "⬜",
+    "color": "#d8d0c0",
+    "tiers": [
+      {
+        "min_pieces": 2,
+        "type": "crit_damage_flat",
+        "value": 2
+      },
+      {
+        "min_pieces": 4,
+        "type": "crit_damage_flat",
+        "value": 4
+      },
+      {
+        "min_pieces": 8,
+        "type": "crit_damage_flat",
+        "value": 6
+      },
+      {
+        "min_pieces": 12,
+        "type": "crit_damage_flat",
+        "value": 10
       }
     ]
   },
   "gobelin_plus": {
     "name": "Gobeline +",
-    "description": "Panoplie gobeline infusée — frappe critique renforcée.",
+    "description": "Fourbe et vicieuse : frappe critique accrue. Version infusée.",
     "icon": "👹",
-    "color": "#9bd96a",
+    "color": "#7ba85a",
     "tiers": [
       {
         "min_pieces": 2,
-        "type": "crit_damage_flat",
+        "type": "crit_chance_flat",
         "value": 2
       },
       {
         "min_pieces": 4,
-        "type": "crit_damage_flat",
-        "value": 4
+        "type": "crit_chance_flat",
+        "value": 2
       },
       {
         "min_pieces": 8,
-        "type": "crit_damage_flat",
-        "value": 7
+        "type": "crit_chance_flat",
+        "value": 3
       },
       {
         "min_pieces": 12,
-        "type": "crit_damage_flat",
-        "value": 12
+        "type": "crit_chance_flat",
+        "value": 5
       }
     ]
   },
   "slime_plus": {
     "name": "Slime +",
-    "description": "Panoplie slime infusée — régénération renforcée.",
+    "description": "Imprégnée de gelée régénératrice. Version infusée.",
     "icon": "🟢",
-    "color": "#a7f084",
+    "color": "#8fdc70",
     "tiers": [
       {
         "min_pieces": 2,
         "type": "hp_regeneration_flat",
-        "value": 2
+        "value": 5
       },
       {
         "min_pieces": 4,
         "type": "hp_regeneration_flat",
-        "value": 4
+        "value": 9
       },
       {
         "min_pieces": 8,
         "type": "hp_regeneration_flat",
-        "value": 8
+        "value": 14
       },
       {
         "min_pieces": 12,
         "type": "hp_regeneration_flat",
-        "value": 12
+        "value": 21
       }
     ]
   }
