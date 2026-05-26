@@ -47,18 +47,18 @@ _W_SUM = sum(ARMOR_ACC.values())
 # Cœur UNIVERSEL (attaque 6 / défense 5 identiques) + petite touche thématique,
 # pour que toute arme tape et tout bouclier protège, sans déséquilibrer.
 WEAPON_1H = {
-    "iron":    {"attack": 6, "defense": 1},
-    "gobelin": {"attack": 6, "crit_chance": 2},
-    "slime":   {"attack": 6, "max_hp": 4},
-    "leather": {"attack": 6, "dodge": 1},
-    "linen":   {"attack": 6, "crit_damage": 4},
+    "iron":    {"attack": 8, "defense": 1},
+    "gobelin": {"attack": 8, "crit_chance": 2},
+    "slime":   {"attack": 8, "max_hp": 4},
+    "leather": {"attack": 8, "dodge": 1},
+    "linen":   {"attack": 8, "crit_damage": 4},
 }
 SHIELD_1H = {
-    "iron":    {"defense": 5, "max_hp": 4},
-    "gobelin": {"defense": 5, "crit_chance": 1},
-    "slime":   {"defense": 5, "max_hp": 6},
-    "leather": {"defense": 5, "dodge": 2},
-    "linen":   {"defense": 5, "crit_damage": 2},
+    "iron":    {"defense": 7, "max_hp": 4},
+    "gobelin": {"defense": 7, "crit_chance": 1},
+    "slime":   {"defense": 7, "max_hp": 6},
+    "leather": {"defense": 7, "dodge": 2},
+    "linen":   {"defense": 7, "crit_damage": 2},
 }
 # Thème réparti sur les 10 slots armures/accessoires (totaux calibrés pour
 # un power score égal — voir vérification). Distribué par poids ARMOR_ACC.
@@ -71,11 +71,11 @@ THEME_TOTAL = {
 }
 # Bonus de set (12 pièces) — thématique. Tiers 2/4/8/12.
 SET_BONUS = {
-    "iron":    ("defense_flat", [1, 2, 3, 4]),
-    "gobelin": ("crit_chance_flat", [1, 1, 2, 3]),
-    "slime":   ("hp_regeneration_flat", [3, 6, 10, 15]),
-    "leather": ("dodge_flat", [1, 2, 3, 4]),
-    "linen":   ("crit_damage_flat", [2, 4, 6, 10]),
+    "iron":    ("defense_flat", [1, 3, 5, 7]),
+    "gobelin": ("crit_chance_flat", [1, 2, 3, 4]),
+    "slime":   ("hp_regeneration_flat", [4, 8, 13, 18]),
+    "leather": ("dodge_flat", [1, 2, 4, 6]),
+    "linen":   ("crit_damage_flat", [3, 6, 9, 14]),
 }
 SET_META = {
     "iron":    ("Fer", "Armure lourde et fiable, taillée pour encaisser.", "🛡️", "#9aa0aa"),
@@ -86,7 +86,7 @@ SET_META = {
 }
 
 
-TARGET_POWER = 230  # power score visé pour un set complet sur un débutant
+TARGET_POWER = 290  # power score visé pour un set complet sur un débutant
 
 _STAT_KEY = {"attack": "atk", "defense": "deff", "max_hp": "hp",
              "crit_chance": "cc", "crit_damage": "cd", "dodge": "dodge", "speed": "spd"}

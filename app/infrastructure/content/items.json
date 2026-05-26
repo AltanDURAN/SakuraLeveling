@@ -141,7 +141,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 6,
+      "attack": 8,
       "max_hp": 4
     },
     "equipment_slot": "main_droite",
@@ -179,7 +179,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 6,
+      "attack": 8,
       "crit_chance": 2
     },
     "equipment_slot": "main_droite",
@@ -217,7 +217,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 5,
+      "defense": 7,
       "max_hp": 4
     },
     "equipment_slot": "main_droite",
@@ -255,7 +255,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 5
+      "max_hp": 3
     },
     "equipment_slot": "casque",
     "requires_two_hands": false,
@@ -294,7 +294,7 @@
     "icon": null,
     "stat_bonuses": {
       "dodge": 2,
-      "max_hp": 15
+      "max_hp": 14
     },
     "equipment_slot": "plastron",
     "requires_two_hands": false,
@@ -312,8 +312,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 1,
-      "max_hp": 6
+      "max_hp": 3
     },
     "equipment_slot": "plastron",
     "requires_two_hands": false,
@@ -350,7 +349,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 5
+      "max_hp": 3
     },
     "equipment_slot": "jambieres",
     "requires_two_hands": false,
@@ -369,7 +368,7 @@
     "icon": null,
     "stat_bonuses": {
       "dodge": 1,
-      "max_hp": 10
+      "max_hp": 9
     },
     "equipment_slot": "bottes",
     "requires_two_hands": false,
@@ -387,7 +386,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 4
+      "max_hp": 2
     },
     "equipment_slot": "bottes",
     "requires_two_hands": false,
@@ -405,7 +404,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 21,
+      "max_hp": 24,
       "hp_regeneration": 1
     },
     "equipment_slot": "collier",
@@ -425,7 +424,7 @@
     "icon": null,
     "stat_bonuses": {
       "dodge": 1,
-      "max_hp": 9
+      "max_hp": 8
     },
     "equipment_slot": "bracelet",
     "requires_two_hands": false,
@@ -443,7 +442,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 5
+      "max_hp": 2
     },
     "equipment_slot": "bague",
     "requires_two_hands": false,
@@ -482,7 +481,7 @@
     "icon": null,
     "stat_bonuses": {
       "dodge": 1,
-      "max_hp": 9
+      "max_hp": 8
     },
     "equipment_slot": "ceinture",
     "requires_two_hands": false,
@@ -654,7 +653,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 18,
+      "max_hp": 20,
       "hp_regeneration": 1
     },
     "equipment_slot": "cape",
@@ -712,7 +711,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 4
+      "max_hp": 2
     },
     "equipment_slot": "bracelet",
     "requires_two_hands": false,
@@ -730,7 +729,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 6,
+      "attack": 8,
       "defense": 1
     },
     "equipment_slot": "main_droite",
@@ -749,7 +748,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 6,
+      "attack": 8,
       "crit_chance": 2
     },
     "equipment_slot": "main_droite",
@@ -768,7 +767,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 5,
+      "defense": 7,
       "max_hp": 6
     },
     "equipment_slot": "main_droite",
@@ -787,7 +786,7 @@
     "buy_price": 24,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 5
+      "max_hp": 2
     },
     "equipment_slot": "collier",
     "requires_two_hands": false,
@@ -805,7 +804,7 @@
     "buy_price": 24,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 4
+      "max_hp": 2
     },
     "equipment_slot": "ceinture",
     "requires_two_hands": false,
@@ -823,7 +822,7 @@
     "buy_price": 24,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 4
+      "max_hp": 2
     },
     "equipment_slot": "cape",
     "requires_two_hands": false,
@@ -841,7 +840,7 @@
     "buy_price": 24,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 4
+      "max_hp": 2
     },
     "equipment_slot": "boucle_oreille",
     "requires_two_hands": false,
@@ -859,7 +858,7 @@
     "buy_price": 12,
     "icon": null,
     "stat_bonuses": {
-      "attack": 6,
+      "attack": 8,
       "dodge": 1
     },
     "equipment_slot": "main_droite",
@@ -878,7 +877,7 @@
     "buy_price": 12,
     "icon": null,
     "stat_bonuses": {
-      "defense": 5,
+      "defense": 7,
       "dodge": 2
     },
     "equipment_slot": "main_droite",
@@ -898,7 +897,7 @@
     "icon": null,
     "stat_bonuses": {
       "dodge": 1,
-      "max_hp": 12
+      "max_hp": 11
     },
     "equipment_slot": "collier",
     "requires_two_hands": false,
@@ -917,7 +916,7 @@
     "icon": null,
     "stat_bonuses": {
       "dodge": 1,
-      "max_hp": 12
+      "max_hp": 11
     },
     "equipment_slot": "bague",
     "requires_two_hands": false,
@@ -936,7 +935,7 @@
     "icon": null,
     "stat_bonuses": {
       "dodge": 1,
-      "max_hp": 10
+      "max_hp": 9
     },
     "equipment_slot": "cape",
     "requires_two_hands": false,
@@ -955,7 +954,7 @@
     "icon": null,
     "stat_bonuses": {
       "dodge": 1,
-      "max_hp": 9
+      "max_hp": 8
     },
     "equipment_slot": "boucle_oreille",
     "requires_two_hands": false,
@@ -973,7 +972,7 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 23,
+      "max_hp": 25,
       "hp_regeneration": 1
     },
     "equipment_slot": "casque",
@@ -992,7 +991,7 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 27,
+      "max_hp": 30,
       "hp_regeneration": 1
     },
     "equipment_slot": "plastron",
@@ -1011,7 +1010,7 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 23,
+      "max_hp": 25,
       "hp_regeneration": 1
     },
     "equipment_slot": "jambieres",
@@ -1030,7 +1029,7 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 18,
+      "max_hp": 20,
       "hp_regeneration": 1
     },
     "equipment_slot": "bottes",
@@ -1049,7 +1048,8 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 16
+      "max_hp": 17,
+      "hp_regeneration": 1
     },
     "equipment_slot": "bracelet",
     "requires_two_hands": false,
@@ -1067,7 +1067,7 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 21,
+      "max_hp": 24,
       "hp_regeneration": 1
     },
     "equipment_slot": "bague",
@@ -1086,7 +1086,8 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 16
+      "max_hp": 17,
+      "hp_regeneration": 1
     },
     "equipment_slot": "ceinture",
     "requires_two_hands": false,
@@ -1104,7 +1105,8 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 16
+      "max_hp": 17,
+      "hp_regeneration": 1
     },
     "equipment_slot": "boucle_oreille",
     "requires_two_hands": false,
@@ -1182,7 +1184,7 @@
     "buy_price": 21,
     "icon": null,
     "stat_bonuses": {
-      "defense": 5,
+      "defense": 7,
       "crit_chance": 1
     },
     "equipment_slot": "main_droite",
@@ -1308,7 +1310,7 @@
     "buy_price": 12,
     "icon": null,
     "stat_bonuses": {
-      "attack": 6,
+      "attack": 8,
       "crit_damage": 4
     },
     "equipment_slot": "main_droite",
@@ -1327,7 +1329,7 @@
     "buy_price": 12,
     "icon": null,
     "stat_bonuses": {
-      "defense": 5,
+      "defense": 7,
       "crit_damage": 2
     },
     "equipment_slot": "main_droite",
@@ -1424,7 +1426,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 6,
+      "attack": 8,
       "defense": 1
     },
     "equipment_slot": "main_droite",
@@ -1443,7 +1445,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 5,
+      "defense": 7,
       "max_hp": 4
     },
     "equipment_slot": "main_droite",
@@ -1462,7 +1464,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 12,
+      "attack": 16,
       "defense": 2,
       "speed": -2
     },
@@ -1482,7 +1484,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 10,
+      "defense": 14,
       "max_hp": 8,
       "attack": -4
     },
@@ -1502,7 +1504,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 6,
+      "attack": 8,
       "max_hp": 4
     },
     "equipment_slot": "main_droite",
@@ -1521,7 +1523,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 5,
+      "defense": 7,
       "max_hp": 6
     },
     "equipment_slot": "main_droite",
@@ -1540,7 +1542,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 12,
+      "attack": 16,
       "max_hp": 8,
       "defense": -3
     },
@@ -1560,7 +1562,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 10,
+      "defense": 14,
       "max_hp": 12,
       "attack": -4
     },
@@ -1580,7 +1582,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 5,
+      "defense": 7,
       "crit_chance": 1
     },
     "equipment_slot": "main_droite",
@@ -1599,7 +1601,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 12,
+      "attack": 16,
       "crit_chance": 2
     },
     "equipment_slot": "main_droite",
@@ -1618,7 +1620,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 10,
+      "defense": 14,
       "crit_chance": 2,
       "attack": -4
     },
@@ -1638,7 +1640,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 6,
+      "attack": 8,
       "dodge": 1
     },
     "equipment_slot": "main_droite",
@@ -1657,7 +1659,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 5,
+      "defense": 7,
       "dodge": 2
     },
     "equipment_slot": "main_droite",
@@ -1676,7 +1678,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 12,
+      "attack": 16,
       "dodge": 2,
       "defense": -2
     },
@@ -1696,7 +1698,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 10,
+      "defense": 14,
       "dodge": 4,
       "attack": -4
     },
@@ -1716,7 +1718,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 6,
+      "attack": 8,
       "crit_damage": 4
     },
     "equipment_slot": "main_droite",
@@ -1735,7 +1737,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 5,
+      "defense": 7,
       "crit_damage": 2
     },
     "equipment_slot": "main_droite",
@@ -1754,7 +1756,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 12,
+      "attack": 16,
       "crit_damage": 8,
       "defense": -3
     },
@@ -1774,7 +1776,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 10,
+      "defense": 14,
       "crit_damage": 4,
       "attack": -4
     },
@@ -1842,7 +1844,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 9,
+      "attack": 12,
       "crit_chance": 3
     },
     "equipment_slot": "main_droite",
@@ -1921,7 +1923,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 9,
+      "attack": 12,
       "crit_chance": 3
     },
     "equipment_slot": "main_droite",
@@ -2000,7 +2002,7 @@
     "buy_price": 21,
     "icon": null,
     "stat_bonuses": {
-      "defense": 8,
+      "defense": 11,
       "crit_chance": 2
     },
     "equipment_slot": "main_droite",
@@ -2087,7 +2089,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 8,
+      "defense": 11,
       "crit_chance": 2
     },
     "equipment_slot": "main_droite",
@@ -2106,7 +2108,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 18,
+      "attack": 24,
       "crit_chance": 3
     },
     "equipment_slot": "main_droite",
@@ -2125,7 +2127,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 15,
+      "defense": 21,
       "crit_chance": 3,
       "attack": -4
     },
@@ -2145,7 +2147,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 9,
+      "attack": 12,
       "max_hp": 6
     },
     "equipment_slot": "main_droite",
@@ -2164,7 +2166,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 32,
+      "max_hp": 36,
       "hp_regeneration": 2
     },
     "equipment_slot": "collier",
@@ -2183,7 +2185,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 27,
+      "max_hp": 30,
       "hp_regeneration": 2
     },
     "equipment_slot": "cape",
@@ -2202,7 +2204,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 8,
+      "defense": 11,
       "max_hp": 9
     },
     "equipment_slot": "main_droite",
@@ -2221,7 +2223,7 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 35,
+      "max_hp": 38,
       "hp_regeneration": 2
     },
     "equipment_slot": "casque",
@@ -2240,7 +2242,7 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 41,
+      "max_hp": 45,
       "hp_regeneration": 2
     },
     "equipment_slot": "plastron",
@@ -2259,7 +2261,7 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 35,
+      "max_hp": 38,
       "hp_regeneration": 2
     },
     "equipment_slot": "jambieres",
@@ -2278,7 +2280,7 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 27,
+      "max_hp": 30,
       "hp_regeneration": 2
     },
     "equipment_slot": "bottes",
@@ -2297,7 +2299,8 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 24
+      "max_hp": 26,
+      "hp_regeneration": 2
     },
     "equipment_slot": "bracelet",
     "requires_two_hands": false,
@@ -2315,7 +2318,7 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 32,
+      "max_hp": 36,
       "hp_regeneration": 2
     },
     "equipment_slot": "bague",
@@ -2334,7 +2337,8 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 24
+      "max_hp": 26,
+      "hp_regeneration": 2
     },
     "equipment_slot": "ceinture",
     "requires_two_hands": false,
@@ -2352,7 +2356,8 @@
     "buy_price": 18,
     "icon": null,
     "stat_bonuses": {
-      "max_hp": 24
+      "max_hp": 26,
+      "hp_regeneration": 2
     },
     "equipment_slot": "boucle_oreille",
     "requires_two_hands": false,
@@ -2370,7 +2375,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 9,
+      "attack": 12,
       "max_hp": 6
     },
     "equipment_slot": "main_droite",
@@ -2389,7 +2394,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 8,
+      "defense": 11,
       "max_hp": 9
     },
     "equipment_slot": "main_droite",
@@ -2408,7 +2413,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack": 18,
+      "attack": 24,
       "max_hp": 12,
       "defense": -3
     },
@@ -2428,7 +2433,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "defense": 15,
+      "defense": 21,
       "max_hp": 18,
       "attack": -4
     },
