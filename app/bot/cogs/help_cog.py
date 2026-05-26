@@ -1,13 +1,17 @@
-"""Cog `/help` — liste paginée des commandes joueur.
+"""Cog `/help` — tutoriel paginé du bot.
 
-Pas de hardcoded list : on itère sur `bot.tree.walk_commands()` pour
-récupérer toutes les slash commands enregistrées et leurs descriptions.
-Le catalogue affiche **une catégorie par page** avec boutons précédent /
-suivant pour naviguer.
+`/help` (sans argument) ouvre un mini-tutoriel : une page d'intro (pitch du
+bot + boucle de jeu + premiers pas) suivie d'une page par CATÉGORIE
+thématique de commandes. Boutons précédent / suivant pour naviguer.
 
-Les commandes admin sont MASQUÉES par défaut (pas pertinentes pour les
-joueurs). Elles restent accessibles via `/help admin set` pour qui les
-cherche directement.
+Pas de liste hardcodée des descriptions : on itère sur
+`bot.tree.walk_commands()` pour récupérer la description LIVE de chaque
+slash command, puis on range chaque commande dans sa catégorie via
+`CATEGORIES`. Toute commande non mappée tombe dans « Autres » → rien n'est
+jamais perdu si on en ajoute une plus tard.
+
+Les commandes admin sont MASQUÉES par défaut. Elles restent accessibles via
+`/help <command>` (ex : `/help admin set`) pour qui les cherche.
 
 Avec paramètre `command` : embed détaillé pour une commande spécifique
 (description + params + autocomplete sur le nom).
@@ -23,14 +27,84 @@ from app.bot.views.help_view import HelpView
 # Préfixes de groupes à ne PAS afficher dans le catalogue joueur.
 HIDDEN_GROUP_PREFIXES = ("admin",)
 
-# Libellés et emojis par catégorie. Les groupes inconnus prennent un
-# emoji par défaut.
-GROUP_LABELS: dict[str, tuple[str, str]] = {
-    "_player_":   ("Joueur — commandes principales", "🎮"),
-    "boss":       ("World boss", "👑"),
-    "brocante":   ("Brocante (marketplace P2P)", "🛍️"),
-    "trade":      ("Échanges entre joueurs", "💱"),
-}
+# Catégories thématiques : (emoji, titre, sous-titre, {noms de commandes}).
+# Le matching se fait sur le NOM DE TÊTE de la commande (ex : "boss spawn"
+# → "boss"), donc un groupe entier se range d'un coup. L'ordre fixe l'ordre
+# des pages. Une commande absente de tous les sets va dans « Autres ».
+CATEGORIES: list[tuple[str, str, str, set[str]]] = [
+    ("👤", "Profil & progression",
+     "Ton personnage, sa classe, ses titres, son arbre et ta routine quotidienne.",
+     {"profile", "gold", "class", "classes", "class_set", "skill",
+      "title", "title_set", "cd", "daily", "daily_quest", "weekly_quest"}),
+    ("⚔️", "Combat & aventure",
+     "Affronte les monstres, les world bosses et les autres joueurs.",
+     {"fight", "use", "boss", "bestiaire"}),
+    ("🎒", "Équipement & inventaire",
+     "Gère ton stuff, tes panoplies et tes loadouts perso.",
+     {"inventory", "equipement", "equipement_list", "equip", "unequip",
+      "equip_panoplie", "panoplie", "create_set", "equip_set", "delete_set"}),
+    ("🛠️", "Artisanat & récolte",
+     "Récolte des ressources puis fabrique / forge ton équipement.",
+     {"gather", "craft", "craft_list", "forge", "forge_list",
+      "craft_panoplie", "forge_panoplie"}),
+    ("💰", "Économie & échanges",
+     "Boutique, monnaie et commerce entre joueurs.",
+     {"shop", "buy", "pay", "trade", "brocante"}),
+    ("🏆", "Classements & utilitaires",
+     "Compare-toi aux autres et trouve de l'aide.",
+     {"top", "help", "ping", "chad"}),
+]
+_OTHERS = ("📂", "Autres", "Commandes diverses.", set())
+
+
+def _build_intro_embed(total_cmds: int, n_pages: int) -> discord.Embed:
+    """Page d'accueil du tutoriel : pitch + boucle de jeu + premiers pas."""
+    embed = discord.Embed(
+        title="🌸 Bienvenue dans SakuraLeveling",
+        description=(
+            "Un **RPG Discord** où tu fais grandir ton personnage : combats les "
+            "monstres qui apparaissent dans le salon, récolte et forge ton "
+            "équipement, débloque des compétences et grimpe dans les classements."
+        ),
+        color=discord.Color.magenta(),
+    )
+    embed.add_field(
+        name="🎯 La boucle de jeu",
+        value=(
+            "**1.** ⚔️ **Combats** — des monstres spawnent tout seuls : rejoins le "
+            "combat de groupe (ou défie un joueur avec `/fight`).\n"
+            "**2.** 📈 **Progresse** — gagne XP, or et butin ; chaque niveau donne "
+            "**1 point de compétence** à investir dans l'arbre (`/skill`).\n"
+            "**3.** 🛠️ **Équipe-toi** — récolte (`/gather`), fabrique (`/craft`, "
+            "`/forge`) et porte une panoplie complète (`/equip_panoplie`).\n"
+            "**4.** 🧬 **Optimise** — choisis ta classe (`/class_set`), tes titres "
+            "(`/title`) et ton build d'arbre.\n"
+            "**5.** 🏆 **Brille** — quêtes (`/weekly`), classements (`/top`) et "
+            "ladder de duels."
+        ),
+        inline=False,
+    )
+    embed.add_field(
+        name="🚀 Premiers pas",
+        value=(
+            "• `/profile` — crée ton personnage et vois tout d'un coup d'œil.\n"
+            "• `/daily` — ta récompense quotidienne (à faire chaque jour !).\n"
+            "• `/gather` puis `/craft_list` — de quoi te fabriquer ton 1er stuff.\n"
+            "• `/skill` — dépense tes points de compétence."
+        ),
+        inline=False,
+    )
+    embed.add_field(
+        name="💡 Astuce",
+        value=(
+            "Tape `/help <commande>` pour le détail d'une commande précise "
+            "(avec ses paramètres). Utilise ◀ ▶ pour parcourir les "
+            f"**{n_pages - 1} catégories** ci-après."
+        ),
+        inline=False,
+    )
+    embed.set_footer(text=f"Page 1/{n_pages} · {total_cmds} commandes joueur")
+    return embed
 
 
 def _walk_all_commands(bot: commands.Bot, include_admin: bool = False):
@@ -118,76 +192,64 @@ class HelpCog(commands.Cog):
         )
 
     async def _send_paginated_list(self, interaction: discord.Interaction) -> None:
-        # Regroupe par préfixe : `/pay` → "_player_", `/boss spawn` → "boss"
-        groups: dict[str, list[tuple[str, str]]] = {}
+        # 1. Range chaque commande joueur dans sa catégorie thématique.
+        buckets: dict[int, list[tuple[str, str]]] = {
+            i: [] for i in range(len(CATEGORIES))
+        }
+        others: list[tuple[str, str]] = []
+        total_cmds = 0
         for name, desc, _ in _walk_all_commands(self.bot, include_admin=False):
-            top = name.split(" ", 1)[0] if " " in name else "_player_"
-            groups.setdefault(top, []).append((name, desc))
+            total_cmds += 1
+            top = name.split(" ", 1)[0]
+            for i, (_emoji, _label, _sub, names) in enumerate(CATEGORIES):
+                if top in names:
+                    buckets[i].append((name, desc))
+                    break
+            else:
+                others.append((name, desc))
 
-        # Page joueur d'abord, puis groupes alphabétique
-        ordered = sorted(
-            groups.keys(),
-            key=lambda g: (g != "_player_", g),
-        )
+        # 2. Construit la liste ordonnée des catégories non vides (+ Autres).
+        sections: list[tuple[str, str, str, list[tuple[str, str]]]] = []
+        for i, (emoji, label, sub, _names) in enumerate(CATEGORIES):
+            if buckets[i]:
+                sections.append((emoji, label, sub, sorted(buckets[i])))
+        if others:
+            sections.append((*_OTHERS[:3], sorted(others)))
 
-        total_cmds = sum(len(v) for v in groups.values())
-        pages: list[discord.Embed] = []
+        n_pages = len(sections) + 1  # +1 pour la page d'intro
 
-        for idx, group_name in enumerate(ordered):
-            label, emoji = GROUP_LABELS.get(
-                group_name, (f"/{group_name}", "📂"),
-            )
-            cmds = sorted(groups[group_name], key=lambda x: x[0])
+        # 3. Page d'intro + une page par catégorie.
+        pages: list[discord.Embed] = [_build_intro_embed(total_cmds, n_pages)]
+        for idx, (emoji, label, sub, cmds) in enumerate(sections):
             embed = discord.Embed(
                 title=f"{emoji} {label}",
-                description=(
-                    f"_{len(cmds)} commande(s) dans cette page._\n"
-                    f"Tape `/help <commande>` pour le détail (autocomplete dispo)."
-                ),
+                description=f"_{sub}_",
                 color=discord.Color.blurple(),
             )
-
-            # Découpe en chunks pour respecter la limite de 1024 chars/field
-            current_value = ""
-            field_idx = 1
+            # Découpe en plusieurs fields pour la limite de 1024 chars.
+            current, field_idx = "", 1
             for cmd_name, cmd_desc in cmds:
-                line = f"`/{cmd_name}` — {cmd_desc}\n"
-                if len(current_value) + len(line) > 1000:
+                line = f"**`/{cmd_name}`** — {cmd_desc}\n"
+                if len(current) + len(line) > 1000:
                     embed.add_field(
-                        name=(
-                            "Commandes" if field_idx == 1
-                            else f"Commandes (suite {field_idx})"
-                        ),
-                        value=current_value,
-                        inline=False,
+                        name="Commandes" if field_idx == 1 else "​",
+                        value=current, inline=False,
                     )
-                    current_value = line
-                    field_idx += 1
+                    current, field_idx = line, field_idx + 1
                 else:
-                    current_value += line
-            if current_value:
+                    current += line
+            if current:
                 embed.add_field(
-                    name=(
-                        "Commandes" if field_idx == 1
-                        else f"Commandes (suite {field_idx})"
-                    ),
-                    value=current_value,
-                    inline=False,
+                    name="Commandes" if field_idx == 1 else "​",
+                    value=current, inline=False,
                 )
-
             embed.set_footer(
                 text=(
-                    f"Page {idx + 1}/{len(ordered)} · "
-                    f"{total_cmds} commandes joueur au total"
+                    f"Page {idx + 2}/{n_pages} · "
+                    f"{len(cmds)} commande(s) · `/help <commande>` pour le détail"
                 )
             )
             pages.append(embed)
-
-        if not pages:
-            await interaction.response.send_message(
-                "ℹ️ Aucune commande disponible.", ephemeral=True,
-            )
-            return
 
         view = HelpView(author_id=interaction.user.id, pages=pages)
         await interaction.response.send_message(
