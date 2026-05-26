@@ -86,7 +86,7 @@ SET_META = {
 }
 
 
-TARGET_POWER = 290  # power score visé pour un set complet sur un débutant
+TARGET_POWER = 560  # set complet sur un débutant (base ~58 → ~+500 de bonus)
 
 _STAT_KEY = {"attack": "atk", "defense": "deff", "max_hp": "hp",
              "crit_chance": "cc", "crit_damage": "cd", "dodge": "dodge", "speed": "spd"}
@@ -101,7 +101,7 @@ def _power(atk, deff, hp, cc, cd, dodge, spd):
 
 # Slots ordonnés par poids décroissant (les gros items se remplissent en premier).
 _SLOTS_ORDERED = sorted(ARMOR_ACC, key=lambda s: -ARMOR_ACC[s])
-_CHUNK = 2  # valeur visée par stat posée → +2 net plutôt qu'un +1 éparpillé
+_CHUNK = 6  # valeur visée par stat posée sur un slot (blocs nets, peu de stats/pièce)
 
 
 def distribute_theme(theme):
@@ -116,7 +116,7 @@ def distribute_theme(theme):
         total = int(round(total))
         if total <= 0:
             continue
-        k = max(1, min(n, total // _CHUNK))   # nb de slots ciblés (chunk ≈ 2)
+        k = max(1, min(n, total // _CHUNK))   # nb de slots ciblés (≈ total / _CHUNK)
         base, extra = divmod(total, k)         # divmod préserve le total exactement
         for i in range(k):
             slot = _SLOTS_ORDERED[(ptr + i) % n]
@@ -311,10 +311,11 @@ def main() -> None:
 def _verify(families):
     """Power score d'un set complet (débutant + 12 pièces + bonus), par famille."""
     base = _power(atk=10, deff=5, hp=100, cc=5, cd=150, dodge=0, spd=5)
-    print(f"\n{'famille':10s} {'power set complet':>18s}  (base seul = %.0f)" % base)
+    print(f"\n{'famille':10s} {'set complet':>12s} {'bonus':>8s}  (base seul = %.0f)" % base)
     for fam in families:
         dist = _distributed_total(THEME_TOTAL[fam])
-        print(f"{fam:10s} {round(_power(**_set_totals(fam, dist)), 1):>18}")
+        total = _power(**_set_totals(fam, dist))
+        print(f"{fam:10s} {round(total, 1):>12} {round(total - base, 1):>8}")
 
 
 if __name__ == "__main__":
