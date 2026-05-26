@@ -63,8 +63,8 @@ SHIELD_1H = {
 # Thème réparti sur les 10 slots armures/accessoires (totaux calibrés pour
 # un power score égal — voir vérification). Distribué par poids ARMOR_ACC.
 THEME_TOTAL = {
-    "iron":    {"defense": 6, "max_hp": 64},
-    "gobelin": {"attack": 6, "crit_chance": 6, "crit_damage": 6},
+    "iron":    {"max_hp": 110},
+    "gobelin": {"attack": 8, "crit_chance": 6, "crit_damage": 6},
     "slime":   {"max_hp": 200, "hp_regeneration": 6},
     "leather": {"dodge": 16, "max_hp": 150},
     "linen":   {"crit_damage": 44, "crit_chance": 16, "attack": 4},
@@ -99,22 +99,53 @@ def _power(atk, deff, hp, cc, cd, dodge, spd):
     return off * ehp / 42
 
 
-def theme_for_slot_dict(theme, slot):
-    """Répartit un dict de totaux thème sur un slot (arrondi simple, 0 permis)."""
-    out = {}
-    w = ARMOR_ACC[slot] / _W_SUM
+# Slots ordonnés par poids décroissant (les gros items se remplissent en premier).
+_SLOTS_ORDERED = sorted(ARMOR_ACC, key=lambda s: -ARMOR_ACC[s])
+_CHUNK = 2  # valeur visée par stat posée → +2 net plutôt qu'un +1 éparpillé
+
+
+def distribute_theme(theme):
+    """Concentre chaque stat sur PEU de slots (valeurs ~_CHUNK) en préservant le
+    TOTAL par stat. Une rotation place chaque stat sur des slots différents, si
+    bien qu'un item porte 1-2 stats nettes au lieu d'un +1 partout.
+    Retourne {slot: {stat: val}}."""
+    out = {s: {} for s in ARMOR_ACC}
+    n = len(_SLOTS_ORDERED)
+    ptr = 0
     for stat, total in theme.items():
-        val = round(total * w)
-        if val:
-            out[stat] = val
+        total = int(round(total))
+        if total <= 0:
+            continue
+        k = max(1, min(n, total // _CHUNK))   # nb de slots ciblés (chunk ≈ 2)
+        base, extra = divmod(total, k)         # divmod préserve le total exactement
+        for i in range(k):
+            slot = _SLOTS_ORDERED[(ptr + i) % n]
+            val = base + (1 if i < extra else 0)
+            if val:
+                out[slot][stat] = out[slot].get(stat, 0) + val
+        ptr = (ptr + k) % n
+
+    # Aucun slot d'armure vide : on DÉPLACE 1 pt d'un slot riche (≥2) vers chaque
+    # vide. Préserve le total par stat → power score inchangé. (Cas typique : fer,
+    # dont le budget d'armure est minime car sa def vit surtout dans bouclier+set.)
+    empties = [s for s in ARMOR_ACC if not out[s]]
+    for empty in empties:
+        donor = max(out, key=lambda s: max(out[s].values(), default=0))
+        if not out[donor] or max(out[donor].values()) < 2:
+            break  # plus rien à déplacer proprement (budget épuisé)
+        stat = max(out[donor], key=out[donor].get)
+        out[donor][stat] -= 1
+        if out[donor][stat] == 0:
+            del out[donor][stat]
+        out[empty][stat] = out[empty].get(stat, 0) + 1
     return out
 
 
 def _distributed_total(theme):
-    """Somme RÉELLE du thème après répartition+arrondi sur les 10 slots."""
+    """Somme RÉELLE du thème après distribution (pour l'autotune)."""
     agg = {}
-    for slot in ARMOR_ACC:
-        for k, v in theme_for_slot_dict(theme, slot).items():
+    for slot_stats in distribute_theme(theme).values():
+        for k, v in slot_stats.items():
             agg[k] = agg.get(k, 0) + v
     return agg
 
@@ -148,10 +179,6 @@ def _autotune_theme():
                 hi = mid
         f = (lo + hi) / 2
         THEME_TOTAL[fam] = {k: round(v * f) for k, v in theme.items()}
-
-
-def theme_for_slot(family, slot):
-    return theme_for_slot_dict(THEME_TOTAL[family], slot)
 
 
 def two_hand(stats_1h, malus_stat, malus_val):
@@ -201,6 +228,7 @@ def main() -> None:
     # 2. Rééquilibrage de TOUS les équipements de famille
     _autotune_theme()   # calibre THEME_TOTAL pour un power score égal
     FAMILIES = ("iron", "gobelin", "slime", "leather", "linen")
+    dist_by_fam = {fam: distribute_theme(THEME_TOTAL[fam]) for fam in FAMILIES}
     for it in items:
         fam, slot, cat = it.get("family"), it.get("equipment_slot"), it.get("category")
         if fam not in FAMILIES:
@@ -214,7 +242,7 @@ def main() -> None:
             # 2-mains bouclier : malus en attaque
             it["stat_bonuses"] = (two_hand(base, "attack", 4) if is_2h else dict(base))
         elif slot in ARMOR_ACC:
-            it["stat_bonuses"] = theme_for_slot(fam, slot)
+            it["stat_bonuses"] = dict(dist_by_fam[fam].get(slot, {}))
 
     # 3. Versions "+" gobelin/slime + recettes
     plus_recipes = []
