@@ -13,17 +13,17 @@
       {
         "min_pieces": 4,
         "type": "defense_flat",
-        "value": 2
+        "value": 3
       },
       {
         "min_pieces": 8,
         "type": "defense_flat",
-        "value": 3
+        "value": 5
       },
       {
         "min_pieces": 12,
         "type": "defense_flat",
-        "value": 4
+        "value": 7
       }
     ]
   },
@@ -46,12 +46,12 @@
       {
         "min_pieces": 8,
         "type": "dodge_flat",
-        "value": 3
+        "value": 4
       },
       {
         "min_pieces": 12,
         "type": "dodge_flat",
-        "value": 4
+        "value": 6
       }
     ]
   },
@@ -64,22 +64,22 @@
       {
         "min_pieces": 2,
         "type": "hp_regeneration_flat",
-        "value": 3
+        "value": 4
       },
       {
         "min_pieces": 4,
         "type": "hp_regeneration_flat",
-        "value": 6
+        "value": 8
       },
       {
         "min_pieces": 8,
         "type": "hp_regeneration_flat",
-        "value": 10
+        "value": 13
       },
       {
         "min_pieces": 12,
         "type": "hp_regeneration_flat",
-        "value": 15
+        "value": 18
       }
     ]
   },
@@ -97,17 +97,17 @@
       {
         "min_pieces": 4,
         "type": "crit_chance_flat",
-        "value": 1
+        "value": 2
       },
       {
         "min_pieces": 8,
         "type": "crit_chance_flat",
-        "value": 2
+        "value": 3
       },
       {
         "min_pieces": 12,
         "type": "crit_chance_flat",
-        "value": 3
+        "value": 4
       }
     ]
   },
@@ -120,22 +120,22 @@
       {
         "min_pieces": 2,
         "type": "crit_damage_flat",
-        "value": 2
+        "value": 3
       },
       {
         "min_pieces": 4,
         "type": "crit_damage_flat",
-        "value": 4
+        "value": 6
       },
       {
         "min_pieces": 8,
         "type": "crit_damage_flat",
-        "value": 6
+        "value": 9
       },
       {
         "min_pieces": 12,
         "type": "crit_damage_flat",
-        "value": 10
+        "value": 14
       }
     ]
   },
@@ -153,17 +153,17 @@
       {
         "min_pieces": 4,
         "type": "crit_chance_flat",
-        "value": 2
+        "value": 3
       },
       {
         "min_pieces": 8,
         "type": "crit_chance_flat",
-        "value": 3
+        "value": 5
       },
       {
         "min_pieces": 12,
         "type": "crit_chance_flat",
-        "value": 5
+        "value": 6
       }
     ]
   },
@@ -176,22 +176,22 @@
       {
         "min_pieces": 2,
         "type": "hp_regeneration_flat",
-        "value": 5
+        "value": 6
       },
       {
         "min_pieces": 4,
         "type": "hp_regeneration_flat",
-        "value": 9
+        "value": 12
       },
       {
         "min_pieces": 8,
         "type": "hp_regeneration_flat",
-        "value": 14
+        "value": 19
       },
       {
         "min_pieces": 12,
         "type": "hp_regeneration_flat",
-        "value": 21
+        "value": 26
       }
     ]
   }
