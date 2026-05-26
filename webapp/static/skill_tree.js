@@ -21,6 +21,15 @@
     const tooltipClose = tooltip.querySelector('.tooltip-close');
 
     const isMobile = () => window.matchMedia('(max-width: 700px)').matches;
+    // Feuille du bas dès qu'on est sur un appareil TACTILE (fiable partout :
+    // tablettes, webview Discord, etc.) ou un petit écran. Ne dépend plus
+    // uniquement de la largeur CSS (qui peut être trompeuse).
+    const wantsSheet = () =>
+        window.matchMedia('(pointer: coarse)').matches ||
+        ('ontouchstart' in window) ||
+        isMobile();
+    const isFinePointer = () =>
+        window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
     const STATE_LABELS = {
         maxed: 'Niveau maximum', in_progress: 'En cours',
@@ -64,21 +73,25 @@
         const skill = (window.SKILL_NODES || []).find(s => s.code === node.dataset.code);
         if (!skill) return;
         fillTooltip(skill);
+
+        const sheet = wantsSheet();
+        tooltip.classList.toggle('tooltip--sheet', sheet);
         tooltip.hidden = false;
 
-        if (isMobile()) {
-            // Bottom sheet (positionné par le CSS) — on neutralise left/top.
+        if (sheet) {
+            // Feuille du bas : pleine largeur, toujours entièrement à l'écran
+            // (position gérée par le CSS .tooltip--sheet). On neutralise l'inline.
             tooltip.style.left = '';
             tooltip.style.top = '';
         } else {
-            // Près du curseur / nœud, clampé dans la fenêtre.
+            // Bulle flottante près du curseur, CLAMPÉE intégralement dans la fenêtre.
             const pad = 14;
-            let left = (clientX ?? 0) + pad;
-            let top = (clientY ?? 0) + pad;
             const w = tooltip.offsetWidth || 340;
             const h = tooltip.offsetHeight || 280;
-            if (left + w > window.innerWidth) left = window.innerWidth - w - pad;
-            if (top + h > window.innerHeight) top = window.innerHeight - h - pad;
+            let left = (clientX ?? window.innerWidth / 2) + pad;
+            let top = (clientY ?? window.innerHeight / 2) + pad;
+            left = Math.min(left, window.innerWidth - w - pad);
+            top = Math.min(top, window.innerHeight - h - pad);
             tooltip.style.left = Math.max(pad, left) + 'px';
             tooltip.style.top = Math.max(pad, top) + 'px';
         }
@@ -86,13 +99,14 @@
     const hideTooltip = () => { tooltip.hidden = true; };
     if (tooltipClose) tooltipClose.addEventListener('click', hideTooltip);
 
-    // Survol desktop (en plus du tap)
+    // Survol : seulement sur souris/desktop (pointeur fin). Sur tactile, on
+    // passe par le tap (feuille du bas).
     svg.querySelectorAll('.skill-node').forEach(node => {
         node.addEventListener('mousemove', e => {
-            if (!isMobile() && activePointers.size === 0) showTooltip(node, e.clientX, e.clientY);
+            if (isFinePointer() && activePointers.size === 0) showTooltip(node, e.clientX, e.clientY);
         });
         node.addEventListener('mouseleave', () => {
-            if (!isMobile()) hideTooltip();
+            if (isFinePointer()) hideTooltip();
         });
     });
 
@@ -225,7 +239,7 @@
 
     // Tap dans le vide masque le tooltip (mobile)
     container.addEventListener('click', e => {
-        if (isMobile() && !(e.target.closest && e.target.closest('.skill-node'))) {
+        if (wantsSheet() && !(e.target.closest && e.target.closest('.skill-node'))) {
             hideTooltip();
         }
     });

@@ -215,18 +215,62 @@ html, body {
 }
 
 .tooltip-close {
-    display: none;  /* visible uniquement en mobile (bottom sheet) */
+    display: none;  /* visible uniquement en feuille du bas */
     position: absolute;
     top: 8px;
     right: 10px;
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     border: none;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.12);
     color: #e8e8f0;
     font-size: 18px;
     cursor: pointer;
+    z-index: 2;
+}
+
+/* Feuille du bas (tactile) — pilotée par JS via la classe, indépendante de la
+   largeur d'écran. Toujours ENTIÈREMENT à l'écran, en bas, scrollable. */
+.tooltip--sheet {
+    left: 0 !important;
+    right: 0;
+    top: auto !important;
+    bottom: 0;
+    width: 100%;
+    max-width: none;
+    border-radius: 18px 18px 0 0;
+    padding: 20px 18px calc(22px + env(safe-area-inset-bottom, 0px));
+    pointer-events: auto;
+    max-height: 62vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: 15px;
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.6);
+    animation: sheet-up 0.18s ease;
+}
+.tooltip--sheet::before {
+    /* poignée de glissement décorative */
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 44px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.25);
+}
+.tooltip--sheet .tooltip-close { display: block; }
+.tooltip--sheet .tooltip-title { font-size: 19px; padding-right: 44px; margin-top: 6px; }
+.tooltip--sheet .tooltip-description,
+.tooltip--sheet .tooltip-level,
+.tooltip--sheet .tooltip-cost,
+.tooltip--sheet .tooltip-prereq { font-size: 15px; }
+
+@keyframes sheet-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
 }
 
 .tooltip-title {
@@ -308,33 +352,9 @@ html, body {
     .legend { font-size: 10px; gap: 6px; }
     .legend-item { padding: 3px 6px; }
 
-    /* Tooltip = feuille du bas, pleine largeur, scrollable, fermable */
-    .tooltip {
-        left: 0 !important;
-        right: 0;
-        top: auto !important;
-        bottom: 0;
-        max-width: none;
-        width: 100%;
-        border-radius: 18px 18px 0 0;
-        padding: 18px 18px 22px;
-        pointer-events: auto;
-        max-height: 60vh;
-        overflow-y: auto;
-        font-size: 14px;
-        animation: sheet-up 0.18s ease;
-    }
-    .tooltip-close { display: block; }
-    .tooltip-title { font-size: 18px; padding-right: 40px; }
-    .tooltip-description, .tooltip-level, .tooltip-cost,
-    .tooltip-prereq { font-size: 14px; }
+    /* La feuille du bas est gérée par .tooltip--sheet (pilotée par JS). */
 
     /* Boutons de contrôle un peu plus haut pour ne pas masquer le hint */
-    .tree-controls { bottom: 70px; right: 14px; }
+    .tree-controls { bottom: 76px; right: 14px; }
     .tree-hint { font-size: 11px; bottom: 10px; }
-}
-
-@keyframes sheet-up {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
 }
