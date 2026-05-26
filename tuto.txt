@@ -20,6 +20,17 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
 /ping
     Vérifie que le bot répond. Rien de plus.
 
+/help [command]
+    Mini-tutoriel intégré au bot. Sans argument : une page d'accueil
+    (pitch du bot + boucle de jeu + premiers pas) puis UNE PAGE PAR
+    CATÉGORIE thématique de commandes (Profil & progression, Combat &
+    aventure, Équipement & inventaire, Artisanat & récolte, Économie &
+    échanges, Classements & utilitaires). Navigation par boutons ◀ ▶,
+    réponse éphémère.
+    Avec `command` (autocomplete) : détaille une commande précise et ses
+    paramètres. Les commandes admin sont masquées du catalogue mais
+    restent consultables via /help <commande> (ex : /help admin set).
+
 /profile [target]
     Affiche votre profil joueur. Si vous ajoutez `target`, vous voyez le
     profil d'un autre joueur via le sélecteur Discord (ex : /profile @Altan).
