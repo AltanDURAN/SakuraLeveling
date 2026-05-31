@@ -13,24 +13,12 @@ from app.domain.services.power_score_service import PowerScoreService
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.session import get_db_session
+from app.bot.cogs._mixins import BetaChannelOnlyMixin
 
 
-class BestiaireCog(commands.Cog):
+class BestiaireCog(BetaChannelOnlyMixin, commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        if interaction.channel_id != settings.beta_channel_id:
-            message = (
-                "🚧 Le bot est actuellement en phase de test.\n"
-                "Utilisez le channel beta dédié."
-            )
-            if interaction.response.is_done():
-                await interaction.followup.send(message, ephemeral=True)
-            else:
-                await interaction.response.send_message(message, ephemeral=True)
-            return False
-        return True
 
     @app_commands.command(
         name="bestiaire",

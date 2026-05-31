@@ -34,6 +34,7 @@ from app.infrastructure.db.repositories.marketplace_repository import (
 )
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
+from app.bot.cogs._mixins import BetaChannelOnlyMixin
 
 
 _logger = logging.getLogger(__name__)
@@ -48,7 +49,7 @@ def _format_listing_line(listing, item_name: str, seller_name: str) -> str:
     )
 
 
-class BrocanteCog(commands.Cog):
+class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
     brocante = app_commands.Group(
         name="brocante", description="Marché P2P entre joueurs"
     )
@@ -59,19 +60,6 @@ class BrocanteCog(commands.Cog):
 
     def cog_unload(self) -> None:
         self.expire_loop.cancel()
-
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        if interaction.channel_id != settings.beta_channel_id:
-            message = (
-                "🚧 Le bot est actuellement en phase de test.\n"
-                "Utilisez le channel beta dédié."
-            )
-            if interaction.response.is_done():
-                await interaction.followup.send(message, ephemeral=True)
-            else:
-                await interaction.response.send_message(message, ephemeral=True)
-            return False
-        return True
 
     @tasks.loop(hours=1)
     async def expire_loop(self) -> None:

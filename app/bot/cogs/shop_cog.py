@@ -10,26 +10,15 @@ from app.infrastructure.db.repositories.inventory_repository import InventoryRep
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.shop_repository import ShopRepository
 from app.infrastructure.db.session import get_db_session
+from app.bot.cogs._mixins import BetaChannelOnlyMixin
 
 
-class ShopCog(commands.Cog):
+class ShopCog(BetaChannelOnlyMixin, commands.Cog):
     """Shop joueur : consulter et acheter. La vente n'existe pas (V2) — les
     drops de mob ne se revendent pas, ils servent uniquement au craft."""
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        from app.infrastructure.config.settings import settings
-
-        if interaction.channel_id != settings.beta_channel_id:
-            message = "🚧 Le bot est actuellement en phase de test.\nUtilisez le channel beta dédié."
-            if interaction.response.is_done():
-                await interaction.followup.send(message, ephemeral=True)
-            else:
-                await interaction.response.send_message(message, ephemeral=True)
-            return False
-        return True
 
     @app_commands.command(name="shop", description="Affiche les articles disponibles à la boutique")
     async def shop(self, interaction: discord.Interaction) -> None:

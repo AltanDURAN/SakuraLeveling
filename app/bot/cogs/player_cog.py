@@ -68,9 +68,10 @@ from app.shared.enums import EquipmentSlot
 from app.domain.services.health_regeneration_service import HealthRegenerationService
 from app.infrastructure.db.repositories.player_health_repository import PlayerHealthRepository
 from app.domain.services.power_score_service import PowerScoreService
+from app.bot.cogs._mixins import BetaChannelOnlyMixin
 
 
-class PlayerCog(commands.Cog):
+class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -110,22 +111,6 @@ class PlayerCog(commands.Cog):
             await interaction.followup.send(message, ephemeral=True)
         else:
             await interaction.response.send_message(message, ephemeral=True)
-
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        if interaction.channel_id != settings.beta_channel_id:
-            if interaction.response.is_done():
-                await interaction.followup.send(
-                    "🚧 Le bot est actuellement en phase de test.\nUtilisez le channel beta dédié.",
-                    ephemeral=True,
-                )
-            else:
-                await interaction.response.send_message(
-                    "🚧 Le bot est actuellement en phase de test.\nUtilisez le channel beta dédié.",
-                    ephemeral=True,
-                )
-            return False
-
-        return True
 
     @app_commands.command(name="ping", description="Vérifier si le bot fonctionne")
     async def ping(self, interaction: discord.Interaction) -> None:

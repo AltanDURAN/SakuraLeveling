@@ -32,6 +32,7 @@ from app.shared.emoji_mappings import (
     item_display_emoji,
 )
 from app.shared.enums import SLOT_ICONS, SLOT_ORDER
+from app.bot.cogs._mixins import BetaChannelOnlyMixin
 
 
 def _format_bonus(bonus_type: str, value: int) -> str:
@@ -39,24 +40,11 @@ def _format_bonus(bonus_type: str, value: int) -> str:
     return f"+{value} {bonus_emoji(bonus_type)}"
 
 
-class PanoplieCog(commands.Cog):
+class PanoplieCog(BetaChannelOnlyMixin, commands.Cog):
     """Détail d'une panoplie : paliers + items qui la composent."""
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        if interaction.channel_id != settings.beta_channel_id:
-            message = (
-                "🚧 Le bot est actuellement en phase de test.\n"
-                "Utilisez le channel beta dédié."
-            )
-            if interaction.response.is_done():
-                await interaction.followup.send(message, ephemeral=True)
-            else:
-                await interaction.response.send_message(message, ephemeral=True)
-            return False
-        return True
 
     @app_commands.command(
         name="panoplie",
