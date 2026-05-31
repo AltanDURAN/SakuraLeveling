@@ -31,7 +31,10 @@ _RARITY_UP = {"common": "uncommon", "uncommon": "rare", "rare": "epic",
 
 
 def _load(p): return json.load(open(p, encoding="utf-8"))
-def _save(p, d): json.dump(d, open(p, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+def _save(p, d):
+    with open(p, "w", encoding="utf-8") as f:
+        json.dump(d, f, ensure_ascii=False, indent=2)
+        f.write("\n")
 
 
 # ---- Slots & poids de répartition du thème sur armures/accessoires ----

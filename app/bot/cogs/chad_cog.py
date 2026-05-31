@@ -16,6 +16,7 @@ from app.infrastructure.db.repositories.help_subscriber_repository import (
 )
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
+from app.bot.cogs._mixins import BetaChannelOnlyMixin
 
 
 class _ChadConfirmView(discord.ui.View):
@@ -99,22 +100,9 @@ class _ChadConfirmView(discord.ui.View):
         self.stop()
 
 
-class ChadCog(commands.Cog):
+class ChadCog(BetaChannelOnlyMixin, commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        if interaction.channel_id != settings.beta_channel_id:
-            message = (
-                "🚧 Le bot est actuellement en phase de test.\n"
-                "Utilisez le channel beta dédié."
-            )
-            if interaction.response.is_done():
-                await interaction.followup.send(message, ephemeral=True)
-            else:
-                await interaction.response.send_message(message, ephemeral=True)
-            return False
-        return True
 
     @app_commands.command(
         name="chad",

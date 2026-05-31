@@ -22,6 +22,7 @@ from app.infrastructure.db.repositories.weekly_quest_repository import (
     WeeklyQuestRepository,
 )
 from app.infrastructure.db.session import get_db_session
+from app.bot.cogs._mixins import BetaChannelOnlyMixin
 
 
 def _build_progress_bar(progress: int, total: int, width: int = 10) -> str:
@@ -77,22 +78,9 @@ def build_weekly_embed(
     return embed
 
 
-class WeeklyQuestCog(commands.Cog):
+class WeeklyQuestCog(BetaChannelOnlyMixin, commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        if interaction.channel_id != settings.beta_channel_id:
-            message = (
-                "🚧 Le bot est actuellement en phase de test.\n"
-                "Utilisez le channel beta dédié."
-            )
-            if interaction.response.is_done():
-                await interaction.followup.send(message, ephemeral=True)
-            else:
-                await interaction.response.send_message(message, ephemeral=True)
-            return False
-        return True
 
     @app_commands.command(
         name="weekly_quest",

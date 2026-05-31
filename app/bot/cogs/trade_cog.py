@@ -8,6 +8,7 @@ from app.bot.views.trade_draft_view import TradeDraftView
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.trade_repository import TradeRepository
 from app.infrastructure.db.session import get_db_session
+from app.bot.cogs._mixins import BetaChannelOnlyMixin
 
 
 TRADE_TTL_MINUTES = 5
@@ -15,7 +16,7 @@ TRADE_TTL_MINUTES = 5
 _logger = logging.getLogger(__name__)
 
 
-class TradeCog(commands.Cog):
+class TradeCog(BetaChannelOnlyMixin, commands.Cog):
     """Échange entre joueurs : items et/ou or, dans les deux sens."""
 
     def __init__(self, bot: commands.Bot) -> None:
@@ -43,19 +44,6 @@ class TradeCog(commands.Cog):
     @expire_loop.before_loop
     async def _before_expire_loop(self) -> None:
         await self.bot.wait_until_ready()
-
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        if interaction.channel_id != settings.beta_channel_id:
-            message = (
-                "🚧 Le bot est actuellement en phase de test.\n"
-                "Utilisez le channel beta dédié."
-            )
-            if interaction.response.is_done():
-                await interaction.followup.send(message, ephemeral=True)
-            else:
-                await interaction.response.send_message(message, ephemeral=True)
-            return False
-        return True
 
     @app_commands.command(
         name="trade",

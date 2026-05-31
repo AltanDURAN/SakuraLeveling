@@ -47,6 +47,7 @@ from app.bot.rendering.pillow_utils import (
     gradient_background,
     try_font,
 )
+from app.shared.formatters import format_int
 
 
 WIDTH = 1024
@@ -175,10 +176,6 @@ def _draw_text_with_shadow(
     shadow_offset: tuple[int, int] = (2, 2),
 ) -> None:
     _shared_text_shadow(draw, xy, text, font, fill, shadow, shadow_offset)
-
-
-def _format_int(n: int) -> str:
-    return f"{n:,}".replace(",", " ")
 
 
 def _format_compact(n: int) -> str:
@@ -764,9 +761,9 @@ def compose_profile_banner(
         seed=hash(display_name) & 0xFFFF,
     )
     if xp_required > 0:
-        xp_text = f"⚡ XP : {_format_int(xp_current)} / {_format_int(xp_required)}  ({pct}%)"
+        xp_text = f"⚡ XP : {format_int(xp_current)} / {format_int(xp_required)}  ({pct}%)"
     else:
-        xp_text = f"⚡ XP : {_format_int(xp_current)}"
+        xp_text = f"⚡ XP : {format_int(xp_current)}"
     draw_text_with_emojis(
         bg, (info_x, bar_y + bar_h + 8), xp_text, xp_label_font,
         fill=COLORS["xp_color"],
