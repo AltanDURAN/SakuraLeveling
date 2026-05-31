@@ -159,8 +159,12 @@ class PanoplieCog(commands.Cog):
             # Découpe en plusieurs fields si > 1000 chars (limite 1024)
             buf = ""
             field_count = 1
+            # Compteur owned / catalogue (le total varie par famille — gobelin_plus
+            # n'a pas forcément 16 pièces. Cf. audit B10 : avant on affichait /16 en dur).
+            owned_count = sum(1 for it in items_in_family if it.id in owned_def_ids)
             base_name = (
-                f"🧩 Pièces de la panoplie ({len(items_in_family)}/16)"
+                f"🧩 Pièces de la panoplie "
+                f"({owned_count}/{len(items_in_family)})"
             )
             for line in piece_lines:
                 if len(buf) + len(line) + 1 > 1000 and buf:
@@ -182,7 +186,7 @@ class PanoplieCog(commands.Cog):
                 )
         else:
             embed.add_field(
-                name="🧩 Pièces de la panoplie (0/16)",
+                name="🧩 Pièces de la panoplie",
                 value="_Aucun item ne porte encore cette famille._",
                 inline=False,
             )

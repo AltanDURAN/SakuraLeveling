@@ -24,6 +24,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.session import get_db_session
 from webapp.admin.auth import AdminUser, require_admin
+from webapp.admin._shared import get_templates
 from webapp.admin.json_writer import (
     add_skill_node,
     append_to_list,
@@ -39,9 +40,6 @@ router = APIRouter(prefix="/admin", tags=["admin-content"])
 CONTENT_DIR = Path(__file__).resolve().parents[3] / "app" / "infrastructure" / "content"
 
 
-def get_templates():
-    from webapp.main import templates
-    return templates
 
 
 def _load_json(filename: str):
@@ -99,6 +97,35 @@ def _parse_int_list(raw: str) -> list[int]:
             out.append(int(x))
         except ValueError:
             pass
+    return out
+
+
+def _parse_unlock_requirements(raw: str) -> list[dict]:
+    """Parse le champ 'unlock' libre admin → liste de requirements typés.
+
+    Format attendu : 'profession_level:mining:2, level:5'. Avant cette
+    factorisation, classes_create et classes_update faisaient `int(parts[N])`
+    sans try/except → HTTP 500 brut sur faute de frappe (cf. audit B7).
+    Désormais : un chunk mal formé est SILENCIEUSEMENT ignoré (au lieu de
+    crasher la requête), comme les autres parseurs du module.
+    """
+    out: list[dict] = []
+    raw = (raw or "").strip()
+    if not raw:
+        return out
+    for chunk in raw.split(","):
+        parts = [p.strip() for p in chunk.split(":")]
+        try:
+            if parts[0] == "profession_level" and len(parts) == 3:
+                out.append({
+                    "type": "profession_level",
+                    "profession_code": parts[1],
+                    "level": int(parts[2]),
+                })
+            elif parts[0] == "level" and len(parts) == 2:
+                out.append({"type": "level", "level": int(parts[1])})
+        except (ValueError, IndexError):
+            continue
     return out
 
 
@@ -580,21 +607,7 @@ async def classes_create(request: Request, user: AdminUser = Depends(require_adm
         "description": fd.get("description", "").strip(),
         "stat_bonuses": _parse_kv_pairs(fd.get("stat_bonuses", "")),
     }
-    unlock = fd.get("unlock", "").strip()
-    if unlock:
-        # Format attendu : "profession_level:mining:2" ou "level:5"
-        reqs = []
-        for chunk in unlock.split(","):
-            parts = [p.strip() for p in chunk.split(":")]
-            if parts[0] == "profession_level" and len(parts) == 3:
-                reqs.append({
-                    "type": "profession_level",
-                    "profession_code": parts[1],
-                    "level": int(parts[2]),
-                })
-            elif parts[0] == "level" and len(parts) == 2:
-                reqs.append({"type": "level", "level": int(parts[1])})
-        entry["unlock_requirements"] = reqs
+    entry["unlock_requirements"] = _parse_unlock_requirements(fd.get("unlock", ""))
     append_to_list("classes.json", entry)
     return RedirectResponse(f"/admin/classes?q={code}", status_code=303)
 
@@ -1131,20 +1144,9 @@ async def classes_update(
         "description": fd.get("description", "").strip(),
         "stat_bonuses": _parse_kv_pairs(fd.get("stat_bonuses", "")),
     }
-    unlock = fd.get("unlock", "").strip()
-    if unlock:
-        reqs = []
-        for chunk in unlock.split(","):
-            parts = [p.strip() for p in chunk.split(":")]
-            if parts[0] == "profession_level" and len(parts) == 3:
-                reqs.append({
-                    "type": "profession_level",
-                    "profession_code": parts[1],
-                    "level": int(parts[2]),
-                })
-            elif parts[0] == "level" and len(parts) == 2:
-                reqs.append({"type": "level", "level": int(parts[1])})
-        entry["unlock_requirements"] = reqs
+    # Toujours écrire la clé (même vide) → vider le champ retire les prérequis
+    # explicitement, sans dépendre de la stratégie de merge. Cf. audit (cohérence).
+    entry["unlock_requirements"] = _parse_unlock_requirements(fd.get("unlock", ""))
     update_in_list_by_key("classes.json", code, entry)
     return RedirectResponse(f"/admin/classes?q={code}", status_code=303)
 

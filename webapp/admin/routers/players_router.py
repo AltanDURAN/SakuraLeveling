@@ -11,15 +11,13 @@ from app.application.use_cases.reset_player import ResetPlayerUseCase
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
 from webapp.admin.auth import AdminUser, require_admin
+from webapp.admin._shared import get_templates
 
 
 _logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin/players", tags=["admin-players"])
 
 
-def get_templates():
-    from webapp.main import templates
-    return templates
 
 
 @router.get("", response_class=HTMLResponse)

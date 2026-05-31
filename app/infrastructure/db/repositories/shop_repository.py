@@ -3,10 +3,10 @@ from datetime import datetime, UTC
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.domain.entities.item_definition import ItemDefinition
 from app.domain.entities.shop_item import ShopItem
 from app.infrastructure.db.models.item_model import ItemDefinitionModel
 from app.infrastructure.db.models.shop_item_model import ShopItemModel
+from app.infrastructure.db.repositories._mappers import map_item_definition
 
 
 class ShopRepository:
@@ -123,25 +123,16 @@ class ShopRepository:
 
     def _to_domain(self, model: ShopItemModel) -> ShopItem:
         item_model = self.session.get(ItemDefinitionModel, model.item_definition_id)
-        item_definition = ItemDefinition(
-            id=item_model.id,
-            code=item_model.code,
-            name=item_model.name,
-            description=item_model.description,
-            category=item_model.category,
-            rarity=item_model.rarity,
-            stackable=item_model.stackable,
-            max_stack=item_model.max_stack,
-            sell_price=item_model.sell_price,
-            buy_price=item_model.buy_price,
-            icon=item_model.icon,
-            stat_bonuses=item_model.stat_bonuses_json,
-            equipment_slot=item_model.equipment_slot,
-            requires_two_hands=bool(item_model.requires_two_hands or False),
-            family=getattr(item_model, "family", "") or "",
-            created_at=item_model.created_at,
-            updated_at=item_model.updated_at,
-        )
+        # Garde contre une ShopItem orpheline (ItemDefinition supprimée).
+        # Sans ça, on déréfère un None silencieusement → AttributeError opaque.
+        # Cf. audit B3 : aligne le pattern défensif de craft_repository._to_domain.
+        if item_model is None:
+            raise RuntimeError(
+                f"ShopItem id={model.id} référence item_definition_id="
+                f"{model.item_definition_id} qui n'existe plus. "
+                "Re-seed le contenu (seed_content.py) ou retire l'entrée orpheline."
+            )
+        item_definition = map_item_definition(item_model)
         return ShopItem(
             id=model.id,
             item_definition=item_definition,

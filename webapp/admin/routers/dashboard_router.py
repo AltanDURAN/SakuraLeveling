@@ -8,17 +8,13 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 
+from webapp.admin._shared import get_templates
 from webapp.admin.auth import AdminUser, require_admin
 
 
 router = APIRouter(prefix="/admin", tags=["admin-dashboard"])
 
 CONTENT_DIR = Path(__file__).resolve().parents[3] / "app" / "infrastructure" / "content"
-
-
-def get_templates():
-    from webapp.main import templates
-    return templates
 
 
 def _load_json(filename: str):

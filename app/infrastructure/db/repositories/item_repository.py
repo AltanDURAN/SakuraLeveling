@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.domain.entities.item_definition import ItemDefinition
 from app.infrastructure.db.models.item_model import ItemDefinitionModel
+from app.infrastructure.db.repositories._mappers import map_item_definition
 
 
 class ItemRepository:
@@ -64,25 +65,7 @@ class ItemRepository:
         return self._to_domain(model)
 
     def _to_domain(self, model: ItemDefinitionModel) -> ItemDefinition:
-        return ItemDefinition(
-            id=model.id,
-            code=model.code,
-            name=model.name,
-            description=model.description,
-            category=model.category,
-            rarity=model.rarity,
-            stackable=model.stackable,
-            max_stack=model.max_stack,
-            sell_price=model.sell_price,
-            buy_price=model.buy_price,
-            icon=model.icon,
-            stat_bonuses=model.stat_bonuses_json,
-            equipment_slot=model.equipment_slot,
-            requires_two_hands=bool(model.requires_two_hands or False),
-            family=getattr(model, "family", "") or "",
-            created_at=model.created_at,
-            updated_at=model.updated_at,
-        )
+        return map_item_definition(model)
 
     def update_by_code(
         self,

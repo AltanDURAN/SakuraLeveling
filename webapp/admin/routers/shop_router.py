@@ -11,15 +11,13 @@ from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.shop_repository import ShopRepository
 from app.infrastructure.db.session import get_db_session
 from webapp.admin.auth import AdminUser, require_admin
+from webapp.admin._shared import get_templates
 
 
 _logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin/shop", tags=["admin-shop"])
 
 
-def get_templates():
-    from webapp.main import templates
-    return templates
 
 
 def _parse_int(raw: str | None, default: int = 0) -> int:

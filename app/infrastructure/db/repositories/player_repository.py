@@ -103,7 +103,10 @@ class PlayerRepository:
         if progression is None:
             return
 
-        progression.xp += amount
+        # Clamp à 0 : aucun chemin légitime ne déduit de l'XP ; protège contre
+        # un solde négatif si un admin passe un amount<0 par erreur.
+        progression.xp = max(0, progression.xp + amount)
+        progression.updated_at = datetime.now(UTC)
         self.session.commit()
 
     def add_gold(self, player_id: int, gold: int) -> None:
@@ -111,7 +114,10 @@ class PlayerRepository:
         if resources is None:
             return
 
-        resources.gold += gold
+        # Clamp à 0 : les déductions légitimes (buy_from_shop, transfer, accept_trade,
+        # marketplace) vérifient le solde en amont — le clamp est de la défense en
+        # profondeur contre une race ou un appel admin malformé.
+        resources.gold = max(0, resources.gold + gold)
         resources.updated_at = datetime.now(UTC)
         self.session.commit()
 

@@ -30,6 +30,7 @@ from app.application.use_cases.get_skill_tree_state import GetSkillTreeStateUseC
 from app.bot.rendering.skill_tree_renderer import render_to_svg
 from app.domain.services.power_score_service import PowerScoreService
 from app.domain.services.skill_tree_service import SkillTreeService
+from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
@@ -59,6 +60,13 @@ _logger = logging.getLogger(__name__)
 
 
 app = FastAPI(title="SakuraLeveling — Skill Tree Viewer")
+
+
+@app.on_event("startup")
+async def _gate_unsafe_admin_secret() -> None:
+    """Refuse de servir la moindre requête tant que le secret de cookie admin
+    est resté au défaut public — sinon n'importe qui forge un cookie admin."""
+    settings.assert_safe_admin_secret()
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 

@@ -17,7 +17,7 @@ class PlayerProgressionModel(Base):
     xp: Mapped[int] = mapped_column(Integer, default=0)
     skill_points: Mapped[int] = mapped_column(Integer, default=0)
 
-    created_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
 
     player = relationship("PlayerModel", back_populates="progression")

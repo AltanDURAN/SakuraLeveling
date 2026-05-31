@@ -17,15 +17,13 @@ from app.infrastructure.db.repositories.inventory_repository import (
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
 from webapp.admin.auth import AdminUser, require_admin
+from webapp.admin._shared import get_templates
 
 
 _logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin/actions", tags=["admin-actions"])
 
 
-def get_templates():
-    from webapp.main import templates
-    return templates
 
 
 def _resolve_player_id(session, raw: str) -> int | None:
@@ -86,6 +84,12 @@ async def give_gold(
         amount = int(form.get("amount", "0"))
     except ValueError:
         return RedirectResponse("/admin/actions?error=Montant+invalide", status_code=303)
+    # 'give' = ajouter ; pour retirer/forcer un solde, utiliser set_gold (clamp ≥0).
+    if amount < 0:
+        return RedirectResponse(
+            "/admin/actions?error=Montant+n%C3%A9gatif+refus%C3%A9+%E2%80%94+utilise+set_gold",
+            status_code=303,
+        )
 
     with get_db_session() as session:
         pid = _resolve_player_id(session, target)
@@ -107,6 +111,11 @@ async def give_xp(
         amount = int(form.get("amount", "0"))
     except ValueError:
         return RedirectResponse("/admin/actions?error=Montant+invalide", status_code=303)
+    if amount < 0:
+        return RedirectResponse(
+            "/admin/actions?error=Montant+n%C3%A9gatif+refus%C3%A9",
+            status_code=303,
+        )
 
     with get_db_session() as session:
         pid = _resolve_player_id(session, target)

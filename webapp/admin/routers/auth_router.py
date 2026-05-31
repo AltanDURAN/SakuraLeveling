@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 
+from webapp.admin._shared import get_templates
 from webapp.admin.auth import (
     AdminUser,
     build_authorize_url,
@@ -23,12 +23,6 @@ from app.infrastructure.config.settings import settings
 
 
 router = APIRouter(prefix="/admin", tags=["admin-auth"])
-
-
-def get_templates() -> Jinja2Templates:
-    """Évite l'import circulaire avec webapp.main — résolu à l'appel."""
-    from webapp.main import templates
-    return templates
 
 
 @router.get("/login", response_class=HTMLResponse)

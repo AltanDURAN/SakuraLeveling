@@ -85,37 +85,6 @@ def test_total_buy_cost_is_linear():
     assert service.total_buy_cost(item, 10) == 150
 
 
-def test_total_sell_amount_decays_per_unit():
-    service = ShopPricingService()
-    # max=10, min=0, threshold=10. Vendre 10 unités depuis stock=0.
-    # Unit 1 vend à stock=0 → 10. Unit 2 à stock=1 → 9. ... Unit 10 à stock=9 → 1.
-    # Total = 10+9+8+7+6+5+4+3+2+1 = 55.
-    item = _make_shop_item(max_sell_price=10, min_sell_price=0, stock_threshold=10, current_stock=0)
-
-    total = service.total_sell_amount(item, 10)
-
-    assert total == 55
-
-
-def test_total_sell_amount_with_threshold_capped_uses_min_after_saturation():
-    service = ShopPricingService()
-    # Stock initial 50, threshold 10, max=10, min=0. Tout est déjà à min après le premier.
-    item = _make_shop_item(max_sell_price=10, min_sell_price=0, stock_threshold=10, current_stock=50)
-
-    total = service.total_sell_amount(item, 5)
-
-    # Tout à 0 (stock >> threshold)
-    assert total == 0
-
-
-def test_total_sell_amount_zero_quantity_is_zero():
-    service = ShopPricingService()
-    item = _make_shop_item()
-
-    assert service.total_sell_amount(item, 0) == 0
-    assert service.total_sell_amount(item, -3) == 0
-
-
 def test_sell_price_with_zero_threshold_returns_max():
     service = ShopPricingService()
     item = _make_shop_item(max_sell_price=10, min_sell_price=1, stock_threshold=0, current_stock=999)

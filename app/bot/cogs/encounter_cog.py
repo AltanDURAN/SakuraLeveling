@@ -260,7 +260,12 @@ class EncounterCog(commands.Cog):
             "power_score": mob_score,
         }
 
-        compose_players_banner(
+        # Rendu Pillow + téléchargement d'avatars : sync et CPU/IO-bound.
+        # Sans to_thread, ça bloque tout l'event loop pendant le rendu (~1-2s
+        # + jusqu'à 15s par avatar lent) → heartbeat Discord et autres
+        # interactions gelés. Cf. audit Phase 1 finding B5.
+        await asyncio.to_thread(
+            compose_players_banner,
             players=[],
             mob=spawn_mob_payload,
             output_path=str(spawn_output_full),
@@ -378,7 +383,8 @@ class EncounterCog(commands.Cog):
                 )
             )
 
-            compose_players_banner(
+            await asyncio.to_thread(
+                compose_players_banner,
                 players=turn_log.players_state,
                 mob=mob_payload,
                 output_path=str(current_output_full),
@@ -540,7 +546,8 @@ class EncounterCog(commands.Cog):
             players_stats_for_score
         ) if players_stats_for_score else "0"
 
-        compose_players_banner(
+        await asyncio.to_thread(
+            compose_players_banner,
             players=players,
             mob=mob_payload,
             output_path=str(output_full),

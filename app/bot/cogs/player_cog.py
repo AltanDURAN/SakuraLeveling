@@ -16,13 +16,8 @@ from app.application.use_cases.craft_item import CraftItemUseCase
 from app.application.use_cases.gather_resource import GatherResourceUseCase
 from app.application.use_cases.use_consumable import UseConsumableUseCase
 from app.application.use_cases.get_available_classes import GetAvailableClassesUseCase
-from app.application.use_cases.get_available_crafts import GetAvailableCraftsUseCase
-from app.application.use_cases.get_player_class import GetPlayerClassUseCase
 from app.application.use_cases.get_player_equipment import GetPlayerEquipmentUseCase
 from app.application.use_cases.equip_item import EquipItemUseCase
-from app.application.use_cases.get_player_inventory import GetPlayerInventoryUseCase
-from app.application.use_cases.get_player_profile import GetPlayerProfileUseCase
-from app.application.use_cases.get_player_stats import GetPlayerStatsUseCase
 from app.bot.embeds.duel_embeds import (
     build_duel_intro_embed,
     build_duel_result_embed,
@@ -277,7 +272,10 @@ class PlayerCog(commands.Cog):
                     "dodges_total": getattr(career_stats, "dodges_total", 0),
                 }
 
-            compose_profile_banner(
+            # Rendu Pillow sync + download avatar Discord : off-thread pour ne
+            # pas bloquer l'event loop (cf. audit B5).
+            await asyncio.to_thread(
+                compose_profile_banner,
                 output_path=str(banner_path),
                 display_name=profile.player.display_name,
                 avatar_url=avatar_url,
