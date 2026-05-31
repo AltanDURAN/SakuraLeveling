@@ -3,9 +3,9 @@ from datetime import datetime, UTC
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from app.domain.entities.item_definition import ItemDefinition
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
 from app.infrastructure.db.models.equipment_model import PlayerEquipmentItemModel
+from app.infrastructure.db.repositories._mappers import map_item_definition
 
 
 class EquipmentRepository:
@@ -77,27 +77,7 @@ class EquipmentRepository:
         return self._to_domain(model)
 
     def _to_domain(self, model: PlayerEquipmentItemModel) -> PlayerEquipmentItem:
-        item_model = model.item_definition
-
-        item_definition = ItemDefinition(
-            id=item_model.id,
-            code=item_model.code,
-            name=item_model.name,
-            description=item_model.description,
-            category=item_model.category,
-            rarity=item_model.rarity,
-            stackable=item_model.stackable,
-            max_stack=item_model.max_stack,
-            sell_price=item_model.sell_price,
-            buy_price=item_model.buy_price,
-            icon=item_model.icon,
-            stat_bonuses=item_model.stat_bonuses_json,
-            equipment_slot=item_model.equipment_slot,
-            requires_two_hands=bool(item_model.requires_two_hands or False),
-            family=getattr(item_model, "family", "") or "",
-            created_at=item_model.created_at,
-            updated_at=item_model.updated_at,
-        )
+        item_definition = map_item_definition(model.item_definition)
 
         return PlayerEquipmentItem(
             id=model.id,

@@ -12,6 +12,7 @@ from fastapi import HTTPException
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.session import get_db_session
 from webapp.admin.auth import AdminUser, require_admin
+from webapp.admin._shared import get_templates
 
 
 _logger = logging.getLogger(__name__)
@@ -19,9 +20,6 @@ _logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin/mobs", tags=["admin-mobs"])
 
 
-def get_templates():
-    from webapp.main import templates
-    return templates
 
 
 def _parse_optional_int(raw: str | None) -> int | None:

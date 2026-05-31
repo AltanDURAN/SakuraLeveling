@@ -1,7 +1,7 @@
 """Vérifie après un évènement (kill, duel, craft) si un titre doit être
 débloqué pour un joueur. Persiste l'unlock via PlayerTitleRepository.
 
-Centralisé pour pouvoir l'appeler depuis FightMobUseCase, EncounterService,
+Centralisé pour pouvoir l'appeler depuis EncounterService,
 CraftItemUseCase, ChallengePlayerUseCase, etc., sans dupliquer la logique.
 """
 

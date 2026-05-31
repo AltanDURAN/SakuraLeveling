@@ -8,11 +8,11 @@ from datetime import datetime, UTC
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from app.domain.entities.item_definition import ItemDefinition
 from app.infrastructure.db.models.equipment_set_model import (
     PlayerEquipmentSetItemModel,
     PlayerEquipmentSetModel,
 )
+from app.infrastructure.db.repositories._mappers import map_item_definition
 
 
 @dataclass
@@ -117,21 +117,9 @@ class EquipmentSetRepository:
     ) -> EquipmentSet:
         items: list[EquipmentSetItem] = []
         for it in model.items:
-            im = it.item_definition
             items.append(EquipmentSetItem(
                 slot=it.slot,
-                item_definition=ItemDefinition(
-                    id=im.id, code=im.code, name=im.name,
-                    description=im.description, category=im.category,
-                    rarity=im.rarity, stackable=im.stackable,
-                    max_stack=im.max_stack, sell_price=im.sell_price,
-                    buy_price=im.buy_price, icon=im.icon,
-                    stat_bonuses=im.stat_bonuses_json,
-                    equipment_slot=im.equipment_slot,
-                    requires_two_hands=bool(im.requires_two_hands or False),
-                    family=getattr(im, "family", "") or "",
-                    created_at=im.created_at, updated_at=im.updated_at,
-                ),
+                item_definition=map_item_definition(it.item_definition),
             ))
         return EquipmentSet(
             id=model.id, player_id=model.player_id,

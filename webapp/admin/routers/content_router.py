@@ -24,6 +24,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.session import get_db_session
 from webapp.admin.auth import AdminUser, require_admin
+from webapp.admin._shared import get_templates
 from webapp.admin.json_writer import (
     add_skill_node,
     append_to_list,
@@ -39,9 +40,6 @@ router = APIRouter(prefix="/admin", tags=["admin-content"])
 CONTENT_DIR = Path(__file__).resolve().parents[3] / "app" / "infrastructure" / "content"
 
 
-def get_templates():
-    from webapp.main import templates
-    return templates
 
 
 def _load_json(filename: str):

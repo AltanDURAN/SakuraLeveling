@@ -17,15 +17,13 @@ from app.infrastructure.db.repositories.inventory_repository import (
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
 from webapp.admin.auth import AdminUser, require_admin
+from webapp.admin._shared import get_templates
 
 
 _logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin/actions", tags=["admin-actions"])
 
 
-def get_templates():
-    from webapp.main import templates
-    return templates
 
 
 def _resolve_player_id(session, raw: str) -> int | None:

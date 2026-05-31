@@ -12,6 +12,7 @@ from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.session import get_db_session
 from app.shared.enums import EquipmentSlot, FORGE_CATEGORIES, ItemCategory, ItemRarity
 from webapp.admin.auth import AdminUser, require_admin
+from webapp.admin._shared import get_templates
 
 
 _logger = logging.getLogger(__name__)
@@ -26,9 +27,6 @@ SUPPORTED_STATS = [
 ]
 
 
-def get_templates():
-    from webapp.main import templates
-    return templates
 
 
 def _parse_stat_bonuses(form_data: dict[str, str]) -> dict[str, int]:
