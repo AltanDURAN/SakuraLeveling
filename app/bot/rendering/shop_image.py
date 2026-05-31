@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import io
 import math
-import textwrap
 
 from PIL import Image, ImageDraw
 
@@ -157,7 +156,7 @@ def compose_shop_page(
     # En-tête
     title_font = try_font(38, bold=True)
     draw_text_with_emojis(
-        base, (MARGIN, 28), f"🏪 Boutique", try_font(38, bold=True),
+        base, (MARGIN, 28), f"🏪 Boutique", title_font,
         fill=_TEXT, shadow=_SHADOW, emoji_size=38,
     )
     sub_font = try_font(24, bold=True)

@@ -80,7 +80,9 @@ def main() -> None:
         m["current_hp"] = s["max_hp"]
 
     mobs.sort(key=lambda m: ASSIGN.get(m["code"], (999, ""))[0])
-    json.dump(mobs, open(P, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+    with open(P, "w", encoding="utf-8") as f:
+        json.dump(mobs, f, ensure_ascii=False, indent=2)
+        f.write("\n")
 
     print(f"{'code':22s} {'arch':9s} {'L':>3} {'PV':>5} {'ATK':>4} {'DEF':>4} {'XP':>4} {'gold':>4}")
     for m in mobs:

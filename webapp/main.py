@@ -59,14 +59,18 @@ STATIC_DIR = WEBAPP_DIR / "static"
 _logger = logging.getLogger(__name__)
 
 
-app = FastAPI(title="SakuraLeveling — Skill Tree Viewer")
+from contextlib import asynccontextmanager
 
 
-@app.on_event("startup")
-async def _gate_unsafe_admin_secret() -> None:
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
     """Refuse de servir la moindre requête tant que le secret de cookie admin
     est resté au défaut public — sinon n'importe qui forge un cookie admin."""
     settings.assert_safe_admin_secret()
+    yield
+
+
+app = FastAPI(title="SakuraLeveling — Skill Tree Viewer", lifespan=_lifespan)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 

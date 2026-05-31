@@ -7,8 +7,9 @@ PLATES (Équipements, Mobs, World Bosses, Classes, Shop), tu me renvoies le
 Round-trip par CODE (colonne Code) : ajout, modification et suppression de
 lignes sont tous gérés. Les colonnes calculées (Power, Rang) sont ignorées.
 Les champs non présents dans le tableur (icon, loot_table, image…) sont
-PRÉSERVÉS. Les feuilles structurées (Skill Tree, Titres, Panoplies, Recettes)
-ne sont PAS ré-importées ici — dis-moi les changements à la main.
+PRÉSERVÉS. Les feuilles structurées (Skill Tree, Titres, Panoplies, Recettes,
+Consommables, Ressources) ne sont PAS ré-importées ici — dis-moi les
+changements à la main.
 
     .venv/bin/python scripts/import_content_spreadsheet.py [chemin.xlsx]
         --dry-run   n'écrit rien, affiche seulement le diff

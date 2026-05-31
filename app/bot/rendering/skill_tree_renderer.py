@@ -260,6 +260,7 @@ def render_to_svg(
     definition: SkillTreeDefinition,
     focus: bool = True,
     icons_in_svg: bool = True,
+    view_box: tuple[float, float, float, float] | None = None,
 ) -> str:
     """Construit le SVG entier (à inliner dans une page HTML ou convertir en PNG).
 
@@ -268,6 +269,9 @@ def render_to_svg(
     `focus=False` (web zoomable) : vue d'ensemble du triskèle complet.
     `icons_in_svg=False` : n'inclut PAS les emojis (cairosvg ne sait pas rendre
     les emojis couleur → carrés vides). Le PNG les recompose ensuite via Pillow.
+    `view_box=(x, y, w, h)` : si fourni, court-circuite le calcul de viewBox
+    (le PNG en a besoin une 2e fois pour le mapping pixel → on évite le double
+    calcul).
     """
     service = SkillTreeService(definition)
     states = {
@@ -275,7 +279,9 @@ def render_to_svg(
         for node in definition.skills.values()
     }
 
-    if focus:
+    if view_box is not None:
+        view_x, view_y, view_w, view_h = view_box
+    elif focus:
         view_x, view_y, view_w, view_h = _compute_view_box_focus(state, definition)
     else:
         view_x, view_y, view_w, view_h = _compute_view_box_full(definition)
@@ -332,7 +338,11 @@ def render_to_png(
     from app.bot.rendering.emoji_text import draw_text_with_emojis
     from app.bot.rendering.pillow_utils import try_font
 
-    svg = render_to_svg(state, definition, focus=True, icons_in_svg=False)
+    vx, vy, vw, vh = _compute_view_box_focus(state, definition)
+    svg = render_to_svg(
+        state, definition, focus=True, icons_in_svg=False,
+        view_box=(vx, vy, vw, vh),
+    )
     png = cairosvg.svg2png(
         bytestring=svg.encode("utf-8"),
         output_width=width,
@@ -343,7 +353,6 @@ def render_to_png(
 
     # Mapping coordonnées monde (viewBox) → pixels. preserveAspectRatio
     # xMidYMid meet → échelle uniforme + centrage (letterbox).
-    vx, vy, vw, vh = _compute_view_box_focus(state, definition)
     scale = min(width / vw, height / vh)
     off_x = (width - vw * scale) / 2
     off_y = (height - vh * scale) / 2
