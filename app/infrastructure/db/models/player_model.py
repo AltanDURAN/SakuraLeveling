@@ -15,9 +15,9 @@ class PlayerModel(Base):
     username: Mapped[str] = mapped_column(String(100))
     display_name: Mapped[str] = mapped_column(String(100))
 
-    created_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
-    last_seen_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
+    last_seen_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
 
     progression = relationship(
         "PlayerProgressionModel",

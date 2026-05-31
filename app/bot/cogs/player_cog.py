@@ -277,7 +277,10 @@ class PlayerCog(commands.Cog):
                     "dodges_total": getattr(career_stats, "dodges_total", 0),
                 }
 
-            compose_profile_banner(
+            # Rendu Pillow sync + download avatar Discord : off-thread pour ne
+            # pas bloquer l'event loop (cf. audit B5).
+            await asyncio.to_thread(
+                compose_profile_banner,
                 output_path=str(banner_path),
                 display_name=profile.player.display_name,
                 avatar_url=avatar_url,

@@ -86,6 +86,12 @@ async def give_gold(
         amount = int(form.get("amount", "0"))
     except ValueError:
         return RedirectResponse("/admin/actions?error=Montant+invalide", status_code=303)
+    # 'give' = ajouter ; pour retirer/forcer un solde, utiliser set_gold (clamp ≥0).
+    if amount < 0:
+        return RedirectResponse(
+            "/admin/actions?error=Montant+n%C3%A9gatif+refus%C3%A9+%E2%80%94+utilise+set_gold",
+            status_code=303,
+        )
 
     with get_db_session() as session:
         pid = _resolve_player_id(session, target)
@@ -107,6 +113,11 @@ async def give_xp(
         amount = int(form.get("amount", "0"))
     except ValueError:
         return RedirectResponse("/admin/actions?error=Montant+invalide", status_code=303)
+    if amount < 0:
+        return RedirectResponse(
+            "/admin/actions?error=Montant+n%C3%A9gatif+refus%C3%A9",
+            status_code=303,
+        )
 
     with get_db_session() as session:
         pid = _resolve_player_id(session, target)

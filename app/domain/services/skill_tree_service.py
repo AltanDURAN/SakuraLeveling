@@ -198,14 +198,22 @@ class SkillTreeService:
         candidates.sort(key=lambda n: (self._depth(n), n.code))
         return candidates[:limit]
 
-    def _depth(self, node: SkillNode) -> int:
-        """Profondeur (longueur du chemin depuis la racine, mémorisée à la volée)."""
+    def _depth(self, node: SkillNode, _visited: frozenset[str] = frozenset()) -> int:
+        """Profondeur (longueur du chemin depuis la racine, mémorisée à la volée).
+
+        `_visited` accumule le chemin courant pour rompre une éventuelle boucle
+        de prérequis (A→B→C→A) — la donnée actuelle est acyclique, mais sans
+        garde le moindre cycle dans skill_tree.json planterait le bot en
+        RecursionError au prochain compute_unlockable_skills. Cf. audit B2.
+        """
         if not node.prerequisites:
             return 0
-        # Le calcul exact serait BFS, mais on peut approximer par max(depth(parents))+1
+        if node.code in _visited:
+            return 0  # cycle détecté → on coupe la branche au lieu de récurser à l'infini
+        next_visited = _visited | {node.code}
         return 1 + max(
             (
-                self._depth(self.definition.get(p))
+                self._depth(self.definition.get(p), next_visited)
                 for p in node.prerequisites
                 if self.definition.get(p) is not None
             ),

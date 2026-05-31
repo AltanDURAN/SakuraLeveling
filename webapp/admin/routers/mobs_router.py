@@ -57,6 +57,34 @@ def _parse_loot_table(raw: str | None) -> list[dict] | None:
         return None
 
 
+def _clamp_mob_stats(
+    *, max_hp: int, attack: int, defense: int, speed: int,
+    crit_chance: int, crit_damage: int, dodge: int, hp_regeneration: int,
+    xp_reward: int, gold_reward: int, spawn_weight: int,
+    current_hp: int | None = None,
+) -> dict:
+    """Borne les stats aux conventions de combat V2 (crit_chance/dodge 0..100,
+    crit_damage ≥ 0 avec 100=neutre, current_hp ≤ max_hp). Clampage silencieux
+    pour que l'admin puisse itérer sans avoir à corriger lui-même les overflows."""
+    mh = max(1, max_hp)
+    out = {
+        "max_hp": mh,
+        "attack": max(0, attack),
+        "defense": max(0, defense),
+        "speed": max(0, speed),
+        "crit_chance": max(0, min(crit_chance, 100)),
+        "crit_damage": max(0, crit_damage),
+        "dodge": max(0, min(dodge, 100)),
+        "hp_regeneration": max(0, hp_regeneration),
+        "xp_reward": max(0, xp_reward),
+        "gold_reward": max(0, gold_reward),
+        "spawn_weight": max(1, spawn_weight),
+    }
+    if current_hp is not None:
+        out["current_hp"] = max(0, min(current_hp, mh))
+    return out
+
+
 @router.get("", response_class=HTMLResponse)
 async def mobs_list(
     request: Request,
@@ -143,10 +171,7 @@ async def mobs_create(
                 status_code=400,
             )
 
-        repo.create(
-            code=code,
-            name=name,
-            description=form_data.get("description", "").strip(),
+        stats = _clamp_mob_stats(
             max_hp=max_hp,
             attack=_parse_int(form_data.get("attack"), 1),
             defense=_parse_int(form_data.get("defense"), 0),
@@ -157,10 +182,16 @@ async def mobs_create(
             hp_regeneration=_parse_int(form_data.get("hp_regeneration"), 0),
             xp_reward=_parse_int(form_data.get("xp_reward"), 0),
             gold_reward=_parse_int(form_data.get("gold_reward"), 0),
+            spawn_weight=_parse_int(form_data.get("spawn_weight"), 1),
+        )
+        repo.create(
+            code=code,
+            name=name,
+            description=form_data.get("description", "").strip(),
             image_name=form_data.get("image_name", "").strip(),
             family=form_data.get("family", "").strip() or "unknown",
-            spawn_weight=_parse_int(form_data.get("spawn_weight"), 1),
             loot_table=_parse_loot_table(form_data.get("loot_table")),
+            **stats,
         )
 
     return RedirectResponse(f"/admin/mobs?q={code}", status_code=303)
@@ -200,10 +231,7 @@ async def mobs_update(
             raise HTTPException(
                 status.HTTP_404_NOT_FOUND, f"Mob `{code}` introuvable.",
             )
-        repo.update_by_code(
-            code=code,
-            name=form_data.get("name", existing.name),
-            description=form_data.get("description", existing.description),
+        stats = _clamp_mob_stats(
             max_hp=_parse_int(form_data.get("max_hp"), existing.max_hp),
             current_hp=_parse_int(form_data.get("current_hp"), existing.current_hp),
             attack=_parse_int(form_data.get("attack"), existing.attack),
@@ -215,9 +243,15 @@ async def mobs_update(
             hp_regeneration=_parse_int(form_data.get("hp_regeneration"), existing.hp_regeneration),
             xp_reward=_parse_int(form_data.get("xp_reward"), existing.xp_reward),
             gold_reward=_parse_int(form_data.get("gold_reward"), existing.gold_reward),
+            spawn_weight=_parse_int(form_data.get("spawn_weight"), existing.spawn_weight),
+        )
+        repo.update_by_code(
+            code=code,
+            name=form_data.get("name", existing.name),
+            description=form_data.get("description", existing.description),
             image_name=form_data.get("image_name", existing.image_name).strip() or existing.image_name,
             family=form_data.get("family", existing.family or "").strip() or existing.family,
-            spawn_weight=_parse_int(form_data.get("spawn_weight"), existing.spawn_weight),
             loot_table=_parse_loot_table(form_data.get("loot_table")),
+            **stats,
         )
     return RedirectResponse(f"/admin/mobs?q={code}", status_code=303)

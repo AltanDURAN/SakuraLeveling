@@ -16,5 +16,5 @@ class ClassDefinitionModel(Base):
     stat_bonuses_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     unlock_requirements_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))

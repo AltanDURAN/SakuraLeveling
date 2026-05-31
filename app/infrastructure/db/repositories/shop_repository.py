@@ -123,6 +123,15 @@ class ShopRepository:
 
     def _to_domain(self, model: ShopItemModel) -> ShopItem:
         item_model = self.session.get(ItemDefinitionModel, model.item_definition_id)
+        # Garde contre une ShopItem orpheline (ItemDefinition supprimée).
+        # Sans ça, on déréfère un None silencieusement → AttributeError opaque.
+        # Cf. audit B3 : aligne le pattern défensif de craft_repository._to_domain.
+        if item_model is None:
+            raise RuntimeError(
+                f"ShopItem id={model.id} référence item_definition_id="
+                f"{model.item_definition_id} qui n'existe plus. "
+                "Re-seed le contenu (seed_content.py) ou retire l'entrée orpheline."
+            )
         item_definition = ItemDefinition(
             id=item_model.id,
             code=item_model.code,

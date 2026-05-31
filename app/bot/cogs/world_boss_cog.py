@@ -18,6 +18,8 @@ Reste à venir (besoin liste user) :
     • Particularités custom (modifiers étendus : phases, summons, etc.)
 """
 
+import asyncio
+
 import discord
 from discord import app_commands
 from discord.ext import commands, tasks
@@ -409,7 +411,9 @@ class WorldBossCog(commands.Cog):
             out = GENERATED_ENCOUNTERS_DIR / f"world_boss_{boss.id}.png"
             out.parent.mkdir(parents=True, exist_ok=True)
             try:
-                compose_players_banner(
+                # Rendu sync + download avatars → off-thread (cf. audit B5).
+                await asyncio.to_thread(
+                    compose_players_banner,
                     players=player_payload,
                     mob={
                         "name": boss.name,

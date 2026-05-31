@@ -1,6 +1,11 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+# Valeur sentinelle : si admin_session_secret reste à ça, la webapp refuse de démarrer.
+# Un secret connu publiquement permet de forger un cookie admin et de bypass l'auth.
+ADMIN_SESSION_SECRET_DEFAULT = "dev-secret-change-in-prod"
+
+
 class Settings(BaseSettings):
     discord_token: str
     database_url: str
@@ -27,7 +32,9 @@ class Settings(BaseSettings):
     oauth_redirect_uri: str = "http://localhost:8001/admin/auth/callback"
     # Clé pour signer les cookies de session admin. Générer avec
     # `python -c "import secrets; print(secrets.token_urlsafe(32))"`.
-    admin_session_secret: str = "dev-secret-change-in-prod"
+    # Le défaut est volontairement reconnaissable : la webapp refuse de démarrer
+    # tant qu'on ne l'a pas redéfini dans .env (assert_safe_secret()).
+    admin_session_secret: str = ADMIN_SESSION_SECRET_DEFAULT
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -44,6 +51,16 @@ class Settings(BaseSettings):
             for part in self.admin_discord_ids.split(",")
             if part.strip()
         ]
+
+    def assert_safe_admin_secret(self) -> None:
+        """Refuse de démarrer si le secret de signature de cookie est resté au défaut.
+        Sans ça, n'importe qui peut forger un cookie admin via le secret public du repo."""
+        if self.admin_session_secret == ADMIN_SESSION_SECRET_DEFAULT:
+            raise RuntimeError(
+                "admin_session_secret est au défaut public — refuse de démarrer. "
+                "Générez un secret : python -c 'import secrets; print(secrets.token_urlsafe(32))' "
+                "et définissez ADMIN_SESSION_SECRET dans .env."
+            )
 
 
 settings = Settings()

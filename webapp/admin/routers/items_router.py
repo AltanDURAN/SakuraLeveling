@@ -59,6 +59,37 @@ def _common_form_context() -> dict:
     }
 
 
+def _validate_item_form(form_data: dict[str, str], require_code: bool) -> dict[str, str]:
+    """Validation partagée create/update. Pour update, code vient de l'URL → on
+    ne le revalide pas. Sans ça, items_update acceptait une catégorie arbitraire
+    ou un nom vide qu'items_create aurait refusés (asymétrie de l'audit)."""
+    errors: dict[str, str] = {}
+    if require_code and not form_data.get("code", "").strip():
+        errors["code"] = "Code requis."
+    if not form_data.get("name", "").strip():
+        errors["name"] = "Nom requis."
+    if form_data.get("category", "").strip() not in {c.value for c in ItemCategory}:
+        errors["category"] = "Catégorie invalide."
+    return errors
+
+
+def _render_item_form_errors(
+    request, user, item, form_data: dict[str, str],
+    errors: dict[str, str], status_code: int = 400,
+):
+    return get_templates().TemplateResponse(
+        request, "admin/items/form.html",
+        context={
+            "user": user, "item": item,
+            "form_data": form_data,
+            "stat_bonuses": _parse_stat_bonuses(form_data),
+            "errors": errors,
+            **_common_form_context(),
+        },
+        status_code=status_code,
+    )
+
+
 @router.get("", response_class=HTMLResponse)
 async def items_list(
     request: Request,
@@ -119,51 +150,22 @@ async def items_create(
 ):
     form = await request.form()
     form_data = {k: str(v) for k, v in form.items()}
-    errors: dict[str, str] = {}
 
-    code = form_data.get("code", "").strip()
-    name = form_data.get("name", "").strip()
-    category = form_data.get("category", "").strip()
-    if not code:
-        errors["code"] = "Code requis."
-    if not name:
-        errors["name"] = "Nom requis."
-    if category not in [c.value for c in ItemCategory]:
-        errors["category"] = "Catégorie invalide."
-
+    errors = _validate_item_form(form_data, require_code=True)
     if errors:
-        return get_templates().TemplateResponse(
-            request, "admin/items/form.html",
-            context={
-                "user": user, "item": None,
-                "form_data": form_data,
-                "stat_bonuses": _parse_stat_bonuses(form_data),
-                "errors": errors,
-                **_common_form_context(),
-            },
-            status_code=400,
-        )
+        return _render_item_form_errors(request, user, None, form_data, errors)
 
+    code = form_data["code"].strip()
     with get_db_session() as session:
         repo = ItemRepository(session)
         if repo.get_by_code(code) is not None:
             errors["code"] = f"Le code `{code}` existe déjà."
-            return get_templates().TemplateResponse(
-                request, "admin/items/form.html",
-                context={
-                    "user": user, "item": None,
-                    "form_data": form_data,
-                    "stat_bonuses": _parse_stat_bonuses(form_data),
-                    "errors": errors,
-                    **_common_form_context(),
-                },
-                status_code=400,
-            )
+            return _render_item_form_errors(request, user, None, form_data, errors)
         repo.create(
             code=code,
-            name=name,
+            name=form_data["name"].strip(),
             description=form_data.get("description", "").strip(),
-            category=category,
+            category=form_data["category"].strip(),
             rarity=form_data.get("rarity", "common").strip() or "common",
             stackable=form_data.get("stackable") == "on",
             max_stack=_parse_optional_int(form_data.get("max_stack")),
@@ -214,11 +216,15 @@ async def items_update(
             raise HTTPException(
                 status.HTTP_404_NOT_FOUND, f"Item `{code}` introuvable.",
             )
+        # Validation symétrique avec create (code vient de l'URL, déjà résolu).
+        errors = _validate_item_form(form_data, require_code=False)
+        if errors:
+            return _render_item_form_errors(request, user, existing, form_data, errors)
         repo.update_by_code(
             code=code,
-            name=form_data.get("name", existing.name),
+            name=form_data["name"].strip(),
             description=form_data.get("description", ""),
-            category=form_data.get("category", existing.category),
+            category=form_data["category"].strip(),
             rarity=form_data.get("rarity", existing.rarity),
             stackable=form_data.get("stackable") == "on",
             max_stack=_parse_optional_int(form_data.get("max_stack")),

@@ -25,5 +25,5 @@ class ItemDefinitionModel(Base):
     requires_two_hands: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     family: Mapped[str] = mapped_column(String(50), nullable=False, default="")
 
-    created_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))

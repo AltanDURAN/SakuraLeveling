@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from app.application.services.set_bonus_resolver import resolve_set_bonuses
+from app.application.services.player_stats_resolver import resolve_player_stats
 from app.domain.services.leaderboard_service import (
     Leaderboard,
     LeaderboardEntry,
@@ -122,18 +122,23 @@ class GetLeaderboardUseCase:
 
     def _compute_for_each_player(self, value_fn) -> list[tuple[int, str, int]]:
         results: list[tuple[int, str, int]] = []
+        # On réutilise la session du player_repository — toutes les routes du
+        # leaderboard partagent une même session live.
+        session = self.player_repository.session
 
         profiles = self.player_repository.list_all_profiles()
         for profile in profiles:
             equipped_items = self.equipment_repository.list_by_player_id(profile.player.id)
             active_class = self.class_repository.get_current_class_for_player(profile.player.id)
-            set_bonuses = resolve_set_bonuses(equipped_items)
 
-            stats = self.stats_service.calculate_player_stats(
+            # Passe par le resolver centralisé : applique skill+title+set bonuses.
+            # Sans ça, /top power ignorait l'arbre de compétences (moteur de stats V2).
+            stats = resolve_player_stats(
+                session=session,
                 profile=profile,
                 equipped_items=equipped_items,
                 active_class=active_class,
-                set_bonuses=set_bonuses,
+                stats_service=self.stats_service,
             )
 
             value = value_fn(stats)
