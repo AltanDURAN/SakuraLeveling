@@ -6,6 +6,8 @@ sur la DB sans passer par Discord.
 from __future__ import annotations
 
 import logging
+from collections import Counter
+from urllib.parse import quote_plus
 
 from fastapi import APIRouter, Depends, Request, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -16,6 +18,7 @@ from app.infrastructure.db.repositories.inventory_repository import (
 )
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
+from app.infrastructure.sets.set_loader import list_definitions as list_set_definitions
 from webapp.admin.auth import AdminUser, require_admin
 from webapp.admin._shared import get_templates
 
@@ -54,6 +57,21 @@ async def actions_page(
         profiles = PlayerRepository(session).list_all_profiles()
         items = ItemRepository(session).list_all()
 
+    # Familles de panoplie = familles distinctes parmi les items ÉQUIPABLES.
+    # Compte les pièces par famille + nom/icône depuis sets.json si dispo.
+    equip_items = [it for it in items if (it.equipment_slot or None) and (it.family or "")]
+    counts = Counter(it.family for it in equip_items)
+    sets_def = list_set_definitions()
+    families = [
+        {
+            "code": code,
+            "name": (sets_def.get(code) or {}).get("name", code),
+            "icon": (sets_def.get(code) or {}).get("icon", "🧩"),
+            "count": n,
+        }
+        for code, n in sorted(counts.items())
+    ]
+
     return get_templates().TemplateResponse(
         request, "admin/actions.html",
         context={
@@ -67,6 +85,7 @@ async def actions_page(
                 for p in profiles
             ],
             "items": [{"code": it.code, "name": it.name} for it in items],
+            "families": families,
             "flash_message": message,
             "flash_error": error,
         },
@@ -201,3 +220,42 @@ async def give_item(
         f"/admin/actions?message=%2B{qty}+%C3%97+{item_code}+ajout%C3%A9",
         status_code=303,
     )
+
+
+@router.post("/give_panoplie")
+async def give_panoplie(
+    request: Request,
+    user: AdminUser = Depends(require_admin),
+):
+    """Donne au joueur 1 exemplaire de CHAQUE pièce équipable d'une famille de
+    panoplie (toutes les armures, accessoires, armes et boucliers de la famille)."""
+    form = await request.form()
+    target = form.get("target", "")
+    family = (form.get("family", "") or "").strip()
+    if not family:
+        return RedirectResponse("/admin/actions?error=Panoplie+non+sp%C3%A9cifi%C3%A9e", status_code=303)
+
+    with get_db_session() as session:
+        pid = _resolve_player_id(session, target)
+        if pid is None:
+            return RedirectResponse(f"/admin/actions?error=Joueur+%60{target}%60+introuvable", status_code=303)
+        item_repo = ItemRepository(session)
+        inv_repo = InventoryRepository(session)
+        # Toutes les pièces ÉQUIPABLES de cette famille (1 de chaque).
+        pieces = [
+            it for it in item_repo.list_all()
+            if (it.family or "") == family and (it.equipment_slot or None)
+        ]
+        if not pieces:
+            return RedirectResponse(
+                f"/admin/actions?error=Aucune+pi%C3%A8ce+%C3%A9quipable+pour+la+panoplie+{quote_plus(family)}",
+                status_code=303,
+            )
+        for it in pieces:
+            inv_repo.add_item(pid, it.id, 1)
+        count = len(pieces)
+
+    _logger.info("Admin %s gave panoplie '%s' (%d pieces) to %s",
+                 user.discord_id, family, count, target)
+    msg = quote_plus(f"Panoplie {family} donnée ({count} pièces)")
+    return RedirectResponse(f"/admin/actions?message={msg}", status_code=303)
