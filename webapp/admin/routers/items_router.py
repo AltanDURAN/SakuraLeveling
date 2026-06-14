@@ -11,6 +11,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.session import get_db_session
 from app.shared.enums import EquipmentSlot, FORGE_CATEGORIES, ItemCategory, ItemRarity
+from webapp.admin import content_sync, git_sync
 from webapp.admin.auth import AdminUser, require_admin
 from webapp.admin._shared import get_templates
 
@@ -54,6 +55,27 @@ def _common_form_context() -> dict:
         "slots": [None] + [s.value for s in EquipmentSlot],
         "supported_stats": SUPPORTED_STATS,
         "forge_categories": sorted(FORGE_CATEGORIES),
+    }
+
+
+def _collect_item_fields(form_data: dict[str, str], code: str, fallback_rarity: str = "common") -> dict:
+    """Construit le dict de champs commun à create (repo.create) et update
+    (repo.update_by_code) + à la sync JSON. Source unique de vérité du parsing."""
+    return {
+        "code": code,
+        "name": form_data["name"].strip(),
+        "description": form_data.get("description", "").strip(),
+        "category": form_data["category"].strip(),
+        "rarity": form_data.get("rarity", fallback_rarity).strip() or fallback_rarity,
+        "stackable": form_data.get("stackable") == "on",
+        "max_stack": _parse_optional_int(form_data.get("max_stack")),
+        "sell_price": _parse_optional_int(form_data.get("sell_price")) or 0,
+        "buy_price": _parse_optional_int(form_data.get("buy_price")),
+        "icon": form_data.get("icon", "").strip() or None,
+        "stat_bonuses": _parse_stat_bonuses(form_data) or None,
+        "equipment_slot": form_data.get("equipment_slot", "").strip() or None,
+        "requires_two_hands": form_data.get("requires_two_hands") == "on",
+        "family": form_data.get("family", "").strip(),
     }
 
 
@@ -159,23 +181,13 @@ async def items_create(
         if repo.get_by_code(code) is not None:
             errors["code"] = f"Le code `{code}` existe déjà."
             return _render_item_form_errors(request, user, None, form_data, errors)
-        repo.create(
-            code=code,
-            name=form_data["name"].strip(),
-            description=form_data.get("description", "").strip(),
-            category=form_data["category"].strip(),
-            rarity=form_data.get("rarity", "common").strip() or "common",
-            stackable=form_data.get("stackable") == "on",
-            max_stack=_parse_optional_int(form_data.get("max_stack")),
-            sell_price=_parse_optional_int(form_data.get("sell_price")) or 0,
-            buy_price=_parse_optional_int(form_data.get("buy_price")),
-            icon=form_data.get("icon", "").strip() or None,
-            stat_bonuses=_parse_stat_bonuses(form_data) or None,
-            equipment_slot=form_data.get("equipment_slot", "").strip() or None,
-            requires_two_hands=form_data.get("requires_two_hands") == "on",
-            family=form_data.get("family", "").strip(),
-        )
+        fields = _collect_item_fields(form_data, code)
+        repo.create(**fields)
 
+    # Sync items.json (reseed-safe) + git push best-effort, hors session DB.
+    content_sync.upsert_item_json(content_sync.build_item_dict(**fields))
+    git_sync.push_content(["app/infrastructure/content/items.json"],
+                          f"admin: item {code} créé")
     return RedirectResponse(f"/admin/items?q={code}", status_code=303)
 
 
@@ -218,22 +230,13 @@ async def items_update(
         errors = _validate_item_form(form_data, require_code=False)
         if errors:
             return _render_item_form_errors(request, user, existing, form_data, errors)
-        repo.update_by_code(
-            code=code,
-            name=form_data["name"].strip(),
-            description=form_data.get("description", ""),
-            category=form_data["category"].strip(),
-            rarity=form_data.get("rarity", existing.rarity),
-            stackable=form_data.get("stackable") == "on",
-            max_stack=_parse_optional_int(form_data.get("max_stack")),
-            sell_price=_parse_optional_int(form_data.get("sell_price")) or 0,
-            buy_price=_parse_optional_int(form_data.get("buy_price")),
-            icon=form_data.get("icon", "").strip() or None,
-            stat_bonuses=_parse_stat_bonuses(form_data) or None,
-            equipment_slot=form_data.get("equipment_slot", "").strip() or None,
-            requires_two_hands=form_data.get("requires_two_hands") == "on",
-            family=form_data.get("family", "").strip(),
-        )
+        fields = _collect_item_fields(form_data, code, fallback_rarity=existing.rarity)
+        repo.update_by_code(**fields)
+
+    # Sync items.json (reseed-safe) + git push best-effort, hors session DB.
+    content_sync.upsert_item_json(content_sync.build_item_dict(**fields))
+    git_sync.push_content(["app/infrastructure/content/items.json"],
+                          f"admin: item {code} modifié")
     return RedirectResponse(f"/admin/items?q={code}", status_code=303)
 
 

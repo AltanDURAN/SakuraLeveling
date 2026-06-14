@@ -50,6 +50,7 @@
                     <td>{{ r.daily_streak }}</td>
                     <td>{{ r.last_seen }}</td>
                     <td>
+                        <a href="/admin/players/{{ r.id }}/view" class="btn btn-small">👁 Voir</a>
                         <a href="/admin/players/{{ r.id }}/edit" class="btn btn-small">Éditer</a>
                         <form method="post" action="/admin/players/{{ r.id }}/reset"
                               style="display:inline; margin-left: 0.3rem;"
