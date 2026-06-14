@@ -87,19 +87,19 @@ sudo systemctl enable sakura-bot sakura-webapp
 sudo systemctl restart sakura-bot sakura-webapp
 sleep 3
 
-echo "==> 6. Ouverture du port webapp 8001 (firewall LOCAL Ubuntu)"
-# Les images Ubuntu d'Oracle ont des règles iptables qui DROP tout sauf SSH.
-# On autorise le 8001 entrant (le bot lui n'a besoin que de sortant).
+echo "==> 6. Ouverture du port webapp 8001 (firewall LOCAL éventuel)"
+# Certaines images (Oracle notamment) ont des règles iptables qui DROP tout
+# sauf SSH. On autorise le 8001 entrant (le bot lui n'a besoin que de sortant).
+# On APPEND (-A) : pas d'hypothèse sur le nombre de règles existantes.
 if sudo iptables -C INPUT -p tcp --dport 8001 -j ACCEPT 2>/dev/null; then
     echo "    règle 8001 déjà présente."
 else
-    sudo iptables -I INPUT 6 -p tcp --dport 8001 -j ACCEPT || true
-    # Persiste la règle si netfilter-persistent est dispo.
+    sudo iptables -A INPUT -p tcp --dport 8001 -j ACCEPT 2>/dev/null || true
     sudo netfilter-persistent save 2>/dev/null || \
         echo "    (installe iptables-persistent pour persister la règle au reboot)"
 fi
-echo "    ⚠️  N'oublie pas la SECURITY LIST / NSG côté console Oracle : "
-echo "       ingress TCP 8001 depuis 0.0.0.0/0 (sinon la webapp reste injoignable)."
+echo "    ⚠️  Si ton hébergeur a un firewall AU NIVEAU DU PANEL (Oracle Security"
+echo "       List, IONOS Cloud Firewall…), ouvre aussi TCP 8001 là-bas pour la webapp."
 
 echo "==> 7. Statut"
 sudo systemctl --no-pager status sakura-bot -n 5 || true
