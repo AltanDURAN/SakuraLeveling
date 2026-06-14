@@ -1,0 +1,106 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ p.display_name }} — Joueur — Sakura Admin{% endblock %}
+
+{% block content %}
+<section class="form-page">
+    <a href="/admin/players" class="breadcrumb">← Joueurs</a>
+    <h1>👤 {{ p.display_name }}</h1>
+    <p class="form-section-help">
+        Discord ID : <code>{{ p.discord_id }}</code> · @{{ p.username }} · #{{ p.id }}
+    </p>
+
+    <div class="form-actions" style="margin-bottom: 16px;">
+        <a href="/admin/players/{{ p.id }}/edit" class="btn btn-primary">✏️ Éditer</a>
+        <a href="/admin/actions" class="btn">⚡ Actions (or/items/panoplie)</a>
+    </div>
+
+    <div class="entity-grid" style="grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));">
+
+        <div class="form-section">
+            <h2 class="form-section-title">📊 Progression</h2>
+            <table class="kv-table">
+                <tr><td>Niveau</td><td><strong>{{ p.level }}</strong></td></tr>
+                <tr><td>XP</td><td>{{ p.xp }}</td></tr>
+                <tr><td>Or</td><td>{{ p.gold }}</td></tr>
+                <tr><td>Skill points</td><td>{{ p.skill_points }}</td></tr>
+                <tr><td>Daily streak</td><td>{{ p.daily_streak }}</td></tr>
+                <tr><td>Classe</td><td>{{ p.class }}</td></tr>
+                {% if power is not none %}
+                <tr><td>Power score</td><td><strong>{{ power }}</strong> ({{ rank }})</td></tr>
+                {% endif %}
+            </table>
+        </div>
+
+        {% if stats %}
+        <div class="form-section">
+            <h2 class="form-section-title">⚔️ Stats de combat (finales)</h2>
+            <table class="kv-table">
+                <tr><td>❤️ PV max</td><td>{{ stats.max_hp }}</td></tr>
+                <tr><td>⚔️ Attaque</td><td>{{ stats.attack }}</td></tr>
+                <tr><td>🛡️ Défense</td><td>{{ stats.defense }}</td></tr>
+                <tr><td>💨 Vitesse</td><td>{{ stats.speed }}</td></tr>
+                <tr><td>🎯 Crit chance</td><td>{{ stats.crit_chance }}%</td></tr>
+                <tr><td>💥 Crit dégâts</td><td>{{ stats.crit_damage }}</td></tr>
+                <tr><td>🌀 Esquive</td><td>{{ stats.dodge }}%</td></tr>
+                <tr><td>✨ Régén</td><td>{{ stats.hp_regeneration }}</td></tr>
+            </table>
+        </div>
+        {% endif %}
+
+        <div class="form-section">
+            <h2 class="form-section-title">🏆 Carrière</h2>
+            <table class="kv-table">
+                <tr><td>Combats</td><td>{{ career.combats_fought }} (V {{ career.combats_won }} / D {{ career.combats_lost }})</td></tr>
+                <tr><td>Or amassé</td><td>{{ career.gold_earned_total }}</td></tr>
+                <tr><td>Dégâts infligés</td><td>{{ career.damage_dealt_total }}</td></tr>
+                <tr><td>Dégâts encaissés</td><td>{{ career.damage_tanked_total }}</td></tr>
+                <tr><td>PV soignés</td><td>{{ career.hp_healed_total }}</td></tr>
+                <tr><td>Esquives totales</td><td>{{ career.dodges_total }}</td></tr>
+            </table>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">🎽 Équipement ({{ equipment|length }})</h2>
+            {% if equipment %}
+            <table class="kv-table">
+                {% for e in equipment %}
+                <tr>
+                    <td><code>{{ e.slot }}</code></td>
+                    <td>{{ e.name }} <span class="muted">({{ e.code }}{% if e.family %} · {{ e.family }}{% endif %})</span></td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% else %}
+            <p class="muted">Rien d'équipé.</p>
+            {% endif %}
+        </div>
+
+        <div class="form-section" style="grid-column: 1 / -1;">
+            <h2 class="form-section-title">📦 Inventaire ({{ inventory|length }} types)</h2>
+            {% if inventory %}
+            <table class="kv-table">
+                <tr><th style="text-align:left">Item</th><th style="text-align:left">Catégorie</th><th style="text-align:right">Qté</th></tr>
+                {% for it in inventory %}
+                <tr>
+                    <td>{{ it.name }} <span class="muted">({{ it.code }})</span></td>
+                    <td>{{ it.category }}</td>
+                    <td style="text-align:right"><strong>{{ it.quantity }}</strong></td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% else %}
+            <p class="muted">Inventaire vide.</p>
+            {% endif %}
+        </div>
+
+    </div>
+</section>
+
+<style>
+    .kv-table { width: 100%; border-collapse: collapse; }
+    .kv-table td, .kv-table th { padding: 4px 6px; border-bottom: 1px solid var(--border, #eee); font-size: 14px; }
+    .kv-table td:first-child { color: var(--muted, #888); }
+    .muted { color: var(--muted, #999); font-size: 0.9em; }
+</style>
+{% endblock %}
