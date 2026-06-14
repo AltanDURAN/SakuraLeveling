@@ -109,13 +109,20 @@
             </div>
         </form>
 
-        <form method="post" action="/admin/actions/give_panoplie" class="form-section">
-            <h2 class="form-section-title">🌸 Donner une panoplie complète</h2>
+        <form method="post" action="/admin/actions/panoplie" class="form-section">
+            <h2 class="form-section-title">🌸 Donner / retirer une panoplie complète</h2>
             <p class="form-section-help">
-                Ajoute 1 exemplaire de chaque pièce équipable de la famille
-                (armures, accessoires, armes, boucliers).
+                Ajoute ou retire 1 exemplaire de chaque pièce équipable de la
+                famille (armures, accessoires, armes, boucliers).
             </p>
             <div class="form-row">{{ target_field }}
+                <label class="field">
+                    <span class="field-label">Action</span>
+                    <select name="action" class="input" required>
+                        <option value="give" selected>➕ Donner</option>
+                        <option value="take">➖ Prendre</option>
+                    </select>
+                </label>
                 <label class="field">
                     <span class="field-label">Panoplie</span>
                     <select name="family" class="input" required>
@@ -127,7 +134,7 @@
                 </label>
             </div>
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Donner la panoplie</button>
+                <button type="submit" class="btn btn-primary">Appliquer</button>
             </div>
         </form>
     </div>
