@@ -92,56 +92,41 @@ async def actions_page(
     )
 
 
-@router.post("/give_gold")
-async def give_gold(
-    request: Request,
-    user: AdminUser = Depends(require_admin),
-):
+async def _apply_amount(request: Request, repo_method: str, noun: str, user: AdminUser):
+    """Donner OU retirer un montant (or/xp/skill points). `action` = give|take ;
+    le montant saisi est toujours POSITIF, la direction vient du sélecteur.
+    Les méthodes add_* du repo clampent le solde à 0 (retrait sûr)."""
     form = await request.form()
     target = form.get("target", "")
+    action = (form.get("action", "give") or "give").strip()
     try:
         amount = int(form.get("amount", "0"))
     except ValueError:
         return RedirectResponse("/admin/actions?error=Montant+invalide", status_code=303)
-    # 'give' = ajouter ; pour retirer/forcer un solde, utiliser set_gold (clamp ≥0).
-    if amount < 0:
-        return RedirectResponse(
-            "/admin/actions?error=Montant+n%C3%A9gatif+refus%C3%A9+%E2%80%94+utilise+set_gold",
-            status_code=303,
-        )
+    if amount <= 0:
+        return RedirectResponse("/admin/actions?error=Montant+doit+%C3%AAtre+positif", status_code=303)
 
+    delta = -amount if action == "take" else amount
     with get_db_session() as session:
         pid = _resolve_player_id(session, target)
         if pid is None:
             return RedirectResponse(f"/admin/actions?error=Joueur+%60{target}%60+introuvable", status_code=303)
-        PlayerRepository(session).add_gold(pid, amount)
-    _logger.info("Admin %s gave %d gold to player %s", user.discord_id, amount, target)
-    return RedirectResponse(f"/admin/actions?message=%2B{amount}+or+ajout%C3%A9", status_code=303)
+        getattr(PlayerRepository(session), repo_method)(pid, delta)
+    verb = "retiré" if action == "take" else "ajouté"
+    _logger.info("Admin %s %s %d %s to/from %s", user.discord_id, action, amount, noun, target)
+    return RedirectResponse(
+        f"/admin/actions?message={quote_plus(f'{amount} {noun} {verb}')}", status_code=303
+    )
+
+
+@router.post("/give_gold")
+async def give_gold(request: Request, user: AdminUser = Depends(require_admin)):
+    return await _apply_amount(request, "add_gold", "or", user)
 
 
 @router.post("/give_xp")
-async def give_xp(
-    request: Request,
-    user: AdminUser = Depends(require_admin),
-):
-    form = await request.form()
-    target = form.get("target", "")
-    try:
-        amount = int(form.get("amount", "0"))
-    except ValueError:
-        return RedirectResponse("/admin/actions?error=Montant+invalide", status_code=303)
-    if amount < 0:
-        return RedirectResponse(
-            "/admin/actions?error=Montant+n%C3%A9gatif+refus%C3%A9",
-            status_code=303,
-        )
-
-    with get_db_session() as session:
-        pid = _resolve_player_id(session, target)
-        if pid is None:
-            return RedirectResponse(f"/admin/actions?error=Joueur+%60{target}%60+introuvable", status_code=303)
-        PlayerRepository(session).add_xp(pid, amount)
-    return RedirectResponse(f"/admin/actions?message=%2B{amount}+XP+ajout%C3%A9", status_code=303)
+async def give_xp(request: Request, user: AdminUser = Depends(require_admin)):
+    return await _apply_amount(request, "add_xp", "XP", user)
 
 
 @router.post("/set_level")
@@ -174,23 +159,8 @@ async def set_level(
 
 
 @router.post("/give_skill_points")
-async def give_skill_points(
-    request: Request,
-    user: AdminUser = Depends(require_admin),
-):
-    form = await request.form()
-    target = form.get("target", "")
-    try:
-        amount = int(form.get("amount", "0"))
-    except ValueError:
-        return RedirectResponse("/admin/actions?error=Montant+invalide", status_code=303)
-
-    with get_db_session() as session:
-        pid = _resolve_player_id(session, target)
-        if pid is None:
-            return RedirectResponse(f"/admin/actions?error=Joueur+%60{target}%60+introuvable", status_code=303)
-        PlayerRepository(session).add_skill_points(pid, amount)
-    return RedirectResponse(f"/admin/actions?message=%2B{amount}+skill+points", status_code=303)
+async def give_skill_points(request: Request, user: AdminUser = Depends(require_admin)):
+    return await _apply_amount(request, "add_skill_points", "skill points", user)
 
 
 @router.post("/give_item")
@@ -201,6 +171,7 @@ async def give_item(
     form = await request.form()
     target = form.get("target", "")
     item_code = form.get("item_code", "").strip()
+    action = (form.get("action", "give") or "give").strip()
     try:
         qty = int(form.get("quantity", "1"))
         if qty < 1:
@@ -215,11 +186,15 @@ async def give_item(
         item = ItemRepository(session).get_by_code(item_code)
         if item is None:
             return RedirectResponse(f"/admin/actions?error=Item+%60{item_code}%60+introuvable", status_code=303)
-        InventoryRepository(session).add_item(pid, item.id, qty)
-    return RedirectResponse(
-        f"/admin/actions?message=%2B{qty}+%C3%97+{item_code}+ajout%C3%A9",
-        status_code=303,
-    )
+        inv = InventoryRepository(session)
+        if action == "take":
+            ok = inv.remove_item(pid, item.id, qty)
+            msg = (f"{qty} × {item_code} retiré" if ok
+                   else f"Retrait impossible : {item_code} en quantité insuffisante")
+        else:
+            inv.add_item(pid, item.id, qty)
+            msg = f"{qty} × {item_code} ajouté"
+    return RedirectResponse(f"/admin/actions?message={quote_plus(msg)}", status_code=303)
 
 
 @router.post("/panoplie")
