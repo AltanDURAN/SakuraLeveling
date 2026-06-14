@@ -108,6 +108,28 @@
                 <button type="submit" class="btn btn-primary">Donner</button>
             </div>
         </form>
+
+        <form method="post" action="/admin/actions/give_panoplie" class="form-section">
+            <h2 class="form-section-title">🌸 Donner une panoplie complète</h2>
+            <p class="form-section-help">
+                Ajoute 1 exemplaire de chaque pièce équipable de la famille
+                (armures, accessoires, armes, boucliers).
+            </p>
+            <div class="form-row">{{ target_field }}
+                <label class="field">
+                    <span class="field-label">Panoplie</span>
+                    <select name="family" class="input" required>
+                        <option value="" disabled selected>— choisir —</option>
+                        {% for f in families %}
+                            <option value="{{ f.code }}">{{ f.icon }} {{ f.name }} ({{ f.count }} pièces · {{ f.code }})</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Donner la panoplie</button>
+            </div>
+        </form>
     </div>
 
     <datalist id="items-list">
