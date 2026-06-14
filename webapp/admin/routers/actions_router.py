@@ -222,16 +222,18 @@ async def give_item(
     )
 
 
-@router.post("/give_panoplie")
-async def give_panoplie(
+@router.post("/panoplie")
+async def panoplie_action(
     request: Request,
     user: AdminUser = Depends(require_admin),
 ):
-    """Donne au joueur 1 exemplaire de CHAQUE pièce équipable d'une famille de
-    panoplie (toutes les armures, accessoires, armes et boucliers de la famille)."""
+    """Donne OU retire une panoplie complète : 1 exemplaire de CHAQUE pièce
+    équipable de la famille (armures, accessoires, armes, boucliers).
+    `action` = 'give' (ajoute) ou 'take' (retire ce que le joueur possède)."""
     form = await request.form()
     target = form.get("target", "")
     family = (form.get("family", "") or "").strip()
+    action = (form.get("action", "give") or "give").strip()
     if not family:
         return RedirectResponse("/admin/actions?error=Panoplie+non+sp%C3%A9cifi%C3%A9e", status_code=303)
 
@@ -251,11 +253,18 @@ async def give_panoplie(
                 f"/admin/actions?error=Aucune+pi%C3%A8ce+%C3%A9quipable+pour+la+panoplie+{quote_plus(family)}",
                 status_code=303,
             )
-        for it in pieces:
-            inv_repo.add_item(pid, it.id, 1)
-        count = len(pieces)
+        if action == "take":
+            # remove_item renvoie False si le joueur n'a pas la pièce → on
+            # compte celles réellement retirées.
+            count = sum(1 for it in pieces if inv_repo.remove_item(pid, it.id, 1))
+            verb = "retirée"
+        else:
+            for it in pieces:
+                inv_repo.add_item(pid, it.id, 1)
+            count = len(pieces)
+            verb = "donnée"
 
-    _logger.info("Admin %s gave panoplie '%s' (%d pieces) to %s",
-                 user.discord_id, family, count, target)
-    msg = quote_plus(f"Panoplie {family} donnée ({count} pièces)")
+    _logger.info("Admin %s %s panoplie '%s' (%d pieces) to/from %s",
+                 user.discord_id, action, family, count, target)
+    msg = quote_plus(f"Panoplie {family} {verb} ({count} pièces)")
     return RedirectResponse(f"/admin/actions?message={msg}", status_code=303)
