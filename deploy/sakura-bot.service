@@ -1,0 +1,23 @@
+[Unit]
+Description=SakuraLeveling Discord Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/SakuraLeveling
+ExecStart=/home/ubuntu/SakuraLeveling/.venv/bin/python -m app.bot.main
+Restart=on-failure
+RestartSec=5s
+# Le bot maintient une connexion gateway permanente : on le veut résilient
+# aux coupures réseau transitoires (Discord renvoie des resume).
+StartLimitIntervalSec=0
+
+# Sandboxing minimal sans casser l'accès à lita_v2.db ni aux assets générés.
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
