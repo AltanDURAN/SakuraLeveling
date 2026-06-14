@@ -30,6 +30,16 @@
         </label>
     {% endset %}
 
+    {% set action_field %}
+        <label class="field">
+            <span class="field-label">Action</span>
+            <select name="action" class="input" required>
+                <option value="give" selected>➕ Donner</option>
+                <option value="take">➖ Retirer</option>
+            </select>
+        </label>
+    {% endset %}
+
     <datalist id="players-list">
         {% for p in profiles %}
             <option value="{{ p.discord_id }}">{{ p.display_name }} ({{ p.username }})</option>
@@ -39,28 +49,28 @@
     <div class="entity-grid" style="grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));">
 
         <form method="post" action="/admin/actions/give_gold" class="form-section">
-            <h2 class="form-section-title">💰 Donner de l'or</h2>
-            <div class="form-row">{{ target_field }}
+            <h2 class="form-section-title">💰 Or — donner / retirer</h2>
+            <div class="form-row">{{ target_field }}{{ action_field }}
                 <label class="field">
-                    <span class="field-label">Montant (peut être négatif)</span>
-                    <input type="number" name="amount" class="input" value="100" required>
+                    <span class="field-label">Montant</span>
+                    <input type="number" name="amount" class="input" value="100" min="1" required>
                 </label>
             </div>
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Donner</button>
+                <button type="submit" class="btn btn-primary">Appliquer</button>
             </div>
         </form>
 
         <form method="post" action="/admin/actions/give_xp" class="form-section">
-            <h2 class="form-section-title">✨ Donner de l'XP</h2>
-            <div class="form-row">{{ target_field }}
+            <h2 class="form-section-title">✨ XP — donner / retirer</h2>
+            <div class="form-row">{{ target_field }}{{ action_field }}
                 <label class="field">
                     <span class="field-label">XP</span>
-                    <input type="number" name="amount" class="input" value="100" required>
+                    <input type="number" name="amount" class="input" value="100" min="1" required>
                 </label>
             </div>
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Donner</button>
+                <button type="submit" class="btn btn-primary">Appliquer</button>
             </div>
         </form>
 
@@ -79,21 +89,21 @@
         </form>
 
         <form method="post" action="/admin/actions/give_skill_points" class="form-section">
-            <h2 class="form-section-title">🌳 Donner des skill points</h2>
-            <div class="form-row">{{ target_field }}
+            <h2 class="form-section-title">🌳 Skill points — donner / retirer</h2>
+            <div class="form-row">{{ target_field }}{{ action_field }}
                 <label class="field">
-                    <span class="field-label">Skill points (peut être négatif)</span>
-                    <input type="number" name="amount" class="input" value="5" required>
+                    <span class="field-label">Skill points</span>
+                    <input type="number" name="amount" class="input" value="5" min="1" required>
                 </label>
             </div>
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Donner</button>
+                <button type="submit" class="btn btn-primary">Appliquer</button>
             </div>
         </form>
 
         <form method="post" action="/admin/actions/give_item" class="form-section">
-            <h2 class="form-section-title">📦 Donner un item</h2>
-            <div class="form-row">{{ target_field }}
+            <h2 class="form-section-title">📦 Item — donner / retirer</h2>
+            <div class="form-row">{{ target_field }}{{ action_field }}
                 <label class="field">
                     <span class="field-label">Item</span>
                     <input list="items-list" name="item_code" class="input"
@@ -105,7 +115,7 @@
                 </label>
             </div>
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Donner</button>
+                <button type="submit" class="btn btn-primary">Appliquer</button>
             </div>
         </form>
 
