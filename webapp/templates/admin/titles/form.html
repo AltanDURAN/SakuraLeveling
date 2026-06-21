@@ -26,13 +26,17 @@
                     {% if errors.get('name') %}<span class="field-error">{{ errors['name'] }}</span>{% endif %}
                 </label>
                 <label class="field">
-                    <span class="field-label">Icon</span>
+                    <span class="field-label">Icône (emoji)</span>
                     <input type="text" name="icon" class="input" value="{{ fd.get('icon', '') }}" placeholder="🏹">
                 </label>
             </div>
             <label class="field">
                 <span class="field-label">Description</span>
                 <textarea name="description" class="input textarea" rows="2">{{ fd.get('description', '') }}</textarea>
+            </label>
+            <label class="field" style="flex-direction:row; align-items:center; gap:8px;">
+                <input type="checkbox" name="exclusive" value="on" {% if fd.get('exclusive') %}checked{% endif %}>
+                <span class="field-label" style="margin:0;">Titre exclusif (un seul détenteur à la fois — ex : Champion 1v1)</span>
             </label>
         </div>
 

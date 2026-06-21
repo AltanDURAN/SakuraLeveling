@@ -22,7 +22,18 @@
                 </label>
                 <label class="field">
                     <span class="field-label">Nom</span>
-                    <input type="text" name="name" class="input" value="{{ fd.get('name', '') }}" placeholder="Panoplie Dragonite">
+                    <input type="text" name="name" class="input" value="{{ fd.get('name', '') }}" placeholder="Panoplie Dragonite" required>
+                    {% if errors.get('name') %}<span class="field-error">{{ errors['name'] }}</span>{% endif %}
+                </label>
+            </div>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Icône (emoji)</span>
+                    <input type="text" name="icon" class="input" value="{{ fd.get('icon', '') }}" placeholder="🐉">
+                </label>
+                <label class="field">
+                    <span class="field-label">Couleur (hex)</span>
+                    <input type="text" name="color" class="input" value="{{ fd.get('color', '') }}" placeholder="#9aa0aa">
                 </label>
             </div>
             <label class="field">
@@ -34,19 +45,31 @@
         <div class="form-section">
             <h2 class="form-section-title">Bonus par palier</h2>
             <p class="form-section-help">
-                Bonus du palier le plus haut REMPLACE celui des paliers inférieurs (pas cumulatif).<br>
-                Format : <code>defense=10, attack=5</code> par palier.
+                Chaque palier (2 / 4 / 8 / 12 pièces équipées) donne <strong>UN</strong> bonus.
+                Le palier le plus haut atteint REMPLACE les inférieurs (pas cumulatif).
+                Laisse « Aucun » pour désactiver un palier.
             </p>
-            <div class="form-row">
-                <label class="field"><span class="field-label">2 pièces</span>
-                    <input type="text" name="tier_2" class="input" value="{{ fd.get('tier_2', '') }}" placeholder="defense=5"></label>
-                <label class="field"><span class="field-label">4 pièces</span>
-                    <input type="text" name="tier_4" class="input" value="{{ fd.get('tier_4', '') }}" placeholder="defense=10, attack=3"></label>
-                <label class="field"><span class="field-label">8 pièces</span>
-                    <input type="text" name="tier_8" class="input" value="{{ fd.get('tier_8', '') }}" placeholder="defense=20, attack=8"></label>
-                <label class="field"><span class="field-label">12 pièces</span>
-                    <input type="text" name="tier_12" class="input" value="{{ fd.get('tier_12', '') }}" placeholder="defense=40, attack=15, max_hp=50"></label>
+            {% for n in tier_counts %}
+            <div class="form-row" style="align-items:flex-end;">
+                <label class="field" style="max-width:90px;">
+                    <span class="field-label">{{ n }} pièces</span>
+                    <input type="text" class="input" value="{{ n }} pièces" disabled>
+                </label>
+                <label class="field">
+                    <span class="field-label">Type de bonus</span>
+                    <select name="tier_{{ n }}_type" class="input">
+                        <option value="">— Aucun —</option>
+                        {% for code, label in bonus_types.items() %}
+                            <option value="{{ code }}" {% if fd.get('tier_' ~ n ~ '_type') == code %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="field" style="max-width:140px;">
+                    <span class="field-label">Valeur</span>
+                    <input type="number" name="tier_{{ n }}_value" class="input" value="{{ fd.get('tier_' ~ n ~ '_value', '') }}" placeholder="0">
+                </label>
             </div>
+            {% endfor %}
         </div>
 
         <div class="form-actions">
