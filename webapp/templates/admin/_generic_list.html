@@ -48,7 +48,7 @@
     </form>
 
     {% if rows %}
-    {% set has_edit = rows and rows[0].get('__edit_url__') %}
+    {% set has_edit = rows and (rows[0].get('__edit_url__') or rows[0].get('__delete_url__')) %}
     <div class="table-wrapper">
         <table class="data-table" data-sortable>
             <thead>
@@ -69,9 +69,16 @@
                         </td>
                     {% endfor %}
                     {% if has_edit %}
-                        <td>
+                        <td style="white-space:nowrap;">
                             {% if row.get('__edit_url__') %}
                                 <a href="{{ row['__edit_url__'] }}" class="btn btn-small">Éditer</a>
+                            {% endif %}
+                            {% if row.get('__delete_url__') %}
+                                <form method="post" action="{{ row['__delete_url__'] }}"
+                                      style="display:inline; margin-left:0.3rem;"
+                                      onsubmit="return confirm('⚠️ Supprimer définitivement cette entrée ?\n\nElle disparaîtra du JSON. Irréversible (sauf reseed).');">
+                                    <button type="submit" class="btn btn-small" style="background: var(--danger); color: white;">Suppr.</button>
+                                </form>
                             {% endif %}
                         </td>
                     {% endif %}

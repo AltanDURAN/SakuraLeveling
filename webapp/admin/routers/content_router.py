@@ -29,6 +29,8 @@ from webapp.admin._shared import get_templates
 from webapp.admin.json_writer import (
     add_skill_node,
     append_to_list,
+    atomic_write_json,
+    delete_in_list_by_key,
     load_json as _writer_load,
     upsert_to_dict,
 )
@@ -188,6 +190,7 @@ async def classes_list(
                 for r in (c.get("unlock_requirements") or [])
             ) or "—",
             "__edit_url__": f"/admin/classes/{c.get('code', '')}/edit",
+            "__delete_url__": f"/admin/classes/{c.get('code', '')}/delete",
         }
         for c in data
     ]
@@ -307,6 +310,7 @@ async def skill_tree_list(
             "prereqs": ", ".join(node.get("prerequisites") or []) or "—",
             "effects": effects_str or "—",
             "__edit_url__": f"/admin/skill-tree/{code}/edit",
+            "__delete_url__": f"/admin/skill-tree/{code}/delete",
         })
     filtered = _filter_rows(rows, q)
     return _render(
@@ -355,12 +359,14 @@ async def panoplies_list(
                 "name": info.get("name", family) if isinstance(info, dict) else family,
                 "tiers": tiers_str or "—",
                 "__edit_url__": f"/admin/panoplies/{family}/edit",
+                "__delete_url__": f"/admin/panoplies/{family}/delete",
             })
     elif isinstance(data, list):
         for family in data:
             rows.append({
                 "family": family, "name": family, "tiers": "—",
                 "__edit_url__": f"/admin/panoplies/{family}/edit",
+                "__delete_url__": f"/admin/panoplies/{family}/delete",
             })
 
     # Compte le nombre d'items par famille
@@ -417,6 +423,7 @@ async def titles_list(
             "condition_value": t.get("condition_value", "—"),
             "effects": effects_str or "—",
             "__edit_url__": f"/admin/titles/{t.get('code', '')}/edit",
+            "__delete_url__": f"/admin/titles/{t.get('code', '')}/delete",
         })
     filtered = _filter_rows(rows, q, {"condition_type": condition_type})
     return _render(
@@ -463,6 +470,7 @@ def _quest_rows(filename: str, scope: str):
             "reward_xp": q.get("reward_xp", 0),
             "reward_items": items_str,
             "__edit_url__": f"/admin/quests/{scope}/{q.get('code', '')}/edit",
+            "__delete_url__": f"/admin/quests/{scope}/{q.get('code', '')}/delete",
         })
     return rows
 
@@ -543,6 +551,7 @@ async def world_bosses_list(
             "spawn_weight": b.get("spawn_weight", 0),
             "modifiers": mods_str,
             "__edit_url__": f"/admin/world-bosses/{b.get('code', '')}/edit",
+            "__delete_url__": f"/admin/world-bosses/{b.get('code', '')}/delete",
         })
     filtered = _filter_rows(rows, q, {"tier": tier})
     return _render(
@@ -1632,3 +1641,65 @@ async def crafts_update(
         session.commit()
 
     return RedirectResponse(f"/admin/crafts?q={code}", status_code=303)
+
+
+# ========================= Suppressions (DELETE) =========================
+# Entités JSON-backed uniquement (classes, titres, quêtes, bosses, panoplies,
+# skill nodes). Les entités DB-backed (items, mobs, crafts) ne sont pas
+# supprimables ici (référencées par les joueurs — à traiter séparément).
+
+def _delete_from_list(filename: str, code: str, label: str, redirect: str):
+    try:
+        delete_in_list_by_key(filename, code)
+    except ValueError:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"{label} `{code}` introuvable.")
+    git_sync.push_content([f"app/infrastructure/content/{filename}"],
+                          f"admin: {label} {code} supprimé(e)")
+    return RedirectResponse(redirect, status_code=303)
+
+
+@router.post("/classes/{code}/delete")
+async def classes_delete(code: str, user: AdminUser = Depends(require_admin)):
+    return _delete_from_list("classes.json", code, "Classe", "/admin/classes")
+
+
+@router.post("/titles/{code}/delete")
+async def titles_delete(code: str, user: AdminUser = Depends(require_admin)):
+    return _delete_from_list("titles.json", code, "Titre", "/admin/titles")
+
+
+@router.post("/world-bosses/{code}/delete")
+async def bosses_delete(code: str, user: AdminUser = Depends(require_admin)):
+    return _delete_from_list("boss_definitions.json", code, "Boss", "/admin/world-bosses")
+
+
+@router.post("/quests/{scope}/{code}/delete")
+async def quests_delete(scope: str, code: str, user: AdminUser = Depends(require_admin)):
+    filename = "weekly_quests.json" if scope == "weekly" else "daily_quests.json"
+    return _delete_from_list(filename, code, "Quête", f"/admin/quests?scope={scope}")
+
+
+@router.post("/panoplies/{family}/delete")
+async def panoplies_delete(family: str, user: AdminUser = Depends(require_admin)):
+    data = _writer_load("sets.json", default={}) or {}
+    if not isinstance(data, dict) or family not in data:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Panoplie `{family}` introuvable.")
+    del data[family]
+    atomic_write_json("sets.json", data)
+    git_sync.push_content(["app/infrastructure/content/sets.json"],
+                          f"admin: panoplie {family} supprimée")
+    return RedirectResponse("/admin/panoplies", status_code=303)
+
+
+@router.post("/skill-tree/{code}/delete")
+async def skills_delete(code: str, user: AdminUser = Depends(require_admin)):
+    data = _writer_load("skill_tree.json", default={"skills": {}}) or {"skills": {}}
+    skills = data.get("skills") or {}
+    if code not in skills:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Skill `{code}` introuvable.")
+    del skills[code]
+    data["skills"] = skills
+    atomic_write_json("skill_tree.json", data)
+    git_sync.push_content(["app/infrastructure/content/skill_tree.json"],
+                          f"admin: skill {code} supprimé")
+    return RedirectResponse("/admin/skill-tree", status_code=303)
