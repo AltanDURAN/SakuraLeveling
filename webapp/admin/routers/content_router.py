@@ -23,6 +23,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.session import get_db_session
+from webapp.admin import git_sync
 from webapp.admin.auth import AdminUser, require_admin
 from webapp.admin._shared import get_templates
 from webapp.admin.json_writer import (
@@ -661,12 +662,15 @@ async def titles_create(request: Request, user: AdminUser = Depends(require_admi
         "name": name,
         "description": fd.get("description", "").strip(),
         "icon": fd.get("icon", "").strip(),
+        "exclusive": fd.get("exclusive") == "on",
         "condition_type": fd.get("condition_type", "").strip(),
         "condition_target": fd.get("condition_target", "").strip() or None,
         "condition_value": _parse_int(fd.get("condition_value"), 0),
         "effects": effects,
     }
     append_to_list("titles.json", entry)
+    git_sync.push_content(["app/infrastructure/content/titles.json"],
+                          f"admin: titre {code} créé")
     return RedirectResponse(f"/admin/titles?q={code}", status_code=303)
 
 
@@ -771,11 +775,61 @@ async def bosses_create(request: Request, user: AdminUser = Depends(require_admi
 
 
 # --- Panoplies ---
+# Types de bonus de set supportés par SetBonusService (libellés FR pour l'UI).
+SET_BONUS_TYPES = {
+    "defense_flat": "Défense (plat)",
+    "dodge_flat": "Esquive (plat)",
+    "crit_chance_flat": "Chance critique (plat)",
+    "crit_damage_flat": "Dégâts critiques (plat)",
+    "hp_regeneration_flat": "Régénération PV (plat)",
+    "attack_flat": "Attaque (plat)",
+    "speed_flat": "Vitesse (plat)",
+    "max_hp_flat": "PV max (plat)",
+}
+_TIER_COUNTS = (2, 4, 8, 12)
+
+
+def _build_set_tiers(fd: dict) -> list[dict]:
+    """Construit la liste tiers [{min_pieces, type, value}] au schéma réel de
+    sets.json, depuis les champs tier_{n}_type / tier_{n}_value du formulaire."""
+    tiers = []
+    for n in _TIER_COUNTS:
+        t_type = (fd.get(f"tier_{n}_type", "") or "").strip()
+        t_value = _parse_int(fd.get(f"tier_{n}_value"), 0)
+        if t_type in SET_BONUS_TYPES and t_value:
+            tiers.append({"min_pieces": n, "type": t_type, "value": t_value})
+    return tiers
+
+
+def _set_tiers_to_form(tiers) -> dict:
+    """Inverse : remplit tier_{n}_type / tier_{n}_value pour le pré-remplissage
+    de l'édition. Accepte le format liste réel."""
+    out = {}
+    by_pieces = {}
+    if isinstance(tiers, list):
+        for t in tiers:
+            if isinstance(t, dict) and "min_pieces" in t:
+                by_pieces[int(t["min_pieces"])] = t
+    for n in _TIER_COUNTS:
+        t = by_pieces.get(n, {})
+        out[f"tier_{n}_type"] = t.get("type", "")
+        out[f"tier_{n}_value"] = t.get("value", "")
+    return out
+
+
+def _panoplie_form_ctx(user, form_data, errors, edit_code=None):
+    return {
+        "user": user, "errors": errors, "form_data": form_data,
+        "edit_code": edit_code, "bonus_types": SET_BONUS_TYPES,
+        "tier_counts": _TIER_COUNTS,
+    }
+
+
 @router.get("/panoplies/new", response_class=HTMLResponse)
 async def panoplies_new_form(request: Request, user: AdminUser = Depends(require_admin)):
     return get_templates().TemplateResponse(
         request, "admin/panoplies/form.html",
-        context={"user": user, "errors": {}, "form_data": {}},
+        context=_panoplie_form_ctx(user, {}, {}),
     )
 
 
@@ -785,33 +839,31 @@ async def panoplies_create(request: Request, user: AdminUser = Depends(require_a
     errors = {}
     family = fd.get("family", "").strip().lower()
     if not family:
-        errors["family"] = "Famille (code) requis."
+        errors["family"] = "Famille (code) requise."
+    if not fd.get("name", "").strip():
+        errors["name"] = "Nom requis."
     existing = _writer_load("sets.json", default={}) or {}
     if isinstance(existing, dict) and family in existing:
         errors["family"] = f"Famille `{family}` existe déjà."
     if errors:
         return get_templates().TemplateResponse(
             request, "admin/panoplies/form.html",
-            context={"user": user, "errors": errors, "form_data": fd},
-            status_code=400,
+            context=_panoplie_form_ctx(user, fd, errors), status_code=400,
         )
-    # Tiers : 2/4/8/12 pièces, bonus parsé via kv pairs
-    tiers = {}
-    for n in ("2", "4", "8", "12"):
-        raw = fd.get(f"tier_{n}", "").strip()
-        if raw:
-            tiers[n] = _parse_kv_pairs(raw)
     entry = {
         "name": fd.get("name", "").strip() or family.capitalize(),
         "description": fd.get("description", "").strip(),
-        "tiers": tiers,
+        "icon": fd.get("icon", "").strip(),
+        "color": fd.get("color", "").strip() or "#888888",
+        "tiers": _build_set_tiers(fd),
     }
-    # sets.json est parfois une liste (legacy), parfois un dict. On force dict.
-    if not isinstance(existing, dict):
+    if not isinstance(existing, dict):  # legacy liste → dict
         existing = {k: {} for k in (existing or [])}
     existing[family] = entry
     from webapp.admin.json_writer import atomic_write_json
     atomic_write_json("sets.json", existing)
+    git_sync.push_content(["app/infrastructure/content/sets.json"],
+                          f"admin: panoplie {family} créée")
     return RedirectResponse(f"/admin/panoplies?q={family}", status_code=303)
 
 
@@ -1165,6 +1217,7 @@ async def titles_edit_form(
         "name": entry.get("name", ""),
         "description": entry.get("description", ""),
         "icon": entry.get("icon", ""),
+        "exclusive": entry.get("exclusive", False),
         "condition_type": entry.get("condition_type", ""),
         "condition_target": entry.get("condition_target", "") or "",
         "condition_value": entry.get("condition_value", 0),
@@ -1204,12 +1257,15 @@ async def titles_update(
         "name": fd.get("name", "").strip(),
         "description": fd.get("description", "").strip(),
         "icon": fd.get("icon", "").strip(),
+        "exclusive": fd.get("exclusive") == "on",
         "condition_type": fd.get("condition_type", "").strip(),
         "condition_target": fd.get("condition_target", "").strip() or None,
         "condition_value": _parse_int(fd.get("condition_value"), 0),
         "effects": effects,
     }
     update_in_list_by_key("titles.json", code, entry)
+    git_sync.push_content(["app/infrastructure/content/titles.json"],
+                          f"admin: titre {code} modifié")
     return RedirectResponse(f"/admin/titles?q={code}", status_code=303)
 
 
@@ -1341,19 +1397,18 @@ async def panoplies_edit_form(
     if not isinstance(data, dict) or family not in data:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Panoplie `{family}` introuvable.")
     entry = data[family] or {}
-    tiers = entry.get("tiers", entry.get("bonuses", {})) if isinstance(entry, dict) else {}
     fd = {
         "family": family,
         "name": entry.get("name", "") if isinstance(entry, dict) else "",
         "description": entry.get("description", "") if isinstance(entry, dict) else "",
-        "tier_2": _fmt_kv_pairs(tiers.get("2") if isinstance(tiers, dict) else None),
-        "tier_4": _fmt_kv_pairs(tiers.get("4") if isinstance(tiers, dict) else None),
-        "tier_8": _fmt_kv_pairs(tiers.get("8") if isinstance(tiers, dict) else None),
-        "tier_12": _fmt_kv_pairs(tiers.get("12") if isinstance(tiers, dict) else None),
+        "icon": entry.get("icon", "") if isinstance(entry, dict) else "",
+        "color": entry.get("color", "") if isinstance(entry, dict) else "",
     }
+    # Pré-remplit tier_{n}_type / tier_{n}_value depuis la liste réelle.
+    fd.update(_set_tiers_to_form(entry.get("tiers") if isinstance(entry, dict) else None))
     return get_templates().TemplateResponse(
         request, "admin/panoplies/form.html",
-        context={"user": user, "errors": {}, "form_data": fd, "edit_code": family},
+        context=_panoplie_form_ctx(user, fd, {}, edit_code=family),
     )
 
 
@@ -1365,19 +1420,20 @@ async def panoplies_update(
     if not isinstance(data, dict) or family not in data:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Panoplie `{family}` introuvable.")
     fd = {k: str(v) for k, v in (await request.form()).items()}
-    tiers = {}
-    for n in ("2", "4", "8", "12"):
-        raw = fd.get(f"tier_{n}", "").strip()
-        if raw:
-            tiers[n] = _parse_kv_pairs(raw)
+    # Conserve icon/color existants si le form ne les renvoie pas vides.
+    old = data[family] if isinstance(data[family], dict) else {}
     entry = {
         "name": fd.get("name", "").strip() or family.capitalize(),
         "description": fd.get("description", "").strip(),
-        "tiers": tiers,
+        "icon": fd.get("icon", "").strip() or old.get("icon", ""),
+        "color": fd.get("color", "").strip() or old.get("color", "#888888"),
+        "tiers": _build_set_tiers(fd),
     }
     data[family] = entry
     from webapp.admin.json_writer import atomic_write_json
     atomic_write_json("sets.json", data)
+    git_sync.push_content(["app/infrastructure/content/sets.json"],
+                          f"admin: panoplie {family} modifiée")
     return RedirectResponse(f"/admin/panoplies?q={family}", status_code=303)
 
 
