@@ -27,7 +27,7 @@
                     {% if errors.get('name') %}<span class="field-error">{{ errors['name'] }}</span>{% endif %}
                 </label>
                 <label class="field">
-                    <span class="field-label">Icon</span>
+                    <span class="field-label">Icône (emoji)</span>
                     <input type="text" name="icon" class="input" value="{{ fd.get('icon', '') }}" placeholder="💪">
                 </label>
             </div>
@@ -41,7 +41,7 @@
             <h2 class="form-section-title">Progression</h2>
             <div class="form-row">
                 <label class="field">
-                    <span class="field-label">Max level</span>
+                    <span class="field-label">Niveau max</span>
                     <input type="number" name="max_level" class="input" value="{{ fd.get('max_level', 5) }}" min="1" required>
                 </label>
                 <label class="field">
