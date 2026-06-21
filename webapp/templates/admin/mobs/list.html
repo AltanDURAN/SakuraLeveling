@@ -60,8 +60,13 @@
                     <td>{{ mob.xp_reward }}</td>
                     <td>{{ mob.gold_reward }}</td>
                     <td>{{ mob.spawn_weight }}</td>
-                    <td>
+                    <td style="white-space:nowrap;">
                         <a href="/admin/mobs/{{ mob.code }}/edit" class="btn btn-small">Éditer</a>
+                        <form method="post" action="/admin/mobs/{{ mob.code }}/delete"
+                              style="display:inline; margin-left:0.3rem;"
+                              onsubmit="return confirm('⚠️ Supprimer définitivement le mob « {{ mob.name }} » ?\n\nIl sera retiré de mobs.json + les compteurs de kills associés. Irréversible.');">
+                            <button type="submit" class="btn btn-small" style="background: var(--danger); color: white;">Suppr.</button>
+                        </form>
                     </td>
                 </tr>
                 {% endfor %}

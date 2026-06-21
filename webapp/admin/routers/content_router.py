@@ -259,6 +259,7 @@ async def crafts_list(
                 "station": st,
                 "ingredients": ing_str,
                 "__edit_url__": f"/admin/crafts/{r.code}/edit",
+                "__delete_url__": f"/admin/crafts/{r.code}/delete",
             })
 
     filtered = _filter_rows(rows, q, {"station": station})
@@ -1703,3 +1704,30 @@ async def skills_delete(code: str, user: AdminUser = Depends(require_admin)):
     git_sync.push_content(["app/infrastructure/content/skill_tree.json"],
                           f"admin: skill {code} supprimé")
     return RedirectResponse("/admin/skill-tree", status_code=303)
+
+
+@router.post("/crafts/{code}/delete")
+async def crafts_delete(code: str, user: AdminUser = Depends(require_admin)):
+    """Supprime une recette de craft : DB (recette + ingrédients) + crafts.json."""
+    from sqlalchemy import delete as _sa_delete, select as _sa_select
+    from app.infrastructure.db.models.craft_model import (
+        CraftRecipeModel, CraftRecipeIngredientModel,
+    )
+    with get_db_session() as session:
+        recipe = session.execute(
+            _sa_select(CraftRecipeModel).where(CraftRecipeModel.code == code)
+        ).scalar_one_or_none()
+        if recipe is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, f"Recette `{code}` introuvable.")
+        session.execute(_sa_delete(CraftRecipeIngredientModel).where(
+            CraftRecipeIngredientModel.craft_recipe_id == recipe.id))
+        session.delete(recipe)
+        session.commit()
+    # crafts.json
+    crafts = _writer_load("crafts.json", default=[]) or []
+    new_crafts = [r for r in crafts if r.get("code") != code]
+    if len(new_crafts) != len(crafts):
+        atomic_write_json("crafts.json", new_crafts)
+        git_sync.push_content(["app/infrastructure/content/crafts.json"],
+                              f"admin: recette {code} supprimée")
+    return RedirectResponse("/admin/crafts", status_code=303)

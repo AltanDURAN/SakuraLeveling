@@ -11,6 +11,7 @@ from fastapi import HTTPException
 
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.session import get_db_session
+from webapp.admin import content_sync, git_sync
 from webapp.admin.auth import AdminUser, require_admin
 from webapp.admin._shared import get_templates
 
@@ -253,3 +254,21 @@ async def mobs_update(
             **stats,
         )
     return RedirectResponse(f"/admin/mobs?q={code}", status_code=303)
+
+
+@router.post("/{code}/delete")
+async def mobs_delete(code: str, user: AdminUser = Depends(require_admin)):
+    """Suppression en cascade : retire le mob de la DB (+ compteurs de kills)
+    et de mobs.json."""
+    from app.application.use_cases.delete_mob import DeleteMobUseCase
+    with get_db_session() as session:
+        result = DeleteMobUseCase().execute(session, code)
+    if not result.deleted:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Mob `{code}` introuvable.")
+    touched = content_sync.delete_mob_json(code)
+    _logger.info("Admin %s a supprimé le mob %s (kills retirés: %s, json: %s)",
+                 user.discord_id, code, result.kills_removed, touched)
+    if touched:
+        git_sync.push_content([f"app/infrastructure/content/{f}" for f in touched],
+                              f"admin: mob {code} supprimé (cascade)")
+    return RedirectResponse("/admin/mobs", status_code=303)

@@ -64,8 +64,13 @@
                     <td>{{ item.equipment_slot or "—" }}</td>
                     <td>{{ item.sell_price }}</td>
                     <td>{{ item.buy_price if item.buy_price is not none else "—" }}</td>
-                    <td>
+                    <td style="white-space:nowrap;">
                         <a href="/admin/items/{{ item.code }}/edit" class="btn btn-small">Éditer</a>
+                        <form method="post" action="/admin/items/{{ item.code }}/delete"
+                              style="display:inline; margin-left:0.3rem;"
+                              onsubmit="return confirm('⚠️ Supprimer définitivement l\'item « {{ item.name }} » ?\n\nIl sera retiré de PARTOUT : inventaires, équipement, sets, trades, marketplace, shop, recettes, loot des mobs. Irréversible.');">
+                            <button type="submit" class="btn btn-small" style="background: var(--danger); color: white;">Suppr.</button>
+                        </form>
                     </td>
                 </tr>
                 {% endfor %}

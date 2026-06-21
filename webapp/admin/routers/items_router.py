@@ -250,3 +250,21 @@ def _parse_optional_int(raw: str | None) -> int | None:
         return int(raw)
     except ValueError:
         return None
+
+
+@router.post("/{code}/delete")
+async def items_delete(code: str, user: AdminUser = Depends(require_admin)):
+    """Suppression en cascade : retire l'item de la DB (inventaires, équipement,
+    sets, trades, marketplace, shop, crafts) ET des JSON de contenu."""
+    from app.application.use_cases.delete_item import DeleteItemUseCase
+    with get_db_session() as session:
+        result = DeleteItemUseCase().execute(session, code)
+    if not result.deleted:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Item `{code}` introuvable.")
+    touched = content_sync.delete_item_json(code)
+    _logger.info("Admin %s a supprimé l'item %s (refs DB: %s, recettes: %s, json: %s)",
+                 user.discord_id, code, result.removed_refs, result.recipes_removed, touched)
+    if touched:
+        git_sync.push_content([f"app/infrastructure/content/{f}" for f in touched],
+                              f"admin: item {code} supprimé (cascade)")
+    return RedirectResponse("/admin/items", status_code=303)
