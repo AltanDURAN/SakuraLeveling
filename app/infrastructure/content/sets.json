@@ -194,18 +194,5 @@
         "value": 26
       }
     ]
-  },
-  "zztest": {
-    "name": "ZZ Test",
-    "description": "",
-    "icon": "",
-    "color": "#888888",
-    "tiers": [
-      {
-        "min_pieces": 2,
-        "type": "defense_flat",
-        "value": 1
-      }
-    ]
   }
 }
