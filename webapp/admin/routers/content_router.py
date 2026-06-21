@@ -878,6 +878,16 @@ async def panoplies_create(request: Request, user: AdminUser = Depends(require_a
 
 
 # --- Skill Tree node ---
+# Types d'effets supportés par SkillTreeService (pour l'éditeur d'effets).
+SKILL_EFFECT_TYPES = [
+    "atk_flat", "def_flat", "hp_max_flat",
+    "atk_percent", "def_percent", "hp_max_percent",
+    "crit_chance_flat", "crit_damage_flat", "dodge_flat", "speed_flat",
+    "hp_regeneration_flat", "xp_drop_percent", "gold_drop_percent",
+    "drop_rate_multiplier",
+]
+
+
 @router.get("/skill-tree/new", response_class=HTMLResponse)
 async def skills_new_form(request: Request, user: AdminUser = Depends(require_admin)):
     data = _writer_load("skill_tree.json", default={"skills": {}}) or {"skills": {}}
@@ -887,6 +897,7 @@ async def skills_new_form(request: Request, user: AdminUser = Depends(require_ad
         context={
             "user": user, "errors": {}, "form_data": {},
             "existing_codes": existing_codes,
+            "effects_json": "[]", "effect_types": SKILL_EFFECT_TYPES,
         },
     )
 
@@ -1471,11 +1482,14 @@ async def skills_edit_form(
         "position_y": pos.get("y", 0),
     }
     existing_codes = sorted(c for c in skills.keys() if c != code)
+    import json as _json
+    effects_json = _json.dumps(node.get("effects") or [], ensure_ascii=False)
     return get_templates().TemplateResponse(
         request, "admin/skill_tree/form.html",
         context={
             "user": user, "errors": {}, "form_data": fd,
             "edit_code": code, "existing_codes": existing_codes,
+            "effects_json": effects_json, "effect_types": SKILL_EFFECT_TYPES,
         },
     )
 

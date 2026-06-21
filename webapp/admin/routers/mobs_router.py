@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi import HTTPException
 
+from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.session import get_db_session
 from webapp.admin import content_sync, git_sync
@@ -121,9 +122,12 @@ async def mobs_new_form(
     request: Request,
     user: AdminUser = Depends(require_admin),
 ):
+    with get_db_session() as session:
+        item_codes = [it.code for it in ItemRepository(session).list_all()]
     return get_templates().TemplateResponse(
         request, "admin/mobs/form.html",
-        context={"user": user, "mob": None, "errors": {}},
+        context={"user": user, "mob": None, "errors": {},
+                 "loot_table_json": "[]", "item_codes": item_codes},
     )
 
 
@@ -203,13 +207,16 @@ async def mobs_edit_form(
 ):
     with get_db_session() as session:
         mob = MobRepository(session).get_by_code(code)
-    if mob is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Mob `{code}` introuvable.")
+        if mob is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, f"Mob `{code}` introuvable.")
+        item_codes = [it.code for it in ItemRepository(session).list_all()]
     return get_templates().TemplateResponse(
         request, "admin/mobs/form.html",
         context={
             "user": user, "mob": mob,
-            "loot_table_json": json.dumps(mob.loot_table or [], ensure_ascii=False, indent=2),
+            # JSON compact pour initialiser l'éditeur Alpine (champ caché).
+            "loot_table_json": json.dumps(mob.loot_table or [], ensure_ascii=False),
+            "item_codes": item_codes,
             "errors": {},
         },
     )

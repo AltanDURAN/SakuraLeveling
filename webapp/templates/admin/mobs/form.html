@@ -72,17 +72,51 @@
             </div>
         </div>
 
-        <div class="form-section">
-            <h2 class="form-section-title">Loot table (JSON)</h2>
+        <div class="form-section"
+             x-data='{
+               rows: {{ loot_table_json if loot_table_json is defined else "[]" }},
+               add() { this.rows.push({item_code:"", drop_rate:0.1, min_quantity:1, max_quantity:1}) },
+               removeRow(i) { this.rows.splice(i, 1) }
+             }'>
+            <h2 class="form-section-title">Table de butin (loot)</h2>
             <p class="form-section-help">
-                Liste d'objets <code>{"item_code": "...", "drop_rate": 0.10, "quantity": 1}</code>.
-                Laisser vide ou <code>[]</code> pour aucun drop.
+                Un drop par ligne. <strong>Drop rate</strong> entre 0 et 1 (0.30 = 30%).
+                Aucune ligne = aucun drop.
             </p>
-            <label class="field">
-                <textarea name="loot_table" class="input textarea textarea-code" rows="8"
-                          placeholder='[{"item_code": "slime_jelly", "drop_rate": 0.30, "quantity": 1}]'>{% if loot_table_json is defined %}{{ loot_table_json }}{% else %}{{ fd.get('loot_table', '') }}{% endif %}</textarea>
-            </label>
+
+            <template x-for="(row, i) in rows" :key="i">
+                <div class="form-row" style="align-items:flex-end; margin-bottom:6px;">
+                    <label class="field">
+                        <span class="field-label">Item</span>
+                        <input list="loot-items" class="input" x-model="row.item_code" placeholder="ex: slime_gel">
+                    </label>
+                    <label class="field" style="max-width:130px;">
+                        <span class="field-label">Drop rate (0-1)</span>
+                        <input type="number" step="0.01" min="0" max="1" class="input" x-model.number="row.drop_rate">
+                    </label>
+                    <label class="field" style="max-width:90px;">
+                        <span class="field-label">Qté min</span>
+                        <input type="number" min="1" class="input" x-model.number="row.min_quantity">
+                    </label>
+                    <label class="field" style="max-width:90px;">
+                        <span class="field-label">Qté max</span>
+                        <input type="number" min="1" class="input" x-model.number="row.max_quantity">
+                    </label>
+                    <button type="button" class="btn btn-small" style="background:var(--danger);color:#fff;"
+                            @click="removeRow(i)" title="Retirer ce drop">✕</button>
+                </div>
+            </template>
+
+            <button type="button" class="btn" @click="add()">+ Ajouter un drop</button>
+            <p x-show="rows.length === 0" class="form-section-help" style="margin-top:6px;">Aucun drop.</p>
+
+            <!-- Champ caché alimenté par l'éditeur, lu par le parser serveur. -->
+            <input type="hidden" name="loot_table" :value="JSON.stringify(rows.filter(r => r.item_code))">
         </div>
+
+        <datalist id="loot-items">
+            {% for c in (item_codes or []) %}<option value="{{ c }}">{% endfor %}
+        </datalist>
 
         <div class="form-actions">
             <a href="/admin/mobs" class="btn btn-ghost">Annuler</a>

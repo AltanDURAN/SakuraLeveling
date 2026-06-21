@@ -64,16 +64,44 @@
             </datalist>
         </div>
 
-        <div class="form-section">
+        <div class="form-section"
+             x-data='{
+               rows: {{ effects_json if effects_json is defined else "[]" }}.map(e => ({type: e.type, values: (e.values || []).join(", ")})),
+               add() { this.rows.push({type:"", values:""}) },
+               removeRow(i) { this.rows.splice(i, 1) },
+               serialize() { return this.rows.filter(r => r.type && r.values.trim()).map(r => r.type + ":" + r.values).join(" / ") }
+             }'>
             <h2 class="form-section-title">Effets</h2>
             <p class="form-section-help">
-                Un effet par ligne (séparés par <code>/</code>), format : <code>type:val1,val2,val3</code> (valeurs cumulatives, autant que max_level).<br>
-                Types supportés : <code>atk_percent</code>, <code>def_percent</code>, <code>hp_max_percent</code>, <code>crit_chance_flat</code>, <code>crit_damage_flat</code>, <code>dodge_flat</code>, <code>speed_flat</code>, <code>hp_regeneration_flat</code>, <code>xp_drop_percent</code>, <code>gold_drop_percent</code>, <code>drop_rate_multiplier</code>.
+                Un effet par ligne. <strong>Valeurs cumulatives</strong> séparées par des
+                virgules — autant que le niveau max (ex : niveau max 3 → <code>5, 10, 15</code>).
             </p>
-            <label class="field">
-                <textarea name="effects" class="input textarea textarea-code" rows="3"
-                          placeholder="atk_percent:1,3,6,10,15">{{ fd.get('effects', '') }}</textarea>
-            </label>
+
+            <template x-for="(row, i) in rows" :key="i">
+                <div class="form-row" style="align-items:flex-end; margin-bottom:6px;">
+                    <label class="field">
+                        <span class="field-label">Type d'effet</span>
+                        <select class="input" x-model="row.type">
+                            <option value="">— choisir —</option>
+                            {% for t in (effect_types or []) %}
+                                <option value="{{ t }}">{{ t }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span class="field-label">Valeurs par niveau (cumulatives, séparées par virgule)</span>
+                        <input type="text" class="input" x-model="row.values" placeholder="5, 10, 15">
+                    </label>
+                    <button type="button" class="btn btn-small" style="background:var(--danger);color:#fff;"
+                            @click="removeRow(i)" title="Retirer cet effet">✕</button>
+                </div>
+            </template>
+
+            <button type="button" class="btn" @click="add()">+ Ajouter un effet</button>
+            <p x-show="rows.length === 0" class="form-section-help" style="margin-top:6px;">Aucun effet.</p>
+
+            <!-- Champ caché alimenté par l'éditeur, lu par le parser serveur. -->
+            <input type="hidden" name="effects" :value="serialize()">
         </div>
 
         <div class="form-section">
