@@ -114,7 +114,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
     async def ping(self, interaction: discord.Interaction) -> None:
         await interaction.response.send_message("🏓 Pong !")
 
-    @app_commands.command(name="profile", description="Afficher un profil joueur")
+    @app_commands.command(name="profil", description="Afficher un profil joueur")
     @app_commands.describe(target="Joueur dont afficher le profil (par défaut : vous)")
     async def profile(
         self,
@@ -323,7 +323,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         )
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="inventory", description="Afficher un inventaire")
+    @app_commands.command(name="inventaire", description="Afficher un inventaire")
     @app_commands.describe(target="Joueur dont afficher l'inventaire (par défaut : vous)")
     async def inventory(
         self,
@@ -392,7 +392,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             )
 
     @app_commands.command(
-        name="equipement_list",
+        name="equipement_liste",
         description="Liste les équipements possédés par catégorie (équipés ou non)",
     )
     @app_commands.describe(target="Joueur ciblé (par défaut : vous)")
@@ -424,7 +424,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         embed, file, _, _ = await asyncio.to_thread(view.render_current)
         await interaction.followup.send(embed=embed, file=file, view=view)
 
-    @app_commands.command(name="equip", description="Équiper un item depuis votre inventaire")
+    @app_commands.command(name="equiper", description="Équiper un item depuis votre inventaire")
     @app_commands.describe(item_code="Code de l'item (autocomplete sur votre inventaire)")
     async def equip(
         self,
@@ -631,7 +631,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         return choices
 
     @app_commands.command(
-        name="unequip",
+        name="desequiper",
         description="Déséquiper un emplacement (ou tout, avec slot=all)",
     )
     @app_commands.describe(slot="`all` pour tout retirer, sinon le slot ciblé (autocomplete)")
@@ -717,7 +717,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         return choices
 
     @app_commands.command(
-        name="equip_panoplie",
+        name="equiper_panoplie",
         description="Équipe en un clic toutes les pièces d'une panoplie (12/12)",
     )
     @app_commands.describe(
@@ -790,7 +790,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
     # ---------------------- Sets d'équipement (loadouts) -----------------
 
     @app_commands.command(
-        name="create_set",
+        name="creer_set",
         description="Sauvegarde l'équipement actuel sous un nom (loadout réutilisable)",
     )
     @app_commands.describe(nom="Nom du set (max 50 caractères, libre)")
@@ -821,7 +821,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         )
 
     @app_commands.command(
-        name="delete_set",
+        name="supprimer_set",
         description="Supprime un set d'équipement sauvegardé",
     )
     @app_commands.describe(nom="Nom du set à supprimer (autocomplete)")
@@ -851,7 +851,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         )
 
     @app_commands.command(
-        name="equip_set",
+        name="equiper_set",
         description="Applique un set d'équipement sauvegardé",
     )
     @app_commands.describe(nom="Nom du set à équiper (autocomplete)")
@@ -916,7 +916,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         return choices
 
     @app_commands.command(
-        name="fight",
+        name="duel",
         description="Défier un autre joueur en duel 1v1 (PvP, sans gain ni perte)",
     )
     @app_commands.describe(target="Joueur à défier")
@@ -999,7 +999,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         )
         await message.edit(embed=final_embed)
 
-    @app_commands.command(name="class", description="Afficher la classe active d'un joueur")
+    @app_commands.command(name="classe", description="Afficher la classe active d'un joueur")
     @app_commands.describe(target="Joueur dont afficher la classe (par défaut : vous)")
     async def player_class(
         self,
@@ -1019,7 +1019,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         embed = build_player_class_embed(target_member.display_name, active_class)
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="class_set", description="Définir votre classe active")
+    @app_commands.command(name="choisir_classe", description="Définir votre classe active")
     @app_commands.describe(class_code="Code technique de la classe")
     async def class_set(self, interaction: discord.Interaction, class_code: str) -> None:
         with get_db_session() as session:
@@ -1046,7 +1046,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         await interaction.response.send_message(message, ephemeral=not success)
 
     @app_commands.command(
-        name="craft_list",
+        name="recettes",
         description="Liste les recettes d'accessoires (collier, bague, ceinture, cape…)",
     )
     async def craft_list(self, interaction: discord.Interaction) -> None:
@@ -1059,7 +1059,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         )
 
     @app_commands.command(
-        name="forge_list",
+        name="recettes_forge",
         description="Liste les recettes d'armes, boucliers et armures (à forger)",
     )
     async def forge_list(self, interaction: discord.Interaction) -> None:
@@ -1072,7 +1072,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         )
 
     @app_commands.command(
-        name="craft_panoplie",
+        name="fabriquer_panoplie",
         description="Craft toutes les pièces /craft d'une panoplie (preview + confirmation)",
     )
     @app_commands.describe(nom="Nom de la panoplie (autocomplete)")
@@ -1084,7 +1084,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         )
 
     @app_commands.command(
-        name="forge_panoplie",
+        name="forger_panoplie",
         description="Forge toutes les pièces /forge d'une panoplie (preview + confirmation)",
     )
     @app_commands.describe(nom="Nom de la panoplie (autocomplete)")
@@ -1210,14 +1210,14 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         embed, file = await asyncio.to_thread(view.render_current)
         await interaction.followup.send(embed=embed, file=file, view=view)
 
-    @app_commands.command(name="craft", description="Fabriquer un objet (équipement / accessoire)")
+    @app_commands.command(name="fabriquer", description="Fabriquer un objet (équipement / accessoire)")
     @app_commands.describe(recipe_code="Code de la recette (autocomplete)")
     async def craft(self, interaction: discord.Interaction, recipe_code: str) -> None:
         await self._execute_craft(
             interaction, recipe_code, expect_weapon=False
         )
 
-    @app_commands.command(name="forge", description="Forger une arme ou un bouclier")
+    @app_commands.command(name="forger", description="Forger une arme ou un bouclier")
     @app_commands.describe(recipe_code="Code de la recette (autocomplete sur armes/boucliers)")
     async def forge(self, interaction: discord.Interaction, recipe_code: str) -> None:
         await self._execute_craft(
@@ -1374,7 +1374,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         return choices
 
     @app_commands.command(
-        name="pay",
+        name="payer",
         description="Envoyer de l'or à un autre joueur",
     )
     @app_commands.describe(
@@ -1415,7 +1415,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         )
 
     @app_commands.command(
-        name="use",
+        name="utiliser",
         description="Utiliser un consommable de votre inventaire (potion, etc.)",
     )
     @app_commands.describe(item_code="Code du consommable (autocomplete sur votre inventaire)")
@@ -1548,7 +1548,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(
-        name="gold",
+        name="or",
         description="Voir votre or (ou celui d'un autre joueur)",
     )
     @app_commands.describe(target="Joueur ciblé (par défaut : vous)")

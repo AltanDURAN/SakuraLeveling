@@ -121,7 +121,7 @@ class TitleCog(BetaChannelOnlyMixin, commands.Cog):
         self.bot = bot
 
     @app_commands.command(
-        name="title", description="Afficher les titres débloqués d'un joueur"
+        name="titre", description="Afficher les titres débloqués d'un joueur"
     )
     @app_commands.describe(target="Joueur ciblé (par défaut : vous)")
     async def title(
@@ -196,7 +196,7 @@ class TitleCog(BetaChannelOnlyMixin, commands.Cog):
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(
-        name="title_set",
+        name="titre_actif",
         description="Choisir le titre affiché dans votre profil",
     )
     @app_commands.describe(

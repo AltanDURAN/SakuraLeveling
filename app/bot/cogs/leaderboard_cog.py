@@ -39,7 +39,7 @@ class LeaderboardCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
-    @app_commands.command(name="top", description="Affiche un classement")
+    @app_commands.command(name="classement", description="Affiche un classement")
     @app_commands.describe(category="Type de classement à afficher")
     async def top(self, interaction: discord.Interaction, category: str) -> None:
         await interaction.response.defer()

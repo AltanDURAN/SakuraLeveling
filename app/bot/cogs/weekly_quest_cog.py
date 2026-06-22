@@ -83,7 +83,7 @@ class WeeklyQuestCog(BetaChannelOnlyMixin, commands.Cog):
         self.bot = bot
 
     @app_commands.command(
-        name="weekly_quest",
+        name="quetes_hebdo",
         description="Voir et réclamer vos 3 quêtes hebdomadaires",
     )
     async def weekly_quest(self, interaction: discord.Interaction) -> None:

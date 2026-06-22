@@ -22,7 +22,7 @@ class ShopCog(BetaChannelOnlyMixin, commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
-    @app_commands.command(name="shop", description="Affiche les articles disponibles à la boutique")
+    @app_commands.command(name="boutique", description="Affiche les articles disponibles à la boutique")
     async def shop(self, interaction: discord.Interaction) -> None:
         with get_db_session() as session:
             shop_repository = ShopRepository(session)
@@ -34,7 +34,7 @@ class ShopCog(BetaChannelOnlyMixin, commands.Cog):
             embed=embed, file=file, view=view,
         )
 
-    @app_commands.command(name="buy", description="Acheter un objet à la boutique")
+    @app_commands.command(name="acheter", description="Acheter un objet à la boutique")
     @app_commands.describe(item_code="Code de l'objet à acheter", quantity="Quantité à acheter")
     async def buy(
         self,

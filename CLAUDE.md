@@ -103,6 +103,9 @@ git checkout main
 
 ## Slash commands disponibles
 
+> **⚠️ Renommage FR (juin 2026)** — les commandes ont été renommées en français (sans accents/majuscules). Le tableau ci-dessous garde parfois les anciens noms ; mapping appliqué dans le code (décorateurs `command(name=...)`, méthodes Python inchangées) :
+> `profile→profil` · `inventory→inventaire` · `gold→or` · `fight→duel` · `use→utiliser` · `pay→payer` · `shop→boutique` · `buy→acheter` · `top→classement` · `class→classe` · `class_set→choisir_classe` · `craft→fabriquer` · `forge→forger` · `craft_list→recettes` · `forge_list→recettes_forge` · `craft_panoplie→fabriquer_panoplie` · `forge_panoplie→forger_panoplie` · `equip→equiper` · `unequip→desequiper` · `equip_panoplie→equiper_panoplie` · `equip_set→equiper_set` · `create_set→creer_set` · `delete_set→supprimer_set` · `equipement_list→equipement_liste` · `skill→arbre` · `title→titre` · `title_set→titre_actif` · `trade→echange` · `weekly_quest→quetes_hebdo` · `daily_quest→quetes`. Nouvelles : `/competences`, `/demarrer`. Inchangées : `daily`, `help`, `ping`, `cd`, `chad`, `bestiaire`, `panoplie`, `equipement`, groupes `admin`/`boss`/`brocante`. (tuto.txt + xlsx restent à resynchroniser.)
+
 | Commande | Cog | Rôle |
 |---|---|---|
 | `/profile [target]`, `/equipement [target]`, `/equipement_list [target]`, `/inventory [target]`, `/class [target]`, `/gold [target]` | `player_cog` | Consultatives — `target` optionnel : par défaut soi-même, sinon profil d'un autre joueur |

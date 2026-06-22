@@ -42,7 +42,7 @@ def build_welcome_embed(display_name: str | None = None) -> discord.Embed:
             "Les **monstres** apparaissent dans les salons de zone : clique "
             "**Rejoindre** pour combattre en groupe et gagner XP/or/loot.\n"
             "**`/arbre`** — dépense tes points de compétence (moteur de stats).\n"
-            "**`/equip`**, **`/boutique`**, **`/craft_list`** — équipe-toi."
+            "**`/equiper`**, **`/boutique`**, **`/recettes`** — équipe-toi."
         ),
         inline=False,
     )

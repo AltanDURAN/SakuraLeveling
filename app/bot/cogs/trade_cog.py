@@ -46,7 +46,7 @@ class TradeCog(BetaChannelOnlyMixin, commands.Cog):
         await self.bot.wait_until_ready()
 
     @app_commands.command(
-        name="trade",
+        name="echange",
         description="Proposer un échange à un autre joueur (items et/ou or)",
     )
     @app_commands.describe(target="Joueur avec qui échanger")

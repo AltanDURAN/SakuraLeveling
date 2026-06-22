@@ -78,7 +78,7 @@ class DailyQuestCog(BetaChannelOnlyMixin, commands.Cog):
         self.bot = bot
 
     @app_commands.command(
-        name="daily_quest",
+        name="quetes",
         description="Voir et réclamer vos 3 quêtes quotidiennes",
     )
     async def daily_quest(self, interaction: discord.Interaction) -> None:

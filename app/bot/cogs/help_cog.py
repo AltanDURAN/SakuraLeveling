@@ -72,25 +72,25 @@ def _build_intro_embed(total_cmds: int, n_pages: int) -> discord.Embed:
         name="🎯 La boucle de jeu",
         value=(
             "**1.** ⚔️ **Combats** — des monstres spawnent tout seuls : rejoins le "
-            "combat de groupe (ou défie un joueur avec `/fight`).\n"
+            "combat de groupe (ou défie un joueur avec `/duel`).\n"
             "**2.** 📈 **Progresse** — gagne XP, or et butin ; chaque niveau donne "
-            "**1 point de compétence** à investir dans l'arbre (`/skill`).\n"
-            "**3.** 🛠️ **Équipe-toi** — récolte (`/gather`), fabrique (`/craft`, "
-            "`/forge`) et porte une panoplie complète (`/equip_panoplie`).\n"
-            "**4.** 🧬 **Optimise** — choisis ta classe (`/class_set`), tes titres "
-            "(`/title`) et ton build d'arbre.\n"
-            "**5.** 🏆 **Brille** — quêtes (`/weekly`), classements (`/top`) et "
-            "ladder de duels."
+            "**1 point de compétence** à investir dans l'arbre (`/arbre`).\n"
+            "**3.** 🛠️ **Équipe-toi** — fabrique (`/fabriquer`, "
+            "`/forger`) et porte une panoplie complète (`/equiper_panoplie`).\n"
+            "**4.** 🔮 **Adapte** — équipe tes 2 compétences élémentaires "
+            "(`/competences`) selon l'élément de l'ennemi (`/bestiaire`).\n"
+            "**5.** 🏆 **Brille** — quêtes (`/quetes_hebdo`), classements "
+            "(`/classement`) et ladder de duels."
         ),
         inline=False,
     )
     embed.add_field(
         name="🚀 Premiers pas",
         value=(
-            "• `/profile` — crée ton personnage et vois tout d'un coup d'œil.\n"
+            "• `/profil` — crée ton personnage et vois tout d'un coup d'œil.\n"
             "• `/daily` — ta récompense quotidienne (à faire chaque jour !).\n"
-            "• `/gather` puis `/craft_list` — de quoi te fabriquer ton 1er stuff.\n"
-            "• `/skill` — dépense tes points de compétence."
+            "• `/demarrer` — le guide complet du débutant.\n"
+            "• `/competences` — équipe tes compétences élémentaires."
         ),
         inline=False,
     )

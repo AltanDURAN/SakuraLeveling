@@ -31,7 +31,7 @@ class SkillCog(BetaChannelOnlyMixin, commands.Cog):
         self.bot = bot
 
     @app_commands.command(
-        name="skill",
+        name="arbre",
         description="Afficher votre arbre de compétences",
     )
     @app_commands.describe(
