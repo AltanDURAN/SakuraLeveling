@@ -471,9 +471,11 @@ class LaunchPartyFightWorldBossUseCase:
         if boss is None or not boss.is_alive:
             return PartyFightBossResult(False, "❌ Boss inactif.")
 
-        voters = self.world_boss_repository.list_voters(boss_id)
+        # Combat quotidien : tous les INSCRITS (joined) participent (plus de
+        # vote — le combat est déclenché par le scheduler à 21h).
+        voters = self.world_boss_repository.list_joined_participants(boss_id)
         if not voters:
-            return PartyFightBossResult(False, "❌ Aucun voteur.")
+            return PartyFightBossResult(False, "❌ Aucun inscrit.")
 
         now = datetime.now(UTC)
         eligible: list[tuple[WorldBossParticipation, dict]] = []
@@ -796,6 +798,10 @@ class CompleteWorldBossUseCase:
         top_heal_id = top_heal.player_id if top_heal.hp_healed > 0 else None
         top_part_id = top_part.player_id if top_part.fights_count > 0 else None
 
+        # Loot exclusif du boss : roll indépendant par participant.
+        boss_def = get_boss_definition(boss.code)
+        boss_loot = boss_def.loot_table if boss_def is not None else []
+
         # Top-3 global (par score combiné) → rangs pour le bonus.
         top3 = sorted(participations, key=lambda p: scores[p.player_id], reverse=True)[:3]
         top3_rank = {p.player_id: i for i, p in enumerate(top3) if scores[p.player_id] > 0}
@@ -837,6 +843,16 @@ class CompleteWorldBossUseCase:
             if p.player_id == top_part_id:
                 total_gold += cat_bonus
                 roles_won.append("top_participation")
+
+            # Loot exclusif : chaque participant roll la table du boss.
+            for entry in boss_loot:
+                try:
+                    if random.random() < float(entry.get("drop_rate", 0)):
+                        qmin = int(entry.get("min_quantity", 1))
+                        qmax = int(entry.get("max_quantity", qmin))
+                        items.append((entry["item_code"], random.randint(qmin, qmax)))
+                except (KeyError, ValueError, TypeError):
+                    continue
 
             role = roles_won[0] if roles_won else "participant"
 

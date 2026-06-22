@@ -19,10 +19,18 @@ Reste à venir (besoin liste user) :
 """
 
 import asyncio
+import logging
+from datetime import datetime, time
+from zoneinfo import ZoneInfo
 
 import discord
 from discord import app_commands
 from discord.ext import commands, tasks
+
+# Combat quotidien : inscription minuit→20h50, lancement auto à 21h (Paris).
+_PARIS = ZoneInfo("Europe/Paris")
+_DAILY_FIGHT_TIME = time(hour=21, minute=0, tzinfo=_PARIS)
+_REGISTRATION_CLOSE = time(hour=20, minute=50)  # joins fermés 20h50→minuit
 
 from app.application.use_cases.world_boss import (
     CompleteWorldBossUseCase,
@@ -100,6 +108,16 @@ class WorldBossView(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
         await interaction.response.defer(ephemeral=True)
+        # Fenêtre d'inscription : minuit → 20h50 (Paris). Fermée ensuite,
+        # jusqu'au combat de 21h puis réouverte le lendemain à minuit.
+        now_paris = datetime.now(_PARIS).timetz()
+        if now_paris.replace(tzinfo=None) >= _REGISTRATION_CLOSE:
+            await interaction.followup.send(
+                "🚪 Inscriptions **fermées** (20h50→21h). Le combat se lance à "
+                "**21h**. Reviens t'inscrire après minuit pour le combat de demain.",
+                ephemeral=True,
+            )
+            return
         with get_db_session() as session:
             use_case = JoinWorldBossUseCase(
                 world_boss_repository=WorldBossRepository(session),
@@ -141,37 +159,22 @@ class WorldBossView(discord.ui.View):
                 await cog.refresh_boss_message(boss_id)
 
     @discord.ui.button(
-        label="Voter pour lancer",
+        label="Combat auto à 21h",
         style=discord.ButtonStyle.primary,
-        emoji="🗳️",
+        emoji="⏰",
         custom_id="world_boss:vote",
     )
     async def vote_button(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
-        from app.application.use_cases.world_boss import (
-            VoteForFightWorldBossUseCase,
+        # Le vote a été remplacé par un combat quotidien automatique à 21h.
+        # Ce bouton est désormais purement informatif.
+        await interaction.response.send_message(
+            "⏰ **Combat automatique chaque jour à 21h** (heure de Paris).\n"
+            "Inscris-toi via **🤝 Rejoindre** avant 20h50. À 21h, tous les "
+            "inscrits combattent le boss, puis la liste est remise à zéro.",
+            ephemeral=True,
         )
-        await interaction.response.defer(ephemeral=True)
-        with get_db_session() as session:
-            use_case = VoteForFightWorldBossUseCase(
-                world_boss_repository=WorldBossRepository(session),
-                player_repository=PlayerRepository(session),
-            )
-            result = use_case.execute(discord_id=interaction.user.id)
-        await interaction.followup.send(result.message, ephemeral=True)
-
-        cog = self._resolve_cog(interaction)
-        if cog is None:
-            return
-        # Toujours refresh le message pour mettre à jour le compteur
-        # de votes (X/Y) côté View.
-        if result.boss_id:
-            await cog.refresh_boss_message(result.boss_id)
-
-        if result.success and result.should_launch and result.boss_id:
-            # Tous les inscrits ont voté → lancer combat collectif
-            await cog.launch_party_fight(result.boss_id)
 
 
 class WorldBossCog(commands.Cog):
@@ -192,9 +195,35 @@ class WorldBossCog(commands.Cog):
         # clics (custom_id stables) même si le bot a redémarré.
         self.bot.add_view(WorldBossView(self))
         self.auto_spawn_loop.start()
+        self.daily_fight_loop.start()
 
     def cog_unload(self) -> None:
         self.auto_spawn_loop.cancel()
+        self.daily_fight_loop.cancel()
+
+    @tasks.loop(time=_DAILY_FIGHT_TIME)
+    async def daily_fight_loop(self) -> None:
+        """Combat quotidien automatique à 21h (Paris) : tous les inscrits du
+        jour combattent le boss actif, puis la liste est vidée (le use case
+        désinscrit chaque combattant). Sans inscrit, on ne fait rien."""
+        try:
+            boss_id = await self._resolve_active_boss_id()
+            if boss_id is None:
+                return
+            with get_db_session() as session:
+                joined = WorldBossRepository(session).count_joined(boss_id)
+            if joined <= 0:
+                return
+            logging.getLogger(__name__).info(
+                "Combat quotidien world boss 21h : %s inscrit(s)", joined
+            )
+            await self.launch_party_fight(boss_id)
+        except Exception:
+            logging.getLogger(__name__).exception("daily_fight_loop failed")
+
+    @daily_fight_loop.before_loop
+    async def _before_daily_fight(self) -> None:
+        await self.bot.wait_until_ready()
 
     @tasks.loop(hours=1)
     async def auto_spawn_loop(self) -> None:

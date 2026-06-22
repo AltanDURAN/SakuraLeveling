@@ -41,4 +41,8 @@ class BossDefinition:
     #   phases (list)                   : [{below_pct, attack_multiplier, element?}]
     modifiers: dict = field(default_factory=dict)
 
+    # Loot exclusif : roll indépendant par participant survivant. Liste de
+    # {item_code, drop_rate (0..1), min_quantity, max_quantity}.
+    loot_table: list = field(default_factory=list)
+
     lore: str = ""

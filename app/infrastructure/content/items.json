@@ -2400,5 +2400,102 @@
     "equipment_slot": "main_droite",
     "requires_two_hands": true,
     "family": "slime_plus"
+  },
+  {
+    "code": "titan_gel_core",
+    "name": "Cœur de Gel du Titan",
+    "description": "Trophée du Titan Visqueux. Régénère le porteur.",
+    "category": "necklace",
+    "rarity": "epic",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 120,
+      "hp_regeneration": 3
+    },
+    "equipment_slot": "collier",
+    "requires_two_hands": false,
+    "family": "boss"
+  },
+  {
+    "code": "warlord_blade",
+    "name": "Lame du Seigneur de Guerre",
+    "description": "Trophée du Seigneur Gobelin. Tranchante et sanguinaire.",
+    "category": "weapon",
+    "rarity": "epic",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 18,
+      "crit_chance": 4
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false,
+    "family": "boss"
+  },
+  {
+    "code": "colossus_plate",
+    "name": "Plastron du Colosse",
+    "description": "Trophée du Colosse de Pierre. Une muraille ambulante.",
+    "category": "chest",
+    "rarity": "epic",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense": 16,
+      "max_hp": 150
+    },
+    "equipment_slot": "plastron",
+    "requires_two_hands": false,
+    "family": "boss"
+  },
+  {
+    "code": "wraith_cloak",
+    "name": "Cape du Spectre",
+    "description": "Trophée du Spectre des Ténèbres. Floue les contours.",
+    "category": "cape",
+    "rarity": "legendary",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "dodge": 6,
+      "speed": 4,
+      "crit_damage": 15
+    },
+    "equipment_slot": "cape",
+    "requires_two_hands": false,
+    "family": "boss"
+  },
+  {
+    "code": "dragon_heart",
+    "name": "Cœur du Dragon Ancestral",
+    "description": "Trophée ultime. La puissance d'un dragon dans une bague.",
+    "category": "ring",
+    "rarity": "legendary",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 25,
+      "defense": 12,
+      "crit_damage": 25
+    },
+    "equipment_slot": "bague",
+    "requires_two_hands": false,
+    "family": "boss"
   }
 ]
