@@ -130,14 +130,22 @@ def build_boss_defeated_embed(
     )
 
     role_label = {
+        "top1_global": "🥇 MVP",
+        "top2_global": "🥈 2ᵉ",
+        "top3_global": "🥉 3ᵉ",
         "top_damage": "💥 Top Dégâts",
         "top_tank": "🛡️ Top Tank",
-        "top_heal": "💚 Top Heal",
+        "top_heal": "💚 Top Soin",
+        "top_participation": "⏱️ Top Présence",
         "participant": "🎖️ Participant",
     }
 
-    # Trier : tops d'abord, puis participants
-    role_priority = {"top_damage": 0, "top_tank": 1, "top_heal": 2, "participant": 3}
+    # Trier : podium global d'abord, puis catégories, puis participants.
+    role_priority = {
+        "top1_global": 0, "top2_global": 1, "top3_global": 2,
+        "top_damage": 3, "top_tank": 4, "top_heal": 5,
+        "top_participation": 6, "participant": 7,
+    }
     rewards_sorted = sorted(rewards, key=lambda r: (role_priority.get(r.role, 99), -r.gold))
 
     lines: list[str] = []

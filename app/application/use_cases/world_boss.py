@@ -888,6 +888,28 @@ class CompleteWorldBossUseCase:
                 )
             )
 
+        # Titres : « Tueur de <boss> » à tous les vainqueurs (petit bonus) +
+        # « MVP des World Boss » exclusif au meilleur contributeur (rotatif).
+        try:
+            from app.application.services.exclusive_title_service import (
+                ExclusiveTitleService,
+            )
+            from app.infrastructure.db.repositories.player_title_repository import (
+                PlayerTitleRepository,
+            )
+            session = self.world_boss_repository.session
+            title_repo = PlayerTitleRepository(session)
+            tueur_code = f"tueur_{boss.code}"
+            for p in participations:
+                title_repo.unlock(p.player_id, tueur_code)
+            if mvp_id is not None:
+                ExclusiveTitleService(session).award_to("mvp_world_boss", mvp_id)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Attribution des titres world boss échouée", exc_info=True
+            )
+
         return CompleteBossResult(
             success=True,
             message=f"🏆 **{boss.name}** vaincu — {len(rewards)} participant(s) récompensé(s).",
