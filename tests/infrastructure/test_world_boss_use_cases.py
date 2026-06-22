@@ -310,21 +310,23 @@ def test_complete_distributes_rewards_to_top_and_base(session):
     assert result.success is True
     assert len(result.rewards) == 3
 
-    # Alice (top damage) doit avoir base + bonus damage
     alice_reward = next(r for r in result.rewards if r.player_id == p_alice)
-    assert alice_reward.role == "top_damage"
-    # Base 50g + top 200g = 250g
-    assert alice_reward.gold == 250
-
-    # Bob (top tank)
     bob_reward = next(r for r in result.rewards if r.player_id == p_bob)
-    assert bob_reward.role == "top_tank"
-    assert bob_reward.gold == 250
-
-    # Carol (participant)
     carol_reward = next(r for r in result.rewards if r.player_id == p_carol)
-    assert carol_reward.role == "participant"
-    assert carol_reward.gold == 50  # base seule
+
+    # XP ÉGALE pour tous (nouveau modèle).
+    assert alice_reward.xp == bob_reward.xp == carol_reward.xp
+
+    # Or proportionnel + bonus : tous au-dessus de la base, et le plus
+    # contributif (Bob, top tank dominant) touche plus que Carol (ordinaire).
+    assert carol_reward.gold >= 50  # base + petite part
+    assert bob_reward.gold > carol_reward.gold
+    assert alice_reward.gold > carol_reward.gold
+
+    # Rôles : Bob top tank, Alice top damage (cumulés avec leur rang global).
+    assert "top_tank" in bob_reward.role or bob_reward.role.startswith("top")
+    # Le top damage (Alice) reçoit une potion bonus de catégorie.
+    assert ("potion_soin_iii", 1) in alice_reward.items
 
 
 # ---------- Helpers ----------

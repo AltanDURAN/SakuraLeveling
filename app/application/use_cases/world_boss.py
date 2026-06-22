@@ -732,13 +732,18 @@ class CompleteWorldBossUseCase:
         • Base (tous) : +50g, +25xp, +1 potion_soin_i
     """
 
+    # Récompense de base (présence suffit) — tous les participants.
     BASE_REWARD_GOLD = 50
-    BASE_REWARD_XP = 25
     BASE_REWARD_ITEM = ("potion_soin_i", 1)
-
-    TOP_REWARD_GOLD = 200
-    TOP_REWARD_XP = 100
-    TOP_REWARD_ITEM = ("potion_soin_iii", 1)
+    # XP ÉGALE pour tous (× multiplicateur de tier).
+    XP_PER_TIER = 50
+    # Pool d'or FIXE (× tier) réparti AU PRORATA de la contribution.
+    GOLD_POOL_PER_TIER = 200
+    # Bonus top-3 global (rangs 1/2/3, × tier).
+    TOP3_GOLD = (150, 100, 50)
+    # Bonus top-1 par catégorie (dégâts/tank/soin/participation, × tier) + potion.
+    CATEGORY_BONUS_GOLD = 100
+    CATEGORY_BONUS_ITEM = ("potion_soin_iii", 1)
 
     def __init__(
         self,
@@ -765,15 +770,37 @@ class CompleteWorldBossUseCase:
                 False, "⚠️ Aucun participant à récompenser.", rewards=[],
             )
 
-        # Identifier les top par métrique
+        # Multiplicateur de tier (gros boss = plus grosses récompenses).
+        tier_mult = 1 + (boss.max_hp // 200_000)
+        gold_pool = self.GOLD_POOL_PER_TIER * tier_mult
+        xp_each = self.XP_PER_TIER * tier_mult
+
+        # Score de contribution combiné (dégâts + tank + soin, normalisés).
+        tot_d = sum(p.damage_dealt for p in participations) or 1
+        tot_t = sum(p.damage_tanked for p in participations) or 1
+        tot_h = sum(p.hp_healed for p in participations) or 1
+
+        def _score(p) -> float:
+            return p.damage_dealt / tot_d + p.damage_tanked / tot_t + p.hp_healed / tot_h
+
+        scores = {p.player_id: _score(p) for p in participations}
+        total_score = sum(scores.values()) or 1.0
+
+        # Top-1 par catégorie (None si métrique nulle).
         top_damage = max(participations, key=lambda p: p.damage_dealt)
         top_tank = max(participations, key=lambda p: p.damage_tanked)
-        # heal=0 en V1 mais on garde la mécanique pour quand on aura un mode équipe
         top_heal = max(participations, key=lambda p: p.hp_healed)
-
+        top_part = max(participations, key=lambda p: p.fights_count)
         top_damage_id = top_damage.player_id if top_damage.damage_dealt > 0 else None
         top_tank_id = top_tank.player_id if top_tank.damage_tanked > 0 else None
         top_heal_id = top_heal.player_id if top_heal.hp_healed > 0 else None
+        top_part_id = top_part.player_id if top_part.fights_count > 0 else None
+
+        # Top-3 global (par score combiné) → rangs pour le bonus.
+        top3 = sorted(participations, key=lambda p: scores[p.player_id], reverse=True)[:3]
+        top3_rank = {p.player_id: i for i, p in enumerate(top3) if scores[p.player_id] > 0}
+        # MVP = meilleur score global (pour le titre exclusif, cf. plus bas).
+        mvp_id = top3[0].player_id if top3 and scores[top3[0].player_id] > 0 else None
 
         rewards: list[BossRewardEntry] = []
         for p in participations:
@@ -781,27 +808,35 @@ class CompleteWorldBossUseCase:
             if profile is None:
                 continue
 
-            # Cumul des récompenses : base toujours, + bonus si top-X
-            total_gold = self.BASE_REWARD_GOLD
-            total_xp = self.BASE_REWARD_XP
+            # Base (présence) + part proportionnelle du pool d'or.
+            share = scores[p.player_id] / total_score
+            total_gold = self.BASE_REWARD_GOLD + int(gold_pool * share)
+            total_xp = xp_each  # XP ÉGALE pour tous
             items: list[tuple[str, int]] = [self.BASE_REWARD_ITEM]
             roles_won: list[str] = []
 
+            # Bonus top-3 global (cumulable avec les bonus de catégorie).
+            if p.player_id in top3_rank:
+                total_gold += self.TOP3_GOLD[top3_rank[p.player_id]] * tier_mult
+                roles_won.append(f"top{top3_rank[p.player_id] + 1}_global")
+
+            # Bonus top-1 par catégorie (cumulables).
+            cat_bonus = self.CATEGORY_BONUS_GOLD * tier_mult
             if p.player_id == top_damage_id:
-                total_gold += self.TOP_REWARD_GOLD
-                total_xp += self.TOP_REWARD_XP
-                items.append(self.TOP_REWARD_ITEM)
+                total_gold += cat_bonus
+                items.append(self.CATEGORY_BONUS_ITEM)
                 roles_won.append("top_damage")
             if p.player_id == top_tank_id:
-                total_gold += self.TOP_REWARD_GOLD
-                total_xp += self.TOP_REWARD_XP
-                items.append(self.TOP_REWARD_ITEM)
+                total_gold += cat_bonus
+                items.append(self.CATEGORY_BONUS_ITEM)
                 roles_won.append("top_tank")
             if p.player_id == top_heal_id:
-                total_gold += self.TOP_REWARD_GOLD
-                total_xp += self.TOP_REWARD_XP
-                items.append(self.TOP_REWARD_ITEM)
+                total_gold += cat_bonus
+                items.append(self.CATEGORY_BONUS_ITEM)
                 roles_won.append("top_heal")
+            if p.player_id == top_part_id:
+                total_gold += cat_bonus
+                roles_won.append("top_participation")
 
             role = roles_won[0] if roles_won else "participant"
 
