@@ -36,6 +36,7 @@ def build_player_profile_embed(
     duel_wins: int = 0,
     duel_losses: int = 0,
     active_title: str | None = None,
+    affinities: dict[str, int] | None = None,
 ) -> discord.Embed:
     title_prefix = f"🏷️ {active_title} • " if active_title else ""
     embed = discord.Embed(
@@ -76,6 +77,16 @@ def build_player_profile_embed(
         value=f"{stats.hp_regeneration} PV/min",
         inline=True,
     )
+
+    # Affinités élémentaires (0-100 par élément) — utiles pour choisir ses
+    # compétences face à l'élément de l'ennemi.
+    if affinities:
+        from app.shared.enums import ALL_ELEMENTS, ELEMENT_EMOJIS
+        aff_str = "  ".join(
+            f"{ELEMENT_EMOJIS.get(e.value, '')}{int(affinities.get(e.value, 0))}"
+            for e in ALL_ELEMENTS
+        )
+        embed.add_field(name="🔮 Affinités élémentaires", value=aff_str, inline=False)
     embed.add_field(
         name="🔥 Daily Streak",
         value=f"{profile.resources.daily_streak}",

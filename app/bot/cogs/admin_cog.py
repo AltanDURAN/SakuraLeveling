@@ -3,6 +3,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from app.application.services.set_bonus_resolver import resolve_set_bonuses
+from app.application.services.player_stats_resolver import resolve_player_stats
 from app.application.use_cases.reset_player import ResetPlayerUseCase
 from app.bot.checks.admin_check import admin_only
 from app.shared.enums import EquipmentSlot
@@ -124,10 +125,9 @@ class AdminCog(commands.Cog):
                 active_class = ClassRepository(session).get_current_class_for_player(
                     profile.player.id
                 )
-                stats = StatsService().calculate_player_stats(
-                    profile=profile, equipped_items=equipped, active_class=active_class,
-                    set_bonuses=resolve_set_bonuses(equipped),
-                )
+                # Chaîne complète (skill + classe + sets + titres) pour un
+                # max_hp correct (l'inline ne comptait que les sets).
+                stats = resolve_player_stats(session, profile, equipped, active_class)
                 health_repo = PlayerHealthRepository(session)
                 state = health_repo.get_or_create(
                     profile.player.id, default_current_hp=stats.max_hp,
@@ -385,10 +385,8 @@ class AdminCog(commands.Cog):
             active_class = ClassRepository(session).get_current_class_for_player(
                 profile.player.id
             )
-            stats = StatsService().calculate_player_stats(
-                profile=profile, equipped_items=equipped, active_class=active_class,
-                set_bonuses=resolve_set_bonuses(equipped),
-            )
+            # Chaîne complète (skill + classe + sets + titres) pour heal_full.
+            stats = resolve_player_stats(session, profile, equipped, active_class)
             health_repo = PlayerHealthRepository(session)
             health_repo.get_or_create(profile.player.id, default_current_hp=stats.max_hp)
             health_repo.update_current_hp(profile.player.id, stats.max_hp)

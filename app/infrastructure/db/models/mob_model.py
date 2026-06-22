@@ -23,6 +23,7 @@ class MobDefinitionModel(Base):
     description: Mapped[str] = mapped_column(String(255), default="")
     image_name: Mapped[str] = mapped_column(String(100), nullable=True)
     family: Mapped[str] = mapped_column(String(100), nullable=False, server_default="unknown", index=True)
+    element: Mapped[str] = mapped_column(String(20), nullable=False, server_default="")
 
     max_hp: Mapped[int] = mapped_column(Integer)
     current_hp: Mapped[int] = mapped_column(Integer)

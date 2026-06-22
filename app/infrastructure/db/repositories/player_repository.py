@@ -10,6 +10,9 @@ from app.domain.entities.player_resources import PlayerResources
 from app.infrastructure.db.models.player_model import PlayerModel
 from app.infrastructure.db.models.progression_model import PlayerProgressionModel
 from app.infrastructure.db.models.resource_model import PlayerResourceModel
+from app.infrastructure.db.repositories.element_affinity_repository import (
+    ElementAffinityRepository,
+)
 
 
 class PlayerRepository:
@@ -78,7 +81,38 @@ class PlayerRepository:
         self.session.commit()
         self.session.refresh(player_model)
 
+        self._ensure_elemental_setup(player_model.id)
+        self.session.refresh(player_model)
+
         return self._to_domain(player_model)
+
+    def _ensure_elemental_setup(self, player_id: int) -> None:
+        """Garantit que le joueur a ses 8 affinités élémentaires (tirées
+        aléatoirement 0..100) et 2 compétences de départ. Idempotent : sert
+        aussi de backfill paresseux pour les joueurs antérieurs au système.
+        L'élément d'attaque dérive de la compétence offensive équipée (plus de
+        champ `active_element` — source de vérité unique)."""
+        ElementAffinityRepository(self.session).init_for_player(player_id)
+
+        player_model = self.session.get(PlayerModel, player_id)
+        if player_model is None:
+            return
+
+        affinities = ElementAffinityRepository(self.session).get_affinities(player_id)
+        best = (
+            max(affinities.items(), key=lambda kv: kv[1])[0]
+            if affinities else None
+        )
+
+        changed = False
+        # Compétences de départ : offensive + support de l'élément préféré.
+        if best and not player_model.skill_slot_1 and not player_model.skill_slot_2:
+            player_model.skill_slot_1 = f"{best}_offensive"
+            player_model.skill_slot_2 = f"{best}_support"
+            changed = True
+        if changed:
+            player_model.updated_at = datetime.now(UTC)
+            self.session.commit()
 
     def get_or_create_by_discord_id(
         self,
@@ -90,6 +124,7 @@ class PlayerRepository:
 
         if existing is not None:
             self._update_identity_metadata(existing.player.id, username, display_name)
+            self._ensure_elemental_setup(existing.player.id)  # backfill paresseux
             return self.get_by_discord_id(discord_id)  # refreshed
 
         return self.create_player(
@@ -212,6 +247,8 @@ class PlayerRepository:
             created_at=player_model.created_at,
             updated_at=player_model.updated_at,
             last_seen_at=player_model.last_seen_at,
+            skill_slot_1=player_model.skill_slot_1,
+            skill_slot_2=player_model.skill_slot_2,
         )
 
         progression = PlayerProgression(

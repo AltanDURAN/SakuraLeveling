@@ -27,3 +27,9 @@ def get_family_drops() -> dict[str, dict]:
         else:
             _cache = {}
     return _cache
+
+
+def clear_cache() -> None:
+    """Force le re-chargement du JSON (uniformité avec les autres loaders)."""
+    global _cache
+    _cache = None

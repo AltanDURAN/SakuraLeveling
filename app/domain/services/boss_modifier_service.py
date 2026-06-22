@@ -38,14 +38,27 @@ class BossModifierService:
         adjusted_attack = boss_attack
         enraged = False
 
+        ratio_pct = (boss_current_hp / boss_max_hp) * 100 if boss_max_hp > 0 else 100.0
+
         # Enrage : si HP courants en-dessous du seuil, multiplier l'attaque
         threshold_pct = modifiers.get("enrage_below_pct")
         attack_mult = modifiers.get("enrage_attack_multiplier", 1.0)
-        if threshold_pct is not None and boss_max_hp > 0:
-            ratio_pct = (boss_current_hp / boss_max_hp) * 100
-            if ratio_pct <= threshold_pct:
-                adjusted_attack = int(boss_attack * attack_mult)
-                enraged = True
+        if threshold_pct is not None and ratio_pct <= threshold_pct:
+            adjusted_attack = int(adjusted_attack * attack_mult)
+            enraged = True
+
+        # Phases : seuils de PV (calculés au début du combat, modèle 1 combat/jour
+        # à PV persistants). On applique le multiplicateur de la phase la plus
+        # forte atteinte (cumulable avec l'enrage).
+        phases = modifiers.get("phases") or []
+        phase_mult = 1.0
+        for ph in phases:
+            below = ph.get("below_pct")
+            if below is not None and ratio_pct <= below:
+                phase_mult = max(phase_mult, float(ph.get("attack_multiplier", 1.0)))
+        if phase_mult != 1.0:
+            adjusted_attack = int(adjusted_attack * phase_mult)
+            enraged = True
 
         # Crit immunity : on neutralise la crit_chance du joueur
         adjusted_crit = (

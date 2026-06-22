@@ -9,7 +9,7 @@ ou si l'item n'est pas marqué `category=consumable`.
 
 from dataclasses import dataclass
 
-from app.application.services.set_bonus_resolver import resolve_set_bonuses
+from app.application.services.player_stats_resolver import resolve_player_stats
 from app.domain.services.stats_service import StatsService
 from app.domain.services.skill_tree_service import SkillTreeService
 from app.infrastructure.db.repositories.class_repository import ClassRepository
@@ -104,22 +104,19 @@ class UseConsumableUseCase:
                 item_name=item.name,
             )
 
-        # Calcul du max_hp courant (4e étage = skill bonuses)
+        # Calcul du max_hp courant — chaîne complète (skill + classe + sets +
+        # TITRES) via le helper centralisé (corrige l'oubli des titres : un
+        # Champion 1v1 a un max_hp majoré qui doit servir au plafond de soin).
         equipped = self.equipment_repository.list_by_player_id(profile.player.id)
         active_class = self.class_repository.get_current_class_for_player(
             profile.player.id
         )
-        allocations = self.skill_allocation_repository.list_by_player(profile.player.id)
-        skill_bonuses = SkillTreeService(get_skill_tree_definition()).aggregate_bonuses(
-            allocations
-        )
-        set_bonuses = resolve_set_bonuses(equipped)
-        stats = self.stats_service.calculate_player_stats(
-            profile=profile,
-            equipped_items=equipped,
-            active_class=active_class,
-            skill_bonuses=skill_bonuses,
-            set_bonuses=set_bonuses,
+        stats = resolve_player_stats(
+            self.equipment_repository.session,
+            profile,
+            equipped,
+            active_class,
+            stats_service=self.stats_service,
         )
         max_hp = stats.max_hp
 

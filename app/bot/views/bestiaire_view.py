@@ -10,8 +10,24 @@ from __future__ import annotations
 import discord
 
 from app.domain.entities.mob_definition import MobDefinition
+from app.domain.services import element_service
 from app.domain.services.power_score_service import PowerScoreService
+from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
 from app.shared.paths import MOBS_ASSETS_DIR
+
+
+def _element_line(element: str) -> str:
+    """Ligne 'Élément' pour la fiche : emoji + nom + faiblesses (qui le battent)."""
+    if not element:
+        return "Élément : **neutre**"
+    emoji = ELEMENT_EMOJIS.get(element, "")
+    label = ELEMENT_LABELS.get(element, element)
+    weaknesses = element_service.weaknesses_of(element)
+    weak_str = ", ".join(
+        f"{ELEMENT_EMOJIS.get(e.value, '')} {ELEMENT_LABELS.get(e.value, e.value)}"
+        for e in weaknesses
+    ) or "—"
+    return f"Élément : {emoji} **{label}**\nFaible à : {weak_str}"
 
 
 def _format_loot_line(loot_entry: dict) -> str:
@@ -43,7 +59,7 @@ def build_mob_embed(
     )
     embed.add_field(
         name="Identité",
-        value=f"`{mob.code}`\nFamille : **{mob.family or '—'}**",
+        value=f"`{mob.code}`\nFamille : **{mob.family or '—'}**\n{_element_line(mob.element)}",
         inline=False,
     )
     embed.add_field(

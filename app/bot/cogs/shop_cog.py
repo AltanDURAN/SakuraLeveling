@@ -1,3 +1,5 @@
+import asyncio
+
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -27,7 +29,7 @@ class ShopCog(BetaChannelOnlyMixin, commands.Cog):
             shop_items = shop_repository.list_all(only_enabled=True)
 
         view = ShopView(shop_items)
-        embed, file = view.render_current()
+        embed, file = await asyncio.to_thread(view.render_current)
         await interaction.response.send_message(
             embed=embed, file=file, view=view,
         )

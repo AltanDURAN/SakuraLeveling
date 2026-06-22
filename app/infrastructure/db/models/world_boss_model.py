@@ -24,6 +24,10 @@ class WorldBossModel(Base):
     dodge: Mapped[int] = mapped_column(Integer, default=0)
     hp_regeneration: Mapped[int] = mapped_column(Integer, default=0)
 
+    # Élément du boss (mono-élément V1). "" = neutre. Modifiable à chaud par
+    # l'admin sur l'instance active.
+    element: Mapped[str] = mapped_column(String(20), default="")
+
     status: Mapped[str] = mapped_column(String(20), default="active", index=True)
     spawned_at: Mapped[datetime] = mapped_column(DateTime)
     defeated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

@@ -54,14 +54,28 @@ def test_pick_random_definition_respects_weights():
 def test_modifiers_loaded_correctly():
     clear_cache()
     titan = get_definition("slime_titan")
-    assert titan.modifiers == {"damage_immunity_threshold": 5}
+    assert titan.modifiers.get("damage_immunity_threshold") == 5
 
     warlord = get_definition("gobelin_warlord")
-    assert warlord.modifiers == {
-        "enrage_below_pct": 30,
-        "enrage_attack_multiplier": 1.5,
-    }
+    assert warlord.modifiers.get("enrage_below_pct") == 30
+    assert warlord.modifiers.get("enrage_attack_multiplier") == 1.5
 
     dragon = get_definition("ancient_dragon")
     assert "damage_immunity_threshold" in dragon.modifiers
     assert "enrage_below_pct" in dragon.modifiers
+    # nouveaux modifiers (politis : ignorés par le moteur tant que non câblés)
+    assert "phases" in dragon.modifiers
+    assert "adds" in dragon.modifiers
+
+
+def test_each_boss_has_an_element():
+    clear_cache()
+    expected = {
+        "slime_titan": "eau",
+        "gobelin_warlord": "feu",
+        "stone_colossus": "terre",
+        "shadow_wraith": "tenebre",
+        "ancient_dragon": "lumiere",
+    }
+    for code, elem in expected.items():
+        assert get_definition(code).element == elem

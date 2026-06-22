@@ -87,6 +87,16 @@ sudo systemctl enable sakura-bot sakura-webapp
 sudo systemctl restart sakura-bot sakura-webapp
 sleep 3
 
+echo "==> 5bis. Backup quotidien de la DB (cron 03:00 UTC)"
+mkdir -p "$HOME/sakura-backups"
+BACKUP_CRON="0 3 * * * $REPO_DIR/scripts/backup_db.sh >> $HOME/sakura-backups/backup.log 2>&1"
+# Idempotent : retire toute ligne backup_db.sh existante puis (ré)ajoute.
+# `|| true` partout : crontab vide → crontab -l renvoie non-zéro (set -e).
+( crontab -l 2>/dev/null | grep -v 'backup_db.sh' || true; echo "$BACKUP_CRON" ) | crontab - || true
+echo "    cron backup : $(crontab -l 2>/dev/null | grep backup_db.sh || echo 'NON installé')"
+echo "    ⚠️  Backups LOCAUX au VPS uniquement. Pour une copie offsite, ajoute un"
+echo "       scp/rclone vers une autre machine dans backup_db.sh (ou un 2e cron)."
+
 echo "==> 6. Ouverture du port webapp 8001 (firewall LOCAL éventuel)"
 # Certaines images (Oracle notamment) ont des règles iptables qui DROP tout
 # sauf SSH. On autorise le 8001 entrant (le bot lui n'a besoin que de sortant).

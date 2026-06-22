@@ -35,6 +35,7 @@ class WorldBoss:
     spawned_at: datetime
     defeated_at: datetime | None
     channel_message_id: int | None
+    element: str = ""
 
     @property
     def is_alive(self) -> bool:

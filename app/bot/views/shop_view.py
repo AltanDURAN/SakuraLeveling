@@ -5,6 +5,7 @@ onglet re-rend l'image de la catégorie.
 
 from __future__ import annotations
 
+import asyncio
 import io
 import uuid
 
@@ -43,7 +44,7 @@ class _PageButton(discord.ui.Button):
         view.current_page_label = self.label_text
         view.current_page_emoji = self.emoji_text
         view._refresh_styles()
-        embed, file = view.render_current()
+        embed, file = await asyncio.to_thread(view.render_current)
         await interaction.response.edit_message(embed=embed, attachments=[file], view=view)
 
 

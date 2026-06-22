@@ -193,6 +193,7 @@ async def mobs_create(
             description=form_data.get("description", "").strip(),
             image_name=form_data.get("image_name", "").strip(),
             family=form_data.get("family", "").strip() or "unknown",
+            element=form_data.get("element", "").strip(),
             loot_table=_parse_loot_table(form_data.get("loot_table")),
             **stats,
         )
@@ -257,6 +258,7 @@ async def mobs_update(
             description=form_data.get("description", existing.description),
             image_name=form_data.get("image_name", existing.image_name).strip() or existing.image_name,
             family=form_data.get("family", existing.family or "").strip() or existing.family,
+            element=form_data.get("element", existing.element or "").strip(),
             loot_table=_parse_loot_table(form_data.get("loot_table")),
             **stats,
         )

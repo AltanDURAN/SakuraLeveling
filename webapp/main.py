@@ -71,6 +71,11 @@ async def _lifespan(app: FastAPI):
 
 
 app = FastAPI(title="SakuraLeveling — Skill Tree Viewer", lifespan=_lifespan)
+
+# Protection CSRF (vérification d'origine) sur les routes /admin mutantes.
+from webapp.admin.csrf import csrf_origin_middleware
+app.middleware("http")(csrf_origin_middleware)
+
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 

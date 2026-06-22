@@ -70,6 +70,7 @@ def seed_mobs() -> None:
                 name=mob_data["name"],
                 description=mob_data["description"],
                 family=mob_data.get("family", "unknown"),
+                element=mob_data.get("element", ""),
                 max_hp=mob_data["max_hp"],
                 current_hp=mob_data.get("current_hp", mob_data["max_hp"]),
                 attack=mob_data["attack"],

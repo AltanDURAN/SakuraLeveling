@@ -1,16 +1,16 @@
 """Use cases du système de world boss.
 
-6 use cases regroupés pour cohérence :
+Use cases regroupés pour cohérence :
     1. SpawnWorldBossUseCase — spawn manuel à partir d'une BossDefinition (JSON)
     2. SpawnRandomWorldBossUseCase — auto-spawn pondéré par spawn_weight
     3. JoinWorldBossUseCase — joueur s'inscrit à la session
     4. LeaveWorldBossUseCase — joueur se désinscrit (refus s'il a déjà combattu)
-    5. FightWorldBossUseCase — solo combat avec bonus d'équipe + cooldown 1/jour
-       + application des modifiers (immunity threshold, enrage, crit immunity)
+    5. VoteForFightWorldBossUseCase / LaunchPartyFightWorldBossUseCase — combat
+       collectif (vote puis bataille de groupe) + application des modifiers
     6. CompleteWorldBossUseCase — récompenses à la défaite
 
-Convention HP/résultat : on réutilise `CombatService.fight_player_vs_mob` en
-wrappant le boss dans une `MobDefinition` éphémère.
+Convention HP/résultat : on réutilise `PartyCombatService.fight_party_vs_mob`
+en wrappant le boss dans une `MobDefinition` éphémère.
 """
 
 import random
@@ -19,6 +19,7 @@ from datetime import datetime, UTC, timedelta
 from zoneinfo import ZoneInfo
 
 from app.application.services.set_bonus_resolver import resolve_set_bonuses
+from app.application.services.player_stats_resolver import resolve_player_stats
 from app.domain.entities.boss_definition import BossDefinition
 from app.domain.entities.mob_definition import MobDefinition
 from app.domain.entities.world_boss import WorldBoss, WorldBossParticipation
@@ -51,6 +52,10 @@ from app.infrastructure.world_boss.boss_definition_loader import (
 
 BOSS_FIGHT_COOLDOWN_KEY = "world_boss_fight"
 BOSS_RESPAWN_COOLDOWN_DAYS = 7  # 7 jours après défaite avant un nouveau spawn
+# Cap de tours d'un combat collectif : sécurité anti-boucle infinie quand
+# l'auto-soin du boss dépasse les DPS de l'équipe (la journée n'aboutit alors
+# ni à une mort ni à une victoire — le combat s'arrête simplement).
+BOSS_FIGHT_MAX_TURNS = 4000
 # Reset à minuit heure de Paris (CEST/CET selon saison, DST géré
 # automatiquement par zoneinfo). Stocké en UTC.
 _PARIS = ZoneInfo("Europe/Paris")
@@ -125,6 +130,7 @@ def _create_boss_from_definition(
         crit_damage=definition.crit_damage,
         dodge=definition.dodge,
         hp_regeneration=0,
+        element=definition.element,
     )
 
 
@@ -399,229 +405,6 @@ class FightBossResult:
     boss_defeated: bool = False
 
 
-class FightWorldBossUseCase:
-    """Lance le combat solo d'un joueur contre le boss.
-
-    Règles :
-        • Le joueur doit être inscrit (joined=True)
-        • Cooldown 1 combat/jour reset à minuit UTC
-        • Stats du joueur boostées par le `team_bonus_multiplier`
-        • Le boss garde ses HP réels (current_hp persisté)
-        • Le boss ne regen JAMAIS de PV (hp_regeneration=0 par construction)
-        • La participation cumule damage_dealt / tanked / hp_healed
-    """
-
-    def __init__(
-        self,
-        world_boss_repository: WorldBossRepository,
-        player_repository: PlayerRepository,
-        equipment_repository: EquipmentRepository,
-        class_repository: ClassRepository,
-        skill_allocation_repository: PlayerSkillAllocationRepository,
-        cooldown_repository: CooldownRepository,
-        stats_service: StatsService,
-        scaling_service: WorldBossScalingService,
-        combat_service: CombatService,
-        cooldown_service: CooldownService,
-        modifier_service: BossModifierService | None = None,
-    ) -> None:
-        self.world_boss_repository = world_boss_repository
-        self.player_repository = player_repository
-        self.equipment_repository = equipment_repository
-        self.class_repository = class_repository
-        self.skill_allocation_repository = skill_allocation_repository
-        self.cooldown_repository = cooldown_repository
-        self.stats_service = stats_service
-        self.scaling_service = scaling_service
-        self.combat_service = combat_service
-        self.cooldown_service = cooldown_service
-        self.modifier_service = modifier_service or BossModifierService()
-
-    def execute(
-        self, discord_id: int, username: str, display_name: str,
-    ) -> FightBossResult:
-        boss = self.world_boss_repository.get_active()
-        if boss is None or not boss.is_alive:
-            return FightBossResult(False, "❌ Aucun world boss actif.")
-
-        profile = self.player_repository.get_or_create_by_discord_id(
-            discord_id=discord_id, username=username, display_name=display_name,
-        )
-        participation = self.world_boss_repository.get_participation(
-            boss.id, profile.player.id
-        )
-        if participation is None or not participation.joined:
-            return FightBossResult(
-                False, "❌ Vous devez d'abord rejoindre le raid."
-            )
-
-        # Cooldown 1/jour
-        now = datetime.now(UTC)
-        cooldown = self.cooldown_repository.get_by_player_and_action(
-            profile.player.id, BOSS_FIGHT_COOLDOWN_KEY
-        )
-        if not self.cooldown_service.is_available(cooldown, now):
-            ts = int(cooldown.next_available_at.timestamp())
-            return FightBossResult(
-                False,
-                f"⏳ Vous avez déjà combattu aujourd'hui. Reset <t:{ts}:R>.",
-            )
-
-        # Calcul des stats avec bonus d'équipe
-        equipped = self.equipment_repository.list_by_player_id(profile.player.id)
-        active_class = self.class_repository.get_current_class_for_player(profile.player.id)
-        allocations = self.skill_allocation_repository.list_by_player(profile.player.id)
-        skill_bonuses = SkillTreeService(get_skill_tree_definition()).aggregate_bonuses(
-            allocations
-        )
-        set_bonuses = resolve_set_bonuses(equipped)
-        base_stats = self.stats_service.calculate_player_stats(
-            profile=profile,
-            equipped_items=equipped,
-            active_class=active_class,
-            skill_bonuses=skill_bonuses,
-            set_bonuses=set_bonuses,
-        )
-        num_participants = self.world_boss_repository.count_joined(boss.id)
-        boosted_stats = self.scaling_service.apply_team_bonus(base_stats, num_participants)
-        team_bonus_pct = int(
-            (self.scaling_service.compute_team_bonus_multiplier(num_participants) - 1) * 100
-        )
-
-        # Récupérer les modifiers depuis la BossDefinition (si présente)
-        boss_def = get_boss_definition(boss.code)
-        modifiers = boss_def.modifiers if boss_def is not None else {}
-
-        # Application des modifiers : enrage (mult atk boss) + crit_immunity
-        adjustments = self.modifier_service.compute_adjustments(
-            modifiers=modifiers,
-            boss_max_hp=boss.max_hp,
-            boss_current_hp=boss.current_hp,
-            boss_attack=boss.attack,
-            player_crit_chance=boosted_stats.crit_chance,
-        )
-
-        # Si crit immunity actif, on neutralise la crit_chance du joueur
-        if adjustments.player_crit_chance != boosted_stats.crit_chance:
-            boosted_stats = type(boosted_stats)(
-                max_hp=boosted_stats.max_hp,
-                attack=boosted_stats.attack,
-                defense=boosted_stats.defense,
-                speed=boosted_stats.speed,
-                crit_chance=adjustments.player_crit_chance,
-                crit_damage=boosted_stats.crit_damage,
-                dodge=boosted_stats.dodge,
-                hp_regeneration=boosted_stats.hp_regeneration,
-            )
-
-        # Combat avec attack du boss potentiellement enragé
-        boss_as_mob = _boss_to_mob_definition(
-            boss, overridden_attack=adjustments.boss_attack
-        )
-        battle_result = self.combat_service.fight_player_vs_mob(
-            player_stats=boosted_stats, mob=boss_as_mob,
-        )
-
-        # Calcul des métriques de combat
-        raw_damage_dealt = boss.current_hp - max(0, battle_result.mob_remaining_hp)
-        # Application du damage_immunity_threshold sur le total infligé.
-        # Note V1 : on filtre globalement, pas par coup. C'est une approximation
-        # raisonnable pour le squelette ; raffinable plus tard en intégrant le
-        # filter dans le tour-par-tour de CombatService.
-        damage_dealt = self.modifier_service.filter_incoming_damage(
-            raw_damage_dealt, adjustments.damage_immunity_threshold,
-        )
-        # damage_tanked = brut entrant total (avant réduction par défense),
-        # cf. BattleResult.player_total_raw_damage_taken. Si l'attribut est
-        # absent (anciens tests), fallback sur le calcul HP perdus.
-        damage_tanked = getattr(
-            battle_result, "player_total_raw_damage_taken", 0
-        ) or (boosted_stats.max_hp - max(0, battle_result.player_remaining_hp))
-        hp_healed = 0  # V1 solo
-
-        # Persist (damage filtré, pas raw)
-        self.world_boss_repository.apply_damage(boss.id, damage_dealt)
-        self.world_boss_repository.add_combat_metrics(
-            boss.id, profile.player.id,
-            damage_dealt=damage_dealt,
-            damage_tanked=damage_tanked,
-            hp_healed=hp_healed,
-        )
-
-        # Quêtes V2 : on_damage_dealt + on_damage_tanked (les boss sont
-        # des "monstres" pour le compteur). on_boss_damage retiré.
-        try:
-            from app.application.use_cases.weekly_quests import (
-                WeeklyQuestProgressService,
-            )
-            from app.application.use_cases.daily_quests import (
-                DailyQuestProgressService,
-            )
-            from app.infrastructure.db.repositories.weekly_quest_repository import (
-                WeeklyQuestRepository,
-            )
-            from app.infrastructure.db.repositories.daily_quest_repository import (
-                DailyQuestRepository,
-            )
-            session = self.world_boss_repository.session
-            _wqp = WeeklyQuestProgressService(WeeklyQuestRepository(session))
-            _dqp = DailyQuestProgressService(DailyQuestRepository(session))
-            if damage_dealt > 0:
-                _wqp.on_damage_dealt(profile.player.id, damage_dealt)
-                _dqp.on_damage_dealt(profile.player.id, damage_dealt)
-            if damage_tanked > 0:
-                _wqp.on_damage_tanked(profile.player.id, damage_tanked)
-                _dqp.on_damage_tanked(profile.player.id, damage_tanked)
-        except Exception as _e:
-            import logging
-            logging.getLogger(__name__).warning(
-                "Quest progress hook failed: %s", _e, exc_info=True,
-            )
-
-        # Cooldown : prochaine fenêtre = minuit UTC
-        next_avail = _next_midnight_utc(now)
-        self.cooldown_repository.upsert(
-            profile.player.id, BOSS_FIGHT_COOLDOWN_KEY, now, next_avail
-        )
-
-        boss_after = self.world_boss_repository.get_by_id(boss.id)
-        defeated = boss_after.current_hp <= 0
-        if defeated:
-            self.world_boss_repository.mark_defeated(boss.id)
-
-        msg_lines = [
-            f"⚔️ Combat contre **{boss.name}** terminé.",
-            f"💥 Dégâts infligés : **{damage_dealt:,}**",
-            f"🛡️ Dégâts encaissés : **{damage_tanked:,}**",
-            f"📊 PV restants du boss : **{boss_after.current_hp:,} / {boss.max_hp:,}**",
-        ]
-        if team_bonus_pct > 0:
-            msg_lines.append(f"🤝 Bonus d'équipe appliqué : **+{team_bonus_pct}%**")
-        if adjustments.enraged:
-            msg_lines.append("🔥 **Boss enragé** — son attaque est amplifiée.")
-        if (
-            adjustments.damage_immunity_threshold > 0
-            and raw_damage_dealt > 0
-            and damage_dealt == 0
-        ):
-            msg_lines.append(
-                f"🛡️ Carapace : vos coups (<{adjustments.damage_immunity_threshold}) "
-                "ont glissé. Frappez plus fort."
-            )
-        if defeated:
-            msg_lines.append(f"🏆 **{boss.name}** est vaincu !")
-
-        return FightBossResult(
-            success=True,
-            message="\n".join(msg_lines),
-            battle_result=battle_result,
-            boss_remaining_hp=boss_after.current_hp,
-            boss_max_hp=boss.max_hp,
-            team_bonus_pct=team_bonus_pct,
-            boss_defeated=defeated,
-        )
-
-
 # ---------- 3bis. Combat collectif (système de vote) ----------
 
 
@@ -677,6 +460,12 @@ class LaunchPartyFightWorldBossUseCase:
 
     def execute(self, boss_id: int) -> PartyFightBossResult:
         from app.domain.services.party_combat_service import PartyCombatService
+        from app.domain.services import element_service
+        from app.domain.services.skill_effect_service import offensive_element
+        from app.infrastructure.elements import element_skill_loader
+        from app.infrastructure.db.repositories.element_affinity_repository import (
+            ElementAffinityRepository,
+        )
 
         boss = self.world_boss_repository.get_by_id(boss_id)
         if boss is None or not boss.is_alive:
@@ -690,6 +479,19 @@ class LaunchPartyFightWorldBossUseCase:
         eligible: list[tuple[WorldBossParticipation, dict]] = []
         skipped = 0
         num_joined = self.world_boss_repository.count_joined(boss_id)
+
+        # Système élémentaire : multiplicateurs ±50% par voteur.
+        #   elemental_out : avantage du voteur sur le boss (dégâts infligés)
+        #   elemental_in  : avantage du boss sur le voteur (dégâts subis)
+        # Neutres (vides) si le boss n'a pas d'élément.
+        elemental_out: dict[int, float] = {}
+        elemental_in: dict[int, float] = {}
+        skill_loadouts: dict[int, list] = {}
+        boss_aff = (
+            element_service.single_element_affinities(boss.element)
+            if boss.element else None
+        )
+        affinity_repo = ElementAffinityRepository(self.world_boss_repository.session)
 
         # Modifiers du boss (immunity threshold, enrage, crit immunity)
         boss_def = get_boss_definition(boss.code)
@@ -716,17 +518,14 @@ class LaunchPartyFightWorldBossUseCase:
                 continue
             equipped = self.equipment_repository.list_by_player_id(v.player_id)
             active_class = self.class_repository.get_current_class_for_player(v.player_id)
-            allocations = self.skill_allocation_repository.list_by_player(v.player_id)
-            skill_bonuses = SkillTreeService(
-                get_skill_tree_definition()
-            ).aggregate_bonuses(allocations)
-            set_bonuses = resolve_set_bonuses(equipped)
-            base_stats = self.stats_service.calculate_player_stats(
-                profile=profile,
-                equipped_items=equipped,
-                active_class=active_class,
-                skill_bonuses=skill_bonuses,
-                set_bonuses=set_bonuses,
+            # Chaîne de stats centralisée (skill + classe + sets + TITRES) —
+            # corrige l'oubli des bonus de titre dans le combat de boss.
+            base_stats = resolve_player_stats(
+                self.world_boss_repository.session,
+                profile,
+                equipped,
+                active_class,
+                stats_service=self.stats_service,
             )
             boosted = self.scaling_service.apply_team_bonus(base_stats, num_joined)
             # Si crit immunity : neutralise crit_chance
@@ -737,6 +536,32 @@ class LaunchPartyFightWorldBossUseCase:
                     crit_chance=0, crit_damage=boosted.crit_damage,
                     dodge=boosted.dodge, hp_regeneration=boosted.hp_regeneration,
                 )
+            # Compétences équipées (slots libres, peuvent être vides) → passées
+            # telles quelles au combat, qui les résout par tour.
+            equipped_skills = [
+                element_skill_loader.get_skill(code)
+                for code in (profile.player.skill_slot_1, profile.player.skill_slot_2)
+                if code
+            ]
+            if equipped_skills:
+                skill_loadouts[v.player_id] = equipped_skills
+
+            # Multiplicateurs élémentaires du voteur (si le boss a un élément).
+            if boss_aff is not None:
+                aff = affinity_repo.get_affinities(v.player_id)
+                # élément d'attaque = compétence offensive équipée, sinon repli
+                # sur l'affinité la plus haute (le joueur frappe quand même).
+                player_elem = offensive_element(equipped_skills) or (
+                    max(aff, key=aff.get) if aff else ""
+                )
+                if player_elem:
+                    elemental_out[v.player_id] = element_service.damage_multiplier(
+                        player_elem, aff, boss_aff,
+                    )
+                elemental_in[v.player_id] = element_service.damage_multiplier(
+                    boss.element, boss_aff, aff,
+                )
+
             eligible.append((v, {
                 "player_id": v.player_id,
                 "user_id": v.player_id,  # fallback
@@ -764,18 +589,28 @@ class LaunchPartyFightWorldBossUseCase:
         party = [payload for _, payload in eligible]
         battle_result = PartyCombatService().fight_party_vs_mob(
             party=party, mob=boss_as_mob,
+            elemental_mult_by_player=elemental_out,
+            incoming_elemental_mult_by_player=elemental_in,
+            skill_loadouts_by_player=skill_loadouts,
+            # Modifiers boss dynamiques (le seuil d'immunité est désormais
+            # appliqué par coup dans la simulation, pas sur le total).
+            damage_immunity_threshold=adjustments.damage_immunity_threshold,
+            boss_heal_per_turn=int(modifiers.get("auto_heal_per_turn", 0)),
+            boss_reflect_pct=int(modifiers.get("reflect_pct", 0)),
+            boss_adds=modifiers.get("adds"),
+            max_turns=BOSS_FIGHT_MAX_TURNS,
         )
 
-        # Damage agrégé = sum des damage_dealt des contributions (déjà
-        # net du crit / défense). On applique l'immunity threshold global.
+        # Les PV restants du boss = résultat réel de la simulation (intègre
+        # seuil d'immunité par coup + auto-soin). On synchronise l'instance
+        # persistée dessus (peut remonter si le boss s'est soigné).
         contribs_by_id = {
             c.player_id: c for c in battle_result.contributions
         }
-        raw_damage_total = sum(c.damage_dealt for c in battle_result.contributions)
-        damage_total = self.modifier_service.filter_incoming_damage(
-            raw_damage_total, adjustments.damage_immunity_threshold,
+        damage_total = max(0, boss.current_hp - battle_result.mob_remaining_hp)
+        self.world_boss_repository.set_current_hp(
+            boss_id, battle_result.mob_remaining_hp,
         )
-        self.world_boss_repository.apply_damage(boss_id, damage_total)
         total_tanked = 0
         # Distribution des métriques par voteur
         for participation, _ in eligible:

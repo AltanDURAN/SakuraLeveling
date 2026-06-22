@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import io
 
 import discord
@@ -75,7 +76,7 @@ class SkillTreeView(discord.ui.View):
             return
 
         embed = build_skill_tree_embed(state, web_url=self.web_url)
-        attachment = render_attachment(state, self.definition)
+        attachment = await asyncio.to_thread(render_attachment, state, self.definition)
         # Édite le message principal (pas celui du picker éphémère qui peut
         # contenir l'interaction courante). Si la référence n'a pas été
         # posée par le cog (cas de fallback), on retombe sur interaction.message.

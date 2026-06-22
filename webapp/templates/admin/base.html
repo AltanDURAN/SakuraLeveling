@@ -6,8 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Sakura Admin{% endblock %}</title>
     <link rel="stylesheet" href="/static/admin/admin.css">
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <!-- Dépendances auto-hébergées (plus de CDN unpkg) : versions figées,
+         pas de risque supply-chain, fonctionne hors-ligne. -->
+    <script defer src="/static/admin/vendor/alpine-3.14.1.min.js"></script>
+    <script src="/static/admin/vendor/htmx-1.9.12.min.js"></script>
     <script src="/static/admin/admin.js"></script>
 </head>
 <body>

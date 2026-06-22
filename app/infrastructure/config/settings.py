@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     # tant qu'on ne l'a pas redéfini dans .env (assert_safe_secret()).
     admin_session_secret: str = ADMIN_SESSION_SECRET_DEFAULT
 
+    # Cookies de session/oauth en `Secure` (HTTPS only). Mettre à True en prod
+    # derrière TLS. Laisser False en local HTTP (sinon le cookie n'est jamais
+    # envoyé et le login boucle).
+    admin_cookie_secure: bool = False
+
     # Si True, les éditions de contenu via l'admin web sont commitées + poussées
     # sur git (beta). Nécessite une clé de déploiement write sur le VPS.
     # Désactivé par défaut : le contenu est tout de même écrit dans les JSON

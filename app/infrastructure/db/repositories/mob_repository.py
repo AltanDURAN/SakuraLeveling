@@ -53,6 +53,7 @@ class MobRepository:
         spawn_weight: int = 1,
         loot_table: list[dict] | None = None,
         current_hp: int | None = None,
+        element: str = "",
     ) -> MobDefinition:
         if current_hp is None:
             current_hp = max_hp
@@ -63,6 +64,7 @@ class MobRepository:
             description=description,
             image_name=image_name,
             family=family,
+            element=element,
             max_hp=max_hp,
             current_hp=current_hp,
             attack=attack,
@@ -124,6 +126,7 @@ class MobRepository:
             description=model.description,
             image_name=model.image_name,
             family=model.family,
+            element=model.element or "",
             max_hp=model.max_hp,
             current_hp=model.current_hp,
             attack=model.attack,
@@ -161,6 +164,7 @@ class MobRepository:
         spawn_weight: int,
         family: str = "unknown",
         loot_table: list[dict] | None = None,
+        element: str | None = None,
     ):
         stmt = select(MobDefinitionModel).where(MobDefinitionModel.code == code)
         model = self.session.execute(stmt).scalar_one_or_none()
@@ -183,6 +187,8 @@ class MobRepository:
         model.gold_reward = gold_reward
         model.image_name = image_name
         model.family = family
+        if element is not None:
+            model.element = element
         model.spawn_weight = spawn_weight
         model.loot_table_json = loot_table
         model.updated_at = datetime.now(UTC)

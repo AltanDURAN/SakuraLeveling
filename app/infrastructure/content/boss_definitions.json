@@ -2,10 +2,11 @@
   {
     "code": "slime_titan",
     "name": "Titan Visqueux",
-    "description": "Un slime ancestral devenu colosse, sa masse étouffante absorbe les coups les plus faibles.",
+    "description": "Un slime ancestral devenu colosse, sa masse étouffante absorbe les coups les plus faibles et se régénère lentement.",
     "image_name": "slime.png",
     "tier": "intro",
     "spawn_weight": 100,
+    "element": "eau",
     "max_hp": 50000,
     "attack": 50,
     "defense": 20,
@@ -14,17 +15,19 @@
     "crit_damage": 100,
     "dodge": 0,
     "modifiers": {
-      "damage_immunity_threshold": 5
+      "damage_immunity_threshold": 5,
+      "auto_heal_per_turn": 50
     },
-    "lore": "Premier obstacle des aventuriers ambitieux. Endurant mais sans surprise."
+    "lore": "Premier obstacle des aventuriers ambitieux. Élément Eau (faible à plante/foudre… ici : plante/terre/glace). Se régénère un peu chaque tour : il faut le tuer assez vite."
   },
   {
     "code": "gobelin_warlord",
     "name": "Seigneur de Guerre Gobelin",
-    "description": "Le chef d'une horde sanguinaire. Plus il est blessé, plus sa rage l'amplifie.",
+    "description": "Le chef d'une horde sanguinaire. Plus il est blessé, plus sa rage l'amplifie, et il appelle des renforts.",
     "image_name": "gobelin_geant.png",
     "tier": "medium",
     "spawn_weight": 60,
+    "element": "feu",
     "max_hp": 200000,
     "attack": 200,
     "defense": 100,
@@ -34,17 +37,19 @@
     "dodge": 5,
     "modifiers": {
       "enrage_below_pct": 30,
-      "enrage_attack_multiplier": 1.5
+      "enrage_attack_multiplier": 1.5,
+      "adds": { "attack": 80, "summon_turn_interval": 4, "max_active": 3 }
     },
-    "lore": "À 30% PV, sa rage le pousse à frapper 50% plus fort. Tomber l'achever vite ou tenir bon."
+    "lore": "Élément Feu (faible à eau/vent/terre). À 30% PV sa rage le fait frapper 50% plus fort. Invoque des gobelins toutes les 4 manches (max 3) qui tapent l'équipe."
   },
   {
     "code": "stone_colossus",
     "name": "Colosse de Pierre",
-    "description": "Une statue runique animée par d'antiques magies. Inébranlable face aux frappes faibles.",
+    "description": "Une statue runique animée par d'antiques magies. Inébranlable face aux frappes faibles, sa carapace renvoie une part des coups.",
     "image_name": "gobelin_runique.png",
     "tier": "medium_hard",
     "spawn_weight": 30,
+    "element": "terre",
     "max_hp": 500000,
     "attack": 300,
     "defense": 400,
@@ -53,17 +58,19 @@
     "crit_damage": 100,
     "dodge": 0,
     "modifiers": {
-      "damage_immunity_threshold": 50
+      "damage_immunity_threshold": 50,
+      "reflect_pct": 15
     },
-    "lore": "Sa carapace runique ignore les dégâts inférieurs à 50. Il faut frapper fort ou pas du tout."
+    "lore": "Élément Terre (faible à plante/glace/vent). Sa carapace runique ignore les dégâts < 50 et renvoie 15% des coups reçus. Frapper fort, ou souffrir du retour."
   },
   {
     "code": "shadow_wraith",
     "name": "Spectre des Ténèbres",
-    "description": "Une entité incorporelle qui glisse entre les coups. Les coups critiques traversent sa forme étherée.",
+    "description": "Une entité incorporelle qui glisse entre les coups. Les coups critiques traversent sa forme étherée, et il mute en s'affaiblissant.",
     "image_name": "gobelin_assassin.png",
     "tier": "hard",
     "spawn_weight": 15,
+    "element": "tenebre",
     "max_hp": 800000,
     "attack": 500,
     "defense": 150,
@@ -72,17 +79,22 @@
     "crit_damage": 150,
     "dodge": 30,
     "modifiers": {
-      "crit_immunity": true
+      "crit_immunity": true,
+      "phases": [
+        { "below_pct": 50, "attack_multiplier": 1.3 },
+        { "below_pct": 20, "attack_multiplier": 1.6 }
+      ]
     },
-    "lore": "Les coups critiques sont annulés (traités comme des coups normaux). Sa vitesse rend ses esquives redoutables."
+    "lore": "Élément Ténèbre (faible à lumière). Les crits sont annulés. À 50% PV il frappe +30%, à 20% PV +60%. Sa vitesse rend ses esquives redoutables."
   },
   {
     "code": "ancient_dragon",
     "name": "Dragon Ancestral",
-    "description": "Le sommet de l'évolution. Inflige des coups dévastateurs et entre en rage à la fin.",
+    "description": "Le sommet de l'évolution. Inflige des coups dévastateurs, renvoie les frappes, invoque des drakelings, se régénère et entre en rage à la fin.",
     "image_name": "gobelin_superieur.png",
     "tier": "endgame",
     "spawn_weight": 5,
+    "element": "lumiere",
     "max_hp": 2000000,
     "attack": 800,
     "defense": 300,
@@ -93,8 +105,14 @@
     "modifiers": {
       "damage_immunity_threshold": 100,
       "enrage_below_pct": 25,
-      "enrage_attack_multiplier": 1.8
+      "enrage_attack_multiplier": 1.8,
+      "auto_heal_per_turn": 2000,
+      "reflect_pct": 20,
+      "adds": { "attack": 250, "summon_turn_interval": 5, "max_active": 2 },
+      "phases": [
+        { "below_pct": 50, "attack_multiplier": 1.25 }
+      ]
     },
-    "lore": "Le boss définitif : armure dragon (ignore <100 dmg), rage finale (-25% PV → +80% atk). Ne peut être vaincu qu'en raid massif."
+    "lore": "Élément Lumière (faible à ténèbre). Le boss définitif : armure dragon (ignore <100 dmg), renvoie 20% des coups, régénère 2000 PV/tour, invoque des drakelings, phase à 50% PV, rage finale à 25% PV (+80% atk). Raid massif obligatoire."
   }
 ]

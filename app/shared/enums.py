@@ -142,3 +142,60 @@ class ItemRarity(str, Enum):
 
 class CooldownAction(StrEnum):
     DAILY = "daily"
+
+
+class Element(StrEnum):
+    """Éléments du jeu (système élémentaire V1).
+
+    Mono-élément en V1 (un boss/joueur attaque avec un seul élément à la fois) ;
+    le double/triple élément (rare) est prévu plus tard sans changer cet enum.
+
+    Tiers de complexité (purement informatif, pour le contenu) :
+    - basiques : eau / feu / plante
+    - intermédiaires : glace / vent / terre
+    - avancés : tenebre / lumiere
+    """
+
+    EAU = "eau"
+    FEU = "feu"
+    PLANTE = "plante"
+    GLACE = "glace"
+    VENT = "vent"
+    TERRE = "terre"
+    TENEBRE = "tenebre"
+    LUMIERE = "lumiere"
+
+
+# Ordre canonique d'affichage (basiques → intermédiaires → avancés).
+ALL_ELEMENTS: list[Element] = [
+    Element.EAU,
+    Element.FEU,
+    Element.PLANTE,
+    Element.GLACE,
+    Element.VENT,
+    Element.TERRE,
+    Element.TENEBRE,
+    Element.LUMIERE,
+]
+
+ELEMENT_EMOJIS: dict[str, str] = {
+    Element.EAU.value:     "💧",
+    Element.FEU.value:     "🔥",
+    Element.PLANTE.value:  "🌿",
+    Element.GLACE.value:   "❄️",
+    Element.VENT.value:    "🌪️",
+    Element.TERRE.value:   "🪨",
+    Element.TENEBRE.value: "🌑",
+    Element.LUMIERE.value: "☀️",
+}
+
+ELEMENT_LABELS: dict[str, str] = {
+    Element.EAU.value:     "Eau",
+    Element.FEU.value:     "Feu",
+    Element.PLANTE.value:  "Plante",
+    Element.GLACE.value:   "Glace",
+    Element.VENT.value:    "Vent",
+    Element.TERRE.value:   "Terre",
+    Element.TENEBRE.value: "Ténèbre",
+    Element.LUMIERE.value: "Lumière",
+}

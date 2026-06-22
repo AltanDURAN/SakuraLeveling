@@ -70,8 +70,25 @@ Ordre de lecture conseillé avant patch : `pyproject.toml` → `alembic.ini` →
   - **Aucune stat au level-up** : `StatsService` base CONSTANTE (100 PV / 10 ATK / 5 DEF). Le niveau ne donne qu'**1 point de compétence**. Toute la croissance vient de l'**arbre** + gear/classe/titres.
   - **Arbre = moteur de stats** : nœuds **plats** (`atk_flat`/`def_flat`/`hp_max_flat`) = moteur infini non plafonné ; nœuds **%** plafonnés dans `aggregate_bonuses` (atk/def/hp ≤ +200%, gold/xp ≤ +100%, drop ×2). 3 branches (Attaque/Défense/Utilitaire), chaîne stricte, anneaux 5 simples + 1 spécial. Généré par `scripts/generate_skill_tree.py` (extensible en ajoutant des anneaux).
   - **Mobs** : stats relatives au joueur de référence (`scripts/restat_mobs.py`) — DEF mob ≈ 45% ATK joueur, PV ≈ 11× ATK joueur (~20 coups), XP/kill = 6.25·L, or/kill = 3·L. Archétypes standard/brute/blindé/rapide.
-  - **Courbe d'XP** : `XP_pour_next = 50·L^1.5` → kills/niveau `= 8·√L` (~3-4 mois solo pour le niveau 100). Géré par `ProgressionService`.
+  - **Courbe d'XP** : `XP_pour_next = 100·L` (LINÉAIRE) → **kills/niveau ≈ 16 CONSTANT**. Géré par `ProgressionService`. **VOULU** (règle « 2 axes sur 3 montent » : la difficulté des mobs ET l'XP requise par niveau montent, mais le NOMBRE de kills/niveau reste ~constant). ⚠️ Ne PAS « corriger » vers `50·L^1.5` — c'est l'ancienne doc qui était fausse.
   - **À faire plus tard** : gear tiéré sur les 27 paliers + coûts craft/forge en or (le craft est aujourd'hui un sink de MATÉRIAUX uniquement, pas d'or).
+
+- **V2.1 — Système élémentaire & compétences** (juin 2026) :
+  - **8 éléments** (`Element` dans `enums.py`) : eau/feu/plante (basiques), glace/vent/terre (intermédiaires, **2ᵉ cycle plus fort VOULU** — affinité plus dure à monter), tenebre/lumiere (avancés). Graphe de forces dans [`element_service.py`](app/domain/services/element_service.py) ; **asymétrie assumée** (ne pas « rééquilibrer »).
+  - **Affinités joueur** : table `player_element_affinities` (0-100 par élément, tirées aléatoirement à la création). Visibles dans `/profil`. Montée d'affinité + item d'affinité = à faire plus tard.
+  - **Avantage élémentaire** : `damage_multiplier` borné **±30%** (`DEFAULT_MAGNITUDE`), piloté par les affinités attaquant/cible. Mobs ET boss ont un `element` (mono-élément V1, `""`=neutre), éditable via `/admin`.
+  - **Compétences élémentaires** : 24 (8 éléments × offensive/défensive/support), [`element_skills.json`](app/infrastructure/content/element_skills.json) + loader. **2 slots libres** par joueur (`players.skill_slot_1/2`). Effets en **% de STATS** (jamais % de PV) : offensive=%ATK infligés · défensive=**bouclier** %DEF · support=soin de l'allié au PV le plus bas (%ATK), spéciale=**bouclier d'équipe** %DEF. Par tour : **basique chaque tour, spéciale 10% qui REMPLACE** (jamais cumulées). Résolu par `SkillEffectService.roll_effect` dans `PartyCombatService`.
+  - **Élément d'attaque du joueur** = élément de sa compétence **offensive** équipée (`offensive_element`). **`active_element` a été SUPPRIMÉ** (source de vérité unique).
+  - **Contribution « soin »** en combat = soins + boucliers donnés aux **alliés** uniquement (jamais sur soi).
+  - **Câblage** : actif dans le **combat de world boss** (`PartyCombatService` reçoit `elemental_mult_by_player` / `skill_loadouts_by_player`). Les encounters/duels restent neutres en V1 (pas de régression de balance).
+  - **Statut** : combat fait & testé. Reste (Lot 6) : récompenses proportionnelles + titres Tueur/MVP, scheduler 21h, UI, restat boss, loot exclusif, commande `/competences` (équiper les 2 skills), affinités sur la bannière PNG.
+
+- **V2.1 — corrections d'audit (juin 2026)** :
+  - **`/gather` RETIRÉ** (métiers à retravailler ; `GatherResourceUseCase` conservé non câblé).
+  - **Pas de combat solo dédié** : `FightMobUseCase` **n'existe pas** — tout le PvE passe par les **encounters de groupe** (jouables seul). L'incrément kills/drops/titres vit dans `EncounterService`.
+  - **Chaîne Alembic réparée** (rejeu de zéro OK). **SQLite WAL + busy_timeout** activés (`session.py`).
+  - **Daily streak** `streak×100` sans cap = **VOULU** (rétention). 
+  - Webapp : **CSRF** (vérif origine), cookies `secure` via `ADMIN_COOKIE_SECURE`, Alpine/htmx **auto-hébergés**, caches loaders invalidés à chaque écriture de contenu.
 
 ## Workflow Git
 
@@ -89,7 +106,7 @@ git checkout main
 | Commande | Cog | Rôle |
 |---|---|---|
 | `/profile [target]`, `/equipement [target]`, `/equipement_list [target]`, `/inventory [target]`, `/class [target]`, `/gold [target]` | `player_cog` | Consultatives — `target` optionnel : par défaut soi-même, sinon profil d'un autre joueur |
-| `/equip`, `/unequip <slot>`, `/class_set`, `/classes`, `/daily`, `/gather`, `/craft`, `/craft_list`, `/forge`, `/forge_list` | `player_cog` | Actions sur soi ou listes globales (`/daily` reset à minuit UTC) |
+| `/equip`, `/unequip <slot>`, `/class_set`, `/classes`, `/daily`, `/craft`, `/craft_list`, `/forge`, `/forge_list` | `player_cog` | Actions sur soi ou listes globales (`/daily` reset à minuit UTC). `/gather` RETIRÉ (métiers à retravailler). |
 | `/fight @target` | `player_cog` | Duel 1v1 PvP entre joueurs (rien à gagner ni à perdre, juste pour le ladder) |
 | (boucle automatique) | `encounter_cog` | Spawn d'encounters, recrutement, combat de groupe |
 | `/top <category>` | `leaderboard_cog` | Classements (puissance, niveau, or, stats, kills total/mob/famille, duels 1v1) avec autocomplete |
@@ -114,7 +131,7 @@ git checkout main
 | `/craft_panoplie <nom>`, `/forge_panoplie <nom>` | `player_cog` | Bulk-craft des pièces de panoplie manquantes (filtré par station forge/craft). Preview avec ingrédients utilisés + boutons Confirmer/Annuler. Liste les manquants si ressources insuffisantes. |
 | `/create_set <nom>`, `/delete_set <nom>`, `/equip_set <nom>` | `player_cog` | Loadouts personnels : sauvegarde l'équipement actuel sous un nom libre, supprime, ou rappelle un set. Tables `player_equipment_sets` + `player_equipment_set_items`. Refuse à l'equip si une pièce du set n'est plus possédée. |
 | `/unequip <slot\|all>` | `player_cog` | `slot=all` retire tout l'équipement d'un coup. |
-| `/weekly`, `/weekly_claim <code>` | `weekly_quest_cog` | 3 quêtes hebdo random tirées le lundi UTC |
+| `/weekly_quest` (claim par bouton) | `weekly_quest_cog` | 3 quêtes hebdo random tirées le lundi UTC. (`/daily_quest` : quêtes quotidiennes.) |
 | `/brocante list/my/sell/buy/cancel` | `brocante_cog` | Marketplace P2P avec commission shop (5%) |
 | `/boss spawn <boss_code>`, `/boss list`, `/boss stop` | `world_boss_cog` | Spawn manuel admin / catalogue + auto-spawn hebdo. `stop` arrête le boss actif sans distribuer de récompenses (cleanup/debug). |
 

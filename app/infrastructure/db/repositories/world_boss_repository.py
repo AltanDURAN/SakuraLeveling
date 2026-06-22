@@ -66,6 +66,7 @@ class WorldBossRepository:
         crit_damage: int = 100,
         dodge: int = 0,
         hp_regeneration: int = 0,
+        element: str = "",
     ) -> WorldBoss:
         now = datetime.now(UTC)
         model = WorldBossModel(
@@ -81,6 +82,7 @@ class WorldBossRepository:
             crit_damage=crit_damage,
             dodge=dodge,
             hp_regeneration=hp_regeneration,
+            element=element,
             status=WorldBossStatus.ACTIVE.value,
             spawned_at=now,
         )
@@ -112,6 +114,32 @@ class WorldBossRepository:
             return
         model.channel_message_id = message_id
         self.session.commit()
+
+    def set_element(self, boss_id: int, element: str) -> None:
+        """Change l'élément du boss (admin, à chaud)."""
+        model = self.session.get(WorldBossModel, boss_id)
+        if model is None:
+            return
+        model.element = element or ""
+        self.session.commit()
+
+    def set_current_hp(self, boss_id: int, current_hp: int) -> int:
+        """Définit les PV courants du boss (admin). Borné [0, max_hp]."""
+        model = self.session.get(WorldBossModel, boss_id)
+        if model is None:
+            return 0
+        model.current_hp = max(0, min(current_hp, model.max_hp))
+        self.session.commit()
+        return model.current_hp
+
+    def heal(self, boss_id: int, amount: int) -> int:
+        """Régénère des PV au boss (auto-soin en combat / admin). Borné max_hp."""
+        model = self.session.get(WorldBossModel, boss_id)
+        if model is None:
+            return 0
+        model.current_hp = min(model.max_hp, model.current_hp + max(0, amount))
+        self.session.commit()
+        return model.current_hp
 
     # ---------- participations ----------
 
@@ -291,6 +319,7 @@ class WorldBossRepository:
             spawned_at=model.spawned_at,
             defeated_at=model.defeated_at,
             channel_message_id=model.channel_message_id,
+            element=model.element or "",
         )
 
     def _participation_to_domain(

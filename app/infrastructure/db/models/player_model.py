@@ -15,6 +15,11 @@ class PlayerModel(Base):
     username: Mapped[str] = mapped_column(String(100))
     display_name: Mapped[str] = mapped_column(String(100))
 
+    # 2 emplacements de compétence élémentaire (codes '<element>_<role>').
+    # Slots libres ; NULL = vide.
+    skill_slot_1: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    skill_slot_2: Mapped[str | None] = mapped_column(String(40), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
     last_seen_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))

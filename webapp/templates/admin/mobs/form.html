@@ -36,6 +36,16 @@
                 {% endif %}
                 {{ field('name', 'Nom', fd.get('name', mob.name if mob else ''), errors, placeholder='Gobelin guerrier') }}
                 {{ field('family', 'Famille', fd.get('family', mob.family if mob else 'unknown'), errors, placeholder='gobelin / slime / …') }}
+                <label class="field">
+                    <span class="field-label">Élément</span>
+                    {% set cur_el = fd.get('element', mob.element if mob else '') %}
+                    <select name="element" class="input">
+                        <option value="" {% if not cur_el %}selected{% endif %}>— neutre —</option>
+                        {% for el in ['eau','feu','plante','glace','vent','terre','tenebre','lumiere'] %}
+                            <option value="{{ el }}" {% if cur_el == el %}selected{% endif %}>{{ el }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
             </div>
             <label class="field">
                 <span class="field-label">Description</span>

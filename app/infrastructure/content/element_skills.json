@@ -1,0 +1,36 @@
+{
+  "_comment": "Compétences élémentaires V1. 8 éléments × 3 rôles = 24. Code '<element>_<role>'. Effets en % de STATS (jamais % de PV). Au tour par tour : la BASIQUE s'applique chaque tour ; à 10% (proc_chance) la SPÉCIALE la REMPLACE ce tour (jamais les deux). kinds : damage = inflige value×ATK ; shield_self = bouclier value×DEF sur soi ; heal_ally = soigne l'allié au PV le plus bas de value×ATK ; shield_team = bouclier value×DEF sur TOUTE l'équipe.",
+  "skills": {
+    "feu_offensive":     { "element": "feu",     "role": "offensive", "emoji": "🔥", "basic": { "name": "Frappe Ardente",     "kind": "damage",      "value": 1.0 }, "special": { "name": "Embrasement Infernal", "kind": "damage",      "value": 1.5, "proc_chance": 0.1 } },
+    "feu_defensive":     { "element": "feu",     "role": "defensive", "emoji": "🔥", "basic": { "name": "Égide de Braise",     "kind": "shield_self", "value": 1.0 }, "special": { "name": "Rempart Incandescent", "kind": "shield_self", "value": 1.5, "proc_chance": 0.1 } },
+    "feu_support":       { "element": "feu",     "role": "support",   "emoji": "🔥", "basic": { "name": "Souffle Ardent",      "kind": "heal_ally",   "value": 1.0 }, "special": { "name": "Renaissance des Cendres", "kind": "shield_team", "value": 1.0, "proc_chance": 0.1 } },
+
+    "eau_offensive":     { "element": "eau",     "role": "offensive", "emoji": "💧", "basic": { "name": "Frappe Aqueuse",     "kind": "damage",      "value": 1.0 }, "special": { "name": "Déferlante Abyssale", "kind": "damage",      "value": 1.5, "proc_chance": 0.1 } },
+    "eau_defensive":     { "element": "eau",     "role": "defensive", "emoji": "💧", "basic": { "name": "Égide d'Écume",      "kind": "shield_self", "value": 1.0 }, "special": { "name": "Rempart des Marées", "kind": "shield_self", "value": 1.5, "proc_chance": 0.1 } },
+    "eau_support":       { "element": "eau",     "role": "support",   "emoji": "💧", "basic": { "name": "Souffle d'Onde",     "kind": "heal_ally",   "value": 1.0 }, "special": { "name": "Bénédiction des Sources", "kind": "shield_team", "value": 1.0, "proc_chance": 0.1 } },
+
+    "plante_offensive":  { "element": "plante",  "role": "offensive", "emoji": "🌿", "basic": { "name": "Frappe Sylvestre",   "kind": "damage",      "value": 1.0 }, "special": { "name": "Floraison Mortelle", "kind": "damage",      "value": 1.5, "proc_chance": 0.1 } },
+    "plante_defensive":  { "element": "plante",  "role": "defensive", "emoji": "🌿", "basic": { "name": "Égide de Ronces",    "kind": "shield_self", "value": 1.0 }, "special": { "name": "Rempart Sylvestre", "kind": "shield_self", "value": 1.5, "proc_chance": 0.1 } },
+    "plante_support":    { "element": "plante",  "role": "support",   "emoji": "🌿", "basic": { "name": "Souffle Sylvestre",  "kind": "heal_ally",   "value": 1.0 }, "special": { "name": "Floraison Vivace", "kind": "shield_team", "value": 1.0, "proc_chance": 0.1 } },
+
+    "glace_offensive":   { "element": "glace",   "role": "offensive", "emoji": "❄️", "basic": { "name": "Frappe Glaciale",    "kind": "damage",      "value": 1.0 }, "special": { "name": "Blizzard Éternel", "kind": "damage",      "value": 1.5, "proc_chance": 0.1 } },
+    "glace_defensive":   { "element": "glace",   "role": "defensive", "emoji": "❄️", "basic": { "name": "Égide de Givre",     "kind": "shield_self", "value": 1.0 }, "special": { "name": "Rempart Glaciaire", "kind": "shield_self", "value": 1.5, "proc_chance": 0.1 } },
+    "glace_support":     { "element": "glace",   "role": "support",   "emoji": "❄️", "basic": { "name": "Souffle Glacé",      "kind": "heal_ally",   "value": 1.0 }, "special": { "name": "Communion des Neiges", "kind": "shield_team", "value": 1.0, "proc_chance": 0.1 } },
+
+    "vent_offensive":    { "element": "vent",    "role": "offensive", "emoji": "🌪️", "basic": { "name": "Frappe Éolienne",    "kind": "damage",      "value": 1.0 }, "special": { "name": "Ouragan Déchaîné", "kind": "damage",      "value": 1.5, "proc_chance": 0.1 } },
+    "vent_defensive":    { "element": "vent",    "role": "defensive", "emoji": "🌪️", "basic": { "name": "Égide des Bourrasques", "kind": "shield_self", "value": 1.0 }, "special": { "name": "Rempart des Cieux", "kind": "shield_self", "value": 1.5, "proc_chance": 0.1 } },
+    "vent_support":      { "element": "vent",    "role": "support",   "emoji": "🌪️", "basic": { "name": "Souffle Zéphyr",     "kind": "heal_ally",   "value": 1.0 }, "special": { "name": "Bénédiction des Vents", "kind": "shield_team", "value": 1.0, "proc_chance": 0.1 } },
+
+    "terre_offensive":   { "element": "terre",   "role": "offensive", "emoji": "🪨", "basic": { "name": "Frappe Tellurique",  "kind": "damage",      "value": 1.0 }, "special": { "name": "Séisme Titanesque", "kind": "damage",      "value": 1.5, "proc_chance": 0.1 } },
+    "terre_defensive":   { "element": "terre",   "role": "defensive", "emoji": "🪨", "basic": { "name": "Égide de Roche",     "kind": "shield_self", "value": 1.0 }, "special": { "name": "Rempart Tellurique", "kind": "shield_self", "value": 1.5, "proc_chance": 0.1 } },
+    "terre_support":     { "element": "terre",   "role": "support",   "emoji": "🪨", "basic": { "name": "Souffle Tellurique", "kind": "heal_ally",   "value": 1.0 }, "special": { "name": "Communion de Gaïa", "kind": "shield_team", "value": 1.0, "proc_chance": 0.1 } },
+
+    "tenebre_offensive": { "element": "tenebre", "role": "offensive", "emoji": "🌑", "basic": { "name": "Frappe Sombre",      "kind": "damage",      "value": 1.0 }, "special": { "name": "Éclipse Maudite", "kind": "damage",      "value": 1.5, "proc_chance": 0.1 } },
+    "tenebre_defensive": { "element": "tenebre", "role": "defensive", "emoji": "🌑", "basic": { "name": "Égide d'Ombre",      "kind": "shield_self", "value": 1.0 }, "special": { "name": "Rempart des Abysses", "kind": "shield_self", "value": 1.5, "proc_chance": 0.1 } },
+    "tenebre_support":   { "element": "tenebre", "role": "support",   "emoji": "🌑", "basic": { "name": "Souffle Nocturne",   "kind": "heal_ally",   "value": 1.0 }, "special": { "name": "Pacte des Ombres", "kind": "shield_team", "value": 1.0, "proc_chance": 0.1 } },
+
+    "lumiere_offensive": { "element": "lumiere", "role": "offensive", "emoji": "☀️", "basic": { "name": "Frappe Radieuse",    "kind": "damage",      "value": 1.0 }, "special": { "name": "Jugement Céleste", "kind": "damage",      "value": 1.5, "proc_chance": 0.1 } },
+    "lumiere_defensive": { "element": "lumiere", "role": "defensive", "emoji": "☀️", "basic": { "name": "Égide de Lumière",   "kind": "shield_self", "value": 1.0 }, "special": { "name": "Rempart Sacré", "kind": "shield_self", "value": 1.5, "proc_chance": 0.1 } },
+    "lumiere_support":   { "element": "lumiere", "role": "support",   "emoji": "☀️", "basic": { "name": "Souffle Radieux",    "kind": "heal_ally",   "value": 1.0 }, "special": { "name": "Bénédiction Céleste", "kind": "shield_team", "value": 1.0, "proc_chance": 0.1 } }
+  }
+}

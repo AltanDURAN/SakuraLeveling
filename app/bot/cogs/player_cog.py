@@ -13,7 +13,6 @@ from app.application.use_cases.transfer_gold import TransferGoldUseCase
 from app.application.use_cases.claim_daily_reward import ClaimDailyRewardUseCase
 from app.application.use_cases.challenge_player import ChallengePlayerUseCase
 from app.application.use_cases.craft_item import CraftItemUseCase
-from app.application.use_cases.gather_resource import GatherResourceUseCase
 from app.application.use_cases.use_consumable import UseConsumableUseCase
 from app.application.use_cases.get_available_classes import GetAvailableClassesUseCase
 from app.application.use_cases.get_player_equipment import GetPlayerEquipmentUseCase
@@ -38,7 +37,6 @@ from app.domain.services.class_service import ClassService
 from app.domain.services.cooldown_service import CooldownService
 from app.domain.services.craft_service import CraftService
 from app.domain.services.duel_combat_service import DuelCombatService
-from app.domain.services.profession_service import ProfessionService
 from app.domain.services.stats_service import StatsService
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.class_repository import ClassRepository
@@ -207,20 +205,16 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 if title_def is not None:
                     active_title_name = f"{title_def.icon} {title_def.name}"
 
-        embed = build_player_profile_embed(
-            profile=profile,
-            stats=stats,
-            active_class=active_class,
-            current_hp=regenerated_current_hp,
-            power_score=formatted_power_score,
-            rank_label=rank_label,
-            total_kills=total_kills,
-            career_stats=career_stats,
-            duel_rank_position=duel_rank.rank_position if duel_rank else None,
-            duel_wins=duel_rank.wins if duel_rank else 0,
-            duel_losses=duel_rank.losses if duel_rank else 0,
-            active_title=active_title_name,
-        )
+            from app.infrastructure.db.repositories.element_affinity_repository import (
+                ElementAffinityRepository,
+            )
+            affinities = ElementAffinityRepository(session).get_affinities(
+                profile.player.id
+            )
+
+        # NB : l'embed texte de fallback n'est construit QUE dans le except
+        # (cf. plus bas) — inutile de le calculer à chaque appel sur le chemin
+        # nominal (bannière image).
 
         # Bannière Pillow CONTIENT TOUT le profil — l'embed n'est qu'un
         # conteneur minimaliste pour l'image (pas de duplication des
@@ -310,7 +304,23 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 _e, exc_info=True,
             )
 
-        # Fallback : ancien embed plein de fields si la bannière échoue.
+        # Fallback : embed texte plein de fields (construit uniquement ici,
+        # quand la bannière échoue — pas à chaque /profil).
+        embed = build_player_profile_embed(
+            profile=profile,
+            stats=stats,
+            active_class=active_class,
+            current_hp=regenerated_current_hp,
+            power_score=formatted_power_score,
+            rank_label=rank_label,
+            total_kills=total_kills,
+            career_stats=career_stats,
+            duel_rank_position=duel_rank.rank_position if duel_rank else None,
+            duel_wins=duel_rank.wins if duel_rank else 0,
+            duel_losses=duel_rank.losses if duel_rank else 0,
+            active_title=active_title_name,
+            affinities=affinities,
+        )
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="inventory", description="Afficher un inventaire")
@@ -363,7 +373,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 set_bonuses=set_bonuses,
                 timeout=600.0,
             )
-            embed, file = view.render_current_page()
+            embed, file = await asyncio.to_thread(view.render_current_page)
             await interaction.followup.send(embed=embed, file=file, view=view)
         except Exception as _e:
             # Fallback historique : embed texte 2 pages si Pillow plante
@@ -411,7 +421,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             items=items,
             equipped=equipped,
         )
-        embed, file, _, _ = view.render_current()
+        embed, file, _, _ = await asyncio.to_thread(view.render_current)
         await interaction.followup.send(embed=embed, file=file, view=view)
 
     @app_commands.command(name="equip", description="Équiper un item depuis votre inventaire")
@@ -427,6 +437,10 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             compute_stats_diff,
         )
         from app.domain.entities.player_equipment_item import PlayerEquipmentItem
+
+        # defer() AVANT le travail lourd (jusqu'à 2 calculs de stats complets) :
+        # évite "Unknown interaction" si la DB est chargée.
+        await interaction.response.defer()
 
         with get_db_session() as session:
             profile = PlayerRepository(session).get_or_create_by_discord_id(
@@ -445,13 +459,13 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 None,
             )
             if matched is None:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"❌ L'item `{item_code}` n'est pas dans votre inventaire.",
                     ephemeral=True,
                 )
                 return
             if not matched.item_definition.is_equipable:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"❌ **{matched.item_definition.name}** n'est pas équipable.",
                     ephemeral=True,
                 )
@@ -508,14 +522,14 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                     item_code=item_code,
                 )
                 if not result.success:
-                    await interaction.response.send_message(
+                    await interaction.followup.send(
                         result.message, ephemeral=True
                     )
                     return
                 msg = result.message
                 if result.unequipped_items:
                     msg += f"\n_Déséquipé : {', '.join(result.unequipped_items)}._"
-                await interaction.response.send_message(msg)
+                await interaction.followup.send(msg)
                 return
 
             # Sinon : un autre item est déjà dans le slot → calcule diff
@@ -570,7 +584,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             display_name=interaction.user.display_name,
             item_code=item_code,
         )
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+        await interaction.followup.send(embed=embed, view=view, ephemeral=True)
 
     @equip.autocomplete("item_code")
     async def equip_item_code_autocomplete(
@@ -1193,7 +1207,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             color=color,
             viewer_id=interaction.user.id,
         )
-        embed, file = view.render_current()
+        embed, file = await asyncio.to_thread(view.render_current)
         await interaction.followup.send(embed=embed, file=file, view=view)
 
     @app_commands.command(name="craft", description="Fabriquer un objet (équipement / accessoire)")
@@ -1615,26 +1629,8 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @app_commands.command(name="gather", description="Récolter des ressources")
-    @app_commands.describe(profession_code="Code du métier")
-    async def gather(self, interaction: discord.Interaction, profession_code: str):
-        with get_db_session() as session:
-            use_case = GatherResourceUseCase(
-                player_repository=PlayerRepository(session),
-                profession_repository=ProfessionRepository(session),
-                inventory_repository=InventoryRepository(session),
-                item_repository=ItemRepository(session),
-                profession_service=ProfessionService(),
-            )
-
-            success, message = use_case.execute(
-                interaction.user.id,
-                interaction.user.name,
-                interaction.user.display_name,
-                profession_code,
-            )
-
-        await interaction.response.send_message(message, ephemeral=not success)
+    # NOTE : /gather retiré (juin 2026). Le système de métiers sera retravaillé
+    # sérieusement plus tard (GatherResourceUseCase conservé mais non câblé).
 
     @app_commands.command(name="classes", description="Afficher les classes disponibles et leur état")
     async def classes(self, interaction: discord.Interaction) -> None:

@@ -26,7 +26,6 @@ from discord.ext import commands, tasks
 
 from app.application.use_cases.world_boss import (
     CompleteWorldBossUseCase,
-    FightWorldBossUseCase,
     JoinWorldBossUseCase,
     LaunchPartyFightWorldBossUseCase,
     LeaveWorldBossUseCase,

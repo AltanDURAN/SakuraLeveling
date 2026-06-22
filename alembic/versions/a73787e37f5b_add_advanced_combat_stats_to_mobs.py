@@ -19,22 +19,11 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "mob_definitions",
-        sa.Column("crit_chance", sa.Integer(), nullable=False, server_default="0"),
-    )
-    op.add_column(
-        "mob_definitions",
-        sa.Column("crit_damage", sa.Integer(), nullable=False, server_default="100"),
-    )
-    op.add_column(
-        "mob_definitions",
-        sa.Column("dodge", sa.Integer(), nullable=False, server_default="0"),
-    )
-    op.add_column(
-        "mob_definitions",
-        sa.Column("hp_regeneration", sa.Integer(), nullable=False, server_default="0"),
-    )
+    # NO-OP (correctif chaîne) : les 4 colonnes crit_chance/crit_damage/dodge/
+    # hp_regeneration sont DÉJÀ ajoutées par la révision parente 2e86f71a0e24.
+    # Cette migration (même nom, autogénérée en double) les ré-ajoutait →
+    # `duplicate column name` lors d'un `upgrade head` depuis une base vide.
+    pass
 
 
 def downgrade() -> None:

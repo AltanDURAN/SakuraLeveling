@@ -42,6 +42,7 @@ def _load() -> list[BossDefinition]:
             crit_chance=int(item.get("crit_chance", 0)),
             crit_damage=int(item.get("crit_damage", 100)),
             dodge=int(item.get("dodge", 0)),
+            element=item.get("element", "") or "",
             modifiers=item.get("modifiers", {}) or {},
             lore=item.get("lore", ""),
         )

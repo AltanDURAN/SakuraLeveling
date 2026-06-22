@@ -7,10 +7,14 @@ venv/
 alembic/versions/__pycache__/
 lita_v2.db
 *.db
+# Fichiers annexes du mode WAL (SQLite) — ne pas committer.
+*.db-wal
+*.db-shm
 *.egg-info/
 assets/generated_encounters/
 assets/generated_profiles/
 assets/generated_equipment/
+assets/generated_lists/
 players_banner.png
 *.bak
 

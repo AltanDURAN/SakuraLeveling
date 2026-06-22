@@ -13,6 +13,7 @@ from app.infrastructure.db.models.inventory_model import PlayerInventoryItemMode
 from app.infrastructure.db.models.player_career_stats_model import PlayerCareerStatsModel
 from app.infrastructure.db.models.player_class_state_model import PlayerClassStateModel
 from app.infrastructure.db.models.player_duel_rank_model import PlayerDuelRankModel
+from app.infrastructure.db.models.element_affinity_model import PlayerElementAffinityModel
 from app.infrastructure.db.models.player_health_state_model import PlayerHealthStateModel
 from app.infrastructure.db.models.player_mob_kill_model import PlayerMobKillModel
 from app.infrastructure.db.models.player_skill_allocation_model import (
@@ -56,6 +57,15 @@ class ResetPlayerUseCase:
             resources.daily_streak = 0
             resources.updated_at = now
 
+        # Élément actif : remis à NULL → re-résolu sur les nouvelles affinités
+        # (réinitialisées au prochain accès via le backfill paresseux).
+        from app.infrastructure.db.models.player_model import PlayerModel
+        player_model = session.get(PlayerModel, player_id)
+        if player_model is not None:
+            player_model.skill_slot_1 = None
+            player_model.skill_slot_2 = None
+            player_model.updated_at = now
+
         # Sets d'équipement : DELETE en cascade via FK on the model side.
         # On commence par récupérer les ids puis on supprime les set_items
         # liés. ondelete=CASCADE le ferait au niveau DB mais SQLite peut
@@ -83,6 +93,7 @@ class ResetPlayerUseCase:
             PlayerCareerStatsModel,
             PlayerSkillAllocationModel,
             PlayerDuelRankModel,
+            PlayerElementAffinityModel,
             WorldBossParticipationModel,
             PlayerTitleModel,
             WeeklyQuestAssignmentModel,

@@ -4,7 +4,6 @@ Couvre :
     - SpawnWorldBossUseCase (refus si actif, mob introuvable, succès)
     - JoinWorldBossUseCase (auto-create profile, idempotence)
     - LeaveWorldBossUseCase (refus si déjà combattu)
-    - FightWorldBossUseCase (cooldown, calcul des métriques, défaite)
     - CompleteWorldBossUseCase (récompenses top-X + base)
 """
 
@@ -17,13 +16,11 @@ from sqlalchemy.orm import sessionmaker
 
 from app.application.use_cases.world_boss import (
     CompleteWorldBossUseCase,
-    FightWorldBossUseCase,
     JoinWorldBossUseCase,
     LeaveWorldBossUseCase,
     SpawnRandomWorldBossUseCase,
     SpawnWorldBossUseCase,
 )
-from app.domain.services.combat_service import CombatService
 from app.domain.services.cooldown_service import CooldownService
 from app.domain.services.stats_service import StatsService
 from app.domain.services.world_boss_scaling_service import WorldBossScalingService
@@ -185,77 +182,9 @@ def test_leave_refused_if_already_fought(session):
     assert "déjà combattu" in result.message
 
 
-def test_fight_refused_without_join(session):
-    _seed_mob(session)
-    SpawnWorldBossUseCase(
-        WorldBossRepository(session),
-    ).execute(boss_code="slime_titan")
-
-    fight = _build_fight_use_case(session)
-    result = fight.execute(discord_id=1, username="alice", display_name="Alice")
-    assert result.success is False
-    assert "rejoindre" in result.message
-
-
-def test_fight_records_metrics_and_persists_boss_hp(session):
-    random.seed(0)
-    _seed_mob(session)
-    SpawnWorldBossUseCase(
-        WorldBossRepository(session),
-    ).execute(boss_code="slime_titan")
-
-    JoinWorldBossUseCase(
-        WorldBossRepository(session), PlayerRepository(session)
-    ).execute(discord_id=1, username="alice", display_name="Alice")
-
-    fight = _build_fight_use_case(session)
-    result = fight.execute(discord_id=1, username="alice", display_name="Alice")
-
-    assert result.success is True
-    assert result.battle_result is not None
-    # Note : slime_titan a damage_immunity_threshold=5. Un joueur level 1 fait
-    # ~1-2 dmg, donc ses coups peuvent être filtrés (boss garde ses HP).
-    # On vérifie juste que le combat a tourné et que la session est cohérente.
-
-
-def test_fight_damage_immunity_threshold_blocks_weak_hits(session):
-    """Slime titan a immunité < 5 : un joueur level 1 ne lui inflige aucun dmg."""
-    random.seed(0)
-    SpawnWorldBossUseCase(
-        WorldBossRepository(session),
-    ).execute(boss_code="slime_titan")
-
-    JoinWorldBossUseCase(
-        WorldBossRepository(session), PlayerRepository(session)
-    ).execute(discord_id=1, username="alice", display_name="Alice")
-
-    fight = _build_fight_use_case(session)
-    result = fight.execute(discord_id=1, username="alice", display_name="Alice")
-
-    boss = WorldBossRepository(session).get_active()
-    # Joueur level 1 vs immunité 5 : très probablement 0 dmg appliqué
-    # (le filtre transforme un raw_damage faible en 0)
-    if boss is not None:
-        assert boss.current_hp == 50000  # boss intouché par les coups faibles
-
-
-def test_fight_cooldown_blocks_second_call(session):
-    random.seed(0)
-    _seed_mob(session)
-    SpawnWorldBossUseCase(
-        WorldBossRepository(session),
-    ).execute(boss_code="slime_titan")
-
-    JoinWorldBossUseCase(
-        WorldBossRepository(session), PlayerRepository(session)
-    ).execute(discord_id=1, username="alice", display_name="Alice")
-
-    fight = _build_fight_use_case(session)
-    fight.execute(discord_id=1, username="alice", display_name="Alice")
-    second = fight.execute(discord_id=1, username="alice", display_name="Alice")
-
-    assert second.success is False
-    assert "déjà combattu" in second.message
+# NOTE : les tests du combat SOLO (FightWorldBossUseCase) ont été retirés —
+# le flux solo a été remplacé par le combat collectif
+# (LaunchPartyFightWorldBossUseCase). Couverture combat collectif à ajouter.
 
 
 def test_auto_spawn_refused_when_boss_active(session):
@@ -399,18 +328,3 @@ def test_complete_distributes_rewards_to_top_and_base(session):
 
 
 # ---------- Helpers ----------
-
-
-def _build_fight_use_case(session):
-    return FightWorldBossUseCase(
-        world_boss_repository=WorldBossRepository(session),
-        player_repository=PlayerRepository(session),
-        equipment_repository=EquipmentRepository(session),
-        class_repository=ClassRepository(session),
-        skill_allocation_repository=PlayerSkillAllocationRepository(session),
-        cooldown_repository=CooldownRepository(session),
-        stats_service=StatsService(),
-        scaling_service=WorldBossScalingService(),
-        combat_service=CombatService(),
-        cooldown_service=CooldownService(),
-    )

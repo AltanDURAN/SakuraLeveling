@@ -24,7 +24,8 @@
         "max_quantity": 1
       }
     ],
-    "image_name": "slime.png"
+    "image_name": "slime.png",
+    "element": "eau"
   },
   {
     "code": "gobelin",
@@ -44,7 +45,8 @@
     "gold_reward": 24,
     "spawn_weight": 40,
     "loot_table": [],
-    "image_name": "gobelin.png"
+    "image_name": "gobelin.png",
+    "element": "terre"
   },
   {
     "code": "gobelin_combattant",
@@ -64,7 +66,8 @@
     "gold_reward": 39,
     "spawn_weight": 30,
     "loot_table": [],
-    "image_name": "gobelin_combattant.png"
+    "image_name": "gobelin_combattant.png",
+    "element": "terre"
   },
   {
     "code": "gobelin_chaman",
@@ -84,7 +87,8 @@
     "gold_reward": 69,
     "spawn_weight": 30,
     "loot_table": [],
-    "image_name": "gobelin_chaman.png"
+    "image_name": "gobelin_chaman.png",
+    "element": "tenebre"
   },
   {
     "code": "gobelin_ballon",
@@ -104,7 +108,8 @@
     "gold_reward": 84,
     "spawn_weight": 20,
     "loot_table": [],
-    "image_name": "gobelin_ballon.png"
+    "image_name": "gobelin_ballon.png",
+    "element": "vent"
   },
   {
     "code": "gobelin_geant",
@@ -124,7 +129,8 @@
     "gold_reward": 99,
     "spawn_weight": 20,
     "loot_table": [],
-    "image_name": "gobelin_geant.png"
+    "image_name": "gobelin_geant.png",
+    "element": "terre"
   },
   {
     "code": "gobelin_runique",
@@ -144,7 +150,8 @@
     "gold_reward": 114,
     "spawn_weight": 20,
     "loot_table": [],
-    "image_name": "gobelin_runique.png"
+    "image_name": "gobelin_runique.png",
+    "element": "lumiere"
   },
   {
     "code": "gobelin_superieur",
@@ -171,7 +178,8 @@
         "max_quantity": 1
       }
     ],
-    "image_name": "gobelin_superieur.png"
+    "image_name": "gobelin_superieur.png",
+    "element": "feu"
   },
   {
     "code": "gobelin_assassin",
@@ -198,6 +206,7 @@
         "max_quantity": 1
       }
     ],
-    "image_name": "gobelin_assassin.png"
+    "image_name": "gobelin_assassin.png",
+    "element": "tenebre"
   }
 ]

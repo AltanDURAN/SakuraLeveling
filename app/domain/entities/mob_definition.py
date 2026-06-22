@@ -25,3 +25,5 @@ class MobDefinition:
     loot_table: list[dict] | None
     created_at: datetime
     updated_at: datetime
+    # Élément du mob (mono-élément V1). "" = neutre. Modifiable via /admin.
+    element: str = ""

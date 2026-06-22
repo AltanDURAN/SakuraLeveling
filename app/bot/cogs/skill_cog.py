@@ -1,3 +1,5 @@
+import asyncio
+
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -71,7 +73,7 @@ class SkillCog(BetaChannelOnlyMixin, commands.Cog):
 
         web_url = f"{WEB_BASE_URL}/skill/{state.discord_id}"
         embed = build_skill_tree_embed(state, web_url=web_url)
-        attachment = render_attachment(state, definition)
+        attachment = await asyncio.to_thread(render_attachment, state, definition)
         view = SkillTreeView(
             owner_discord_id=state.discord_id,
             viewer_discord_id=interaction.user.id,

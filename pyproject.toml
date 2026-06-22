@@ -26,6 +26,8 @@ dependencies = [
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+# tests/sandbox = scripts de rendu manuels (pas de test_*), exclus de la collecte.
+addopts = "--ignore=tests/sandbox"
 
 [tool.alembic]
 script_location = "alembic"

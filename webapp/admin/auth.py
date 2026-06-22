@@ -130,8 +130,8 @@ def issue_session_cookie(response: Response, user: AdminUser) -> None:
         token,
         httponly=True,
         samesite="lax",
-        # `secure=True` quand on aura HTTPS. Pour http://IP:port on laisse False.
-        secure=False,
+        # Secure piloté par settings.admin_cookie_secure (True en prod HTTPS).
+        secure=settings.admin_cookie_secure,
         max_age=60 * 60 * 24 * 7,  # 7 jours
     )
 
@@ -146,7 +146,7 @@ def store_oauth_state(response: Response, state: str) -> None:
         state,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=settings.admin_cookie_secure,
         max_age=600,  # 10 min suffisent
     )
 

@@ -44,6 +44,12 @@ def atomic_write_json(filename: str, data: Any) -> None:
         f.write("\n")
     os.replace(tmp, path)
 
+    # Invalide les caches des loaders → la webapp reflète l'édition tout de
+    # suite (le bot, process séparé, reste à redémarrer). Import paresseux
+    # pour éviter tout cycle au boot.
+    from webapp.admin.cache_invalidation import invalidate_content_caches
+    invalidate_content_caches()
+
 
 def append_to_list(filename: str, entry: dict) -> None:
     """Pour les JSON qui sont des listes (classes.json, titles.json, etc)."""
