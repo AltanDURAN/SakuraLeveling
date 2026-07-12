@@ -69,10 +69,14 @@ def get_spawn_channel_for_family(family: str | None) -> int:
 
 def get_background_for_family(family: str | None) -> str:
     """Nom du décor (dans assets/landscapes/) pour la famille. Décor par défaut
-    si la zone n'est pas encore configurée (channel_id=0)."""
+    si la zone n'est pas configurée (channel_id=0) OU si l'image du décor n'existe
+    pas encore (anti-crash : on retombe sur le décor par défaut jusqu'à l'ajout)."""
     z = _zone(family)
     if z and int(z.get("channel_id", 0) or 0):
-        return z.get("background") or default_background()
+        bg = z.get("background") or default_background()
+        from app.shared.paths import LANDSCAPES_ASSETS_DIR
+        if (LANDSCAPES_ASSETS_DIR / bg).exists():
+            return bg
     return default_background()
 
 

@@ -226,7 +226,7 @@
     "speed": 5,
     "xp_reward": 237,
     "gold_reward": 114,
-    "spawn_weight": 0,
+    "spawn_weight": 25,
     "loot_table": null,
     "image_name": "squelette.png"
   },
@@ -247,7 +247,7 @@
     "speed": 5,
     "xp_reward": 273,
     "gold_reward": 131,
-    "spawn_weight": 0,
+    "spawn_weight": 20,
     "loot_table": null,
     "image_name": "zombie.png"
   },
@@ -268,7 +268,7 @@
     "speed": 9,
     "xp_reward": 393,
     "gold_reward": 189,
-    "spawn_weight": 0,
+    "spawn_weight": 15,
     "loot_table": null,
     "image_name": "fantome.png"
   },
@@ -289,7 +289,7 @@
     "speed": 5,
     "xp_reward": 399,
     "gold_reward": 191,
-    "spawn_weight": 0,
+    "spawn_weight": 10,
     "loot_table": null,
     "image_name": "momie.png"
   },
@@ -310,7 +310,7 @@
     "speed": 5,
     "xp_reward": 456,
     "gold_reward": 219,
-    "spawn_weight": 0,
+    "spawn_weight": 7,
     "loot_table": null,
     "image_name": "gargouille.png"
   },
@@ -331,7 +331,7 @@
     "speed": 5,
     "xp_reward": 541,
     "gold_reward": 260,
-    "spawn_weight": 0,
+    "spawn_weight": 4,
     "loot_table": null,
     "image_name": "liche_maudite.png"
   },
@@ -352,7 +352,7 @@
     "speed": 9,
     "xp_reward": 733,
     "gold_reward": 352,
-    "spawn_weight": 0,
+    "spawn_weight": 2,
     "loot_table": null,
     "image_name": "banshee.png"
   }

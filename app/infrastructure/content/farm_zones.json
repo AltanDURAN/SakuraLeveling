@@ -5,6 +5,6 @@
   "zones": {
     "slime": {"channel_id": 1485329739605348484, "background": "clairiere_sinistre.png"},
     "gobelin": {"channel_id": 1485329739605348484, "background": "clairiere_sinistre.png"},
-    "mort-vivant": {"channel_id": 0, "background": "berceau_cataclysmique.png"}
+    "mort-vivant": {"channel_id": 1525863083321462914, "background": "cimetiere_abandonne.png"}
   }
 }
