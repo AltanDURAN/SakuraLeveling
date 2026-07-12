@@ -14,8 +14,14 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+import logging
+
 from app.bot.cogs._mixins import BetaChannelOnlyMixin
 from app.infrastructure.config.settings import settings
+from app.infrastructure.db.repositories.player_repository import PlayerRepository
+from app.infrastructure.db.session import get_db_session
+
+_logger = logging.getLogger(__name__)
 
 
 def build_welcome_embed(display_name: str | None = None) -> discord.Embed:
@@ -85,18 +91,54 @@ class OnboardingCog(BetaChannelOnlyMixin, commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member) -> None:
-        # Dormant sans l'intent SERVER MEMBERS. Poste un accueil dans le salon
-        # de bienvenue si configuré.
-        channel_id = getattr(settings, "welcome_channel_id", 0)
-        if not channel_id:
+        """Accueil complet d'un nouveau membre :
+        1. l'enregistre dans la base des joueurs (crée son profil + affinités
+           + compétences de départ),
+        2. lui attribue le rôle par défaut (Sakura Leveling),
+        3. lui souhaite la bienvenue + lui donne les bases (embed guide) en DM
+           et/ou dans le salon d'accueil.
+        Chaque étape est best-effort : un échec ne bloque pas les autres."""
+        if member.bot:
             return
-        channel = member.guild.get_channel(channel_id)
-        if channel is None:
-            return
+
+        # 1. Enregistrement en base (idempotent).
         try:
-            await channel.send(content=member.mention, embed=build_welcome_embed(member.display_name))
+            with get_db_session() as session:
+                PlayerRepository(session).get_or_create_by_discord_id(
+                    discord_id=member.id,
+                    username=member.name,
+                    display_name=member.display_name,
+                )
+        except Exception:
+            _logger.warning("Onboarding: échec création profil %s", member.id, exc_info=True)
+
+        # 2. Attribution du rôle par défaut.
+        role_id = settings.default_member_role_id
+        if role_id:
+            role = member.guild.get_role(role_id)
+            if role is not None:
+                try:
+                    await member.add_roles(role, reason="Nouveau membre — rôle auto")
+                except discord.DiscordException as exc:
+                    _logger.warning("Onboarding: échec rôle %s → %s : %s", role_id, member.id, exc)
+
+        embed = build_welcome_embed(member.display_name)
+
+        # 3a. DM de bienvenue (best-effort — peut être bloqué par le membre).
+        try:
+            await member.send(embed=embed)
         except discord.DiscordException:
             pass
+
+        # 3b. Message dans le salon d'accueil.
+        channel_id = settings.welcome_channel_id
+        if channel_id:
+            channel = member.guild.get_channel(channel_id)
+            if channel is not None:
+                try:
+                    await channel.send(content=member.mention, embed=embed)
+                except discord.DiscordException:
+                    pass
 
 
 async def setup(bot: commands.Bot) -> None:

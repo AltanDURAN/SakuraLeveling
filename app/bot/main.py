@@ -48,6 +48,9 @@ _COG_MODULES = [
 class SakuraBot(commands.Bot):
     def __init__(self) -> None:
         intents = discord.Intents.default()
+        # Intent privilégié SERVER MEMBERS (activé dans le Dev Portal) : requis
+        # pour l'event on_member_join (accueil des nouveaux joueurs).
+        intents.members = True
         super().__init__(command_prefix="!", intents=intents)
 
     async def setup_hook(self) -> None:

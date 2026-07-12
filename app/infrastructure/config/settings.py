@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     # Salon d'accueil des nouveaux membres (on_member_join, nécessite l'intent
     # SERVER MEMBERS). 0 = désactivé.
     welcome_channel_id: int = 0
+    # Rôle attribué automatiquement à chaque nouveau membre (ex : "Sakura
+    # Leveling"). 0 = pas d'attribution auto. Le bot doit avoir "Gérer les
+    # rôles" et être au-dessus de ce rôle dans la hiérarchie.
+    default_member_role_id: int = 0
     # URL publique du webapp skill tree (utilisée par le bouton 'Vue détaillée'
     # de /skill). Sans valeur, on retombe sur l'URL locale http://localhost:8000.
     webapp_base_url: str = "http://localhost:8000"
