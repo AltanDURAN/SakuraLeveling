@@ -26,12 +26,12 @@ class BetaChannelOnlyMixin:
         # chargement (cohérent avec les anciennes implémentations locales).
         from app.infrastructure.config.settings import settings
 
-        if interaction.channel_id == settings.beta_channel_id:
+        if interaction.channel_id in settings.command_channel_ids:
             return True
 
         message = (
-            "🚧 Le bot est actuellement en phase de test.\n"
-            "Utilisez le channel beta dédié."
+            "🚧 Cette commande n'est pas autorisée ici.\n"
+            "Utilisez le salon **général** (ou une zone de farm) pour les commandes."
         )
         if interaction.response.is_done():
             await interaction.followup.send(message, ephemeral=True)

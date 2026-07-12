@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     debug: bool = True
     beta_channel_id: int
     encounter_channel_id: int
+    # Salons où les commandes joueur sont autorisées (env COMMAND_CHANNELS,
+    # IDs séparés par virgule). Vide → rétrocompat : on retombe sur
+    # [beta_channel_id].
+    command_channels: str = ""
     # Channel dédié aux world bosses. Optionnel pour rester rétrocompatible
     # avec les .env existants qui n'ont pas encore l'ID. Si 0/None, fallback
     # vers encounter_channel_id (les bosses sortent dans le même canal).
@@ -55,6 +59,18 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    @property
+    def command_channel_ids(self) -> list[int]:
+        """Salons autorisés pour les commandes joueur. Fallback sur le canal
+        beta si non configuré (rétrocompat)."""
+        if not self.command_channels.strip():
+            return [self.beta_channel_id]
+        return [
+            int(part.strip())
+            for part in self.command_channels.split(",")
+            if part.strip()
+        ]
 
     @property
     def admin_ids(self) -> list[int]:

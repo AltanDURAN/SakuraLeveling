@@ -189,10 +189,6 @@ class EncounterCog(commands.Cog):
             self.encounter_loop.restart()
 
     async def _encounter_loop_body(self):
-        channel = self.bot.get_channel(settings.encounter_channel_id)
-        if channel is None:
-            return
-
         if self.active_encounter is not None:
             return
 
@@ -211,6 +207,17 @@ class EncounterCog(commands.Cog):
             )
 
         if mob is None:
+            return
+
+        # Zone de farm : le salon de spawn dépend de la FAMILLE du mob.
+        # slime + gobelin → zone de base ; autres familles → leur salon dédié
+        # (ou la zone de base si non mappée). NB : un seul encounter actif à la
+        # fois (global) en V1 ; le multi-zone simultané viendra avec le gating.
+        from app.infrastructure.encounters.farm_zone_loader import (
+            get_spawn_channel_for_family,
+        )
+        channel = self.bot.get_channel(get_spawn_channel_for_family(mob.family))
+        if channel is None:
             return
 
         mob_state = EncounterMobState(

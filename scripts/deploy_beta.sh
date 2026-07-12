@@ -14,7 +14,10 @@ set -euo pipefail
 PROJECT_DIR="/home/ubuntu/SakuraLeveling"
 SERVICE_NAME="sakura-bot"
 PYTHON_BIN="python3.12"
-BOSS_CHANNEL_ID="1500256259687972915"  # ID prod/beta fourni par le user
+BOSS_CHANNEL_ID="1485330054182604810"  # salon world-boss
+# Salons où les commandes joueur sont autorisées : général + zone de farm de
+# base (clairière-sinistre) + world-boss.
+COMMAND_CHANNELS="1485329709201096796,1485329739605348484,1485330054182604810"
 
 # Couleurs
 RED='\033[0;31m'
@@ -167,6 +170,14 @@ if grep -q "^BOSS_CHANNEL_ID=" .env; then
 else
     echo "BOSS_CHANNEL_ID=$BOSS_CHANNEL_ID" >> .env
     ok "BOSS_CHANNEL_ID ajouté → $BOSS_CHANNEL_ID"
+fi
+
+if grep -q "^COMMAND_CHANNELS=" .env; then
+    sed -i "s#^COMMAND_CHANNELS=.*#COMMAND_CHANNELS=$COMMAND_CHANNELS#" .env
+    ok "COMMAND_CHANNELS mis à jour"
+else
+    echo "COMMAND_CHANNELS=$COMMAND_CHANNELS" >> .env
+    ok "COMMAND_CHANNELS ajouté"
 fi
 
 # ----- 9. Migrations + seed -----

@@ -1,0 +1,8 @@
+{
+  "_comment": "Zones de farm : mapping FAMILLE de mob -> salon Discord de spawn. Chaque salon = une zone de farm. Les familles non listées tombent sur default_channel_id (zone de base, accessible à tous). slime + gobelin partagent la zone de base. À terme : l'accès aux zones avancées sera gated par un pass de la guilde des aventuriers (rang D, C, ...). Éditable pour ajouter de nouvelles familles/zones.",
+  "default_channel_id": 1485329739605348484,
+  "zones": {
+    "slime": 1485329739605348484,
+    "gobelin": 1485329739605348484
+  }
+}
