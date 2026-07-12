@@ -1,4 +1,6 @@
 import asyncio
+import logging
+import random
 from datetime import datetime, timedelta, UTC
 
 import discord
@@ -19,9 +21,14 @@ from app.bot.views.encounter_view import EncounterView
 from app.domain.services.power_score_service import PowerScoreService
 from app.domain.value_objects.battle_summary import BattleSummary
 from app.domain.value_objects.stats import Stats
-from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.session import get_db_session
+from app.infrastructure.encounters.farm_zone_loader import (
+    default_channel_id,
+    get_background_for_family,
+    get_spawn_channel_for_family,
+    list_zone_channels,
+)
 from app.shared.generated_cleanup import purge_old_files
 from app.shared.paths import (
     GENERATED_ENCOUNTERS_DIR,
@@ -37,28 +44,62 @@ from app.shared.paths import (
 # sa propre copie sur son CDN. Au-delà de cet âge, on purge.
 _GENERATED_FILES_TTL_SECONDS = 7 * 24 * 3600
 
+_logger = logging.getLogger(__name__)
+
 
 class EncounterCog(commands.Cog):
+    """Boucle de spawn des encounters, MULTI-ZONE simultané.
+
+    Chaque zone de farm (chaque salon de spawn distinct, cf. `farm_zones.json`)
+    tourne son PROPRE encounter en parallèle via une tâche async dédiée
+    (`_zone_loop`). L'état est indexé par `channel_id` : la clairière (slime +
+    gobelin) et le cimetière (mort-vivant) peuvent avoir un combat actif chacun
+    en même temps. Un seul encounter actif PAR zone à la fois.
+    """
+
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.active_encounter: ActiveEncounter | None = None
         self.encounter_service = EncounterService()
-        self.next_spawn_at: datetime | None = None
-        self._forced_mob_code: str | None = None
-        # Décor de l'encounter courant (résolu au spawn selon la zone/famille).
-        self._active_bg = LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
-        # Event signalé par /admin start_encounter pour résoudre tout de suite
-        # le combat actif sans attendre les 5 min. Re-créé à chaque spawn.
-        self._early_resolve_event: asyncio.Event | None = None
-        self.encounter_loop.start()
-        self.generated_cleanup_loop.start()
+        self.power_score_service = PowerScoreService()
         self.generated_dir = GENERATED_ENCOUNTERS_DIR
         self.generated_dir.mkdir(exist_ok=True)
-        self.power_score_service = PowerScoreService()
+
+        # --- État PAR ZONE (clé = channel_id du salon de spawn) ---
+        # Encounter actif de la zone (absent = zone libre).
+        self.active_encounters: dict[int, ActiveEncounter] = {}
+        # Décor résolu au spawn, gardé pour tous les rendus de l'encounter.
+        self._zone_bg: dict[int, str] = {}
+        # Prochaine date de spawn autorisée pour la zone.
+        self._zone_next_spawn: dict[int, datetime] = {}
+        # Mob forcé au prochain spawn de la zone (/admin spawn_encounter).
+        self._zone_forced_mob: dict[int, str] = {}
+        # Event de résolution anticipée (/admin start_encounter) par zone.
+        self._zone_early_resolve: dict[int, asyncio.Event] = {}
+        # Tâche asyncio de chaque zone.
+        self._zone_tasks: dict[int, asyncio.Task] = {}
+
+        self._startup_task: asyncio.Task | None = None
+        self.generated_cleanup_loop.start()
+        self._startup_task = asyncio.ensure_future(self._start_zone_loops())
 
     def cog_unload(self):
-        self.encounter_loop.cancel()
         self.generated_cleanup_loop.cancel()
+        if self._startup_task is not None:
+            self._startup_task.cancel()
+        for task in self._zone_tasks.values():
+            task.cancel()
+
+    async def _start_zone_loops(self) -> None:
+        """Démarre une boucle async indépendante par zone de farm, une fois le
+        bot prêt. Chaque zone spawn/combat en parallèle des autres."""
+        await self.bot.wait_until_ready()
+        now = datetime.now(UTC)
+        for channel_id in list_zone_channels():
+            self._zone_next_spawn.setdefault(channel_id, now + timedelta(minutes=1))
+            self._zone_tasks[channel_id] = asyncio.ensure_future(
+                self._zone_loop(channel_id)
+            )
+        _logger.info("Zones d'encounter démarrées : %s", list(self._zone_tasks.keys()))
 
     @tasks.loop(hours=12)
     async def generated_cleanup_loop(self) -> None:
@@ -75,14 +116,17 @@ class EncounterCog(commands.Cog):
     async def before_generated_cleanup_loop(self) -> None:
         await self.bot.wait_until_ready()
 
+    # ---------------------- Participants (zone-aware) ----------------------
+
     async def register_participant(
         self,
+        channel_id: int,
         user_id: int,
         display_name: str,
         avatar_url: str,
     ) -> tuple[bool, str]:
         success, message = self.encounter_service.register_participant(
-            encounter=self.active_encounter,
+            encounter=self.active_encounters.get(channel_id),
             user_id=user_id,
             display_name=display_name,
             avatar_url=avatar_url,
@@ -91,140 +135,163 @@ class EncounterCog(commands.Cog):
 
     async def unregister_participant(
         self,
+        channel_id: int,
         user_id: int,
     ) -> tuple[bool, str]:
         success, message = self.encounter_service.unregister_participant(
-            encounter=self.active_encounter,
+            encounter=self.active_encounters.get(channel_id),
             user_id=user_id,
         )
         return success, message
 
-    def trigger_immediate_spawn(self, mob_code: str | None = None) -> tuple[bool, str]:
-        """Force la prochaine itération du loop à spawn un encounter.
+    # ---------------------- Commandes admin (zone-aware) ----------------------
 
-        Si un combat est déjà actif, il est annulé pour faire place au nouveau
-        (le timer de respawn naturel est correctement réinitialisé via
-        `_early_resolve_event` qui débloque la boucle). Si `mob_code` est
-        fourni, le prochain spawn ciblera ce mob précis (sinon random).
+    def _pick_mob_for_zone(self, channel_id: int, forced_code: str | None):
+        """Choisit un mob pour la zone : soit le mob forcé, soit un tirage
+        pondéré parmi les mobs dont la FAMILLE spawn dans ce salon."""
+        with get_db_session() as session:
+            repo = MobRepository(session)
+            if forced_code is not None:
+                return repo.get_by_code(forced_code)
+            mobs = repo.list_all()
+        eligible = [
+            m
+            for m in mobs
+            if get_spawn_channel_for_family(m.family) == channel_id and m.spawn_weight > 0
+        ]
+        if not eligible:
+            return None
+        return random.choices(
+            eligible, weights=[m.spawn_weight for m in eligible], k=1
+        )[0]
+
+    def trigger_immediate_spawn(self, mob_code: str | None = None) -> tuple[bool, str]:
+        """Force le spawn immédiat d'un encounter dans la zone concernée.
+
+        Si `mob_code` est fourni, la zone est déduite de la FAMILLE du mob ;
+        sinon on force la zone de base (tirage aléatoire parmi ses mobs). Si un
+        combat est déjà actif dans cette zone, il est annulé pour faire place.
         """
         if mob_code is not None:
             with get_db_session() as session:
                 mob = MobRepository(session).get_by_code(mob_code)
             if mob is None:
                 return False, f"Mob `{mob_code}` introuvable."
+            channel_id = get_spawn_channel_for_family(mob.family)
+        else:
+            channel_id = default_channel_id()
 
         cancelled_existing = False
-        if self.active_encounter is not None:
-            # On signale au loop de finir tout de suite l'encounter actuel
-            # (équivalent à un /admin end_encounter implicite). Le loop posera
-            # automatiquement next_spawn_at = +1min puis on l'écrase juste
-            # après pour spawner immédiatement.
-            self.active_encounter = None
-            if self._early_resolve_event is not None:
-                self._early_resolve_event.set()
+        existing = self.active_encounters.pop(channel_id, None)
+        if existing is not None:
+            # Réveille le combat en cours : sa boucle verra qu'il n'est plus
+            # l'encounter courant de la zone et s'auto-annulera.
+            event = self._zone_early_resolve.get(channel_id)
+            if event is not None:
+                event.set()
             cancelled_existing = True
 
-        self._forced_mob_code = mob_code
-        self.next_spawn_at = datetime.now(UTC) - timedelta(seconds=1)
+        if mob_code is not None:
+            self._zone_forced_mob[channel_id] = mob_code
+        else:
+            self._zone_forced_mob.pop(channel_id, None)
+        self._zone_next_spawn[channel_id] = datetime.now(UTC) - timedelta(seconds=1)
+
         suffix = f" ({mob_code})" if mob_code else ""
         prefix = "Combat précédent annulé. " if cancelled_existing else ""
         return True, (
-            f"{prefix}Spawn forcé{suffix} : un monstre apparaît dans quelques secondes."
+            f"{prefix}Spawn forcé{suffix} : un monstre apparaît dans quelques "
+            f"secondes (salon `{channel_id}`)."
         )
 
     def request_early_resolve(self) -> tuple[bool, str]:
-        """Demande au loop de résoudre tout de suite l'encounter actif sans
-        attendre les 5 min. Utilisé par /admin start_encounter. Pas de
-        décalage temporel : la boucle continue ensuite normalement (next_spawn_at
-        sera posé par la résolution comme d'habitude)."""
-        if self.active_encounter is None:
+        """Résout immédiatement TOUS les encounters actifs (toutes zones) sans
+        attendre les 5 min. Utilisé par /admin start_encounter."""
+        if not self.active_encounters:
             return False, "Aucun combat actif à résoudre."
-        if self._early_resolve_event is None:
-            return False, "Combat actif mais loop non prêt."
-        self._early_resolve_event.set()
-        return True, f"Combat lancé immédiatement contre **{self.active_encounter.mob_state.name}**."
+        names: list[str] = []
+        for channel_id, encounter in list(self.active_encounters.items()):
+            event = self._zone_early_resolve.get(channel_id)
+            if event is not None:
+                event.set()
+                names.append(encounter.mob_state.name)
+        if not names:
+            return False, "Combats actifs mais boucles non prêtes."
+        joined = ", ".join(f"**{n}**" for n in names)
+        return True, f"Combat(s) lancé(s) immédiatement : {joined}."
 
     def force_end_encounter(self) -> tuple[bool, str]:
-        """Annule un encounter actif (utilisé par /admin end_encounter).
-
-        N'envoie pas de message dans le canal — l'admin se chargera de
-        communiquer si besoin. Le timer de respawn est reset à +1min pour
-        éviter qu'un autre n'apparaisse instantanément.
-        """
-        if self.active_encounter is None:
+        """Annule TOUS les encounters actifs (toutes zones). Utilisé par
+        /admin end_encounter. N'envoie pas de message dans les canaux."""
+        if not self.active_encounters:
             return False, "Aucun combat actif à arrêter."
-        mob_name = self.active_encounter.mob_state.name
-        self.active_encounter = None
-        self._forced_mob_code = None
-        self.next_spawn_at = datetime.now(UTC) + timedelta(minutes=1)
-        return True, f"Encounter actif (**{mob_name}**) annulé."
+        names: list[str] = []
+        respawn_at = datetime.now(UTC) + timedelta(minutes=1)
+        for channel_id in list(self.active_encounters.keys()):
+            encounter = self.active_encounters.pop(channel_id)
+            names.append(encounter.mob_state.name)
+            self._zone_forced_mob.pop(channel_id, None)
+            self._zone_next_spawn[channel_id] = respawn_at
+            event = self._zone_early_resolve.get(channel_id)
+            if event is not None:
+                event.set()
+        joined = ", ".join(f"**{n}**" for n in names)
+        return True, f"Encounter(s) actif(s) annulé(s) : {joined}."
 
-    @tasks.loop(seconds=10)
-    async def encounter_loop(self):
-        try:
-            await self._encounter_loop_body()
-        except Exception:
-            # Filet de sécurité : ne laisse JAMAIS l'exception remonter,
-            # sinon discord.ext.tasks arrête la boucle (= plus aucun
-            # spawn naturel jusqu'au prochain restart du bot). On log et
-            # on retente au prochain tick (10 s). Les erreurs transitoires
-            # (503 Discord, timeout réseau) sont absorbées.
-            import logging
-            logging.getLogger(__name__).exception(
-                "encounter_loop tick failed — sera retenté"
-            )
-            # Si la boucle a planté avant de poser next_spawn_at, on évite
-            # de retry instantanément en posant un cooldown court.
-            if self.active_encounter is None:
-                self.next_spawn_at = datetime.now(UTC) + timedelta(seconds=30)
+    # ---------------------- Boucle par zone ----------------------
 
-    @encounter_loop.error
-    async def _encounter_loop_error(self, error: Exception) -> None:
-        """Filet de dernière chance : si malgré tout la boucle s'arrête
-        (le décorateur @tasks.loop la stoppe sur exception non rattrapée),
-        on relogue et on la relance."""
-        import logging
-        logging.getLogger(__name__).exception(
-            "encounter_loop crashed unexpectedly, restarting: %s", error,
-        )
-        if not self.encounter_loop.is_running():
-            self.encounter_loop.restart()
+    async def _zone_loop(self, channel_id: int) -> None:
+        """Boucle indépendante d'une zone : attend le timer de spawn, fait
+        apparaître un mob de la zone, joue le combat complet, puis reprogramme.
+        Toute exception est absorbée pour ne jamais tuer la boucle de la zone."""
+        while True:
+            try:
+                await asyncio.sleep(10)
+                await self._zone_tick(channel_id)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                _logger.exception("zone_loop %s tick failed — retenté", channel_id)
+                if channel_id not in self.active_encounters:
+                    self._zone_next_spawn[channel_id] = datetime.now(UTC) + timedelta(
+                        seconds=30
+                    )
 
-    async def _encounter_loop_body(self):
-        if self.active_encounter is not None:
+    async def _zone_tick(self, channel_id: int) -> None:
+        if channel_id in self.active_encounters:
             return
 
         now = datetime.now(UTC)
-        if self.next_spawn_at is not None and now < self.next_spawn_at:
+        next_at = self._zone_next_spawn.get(channel_id)
+        if next_at is not None and now < next_at:
             return
 
-        forced_code = self._forced_mob_code
-        self._forced_mob_code = None  # consommé en une fois
-        with get_db_session() as session:
-            mob_repository = MobRepository(session)
-            mob = (
-                mob_repository.get_by_code(forced_code)
-                if forced_code is not None
-                else mob_repository.get_random()
-            )
-
+        forced_code = self._zone_forced_mob.pop(channel_id, None)
+        mob = self._pick_mob_for_zone(channel_id, forced_code)
         if mob is None:
+            self._zone_next_spawn[channel_id] = now + timedelta(minutes=1)
             return
 
-        # Zone de farm : le salon de spawn dépend de la FAMILLE du mob.
-        # slime + gobelin → zone de base ; autres familles → leur salon dédié
-        # (ou la zone de base si non mappée). NB : un seul encounter actif à la
-        # fois (global) en V1 ; le multi-zone simultané viendra avec le gating.
-        from app.infrastructure.encounters.farm_zone_loader import (
-            get_background_for_family,
-            get_spawn_channel_for_family,
-        )
-        channel = self.bot.get_channel(get_spawn_channel_for_family(mob.family))
+        await self._run_encounter(channel_id, mob)
+
+    def _reschedule(self, channel_id: int, minutes: int = 1) -> None:
+        """Libère la zone et pose le prochain spawn."""
+        self.active_encounters.pop(channel_id, None)
+        self._zone_next_spawn[channel_id] = datetime.now(UTC) + timedelta(minutes=minutes)
+
+    async def _run_encounter(self, channel_id: int, mob) -> None:
+        """Cycle de vie complet d'un encounter dans une zone : spawn → fenêtre
+        de recrutement (5 min ou résolution anticipée) → combat animé → récap.
+        Opère sur un encounter LOCAL indexé par `channel_id` ; ne touche jamais
+        l'état des autres zones."""
+        channel = self.bot.get_channel(channel_id)
         if channel is None:
+            self._zone_next_spawn[channel_id] = datetime.now(UTC) + timedelta(minutes=1)
             return
-        # Décor d'environnement de la zone (selon la famille), gardé pour tous
-        # les rendus de cet encounter.
-        self._active_bg = LANDSCAPES_ASSETS_DIR / get_background_for_family(mob.family)
+
+        # Décor d'environnement de la zone (selon la famille du mob).
+        background_path = LANDSCAPES_ASSETS_DIR / get_background_for_family(mob.family)
+        self._zone_bg[channel_id] = str(background_path)
 
         mob_state = EncounterMobState(
             code=mob.code,
@@ -249,12 +316,11 @@ class EncounterCog(commands.Cog):
             duration_minutes=5,
         )
 
-        view = EncounterView(self, timeout=300)
+        view = EncounterView(self, channel_id, timeout=300)
 
         spawn_filename = f"encounter_spawn_{encounter.mob_state.code}.png"
         spawn_output_full = self.generated_dir / spawn_filename
         spawn_output_relative = f"generated_encounters/{spawn_filename}"
-        background_path = self._active_bg
 
         mob_score = self.power_score_service.calculate_and_format_from_mob(mob)
 
@@ -292,59 +358,57 @@ class EncounterCog(commands.Cog):
 
         message = await channel.send(embed=embed, view=view, file=file)
         encounter.message_id = message.id
-        self.active_encounter = encounter
+        self.active_encounters[channel_id] = encounter
 
         # Fenêtre de recrutement / combat : 5 min OU jusqu'à signal
-        # d'/admin start_encounter (early resolve). Pas de décalage timer :
-        # la suite de la boucle pose next_spawn_at comme d'habitude.
-        self._early_resolve_event = asyncio.Event()
+        # d'/admin start_encounter (early resolve).
+        event = asyncio.Event()
+        self._zone_early_resolve[channel_id] = event
         try:
-            await asyncio.wait_for(self._early_resolve_event.wait(), timeout=300)
+            await asyncio.wait_for(event.wait(), timeout=300)
         except asyncio.TimeoutError:
             pass
         finally:
-            self._early_resolve_event = None
+            self._zone_early_resolve.pop(channel_id, None)
 
         for child in view.children:
             child.disabled = True
 
-        if self.active_encounter is None:
-            self.next_spawn_at = datetime.now(UTC) + timedelta(minutes=1)
+        # L'encounter a-t-il été annulé/remplacé pendant la fenêtre (admin
+        # end/spawn) ? Si oui, on abandonne sans reprogrammer (celui qui a
+        # annulé a déjà posé le prochain spawn).
+        if self.active_encounters.get(channel_id) is not encounter:
             return
 
-        if not self.active_encounter.participants:
+        if not encounter.participants:
             flee_summary = BattleSummary(
                 outcome="flee",
-                mob_name=self.active_encounter.mob_state.name,
-                mob_image_name=self.active_encounter.mob_state.image_name,
+                mob_name=encounter.mob_state.name,
+                mob_image_name=encounter.mob_state.image_name,
                 mob_family="",
                 turns=0,
             )
             flee_embed = build_rewards_page_embed(flee_summary)
             await message.edit(embed=flee_embed, attachments=[], view=None)
-            self.active_encounter = None
-            self.next_spawn_at = datetime.now(UTC) + timedelta(minutes=1)
+            self._reschedule(channel_id)
             return
 
-        result = self.resolve_active_encounter()
+        result = self.encounter_service.resolve_active_encounter(encounter)
         if result is None:
-            self.active_encounter = None
-            self.next_spawn_at = datetime.now(UTC) + timedelta(minutes=1)
+            self._reschedule(channel_id)
             return
 
-        self.persist_final_players_hp(result)
-        battle_summary = self.encounter_service.apply_rewards(self.active_encounter, result)
+        self.encounter_service.persist_final_players_hp(result)
+        battle_summary = self.encounter_service.apply_rewards(encounter, result)
 
-        background_path = self._active_bg
-        current_filename = f"encounter_{self.active_encounter.message_id}_current.png"
+        current_filename = f"encounter_{encounter.message_id}_current.png"
         current_output_full = self.generated_dir / current_filename
         current_output_relative = f"generated_encounters/{current_filename}"
 
         # Message dédié au journal de combat tour par tour. Indépendant du
         # message de spawn (qui garde l'image et finira sur le BattleSummary).
-        # On y accumule les actions et on poste un lien retour à la fin.
-        mob_name = self.active_encounter.mob_state.name
-        mob_max_hp = self.active_encounter.mob_state.max_hp
+        mob_name = encounter.mob_state.name
+        mob_max_hp = encounter.mob_state.max_hp
         action_lines: list[str] = []
         initial_log_embed = build_combat_log_embed(
             mob_name=mob_name,
@@ -411,8 +475,7 @@ class EncounterCog(commands.Cog):
 
             await message.edit(embed=turn_embed, attachments=[file], view=view)
 
-            # Met à jour le journal de combat séparé : on ajoute la ligne
-            # narrant ce tour et on rafraîchit les PV affichés.
+            # Met à jour le journal de combat séparé : ligne du tour + PV.
             if combat_log_message is not None:
                 action_lines.append(format_turn_action(turn_log))
                 log_embed = build_combat_log_embed(
@@ -427,15 +490,13 @@ class EncounterCog(commands.Cog):
                     await combat_log_message.edit(embed=log_embed)
                 except discord.HTTPException:
                     # On garde la suite du combat même si une édition échoue
-                    # (rate limit, message supprimé). Le récap final reste
-                    # disponible sur le message de spawn.
+                    # (rate limit, message supprimé).
                     combat_log_message = None
 
             await asyncio.sleep(1.5)
 
         if battle_summary is None:
-            self.active_encounter = None
-            self.next_spawn_at = datetime.now(UTC) + timedelta(minutes=1)
+            self._reschedule(channel_id)
             return
 
         summary_view = BattleSummaryView(battle_summary, timeout=600.0)
@@ -445,8 +506,7 @@ class EncounterCog(commands.Cog):
             view=summary_view,
         )
 
-        # Édition finale du journal de combat : on ajoute le lien vers
-        # le message de spawn, où le BattleSummary affiche les récompenses.
+        # Édition finale du journal de combat : lien vers le message de spawn.
         if combat_log_message is not None:
             redirect_url = getattr(message, "jump_url", None)
             final_log_embed = build_combat_log_embed(
@@ -465,27 +525,19 @@ class EncounterCog(commands.Cog):
             except discord.HTTPException:
                 pass
 
-        self.active_encounter = None
-        self.next_spawn_at = datetime.now(UTC) + timedelta(minutes=1)
+        self._reschedule(channel_id)
 
-    @encounter_loop.before_loop
-    async def before_encounter_loop(self):
-        await self.bot.wait_until_ready()
-        self.next_spawn_at = datetime.now(UTC) + timedelta(minutes=1)
-
-    def resolve_active_encounter(self):
-        return self.encounter_service.resolve_active_encounter(self.active_encounter)
-
-    async def refresh_encounter_scene(self) -> None:
-        if self.active_encounter is None or self.active_encounter.message_id is None:
+    async def refresh_encounter_scene(self, channel_id: int) -> None:
+        encounter = self.active_encounters.get(channel_id)
+        if encounter is None or encounter.message_id is None:
             return
 
-        channel = self.bot.get_channel(settings.encounter_channel_id)
+        channel = self.bot.get_channel(channel_id)
         if channel is None:
             return
 
         try:
-            message = await channel.fetch_message(self.active_encounter.message_id)
+            message = await channel.fetch_message(encounter.message_id)
         except discord.NotFound:
             return
 
@@ -503,41 +555,43 @@ class EncounterCog(commands.Cog):
                 "dodge": participant.stats.dodge,
                 "hp_regeneration": participant.stats.hp_regeneration,
             }
-            for participant in self.active_encounter.participants.values()
+            for participant in encounter.participants.values()
         ]
 
-        filename = f"encounter_{self.active_encounter.message_id}_current.png"
+        filename = f"encounter_{encounter.message_id}_current.png"
         output_full = self.generated_dir / filename
         output_relative = f"generated_encounters/{filename}"
-        background_path = self._active_bg
+        background_path = self._zone_bg.get(
+            channel_id, str(LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png")
+        )
 
         mob_score = self.power_score_service.format_score(
             self.power_score_service.calculate_from_stats(
                 Stats(
-                    max_hp=self.active_encounter.mob_state.max_hp,
-                    attack=self.active_encounter.mob_state.attack,
-                    defense=self.active_encounter.mob_state.defense,
-                    crit_chance=self.active_encounter.mob_state.crit_chance,
-                    crit_damage=self.active_encounter.mob_state.crit_damage,
-                    dodge=self.active_encounter.mob_state.dodge,
-                    hp_regeneration=self.active_encounter.mob_state.hp_regeneration,
-                    speed=self.active_encounter.mob_state.speed,
+                    max_hp=encounter.mob_state.max_hp,
+                    attack=encounter.mob_state.attack,
+                    defense=encounter.mob_state.defense,
+                    crit_chance=encounter.mob_state.crit_chance,
+                    crit_damage=encounter.mob_state.crit_damage,
+                    dodge=encounter.mob_state.dodge,
+                    hp_regeneration=encounter.mob_state.hp_regeneration,
+                    speed=encounter.mob_state.speed,
                 )
             )
         )
 
         mob_payload = {
-            "name": self.active_encounter.mob_state.name,
-            "image_name": self.active_encounter.mob_state.image_name,
-            "current_hp": self.active_encounter.mob_state.current_hp,
-            "max_hp": self.active_encounter.mob_state.max_hp,
-            "attack": self.active_encounter.mob_state.attack,
-            "defense": self.active_encounter.mob_state.defense,
-            "speed": self.active_encounter.mob_state.speed,
-            "crit_chance": self.active_encounter.mob_state.crit_chance,
-            "crit_damage": self.active_encounter.mob_state.crit_damage,
-            "dodge": self.active_encounter.mob_state.dodge,
-            "hp_regeneration": self.active_encounter.mob_state.hp_regeneration,
+            "name": encounter.mob_state.name,
+            "image_name": encounter.mob_state.image_name,
+            "current_hp": encounter.mob_state.current_hp,
+            "max_hp": encounter.mob_state.max_hp,
+            "attack": encounter.mob_state.attack,
+            "defense": encounter.mob_state.defense,
+            "speed": encounter.mob_state.speed,
+            "crit_chance": encounter.mob_state.crit_chance,
+            "crit_damage": encounter.mob_state.crit_damage,
+            "dodge": encounter.mob_state.dodge,
+            "hp_regeneration": encounter.mob_state.hp_regeneration,
             "power_score": mob_score,
         }
 
@@ -573,9 +627,6 @@ class EncounterCog(commands.Cog):
         )
 
         await message.edit(embed=embed, attachments=[file])
-
-    def persist_final_players_hp(self, result) -> None:
-        self.encounter_service.persist_final_players_hp(result)
 
 
 async def setup(bot: commands.Bot) -> None:

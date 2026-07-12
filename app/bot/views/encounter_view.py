@@ -7,9 +7,12 @@ from app.infrastructure.db.session import get_db_session
 
 
 class EncounterView(discord.ui.View):
-    def __init__(self, cog, timeout: float | None = 300):
+    def __init__(self, cog, channel_id: int, timeout: float | None = 300):
         super().__init__(timeout=timeout)
         self.cog = cog
+        # Zone (salon de spawn) de cet encounter : sert à cibler le bon
+        # encounter côté cog, chaque zone tournant son combat en parallèle.
+        self.channel_id = channel_id
         # État interne du bouton "Demander de l'aide" : usable une seule fois.
         self._help_used: bool = False
         # Le bouton "Quitter" n'apparaît que s'il y a au moins un participant.
@@ -21,10 +24,8 @@ class EncounterView(discord.ui.View):
         - Quitter présent seulement si ≥1 participant.
         - Demander de l'aide désactivé + relabellisé si déjà utilisé.
         Appeler avant de ré-éditer le message avec la view."""
-        has_participants = bool(
-            getattr(self.cog, "active_encounter", None)
-            and self.cog.active_encounter.participants
-        )
+        encounter = self.cog.active_encounters.get(self.channel_id)
+        has_participants = bool(encounter and encounter.participants)
         present = self.leave_encounter in self.children
         if has_participants and not present:
             self.add_item(self.leave_encounter)
@@ -45,13 +46,14 @@ class EncounterView(discord.ui.View):
         await interaction.response.defer(ephemeral=True)
 
         success, message = await self.cog.register_participant(
+            channel_id=self.channel_id,
             user_id=interaction.user.id,
             display_name=interaction.user.display_name,
             avatar_url=interaction.user.display_avatar.url,
         )
 
         if success:
-            await self.cog.refresh_encounter_scene()
+            await self.cog.refresh_encounter_scene(self.channel_id)
             # Fait apparaître le bouton Quitter maintenant qu'il y a du monde.
             self.sync()
             try:
@@ -70,11 +72,12 @@ class EncounterView(discord.ui.View):
         await interaction.response.defer(ephemeral=True)
 
         success, message = await self.cog.unregister_participant(
+            channel_id=self.channel_id,
             user_id=interaction.user.id,
         )
 
         if success:
-            await self.cog.refresh_encounter_scene()
+            await self.cog.refresh_encounter_scene(self.channel_id)
             # Retire le bouton Quitter s'il ne reste plus personne.
             self.sync()
             try:

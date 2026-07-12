@@ -80,6 +80,22 @@ def get_background_for_family(family: str | None) -> str:
     return default_background()
 
 
+def list_zone_channels() -> list[int]:
+    """Liste des salons de spawn DISTINCTS (les zones actives). Chaque salon =
+    une zone qui tournera son propre encounter en parallèle. Inclut la zone de
+    base + chaque zone configurée (channel_id != 0)."""
+    data = _load()
+    channels: set[int] = set()
+    base = int(data.get("default_channel_id", 0) or 0) or settings.encounter_channel_id
+    if base:
+        channels.add(base)
+    for z in (data.get("zones", {}) or {}).values():
+        ch = z if isinstance(z, int) else int((z or {}).get("channel_id", 0) or 0)
+        if ch:
+            channels.add(ch)
+    return sorted(channels)
+
+
 def clear_cache() -> None:
     global _cache
     _cache = None
