@@ -46,7 +46,6 @@ from app.bot.embeds.world_boss_embeds import (
     build_boss_defeated_embed,
 )
 from app.domain.services.boss_modifier_service import BossModifierService
-from app.domain.services.combat_service import CombatService
 from app.domain.services.cooldown_service import CooldownService
 from app.domain.services.stats_service import StatsService
 from app.domain.services.world_boss_scaling_service import WorldBossScalingService
@@ -410,7 +409,7 @@ class WorldBossCog(commands.Cog):
                     name = profile.player.display_name if profile else f"#{part.player_id}"
                     player_payload.append({
                         "name": name, "avatar_url": "",
-                        "current_hp": part.damage_dealt and 1 or 1,
+                        "current_hp": 1,
                         "max_hp": 1,
                     })
 

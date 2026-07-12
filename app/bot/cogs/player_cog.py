@@ -6,6 +6,7 @@ from discord.ext import commands
 from datetime import datetime, UTC
 
 from app.application.services.set_bonus_resolver import resolve_set_bonuses
+from app.application.services.player_stats_resolver import resolve_player_stats
 from app.domain.entities.player_profile import PlayerProfile
 from app.shared.formatters import format_int as _format_int
 from app.application.use_cases.change_player_class import ChangePlayerClassUseCase
@@ -121,6 +122,9 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         interaction: discord.Interaction,
         target: discord.Member | None = None,
     ) -> None:
+        # defer() AVANT le calcul de stats + le rendu Pillow (évite Unknown
+        # interaction). _send_no_profile_error gère le cas déjà-répondu.
+        await interaction.response.defer()
         with get_db_session() as session:
             profile, target_member = self._resolve_profile(interaction, target, session)
             if profile is None:
@@ -295,7 +299,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 attachment_filename=banner_filename,
             )
             file = discord.File(str(banner_path), filename=banner_filename)
-            await interaction.response.send_message(embed=image_embed, file=file)
+            await interaction.followup.send(embed=image_embed, file=file)
             return
         except Exception as _e:
             import logging
@@ -321,7 +325,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             active_title=active_title_name,
             affinities=affinities,
         )
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
 
     @app_commands.command(name="inventaire", description="Afficher un inventaire")
     @app_commands.describe(target="Joueur dont afficher l'inventaire (par défaut : vous)")
@@ -539,12 +543,10 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 allocations
             )
 
-            current_stats = StatsService().calculate_player_stats(
-                profile=profile,
-                equipped_items=current_equipment,
-                active_class=active_class,
-                skill_bonuses=skill_bonuses,
-                set_bonuses=resolve_set_bonuses(current_equipment),
+            # Chaîne complète (skill + classe + sets + TITRES) pour un preview
+            # de diff correct — l'inline oubliait les bonus de titre.
+            current_stats = resolve_player_stats(
+                session, profile, current_equipment, active_class
             )
             # Simule la nouvelle config : retirer l'occupant du slot, ajouter
             # le nouvel item. Pas de persistence — juste un objet domain.
@@ -559,12 +561,8 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             simulated = [
                 e for e in current_equipment if e.slot != target_slot
             ] + [simulated_new]
-            new_stats = StatsService().calculate_player_stats(
-                profile=profile,
-                equipped_items=simulated,
-                active_class=active_class,
-                skill_bonuses=skill_bonuses,
-                set_bonuses=resolve_set_bonuses(simulated),
+            new_stats = resolve_player_stats(
+                session, profile, simulated, active_class
             )
 
             current_in_slot_name = current_in_slot.item_definition.name

@@ -10,9 +10,9 @@
     },
     "unlock_requirements": [
       {
-        "type": "profession_level",
-        "profession_code": "mining",
-        "level": 2
+        "type": "has_item",
+        "item_code": "gobelin_tooth",
+        "quantity": 5
       }
     ]
   },
@@ -27,9 +27,9 @@
     },
     "unlock_requirements": [
       {
-        "type": "profession_level",
-        "profession_code": "woodcutting",
-        "level": 2
+        "type": "has_item",
+        "item_code": "slime_gel",
+        "quantity": 5
       }
     ]
   },
@@ -43,14 +43,14 @@
     },
     "unlock_requirements": [
       {
-        "type": "profession_level",
-        "profession_code": "mining",
-        "level": 3
+        "type": "has_item",
+        "item_code": "gobelin_tooth",
+        "quantity": 10
       },
       {
         "type": "has_item",
         "item_code": "slime_gel",
-        "quantity": 5
+        "quantity": 3
       }
     ]
   }

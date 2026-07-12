@@ -145,7 +145,7 @@ class PartyCombatService:
                             1, round(damage * title_bonus.damage_multiplier_vs(mob_family))
                         )
 
-                    # Avantage élémentaire joueur → cible (±50%). Neutre hors boss.
+                    # Avantage élémentaire joueur → cible (±30%). Neutre hors boss.
                     elem_mult = elemental_mult_by_player.get(player["player_id"], 1.0)
                     if elem_mult != 1.0:
                         damage = max(1, round(damage * elem_mult))
@@ -300,7 +300,7 @@ class PartyCombatService:
                     else:
                         mob_damage = after_defense
 
-                    # Avantage élémentaire cible → joueur (±50%). Neutre hors boss.
+                    # Avantage élémentaire cible → joueur (±30%). Neutre hors boss.
                     incoming_mult = incoming_elemental_mult_by_player.get(
                         target["player_id"], 1.0
                     )

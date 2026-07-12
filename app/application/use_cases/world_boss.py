@@ -24,7 +24,6 @@ from app.domain.entities.boss_definition import BossDefinition
 from app.domain.entities.mob_definition import MobDefinition
 from app.domain.entities.world_boss import WorldBoss, WorldBossParticipation
 from app.domain.services.boss_modifier_service import BossModifierService
-from app.domain.services.combat_service import CombatService
 from app.domain.services.cooldown_service import CooldownService
 from app.domain.services.progression_service import ProgressionService
 from app.domain.services.skill_tree_service import SkillTreeService
