@@ -1,0 +1,79 @@
+{% extends "admin/base.html" %}
+{% block title %}Rôles par membre — Sakura Admin{% endblock %}
+{% block content %}
+<section class="list-page" x-data="{ q: '', roleFilter: '' }">
+    <header class="list-header">
+        <div>
+            <a href="/admin" class="breadcrumb">← Dashboard</a>
+            <h1>🧑‍🤝‍🧑 Rôles <span class="count-pill">{{ members|length }} membres</span></h1>
+        </div>
+    </header>
+
+    <div class="topnav" style="margin-bottom:1rem;">
+        <a href="/admin/roles/by-role" class="topnav-link">Par rôle</a>
+        <a href="/admin/roles/by-member" class="topnav-link" style="font-weight:700;">Par membre</a>
+    </div>
+
+    {% if error %}<div class="field-error" style="margin-bottom:1rem;">⚠️ {{ error }}</div>{% endif %}
+
+    <!-- Assigner un rôle (formulaire partagé, léger) -->
+    <form method="post" action="/admin/roles/member/0/add" class="filter-bar"
+          x-data x-on:submit="$el.action = '/admin/roles/member/' + $el.member.value + '/add'">
+        <input type="hidden" name="back" value="/admin/roles/by-member">
+        <select name="member" class="input" required>
+            <option value="">👤 Membre…</option>
+            {% for m in members %}<option value="{{ m.user_id }}">{{ m.name }}{% if m.bot %} 🤖{% endif %}</option>{% endfor %}
+        </select>
+        <select name="role_id" class="input" required>
+            <option value="">🏷️ Rôle à ajouter…</option>
+            {% for r in assignable %}<option value="{{ r.id }}">{{ r.name }}</option>{% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary">+ Ajouter</button>
+    </form>
+
+    <!-- Recherche / filtre -->
+    <div class="filter-bar">
+        <input type="text" x-model="q" placeholder="🔍 Rechercher un membre" class="input">
+        <select x-model="roleFilter" class="input">
+            <option value="">Tous les rôles</option>
+            {% for r in assignable %}<option value="{{ r.id }}">{{ r.name }}</option>{% endfor %}
+        </select>
+    </div>
+
+    <table class="data-table" style="width:100%;">
+        <thead><tr><th>Membre</th><th>Rôles</th></tr></thead>
+        <tbody>
+        {% for m in members %}
+            <tr x-show="(q==='' || {{ m.name|lower|tojson }}.includes(q.toLowerCase()) || {{ m.username|lower|tojson }}.includes(q.toLowerCase()))
+                        && (roleFilter==='' || {{ m.roles|map(attribute='id')|list|tojson }}.includes(roleFilter))">
+                <td style="white-space:nowrap;">
+                    <img src="{{ m.avatar }}" width="24" height="24" style="border-radius:50%;vertical-align:middle;margin-right:6px;" loading="lazy">
+                    <strong>{{ m.name }}</strong>{% if m.bot %} 🤖{% endif %}
+                </td>
+                <td>
+                    {% for r in m.roles %}
+                        <span class="role-chip" style="border-color:{{ r.color }};color:{{ r.color }};">
+                            {{ r.name }}
+                            {% if not r.managed %}
+                            <form method="post" action="/admin/roles/member/{{ m.user_id }}/remove" style="display:inline;">
+                                <input type="hidden" name="role_id" value="{{ r.id }}">
+                                <input type="hidden" name="back" value="/admin/roles/by-member">
+                                <button type="submit" title="Retirer" class="role-chip-x">✕</button>
+                            </form>
+                            {% endif %}
+                        </span>
+                    {% else %}<span class="text-muted">—</span>{% endfor %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+<style>
+.role-chip{display:inline-flex;align-items:center;gap:4px;border:1px solid;border-radius:12px;padding:1px 8px;margin:2px;font-size:0.82rem;}
+.role-chip-x{background:none;border:none;color:inherit;cursor:pointer;font-size:0.8rem;padding:0;opacity:0.6;}
+.role-chip-x:hover{opacity:1;}
+.data-table th,.data-table td{padding:6px 10px;border-bottom:1px solid rgba(150,120,160,0.15);text-align:left;vertical-align:top;}
+</style>
+{% endblock %}

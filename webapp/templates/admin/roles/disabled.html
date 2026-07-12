@@ -1,0 +1,19 @@
+{% extends "admin/base.html" %}
+{% block title %}Rôles — Sakura Admin{% endblock %}
+{% block content %}
+<section class="list-page">
+    <a href="/admin" class="breadcrumb">← Dashboard</a>
+    <h1>🏷️ Gestion des rôles</h1>
+    <div class="field-error" style="margin-top:1rem;">
+        ⚠️ La gestion des rôles est <strong>désactivée</strong> : <code>DISCORD_GUILD_ID</code> n'est pas configuré.
+    </div>
+    <p class="text-muted" style="margin-top:1rem;">
+        Prérequis pour l'activer :
+    </p>
+    <ul class="text-muted">
+        <li>Définir <code>DISCORD_GUILD_ID</code> dans le <code>.env</code> (ID du serveur).</li>
+        <li>Activer l'intent <strong>SERVER MEMBERS</strong> (Discord Dev Portal) pour lister les membres.</li>
+        <li>Donner au bot la permission <strong>Gérer les rôles</strong> et le placer <strong>au-dessus</strong> des rôles à administrer dans la hiérarchie.</li>
+    </ul>
+</section>
+{% endblock %}

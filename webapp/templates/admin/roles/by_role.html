@@ -1,0 +1,90 @@
+{% extends "admin/base.html" %}
+{% block title %}Rôles par rôle — Sakura Admin{% endblock %}
+{% block content %}
+<section class="list-page" x-data="{ q: '', editing: null }">
+    <header class="list-header">
+        <div>
+            <a href="/admin" class="breadcrumb">← Dashboard</a>
+            <h1>🏷️ Rôles <span class="count-pill">{{ roles|length }}</span></h1>
+        </div>
+    </header>
+
+    <div class="topnav" style="margin-bottom:1rem;">
+        <a href="/admin/roles/by-role" class="topnav-link" style="font-weight:700;">Par rôle</a>
+        <a href="/admin/roles/by-member" class="topnav-link">Par membre</a>
+    </div>
+
+    {% if error %}<div class="field-error" style="margin-bottom:1rem;">⚠️ {{ error }}</div>{% endif %}
+
+    <!-- Créer un rôle -->
+    <form method="post" action="/admin/roles/create" class="filter-bar">
+        <input type="text" name="name" placeholder="Nom du nouveau rôle" class="input" required>
+        <input type="color" name="color" value="#5865f2" class="input" style="max-width:60px;padding:2px;" title="Couleur">
+        <label class="text-muted" style="font-size:0.85rem;"><input type="checkbox" name="hoist"> Afficher séparément</label>
+        <label class="text-muted" style="font-size:0.85rem;"><input type="checkbox" name="mentionable"> Mentionnable</label>
+        <button type="submit" class="btn btn-primary">+ Créer</button>
+    </form>
+
+    <div class="filter-bar">
+        <input type="text" x-model="q" placeholder="🔍 Rechercher un rôle" class="input">
+    </div>
+
+    <div>
+    {% for r in roles %}
+        <div class="role-row" x-show="q==='' || {{ r.name|lower|tojson }}.includes(q.toLowerCase())">
+            <div class="role-row-head">
+                <span class="role-swatch" style="background:{{ r.color }};"></span>
+                <strong style="color:{{ r.color }};">{{ r.name }}</strong>
+                <span class="count-pill">{{ r.count }}</span>
+                {% if r.everyone %}<span class="text-muted">(@everyone)</span>
+                {% elif r.managed %}<span class="text-muted">(géré par une intégration)</span>
+                {% else %}
+                    <button class="btn btn-small" x-on:click="editing = (editing === '{{ r.id }}' ? null : '{{ r.id }}')">✏️ Éditer</button>
+                    <form method="post" action="/admin/roles/{{ r.id }}/delete" style="display:inline;"
+                          onsubmit="return confirm('Supprimer le rôle {{ r.name }} ? (irréversible)');">
+                        <button type="submit" class="btn btn-small" style="background:var(--danger);color:#fff;">🗑</button>
+                    </form>
+                {% endif %}
+            </div>
+
+            {% if not r.everyone and not r.managed %}
+            <form method="post" action="/admin/roles/{{ r.id }}/edit" class="filter-bar" x-show="editing === '{{ r.id }}'" style="margin:6px 0 6px 24px;">
+                <input type="text" name="name" value="{{ r.name }}" class="input" required>
+                <input type="color" name="color" value="{{ r.color }}" class="input" style="max-width:60px;padding:2px;">
+                <button type="submit" class="btn btn-primary btn-small">Enregistrer</button>
+            </form>
+            {% endif %}
+
+            {% if r.members %}
+            <div class="role-members">
+                {% for mem in r.members %}
+                    <span class="role-chip" style="border-color:{{ r.color }};">
+                        <img src="{{ mem.avatar }}" width="18" height="18" style="border-radius:50%;" loading="lazy">
+                        {{ mem.name }}
+                        {% if not r.everyone and not r.managed %}
+                        <form method="post" action="/admin/roles/member/{{ mem.user_id }}/remove" style="display:inline;">
+                            <input type="hidden" name="role_id" value="{{ r.id }}">
+                            <input type="hidden" name="back" value="/admin/roles/by-role">
+                            <button type="submit" title="Retirer" class="role-chip-x">✕</button>
+                        </form>
+                        {% endif %}
+                    </span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    {% endfor %}
+    </div>
+</section>
+
+<style>
+.role-row{padding:8px 10px;border-bottom:1px solid rgba(150,120,160,0.15);}
+.role-row-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.role-swatch{width:14px;height:14px;border-radius:50%;display:inline-block;}
+.role-members{margin:6px 0 0 24px;}
+.role-chip{display:inline-flex;align-items:center;gap:4px;border:1px solid;border-radius:12px;padding:1px 8px;margin:2px;font-size:0.82rem;}
+.role-chip-x{background:none;border:none;color:inherit;cursor:pointer;font-size:0.8rem;padding:0;opacity:0.6;}
+.role-chip-x:hover{opacity:1;}
+.btn-small{padding:2px 8px;font-size:0.8rem;}
+</style>
+{% endblock %}

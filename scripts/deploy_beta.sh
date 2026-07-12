@@ -18,6 +18,7 @@ BOSS_CHANNEL_ID="1485330054182604810"  # salon world-boss
 # Salons où les commandes joueur sont autorisées : général + zone de farm de
 # base (clairière-sinistre) + world-boss.
 COMMAND_CHANNELS="1485329709201096796,1485329739605348484,1485330054182604810"
+DISCORD_GUILD_ID="1485307656364101785"  # serveur Sakura Leveling (gestion rôles admin web)
 
 # Couleurs
 RED='\033[0;31m'
@@ -178,6 +179,14 @@ if grep -q "^COMMAND_CHANNELS=" .env; then
 else
     echo "COMMAND_CHANNELS=$COMMAND_CHANNELS" >> .env
     ok "COMMAND_CHANNELS ajouté"
+fi
+
+if grep -q "^DISCORD_GUILD_ID=" .env; then
+    sed -i "s/^DISCORD_GUILD_ID=.*/DISCORD_GUILD_ID=$DISCORD_GUILD_ID/" .env
+    ok "DISCORD_GUILD_ID mis à jour"
+else
+    echo "DISCORD_GUILD_ID=$DISCORD_GUILD_ID" >> .env
+    ok "DISCORD_GUILD_ID ajouté"
 fi
 
 # ----- 9. Migrations + seed -----
