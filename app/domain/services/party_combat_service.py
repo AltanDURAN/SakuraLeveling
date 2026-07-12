@@ -57,6 +57,11 @@ class PartyCombatService:
                 "stats": player["stats"],
                 "hp": player["current_hp"],
                 "max_hp": player["max_hp"],
+                # Mana : ressource des compétences actives. Absent hors world
+                # boss (pas de loadout) → 0, jamais lu dans ce cas. Ne se
+                # régénère PAS en combat (régen hors combat uniquement).
+                "mana": player.get("current_mana", player.get("mana_max", 0)),
+                "mana_max": player.get("mana_max", 0),
                 "gauge": 0,
                 "shield": 0,  # bouclier (compétences défensives/support)
             }
@@ -111,9 +116,21 @@ class PartyCombatService:
                     # compétence tire sa basique (ou sa spéciale à 10% qui la
                     # remplace). Effets appliqués après l'attaque de base.
                     loadout = skill_loadouts_by_player.get(player["player_id"]) or []
-                    turn_effects = [
-                        _skill_svc.roll_effect(s) for s in loadout if s is not None
-                    ]
+                    # Chaque compétence tire son effet (basique/spéciale) ; l'effet
+                    # ne se déclenche QUE si le joueur peut en payer le mana_cost.
+                    # Sinon il fizzle (attaque normale ce tour). Le mana ne se
+                    # régénère pas en combat → ressource limitée par combat.
+                    turn_effects = []
+                    for s in loadout:
+                        if s is None:
+                            continue
+                        eff = _skill_svc.roll_effect(s)
+                        cost = getattr(eff, "mana_cost", 0)
+                        if cost > 0:
+                            if player["mana"] < cost:
+                                continue  # pas assez de mana → l'effet ne part pas
+                            player["mana"] -= cost
+                        turn_effects.append(eff)
                     offensive_mult = max(
                         [e.value for e in turn_effects if e.kind == SKILL_KIND_DAMAGE],
                         default=1.0,
@@ -199,6 +216,8 @@ class PartyCombatService:
                                     "avatar_url": member["avatar_url"],
                                     "current_hp": member["hp"],
                                     "max_hp": member["max_hp"],
+                                    "current_mana": member["mana"],
+                                    "mana_max": member["mana_max"],
                                     "attack": member["stats"].attack,
                                     "defense": member["stats"].defense,
                                     "speed": member["stats"].speed,
@@ -340,6 +359,8 @@ class PartyCombatService:
                                 "avatar_url": member["avatar_url"],
                                 "current_hp": member["hp"],
                                 "max_hp": member["max_hp"],
+                                "current_mana": member["mana"],
+                                "mana_max": member["mana_max"],
                                 "attack": member["stats"].attack,
                                 "defense": member["stats"].defense,
                                 "speed": member["stats"].speed,
@@ -394,6 +415,7 @@ class PartyCombatService:
         for member in alive_party:
             contribution = contributions[member["player_id"]]
             contribution.final_hp = member["hp"]
+            contribution.final_mana = member["mana"]
             contribution.survived = member["hp"] > 0
 
         surviving_players = [player["name"] for player in alive_party if player["hp"] > 0]

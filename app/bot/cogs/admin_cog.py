@@ -53,6 +53,7 @@ class AdminCog(commands.Cog):
         app_commands.Choice(name="XP", value="xp"),
         app_commands.Choice(name="Skill points", value="skill_points"),
         app_commands.Choice(name="PV courants", value="current_hp"),
+        app_commands.Choice(name="Mana courant", value="current_mana"),
         app_commands.Choice(name="Daily streak", value="daily_streak"),
     ]
 
@@ -140,6 +141,28 @@ class AdminCog(commands.Cog):
                     new = max(0, state.current_hp - amount)
                 health_repo.update_current_hp(profile.player.id, new)
                 label = f"PV courants (max {stats.max_hp})"
+
+            elif resource == "current_mana":
+                from app.infrastructure.db.repositories.player_mana_repository import (
+                    PlayerManaRepository,
+                )
+                equipped = EquipmentRepository(session).list_by_player_id(profile.player.id)
+                active_class = ClassRepository(session).get_current_class_for_player(
+                    profile.player.id
+                )
+                stats = resolve_player_stats(session, profile, equipped, active_class)
+                mana_repo = PlayerManaRepository(session)
+                state = mana_repo.get_or_create(
+                    profile.player.id, default_current_mana=stats.mana_max,
+                )
+                if action == "set":
+                    new = max(0, min(stats.mana_max, amount))
+                elif action == "give":
+                    new = min(stats.mana_max, state.current_mana + amount)
+                else:
+                    new = max(0, state.current_mana - amount)
+                mana_repo.update_current_mana(profile.player.id, new)
+                label = f"Mana courant (max {stats.mana_max})"
 
             elif resource == "daily_streak":
                 current = profile.resources.daily_streak
@@ -363,7 +386,7 @@ class AdminCog(commands.Cog):
 
     @admin.command(
         name="heal_full",
-        description="Restaure tous les PV d'un joueur à son max_hp courant",
+        description="Restaure tous les PV ET le mana d'un joueur à leur max courant",
     )
     @app_commands.describe(target="Joueur ciblé")
     @admin_only
@@ -374,6 +397,9 @@ class AdminCog(commands.Cog):
     ) -> None:
         await interaction.response.defer(ephemeral=True)
         with get_db_session() as session:
+            from app.infrastructure.db.repositories.player_mana_repository import (
+                PlayerManaRepository,
+            )
             player_repo = PlayerRepository(session)
             profile = player_repo.get_by_discord_id(target.id)
             if profile is None:
@@ -390,8 +416,12 @@ class AdminCog(commands.Cog):
             health_repo = PlayerHealthRepository(session)
             health_repo.get_or_create(profile.player.id, default_current_hp=stats.max_hp)
             health_repo.update_current_hp(profile.player.id, stats.max_hp)
+            mana_repo = PlayerManaRepository(session)
+            mana_repo.get_or_create(profile.player.id, default_current_mana=stats.mana_max)
+            mana_repo.update_current_mana(profile.player.id, stats.mana_max)
         await interaction.followup.send(
-            f"✅ {target.mention} restauré à pleins PV (**{stats.max_hp}**).",
+            f"✅ {target.mention} restauré à pleins PV (**{stats.max_hp}**) "
+            f"et plein mana (**{stats.mana_max}**).",
             ephemeral=True,
         )
 

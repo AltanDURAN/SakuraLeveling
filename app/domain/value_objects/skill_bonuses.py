@@ -31,6 +31,8 @@ class SkillBonuses:
     dodge_flat: int = 0
     speed_flat: int = 0
     hp_regeneration_flat: int = 0
+    mana_max_flat: int = 0
+    mana_regeneration_flat: int = 0
     xp_drop_percent: float = 0.0
     gold_drop_percent: float = 0.0
     drop_rate_multiplier: float = 1.0
@@ -58,6 +60,8 @@ class SkillBonuses:
         new_dodge = stats.dodge + self.dodge_flat
         new_speed = stats.speed + self.speed_flat
         new_hp_regen = stats.hp_regeneration + self.hp_regeneration_flat
+        new_mana_max = stats.mana_max + self.mana_max_flat
+        new_mana_regen = stats.mana_regeneration + self.mana_regeneration_flat
 
         # Caps de cohérence (dupliqués pour ne pas dépendre de StatsService)
         new_crit_chance = min(new_crit_chance, 75)
@@ -73,4 +77,6 @@ class SkillBonuses:
             dodge=new_dodge,
             hp_regeneration=max(0, new_hp_regen),
             speed=max(1, new_speed),
+            mana_max=max(0, new_mana_max),
+            mana_regeneration=max(0, new_mana_regen),
         )

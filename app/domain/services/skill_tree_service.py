@@ -19,6 +19,8 @@ _EFFECT_FIELD_MAP: dict[str, str] = {
     "dodge_flat": "dodge_flat",
     "speed_flat": "speed_flat",
     "hp_regeneration_flat": "hp_regeneration_flat",
+    "mana_max_flat": "mana_max_flat",
+    "mana_regeneration_flat": "mana_regeneration_flat",
     "xp_drop_percent": "xp_drop_percent",
     "gold_drop_percent": "gold_drop_percent",
     "drop_rate_multiplier": "drop_rate_multiplier",
@@ -56,6 +58,8 @@ class SkillTreeService:
         dodge_flat = 0
         speed_flat = 0
         hp_regeneration_flat = 0
+        mana_max_flat = 0
+        mana_regeneration_flat = 0
         xp_drop_percent = 0.0
         gold_drop_percent = 0.0
         drop_rate_multiplier = 1.0
@@ -102,6 +106,10 @@ class SkillTreeService:
                         speed_flat += int(cumulative)
                     case "hp_regeneration_flat":
                         hp_regeneration_flat += int(cumulative)
+                    case "mana_max_flat":
+                        mana_max_flat += int(cumulative)
+                    case "mana_regeneration_flat":
+                        mana_regeneration_flat += int(cumulative)
                     case "xp_drop_percent":
                         xp_drop_percent += cumulative / 100.0
                     case "gold_drop_percent":
@@ -132,6 +140,8 @@ class SkillTreeService:
             dodge_flat=dodge_flat,
             speed_flat=speed_flat,
             hp_regeneration_flat=hp_regeneration_flat,
+            mana_max_flat=mana_max_flat,
+            mana_regeneration_flat=mana_regeneration_flat,
             xp_drop_percent=xp_drop_percent,
             gold_drop_percent=gold_drop_percent,
             drop_rate_multiplier=drop_rate_multiplier,

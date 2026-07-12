@@ -465,6 +465,10 @@ class LaunchPartyFightWorldBossUseCase:
         from app.infrastructure.db.repositories.element_affinity_repository import (
             ElementAffinityRepository,
         )
+        from app.domain.services.mana_regeneration_service import ManaRegenerationService
+        from app.infrastructure.db.repositories.player_mana_repository import (
+            PlayerManaRepository,
+        )
 
         boss = self.world_boss_repository.get_by_id(boss_id)
         if boss is None or not boss.is_alive:
@@ -493,6 +497,8 @@ class LaunchPartyFightWorldBossUseCase:
             if boss.element else None
         )
         affinity_repo = ElementAffinityRepository(self.world_boss_repository.session)
+        mana_repo = PlayerManaRepository(self.world_boss_repository.session)
+        mana_regen_service = ManaRegenerationService()
 
         # Modifiers du boss (immunity threshold, enrage, crit immunity)
         boss_def = get_boss_definition(boss.code)
@@ -563,6 +569,20 @@ class LaunchPartyFightWorldBossUseCase:
                     boss.element, boss_aff, aff,
                 )
 
+            # Mana : ressource des compétences actives. On repart du mana
+            # persisté, régénéré HORS combat jusqu'à maintenant (comme les PV
+            # le seraient). Le mana ne se régénère PAS pendant le combat.
+            mana_state = mana_repo.get_or_create(
+                v.player_id, default_current_mana=boosted.mana_max,
+            )
+            regenerated_mana = mana_regen_service.apply_out_of_combat_regeneration(
+                current_mana=mana_state.current_mana,
+                mana_max=boosted.mana_max,
+                mana_regeneration=boosted.mana_regeneration,
+                last_updated_at=mana_state.updated_at,
+                now=now,
+            )
+
             eligible.append((v, {
                 "player_id": v.player_id,
                 "user_id": v.player_id,  # fallback
@@ -571,6 +591,8 @@ class LaunchPartyFightWorldBossUseCase:
                 "stats": boosted,
                 "current_hp": boosted.max_hp,
                 "max_hp": boosted.max_hp,
+                "current_mana": regenerated_mana,
+                "mana_max": boosted.mana_max,
             }))
 
         if not eligible:
@@ -619,6 +641,8 @@ class LaunchPartyFightWorldBossUseCase:
             if contrib is None:
                 continue
             total_tanked += contrib.damage_tanked
+            # Persiste le mana restant : il se régénérera hors combat.
+            mana_repo.refresh_current_mana(participation.player_id, contrib.final_mana)
             self.world_boss_repository.add_combat_metrics(
                 boss_id, participation.player_id,
                 damage_dealt=contrib.damage_dealt,

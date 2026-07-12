@@ -47,10 +47,13 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
           la lettre du rang et "PWR X.XK" écrits dedans.
         • Ligne d'infos : 💰 or, 🔥 Daily Streak, ⚔️ Duel #N (WV-DD),
           📚 SP libres. Wrap auto sur 2 lignes si nécessaire.
-        • Section "Stats de combat" : 8 cards avec barre d'accent colorée
+        • Section "Stats de combat" : 10 cards avec barre d'accent colorée
           par type de stat (❤️ PV rouge, ⚔️ Atk orange, 🛡️ Def bleu,
-          💨 Vit cyan, 🎯 Crit jaune, 💥 Crit dmg magenta, 🌀 Esquive,
-          ✨ Régen vert).
+          💨 Vit cyan, 🔷 Mana bleu, 🌊 Régén M bleu, 🎯 Crit jaune,
+          💥 Crit dmg magenta, 🌀 Esquive, ✨ Régen PV vert).
+          Le Mana s'affiche en "courant/max" comme les PV : c'est la réserve
+          d'énergie qui alimente vos compétences actives (voir /competences).
+          Il se régénère HORS combat (comme les PV) selon votre "Régén M".
         • Section "Statistiques de carrière" : 8 cards (💀 Tués,
           ⚔️ Combats %W, 💰 Or amassé, 💢 Dégâts infligés, 🛡️ Dégâts
           encaissés, 💚 PV soignés, 🌀 Esquives totales, 🏆 V/D).

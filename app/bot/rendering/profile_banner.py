@@ -51,7 +51,9 @@ from app.shared.formatters import format_int
 
 
 WIDTH = 1024
-HEIGHT = 1080
+# +144 (une rangée de cards) depuis l'ajout de la ligne Mana/Régén M dans la
+# grille de combat (10 cards = 3 rangées au lieu de 2).
+HEIGHT = 1224
 
 
 # Palette principale ---------------------------------------------------
@@ -90,6 +92,7 @@ _STAT_ACCENT = {
     "crit_damage": (220, 100, 220, 255),   # magenta
     "dodge": (180, 200, 255, 255),    # bleu pâle
     "regen": (120, 220, 130, 255),    # vert
+    "mana": (90, 150, 255, 255),      # bleu mana
     "kills": (220, 100, 100, 255),
     "combats": (255, 200, 100, 255),
     "gold": (255, 215, 100, 255),
@@ -848,11 +851,23 @@ def compose_profile_banner(
         )
     else:
         hp_display = _format_compact(max_hp_value)
+    # Mana : "current/max" comme les PV (ressource des compétences actives).
+    mana_max_value = int(stats.get("mana_max", 0))
+    current_mana_value = stats.get("current_mana")
+    if current_mana_value is not None:
+        mana_display = (
+            f"{_format_compact(int(current_mana_value))}"
+            f"/{_format_compact(mana_max_value)}"
+        )
+    else:
+        mana_display = _format_compact(mana_max_value)
     combat_cards = [
         ("❤️", "PV", hp_display, "hp"),
         ("⚔️", "Attaque", _format_compact(int(stats.get("attack", 0))), "atk"),
         ("🛡️", "Défense", _format_compact(int(stats.get("defense", 0))), "def"),
         ("💨", "Vitesse", str(stats.get("speed", 0)), "speed"),
+        ("🔷", "Mana", mana_display, "mana"),
+        ("🌊", "Régén M", str(stats.get("mana_regeneration", 0)), "mana"),
         ("🎯", "Crit %", f"{int(stats.get('crit_chance', 0))}%", "crit_chance"),
         ("💥", "Crit dmg", f"{int(stats.get('crit_damage', 100))}%", "crit_damage"),
         ("🌀", "Esquive", f"{int(stats.get('dodge', 0))}%", "dodge"),
@@ -864,10 +879,10 @@ def compose_profile_banner(
         col = idx % grid_cols
         x = margin + col * (card_w + spacing)
         y = combat_grid_y + row * (card_h + spacing)
-        # PV peut afficher "current/max" → fonte rétrécie pour ne pas
+        # PV/Mana peuvent afficher "current/max" → fonte rétrécie pour ne pas
         # déborder de la card.
         card_value_font = (
-            value_font_compact if accent_key == "hp" else value_font
+            value_font_compact if accent_key in ("hp", "mana") else value_font
         )
         _draw_stat_card(
             bg, (x, y), (card_w, card_h),
@@ -876,7 +891,10 @@ def compose_profile_banner(
         )
 
     # ----- CAREER SECTION -----
-    section_career_y = combat_grid_y + 2 * (card_h + spacing) + 20
+    # Nombre de rangées de la grille de combat (dynamique : dépend du nombre
+    # de cards, ex. 10 cards / 4 colonnes = 3 rangées).
+    combat_rows = -(-len(combat_cards) // grid_cols)  # ceil division
+    section_career_y = combat_grid_y + combat_rows * (card_h + spacing) + 20
     _draw_section_header(
         bg, (margin, section_career_y), "📈  STATISTIQUES DE CARRIÈRE",
         section_font, WIDTH - 2 * margin,

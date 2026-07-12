@@ -101,6 +101,8 @@ class TitleBonuses:
             dodge=stats.dodge + champion_pct + dodge_extra,
             hp_regeneration=stats.hp_regeneration + champion_pct,
             speed=stats.speed + champion_pct,
+            mana_max=stats.mana_max,
+            mana_regeneration=stats.mana_regeneration,
         )
 
 

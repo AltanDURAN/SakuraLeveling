@@ -25,6 +25,7 @@ def _parse_effect(raw: dict) -> SkillEffect:
         kind=raw["kind"],
         value=float(raw.get("value", 1.0)),
         proc_chance=float(raw.get("proc_chance", 0.0)),
+        mana_cost=int(raw.get("mana_cost", 0)),
     )
 
 

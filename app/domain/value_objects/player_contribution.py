@@ -13,3 +13,5 @@ class PlayerContribution:
     survived: bool = True
     final_hp: int = 0
     max_hp: int = 0
+    # Mana restant en fin de combat (persisté hors combat pour la régen).
+    final_mana: int = 0

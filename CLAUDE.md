@@ -44,8 +44,11 @@ Ordre de lecture conseillé avant patch : `pyproject.toml` → `alembic.ini` →
 ## Invariants métier (non négociables)
 
 - **`Player` n'a PAS de `current_hp`**. Les HP courants viennent de `PlayerHealthState` (stockage dédié + service de régénération).
+- **`Player` n'a PAS de `current_mana`** (miroir strict du HP). Le mana courant vit dans `PlayerManaState` (table `player_mana_states`, `PlayerManaRepository`). `mana_max` / `mana_regeneration` sont des STATS calculées (base 100/5 + arbre + gear/classe) ; seul le mana courant est persisté.
 - **`hp_regeneration` est OUT-OF-COMBAT uniquement**. La stat ne s'applique JAMAIS pendant un combat (party / solo / duel) — elle est purement passive entre les combats, appliquée par `HealthRegenerationService` selon le temps écoulé. Ne pas réintroduire `+= hp_regeneration` dans les boucles de combat.
-- **`Stats` est le value object canonique** pour toute stat de combat : `max_hp`, `attack`, `defense`, `crit_chance`, `crit_damage`, `dodge`, `hp_regeneration`, `speed`.
+- **`mana_regeneration` est OUT-OF-COMBAT uniquement** (même règle que `hp_regeneration`). `ManaRegenerationService` (calqué sur `HealthRegenerationService`) régénère le mana/minute entre les combats. Le mana ne remonte JAMAIS pendant un combat : en combat c'est une réserve qui se vide.
+- **Compétences actives = coût en mana** : chaque effet de compétence (`element_skills.json`, champ `mana_cost` sur basique/spéciale, 20/40 par défaut) consomme du mana quand il se déclenche EN COMBAT. Si le joueur n'a pas assez de mana, l'effet **fizzle** (attaque normale ce tour). Résolu dans `PartyCombatService` (gating mana-aware du roll d'effets). Actif dans le **combat de world boss** uniquement (comme les skills — encounters/duels neutres). Le mana de départ est le mana persisté régénéré, le mana restant est persisté en fin de combat (`PlayerContribution.final_mana`).
+- **`Stats` est le value object canonique** pour toute stat de combat : `max_hp`, `attack`, `defense`, `crit_chance`, `crit_damage`, `dodge`, `hp_regeneration`, `speed`, `mana_max`, `mana_regeneration`. ⚠️ Toute reconstruction `Stats(...)` (dans `StatsService` étages 6/7, `title_bonus_service`, `skill_bonuses.apply_to_stats`) doit REPORTER `mana_max`/`mana_regeneration`, sinon les défauts=0 les effacent.
 - **Conventions des pourcentages** :
   - `crit_chance`, `dodge` : entiers `0..100` (50 = 50%)
   - `crit_damage` : entier, **100 = neutre, 150 = ×1.5** (PAS un float multiplicateur)

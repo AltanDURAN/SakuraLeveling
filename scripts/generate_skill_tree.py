@@ -105,6 +105,8 @@ _EFFECT_PHRASE: dict[str, str] = {
     "dodge_flat": "+{v}% d'esquive",
     "speed_flat": "+{v} Vitesse",
     "hp_regeneration_flat": "+{v} Régénération de PV",
+    "mana_max_flat": "+{v} Mana max",
+    "mana_regeneration_flat": "+{v} Régénération de mana",
     "gold_drop_percent": "+{v}% d'or gagné",
     "xp_drop_percent": "+{v}% d'XP gagnée",
     "drop_rate_multiplier": "+{v}% de chance de butin",
@@ -154,11 +156,13 @@ BRANCHES = {
             ("gold_drop_percent", 1, 0, "💰", "Bourse"),
             ("xp_drop_percent", 1, 0, "✨", "Sagesse"),
             ("drop_rate_multiplier", 1, 0, "🎁", "Chance"),
+            ("mana_max_flat", 20, 5, "🔷", "Réserve d'énergie"),
         ],
         "speciaux": [
             ("gold_drop_percent", 2, "💰", "Fortune"),
             ("xp_drop_percent", 2, "✨", "Érudition"),
             ("drop_rate_multiplier", 2, "🎁", "Pillage"),
+            ("mana_regeneration_flat", 1, "🌊", "Flux de mana"),
         ],
     },
 }

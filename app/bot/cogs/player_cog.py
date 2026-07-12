@@ -188,6 +188,31 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                     new_current_hp=regenerated_current_hp,
                 )
 
+            # Mana courant : miroir strict du HP (régén hors combat uniquement).
+            from app.infrastructure.db.repositories.player_mana_repository import (
+                PlayerManaRepository,
+            )
+            from app.domain.services.mana_regeneration_service import (
+                ManaRegenerationService,
+            )
+            player_mana_repository = PlayerManaRepository(session)
+            mana_state = player_mana_repository.get_or_create(
+                player_id=profile.player.id,
+                default_current_mana=stats.mana_max,
+            )
+            regenerated_current_mana = ManaRegenerationService().apply_out_of_combat_regeneration(
+                current_mana=mana_state.current_mana,
+                mana_max=stats.mana_max,
+                mana_regeneration=stats.mana_regeneration,
+                last_updated_at=mana_state.updated_at,
+                now=now,
+            )
+            if regenerated_current_mana != mana_state.current_mana and target is None:
+                player_mana_repository.refresh_current_mana(
+                    player_id=profile.player.id,
+                    new_current_mana=regenerated_current_mana,
+                )
+
             total_kills = kill_repository.get_total_kills(profile.player.id)
             career_stats = career_stats_repository.get_or_create(profile.player.id)
 
@@ -285,6 +310,9 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                     "crit_damage": stats.crit_damage,
                     "dodge": stats.dodge,
                     "hp_regeneration": stats.hp_regeneration,
+                    "mana_max": stats.mana_max,
+                    "current_mana": regenerated_current_mana,
+                    "mana_regeneration": stats.mana_regeneration,
                 },
                 career=career_payload,
             )

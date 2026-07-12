@@ -28,6 +28,7 @@ from app.infrastructure.db.models.equipment_set_model import (  # noqa: F401
     PlayerEquipmentSetItemModel,
 )
 from app.infrastructure.db.models.player_health_state_model import PlayerHealthStateModel
+from app.infrastructure.db.models.player_mana_state_model import PlayerManaStateModel
 from app.infrastructure.db.models.player_mob_kill_model import PlayerMobKillModel
 from app.infrastructure.db.models.shop_item_model import ShopItemModel
 from app.infrastructure.db.models.player_career_stats_model import PlayerCareerStatsModel

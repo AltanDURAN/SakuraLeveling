@@ -32,6 +32,14 @@ class StatsService:
         base_hp_regeneration = 5
         hp_regeneration = base_hp_regeneration
 
+        # Mana : ressource de combat pour les compétences actives. Base
+        # constante V2 (comme les PV), croissance via l'arbre + gear/classe.
+        # mana_regeneration = mana/minute régénéré HORS combat uniquement.
+        base_mana_max = 100
+        mana_max = base_mana_max
+        base_mana_regeneration = 5
+        mana_regeneration = base_mana_regeneration
+
         base_speed = 5
         speed = base_speed
 
@@ -45,6 +53,8 @@ class StatsService:
             crit_damage += float(bonuses.get("crit_damage", 0))
             dodge += float(bonuses.get("dodge", 0))
             hp_regeneration += int(bonuses.get("hp_regeneration", 0))
+            mana_max += int(bonuses.get("mana_max", 0))
+            mana_regeneration += int(bonuses.get("mana_regeneration", 0))
 
         for equipment_item in equipped_items:
             bonuses = equipment_item.item_definition.stat_bonuses or {}
@@ -56,6 +66,8 @@ class StatsService:
             crit_damage += float(bonuses.get("crit_damage", 0))
             dodge += float(bonuses.get("dodge", 0))
             hp_regeneration += int(bonuses.get("hp_regeneration", 0))
+            mana_max += int(bonuses.get("mana_max", 0))
+            mana_regeneration += int(bonuses.get("mana_regeneration", 0))
 
         # 4e étage : bonus de l'arbre de compétences (flat additif puis %).
         # Appliqué après équipement/classe et AVANT les caps finaux pour que
@@ -71,6 +83,8 @@ class StatsService:
             dodge += skill_bonuses.dodge_flat
             speed += skill_bonuses.speed_flat
             hp_regeneration += skill_bonuses.hp_regeneration_flat
+            mana_max += skill_bonuses.mana_max_flat
+            mana_regeneration += skill_bonuses.mana_regeneration_flat
 
             # Multiplicateurs % de l'arbre (déjà plafonnés dans aggregate_bonuses :
             # atk/def/hp ≤ +200%). S'appliquent sur le total flat (base + équipement
@@ -83,6 +97,8 @@ class StatsService:
         dodge = min(dodge, 50)
         crit_damage = max(crit_damage, 100)
         hp_regeneration = max(0, hp_regeneration)
+        mana_max = max(0, mana_max)
+        mana_regeneration = max(0, mana_regeneration)
         speed = max(1, speed)
 
         stats = Stats(
@@ -94,6 +110,8 @@ class StatsService:
             crit_damage=crit_damage,
             dodge=dodge,
             hp_regeneration=hp_regeneration,
+            mana_max=mana_max,
+            mana_regeneration=mana_regeneration,
         )
 
         # 5e étage : bonus de titres exclusifs (Champion 1v1 etc.).
@@ -116,6 +134,8 @@ class StatsService:
                 dodge=stats.dodge + set_bonuses.dodge_flat,
                 hp_regeneration=stats.hp_regeneration
                 + set_bonuses.hp_regeneration_flat,
+                mana_max=stats.mana_max,
+                mana_regeneration=stats.mana_regeneration,
             )
 
         # 7e étage : clamp final. Les items lourds peuvent avoir des stats
@@ -130,6 +150,8 @@ class StatsService:
             crit_damage=max(100, stats.crit_damage),
             dodge=max(0, stats.dodge),
             hp_regeneration=max(0, stats.hp_regeneration),
+            mana_max=max(0, stats.mana_max),
+            mana_regeneration=max(0, stats.mana_regeneration),
         )
 
         return stats

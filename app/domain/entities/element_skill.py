@@ -13,12 +13,17 @@ class SkillEffect:
     """Un effet de compétence. `value` est une FRACTION d'une stat (jamais des
     PV) : selon `kind`, multiplie l'ATTAQUE (damage/heal) ou la DÉFENSE (shield).
     `proc_chance` : 0 pour la basique (auto), >0 pour la spéciale (remplace la
-    basique ce tour-là si elle proc)."""
+    basique ce tour-là si elle proc).
+
+    `mana_cost` : mana consommé quand l'effet se déclenche EN COMBAT. Si le
+    joueur n'a pas assez de mana, l'effet ne se déclenche pas ce tour-là
+    (attaque normale). Le mana ne se régénère qu'HORS combat."""
 
     name: str
     kind: str
     value: float
     proc_chance: float = 0.0
+    mana_cost: int = 0
 
 
 @dataclass(frozen=True)
