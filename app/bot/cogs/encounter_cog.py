@@ -45,6 +45,8 @@ class EncounterCog(commands.Cog):
         self.encounter_service = EncounterService()
         self.next_spawn_at: datetime | None = None
         self._forced_mob_code: str | None = None
+        # Décor de l'encounter courant (résolu au spawn selon la zone/famille).
+        self._active_bg = LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
         # Event signalé par /admin start_encounter pour résoudre tout de suite
         # le combat actif sans attendre les 5 min. Re-créé à chaque spawn.
         self._early_resolve_event: asyncio.Event | None = None
@@ -214,11 +216,15 @@ class EncounterCog(commands.Cog):
         # (ou la zone de base si non mappée). NB : un seul encounter actif à la
         # fois (global) en V1 ; le multi-zone simultané viendra avec le gating.
         from app.infrastructure.encounters.farm_zone_loader import (
+            get_background_for_family,
             get_spawn_channel_for_family,
         )
         channel = self.bot.get_channel(get_spawn_channel_for_family(mob.family))
         if channel is None:
             return
+        # Décor d'environnement de la zone (selon la famille), gardé pour tous
+        # les rendus de cet encounter.
+        self._active_bg = LANDSCAPES_ASSETS_DIR / get_background_for_family(mob.family)
 
         mob_state = EncounterMobState(
             code=mob.code,
@@ -248,7 +254,7 @@ class EncounterCog(commands.Cog):
         spawn_filename = f"encounter_spawn_{encounter.mob_state.code}.png"
         spawn_output_full = self.generated_dir / spawn_filename
         spawn_output_relative = f"generated_encounters/{spawn_filename}"
-        background_path = LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
+        background_path = self._active_bg
 
         mob_score = self.power_score_service.calculate_and_format_from_mob(mob)
 
@@ -329,7 +335,7 @@ class EncounterCog(commands.Cog):
         self.persist_final_players_hp(result)
         battle_summary = self.encounter_service.apply_rewards(self.active_encounter, result)
 
-        background_path = LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
+        background_path = self._active_bg
         current_filename = f"encounter_{self.active_encounter.message_id}_current.png"
         current_output_full = self.generated_dir / current_filename
         current_output_relative = f"generated_encounters/{current_filename}"
@@ -503,7 +509,7 @@ class EncounterCog(commands.Cog):
         filename = f"encounter_{self.active_encounter.message_id}_current.png"
         output_full = self.generated_dir / filename
         output_relative = f"generated_encounters/{filename}"
-        background_path = LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
+        background_path = self._active_bg
 
         mob_score = self.power_score_service.format_score(
             self.power_score_service.calculate_from_stats(

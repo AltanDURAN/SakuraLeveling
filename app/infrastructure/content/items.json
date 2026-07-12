@@ -2497,5 +2497,21 @@
     "equipment_slot": "bague",
     "requires_two_hands": false,
     "family": "boss"
+  },
+  {
+    "code": "os_ancien",
+    "name": "Os ancien",
+    "description": "Ossement imprégné d'énergie nécrotique, laissé par les morts-vivants. Matériau de craft.",
+    "category": "resource",
+    "rarity": "uncommon",
+    "stackable": true,
+    "max_stack": 999,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {},
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": ""
   }
 ]

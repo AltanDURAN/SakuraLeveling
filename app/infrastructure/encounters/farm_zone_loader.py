@@ -39,13 +39,41 @@ def default_channel_id() -> int:
     return ch or settings.encounter_channel_id
 
 
+def default_background() -> str:
+    return _load().get("default_background", "clairiere_sinistre.png")
+
+
+def _zone(family: str | None) -> dict | None:
+    """Entrée de zone d'une famille, normalisée en dict {channel_id, background}.
+    Rétrocompatible avec l'ancien format (valeur = int channel_id)."""
+    if not family:
+        return None
+    z = (_load().get("zones", {}) or {}).get(family)
+    if z is None:
+        return None
+    if isinstance(z, int):  # ancien format
+        return {"channel_id": z, "background": default_background()}
+    return z
+
+
 def get_spawn_channel_for_family(family: str | None) -> int:
-    """Salon de spawn pour la famille donnée (zone de base si non mappée)."""
-    data = _load()
-    zones = data.get("zones", {}) or {}
-    if family and family in zones:
-        return int(zones[family])
+    """Salon de spawn pour la famille (zone de base si non mappée ou channel_id=0
+    = zone pas encore configurée)."""
+    z = _zone(family)
+    if z:
+        ch = int(z.get("channel_id", 0) or 0)
+        if ch:
+            return ch
     return default_channel_id()
+
+
+def get_background_for_family(family: str | None) -> str:
+    """Nom du décor (dans assets/landscapes/) pour la famille. Décor par défaut
+    si la zone n'est pas encore configurée (channel_id=0)."""
+    z = _zone(family)
+    if z and int(z.get("channel_id", 0) or 0):
+        return z.get("background") or default_background()
+    return default_background()
 
 
 def clear_cache() -> None:
