@@ -74,13 +74,25 @@ async def roles_by_role(request: Request, user: AdminUser = Depends(require_admi
             if rid in by_role:
                 by_role[rid].append({"name": _member_name(m), "avatar": _avatar_url(m),
                                       "user_id": m["user"]["id"]})
-    roles_ctx = [{
-        "id": r["id"], "name": r["name"], "color": _color_hex(r.get("color", 0)),
-        "position": r.get("position", 0), "managed": r.get("managed", False),
-        "everyone": r["id"] == str(gid),
-        "members": sorted(by_role.get(r["id"], []), key=lambda x: x["name"].lower()),
-        "count": len(by_role.get(r["id"], [])),
-    } for r in roles]
+    # Membres complets (pour proposer, par rôle, ceux qui NE l'ont PAS).
+    all_members = [{"user_id": m["user"]["id"], "name": _member_name(m),
+                    "bot": m["user"].get("bot", False)} for m in members]
+    all_members.sort(key=lambda x: x["name"].lower())
+
+    roles_ctx = []
+    for r in roles:
+        have_ids = {mem["user_id"] for mem in by_role.get(r["id"], [])}
+        assignable_role = r["id"] != str(gid) and not r.get("managed", False)
+        roles_ctx.append({
+            "id": r["id"], "name": r["name"], "color": _color_hex(r.get("color", 0)),
+            "position": r.get("position", 0), "managed": r.get("managed", False),
+            "everyone": r["id"] == str(gid),
+            "members": sorted(by_role.get(r["id"], []), key=lambda x: x["name"].lower()),
+            "count": len(by_role.get(r["id"], [])),
+            # Membres qui n'ont PAS encore ce rôle (pour le picker "+").
+            "eligible": [am for am in all_members if am["user_id"] not in have_ids]
+            if assignable_role else [],
+        })
 
     return get_templates().TemplateResponse(request, "admin/roles/by_role.html", {
         "user": user, "roles": roles_ctx, "error": error,
@@ -105,6 +117,7 @@ async def roles_by_member(request: Request, user: AdminUser = Depends(require_ad
     ]
     members_ctx = []
     for m in members:
+        has_ids = set(m.get("roles", []))
         member_roles = []
         for rid in m.get("roles", []):
             r = role_map.get(rid)
@@ -119,6 +132,8 @@ async def roles_by_member(request: Request, user: AdminUser = Depends(require_ad
             "username": m["user"].get("username", ""),
             "avatar": _avatar_url(m), "bot": m["user"].get("bot", False),
             "roles": member_roles,
+            # Rôles que le membre n'a PAS encore (pour le picker "+").
+            "eligible": [r for r in assignable if r["id"] not in has_ids],
         })
     members_ctx.sort(key=lambda x: x["name"].lower())
 
