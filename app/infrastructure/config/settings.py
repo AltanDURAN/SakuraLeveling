@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     # Leveling"). 0 = pas d'attribution auto. Le bot doit avoir "Gérer les
     # rôles" et être au-dessus de ce rôle dans la hiérarchie.
     default_member_role_id: int = 0
+    # Rôle "chad" : toggle via /chad, mentionné (@chad) par le bouton
+    # "Demander de l'aide" des encounters. 0 = feature désactivée (fallback
+    # sur l'ancienne liste DB). Le bot doit avoir "Gérer les rôles" et être
+    # au-dessus de ce rôle dans la hiérarchie.
+    chad_role_id: int = 0
     # URL publique du webapp skill tree (utilisée par le bouton 'Vue détaillée'
     # de /skill). Sans valeur, on retombe sur l'URL locale http://localhost:8000.
     webapp_base_url: str = "http://localhost:8000"

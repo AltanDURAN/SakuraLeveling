@@ -21,6 +21,7 @@ COMMAND_CHANNELS="1485329709201096796,1485329739605348484,1485330054182604810"
 DISCORD_GUILD_ID="1485307656364101785"  # serveur Sakura Leveling (gestion rôles admin web)
 WELCOME_CHANNEL_ID="1485370050956362029"       # salon bienvenue (accueil nouveaux membres)
 DEFAULT_MEMBER_ROLE_ID="1485382885560029215"   # rôle "Sakura Leveling" auto
+CHAD_ROLE_ID="1525920518291853433"             # rôle "chad" (/chad + @chad appels à l'aide)
 
 # Couleurs
 RED='\033[0;31m'
@@ -191,7 +192,7 @@ else
     ok "DISCORD_GUILD_ID ajouté"
 fi
 
-for KV in "WELCOME_CHANNEL_ID=$WELCOME_CHANNEL_ID" "DEFAULT_MEMBER_ROLE_ID=$DEFAULT_MEMBER_ROLE_ID"; do
+for KV in "WELCOME_CHANNEL_ID=$WELCOME_CHANNEL_ID" "DEFAULT_MEMBER_ROLE_ID=$DEFAULT_MEMBER_ROLE_ID" "CHAD_ROLE_ID=$CHAD_ROLE_ID"; do
     KEY="${KV%%=*}"
     if grep -q "^$KEY=" .env; then
         sed -i "s/^$KEY=.*/$KV/" .env

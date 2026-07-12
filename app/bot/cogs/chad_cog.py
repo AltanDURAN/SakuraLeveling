@@ -1,22 +1,23 @@
-"""Cog `/chad` — système d'inscription au tag des appels à l'aide.
+"""Cog `/chad` — toggle du rôle "chad".
 
-Un "chad" est un joueur qui accepte d'être tagué quand quelqu'un clique
-sur le bouton 'Demander de l'aide' d'un encounter (cf. encounter_cog).
-La commande `/chad` est un toggle : si pas inscrit → propose de rejoindre
-la liste, si déjà inscrit → propose de quitter.
+Un "chad" est un membre qui accepte d'être tagué (mention du rôle @chad)
+quand quelqu'un clique sur le bouton 'Demander de l'aide' d'un encounter
+(cf. encounter_view). La commande `/chad` est un toggle du RÔLE Discord
+`settings.chad_role_id` : si le membre a le rôle → propose de le retirer,
+sinon → propose de l'ajouter. Le rôle est la source de vérité unique
+(plus de liste en base).
 """
+
+import logging
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 
 from app.infrastructure.config.settings import settings
-from app.infrastructure.db.repositories.help_subscriber_repository import (
-    HelpSubscriberRepository,
-)
-from app.infrastructure.db.repositories.player_repository import PlayerRepository
-from app.infrastructure.db.session import get_db_session
 from app.bot.cogs._mixins import BetaChannelOnlyMixin
+
+_logger = logging.getLogger(__name__)
 
 
 class _ChadConfirmView(discord.ui.View):
@@ -25,12 +26,14 @@ class _ChadConfirmView(discord.ui.View):
     def __init__(
         self,
         author_id: int,
-        is_currently_subscribed: bool,
+        role_id: int,
+        is_currently_chad: bool,
         timeout: float = 60.0,
     ) -> None:
         super().__init__(timeout=timeout)
         self.author_id = author_id
-        self.is_currently_subscribed = is_currently_subscribed
+        self.role_id = role_id
+        self.is_currently_chad = is_currently_chad
 
     async def _check_owner(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.author_id:
@@ -50,36 +53,46 @@ class _ChadConfirmView(discord.ui.View):
         if not await self._check_owner(interaction):
             return
 
-        with get_db_session() as session:
-            profile = PlayerRepository(session).get_or_create_by_discord_id(
-                discord_id=interaction.user.id,
-                username=interaction.user.name,
-                display_name=interaction.user.display_name,
-            )
-            repo = HelpSubscriberRepository(session)
-
-            if self.is_currently_subscribed:
-                repo.unsubscribe(profile.player.id)
-                remaining = repo.list_all_discord_ids()
-                mentions = (
-                    " ".join(f"<@{did}>" for did in remaining)
-                    if remaining
-                    else "_aucun chad inscrit pour l'instant_"
-                )
-                msg = (
-                    "✅ Vous ne serez plus notifié lorsqu'une personne demande de l'aide.\n"
-                    f"Liste des chads actuelle : {mentions}"
-                )
-            else:
-                repo.subscribe(profile.player.id)
-                msg = (
-                    "✅ Vous êtes inscrit chez les chads — vous serez tagué "
-                    "quand quelqu'un cliquera sur **Demander de l'aide** dans "
-                    "un encounter. Refaites `/chad` pour quitter la liste."
-                )
+        member = interaction.user
+        guild = interaction.guild
+        role = guild.get_role(self.role_id) if guild is not None else None
 
         for child in self.children:
             child.disabled = True
+
+        if role is None or not isinstance(member, discord.Member):
+            await interaction.response.edit_message(
+                content="❌ Rôle chad introuvable sur ce serveur.", view=self,
+            )
+            self.stop()
+            return
+
+        try:
+            if self.is_currently_chad:
+                await member.remove_roles(role, reason="/chad — quitte les chads")
+                msg = (
+                    "✅ Rôle **chad** retiré — vous ne serez plus tagué lors "
+                    "des appels à l'aide. Refaites `/chad` pour le reprendre."
+                )
+            else:
+                await member.add_roles(role, reason="/chad — rejoint les chads")
+                msg = (
+                    "✅ Rôle **chad** ajouté — vous serez tagué (via @chad) "
+                    "quand un joueur cliquera sur **Demander de l'aide** dans "
+                    "un encounter. Refaites `/chad` pour le retirer."
+                )
+        except discord.Forbidden:
+            _logger.warning(
+                "/chad : permissions insuffisantes pour gérer le rôle %s", self.role_id
+            )
+            msg = (
+                "❌ Je n'ai pas la permission de gérer ce rôle. Vérifie que "
+                "j'ai « Gérer les rôles » et que je suis au-dessus du rôle chad."
+            )
+        except discord.DiscordException:
+            _logger.exception("/chad : échec du toggle de rôle")
+            msg = "❌ Une erreur est survenue lors de la modification du rôle."
+
         await interaction.response.edit_message(content=msg, view=self)
         self.stop()
 
@@ -106,34 +119,41 @@ class ChadCog(BetaChannelOnlyMixin, commands.Cog):
 
     @app_commands.command(
         name="chad",
-        description="Rejoindre / quitter la liste des chads (tagués sur les appels à l'aide)",
+        description="Prendre / retirer le rôle chad (tagué @chad sur les appels à l'aide)",
     )
     async def chad(self, interaction: discord.Interaction) -> None:
-        with get_db_session() as session:
-            profile = PlayerRepository(session).get_or_create_by_discord_id(
-                discord_id=interaction.user.id,
-                username=interaction.user.name,
-                display_name=interaction.user.display_name,
-            )
-            repo = HelpSubscriberRepository(session)
-            is_sub = repo.is_subscribed(profile.player.id)
+        role_id = settings.chad_role_id
+        guild = interaction.guild
+        role = guild.get_role(role_id) if (guild is not None and role_id) else None
 
-        if is_sub:
+        if role is None:
+            await interaction.response.send_message(
+                "❌ Le rôle chad n'est pas configuré sur ce serveur.",
+                ephemeral=True,
+            )
+            return
+
+        is_chad = isinstance(interaction.user, discord.Member) and (
+            interaction.user.get_role(role_id) is not None
+        )
+
+        if is_chad:
             prompt = (
-                "💪 Vous êtes actuellement inscrit chez les **chads**.\n"
-                "Voulez-vous quitter cette liste ? Vous ne serez plus tagué "
+                "💪 Vous avez actuellement le rôle **chad**.\n"
+                "Voulez-vous le retirer ? Vous ne serez plus tagué (@chad) "
                 "lors des appels à l'aide."
             )
         else:
             prompt = (
-                "💪 Voulez-vous rejoindre la liste des **chads** ?\n"
-                "Vous serez tagué dans le canal d'encounter quand un joueur "
-                "cliquera sur **Demander de l'aide**."
+                "💪 Voulez-vous prendre le rôle **chad** ?\n"
+                "Vous serez tagué (@chad) dans le canal d'encounter quand un "
+                "joueur cliquera sur **Demander de l'aide**."
             )
 
         view = _ChadConfirmView(
             author_id=interaction.user.id,
-            is_currently_subscribed=is_sub,
+            role_id=role_id,
+            is_currently_chad=is_chad,
         )
         await interaction.response.send_message(
             prompt, view=view, ephemeral=True,

@@ -1,10 +1,5 @@
 import discord
 
-from app.infrastructure.db.repositories.help_subscriber_repository import (
-    HelpSubscriberRepository,
-)
-from app.infrastructure.db.session import get_db_session
-
 
 class EncounterView(discord.ui.View):
     def __init__(self, cog, channel_id: int, timeout: float | None = 300):
@@ -108,29 +103,40 @@ class EncounterView(discord.ui.View):
             )
             return
 
-        with get_db_session() as session:
-            chad_discord_ids = HelpSubscriberRepository(session).list_all_discord_ids()
+        # Le rôle chad est la source de vérité : on tague @chad (mention du
+        # rôle) au lieu de lister chaque pseudo.
+        from app.infrastructure.config.settings import settings
+        role = (
+            interaction.guild.get_role(settings.chad_role_id)
+            if (interaction.guild is not None and settings.chad_role_id)
+            else None
+        )
 
         # On marque l'aide comme demandée AVANT toute action côté Discord
         # pour éviter qu'un double-click ne génère deux notifications.
         self._help_used = True
         self.sync()  # désactive + relabellise le bouton (et garde Quitter cohérent)
 
-        if not chad_discord_ids:
+        # Personne n'a le rôle (ou rôle non configuré) → message d'invitation.
+        if role is None or not role.members:
             await interaction.response.edit_message(view=self)
             await interaction.followup.send(
-                "📣 Aucun chad inscrit pour l'instant — utilisez `/chad` "
-                "pour rejoindre la liste des notifiables.",
+                "📣 Aucun chad pour l'instant — utilisez `/chad` "
+                "pour prendre le rôle et être notifié.",
                 ephemeral=False,
             )
             return
 
-        mentions = " ".join(f"<@{did}>" for did in chad_discord_ids)
         content = (
-            f"📣 Aventuriers : {mentions} rassemblement ! "
+            f"📣 Aventuriers : {role.mention} rassemblement ! "
             f"{interaction.user.mention} demande de l'aide pour le combat en cours."
         )
 
-        # On édite la view (bouton désactivé/relabellisé) puis on poste l'appel
+        # On édite la view (bouton désactivé/relabellisé) puis on poste l'appel.
+        # allowed_mentions=roles pour que la mention du rôle ping réellement.
         await interaction.response.edit_message(view=self)
-        await interaction.followup.send(content, ephemeral=False)
+        await interaction.followup.send(
+            content,
+            ephemeral=False,
+            allowed_mentions=discord.AllowedMentions(roles=[role]),
+        )
