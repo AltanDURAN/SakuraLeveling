@@ -100,6 +100,10 @@ class OnboardingCog(BetaChannelOnlyMixin, commands.Cog):
         Chaque étape est best-effort : un échec ne bloque pas les autres."""
         if member.bot:
             return
+        # Restreint l'accueil au serveur du jeu (le bot peut être dans d'autres
+        # serveurs qu'on ne veut pas peupler dans la base des joueurs).
+        if settings.discord_guild_id and member.guild.id != settings.discord_guild_id:
+            return
 
         # 1. Enregistrement en base (idempotent).
         try:
