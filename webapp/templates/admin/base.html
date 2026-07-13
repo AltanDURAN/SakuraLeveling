@@ -16,69 +16,71 @@
     {% if user %}
     {% set cur = request.url.path %}
     {% set nav_groups = [
-        {'label': 'Joueurs', 'items': [
-            ('/admin/players', '👥', 'Joueurs'), ('/admin/roles', '🎭', 'Rôles'),
-            ('/admin/actions', '⚡', 'Actions')]},
-        {'label': 'Monde', 'items': [
-            ('/admin/mobs', '👹', 'Mobs'), ('/admin/zones', '🗺️', 'Zones'),
-            ('/admin/familles', '🧬', 'Familles'), ('/admin/world-bosses', '🐉', 'World Bosses')]},
-        {'label': 'Objets & éco', 'items': [
-            ('/admin/items', '📦', 'Items'), ('/admin/shop', '🏪', 'Shop'),
-            ('/admin/crafts', '🛠️', 'Crafts'), ('/admin/panoplies', '🌸', 'Panoplies')]},
-        {'label': 'Progression', 'items': [
-            ('/admin/classes', '🧬', 'Classes'), ('/admin/skill-tree', '🌳', 'Arbre'),
-            ('/admin/competences', '✨', 'Compétences'), ('/admin/titles', '🏷️', 'Titres'),
-            ('/admin/quests', '📜', 'Quêtes')]},
+        {'label': '👥 Joueurs', 'items': [
+            ('/admin/players', 'Joueurs'), ('/admin/roles', 'Rôles'), ('/admin/actions', 'Actions')]},
+        {'label': '🗺️ Monde', 'items': [
+            ('/admin/mobs', 'Mobs'), ('/admin/zones', 'Zones'),
+            ('/admin/familles', 'Familles'), ('/admin/world-bosses', 'World Bosses')]},
+        {'label': '📦 Objets', 'items': [
+            ('/admin/items', 'Items'), ('/admin/shop', 'Shop'),
+            ('/admin/crafts', 'Crafts'), ('/admin/panoplies', 'Panoplies')]},
+        {'label': '📈 Progression', 'items': [
+            ('/admin/classes', 'Classes'), ('/admin/skill-tree', 'Arbre'),
+            ('/admin/competences', 'Compétences'), ('/admin/titles', 'Titres'),
+            ('/admin/quests', 'Quêtes')]},
     ] %}
-    <div class="admin-shell" x-data="{ nav: false }">
-        <aside class="sidebar" x-bind:class="{ 'sidebar--open': nav }">
+    <header class="topbar">
+        <div class="topbar-inner">
             <a href="/admin" class="brand">
                 <span class="brand-mark">🌸</span>
                 <span class="brand-text">Sakura Admin</span>
             </a>
-            <nav class="sidenav">
-                <a href="/admin" class="sidenav-link {% if cur == '/admin' or cur == '/admin/' %}is-active{% endif %}">
-                    <span class="sidenav-ico">🏠</span> Dashboard
-                </a>
+            <nav class="topnav">
+                <a href="/admin" class="topnav-link {% if cur == '/admin' or cur == '/admin/' %}is-active{% endif %}">🏠 Dashboard</a>
                 {% for g in nav_groups %}
-                <div class="sidenav-group">
-                    <span class="sidenav-group-label">{{ g['label'] }}</span>
-                    {% for href, ico, label in g['items'] %}
-                    <a href="{{ href }}" class="sidenav-link {% if cur.startswith(href) %}is-active{% endif %}">
-                        <span class="sidenav-ico">{{ ico }}</span> {{ label }}
-                    </a>
+                    {% set ns = namespace(active=false) %}
+                    {% for href, label in g['items'] %}
+                        {% if cur.startswith(href) %}{% set ns.active = true %}{% endif %}
                     {% endfor %}
-                </div>
+                    <div class="topnav-group"
+                         x-data="{ open: false }"
+                         x-on:click.outside="open = false"
+                         x-on:keydown.escape.window="open = false">
+                        <button type="button"
+                                class="topnav-link topnav-trigger {% if ns.active %}is-active{% endif %}"
+                                x-on:click="open = !open"
+                                x-bind:aria-expanded="open ? 'true' : 'false'">
+                            {{ g['label'] }} <span class="caret" aria-hidden="true">▾</span>
+                        </button>
+                        <div class="topnav-menu" x-show="open" x-cloak>
+                            {% for href, label in g['items'] %}
+                                <a href="{{ href }}" class="{% if cur.startswith(href) %}is-active{% endif %}">{{ label }}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
                 {% endfor %}
             </nav>
-            <div class="sidebar-footer">
+            <div class="topbar-actions">
                 <button class="theme-toggle" type="button" title="Thème clair/sombre"
                         x-on:click="theme = (theme === 'light' ? 'dark' : 'light'); localStorage.setItem('sakura-admin-theme', theme)">
                     <span x-show="theme === 'light'">🌙</span>
                     <span x-show="theme === 'dark'">☀️</span>
                 </button>
                 <span class="user-chip" title="Discord ID : {{ user.discord_id }}">{{ user.display_name }}</span>
-                <a href="/admin/logout" class="logout-link" title="Déconnexion">⎋</a>
+                <a href="/admin/logout" class="logout-link">Déconnexion</a>
             </div>
-        </aside>
-
-        <div class="admin-main">
-            <div class="mobile-bar">
-                <button class="hamburger" type="button" x-on:click="nav = !nav" aria-label="Menu">☰</button>
-                <a href="/admin" class="brand"><span class="brand-mark">🌸</span> Sakura Admin</a>
-            </div>
-            <main class="page-main">
-    {% else %}
-    <main class="page-main">
-    {% endif %}
-        {% block content %}{% endblock %}
-        </main>
-    {% if user %}
-            <footer class="page-footer">
-                <span>🌸 SakuraLeveling — admin interne</span>
-            </footer>
         </div>
-    </div>
+    </header>
+    {% endif %}
+
+    <main class="page-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% if user %}
+    <footer class="page-footer">
+        <span>🌸 SakuraLeveling — admin interne</span>
+    </footer>
     {% endif %}
 </body>
 </html>
