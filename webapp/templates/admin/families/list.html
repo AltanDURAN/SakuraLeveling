@@ -28,7 +28,7 @@
                     <th>Mobs</th>
                     <th>Zone de spawn</th>
                     <th>Essences / kill</th>
-                    <th>Drop commun</th>
+                    <th>Drop commun (éditable)</th>
                 </tr>
             </thead>
             <tbody>
@@ -53,16 +53,31 @@
                         {% else %}{{ f.essences[0] }}–{{ f.essences[1] }}{% endif %}
                     </td>
                     <td>
-                        {% if f.common_drop %}
-                            <code>{{ f.common_drop.item_code }}</code>
-                            ({{ (f.common_drop.drop_rate * 100) | round(0, 'floor') | int }}%)
-                        {% else %}—{% endif %}
+                        <form method="post" action="/admin/familles/{{ f.name }}/drop"
+                              style="display:flex; gap:0.3rem; align-items:center; flex-wrap:wrap;">
+                            <input type="text" name="item_code" list="all-items" class="input"
+                                   style="width: 140px;" placeholder="(aucun)"
+                                   value="{{ f.common_drop.item_code if f.common_drop else '' }}">
+                            <input type="number" name="drop_rate" step="0.05" min="0" max="1" class="input"
+                                   style="width: 78px;"
+                                   value="{{ f.common_drop.drop_rate if f.common_drop else 0.75 }}"
+                                   title="Taux de drop (0 à 1)">
+                            <button type="submit" class="btn btn-small">💾</button>
+                        </form>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    <datalist id="all-items">
+        {% for code in item_codes %}<option value="{{ code }}">{% endfor %}
+    </datalist>
+    <p style="color: var(--muted); margin-top: 0.8rem;">
+        Le <strong>drop commun</strong> est droppé par tous les mobs de la famille
+        (quantité ∝ puissance du mob). Laisse le champ item vide + 💾 pour le retirer.
+        ⚠️ Restart bot requis pour appliquer.
+    </p>
     {% else %}
     <div class="empty-state"><p>Aucune famille (aucun mob).</p></div>
     {% endif %}

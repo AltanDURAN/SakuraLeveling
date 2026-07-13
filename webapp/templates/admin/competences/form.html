@@ -1,0 +1,101 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{% if skill %}Éditer {{ skill.code }}{% else %}Nouvelle compétence{% endif %} — Sakura Admin{% endblock %}
+
+{% block content %}
+{% set fd = form_data if form_data is defined else {} %}
+<section class="form-page">
+    <a href="/admin/competences" class="breadcrumb">← Compétences</a>
+    <h1>{% if skill %}Éditer <code>{{ skill.code }}</code>{% else %}Nouvelle compétence{% endif %}</h1>
+
+    <form method="post"
+          action="{% if skill %}/admin/competences/{{ skill.code }}{% else %}/admin/competences{% endif %}"
+          class="form-grid">
+
+        <div class="form-section">
+            <h2 class="form-section-title">Identité</h2>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Élément</span>
+                    {% set cur_el = fd.get('element', skill.element if skill else '') %}
+                    <select name="element" class="input" {% if skill %}disabled{% endif %}>
+                        {% for el in elements %}
+                        <option value="{{ el }}" {% if cur_el == el %}selected{% endif %}>{{ el }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if skill %}<input type="hidden" name="element" value="{{ skill.element }}">{% endif %}
+                    {% if errors.get('element') %}<span class="field-error">{{ errors['element'] }}</span>{% endif %}
+                </label>
+                <label class="field">
+                    <span class="field-label">Rôle</span>
+                    {% set cur_role = fd.get('role', skill.role if skill else '') %}
+                    <select name="role" class="input" {% if skill %}disabled{% endif %}>
+                        {% for r in roles %}
+                        <option value="{{ r }}" {% if cur_role == r %}selected{% endif %}>{{ r }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if skill %}<input type="hidden" name="role" value="{{ skill.role }}">{% endif %}
+                    {% if errors.get('role') %}<span class="field-error">{{ errors['role'] }}</span>{% endif %}
+                </label>
+                <label class="field">
+                    <span class="field-label">Emoji</span>
+                    <input type="text" name="emoji" class="input" maxlength="4"
+                           value="{{ fd.get('emoji', skill.emoji if skill else '') }}" placeholder="🔥">
+                </label>
+            </div>
+            {% if not skill %}
+            <small style="color: var(--muted);">Le code sera <code>élément_rôle</code> (ex: feu_offensive).</small>
+            {% endif %}
+        </div>
+
+        {% macro effect_fields(prefix, label, eff, with_proc) %}
+        <div class="form-section">
+            <h2 class="form-section-title">{{ label }}</h2>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Nom</span>
+                    <input type="text" name="{{ prefix }}_name" class="input"
+                           value="{{ fd.get(prefix ~ '_name', eff.name if eff else '') }}" placeholder="Frappe Ardente">
+                </label>
+                <label class="field">
+                    <span class="field-label">Type d'effet</span>
+                    {% set curk = fd.get(prefix ~ '_kind', eff.kind if eff else 'damage') %}
+                    <select name="{{ prefix }}_kind" class="input">
+                        {% for k in kinds %}
+                        <option value="{{ k }}" {% if curk == k %}selected{% endif %}>{{ k }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="field">
+                    <span class="field-label">Valeur (× stat : damage/heal=ATK, shield=DEF)</span>
+                    <input type="number" step="0.05" name="{{ prefix }}_value" class="input"
+                           value="{{ fd.get(prefix ~ '_value', eff.value if eff else 1.0) }}">
+                </label>
+                <label class="field">
+                    <span class="field-label">Coût en mana</span>
+                    <input type="number" min="0" name="{{ prefix }}_mana_cost" class="input"
+                           value="{{ fd.get(prefix ~ '_mana_cost', eff.mana_cost if eff else 20) }}">
+                </label>
+                {% if with_proc %}
+                <label class="field">
+                    <span class="field-label">Chance de proc (0–1, ex: 0.1 = 10%)</span>
+                    <input type="number" step="0.01" min="0" max="1" name="{{ prefix }}_proc_chance" class="input"
+                           value="{{ fd.get(prefix ~ '_proc_chance', eff.proc_chance if eff else 0.1) }}">
+                </label>
+                {% endif %}
+            </div>
+        </div>
+        {% endmacro %}
+
+        {{ effect_fields('basic', 'Effet basique (chaque tour)', skill.basic if skill else None, False) }}
+        {{ effect_fields('special', 'Effet spécial (remplace la basique quand il proc)', skill.special if skill else None, True) }}
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                {% if skill %}Enregistrer{% else %}Créer{% endif %}
+            </button>
+            <a href="/admin/competences" class="btn btn-ghost">Annuler</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

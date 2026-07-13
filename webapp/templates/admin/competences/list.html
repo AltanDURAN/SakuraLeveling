@@ -1,0 +1,66 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Compétences élémentaires — Sakura Admin{% endblock %}
+
+{% block content %}
+<section class="list-page">
+    <header class="list-header">
+        <div>
+            <a href="/admin" class="breadcrumb">← Dashboard</a>
+            <h1>✨ Compétences élémentaires <span class="count-pill">{{ skills|length }}</span></h1>
+        </div>
+        <a href="/admin/competences/new" class="btn btn-primary">+ Nouvelle compétence</a>
+    </header>
+
+    <p style="color: var(--muted); margin: 0 0 1rem;">
+        24 compétences (8 éléments × 3 rôles). Chaque skill a une <strong>basique</strong>
+        (chaque tour) et une <strong>spéciale</strong> (proc %). Effets en % de stats,
+        avec un coût en mana. ⚠️ Le bot doit être redémarré pour appliquer les changements.
+    </p>
+
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Compétence</th>
+                    <th>Élément</th>
+                    <th>Rôle</th>
+                    <th>Basique</th>
+                    <th>Spéciale (proc)</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in skills %}
+                <tr>
+                    <td>{{ s.emoji }} <code>{{ s.code }}</code></td>
+                    <td>{{ s.element }}</td>
+                    <td>{{ s.role }}</td>
+                    <td>
+                        <strong>{{ s.basic.name }}</strong><br>
+                        <small style="color: var(--muted);">
+                            {{ s.basic.kind }} · ×{{ s.basic.value }} · 💧{{ s.basic.mana_cost }}
+                        </small>
+                    </td>
+                    <td>
+                        <strong>{{ s.special.name }}</strong><br>
+                        <small style="color: var(--muted);">
+                            {{ s.special.kind }} · ×{{ s.special.value }} · 💧{{ s.special.mana_cost }}
+                            · {{ (s.special.proc_chance * 100) | round(0, 'floor') | int }}%
+                        </small>
+                    </td>
+                    <td style="white-space:nowrap;">
+                        <a href="/admin/competences/{{ s.code }}/edit" class="btn btn-small">Éditer</a>
+                        <form method="post" action="/admin/competences/{{ s.code }}/delete"
+                              style="display:inline; margin-left:0.3rem;"
+                              onsubmit="return confirm('⚠️ Supprimer la compétence « {{ s.code }} » ?\n\nLes joueurs qui l\'ont équipée ne l\'auront plus. Irréversible.');">
+                            <button type="submit" class="btn btn-small" style="background: var(--danger); color: white;">Suppr.</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

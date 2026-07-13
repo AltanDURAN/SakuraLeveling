@@ -203,6 +203,63 @@ def delete_shop_json(item_code: str) -> None:
         _logger.warning("Échec suppression shop_items.json pour '%s'", item_code, exc_info=True)
 
 
+# ---------------------- Compétences élémentaires ----------------------
+
+def load_element_skills() -> dict:
+    data = json_writer.load_json("element_skills.json", default={"skills": {}}) or {"skills": {}}
+    if "skills" not in data:
+        data["skills"] = {}
+    return data
+
+
+def build_skill_effect(*, name, kind, value, mana_cost, proc_chance=0.0) -> dict:
+    """Construit un effet (basique ou spéciale) au schéma element_skills.json."""
+    eff: dict = {"name": name or "", "kind": kind, "value": float(value)}
+    if proc_chance and float(proc_chance) > 0:
+        eff["proc_chance"] = float(proc_chance)
+    eff["mana_cost"] = int(mana_cost or 0)
+    return eff
+
+
+def build_skill_dict(*, element, role, emoji, basic, special) -> dict:
+    return {
+        "element": element,
+        "role": role,
+        "emoji": emoji or "",
+        "basic": basic,
+        "special": special,
+    }
+
+
+def upsert_skill_json(code: str, skill: dict) -> None:
+    data = load_element_skills()
+    data["skills"][code] = skill
+    json_writer.atomic_write_json("element_skills.json", data)
+
+
+def delete_skill_json(code: str) -> None:
+    data = load_element_skills()
+    if code in data["skills"]:
+        del data["skills"][code]
+        json_writer.atomic_write_json("element_skills.json", data)
+
+
+# ---------------------- Drops communs de famille ----------------------
+
+def upsert_family_drop_json(family: str, item_code: str, drop_rate: float) -> None:
+    """Définit (upsert) le drop commun d'une famille dans family_drops.json."""
+    data = json_writer.load_json("family_drops.json", default={}) or {}
+    data[family] = {"item_code": item_code, "drop_rate": float(drop_rate)}
+    json_writer.atomic_write_json("family_drops.json", data)
+
+
+def delete_family_drop_json(family: str) -> None:
+    data = json_writer.load_json("family_drops.json", default={}) or {}
+    if family in data:
+        del data[family]
+        json_writer.atomic_write_json("family_drops.json", data)
+
+
 def load_farm_zones() -> dict:
     return json_writer.load_json("farm_zones.json", default={}) or {}
 
