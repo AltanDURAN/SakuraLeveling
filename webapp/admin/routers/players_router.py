@@ -253,7 +253,10 @@ async def players_inventory(player_id: int, request: Request, edit: int = 0, use
               "category": it.item_definition.category, "quantity": it.quantity} for it in inv],
             key=lambda x: (x["category"], x["code"]),
         )
-        ctx["all_item_codes"] = sorted(i.code for i in ItemRepository(session).list_all())
+        ctx["all_items"] = sorted(
+            ({"code": i.code, "name": i.name} for i in ItemRepository(session).list_all()),
+            key=lambda x: x["name"].lower(),
+        )
     return get_templates().TemplateResponse(request, "admin/players/card.html", context=ctx)
 
 
@@ -268,8 +271,10 @@ async def players_equipment(player_id: int, request: Request, edit: int = 0, use
               "family": e.item_definition.family or ""} for e in eq],
             key=lambda x: x["slot"],
         )
-        ctx["equip_item_codes"] = sorted(
-            i.code for i in ItemRepository(session).list_all() if i.equipment_slot
+        ctx["equip_items"] = sorted(
+            ({"code": i.code, "name": i.name}
+             for i in ItemRepository(session).list_all() if i.equipment_slot),
+            key=lambda x: x["name"].lower(),
         )
         ctx["slots"] = SLOT_ORDER
     return get_templates().TemplateResponse(request, "admin/players/card.html", context=ctx)

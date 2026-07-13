@@ -156,11 +156,13 @@
         {% if section == 'inventory' %}
             {% if edit %}
             <form class="pedit-add" method="post" action="/admin/players/{{ p.id }}/inventory/add">
-                <input type="text" name="item_code" list="all-items" placeholder="code item" required>
+                <select name="item_code" required>
+                    <option value="">— choisir un item —</option>
+                    {% for it in all_items %}<option value="{{ it.code }}">{{ it.name }}</option>{% endfor %}
+                </select>
                 <input type="number" name="quantity" value="1" min="1" title="quantité">
                 <button type="submit" class="btn btn-primary">+ Ajouter</button>
             </form>
-            <datalist id="all-items">{% for code in all_item_codes %}<option value="{{ code }}">{% endfor %}</datalist>
             {% endif %}
             {% if inventory %}
             <div class="table-wrapper"><table class="data-table">
@@ -177,14 +179,16 @@
         {% elif section == 'equipment' %}
             {% if edit %}
             <form class="pedit-add" method="post" action="/admin/players/{{ p.id }}/equipment/equip">
-                <input type="text" name="item_code" list="equip-items" placeholder="code item" required>
+                <select name="item_code" required>
+                    <option value="">— choisir un item —</option>
+                    {% for it in equip_items %}<option value="{{ it.code }}">{{ it.name }}</option>{% endfor %}
+                </select>
                 <select name="slot" required>
                     <option value="">— slot —</option>
                     {% for s in slots %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
                 </select>
                 <button type="submit" class="btn btn-primary">Équiper</button>
             </form>
-            <datalist id="equip-items">{% for code in equip_item_codes %}<option value="{{ code }}">{% endfor %}</datalist>
             {% endif %}
             {% if equipment %}
             <div class="table-wrapper"><table class="data-table">
