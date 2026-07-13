@@ -129,45 +129,21 @@ def _nav(session, current_id: int) -> dict:
     }
 
 
-@router.get("", response_class=HTMLResponse)
-async def players_list(
-    request: Request,
-    user: AdminUser = Depends(require_admin),
-    q: str | None = None,
-):
+@router.get("")
+async def players_list(request: Request, user: AdminUser = Depends(require_admin)):
+    """Redirige directement vers la fiche « carte » du premier joueur (ordre :
+    niveau décroissant puis nom). Le tableau n'est plus utilisé — la sélection
+    se fait via le sélecteur « Aller à » et les flèches de la carte."""
     with get_db_session() as session:
         profiles = PlayerRepository(session).list_all_profiles()
-
-    rows = []
-    for p in profiles:
-        rows.append({
-            "id": p.player.id,
-            "discord_id": p.player.discord_id,
-            "username": p.player.username,
-            "display_name": p.player.display_name,
-            "level": p.progression.level,
-            "xp": p.progression.xp,
-            "skill_points": p.progression.skill_points,
-            "gold": p.resources.gold,
-            "daily_streak": p.resources.daily_streak,
-            "last_seen": p.player.last_seen_at.strftime("%Y-%m-%d %H:%M"),
-        })
-
-    if q:
-        ql = q.lower()
-        rows = [
-            r for r in rows
-            if ql in str(r["discord_id"])
-            or ql in r["username"].lower()
-            or ql in r["display_name"].lower()
-        ]
-
-    rows.sort(key=lambda r: -r["level"])
-
-    return get_templates().TemplateResponse(
-        request, "admin/players/list.html",
-        context={"user": user, "rows": rows, "filter_q": q or ""},
-    )
+    if not profiles:
+        return get_templates().TemplateResponse(
+            request, "admin/players/empty.html", context={"user": user},
+        )
+    first = sorted(
+        profiles, key=lambda p: (-p.progression.level, p.player.display_name.lower()),
+    )[0]
+    return RedirectResponse(f"/admin/players/{first.player.id}/view", status_code=307)
 
 
 async def _base_ctx(session, user, player_id, section: str) -> tuple[dict, object]:
