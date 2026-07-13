@@ -50,7 +50,7 @@ router = APIRouter(prefix="/admin/players", tags=["admin-players"])
 
 
 def _fmt_dt(dt) -> str:
-    return dt.strftime("%Y-%m-%d %H:%M") if dt else "—"
+    return dt.strftime("%d/%m/%Y") if dt else "—"
 
 
 def _player_summary(profile, active_class) -> dict:

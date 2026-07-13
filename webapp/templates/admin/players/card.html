@@ -7,9 +7,12 @@
 } %}
 {% block title %}{{ p.display_name }} — {{ section_titles.get(section, 'Fiche joueur') }}{% endblock %}
 
-{% macro bar(label, cur, max, cls) %}
+{% macro bar(label, cur, max, cls, regen=None) %}
 <div class="pbar">
-    <div class="pbar-head"><span>{{ label }}</span><span>{{ cur }} / {{ max }}</span></div>
+    <div class="pbar-head">
+        <span>{{ label }}</span>
+        <span>{{ cur }} / {{ max }}{% if regen %} <span class="pbar-regen">+{{ regen }}/min</span>{% endif %}</span>
+    </div>
     <div class="pbar-track"><div class="pbar-fill pbar-{{ cls }}"
         style="width: {{ ((cur / max * 100) if max and max > 0 else 0) | round(1) }}%;"></div></div>
 </div>
@@ -21,6 +24,24 @@
          x-on:keydown.window.arrow-left="{% if nav.prev %}window.location='/admin/players/{{ nav.prev.id }}/view'{% endif %}"
          x-on:keydown.window.arrow-right="{% if nav.next %}window.location='/admin/players/{{ nav.next.id }}/view'{% endif %}"
          {% endif %}>
+
+    {% if section == 'main' %}
+    <div class="pcard-jump">
+        <label>Aller à&nbsp;:</label>
+        <select onchange="if(this.value) location.href='/admin/players/'+this.value+'/view'">
+            {% for o in nav.options %}
+            <option value="{{ o.id }}" {% if o.id == p.id %}selected{% endif %}>{{ o.label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+
+    <div class="pcard-nav-row">
+        {% if section == 'main' %}
+            {% if nav.prev %}
+            <a class="pcard-side-arrow" href="/admin/players/{{ nav.prev.id }}/view" title="Précédent : {{ nav.prev.name }}">‹</a>
+            {% else %}<span class="pcard-side-arrow is-disabled">‹</span>{% endif %}
+        {% endif %}
 
     <div class="pcard">
         <!-- Header identité -->
@@ -44,32 +65,21 @@
             </div>
             <div class="pcard-badges">
                 <span class="badge-lvl">Niv {{ p.level }}</span>
-                {% if rank %}<span class="badge-rank">{{ rank }}</span>{% endif %}
+                {% if rank %}
+                <span class="rank-flower" title="Rang {{ rank }}">
+                    <span class="flower">🌸</span>
+                    <span class="rank-text {% if (rank|string)|length > 2 %}rank-long{% endif %}">{{ rank }}</span>
+                </span>
+                {% endif %}
             </div>
         </div>
 
         {% if section == 'main' %}
-        <!-- Carousel navigation joueurs -->
-        <div class="pcard-carousel">
-            {% if nav.prev %}
-                <a class="carousel-arrow" href="/admin/players/{{ nav.prev.id }}/view" title="{{ nav.prev.name }}">◀ <span>{{ nav.prev.name }}</span></a>
-            {% else %}<span class="carousel-arrow is-disabled">◀</span>{% endif %}
-            <select class="carousel-select"
-                    onchange="if(this.value) location.href='/admin/players/'+this.value+'/view'">
-                {% for o in nav.options %}
-                <option value="{{ o.id }}" {% if o.id == p.id %}selected{% endif %}>{{ o.label }}</option>
-                {% endfor %}
-            </select>
-            {% if nav.next %}
-                <a class="carousel-arrow" href="/admin/players/{{ nav.next.id }}/view" title="{{ nav.next.name }}"><span>{{ nav.next.name }}</span> ▶</a>
-            {% else %}<span class="carousel-arrow is-disabled">▶</span>{% endif %}
-        </div>
-
         <!-- Barres PV / Mana / XP -->
         <div class="pcard-bars">
-            {{ bar('❤️ PV', bars.hp.cur, bars.hp.max, 'hp') }}
-            {{ bar('🔷 Mana', bars.mana.cur, bars.mana.max, 'mana') }}
-            {{ bar('⚡ XP → niv ' ~ (p.level + 1), bars.xp.cur, bars.xp.max, 'xp') }}
+            {{ bar('❤️ PV', bars.hp.cur, bars.hp.max, 'hp', stats.hp_regeneration if stats else 0) }}
+            {{ bar('🔷 Mana', bars.mana.cur, bars.mana.max, 'mana', stats.mana_regeneration if stats else 0) }}
+            {{ bar('⚡ XP → Niv ' ~ (p.level + 1), bars.xp.cur, bars.xp.max, 'xp') }}
         </div>
 
         {% if stats %}
@@ -169,6 +179,13 @@
             {% else %}<div class="empty-state"><p>Ce joueur n'a pas encore combattu en duel.</p></div>{% endif %}
         {% endif %}
         {% endif %}
-    </div>
+    </div>{# .pcard #}
+
+        {% if section == 'main' %}
+            {% if nav.next %}
+            <a class="pcard-side-arrow" href="/admin/players/{{ nav.next.id }}/view" title="Suivant : {{ nav.next.name }}">›</a>
+            {% else %}<span class="pcard-side-arrow is-disabled">›</span>{% endif %}
+        {% endif %}
+    </div>{# .pcard-nav-row #}
 </section>
 {% endblock %}

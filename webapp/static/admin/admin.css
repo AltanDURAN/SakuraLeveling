@@ -708,7 +708,43 @@ code {
 }
 
 /* ============ Fiche joueur (carte + carousel) ============ */
-.pcard-wrap { max-width: 780px; margin: 0 auto; }
+.pcard-wrap { max-width: 900px; margin: 0 auto; }
+
+/* Sélecteur "aller à" au-dessus de la carte */
+.pcard-jump { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin: 0 auto 1.1rem; font-size: 0.85rem; color: var(--text-soft); }
+.pcard-jump select { padding: 0.45rem 0.7rem; border-radius: 999px; border: 1px solid var(--border); background: var(--bg-elev); color: var(--text); font-weight: 500; max-width: 340px; }
+
+/* Rangée : flèche extérieure | carte | flèche extérieure */
+.pcard-nav-row { display: flex; align-items: center; gap: 0.8rem; }
+.pcard-nav-row > .pcard { flex: 1; min-width: 0; }
+.pcard-side-arrow {
+    flex-shrink: 0; width: 46px; height: 46px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; background: var(--bg-elev); border: 1px solid var(--border);
+    color: var(--accent); font-size: 1.9rem; font-weight: 700; line-height: 1;
+    box-shadow: var(--shadow-sm); transition: all 0.15s;
+}
+.pcard-side-arrow:hover { background: var(--accent); color: #fff; border-color: var(--accent); transform: scale(1.08); }
+.pcard-side-arrow.is-disabled { opacity: 0.3; pointer-events: none; box-shadow: none; }
+
+/* Fleur de sakura avec le rang au centre */
+.rank-flower { position: relative; width: 58px; height: 58px; display: inline-flex; align-items: center; justify-content: center; filter: drop-shadow(0 1px 2px rgba(150,80,130,0.28)); }
+.rank-flower .flower { font-size: 56px; line-height: 1; }
+.rank-flower .rank-text {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 1.15rem; color: #7a2c53;
+    text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 1px 1px #fff;
+}
+.rank-flower .rank-text.rank-long { font-size: 0.82rem; letter-spacing: -0.02em; }
+
+/* Régén affichée sur les barres PV/Mana */
+.pbar-regen { color: var(--success); font-weight: 600; font-size: 0.92em; }
+
+@media (max-width: 560px) {
+    .pcard-side-arrow { width: 36px; height: 36px; font-size: 1.4rem; }
+    .pcard-nav-row { gap: 0.4rem; }
+}
+
 .pcard {
     background: var(--bg-elev);
     border: 1px solid var(--border);
