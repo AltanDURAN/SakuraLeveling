@@ -14,7 +14,7 @@ Fichiers attendus (l'un des noms ci-dessous par rang) :
   diamond.png     (rang S)
   master.png      (rang SS)
   grandmaster.png (rang SSS)
-  challenger.png  (rang SSS+)
+  challenger.png  (rang Ω)
 
 Taille conseillée : ~150 px de large, ratio proche des emblèmes (un peu plus
 large que haut). L'affichage est capé à 78×52 px.

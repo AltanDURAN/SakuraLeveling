@@ -4,7 +4,7 @@ from app.domain.value_objects.stats import Stats
 
 # Paliers de rang fondés sur le power score. Pour chaque palier, le rang
 # s'applique tant que le score est STRICTEMENT inférieur à la borne.
-# Au-delà du dernier palier, on retombe sur le rang max "SSS+".
+# Au-delà du dernier palier, on retombe sur le rang max "Ω" (Challenger).
 #
 # Les bornes sont DÉRIVÉES de la courbe du joueur de référence (build
 # équilibré sans équipement) : la borne d'un rang = le score du joueur de
@@ -23,9 +23,10 @@ _RANK_THRESHOLDS: list[tuple[int, str]] = [
     (9_500, "A-"), (10_500, "A"), (11_650, "A+"),
     (12_600, "S-"), (13_600, "S"), (21_700, "S+"),
     (36_000, "SS-"), (64_000, "SS"), (130_000, "SS+"),
-    (292_000, "SSS-"), (650_000, "SSS"),
+    (292_000, "SSS-"), (650_000, "SSS"), (1_400_000, "SSS+"),
 ]
-_RANK_MAX = "SSS+"
+# Rang pinacle (Challenger), tail infini au-delà du dernier palier.
+_RANK_MAX = "Ω"
 
 
 # Combien de "coups encaissés" vaut 1 point de défense en PV effectifs.

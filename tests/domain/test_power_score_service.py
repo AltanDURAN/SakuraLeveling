@@ -242,9 +242,12 @@ def test_compute_rank_level_100_reference_is_s():
     assert service.compute_rank_from_stats(ref_l100) == "S"
 
 
-def test_compute_rank_caps_at_sss_plus():
+def test_compute_rank_top_is_omega():
     service = PowerScoreService()
 
-    # Au-delà du dernier seuil (50_000_000_000), tout est SSS+
-    assert service.compute_rank(50_000_000_000) == "SSS+"
-    assert service.compute_rank(10**15) == "SSS+"
+    # SSS+ est désormais un palier borné ; le pinacle (tail infini) est Ω (Challenger).
+    assert service.compute_rank(650_000) == "SSS+"
+    assert service.compute_rank(1_399_999) == "SSS+"
+    assert service.compute_rank(1_400_000) == "Ω"
+    assert service.compute_rank(50_000_000_000) == "Ω"
+    assert service.compute_rank(10**15) == "Ω"

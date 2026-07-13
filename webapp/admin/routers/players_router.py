@@ -53,31 +53,30 @@ def _fmt_dt(dt) -> str:
     return dt.strftime("%d/%m/%Y") if dt else "—"
 
 
-# Mapping rang bot (lettre de base) → tier LoL + couleur du tier (pour le repli
-# coloré et la teinte de la fleur). L'image d'emblème (si fournie) vit dans
+# Mapping rang bot (lettre de base) → (tier = nom de fichier d'emblème,
+# couleur du tier, libellé FR). L'image d'emblème (si fournie) vit dans
 # webapp/static/admin/ranks/<tier>.png.
-_RANK_TIER: dict[str, tuple[str, str]] = {
-    "F": ("iron", "#8a8a8a"),
-    "E": ("bronze", "#b06a3b"),
-    "D": ("silver", "#b8c2cf"),
-    "C": ("gold", "#e3b23c"),
-    "B": ("platinum", "#57c9d6"),
-    "A": ("emerald", "#2ecc71"),
-    "S": ("diamond", "#6ea8ff"),
-    "SS": ("master", "#b06fe0"),
-    "SSS": ("grandmaster", "#e35b4a"),
+_RANK_TIER: dict[str, tuple[str, str, str]] = {
+    "F": ("iron", "#8a8a8a", "Fer"),
+    "E": ("bronze", "#b06a3b", "Bronze"),
+    "D": ("silver", "#b8c2cf", "Argent"),
+    "C": ("gold", "#e3b23c", "Or"),
+    "B": ("platinum", "#57c9d6", "Platine"),
+    "A": ("emerald", "#2ecc71", "Émeraude"),
+    "S": ("diamond", "#6ea8ff", "Diamant"),
+    "SS": ("master", "#b06fe0", "Master"),
+    "SSS": ("grandmaster", "#e35b4a", "Grand Master"),
+    "Ω": ("challenger", "#ecd07a", "Challenger"),
 }
+_RANK_TIER_DEFAULT = ("iron", "#8a8a8a", "Fer")
 
 
-def _emblem_for_rank(rank) -> tuple[str, str]:
-    """(tier, couleur) pour un rang. SSS+ → challenger (top absolu)."""
+def _emblem_for_rank(rank) -> tuple[str, str, str]:
+    """(tier, couleur, libellé FR) pour un rang. Ω → Challenger (pinacle)."""
     if not rank:
-        return ("iron", "#8a8a8a")
-    r = str(rank)
-    base = r.replace("+", "").replace("-", "")
-    if base == "SSS" and "+" in r:
-        return ("challenger", "#ecd07a")
-    return _RANK_TIER.get(base, ("iron", "#8a8a8a"))
+        return _RANK_TIER_DEFAULT
+    base = str(rank).replace("+", "").replace("-", "")
+    return _RANK_TIER.get(base, _RANK_TIER_DEFAULT)
 
 
 def _player_summary(profile, active_class) -> dict:
@@ -189,7 +188,7 @@ async def _base_ctx(session, user, player_id, section: str) -> tuple[dict, objec
     except Exception:
         _logger.warning("calcul stats échoué player %s", player_id, exc_info=True)
 
-    tier, tier_color = _emblem_for_rank(rank)
+    tier, tier_color, tier_label = _emblem_for_rank(rank)
     ctx = {
         "user": user,
         "section": section,
@@ -201,6 +200,7 @@ async def _base_ctx(session, user, player_id, section: str) -> tuple[dict, objec
         "rank": rank,
         "rank_tier": tier,
         "rank_tier_color": tier_color,
+        "rank_tier_label": tier_label,
         "_equipped": equipped,
     }
     return ctx, profile
