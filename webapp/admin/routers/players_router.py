@@ -53,6 +53,33 @@ def _fmt_dt(dt) -> str:
     return dt.strftime("%d/%m/%Y") if dt else "—"
 
 
+# Mapping rang bot (lettre de base) → tier LoL + couleur du tier (pour le repli
+# coloré et la teinte de la fleur). L'image d'emblème (si fournie) vit dans
+# webapp/static/admin/ranks/<tier>.png.
+_RANK_TIER: dict[str, tuple[str, str]] = {
+    "F": ("iron", "#8a8a8a"),
+    "E": ("bronze", "#b06a3b"),
+    "D": ("silver", "#b8c2cf"),
+    "C": ("gold", "#e3b23c"),
+    "B": ("platinum", "#57c9d6"),
+    "A": ("emerald", "#2ecc71"),
+    "S": ("diamond", "#6ea8ff"),
+    "SS": ("master", "#b06fe0"),
+    "SSS": ("grandmaster", "#e35b4a"),
+}
+
+
+def _emblem_for_rank(rank) -> tuple[str, str]:
+    """(tier, couleur) pour un rang. SSS+ → challenger (top absolu)."""
+    if not rank:
+        return ("iron", "#8a8a8a")
+    r = str(rank)
+    base = r.replace("+", "").replace("-", "")
+    if base == "SSS" and "+" in r:
+        return ("challenger", "#ecd07a")
+    return _RANK_TIER.get(base, ("iron", "#8a8a8a"))
+
+
 def _player_summary(profile, active_class) -> dict:
     return {
         "id": profile.player.id,
@@ -144,17 +171,37 @@ async def players_list(
 
 
 async def _base_ctx(session, user, player_id, section: str) -> tuple[dict, object]:
-    """Contexte commun à toutes les cartes (identité + avatar + nav)."""
+    """Contexte commun à toutes les cartes : identité + avatar + nav + stats/rang
+    (le badge de rang est ainsi cohérent sur toutes les cartes)."""
     profile = PlayerRepository(session).get_profile_by_player_id(player_id)
     if profile is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Player #{player_id} introuvable.")
     active_class = ClassRepository(session).get_current_class_for_player(player_id)
+    equipped = EquipmentRepository(session).list_by_player_id(player_id)
+
+    stats = power = rank = None
+    try:
+        stats = resolve_player_stats(session, profile, equipped, active_class)
+        pss = PowerScoreService()
+        score = pss.calculate_from_stats(stats)
+        power = pss.format_score(score)
+        rank = pss.compute_rank(score)
+    except Exception:
+        _logger.warning("calcul stats échoué player %s", player_id, exc_info=True)
+
+    tier, tier_color = _emblem_for_rank(rank)
     ctx = {
         "user": user,
         "section": section,
         "p": _player_summary(profile, active_class),
         "nav": _nav(session, player_id),
         "avatar_url": await discord_api.avatar_url_for(profile.player.discord_id),
+        "stats": stats,
+        "power": power,
+        "rank": rank,
+        "rank_tier": tier,
+        "rank_tier_color": tier_color,
+        "_equipped": equipped,
     }
     return ctx, profile
 
@@ -167,18 +214,8 @@ async def players_view(
     """Carte principale : identité, 3 barres (PV/Mana/XP), stats + sous-cartes."""
     with get_db_session() as session:
         ctx, profile = await _base_ctx(session, user, player_id, "main")
-        equipped = EquipmentRepository(session).list_by_player_id(player_id)
-        active_class = ClassRepository(session).get_current_class_for_player(player_id)
-
-        try:
-            stats = resolve_player_stats(session, profile, equipped, active_class)
-            pss = PowerScoreService()
-            score = pss.calculate_from_stats(stats)
-            power = pss.format_score(score)
-            rank = pss.compute_rank(score)
-        except Exception:
-            _logger.warning("calcul stats échoué player %s", player_id, exc_info=True)
-            stats = power = rank = None
+        stats = ctx["stats"]
+        equipped = ctx["_equipped"]
 
         # Barres de progression : PV / mana courants (état persisté) + XP.
         max_hp = stats.max_hp if stats else 1
@@ -187,13 +224,12 @@ async def players_view(
         cur_mana = PlayerManaRepository(session).get_or_create(player_id, max_mana).current_mana
         xp_needed = ProgressionService().xp_required_for_next_level(profile.progression.level)
 
-        counts = {
-            "inventory": len(InventoryRepository(session).list_by_player_id(player_id)),
-            "equipment": len(equipped),
-            "titles": len(PlayerTitleRepository(session).list_codes_for_player(player_id)),
-        }
         ctx.update({
-            "stats": stats, "power": power, "rank": rank, "counts": counts,
+            "counts": {
+                "inventory": len(InventoryRepository(session).list_by_player_id(player_id)),
+                "equipment": len(equipped),
+                "titles": len(PlayerTitleRepository(session).list_codes_for_player(player_id)),
+            },
             "bars": {
                 "hp": {"cur": cur_hp, "max": max_hp},
                 "mana": {"cur": cur_mana, "max": max_mana},

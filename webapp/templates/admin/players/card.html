@@ -66,7 +66,10 @@
             <div class="pcard-badges">
                 <span class="badge-lvl">Niv {{ p.level }}</span>
                 {% if rank %}
-                <span class="rank-flower" title="Rang {{ rank }}">
+                <span class="rank-emblem" style="--tier: {{ rank_tier_color }};"
+                      data-tier="{{ rank_tier }}" title="Rang {{ rank }} ({{ rank_tier }})">
+                    <img class="emblem-img" src="/static/admin/ranks/{{ rank_tier }}.png" alt=""
+                         onerror="this.remove()">
                     <span class="flower">🌸</span>
                     <span class="rank-text {% if (rank|string)|length > 2 %}rank-long{% endif %}">{{ rank }}</span>
                 </span>
