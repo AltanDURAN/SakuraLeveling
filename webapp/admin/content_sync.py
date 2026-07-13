@@ -159,6 +159,50 @@ def upsert_mob_json(mob: dict) -> None:
         _logger.warning("Échec sync mobs.json pour '%s'", mob.get("code"), exc_info=True)
 
 
+def build_shop_dict(
+    *, item_code, buy_price, max_sell_price, min_sell_price,
+    stock_threshold, enabled,
+) -> dict:
+    """Construit une entrée de shop_items.json (schéma du seed)."""
+    return {
+        "item_code": item_code,
+        "buy_price": int(buy_price or 0),
+        "max_sell_price": int(max_sell_price or 0),
+        "min_sell_price": int(min_sell_price or 0),
+        "stock_threshold": int(stock_threshold or 0),
+        "enabled": bool(enabled),
+    }
+
+
+def upsert_shop_json(entry: dict) -> None:
+    """Insère/met à jour une entrée shop (par item_code) dans shop_items.json.
+    Best-effort — atomic_write_json déclenche aussi le git push."""
+    try:
+        data = json_writer.load_json("shop_items.json", default=[]) or []
+        code = entry["item_code"]
+        for i, e in enumerate(data):
+            if isinstance(e, dict) and e.get("item_code") == code:
+                data[i] = entry
+                break
+        else:
+            data.append(entry)
+        json_writer.atomic_write_json("shop_items.json", data)
+        _logger.info("shop_items.json synchronisé pour '%s'", code)
+    except Exception:
+        _logger.warning("Échec sync shop_items.json pour '%s'", entry.get("item_code"), exc_info=True)
+
+
+def delete_shop_json(item_code: str) -> None:
+    """Retire l'entrée shop de l'item de shop_items.json."""
+    try:
+        data = json_writer.load_json("shop_items.json", default=[]) or []
+        new_data = [e for e in data if e.get("item_code") != item_code]
+        if len(new_data) != len(data):
+            json_writer.atomic_write_json("shop_items.json", new_data)
+    except Exception:
+        _logger.warning("Échec suppression shop_items.json pour '%s'", item_code, exc_info=True)
+
+
 def load_farm_zones() -> dict:
     return json_writer.load_json("farm_zones.json", default={}) or {}
 

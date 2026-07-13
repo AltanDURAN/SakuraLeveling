@@ -18,3 +18,7 @@ assets/generated_lists/
 players_banner.png
 *.bak
 
+
+# Fichiers temporaires des écritures atomiques de contenu (admin web)
+app/infrastructure/content/*.bak
+app/infrastructure/content/*.tmp

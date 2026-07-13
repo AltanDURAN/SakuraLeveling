@@ -50,6 +50,17 @@ def atomic_write_json(filename: str, data: Any) -> None:
     from webapp.admin.cache_invalidation import invalidate_content_caches
     invalidate_content_caches()
 
+    # Versionne l'écriture sur git (best-effort, no-op si CONTENT_GIT_PUSH off).
+    # CENTRALISÉ ICI : comme TOUTE écriture de contenu passe par cette fonction,
+    # chaque création/édition/suppression (items, mobs, zones, classes, quêtes,
+    # bosses, crafts, skills, titres, panoplies, shop…) part automatiquement sur
+    # beta → reconstruction complète depuis git si le VPS est perdu.
+    from webapp.admin import git_sync
+    git_sync.push_content(
+        [f"app/infrastructure/content/{filename}"],
+        f"admin: contenu {filename} mis à jour",
+    )
+
 
 def append_to_list(filename: str, entry: dict) -> None:
     """Pour les JSON qui sont des listes (classes.json, titles.json, etc)."""

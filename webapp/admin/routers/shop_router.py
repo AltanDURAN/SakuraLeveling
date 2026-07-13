@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.shop_repository import ShopRepository
 from app.infrastructure.db.session import get_db_session
+from webapp.admin import content_sync
 from webapp.admin.auth import AdminUser, require_admin
 from webapp.admin._shared import get_templates
 
@@ -131,6 +132,15 @@ async def shop_create(
             enabled=fd.get("enabled") == "on",
         )
 
+    # Reseed-safe + git : réécrit shop_items.json (atomic_write_json → push).
+    content_sync.upsert_shop_json(content_sync.build_shop_dict(
+        item_code=item_code,
+        buy_price=_parse_int(fd.get("buy_price"), 0),
+        max_sell_price=_parse_int(fd.get("max_sell_price"), 0),
+        min_sell_price=_parse_int(fd.get("min_sell_price"), 0),
+        stock_threshold=_parse_int(fd.get("stock_threshold"), 100),
+        enabled=fd.get("enabled") == "on",
+    ))
     return RedirectResponse(f"/admin/shop?q={item_code}", status_code=303)
 
 
@@ -171,7 +181,18 @@ async def shop_update(
         # Le current_stock se modifie via une API distincte côté repo
         if "current_stock" in fd:
             repo.set_stock(shop_item_id, _parse_int(fd.get("current_stock"), 0))
-    return RedirectResponse(f"/admin/shop?q={result.item_definition.code}", status_code=303)
+        item_code = result.item_definition.code
+
+    # Reseed-safe + git : réécrit shop_items.json (atomic_write_json → push).
+    content_sync.upsert_shop_json(content_sync.build_shop_dict(
+        item_code=item_code,
+        buy_price=_parse_int(fd.get("buy_price"), 0),
+        max_sell_price=_parse_int(fd.get("max_sell_price"), 0),
+        min_sell_price=_parse_int(fd.get("min_sell_price"), 0),
+        stock_threshold=_parse_int(fd.get("stock_threshold"), 100),
+        enabled=fd.get("enabled") == "on",
+    ))
+    return RedirectResponse(f"/admin/shop?q={item_code}", status_code=303)
 
 
 @router.post("/{shop_item_id}/delete")
@@ -180,7 +201,14 @@ async def shop_delete(
     user: AdminUser = Depends(require_admin),
 ):
     with get_db_session() as session:
-        ok = ShopRepository(session).delete(shop_item_id)
+        repo = ShopRepository(session)
+        # Récupère l'item_code AVANT suppression (pour retirer du JSON).
+        existing = {si.id: si for si in repo.list_all()}
+        target = existing.get(shop_item_id)
+        item_code = target.item_definition.code if target else None
+        ok = repo.delete(shop_item_id)
     if not ok:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Shop item #{shop_item_id} introuvable.")
+    if item_code:
+        content_sync.delete_shop_json(item_code)
     return RedirectResponse("/admin/shop", status_code=303)
