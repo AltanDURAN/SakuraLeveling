@@ -28,10 +28,11 @@ class ElementAffinityRepository:
         player_id: int,
         rng: random.Random | None = None,
         low: int = 0,
-        high: int = 100,
+        high: int = 10,
     ) -> dict[str, int]:
         """Tire une affinité aléatoire (low..high) par élément pour un nouveau
-        joueur. Idempotent : ne touche pas aux éléments déjà présents."""
+        joueur (0..10 par défaut ; la montée jusqu'à 100 se fait en farmant des
+        essences). Idempotent : ne touche pas aux éléments déjà présents."""
         rng = rng or random
         existing = {
             row.element

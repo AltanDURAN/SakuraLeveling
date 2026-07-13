@@ -88,11 +88,12 @@ class PlayerRepository:
 
     def _ensure_elemental_setup(self, player_id: int) -> None:
         """Garantit que le joueur a ses 8 affinités élémentaires (tirées
-        aléatoirement 0..100) et 2 compétences de départ. Idempotent : sert
+        aléatoirement 0..10 à la création — la montée jusqu'à 100 se fait en
+        farmant des essences) et 2 compétences de départ. Idempotent : sert
         aussi de backfill paresseux pour les joueurs antérieurs au système.
         L'élément d'attaque dérive de la compétence offensive équipée (plus de
         champ `active_element` — source de vérité unique)."""
-        ElementAffinityRepository(self.session).init_for_player(player_id)
+        ElementAffinityRepository(self.session).init_for_player(player_id, high=10)
 
         player_model = self.session.get(PlayerModel, player_id)
         if player_model is None:

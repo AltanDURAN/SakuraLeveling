@@ -1,10 +1,11 @@
 {
-  "_comment": "Zones de farm : FAMILLE de mob -> { channel_id: salon de spawn, background: décor dans assets/landscapes/ }. Familles non listées → default. slime + gobelin partagent la zone de base. À terme : accès aux zones avancées gated par un pass de la guilde des aventuriers. channel_id=0 → zone non configurée, spawn dans la zone de base en attendant.",
+  "_comment": "Zones de farm : FAMILLE de mob -> { channel_id: salon de spawn, background: décor dans assets/landscapes/, essences_per_kill: essences élémentaires droppées par kill dans cette zone }. Familles non listées → default. slime + gobelin partagent la zone de base. À terme : accès aux zones avancées gated par un pass de la guilde des aventuriers. channel_id=0 → zone non configurée, spawn dans la zone de base en attendant.",
   "default_channel_id": 1485329739605348484,
   "default_background": "clairiere_sinistre.png",
+  "default_essences_per_kill": 1,
   "zones": {
-    "slime": {"channel_id": 1485329739605348484, "background": "clairiere_sinistre.png"},
-    "gobelin": {"channel_id": 1485329739605348484, "background": "clairiere_sinistre.png"},
-    "mort-vivant": {"channel_id": 1525863083321462914, "background": "cimetiere_abandonne.png"}
+    "slime": {"channel_id": 1485329739605348484, "background": "clairiere_sinistre.png", "essences_per_kill": 1},
+    "gobelin": {"channel_id": 1485329739605348484, "background": "clairiere_sinistre.png", "essences_per_kill": 1},
+    "mort-vivant": {"channel_id": 1525863083321462914, "background": "cimetiere_abandonne.png", "essences_per_kill": 2}
   }
 }

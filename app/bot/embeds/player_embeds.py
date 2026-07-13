@@ -1,10 +1,58 @@
 import discord
 
 from app.shared.formatters import format_int as _format_int
+from app.shared.enums import ALL_ELEMENTS, ELEMENT_EMOJIS, ELEMENT_LABELS
 from app.domain.entities.class_definition import ClassDefinition
 from app.domain.entities.player_career_stats import PlayerCareerStats
 from app.domain.entities.player_profile import PlayerProfile
+from app.domain.services.element_affinity_progression_service import (
+    ElementAffinityProgressionService,
+)
 from app.domain.value_objects.stats import Stats
+
+
+def _affinity_bar(value: int, width: int = 10) -> str:
+    filled = round(max(0, min(100, value)) / 100 * width)
+    return "█" * filled + "░" * (width - filled)
+
+
+def build_affinities_embed(
+    display_name: str,
+    affinities: dict[str, int],
+    essences: dict[str, int],
+    is_self: bool = True,
+) -> discord.Embed:
+    """Affinités élémentaires (0..100) + progression d'essences vers le palier
+    suivant (coût N→N+1 = N+1 essences), pour chaque élément."""
+    progression = ElementAffinityProgressionService()
+    who = "Vos" if is_self else f"Affinités de {display_name} —"
+    embed = discord.Embed(
+        title=f"✨ {who} affinités élémentaires",
+        description=(
+            "Tuez des monstres d'un élément pour gagner des **essences** ; "
+            "elles montent automatiquement l'affinité de cet élément "
+            "(coût du palier N→N+1 = N+1 essences)."
+        ),
+        color=discord.Color.purple(),
+    )
+    for element in ALL_ELEMENTS:
+        code = element.value
+        aff = int(affinities.get(code, 0))
+        ess = int(essences.get(code, 0))
+        emoji = ELEMENT_EMOJIS.get(code, "")
+        label = ELEMENT_LABELS.get(code, code)
+        next_cost = progression.cost_for_next_level(aff)
+        bar = _affinity_bar(aff)
+        if next_cost is None:
+            progress = "**MAX** 🏆"
+        else:
+            progress = f"{ess}/{next_cost} essences → palier suivant"
+        embed.add_field(
+            name=f"{emoji} {label} — {aff}/100",
+            value=f"`{bar}` {progress}",
+            inline=False,
+        )
+    return embed
 
 
 def build_player_profile_image_embed(

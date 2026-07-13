@@ -38,6 +38,7 @@ from app.infrastructure.db.models.player_duel_rank_model import PlayerDuelRankMo
 from app.infrastructure.db.models.world_boss_model import WorldBossModel, WorldBossParticipationModel
 from app.infrastructure.db.models.player_title_model import PlayerTitleModel
 from app.infrastructure.db.models.element_affinity_model import PlayerElementAffinityModel
+from app.infrastructure.db.models.element_essence_model import PlayerElementEssenceModel
 from app.infrastructure.db.models.weekly_quest_model import WeeklyQuestAssignmentModel
 from app.infrastructure.db.models.daily_quest_model import DailyQuestAssignmentModel
 from app.infrastructure.db.models.marketplace_listing_model import MarketplaceListingModel

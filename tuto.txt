@@ -31,6 +31,21 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     paramètres. Les commandes admin sont masquées du catalogue mais
     restent consultables via /help <commande> (ex : /help admin set).
 
+/affinites [target]
+    Affiche vos 8 affinités élémentaires (0 à 100 par élément) et votre
+    progression d'essences vers le palier suivant.
+        • Chaque joueur démarre avec une affinité ALÉATOIRE de 0 à 10 par
+          élément. La montée jusqu'à 100 se fait en FARMANT.
+        • En tuant un monstre d'un élément, vous gagnez des ESSENCES de cet
+          élément. Le nombre par kill dépend de la zone de farm (clairière
+          sinistre : 1 essence/kill, cimetière abandonné : 2 essences/kill).
+        • Les essences montent l'affinité AUTOMATIQUEMENT : passer du palier
+          N à N+1 coûte N+1 essences du même élément (0→1 : 1 essence,
+          1→2 : 2 essences, …, 99→100 : 100 essences). Le surplus est gardé.
+        • Une plus haute affinité renforce vos dégâts élémentaires (±30%
+          selon l'élément de l'ennemi). Les montées d'affinité sont annoncées
+          dans le récap de combat.
+
 /profile [target]
     Affiche votre profil joueur. Si vous ajoutez `target`, vous voyez le
     profil d'un autre joueur via le sélecteur Discord (ex : /profile @Altan).

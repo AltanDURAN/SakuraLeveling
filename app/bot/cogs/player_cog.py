@@ -1045,6 +1045,44 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         embed = build_player_class_embed(target_member.display_name, active_class)
         await interaction.response.send_message(embed=embed)
 
+    @app_commands.command(
+        name="affinites",
+        description="Voir vos affinités élémentaires et votre progression d'essences",
+    )
+    @app_commands.describe(target="Joueur dont afficher les affinités (par défaut : vous)")
+    async def affinities_cmd(
+        self,
+        interaction: discord.Interaction,
+        target: discord.Member | None = None,
+    ) -> None:
+        from app.infrastructure.db.repositories.element_affinity_repository import (
+            ElementAffinityRepository,
+        )
+        from app.infrastructure.db.repositories.element_essence_repository import (
+            ElementEssenceRepository,
+        )
+        from app.bot.embeds.player_embeds import build_affinities_embed
+
+        with get_db_session() as session:
+            profile, target_member = self._resolve_profile(interaction, target, session)
+            if profile is None:
+                await self._send_no_profile_error(interaction, target_member)
+                return
+
+            affinities = ElementAffinityRepository(session).get_affinities(
+                profile.player.id
+            )
+            essences = ElementEssenceRepository(session).get_essences(profile.player.id)
+
+        is_self = target_member.id == interaction.user.id
+        embed = build_affinities_embed(
+            display_name=target_member.display_name,
+            affinities=affinities,
+            essences=essences,
+            is_self=is_self,
+        )
+        await interaction.response.send_message(embed=embed)
+
     @app_commands.command(name="choisir_classe", description="Définir votre classe active")
     @app_commands.describe(class_code="Code technique de la classe")
     async def class_set(self, interaction: discord.Interaction, class_code: str) -> None:

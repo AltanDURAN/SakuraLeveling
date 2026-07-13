@@ -14,6 +14,7 @@ from app.infrastructure.db.models.player_career_stats_model import PlayerCareerS
 from app.infrastructure.db.models.player_class_state_model import PlayerClassStateModel
 from app.infrastructure.db.models.player_duel_rank_model import PlayerDuelRankModel
 from app.infrastructure.db.models.element_affinity_model import PlayerElementAffinityModel
+from app.infrastructure.db.models.element_essence_model import PlayerElementEssenceModel
 from app.infrastructure.db.models.player_health_state_model import PlayerHealthStateModel
 from app.infrastructure.db.models.player_mana_state_model import PlayerManaStateModel
 from app.infrastructure.db.models.player_mob_kill_model import PlayerMobKillModel
@@ -96,6 +97,7 @@ class ResetPlayerUseCase:
             PlayerSkillAllocationModel,
             PlayerDuelRankModel,
             PlayerElementAffinityModel,
+            PlayerElementEssenceModel,
             WorldBossParticipationModel,
             PlayerTitleModel,
             WeeklyQuestAssignmentModel,

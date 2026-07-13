@@ -17,13 +17,22 @@ from app.domain.services.progression_service import ProgressionService
 from app.domain.services.reward_distribution_service import RewardDistributionService
 from app.domain.services.skill_tree_service import SkillTreeService
 from app.domain.services.stats_service import StatsService
+from app.domain.services.element_affinity_progression_service import (
+    ElementAffinityProgressionService,
+)
 from app.domain.value_objects.battle_summary import BattleSummary
-from app.domain.value_objects.player_reward import PlayerReward
+from app.domain.value_objects.player_reward import EssenceGain, PlayerReward
 from app.domain.value_objects.skill_bonuses import SkillBonuses
 from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
+from app.infrastructure.db.repositories.element_affinity_repository import (
+    ElementAffinityRepository,
+)
+from app.infrastructure.db.repositories.element_essence_repository import (
+    ElementEssenceRepository,
+)
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.repositories.player_career_stats_repository import (
     PlayerCareerStatsRepository,
@@ -311,6 +320,14 @@ class EncounterService:
                 kill_repository=kill_repository,
             )
             skill_tree_service = SkillTreeService(get_skill_tree_definition())
+            essence_repository = ElementEssenceRepository(session)
+            affinity_repository = ElementAffinityRepository(session)
+            affinity_progression = ElementAffinityProgressionService()
+            # Essences par kill = propriété de la ZONE de spawn (via la famille).
+            from app.infrastructure.encounters.farm_zone_loader import (
+                get_essences_per_kill_for_family,
+            )
+            essences_per_kill = get_essences_per_kill_for_family(mob.family)
 
             for participant in encounter.participants.values():
                 contribution = contributions_by_id.get(participant.player_id)
@@ -380,6 +397,18 @@ class EncounterService:
                     career_repository.add(participant.player_id, gold_earned=gold)
 
                 kill_repository.increment(participant.player_id, mob_code)
+
+                # Essences élémentaires : drop selon la zone + auto-conversion
+                # en affinité (survivants uniquement, comme le kill).
+                essence_gains = self._award_element_essences(
+                    essence_repository=essence_repository,
+                    affinity_repository=affinity_repository,
+                    progression_service=affinity_progression,
+                    player_id=participant.player_id,
+                    mob=mob,
+                    essences_per_kill=essences_per_kill,
+                )
+
                 # Check titres : kills_family / kills_total / kills_mob.
                 # Unlock silencieux côté embed (le joueur découvre via /title).
                 if mob.family:
@@ -483,6 +512,7 @@ class EncounterService:
                         contribution_share=contribution_shares.get(
                             participant.player_id, 0.0
                         ),
+                        essence_gains=essence_gains,
                     )
                 )
 
@@ -497,6 +527,47 @@ class EncounterService:
             base_gold_reward=mob.gold_reward,
         )
     
+    @staticmethod
+    def _award_element_essences(
+        essence_repository: ElementEssenceRepository,
+        affinity_repository: ElementAffinityRepository,
+        progression_service: ElementAffinityProgressionService,
+        player_id: int,
+        mob,
+        essences_per_kill: int,
+    ) -> list[EssenceGain]:
+        """Dépose les essences des élément(s) du mob et convertit
+        automatiquement en niveaux d'affinité (coût N→N+1 = N+1). Renvoie les
+        gains pour affichage dans le récap. Mob neutre → aucun gain."""
+        from app.shared.enums import parse_elements
+
+        elements = parse_elements(getattr(mob, "element", "") or "")
+        if not elements or essences_per_kill <= 0:
+            return []
+
+        essences_map = essence_repository.get_essences(player_id)
+        affinities_map = affinity_repository.get_affinities(player_id)
+
+        gains: list[EssenceGain] = []
+        for elem in elements:
+            before_aff = int(affinities_map.get(elem, 0))
+            current_ess = int(essences_map.get(elem, 0))
+            conv = progression_service.apply_essences(
+                before_aff, current_ess, essences_per_kill,
+            )
+            essence_repository.set_essence(player_id, elem, conv.remaining_essences)
+            if conv.levels_gained > 0:
+                affinity_repository.set_affinity(player_id, elem, conv.new_affinity)
+            gains.append(
+                EssenceGain(
+                    element=elem,
+                    essences_gained=essences_per_kill,
+                    affinity_before=before_aff,
+                    affinity_after=conv.new_affinity,
+                )
+            )
+        return gains
+
     @staticmethod
     def _grant_xp(player_repository, player_id: int, xp: int) -> None:
         """Applique un gain d'XP en passant par le palier de niveau.

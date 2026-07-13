@@ -80,6 +80,19 @@ def get_background_for_family(family: str | None) -> str:
     return default_background()
 
 
+def default_essences_per_kill() -> int:
+    return int(_load().get("default_essences_per_kill", 1) or 1)
+
+
+def get_essences_per_kill_for_family(family: str | None) -> int:
+    """Nombre d'essences élémentaires droppées par kill dans la zone de la
+    famille (zone de base si non mappée). Ex : clairière 1, cimetière 2."""
+    z = _zone(family)
+    if z and int(z.get("channel_id", 0) or 0):
+        return int(z.get("essences_per_kill", default_essences_per_kill()) or 0)
+    return default_essences_per_kill()
+
+
 def list_zone_channels() -> list[int]:
     """Liste des salons de spawn DISTINCTS (les zones actives). Chaque salon =
     une zone qui tournera son propre encounter en parallèle. Inclut la zone de

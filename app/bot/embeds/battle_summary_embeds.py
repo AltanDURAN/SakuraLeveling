@@ -2,7 +2,27 @@ import discord
 from discord.utils import escape_markdown
 
 from app.shared.formatters import format_int as _format_int
+from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
 from app.domain.value_objects.battle_summary import BattleSummary
+
+
+def _essence_lines(reward) -> list[str]:
+    """Lignes de récap des essences gagnées + montées d'affinité (auto)."""
+    lines: list[str] = []
+    for g in getattr(reward, "essence_gains", None) or []:
+        emoji = ELEMENT_EMOJIS.get(g.element, "")
+        label = ELEMENT_LABELS.get(g.element, g.element)
+        if g.leveled_up:
+            lines.append(
+                f"{emoji} +{g.essences_gained} essence · **Affinité {label} "
+                f"{g.affinity_before}→{g.affinity_after}** ✨"
+            )
+        else:
+            lines.append(
+                f"{emoji} +{g.essences_gained} essence de {label.lower()} "
+                f"(affinité {g.affinity_after}/100)"
+            )
+    return lines
 
 
 def _outcome_color(summary: BattleSummary) -> discord.Color:
@@ -61,6 +81,7 @@ def build_rewards_page_embed(summary: BattleSummary) -> discord.Embed:
                 lines.append(f"🎁 {items_text}")
             else:
                 lines.append("🎁 Aucun objet")
+            lines.extend(_essence_lines(reward))
         elif summary.is_victory:
             lines.append("_Vaincu pendant le combat — aucune récompense._")
         else:

@@ -199,3 +199,24 @@ ELEMENT_LABELS: dict[str, str] = {
     Element.TENEBRE.value: "Ténèbre",
     Element.LUMIERE.value: "Lumière",
 }
+
+_VALID_ELEMENTS: set[str] = {e.value for e in ALL_ELEMENTS}
+
+
+def parse_elements(raw: str | None) -> list[str]:
+    """Parse le champ `element` d'un mob/boss en LISTE d'éléments valides.
+
+    Mono-élément aujourd'hui ("feu") ; forward-compatible multi-élément
+    ("feu,glace" ou "feu glace"). "" / neutre → liste vide. Filtre les valeurs
+    inconnues et déduplique en conservant l'ordre."""
+    if not raw:
+        return []
+    parts = raw.replace(",", " ").split()
+    seen: set[str] = set()
+    out: list[str] = []
+    for p in parts:
+        e = p.strip().lower()
+        if e in _VALID_ELEMENTS and e not in seen:
+            seen.add(e)
+            out.append(e)
+    return out
