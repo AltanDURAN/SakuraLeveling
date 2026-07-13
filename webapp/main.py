@@ -80,6 +80,10 @@ from webapp.admin.csrf import csrf_origin_middleware
 app.middleware("http")(csrf_origin_middleware)
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+# Sert les assets du jeu (images de mobs, décors) pour les aperçus admin.
+from app.shared.paths import ASSETS_DIR as _ASSETS_DIR  # noqa: E402
+_ASSETS_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/assets", StaticFiles(directory=str(_ASSETS_DIR)), name="assets")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # Routers admin — montés avant les routes publiques pour que /admin/* matche

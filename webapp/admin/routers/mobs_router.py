@@ -12,7 +12,8 @@ from fastapi import HTTPException
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.session import get_db_session
-from webapp.admin import content_sync, git_sync
+from app.shared.paths import MOBS_ASSETS_DIR
+from webapp.admin import content_sync, git_sync, uploads
 from webapp.admin.auth import AdminUser, require_admin
 from webapp.admin._shared import get_templates
 
@@ -20,6 +21,23 @@ from webapp.admin._shared import get_templates
 _logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin/mobs", tags=["admin-mobs"])
+
+
+async def _save_mob_image(form, code: str, fallback: str) -> tuple[str, str | None, str | None]:
+    """Si un fichier image a été uploadé, l'enregistre dans assets/mobs/ sous
+    `<code>.<ext>` et renvoie (image_name, asset_path_git, error). Sinon renvoie
+    (fallback, None, None). asset_path_git sert au git push."""
+    upload = form.get("image_file")
+    if upload is None or not getattr(upload, "filename", ""):
+        return fallback, None, None
+    data = await upload.read()
+    try:
+        saved = uploads.save_asset_bytes(
+            data, upload.filename, MOBS_ASSETS_DIR, preferred_stem=code,
+        )
+    except uploads.UploadError as exc:
+        return fallback, None, str(exc)
+    return saved, f"assets/mobs/{saved}", None
 
 
 
@@ -192,6 +210,17 @@ async def mobs_create(
         family = form_data.get("family", "").strip() or "unknown"
         element = form_data.get("element", "").strip()
         loot_table = _parse_loot_table(form_data.get("loot_table"))
+
+        # Upload d'image (optionnel) → écrase image_name par le fichier sauvé.
+        image_name, asset_path, upload_err = await _save_mob_image(form, code, image_name)
+        if upload_err:
+            errors["image_file"] = upload_err
+            return get_templates().TemplateResponse(
+                request, "admin/mobs/form.html",
+                context={"user": user, "mob": None, "form_data": form_data, "errors": errors},
+                status_code=400,
+            )
+
         repo.create(
             code=code,
             name=name,
@@ -209,9 +238,10 @@ async def mobs_create(
         current_hp=stats["max_hp"], image_name=image_name, element=element,
         loot_table=loot_table, **stats,
     ))
-    git_sync.push_content(
-        ["app/infrastructure/content/mobs.json"], f"admin: mob {code} créé",
-    )
+    push_paths = ["app/infrastructure/content/mobs.json"]
+    if asset_path:
+        push_paths.append(asset_path)
+    git_sync.push_content(push_paths, f"admin: mob {code} créé")
     return RedirectResponse(f"/admin/mobs?q={code}", status_code=303)
 
 
@@ -272,6 +302,20 @@ async def mobs_update(
         family = form_data.get("family", existing.family or "").strip() or existing.family
         element = form_data.get("element", existing.element or "").strip()
         loot_table = _parse_loot_table(form_data.get("loot_table"))
+
+        # Upload d'image (optionnel) → écrase image_name par le fichier sauvé.
+        image_name, asset_path, upload_err = await _save_mob_image(form, code, image_name)
+        if upload_err:
+            return get_templates().TemplateResponse(
+                request, "admin/mobs/form.html",
+                context={
+                    "user": user, "mob": existing,
+                    "loot_table_json": json.dumps(loot_table or [], ensure_ascii=False),
+                    "form_data": form_data, "errors": {"image_file": upload_err},
+                },
+                status_code=400,
+            )
+
         repo.update_by_code(
             code=code,
             name=name,
@@ -288,9 +332,10 @@ async def mobs_update(
         code=code, name=name, family=family, description=description,
         image_name=image_name, element=element, loot_table=loot_table, **stats,
     ))
-    git_sync.push_content(
-        ["app/infrastructure/content/mobs.json"], f"admin: mob {code} édité",
-    )
+    push_paths = ["app/infrastructure/content/mobs.json"]
+    if asset_path:
+        push_paths.append(asset_path)
+    git_sync.push_content(push_paths, f"admin: mob {code} édité")
     return RedirectResponse(f"/admin/mobs?q={code}", status_code=303)
 
 

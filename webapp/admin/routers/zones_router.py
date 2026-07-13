@@ -16,13 +16,28 @@ from fastapi.responses import RedirectResponse
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.session import get_db_session
 from app.infrastructure.encounters import farm_zone_loader
-from webapp.admin import content_sync, git_sync
+from app.shared.paths import LANDSCAPES_ASSETS_DIR
+from webapp.admin import content_sync, git_sync, uploads
 from webapp.admin.auth import AdminUser, require_admin
 from webapp.admin._shared import get_templates
 
 _logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin/zones", tags=["admin-zones"])
+
+
+async def _save_zone_background(form) -> tuple[str | None, str | None, str | None]:
+    """Si un décor a été uploadé, l'enregistre dans assets/landscapes/ et renvoie
+    (filename, asset_path_git, error). Sinon (None, None, None)."""
+    upload = form.get("background_file")
+    if upload is None or not getattr(upload, "filename", ""):
+        return None, None, None
+    data = await upload.read()
+    try:
+        saved = uploads.save_asset_bytes(data, upload.filename, LANDSCAPES_ASSETS_DIR)
+    except uploads.UploadError as exc:
+        return None, None, str(exc)
+    return saved, f"assets/landscapes/{saved}", None
 
 
 def _parse_int(value, default: int = 0) -> int:
@@ -88,8 +103,13 @@ def _read_zone_form(form_data: dict) -> tuple[dict, dict]:
 @router.post("")
 async def zones_create(request: Request, user: AdminUser = Depends(require_admin)):
     form = await request.form()
-    form_data = {k: str(v) for k, v in form.items()}
+    form_data = {k: str(v) for k, v in form.items() if k != "background_file"}
+    saved_bg, bg_asset, bg_err = await _save_zone_background(form)
+    if saved_bg:
+        form_data["background"] = saved_bg
     zone, errors = _read_zone_form(form_data)
+    if bg_err:
+        errors["background_file"] = bg_err
     if errors:
         return get_templates().TemplateResponse(
             request, "admin/zones/form.html",
@@ -100,10 +120,10 @@ async def zones_create(request: Request, user: AdminUser = Depends(require_admin
             status_code=400,
         )
     content_sync.upsert_zone_json(zone)
-    git_sync.push_content(
-        ["app/infrastructure/content/farm_zones.json"],
-        f"admin: zone {zone['name']} créée",
-    )
+    push_paths = ["app/infrastructure/content/farm_zones.json"]
+    if bg_asset:
+        push_paths.append(bg_asset)
+    git_sync.push_content(push_paths, f"admin: zone {zone['name']} créée")
     _logger.info("Admin %s a créé la zone %s (channel %s)",
                  user.discord_id, zone["name"], zone["channel_id"])
     return RedirectResponse("/admin/zones", status_code=303)
@@ -135,8 +155,13 @@ async def zones_update(
     channel_id: int, request: Request, user: AdminUser = Depends(require_admin),
 ):
     form = await request.form()
-    form_data = {k: str(v) for k, v in form.items()}
+    form_data = {k: str(v) for k, v in form.items() if k != "background_file"}
+    saved_bg, bg_asset, bg_err = await _save_zone_background(form)
+    if saved_bg:
+        form_data["background"] = saved_bg
     zone, errors = _read_zone_form(form_data)
+    if bg_err:
+        errors["background_file"] = bg_err
     if errors:
         # Réinjecte le channel_id d'origine pour l'action du formulaire.
         zone_ctx = {**zone, "channel_id": channel_id}
@@ -149,10 +174,10 @@ async def zones_update(
             status_code=400,
         )
     content_sync.upsert_zone_json(zone, original_channel_id=channel_id)
-    git_sync.push_content(
-        ["app/infrastructure/content/farm_zones.json"],
-        f"admin: zone {zone['name']} éditée",
-    )
+    push_paths = ["app/infrastructure/content/farm_zones.json"]
+    if bg_asset:
+        push_paths.append(bg_asset)
+    git_sync.push_content(push_paths, f"admin: zone {zone['name']} éditée")
     _logger.info("Admin %s a édité la zone %s (channel %s→%s)",
                  user.discord_id, zone["name"], channel_id, zone["channel_id"])
     return RedirectResponse("/admin/zones", status_code=303)

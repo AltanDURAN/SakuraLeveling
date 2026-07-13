@@ -21,6 +21,7 @@
 
     <form method="post"
           action="{% if mob %}/admin/mobs/{{ mob.code }}{% else %}/admin/mobs{% endif %}"
+          enctype="multipart/form-data"
           class="form-grid">
 
         <div class="form-section">
@@ -51,7 +52,28 @@
                 <span class="field-label">Description</span>
                 <textarea name="description" class="input textarea" rows="2">{{ fd.get('description', mob.description if mob else '') }}</textarea>
             </label>
-            {{ field('image_name', 'Image (asset local sous assets/mobs/)', fd.get('image_name', mob.image_name if mob else ''), errors, placeholder='goblin_warrior.png') }}
+            {% set cur_img = fd.get('image_name', mob.image_name if mob else '') %}
+            <div class="form-row" style="align-items: flex-end;">
+                <label class="field">
+                    <span class="field-label">Uploader une image (PNG/JPG/WebP/GIF, ≤ 8 Mo)</span>
+                    <input type="file" name="image_file" class="input"
+                           accept=".png,.jpg,.jpeg,.webp,.gif">
+                    {% if errors.get('image_file') %}<span class="field-error">{{ errors['image_file'] }}</span>{% endif %}
+                    <small style="color: var(--muted);">
+                        L'image est enregistrée sous <code>{{ (mob.code if mob else 'code') }}.&lt;ext&gt;</code>
+                        dans assets/mobs/. Laisse vide pour garder l'image actuelle.
+                    </small>
+                </label>
+                {% if cur_img %}
+                <div class="field" style="flex: 0 0 auto;">
+                    <span class="field-label">Aperçu actuel</span>
+                    <img src="/assets/mobs/{{ cur_img }}" alt="{{ cur_img }}"
+                         style="max-height: 80px; max-width: 120px; border-radius: 8px; border: 1px solid var(--border);"
+                         onerror="this.style.display='none'">
+                </div>
+                {% endif %}
+            </div>
+            {{ field('image_name', 'Nom d\'image (si tu ne fais pas d\'upload — asset existant dans assets/mobs/)', cur_img, errors, placeholder='goblin_warrior.png') }}
         </div>
 
         <div class="form-section">

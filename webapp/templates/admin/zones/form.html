@@ -11,6 +11,7 @@
 
     <form method="post"
           action="{% if zone %}/admin/zones/{{ zone.channel_id }}{% else %}/admin/zones{% endif %}"
+          enctype="multipart/form-data"
           class="form-grid">
 
         <div class="form-section">
@@ -31,11 +32,29 @@
                     {% if errors.get('channel_id') %}<span class="field-error">{{ errors['channel_id'] }}</span>{% endif %}
                 </label>
                 <label class="field">
-                    <span class="field-label">Décor (asset dans assets/landscapes/)</span>
+                    <span class="field-label">Décor — nom d'asset (ou upload ci-dessous)</span>
                     <input type="text" name="background" class="input"
                            value="{{ fd.get('background', zone.background if zone else '') }}"
                            placeholder="clairiere_sinistre.png">
                 </label>
+            </div>
+            {% set cur_bg = fd.get('background', zone.background if zone else '') %}
+            <div class="form-row" style="align-items: flex-end;">
+                <label class="field">
+                    <span class="field-label">Uploader un décor (PNG/JPG/WebP, ≤ 8 Mo)</span>
+                    <input type="file" name="background_file" class="input"
+                           accept=".png,.jpg,.jpeg,.webp,.gif">
+                    {% if errors.get('background_file') %}<span class="field-error">{{ errors['background_file'] }}</span>{% endif %}
+                    <small style="color: var(--muted);">Enregistré dans assets/landscapes/. Laisse vide pour garder le décor actuel.</small>
+                </label>
+                {% if cur_bg %}
+                <div class="field" style="flex: 0 0 auto;">
+                    <span class="field-label">Aperçu</span>
+                    <img src="/assets/landscapes/{{ cur_bg }}" alt="{{ cur_bg }}"
+                         style="max-height: 80px; max-width: 140px; border-radius: 8px; border: 1px solid var(--border);"
+                         onerror="this.style.display='none'">
+                </div>
+                {% endif %}
             </div>
         </div>
 
