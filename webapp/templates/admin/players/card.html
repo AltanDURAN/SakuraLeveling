@@ -30,29 +30,25 @@
     {% endif %}
 {% endmacro %}
 
-<section class="pcard-wrap"
-         {% if section == 'main' %}x-data
-         x-on:keydown.window.arrow-left="{% if nav.prev %}window.location='/admin/players/{{ nav.prev.id }}/view{{ eq }}'{% endif %}"
-         x-on:keydown.window.arrow-right="{% if nav.next %}window.location='/admin/players/{{ nav.next.id }}/view{{ eq }}'{% endif %}"
-         {% endif %}>
+{% macro chevron(dir) %}<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="{{ 'M15 5l-7 7 7 7' if dir == 'left' else 'M9 5l7 7-7 7' }}" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>{% endmacro %}
 
-    {% if section == 'main' %}
+<section class="pcard-wrap" x-data
+         x-on:keydown.window.arrow-left="{% if nav.prev %}window.location='/admin/players/{{ nav.prev.id }}/{{ self_path }}{{ eq }}'{% endif %}"
+         x-on:keydown.window.arrow-right="{% if nav.next %}window.location='/admin/players/{{ nav.next.id }}/{{ self_path }}{{ eq }}'{% endif %}">
+
     <div class="pcard-jump">
         <label>Aller à&nbsp;:</label>
-        <select onchange="if(this.value) location.href='/admin/players/'+this.value+'/view{{ eq }}'">
+        <select onchange="if(this.value) location.href='/admin/players/'+this.value+'/{{ self_path }}{{ eq }}'">
             {% for o in nav.options %}
             <option value="{{ o.id }}" {% if o.id == p.id %}selected{% endif %}>{{ o.label }}</option>
             {% endfor %}
         </select>
     </div>
-    {% endif %}
 
     <div class="pcard-nav-row">
-        {% if section == 'main' %}
-            {% if nav.prev %}
-            <a class="pcard-side-arrow" href="/admin/players/{{ nav.prev.id }}/view{{ eq }}" title="Précédent : {{ nav.prev.name }}">‹</a>
-            {% else %}<span class="pcard-side-arrow is-disabled">‹</span>{% endif %}
-        {% endif %}
+        {% if nav.prev %}
+        <a class="pcard-side-arrow" href="/admin/players/{{ nav.prev.id }}/{{ self_path }}{{ eq }}" title="Précédent : {{ nav.prev.name }}">{{ chevron('left') }}</a>
+        {% else %}<span class="pcard-side-arrow is-disabled">{{ chevron('left') }}</span>{% endif %}
 
     <div class="pcard {% if edit %}pcard--editing{% endif %}">
         <!-- Header identité -->
@@ -180,12 +176,8 @@
             {% if edit %}
             <form class="pedit-add" method="post" action="/admin/players/{{ p.id }}/equipment/equip">
                 <select name="item_code" required>
-                    <option value="">— choisir un item —</option>
+                    <option value="">— choisir un item à équiper —</option>
                     {% for it in equip_items %}<option value="{{ it.code }}">{{ it.name }}</option>{% endfor %}
-                </select>
-                <select name="slot" required>
-                    <option value="">— slot —</option>
-                    {% for s in slots %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
                 </select>
                 <button type="submit" class="btn btn-primary">Équiper</button>
             </form>
@@ -207,7 +199,7 @@
             <form class="pedit-add" method="post" action="/admin/players/{{ p.id }}/titles/add">
                 <select name="title_code" required>
                     <option value="">— titre à débloquer —</option>
-                    {% for t in available_titles %}<option value="{{ t.code }}">{{ t.name }} ({{ t.code }})</option>{% endfor %}
+                    {% for t in available_titles %}<option value="{{ t.code }}">{{ t.name }}</option>{% endfor %}
                 </select>
                 <button type="submit" class="btn btn-primary">+ Débloquer</button>
             </form>
@@ -277,11 +269,9 @@
         {% endif %}
     </div>{# .pcard #}
 
-        {% if section == 'main' %}
-            {% if nav.next %}
-            <a class="pcard-side-arrow" href="/admin/players/{{ nav.next.id }}/view{{ eq }}" title="Suivant : {{ nav.next.name }}">›</a>
-            {% else %}<span class="pcard-side-arrow is-disabled">›</span>{% endif %}
-        {% endif %}
+        {% if nav.next %}
+        <a class="pcard-side-arrow" href="/admin/players/{{ nav.next.id }}/{{ self_path }}{{ eq }}" title="Suivant : {{ nav.next.name }}">{{ chevron('right') }}</a>
+        {% else %}<span class="pcard-side-arrow is-disabled">{{ chevron('right') }}</span>{% endif %}
     </div>{# .pcard-nav-row #}
 </section>
 {% endblock %}

@@ -466,11 +466,12 @@ async def inv_remove(player_id: int, request: Request, user: AdminUser = Depends
 async def eq_equip(player_id: int, request: Request, user: AdminUser = Depends(require_admin)):
     form = await request.form()
     code = str(form.get("item_code", "")).strip()
-    slot = str(form.get("slot", "")).strip()
     with get_db_session() as session:
         item = ItemRepository(session).get_by_code(code)
-        if item and slot:
-            EquipmentRepository(session).equip_item(player_id, item.id, slot)
+        # Slot = slot canonique de l'item (connu). Les armes 1-main vont en
+        # main_droite par défaut.
+        if item and item.equipment_slot:
+            EquipmentRepository(session).equip_item(player_id, item.id, item.equipment_slot)
     return _redir(player_id, "equipment")
 
 

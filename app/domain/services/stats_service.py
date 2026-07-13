@@ -139,12 +139,12 @@ class StatsService:
             )
 
         # 7e étage : clamp final. Les items lourds peuvent avoir des stats
-        # négatives (ex : grand espadon = -5 def). On clamp à un minimum
-        # raisonnable pour éviter PV ≤ 0 et autres incohérences.
+        # négatives (ex : grand espadon = -5 def). Plancher : au MINIMUM 1 PV
+        # max, 1 attaque, 1 défense ; aucune stat finale négative.
         stats = Stats(
             max_hp=max(1, stats.max_hp),
-            attack=max(0, stats.attack),
-            defense=max(0, stats.defense),
+            attack=max(1, stats.attack),
+            defense=max(1, stats.defense),
             speed=max(1, stats.speed),
             crit_chance=max(0, stats.crit_chance),
             crit_damage=max(100, stats.crit_damage),
