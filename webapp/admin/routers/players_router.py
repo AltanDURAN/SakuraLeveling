@@ -278,7 +278,7 @@ async def players_titles(player_id: int, request: Request, edit: int = 0, user: 
 
 
 @router.get("/{player_id}/affinities", response_class=HTMLResponse)
-async def players_affinities(player_id: int, request: Request, user: AdminUser = Depends(require_admin)):
+async def players_affinities(player_id: int, request: Request, edit: int = 0, user: AdminUser = Depends(require_admin)):
     with get_db_session() as session:
         ctx, _ = await _base_ctx(session, user, player_id, "affinities")
         aff = ElementAffinityRepository(session).get_affinities(player_id)
