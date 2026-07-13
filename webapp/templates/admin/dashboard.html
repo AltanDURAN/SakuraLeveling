@@ -20,15 +20,6 @@
         <p class="dashboard-sub">Centre de pilotage du contenu de SakuraLeveling.</p>
     </header>
 
-    <div class="dashboard-stats">
-        <div class="stat-pill"><strong>{{ players_count }}</strong> joueurs</div>
-        <div class="stat-pill"><strong>{{ mobs_count }}</strong> mobs</div>
-        <div class="stat-pill"><strong>{{ items_count }}</strong> items</div>
-        <div class="stat-pill"><strong>{{ zones_count }}</strong> zones</div>
-        <div class="stat-pill"><strong>{{ competences_count }}</strong> compétences</div>
-        <div class="stat-pill"><strong>{{ bosses_count }}</strong> bosses</div>
-    </div>
-
     <h2 class="dashboard-section">👥 Joueurs</h2>
     <div class="entity-grid">
         {{ card('/admin/players', '👥', 'Joueurs', 'Profils : voir, éditer, reset complet.', players_count ~ ' joueur(s)') }}
