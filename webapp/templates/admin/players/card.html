@@ -19,16 +19,27 @@
 {% endmacro %}
 
 {% block content %}
+{% set eq = '?edit=1' if edit else '' %}
+{% set self_path = 'view' if section == 'main' else section %}
+
+{% macro edit_toggle() %}
+    {% if edit %}
+        <a href="/admin/players/{{ p.id }}/{{ self_path }}" class="btn btn-ghost">✓ Terminer</a>
+    {% else %}
+        <a href="/admin/players/{{ p.id }}/{{ self_path }}?edit=1" class="btn">✏️ Éditer</a>
+    {% endif %}
+{% endmacro %}
+
 <section class="pcard-wrap"
          {% if section == 'main' %}x-data
-         x-on:keydown.window.arrow-left="{% if nav.prev %}window.location='/admin/players/{{ nav.prev.id }}/view'{% endif %}"
-         x-on:keydown.window.arrow-right="{% if nav.next %}window.location='/admin/players/{{ nav.next.id }}/view'{% endif %}"
+         x-on:keydown.window.arrow-left="{% if nav.prev %}window.location='/admin/players/{{ nav.prev.id }}/view{{ eq }}'{% endif %}"
+         x-on:keydown.window.arrow-right="{% if nav.next %}window.location='/admin/players/{{ nav.next.id }}/view{{ eq }}'{% endif %}"
          {% endif %}>
 
     {% if section == 'main' %}
     <div class="pcard-jump">
         <label>Aller à&nbsp;:</label>
-        <select onchange="if(this.value) location.href='/admin/players/'+this.value+'/view'">
+        <select onchange="if(this.value) location.href='/admin/players/'+this.value+'/view{{ eq }}'">
             {% for o in nav.options %}
             <option value="{{ o.id }}" {% if o.id == p.id %}selected{% endif %}>{{ o.label }}</option>
             {% endfor %}
@@ -39,11 +50,11 @@
     <div class="pcard-nav-row">
         {% if section == 'main' %}
             {% if nav.prev %}
-            <a class="pcard-side-arrow" href="/admin/players/{{ nav.prev.id }}/view" title="Précédent : {{ nav.prev.name }}">‹</a>
+            <a class="pcard-side-arrow" href="/admin/players/{{ nav.prev.id }}/view{{ eq }}" title="Précédent : {{ nav.prev.name }}">‹</a>
             {% else %}<span class="pcard-side-arrow is-disabled">‹</span>{% endif %}
         {% endif %}
 
-    <div class="pcard">
+    <div class="pcard {% if edit %}pcard--editing{% endif %}">
         <!-- Header identité -->
         <div class="pcard-head">
             <img class="pcard-avatar" src="{{ avatar_url }}" alt="{{ p.display_name }}"
@@ -78,6 +89,22 @@
         </div>
 
         {% if section == 'main' %}
+        {% if edit %}
+        <!-- Panneau d'édition des valeurs scalaires -->
+        <form class="pedit-panel" method="post" action="/admin/players/{{ p.id }}">
+            <div class="pedit-grid">
+                <label>Niveau<input type="number" name="level" min="1" value="{{ p.level }}"></label>
+                <label>XP<input type="number" name="xp" min="0" value="{{ p.xp }}"></label>
+                <label>Or<input type="number" name="gold" min="0" value="{{ p.gold }}"></label>
+                <label>Points de comp.<input type="number" name="skill_points" min="0" value="{{ p.skill_points }}"></label>
+                <label>Daily streak<input type="number" name="daily_streak" min="0" value="{{ p.daily_streak }}"></label>
+                <label>PV courant<input type="number" name="current_hp" min="0" value="{{ bars.hp.cur }}"></label>
+                <label>Mana courant<input type="number" name="current_mana" min="0" value="{{ bars.mana.cur }}"></label>
+            </div>
+            <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
+        </form>
+        {% endif %}
+
         <!-- Barres PV / Mana / XP -->
         <div class="pcard-bars">
             {{ bar('❤️ PV', bars.hp.cur, bars.hp.max, 'hp', stats.hp_regeneration if stats else 0) }}
@@ -86,7 +113,7 @@
         </div>
 
         {% if stats %}
-        <h3 class="pcard-h3">⚔️ Stats de combat</h3>
+        <h3 class="pcard-h3">⚔️ Stats de combat <small>(calculées — via équipement / arbre / titres)</small></h3>
         <div class="pcard-grid">
             <div class="pfield"><span>⚔️ Attaque</span><strong>{{ stats.attack }}</strong></div>
             <div class="pfield"><span>🛡️ Défense</span><strong>{{ stats.defense }}</strong></div>
@@ -100,18 +127,18 @@
         <!-- Liens vers les sous-cartes -->
         <h3 class="pcard-h3">🗂️ Détails</h3>
         <div class="pcard-links">
-            <a href="/admin/players/{{ p.id }}/inventory" class="pcard-link">🎒 Inventaire <span class="pill">{{ counts.inventory }}</span></a>
-            <a href="/admin/players/{{ p.id }}/equipment" class="pcard-link">🛡️ Équipement <span class="pill">{{ counts.equipment }}</span></a>
-            <a href="/admin/players/{{ p.id }}/titles" class="pcard-link">🏷️ Titres <span class="pill">{{ counts.titles }}</span></a>
-            <a href="/admin/players/{{ p.id }}/career" class="pcard-link">📈 Carrière</a>
-            <a href="/admin/players/{{ p.id }}/affinities" class="pcard-link">✨ Affinités</a>
-            <a href="/admin/players/{{ p.id }}/skills" class="pcard-link">🔮 Compétences</a>
-            <a href="/admin/players/{{ p.id }}/duel" class="pcard-link">⚔️ Duel</a>
+            <a href="/admin/players/{{ p.id }}/inventory{{ eq }}" class="pcard-link">🎒 Inventaire <span class="pill">{{ counts.inventory }}</span></a>
+            <a href="/admin/players/{{ p.id }}/equipment{{ eq }}" class="pcard-link">🛡️ Équipement <span class="pill">{{ counts.equipment }}</span></a>
+            <a href="/admin/players/{{ p.id }}/titles{{ eq }}" class="pcard-link">🏷️ Titres <span class="pill">{{ counts.titles }}</span></a>
+            <a href="/admin/players/{{ p.id }}/career{{ eq }}" class="pcard-link">📈 Carrière</a>
+            <a href="/admin/players/{{ p.id }}/affinities{{ eq }}" class="pcard-link">✨ Affinités</a>
+            <a href="/admin/players/{{ p.id }}/skills{{ eq }}" class="pcard-link">🔮 Compétences</a>
+            <a href="/admin/players/{{ p.id }}/duel{{ eq }}" class="pcard-link">⚔️ Duel</a>
         </div>
 
         <!-- Actions -->
         <div class="pcard-actions">
-            <a href="/admin/players/{{ p.id }}/edit" class="btn btn-primary">✏️ Éditer</a>
+            {{ edit_toggle() }}
             <form method="post" action="/admin/players/{{ p.id }}/reset"
                   onsubmit="return confirm('⚠️ RESET complet de {{ p.display_name }} ?\n\nNiveau, or, inventaire, équipement, kills, titres, affinités… tout est remis à zéro (identité Discord conservée). Irréversible.');">
                 <button type="submit" class="btn" style="background: var(--danger); color: #fff;">♻️ Reset</button>
@@ -120,33 +147,79 @@
 
         {% else %}
         <!-- ===== SOUS-CARTE ===== -->
-        <a href="/admin/players/{{ p.id }}/view" class="pcard-back">← Retour à la fiche</a>
+        <div class="pcard-subtoolbar">
+            <a href="/admin/players/{{ p.id }}/view{{ eq }}" class="pcard-back">← Retour à la fiche</a>
+            {{ edit_toggle() }}
+        </div>
         <h2 class="pcard-section-title">{{ section_titles.get(section, section) }}</h2>
 
         {% if section == 'inventory' %}
+            {% if edit %}
+            <form class="pedit-add" method="post" action="/admin/players/{{ p.id }}/inventory/add">
+                <input type="text" name="item_code" list="all-items" placeholder="code item" required>
+                <input type="number" name="quantity" value="1" min="1" title="quantité">
+                <button type="submit" class="btn btn-primary">+ Ajouter</button>
+            </form>
+            <datalist id="all-items">{% for code in all_item_codes %}<option value="{{ code }}">{% endfor %}</datalist>
+            {% endif %}
             {% if inventory %}
             <div class="table-wrapper"><table class="data-table">
-                <thead><tr><th>Item</th><th>Catégorie</th><th>Qté</th></tr></thead>
+                <thead><tr><th>Item</th><th>Catégorie</th><th>Qté</th>{% if edit %}<th></th>{% endif %}</tr></thead>
                 <tbody>{% for it in inventory %}
-                    <tr><td>{{ it.name }} <code>{{ it.code }}</code></td><td>{{ it.category }}</td><td>{{ it.quantity }}</td></tr>
+                    <tr><td>{{ it.name }} <code>{{ it.code }}</code></td><td>{{ it.category }}</td><td>{{ it.quantity }}</td>
+                    {% if edit %}<td><form method="post" action="/admin/players/{{ p.id }}/inventory/remove" onsubmit="return confirm('Retirer {{ it.code }} de l\'inventaire ?');">
+                        <input type="hidden" name="item_code" value="{{ it.code }}">
+                        <button class="btn btn-small btn-del">✕</button></form></td>{% endif %}</tr>
                 {% endfor %}</tbody>
             </table></div>
             {% else %}<div class="empty-state"><p>Inventaire vide.</p></div>{% endif %}
 
         {% elif section == 'equipment' %}
+            {% if edit %}
+            <form class="pedit-add" method="post" action="/admin/players/{{ p.id }}/equipment/equip">
+                <input type="text" name="item_code" list="equip-items" placeholder="code item" required>
+                <select name="slot" required>
+                    <option value="">— slot —</option>
+                    {% for s in slots %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary">Équiper</button>
+            </form>
+            <datalist id="equip-items">{% for code in equip_item_codes %}<option value="{{ code }}">{% endfor %}</datalist>
+            {% endif %}
             {% if equipment %}
             <div class="table-wrapper"><table class="data-table">
-                <thead><tr><th>Slot</th><th>Item</th><th>Panoplie</th></tr></thead>
+                <thead><tr><th>Slot</th><th>Item</th><th>Panoplie</th>{% if edit %}<th></th>{% endif %}</tr></thead>
                 <tbody>{% for e in equipment %}
-                    <tr><td><strong>{{ e.slot }}</strong></td><td>{{ e.name }} <code>{{ e.code }}</code></td><td>{{ e.family or '—' }}</td></tr>
+                    <tr><td><strong>{{ e.slot }}</strong></td><td>{{ e.name }} <code>{{ e.code }}</code></td><td>{{ e.family or '—' }}</td>
+                    {% if edit %}<td><form method="post" action="/admin/players/{{ p.id }}/equipment/unequip">
+                        <input type="hidden" name="slot" value="{{ e.slot }}">
+                        <button class="btn btn-small btn-del" title="Déséquiper">✕</button></form></td>{% endif %}</tr>
                 {% endfor %}</tbody>
             </table></div>
             {% else %}<div class="empty-state"><p>Aucun équipement.</p></div>{% endif %}
 
         {% elif section == 'titles' %}
+            {% if edit %}
+            <form class="pedit-add" method="post" action="/admin/players/{{ p.id }}/titles/add">
+                <select name="title_code" required>
+                    <option value="">— titre à débloquer —</option>
+                    {% for t in available_titles %}<option value="{{ t.code }}">{{ t.name }} ({{ t.code }})</option>{% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary">+ Débloquer</button>
+            </form>
+            {% endif %}
             {% if titles %}
             <div class="pcard-chips">{% for t in titles %}
-                <span class="chip {% if t.active %}chip-active{% endif %}">{% if t.active %}★ {% endif %}{{ t.name }} <code>{{ t.code }}</code></span>
+                <span class="chip {% if t.active %}chip-active{% endif %}">
+                    {% if t.active %}★ {% endif %}{{ t.name }} <code>{{ t.code }}</code>
+                    {% if edit %}
+                    {% if not t.active %}<form method="post" action="/admin/players/{{ p.id }}/titles/activate" style="display:inline">
+                        <input type="hidden" name="title_code" value="{{ t.code }}"><button class="chip-btn" title="Activer">★</button></form>{% endif %}
+                    <form method="post" action="/admin/players/{{ p.id }}/titles/remove" style="display:inline"
+                          onsubmit="return confirm('Retirer le titre {{ t.code }} ?');">
+                        <input type="hidden" name="title_code" value="{{ t.code }}"><button class="chip-btn chip-del" title="Retirer">✕</button></form>
+                    {% endif %}
+                </span>
             {% endfor %}</div>
             {% else %}<div class="empty-state"><p>Aucun titre débloqué.</p></div>{% endif %}
 
@@ -168,9 +241,25 @@
             {% endfor %}</div>
 
         {% elif section == 'skills' %}
-            <div class="pcard-grid">{% for s in skills %}
-                <div class="pfield"><span>Slot {{ s.slot }}</span><strong>{% if s.code %}{{ s.name }} ({{ s.element }}/{{ s.role }}){% else %}— vide —{% endif %}</strong></div>
-            {% endfor %}</div>
+            {% for s in skills %}
+            <div class="pcard-grid" style="margin-bottom:.5rem;">
+                <div class="pfield" style="grid-column: 1 / -1;">
+                    <span>Slot {{ s.slot }}</span>
+                    {% if edit %}
+                    <form method="post" action="/admin/players/{{ p.id }}/skills/set" style="display:flex; gap:.4rem; margin-top:.3rem;">
+                        <input type="hidden" name="slot" value="{{ s.slot }}">
+                        <select name="skill_code" style="flex:1;">
+                            <option value="">— vide —</option>
+                            {% for code in all_skill_codes %}<option value="{{ code }}" {% if code == s.code %}selected{% endif %}>{{ code }}</option>{% endfor %}
+                        </select>
+                        <button class="btn btn-small btn-primary">OK</button>
+                    </form>
+                    {% else %}
+                    <strong>{% if s.code %}{{ s.name }} ({{ s.element }}/{{ s.role }}){% else %}— vide —{% endif %}</strong>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
 
         {% elif section == 'duel' %}
             {% if duel %}
@@ -186,7 +275,7 @@
 
         {% if section == 'main' %}
             {% if nav.next %}
-            <a class="pcard-side-arrow" href="/admin/players/{{ nav.next.id }}/view" title="Suivant : {{ nav.next.name }}">›</a>
+            <a class="pcard-side-arrow" href="/admin/players/{{ nav.next.id }}/view{{ eq }}" title="Suivant : {{ nav.next.name }}">›</a>
             {% else %}<span class="pcard-side-arrow is-disabled">›</span>{% endif %}
         {% endif %}
     </div>{# .pcard-nav-row #}

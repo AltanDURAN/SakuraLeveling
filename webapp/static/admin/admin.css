@@ -843,3 +843,33 @@ code {
     .carousel-arrow span { display: none; }
     .pcard-actions { flex-direction: column; }
 }
+
+/* ============ Fiche joueur — mode édition ============ */
+.pcard--editing { box-shadow: 0 0 0 2px var(--accent), var(--shadow-lg); }
+
+.pcard-subtoolbar { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin-top: 1.1rem; flex-wrap: wrap; }
+
+.pedit-panel {
+    margin: 1.2rem 0 0.4rem; padding: 1rem; border: 1px dashed var(--accent);
+    border-radius: var(--radius); background: var(--accent-soft);
+}
+.pedit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.7rem; margin-bottom: 0.9rem; }
+.pedit-grid label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.75rem; color: var(--text-soft); font-weight: 600; }
+.pedit-grid input { padding: 0.45rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-elev); color: var(--text); }
+
+.pedit-add { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem;
+    padding: 0.7rem; border: 1px dashed var(--accent); border-radius: var(--radius); background: var(--accent-soft); }
+.pedit-add input[type="text"] { flex: 1; min-width: 140px; }
+.pedit-add input, .pedit-add select { padding: 0.45rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-elev); color: var(--text); }
+.pedit-add input[type="number"] { width: 80px; }
+
+.btn-del { background: var(--danger); color: #fff; padding: 0.2rem 0.5rem; line-height: 1; }
+.btn-del:hover { filter: brightness(1.08); }
+
+.chip-btn {
+    background: rgba(255,255,255,0.25); border: none; cursor: pointer; color: inherit;
+    border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; line-height: 1;
+    margin-left: 0.15rem; padding: 0;
+}
+.chip-btn:hover { background: rgba(255,255,255,0.45); }
+.chip-del:hover { background: var(--danger); color: #fff; }

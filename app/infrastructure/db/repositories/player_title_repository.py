@@ -2,7 +2,7 @@
 
 from datetime import datetime, UTC
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from app.infrastructure.db.models.player_title_model import PlayerTitleModel
@@ -40,6 +40,17 @@ class PlayerTitleRepository:
         )
         self.session.commit()
         return True
+
+    def remove_title(self, player_id: int, title_code: str) -> bool:
+        """Retire un titre précis d'un joueur. Retourne True si supprimé."""
+        result = self.session.execute(
+            delete(PlayerTitleModel).where(
+                PlayerTitleModel.player_id == player_id,
+                PlayerTitleModel.title_code == title_code,
+            )
+        )
+        self.session.commit()
+        return result.rowcount > 0
 
     def get_active_title_code(self, player_id: int) -> str | None:
         stmt = select(PlayerTitleModel.title_code).where(
