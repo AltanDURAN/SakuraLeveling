@@ -1,0 +1,162 @@
+{% extends "admin/base.html" %}
+
+{% set section_titles = {
+    'inventory': '🎒 Inventaire', 'equipment': '🛡️ Équipement', 'titles': '🏷️ Titres',
+    'affinities': '✨ Affinités & essences', 'skills': '🔮 Compétences', 'duel': '⚔️ Duel'
+} %}
+{% block title %}{{ p.display_name }} — {{ section_titles.get(section, 'Fiche joueur') }}{% endblock %}
+
+{% block content %}
+<section class="pcard-wrap"
+         {% if section == 'main' %}x-data
+         x-on:keydown.window.arrow-left="{% if nav.prev %}window.location='/admin/players/{{ nav.prev.id }}/view'{% endif %}"
+         x-on:keydown.window.arrow-right="{% if nav.next %}window.location='/admin/players/{{ nav.next.id }}/view'{% endif %}"
+         {% endif %}>
+
+    <div class="pcard">
+        <!-- Header identité -->
+        <div class="pcard-head">
+            <div class="pcard-avatar" style="background: hsl({{ (p.id * 47) % 360 }}, 58%, 52%);">
+                {{ p.display_name[0] | upper if p.display_name else '?' }}
+            </div>
+            <div class="pcard-id">
+                <h1>{{ p.display_name }}</h1>
+                <div class="pcard-sub">@{{ p.username }} · ID <code>{{ p.discord_id }}</code></div>
+            </div>
+            <div class="pcard-badges">
+                <span class="badge-lvl">Niv {{ p.level }}</span>
+                {% if rank %}<span class="badge-rank">{{ rank }}</span>{% endif %}
+            </div>
+        </div>
+
+        {% if section == 'main' %}
+        <!-- Carousel navigation joueurs -->
+        <div class="pcard-carousel">
+            {% if nav.prev %}
+                <a class="carousel-arrow" href="/admin/players/{{ nav.prev.id }}/view" title="{{ nav.prev.name }}">◀ <span>{{ nav.prev.name }}</span></a>
+            {% else %}<span class="carousel-arrow is-disabled">◀</span>{% endif %}
+            <select class="carousel-select"
+                    onchange="if(this.value) location.href='/admin/players/'+this.value+'/view'">
+                {% for o in nav.options %}
+                <option value="{{ o.id }}" {% if o.id == p.id %}selected{% endif %}>{{ o.label }}</option>
+                {% endfor %}
+            </select>
+            {% if nav.next %}
+                <a class="carousel-arrow" href="/admin/players/{{ nav.next.id }}/view" title="{{ nav.next.name }}"><span>{{ nav.next.name }}</span> ▶</a>
+            {% else %}<span class="carousel-arrow is-disabled">▶</span>{% endif %}
+        </div>
+        <div class="pcard-position">{{ nav.position }} / {{ nav.total }} · <span class="hint">← → pour naviguer</span></div>
+
+        <!-- Résumé -->
+        <div class="pcard-grid">
+            <div class="pfield"><span>Niveau</span><strong>{{ p.level }}</strong></div>
+            <div class="pfield"><span>XP</span><strong>{{ p.xp }}</strong></div>
+            <div class="pfield"><span>Or</span><strong>{{ p.gold }}</strong></div>
+            <div class="pfield"><span>Points de comp.</span><strong>{{ p.skill_points }}</strong></div>
+            <div class="pfield"><span>Classe</span><strong>{{ p.class }}</strong></div>
+            <div class="pfield"><span>Daily streak</span><strong>{{ p.daily_streak }}</strong></div>
+            <div class="pfield"><span>Puissance</span><strong>{{ power or '—' }}</strong></div>
+            <div class="pfield"><span>Vu le</span><strong>{{ p.last_seen }}</strong></div>
+        </div>
+
+        {% if stats %}
+        <h3 class="pcard-h3">⚔️ Stats de combat</h3>
+        <div class="pcard-grid">
+            <div class="pfield"><span>❤️ PV max</span><strong>{{ stats.max_hp }}</strong></div>
+            <div class="pfield"><span>🔷 Mana</span><strong>{{ stats.mana_max }}</strong></div>
+            <div class="pfield"><span>⚔️ Attaque</span><strong>{{ stats.attack }}</strong></div>
+            <div class="pfield"><span>🛡️ Défense</span><strong>{{ stats.defense }}</strong></div>
+            <div class="pfield"><span>💨 Vitesse</span><strong>{{ stats.speed }}</strong></div>
+            <div class="pfield"><span>🎯 Crit</span><strong>{{ stats.crit_chance }}% / {{ stats.crit_damage }}%</strong></div>
+            <div class="pfield"><span>🌀 Esquive</span><strong>{{ stats.dodge }}%</strong></div>
+            <div class="pfield"><span>✨ Régén</span><strong>PV {{ stats.hp_regeneration }} · M {{ stats.mana_regeneration }}</strong></div>
+        </div>
+        {% endif %}
+
+        <h3 class="pcard-h3">📈 Carrière</h3>
+        <div class="pcard-grid">
+            <div class="pfield"><span>💀 Kills</span><strong>{{ total_kills }}</strong></div>
+            <div class="pfield"><span>⚔️ Combats</span><strong>{{ career.combats_fought }}</strong></div>
+            <div class="pfield"><span>🏆 V / D</span><strong>{{ career.combats_won }} / {{ career.combats_lost }}</strong></div>
+            <div class="pfield"><span>💰 Or amassé</span><strong>{{ career.gold_earned_total }}</strong></div>
+            <div class="pfield"><span>💢 Dégâts inf.</span><strong>{{ career.damage_dealt_total }}</strong></div>
+            <div class="pfield"><span>🛡️ Dégâts encaissés</span><strong>{{ career.damage_tanked_total }}</strong></div>
+            <div class="pfield"><span>💚 PV soignés</span><strong>{{ career.hp_healed_total }}</strong></div>
+            <div class="pfield"><span>🌀 Esquives</span><strong>{{ career.dodges_total }}</strong></div>
+        </div>
+
+        <!-- Liens vers les sous-cartes -->
+        <h3 class="pcard-h3">🗂️ Détails</h3>
+        <div class="pcard-links">
+            <a href="/admin/players/{{ p.id }}/inventory" class="pcard-link">🎒 Inventaire <span class="pill">{{ counts.inventory }}</span></a>
+            <a href="/admin/players/{{ p.id }}/equipment" class="pcard-link">🛡️ Équipement <span class="pill">{{ counts.equipment }}</span></a>
+            <a href="/admin/players/{{ p.id }}/titles" class="pcard-link">🏷️ Titres <span class="pill">{{ counts.titles }}</span></a>
+            <a href="/admin/players/{{ p.id }}/affinities" class="pcard-link">✨ Affinités</a>
+            <a href="/admin/players/{{ p.id }}/skills" class="pcard-link">🔮 Compétences</a>
+            <a href="/admin/players/{{ p.id }}/duel" class="pcard-link">⚔️ Duel</a>
+        </div>
+
+        <!-- Actions -->
+        <div class="pcard-actions">
+            <a href="/admin/players/{{ p.id }}/edit" class="btn btn-primary">✏️ Éditer</a>
+            <form method="post" action="/admin/players/{{ p.id }}/reset"
+                  onsubmit="return confirm('⚠️ RESET complet de {{ p.display_name }} ?\n\nNiveau, or, inventaire, équipement, kills, titres, affinités… tout est remis à zéro (identité Discord conservée). Irréversible.');">
+                <button type="submit" class="btn" style="background: var(--danger); color: #fff;">♻️ Reset</button>
+            </form>
+        </div>
+
+        {% else %}
+        <!-- ===== SOUS-CARTE ===== -->
+        <a href="/admin/players/{{ p.id }}/view" class="pcard-back">← Retour à la fiche</a>
+        <h2 class="pcard-section-title">{{ section_titles.get(section, section) }}</h2>
+
+        {% if section == 'inventory' %}
+            {% if inventory %}
+            <div class="table-wrapper"><table class="data-table">
+                <thead><tr><th>Item</th><th>Catégorie</th><th>Qté</th></tr></thead>
+                <tbody>{% for it in inventory %}
+                    <tr><td>{{ it.name }} <code>{{ it.code }}</code></td><td>{{ it.category }}</td><td>{{ it.quantity }}</td></tr>
+                {% endfor %}</tbody>
+            </table></div>
+            {% else %}<div class="empty-state"><p>Inventaire vide.</p></div>{% endif %}
+
+        {% elif section == 'equipment' %}
+            {% if equipment %}
+            <div class="table-wrapper"><table class="data-table">
+                <thead><tr><th>Slot</th><th>Item</th><th>Panoplie</th></tr></thead>
+                <tbody>{% for e in equipment %}
+                    <tr><td><strong>{{ e.slot }}</strong></td><td>{{ e.name }} <code>{{ e.code }}</code></td><td>{{ e.family or '—' }}</td></tr>
+                {% endfor %}</tbody>
+            </table></div>
+            {% else %}<div class="empty-state"><p>Aucun équipement.</p></div>{% endif %}
+
+        {% elif section == 'titles' %}
+            {% if titles %}
+            <div class="pcard-chips">{% for t in titles %}
+                <span class="chip {% if t.active %}chip-active{% endif %}">{% if t.active %}★ {% endif %}{{ t.name }} <code>{{ t.code }}</code></span>
+            {% endfor %}</div>
+            {% else %}<div class="empty-state"><p>Aucun titre débloqué.</p></div>{% endif %}
+
+        {% elif section == 'affinities' %}
+            <div class="pcard-grid">{% for a in affinities %}
+                <div class="pfield"><span>{{ a.emoji }} {{ a.label }}</span><strong>{{ a.value }}/100 · {{ a.essences }} ess.</strong></div>
+            {% endfor %}</div>
+
+        {% elif section == 'skills' %}
+            <div class="pcard-grid">{% for s in skills %}
+                <div class="pfield"><span>Slot {{ s.slot }}</span><strong>{% if s.code %}{{ s.name }} ({{ s.element }}/{{ s.role }}){% else %}— vide —{% endif %}</strong></div>
+            {% endfor %}</div>
+
+        {% elif section == 'duel' %}
+            {% if duel %}
+            <div class="pcard-grid">
+                <div class="pfield"><span>Rang ladder</span><strong>#{{ duel.rank_position }}</strong></div>
+                <div class="pfield"><span>Victoires</span><strong>{{ duel.wins }}</strong></div>
+                <div class="pfield"><span>Défaites</span><strong>{{ duel.losses }}</strong></div>
+            </div>
+            {% else %}<div class="empty-state"><p>Ce joueur n'a pas encore combattu en duel.</p></div>{% endif %}
+        {% endif %}
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
