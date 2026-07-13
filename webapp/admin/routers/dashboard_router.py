@@ -56,9 +56,18 @@ async def dashboard(
         players_count = len(PlayerRepository(session).list_all_profiles())
         shop_count = len(ShopRepository(session).list_all(only_enabled=False))
         crafts_count = session.execute(select(func.count()).select_from(CraftRecipeModel)).scalar() or 0
+        families_count = len(MobRepository(session).list_distinct_families())
 
     skill_data = _load_json("skill_tree.json") or {}
     skill_nodes_count = len(skill_data.get("skills", {})) if isinstance(skill_data, dict) else 0
+
+    # Zones (farm_zones.json) + compétences élémentaires (element_skills.json)
+    from app.infrastructure.encounters import farm_zone_loader
+    from app.infrastructure.elements import element_skill_loader
+    farm_zone_loader.clear_cache()
+    element_skill_loader.clear_cache()
+    zones_count = len(farm_zone_loader.list_zones())
+    competences_count = len(element_skill_loader.all_skills())
 
     return get_templates().TemplateResponse(
         request, "admin/dashboard.html",
@@ -75,5 +84,8 @@ async def dashboard(
             "bosses_count": _count_json_top_level("boss_definitions.json"),
             "shop_count": shop_count,
             "players_count": players_count,
+            "zones_count": zones_count,
+            "families_count": families_count,
+            "competences_count": competences_count,
         },
     )

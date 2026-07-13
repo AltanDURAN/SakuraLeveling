@@ -129,6 +129,54 @@ code {
     background: var(--accent-soft);
     color: var(--accent);
 }
+.topnav-link.is-active {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* Menus déroulants groupés (Alpine) */
+[x-cloak] { display: none !important; }
+.topnav-group { position: relative; }
+.topnav-trigger {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.topnav-trigger .caret { font-size: 0.65em; opacity: 0.6; }
+.topnav-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 0.35rem;
+    min-width: 190px;
+    padding: 0.35rem;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+.topnav-menu a {
+    display: block;
+    padding: 0.45rem 0.7rem;
+    border-radius: var(--radius);
+    color: var(--text-soft);
+    font-weight: 500;
+    white-space: nowrap;
+}
+.topnav-menu a:hover,
+.topnav-menu a.is-active {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
 
 .topbar-actions {
     margin-left: auto;
@@ -246,7 +294,32 @@ code {
     margin: 0 0 0.3rem;
     font-size: 2rem;
 }
-.dashboard-sub { color: var(--text-soft); margin: 0 0 2rem; }
+.dashboard-sub { color: var(--text-soft); margin: 0 0 1.5rem; }
+
+/* Bandeau de stats rapides */
+.dashboard-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 0 0 2rem;
+}
+.stat-pill {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.85rem;
+    color: var(--text-soft);
+}
+.stat-pill strong { color: var(--accent); font-size: 1rem; }
+
+/* Titres de section du dashboard */
+.dashboard-section {
+    margin: 2rem 0 1rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 1.2rem;
+}
 
 .entity-grid {
     display: grid;

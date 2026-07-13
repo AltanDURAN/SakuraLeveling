@@ -20,24 +20,42 @@
                 <span class="brand-mark">🌸</span>
                 <span class="brand-text">Sakura Admin</span>
             </a>
+            {% set cur = request.url.path %}
+            {% set nav_groups = [
+                {'label': '👥 Joueurs', 'items': [
+                    ('/admin/players', 'Joueurs'), ('/admin/roles', 'Rôles'), ('/admin/actions', 'Actions')]},
+                {'label': '🗺️ Monde', 'items': [
+                    ('/admin/mobs', 'Mobs'), ('/admin/zones', 'Zones'),
+                    ('/admin/familles', 'Familles'), ('/admin/world-bosses', 'World Bosses')]},
+                {'label': '📦 Objets', 'items': [
+                    ('/admin/items', 'Items'), ('/admin/shop', 'Shop'),
+                    ('/admin/crafts', 'Crafts'), ('/admin/panoplies', 'Panoplies')]},
+                {'label': '📈 Progression', 'items': [
+                    ('/admin/classes', 'Classes'), ('/admin/skill-tree', 'Arbre'),
+                    ('/admin/competences', 'Compétences'), ('/admin/titles', 'Titres'),
+                    ('/admin/quests', 'Quêtes')]},
+            ] %}
             <nav class="topnav">
-                <a href="/admin" class="topnav-link">Dashboard</a>
-                <a href="/admin/players" class="topnav-link">Joueurs</a>
-                <a href="/admin/roles" class="topnav-link">Rôles</a>
-                <a href="/admin/actions" class="topnav-link">Actions</a>
-                <a href="/admin/items" class="topnav-link">Items</a>
-                <a href="/admin/mobs" class="topnav-link">Mobs</a>
-                <a href="/admin/zones" class="topnav-link">Zones</a>
-                <a href="/admin/familles" class="topnav-link">Familles</a>
-                <a href="/admin/competences" class="topnav-link">Compétences</a>
-                <a href="/admin/shop" class="topnav-link">Shop</a>
-                <a href="/admin/crafts" class="topnav-link">Crafts</a>
-                <a href="/admin/skill-tree" class="topnav-link">Arbre</a>
-                <a href="/admin/panoplies" class="topnav-link">Panoplies</a>
-                <a href="/admin/titles" class="topnav-link">Titres</a>
-                <a href="/admin/classes" class="topnav-link">Classes</a>
-                <a href="/admin/quests" class="topnav-link">Quêtes</a>
-                <a href="/admin/world-bosses" class="topnav-link">Bosses</a>
+                <a href="/admin" class="topnav-link {% if cur == '/admin' or cur == '/admin/' %}is-active{% endif %}">🌸 Dashboard</a>
+                {% for g in nav_groups %}
+                    {% set ns = namespace(active=false) %}
+                    {% for href, label in g['items'] %}
+                        {% if cur.startswith(href) %}{% set ns.active = true %}{% endif %}
+                    {% endfor %}
+                    <div class="topnav-group" x-data="{ open: false }" x-on:click.away="open = false">
+                        <button type="button"
+                                class="topnav-link topnav-trigger {% if ns.active %}is-active{% endif %}"
+                                x-on:click="open = !open">
+                            {{ g['label'] }} <span class="caret">▾</span>
+                        </button>
+                        <div class="topnav-menu" x-show="open" x-cloak x-transition.opacity
+                             x-on:click="open = false">
+                            {% for href, label in g['items'] %}
+                                <a href="{{ href }}" class="{% if cur.startswith(href) %}is-active{% endif %}">{{ label }}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
             </nav>
             <div class="topbar-actions">
                 <button class="theme-toggle" type="button"

@@ -2,6 +2,17 @@
 
 {% block title %}Dashboard — Sakura Admin{% endblock %}
 
+{% macro card(href, icon, title, desc, count=None) %}
+<a class="entity-card entity-card--active" href="{{ href }}">
+    <div class="entity-icon">{{ icon }}</div>
+    <div class="entity-body">
+        <h2>{{ title }}</h2>
+        <p>{{ desc }}</p>
+        {% if count is not none %}<span class="entity-count">{{ count }}</span>{% endif %}
+    </div>
+</a>
+{% endmacro %}
+
 {% block content %}
 <section class="dashboard">
     <header class="dashboard-header">
@@ -9,114 +20,45 @@
         <p class="dashboard-sub">Centre de pilotage du contenu de SakuraLeveling.</p>
     </header>
 
+    <div class="dashboard-stats">
+        <div class="stat-pill"><strong>{{ players_count }}</strong> joueurs</div>
+        <div class="stat-pill"><strong>{{ mobs_count }}</strong> mobs</div>
+        <div class="stat-pill"><strong>{{ items_count }}</strong> items</div>
+        <div class="stat-pill"><strong>{{ zones_count }}</strong> zones</div>
+        <div class="stat-pill"><strong>{{ competences_count }}</strong> compétences</div>
+        <div class="stat-pill"><strong>{{ bosses_count }}</strong> bosses</div>
+    </div>
+
+    <h2 class="dashboard-section">👥 Joueurs</h2>
     <div class="entity-grid">
-        <a class="entity-card entity-card--active" href="/admin/items">
-            <div class="entity-icon">📦</div>
-            <div class="entity-body">
-                <h2>Items</h2>
-                <p>Définitions d'items : armes, armures, ressources, consommables.</p>
-                <span class="entity-count">{{ items_count }} item(s)</span>
-            </div>
-        </a>
+        {{ card('/admin/players', '👥', 'Joueurs', 'Profils : voir, éditer, reset complet.', players_count ~ ' joueur(s)') }}
+        {{ card('/admin/roles', '🎭', 'Rôles Discord', 'Rôles du serveur + attribution aux membres.', 'gérer') }}
+        {{ card('/admin/actions', '⚡', 'Actions admin', 'Donner or / xp / niveau / items / skill points.', 'outils') }}
+    </div>
 
-        <a class="entity-card entity-card--active" href="/admin/mobs">
-            <div class="entity-icon">👹</div>
-            <div class="entity-body">
-                <h2>Mobs</h2>
-                <p>Définitions des monstres : stats, drops, familles, spawn weight.</p>
-                <span class="entity-count">{{ mobs_count }} mob(s)</span>
-            </div>
-        </a>
+    <h2 class="dashboard-section">🗺️ Monde</h2>
+    <div class="entity-grid">
+        {{ card('/admin/mobs', '👹', 'Mobs', 'Monstres : stats, drops, familles, élément, image.', mobs_count ~ ' mob(s)') }}
+        {{ card('/admin/zones', '🗺️', 'Zones de farm', 'Salon, familles, décor, essences par kill.', zones_count ~ ' zone(s)') }}
+        {{ card('/admin/familles', '🧬', 'Familles', 'Vue famille → mobs, zone, drop commun (éditable).', families_count ~ ' famille(s)') }}
+        {{ card('/admin/world-bosses', '🐉', 'World Bosses', 'Boss hebdo, stats et modifiers.', bosses_count ~ ' boss') }}
+    </div>
 
-        <a class="entity-card entity-card--active" href="/admin/classes">
-            <div class="entity-icon">🧬</div>
-            <div class="entity-body">
-                <h2>Classes</h2>
-                <p>Classes de personnage et bonus.</p>
-                <span class="entity-count">{{ classes_count }} classe(s)</span>
-            </div>
-        </a>
+    <h2 class="dashboard-section">📦 Objets & économie</h2>
+    <div class="entity-grid">
+        {{ card('/admin/items', '📦', 'Items', 'Armes, armures, ressources, consommables.', items_count ~ ' item(s)') }}
+        {{ card('/admin/shop', '🏪', 'Shop', 'Items en vente + prix.', shop_count ~ ' au shop') }}
+        {{ card('/admin/crafts', '🛠️', 'Recettes', 'Craft & forge : résultat, ingrédients, station.', crafts_count ~ ' recette(s)') }}
+        {{ card('/admin/panoplies', '🌸', 'Panoplies', 'Sets et bonus par paliers.', panoplies_count ~ ' panoplie(s)') }}
+    </div>
 
-        <a class="entity-card entity-card--active" href="/admin/crafts">
-            <div class="entity-icon">🛠️</div>
-            <div class="entity-body">
-                <h2>Recettes</h2>
-                <p>Craft et forge — résultat, ingrédients, station.</p>
-                <span class="entity-count">{{ crafts_count }} recette(s)</span>
-            </div>
-        </a>
-
-        <a class="entity-card entity-card--active" href="/admin/skill-tree">
-            <div class="entity-icon">🌳</div>
-            <div class="entity-body">
-                <h2>Skill Tree</h2>
-                <p>Arbre de compétences : nœuds, effets, prérequis.</p>
-                <span class="entity-count">{{ skill_nodes_count }} nœud(s)</span>
-            </div>
-        </a>
-
-        <a class="entity-card entity-card--active" href="/admin/panoplies">
-            <div class="entity-icon">🌸</div>
-            <div class="entity-body">
-                <h2>Panoplies</h2>
-                <p>Sets : iron, slime, gobelin, leather, linen.</p>
-                <span class="entity-count">{{ panoplies_count }} panoplie(s)</span>
-            </div>
-        </a>
-
-        <a class="entity-card entity-card--active" href="/admin/titles">
-            <div class="entity-icon">🏷️</div>
-            <div class="entity-body">
-                <h2>Titres</h2>
-                <p>Titres exclusifs et déblocables avec effets passifs.</p>
-                <span class="entity-count">{{ titles_count }} titre(s)</span>
-            </div>
-        </a>
-
-        <a class="entity-card entity-card--active" href="/admin/quests">
-            <div class="entity-icon">📜</div>
-            <div class="entity-body">
-                <h2>Quêtes</h2>
-                <p>Quotidiennes (par défaut) et hebdomadaires (?scope=weekly).</p>
-                <span class="entity-count">{{ quests_count }} quête(s)</span>
-            </div>
-        </a>
-
-        <a class="entity-card entity-card--active" href="/admin/world-bosses">
-            <div class="entity-icon">🐉</div>
-            <div class="entity-body">
-                <h2>World Bosses</h2>
-                <p>Boss hebdo et modifiers.</p>
-                <span class="entity-count">{{ bosses_count }} boss</span>
-            </div>
-        </a>
-
-        <a class="entity-card entity-card--active" href="/admin/shop">
-            <div class="entity-icon">🏪</div>
-            <div class="entity-body">
-                <h2>Shop</h2>
-                <p>Items vendus + prix dynamique.</p>
-                <span class="entity-count">{{ shop_count }} item(s) au shop</span>
-            </div>
-        </a>
-
-        <a class="entity-card entity-card--active" href="/admin/actions">
-            <div class="entity-icon">⚡</div>
-            <div class="entity-body">
-                <h2>Actions admin</h2>
-                <p>give_gold, give_xp, set_level, give_item, give_skill_points.</p>
-                <span class="entity-count">5 actions</span>
-            </div>
-        </a>
-
-        <a class="entity-card entity-card--active" href="/admin/players">
-            <div class="entity-icon">👥</div>
-            <div class="entity-body">
-                <h2>Joueurs</h2>
-                <p>Liste des profils + reset complet.</p>
-                <span class="entity-count">{{ players_count }} joueur(s)</span>
-            </div>
-        </a>
+    <h2 class="dashboard-section">📈 Progression</h2>
+    <div class="entity-grid">
+        {{ card('/admin/classes', '🧬', 'Classes', 'Classes de personnage et bonus.', classes_count ~ ' classe(s)') }}
+        {{ card('/admin/skill-tree', '🌳', 'Arbre', 'Nœuds de compétences : effets, prérequis.', skill_nodes_count ~ ' nœud(s)') }}
+        {{ card('/admin/competences', '✨', 'Compétences élém.', '24 skills actifs : effet, mana, proc.', competences_count ~ ' skill(s)') }}
+        {{ card('/admin/titles', '🏷️', 'Titres', 'Titres exclusifs / déblocables et effets.', titles_count ~ ' titre(s)') }}
+        {{ card('/admin/quests', '📜', 'Quêtes', 'Quotidiennes et hebdomadaires.', quests_count ~ ' quête(s)') }}
     </div>
 </section>
 {% endblock %}
