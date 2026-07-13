@@ -2,9 +2,18 @@
 
 {% set section_titles = {
     'inventory': '🎒 Inventaire', 'equipment': '🛡️ Équipement', 'titles': '🏷️ Titres',
-    'affinities': '✨ Affinités & essences', 'skills': '🔮 Compétences', 'duel': '⚔️ Duel'
+    'affinities': '✨ Affinités & essences', 'skills': '🔮 Compétences', 'duel': '⚔️ Duel',
+    'career': '📈 Carrière'
 } %}
 {% block title %}{{ p.display_name }} — {{ section_titles.get(section, 'Fiche joueur') }}{% endblock %}
+
+{% macro bar(label, cur, max, cls) %}
+<div class="pbar">
+    <div class="pbar-head"><span>{{ label }}</span><span>{{ cur }} / {{ max }}</span></div>
+    <div class="pbar-track"><div class="pbar-fill pbar-{{ cls }}"
+        style="width: {{ ((cur / max * 100) if max and max > 0 else 0) | round(1) }}%;"></div></div>
+</div>
+{% endmacro %}
 
 {% block content %}
 <section class="pcard-wrap"
@@ -16,12 +25,22 @@
     <div class="pcard">
         <!-- Header identité -->
         <div class="pcard-head">
-            <div class="pcard-avatar" style="background: hsl({{ (p.id * 47) % 360 }}, 58%, 52%);">
-                {{ p.display_name[0] | upper if p.display_name else '?' }}
-            </div>
+            <img class="pcard-avatar" src="{{ avatar_url }}" alt="{{ p.display_name }}"
+                 loading="lazy" referrerpolicy="no-referrer">
             <div class="pcard-id">
                 <h1>{{ p.display_name }}</h1>
                 <div class="pcard-sub">@{{ p.username }} · ID <code>{{ p.discord_id }}</code></div>
+                <div class="pcard-meta">
+                    <span>🧬 {{ p.class }}</span>
+                    <span>💰 {{ p.gold }}</span>
+                    <span>📚 {{ p.skill_points }} pts</span>
+                    <span>🔥 {{ p.daily_streak }}</span>
+                    {% if power %}<span>⚡ {{ power }}</span>{% endif %}
+                </div>
+                <div class="pcard-dates">
+                    <span>🎉 Arrivé le {{ p.joined }}</span>
+                    <span>🕓 Dernière commande {{ p.last_seen }}</span>
+                </div>
             </div>
             <div class="pcard-badges">
                 <span class="badge-lvl">Niv {{ p.level }}</span>
@@ -45,25 +64,17 @@
                 <a class="carousel-arrow" href="/admin/players/{{ nav.next.id }}/view" title="{{ nav.next.name }}"><span>{{ nav.next.name }}</span> ▶</a>
             {% else %}<span class="carousel-arrow is-disabled">▶</span>{% endif %}
         </div>
-        <div class="pcard-position">{{ nav.position }} / {{ nav.total }} · <span class="hint">← → pour naviguer</span></div>
 
-        <!-- Résumé -->
-        <div class="pcard-grid">
-            <div class="pfield"><span>Niveau</span><strong>{{ p.level }}</strong></div>
-            <div class="pfield"><span>XP</span><strong>{{ p.xp }}</strong></div>
-            <div class="pfield"><span>Or</span><strong>{{ p.gold }}</strong></div>
-            <div class="pfield"><span>Points de comp.</span><strong>{{ p.skill_points }}</strong></div>
-            <div class="pfield"><span>Classe</span><strong>{{ p.class }}</strong></div>
-            <div class="pfield"><span>Daily streak</span><strong>{{ p.daily_streak }}</strong></div>
-            <div class="pfield"><span>Puissance</span><strong>{{ power or '—' }}</strong></div>
-            <div class="pfield"><span>Vu le</span><strong>{{ p.last_seen }}</strong></div>
+        <!-- Barres PV / Mana / XP -->
+        <div class="pcard-bars">
+            {{ bar('❤️ PV', bars.hp.cur, bars.hp.max, 'hp') }}
+            {{ bar('🔷 Mana', bars.mana.cur, bars.mana.max, 'mana') }}
+            {{ bar('⚡ XP → niv ' ~ (p.level + 1), bars.xp.cur, bars.xp.max, 'xp') }}
         </div>
 
         {% if stats %}
         <h3 class="pcard-h3">⚔️ Stats de combat</h3>
         <div class="pcard-grid">
-            <div class="pfield"><span>❤️ PV max</span><strong>{{ stats.max_hp }}</strong></div>
-            <div class="pfield"><span>🔷 Mana</span><strong>{{ stats.mana_max }}</strong></div>
             <div class="pfield"><span>⚔️ Attaque</span><strong>{{ stats.attack }}</strong></div>
             <div class="pfield"><span>🛡️ Défense</span><strong>{{ stats.defense }}</strong></div>
             <div class="pfield"><span>💨 Vitesse</span><strong>{{ stats.speed }}</strong></div>
@@ -73,24 +84,13 @@
         </div>
         {% endif %}
 
-        <h3 class="pcard-h3">📈 Carrière</h3>
-        <div class="pcard-grid">
-            <div class="pfield"><span>💀 Kills</span><strong>{{ total_kills }}</strong></div>
-            <div class="pfield"><span>⚔️ Combats</span><strong>{{ career.combats_fought }}</strong></div>
-            <div class="pfield"><span>🏆 V / D</span><strong>{{ career.combats_won }} / {{ career.combats_lost }}</strong></div>
-            <div class="pfield"><span>💰 Or amassé</span><strong>{{ career.gold_earned_total }}</strong></div>
-            <div class="pfield"><span>💢 Dégâts inf.</span><strong>{{ career.damage_dealt_total }}</strong></div>
-            <div class="pfield"><span>🛡️ Dégâts encaissés</span><strong>{{ career.damage_tanked_total }}</strong></div>
-            <div class="pfield"><span>💚 PV soignés</span><strong>{{ career.hp_healed_total }}</strong></div>
-            <div class="pfield"><span>🌀 Esquives</span><strong>{{ career.dodges_total }}</strong></div>
-        </div>
-
         <!-- Liens vers les sous-cartes -->
         <h3 class="pcard-h3">🗂️ Détails</h3>
         <div class="pcard-links">
             <a href="/admin/players/{{ p.id }}/inventory" class="pcard-link">🎒 Inventaire <span class="pill">{{ counts.inventory }}</span></a>
             <a href="/admin/players/{{ p.id }}/equipment" class="pcard-link">🛡️ Équipement <span class="pill">{{ counts.equipment }}</span></a>
             <a href="/admin/players/{{ p.id }}/titles" class="pcard-link">🏷️ Titres <span class="pill">{{ counts.titles }}</span></a>
+            <a href="/admin/players/{{ p.id }}/career" class="pcard-link">📈 Carrière</a>
             <a href="/admin/players/{{ p.id }}/affinities" class="pcard-link">✨ Affinités</a>
             <a href="/admin/players/{{ p.id }}/skills" class="pcard-link">🔮 Compétences</a>
             <a href="/admin/players/{{ p.id }}/duel" class="pcard-link">⚔️ Duel</a>
@@ -136,6 +136,18 @@
                 <span class="chip {% if t.active %}chip-active{% endif %}">{% if t.active %}★ {% endif %}{{ t.name }} <code>{{ t.code }}</code></span>
             {% endfor %}</div>
             {% else %}<div class="empty-state"><p>Aucun titre débloqué.</p></div>{% endif %}
+
+        {% elif section == 'career' %}
+            <div class="pcard-grid">
+                <div class="pfield"><span>💀 Kills</span><strong>{{ total_kills }}</strong></div>
+                <div class="pfield"><span>⚔️ Combats</span><strong>{{ career.combats_fought }}</strong></div>
+                <div class="pfield"><span>🏆 V / D</span><strong>{{ career.combats_won }} / {{ career.combats_lost }}</strong></div>
+                <div class="pfield"><span>💰 Or amassé</span><strong>{{ career.gold_earned_total }}</strong></div>
+                <div class="pfield"><span>💢 Dégâts inf.</span><strong>{{ career.damage_dealt_total }}</strong></div>
+                <div class="pfield"><span>🛡️ Dégâts encaissés</span><strong>{{ career.damage_tanked_total }}</strong></div>
+                <div class="pfield"><span>💚 PV soignés</span><strong>{{ career.hp_healed_total }}</strong></div>
+                <div class="pfield"><span>🌀 Esquives</span><strong>{{ career.dodges_total }}</strong></div>
+            </div>
 
         {% elif section == 'affinities' %}
             <div class="pcard-grid">{% for a in affinities %}

@@ -15,7 +15,10 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from app.application.services.player_stats_resolver import resolve_player_stats
 from app.application.use_cases.reset_player import ResetPlayerUseCase
 from app.domain.services.power_score_service import PowerScoreService
+from app.domain.services.progression_service import ProgressionService
 from app.infrastructure.db.repositories.class_repository import ClassRepository
+from app.infrastructure.db.repositories.player_health_repository import PlayerHealthRepository
+from app.infrastructure.db.repositories.player_mana_repository import PlayerManaRepository
 from app.infrastructure.db.repositories.element_affinity_repository import (
     ElementAffinityRepository,
 )
@@ -37,12 +40,17 @@ from app.infrastructure.db.session import get_db_session
 from app.infrastructure.elements import element_skill_loader
 from app.infrastructure.titles import title_loader
 from app.shared.enums import ALL_ELEMENTS, ELEMENT_EMOJIS, ELEMENT_LABELS
+from webapp.admin import discord_api
 from webapp.admin.auth import AdminUser, require_admin
 from webapp.admin._shared import get_templates
 
 
 _logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin/players", tags=["admin-players"])
+
+
+def _fmt_dt(dt) -> str:
+    return dt.strftime("%Y-%m-%d %H:%M") if dt else "—"
 
 
 def _player_summary(profile, active_class) -> dict:
@@ -57,7 +65,10 @@ def _player_summary(profile, active_class) -> dict:
         "gold": profile.resources.gold,
         "daily_streak": profile.resources.daily_streak,
         "class": active_class.name if active_class else "—",
-        "last_seen": profile.player.last_seen_at.strftime("%Y-%m-%d %H:%M"),
+        # created_at = arrivée sur le serveur (création du profil, à l'accueil ou
+        # à la 1re commande) ; last_seen_at = dernière commande effectuée.
+        "joined": _fmt_dt(profile.player.created_at),
+        "last_seen": _fmt_dt(profile.player.last_seen_at),
     }
 
 
@@ -132,8 +143,8 @@ async def players_list(
     )
 
 
-def _base_ctx(session, user, player_id, section: str) -> tuple[dict, object]:
-    """Contexte commun à toutes les cartes (identité + nav). Renvoie (ctx, profile)."""
+async def _base_ctx(session, user, player_id, section: str) -> tuple[dict, object]:
+    """Contexte commun à toutes les cartes (identité + avatar + nav)."""
     profile = PlayerRepository(session).get_profile_by_player_id(player_id)
     if profile is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Player #{player_id} introuvable.")
@@ -143,6 +154,7 @@ def _base_ctx(session, user, player_id, section: str) -> tuple[dict, object]:
         "section": section,
         "p": _player_summary(profile, active_class),
         "nav": _nav(session, player_id),
+        "avatar_url": await discord_api.avatar_url_for(profile.player.discord_id),
     }
     return ctx, profile
 
@@ -152,32 +164,41 @@ async def players_view(
     player_id: int, request: Request,
     user: AdminUser = Depends(require_admin),
 ):
-    """Carte principale : identité, stats, carrière + liens vers les sous-cartes."""
+    """Carte principale : identité, 3 barres (PV/Mana/XP), stats + sous-cartes."""
     with get_db_session() as session:
-        ctx, profile = _base_ctx(session, user, player_id, "main")
+        ctx, profile = await _base_ctx(session, user, player_id, "main")
         equipped = EquipmentRepository(session).list_by_player_id(player_id)
         active_class = ClassRepository(session).get_current_class_for_player(player_id)
-        career = PlayerCareerStatsRepository(session).get_or_create(player_id)
-        total_kills = PlayerKillRepository(session).get_total_kills(player_id)
 
         try:
             stats = resolve_player_stats(session, profile, equipped, active_class)
             pss = PowerScoreService()
-            power = pss.format_score(pss.calculate_from_stats(stats))
-            rank = pss.compute_rank(pss.calculate_from_stats(stats))
+            score = pss.calculate_from_stats(stats)
+            power = pss.format_score(score)
+            rank = pss.compute_rank(score)
         except Exception:
             _logger.warning("calcul stats échoué player %s", player_id, exc_info=True)
             stats = power = rank = None
 
-        # Compteurs pour les badges des sous-cartes.
+        # Barres de progression : PV / mana courants (état persisté) + XP.
+        max_hp = stats.max_hp if stats else 1
+        max_mana = stats.mana_max if stats else 0
+        cur_hp = PlayerHealthRepository(session).get_or_create(player_id, max_hp).current_hp
+        cur_mana = PlayerManaRepository(session).get_or_create(player_id, max_mana).current_mana
+        xp_needed = ProgressionService().xp_required_for_next_level(profile.progression.level)
+
         counts = {
             "inventory": len(InventoryRepository(session).list_by_player_id(player_id)),
             "equipment": len(equipped),
             "titles": len(PlayerTitleRepository(session).list_codes_for_player(player_id)),
         }
         ctx.update({
-            "stats": stats, "power": power, "rank": rank,
-            "career": career, "total_kills": total_kills, "counts": counts,
+            "stats": stats, "power": power, "rank": rank, "counts": counts,
+            "bars": {
+                "hp": {"cur": cur_hp, "max": max_hp},
+                "mana": {"cur": cur_mana, "max": max_mana},
+                "xp": {"cur": profile.progression.xp, "max": xp_needed},
+            },
         })
     return get_templates().TemplateResponse(request, "admin/players/card.html", context=ctx)
 
@@ -185,7 +206,7 @@ async def players_view(
 @router.get("/{player_id}/inventory", response_class=HTMLResponse)
 async def players_inventory(player_id: int, request: Request, user: AdminUser = Depends(require_admin)):
     with get_db_session() as session:
-        ctx, _ = _base_ctx(session, user, player_id, "inventory")
+        ctx, _ = await _base_ctx(session, user, player_id, "inventory")
         inv = InventoryRepository(session).list_by_player_id(player_id)
         ctx["inventory"] = sorted(
             [{"code": it.item_definition.code, "name": it.item_definition.name,
@@ -198,7 +219,7 @@ async def players_inventory(player_id: int, request: Request, user: AdminUser = 
 @router.get("/{player_id}/equipment", response_class=HTMLResponse)
 async def players_equipment(player_id: int, request: Request, user: AdminUser = Depends(require_admin)):
     with get_db_session() as session:
-        ctx, _ = _base_ctx(session, user, player_id, "equipment")
+        ctx, _ = await _base_ctx(session, user, player_id, "equipment")
         eq = EquipmentRepository(session).list_by_player_id(player_id)
         ctx["equipment"] = sorted(
             [{"slot": e.slot, "code": e.item_definition.code, "name": e.item_definition.name,
@@ -211,7 +232,7 @@ async def players_equipment(player_id: int, request: Request, user: AdminUser = 
 @router.get("/{player_id}/titles", response_class=HTMLResponse)
 async def players_titles(player_id: int, request: Request, user: AdminUser = Depends(require_admin)):
     with get_db_session() as session:
-        ctx, _ = _base_ctx(session, user, player_id, "titles")
+        ctx, _ = await _base_ctx(session, user, player_id, "titles")
         repo = PlayerTitleRepository(session)
         codes = repo.list_codes_for_player(player_id)
         active = repo.get_active_title_code(player_id)
@@ -226,7 +247,7 @@ async def players_titles(player_id: int, request: Request, user: AdminUser = Dep
 @router.get("/{player_id}/affinities", response_class=HTMLResponse)
 async def players_affinities(player_id: int, request: Request, user: AdminUser = Depends(require_admin)):
     with get_db_session() as session:
-        ctx, _ = _base_ctx(session, user, player_id, "affinities")
+        ctx, _ = await _base_ctx(session, user, player_id, "affinities")
         aff = ElementAffinityRepository(session).get_affinities(player_id)
         ess = ElementEssenceRepository(session).get_essences(player_id)
         ctx["affinities"] = [
@@ -241,7 +262,7 @@ async def players_affinities(player_id: int, request: Request, user: AdminUser =
 @router.get("/{player_id}/skills", response_class=HTMLResponse)
 async def players_skills(player_id: int, request: Request, user: AdminUser = Depends(require_admin)):
     with get_db_session() as session:
-        ctx, profile = _base_ctx(session, user, player_id, "skills")
+        ctx, profile = await _base_ctx(session, user, player_id, "skills")
         slots = []
         for i, code in enumerate((profile.player.skill_slot_1, profile.player.skill_slot_2), start=1):
             sk = element_skill_loader.get_skill(code) if code else None
@@ -257,11 +278,20 @@ async def players_skills(player_id: int, request: Request, user: AdminUser = Dep
 @router.get("/{player_id}/duel", response_class=HTMLResponse)
 async def players_duel(player_id: int, request: Request, user: AdminUser = Depends(require_admin)):
     with get_db_session() as session:
-        ctx, _ = _base_ctx(session, user, player_id, "duel")
+        ctx, _ = await _base_ctx(session, user, player_id, "duel")
         dr = PlayerDuelRankRepository(session).get_by_player_id(player_id)
         ctx["duel"] = None if dr is None else {
             "rank_position": dr.rank_position, "wins": dr.wins, "losses": dr.losses,
         }
+    return get_templates().TemplateResponse(request, "admin/players/card.html", context=ctx)
+
+
+@router.get("/{player_id}/career", response_class=HTMLResponse)
+async def players_career(player_id: int, request: Request, user: AdminUser = Depends(require_admin)):
+    with get_db_session() as session:
+        ctx, _ = await _base_ctx(session, user, player_id, "career")
+        ctx["career"] = PlayerCareerStatsRepository(session).get_or_create(player_id)
+        ctx["total_kills"] = PlayerKillRepository(session).get_total_kills(player_id)
     return get_templates().TemplateResponse(request, "admin/players/card.html", context=ctx)
 
 

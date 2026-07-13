@@ -58,6 +58,37 @@ async def _request(method: str, path: str, **kwargs) -> tuple[bool, object]:
     return False, f"{resp.status_code} — {detail}"
 
 
+# ---------- avatar ----------
+
+_avatar_cache: dict[int, str] = {}
+
+
+def _default_avatar(user_id: int) -> str:
+    """Avatar Discord par défaut (système pseudo sans discriminateur)."""
+    return f"https://cdn.discordapp.com/embed/avatars/{(user_id >> 22) % 6}.png"
+
+
+async def avatar_url_for(user_id: int, size: int = 128) -> str:
+    """URL de l'avatar Discord d'un utilisateur (via le bot token). Cache en
+    mémoire ; retombe sur l'avatar par défaut en cas d'échec (jamais bloquant)."""
+    if user_id in _avatar_cache:
+        return _avatar_cache[user_id]
+    url = _default_avatar(user_id)
+    try:
+        async with httpx.AsyncClient(base_url=_API, headers=_headers(), timeout=6) as c:
+            resp = await c.get(f"/users/{user_id}")
+        if resp.status_code == 200:
+            data = resp.json()
+            h = data.get("avatar")
+            if h:
+                ext = "gif" if str(h).startswith("a_") else "png"
+                url = f"https://cdn.discordapp.com/avatars/{user_id}/{h}.{ext}?size={size}"
+    except Exception:  # noqa: BLE001 - jamais bloquant, on garde le défaut
+        pass
+    _avatar_cache[user_id] = url
+    return url
+
+
 # ---------- lecture ----------
 
 async def list_roles(guild_id: int) -> tuple[bool, object]:
