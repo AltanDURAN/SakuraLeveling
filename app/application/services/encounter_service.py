@@ -323,11 +323,12 @@ class EncounterService:
             essence_repository = ElementEssenceRepository(session)
             affinity_repository = ElementAffinityRepository(session)
             affinity_progression = ElementAffinityProgressionService()
-            # Essences par kill = propriété de la ZONE de spawn (via la famille).
+            # Essences par kill = propriété de la ZONE de spawn (via la famille) :
+            # fourchette [min, max] tirée aléatoirement à chaque kill.
             from app.infrastructure.encounters.farm_zone_loader import (
-                get_essences_per_kill_for_family,
+                get_essences_range_for_family,
             )
-            essences_per_kill = get_essences_per_kill_for_family(mob.family)
+            essences_min, essences_max = get_essences_range_for_family(mob.family)
 
             for participant in encounter.participants.values():
                 contribution = contributions_by_id.get(participant.player_id)
@@ -398,8 +399,11 @@ class EncounterService:
 
                 kill_repository.increment(participant.player_id, mob_code)
 
-                # Essences élémentaires : drop selon la zone + auto-conversion
-                # en affinité (survivants uniquement, comme le kill).
+                # Essences élémentaires : drop selon la zone (nombre tiré dans
+                # [min, max] pour CE kill) + auto-conversion en affinité
+                # (survivants uniquement, comme le kill).
+                import random as _random
+                essences_per_kill = _random.randint(essences_min, essences_max)
                 essence_gains = self._award_element_essences(
                     essence_repository=essence_repository,
                     affinity_repository=affinity_repository,

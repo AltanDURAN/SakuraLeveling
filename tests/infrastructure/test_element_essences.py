@@ -76,6 +76,21 @@ def test_neutral_mob_gives_nothing(session):
     assert ElementEssenceRepository(session).get_essences(1)["feu"] == 0
 
 
+def test_essences_range_parsing():
+    from app.infrastructure.encounters.farm_zone_loader import _essences_range_from_entry
+
+    # Nouveau format min/max
+    assert _essences_range_from_entry({"essences_min": 1, "essences_max": 3}, 1, 1) == (1, 3)
+    # min seul → max = min
+    assert _essences_range_from_entry({"essences_min": 2}, 1, 1) == (2, 2)
+    # Ancien format fixe → min == max
+    assert _essences_range_from_entry({"essences_per_kill": 2}, 1, 1) == (2, 2)
+    # Rien → défauts
+    assert _essences_range_from_entry({}, 1, 3) == (1, 3)
+    # max < min corrigé (hi >= lo)
+    assert _essences_range_from_entry({"essences_min": 3, "essences_max": 1}, 1, 1) == (3, 3)
+
+
 def test_multi_element_mob_awards_each_element(session):
     gains = _award(session, "feu,glace", 1)
     elems = {g.element for g in gains}

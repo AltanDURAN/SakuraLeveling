@@ -111,6 +111,115 @@ def delete_item_json(code: str) -> list[str]:
     return touched
 
 
+def build_mob_dict(
+    *, code, name, family, description, max_hp, current_hp, attack, defense,
+    crit_chance, crit_damage, dodge, hp_regeneration, speed, xp_reward,
+    gold_reward, spawn_weight, loot_table, image_name, element,
+) -> dict:
+    """Construit le dict d'un mob au schéma exact de mobs.json (ordre du seed)."""
+    return {
+        "code": code,
+        "name": name,
+        "family": family or "unknown",
+        "description": description or "",
+        "max_hp": int(max_hp),
+        "current_hp": int(current_hp if current_hp is not None else max_hp),
+        "attack": int(attack),
+        "defense": int(defense),
+        "crit_chance": int(crit_chance),
+        "crit_damage": int(crit_damage),
+        "dodge": int(dodge),
+        "hp_regeneration": int(hp_regeneration),
+        "speed": int(speed),
+        "xp_reward": int(xp_reward),
+        "gold_reward": int(gold_reward),
+        "spawn_weight": int(spawn_weight),
+        "loot_table": loot_table or [],
+        "image_name": image_name,
+        "element": element or "",
+    }
+
+
+def upsert_mob_json(mob: dict) -> None:
+    """Insère ou met à jour le mob (par `code`) dans mobs.json. Best-effort :
+    une erreur d'écriture ne casse pas l'action admin (la DB reste la source
+    live ; le JSON sert au reseed → reseed-safe comme les items)."""
+    try:
+        data = json_writer.load_json("mobs.json", default=[]) or []
+        code = mob["code"]
+        for i, entry in enumerate(data):
+            if isinstance(entry, dict) and entry.get("code") == code:
+                data[i] = mob
+                break
+        else:
+            data.append(mob)
+        json_writer.atomic_write_json("mobs.json", data)
+        _logger.info("mobs.json synchronisé pour '%s'", code)
+    except Exception:
+        _logger.warning("Échec sync mobs.json pour '%s'", mob.get("code"), exc_info=True)
+
+
+def load_farm_zones() -> dict:
+    return json_writer.load_json("farm_zones.json", default={}) or {}
+
+
+def build_zone_dict(
+    *, name, channel_id, families, background, essences_min, essences_max,
+) -> dict:
+    """Construit une entrée de zone au schéma zone-centré de farm_zones.json."""
+    lo = max(0, int(essences_min or 0))
+    hi = max(lo, int(essences_max or 0))
+    if isinstance(families, str):
+        families = families.replace(",", " ").split()
+    return {
+        "name": name or "",
+        "channel_id": int(channel_id or 0),
+        "families": [f.strip() for f in (families or []) if f and f.strip()],
+        "background": background or "",
+        "essences_min": lo,
+        "essences_max": hi,
+    }
+
+
+def _zones_as_list(data: dict) -> list[dict]:
+    """Renvoie la liste `zones` de farm_zones.json (migre l'ancien format dict
+    vers une liste au passage)."""
+    zones = data.get("zones")
+    if isinstance(zones, list):
+        return zones
+    # Ancien format {famille: {...}} → normalise via le loader.
+    from app.infrastructure.encounters import farm_zone_loader
+    farm_zone_loader.clear_cache()
+    return [dict(z) for z in farm_zone_loader.list_zones()]
+
+
+def upsert_zone_json(zone: dict, original_channel_id: int | None = None) -> None:
+    """Insère/met à jour une zone dans farm_zones.json (clé = channel_id).
+    `original_channel_id` : channel_id AVANT édition (permet de changer le
+    channel d'une zone existante)."""
+    data = load_farm_zones()
+    zones = _zones_as_list(data)
+    key = original_channel_id if original_channel_id is not None else zone["channel_id"]
+    for i, z in enumerate(zones):
+        if isinstance(z, dict) and int(z.get("channel_id", 0) or 0) == int(key or 0):
+            zones[i] = zone
+            break
+    else:
+        zones.append(zone)
+    data["zones"] = zones
+    json_writer.atomic_write_json("farm_zones.json", data)
+
+
+def delete_zone_json(channel_id: int) -> None:
+    data = load_farm_zones()
+    zones = _zones_as_list(data)
+    data["zones"] = [
+        z for z in zones
+        if int((z or {}).get("channel_id", 0) or 0) != int(channel_id or 0)
+    ]
+    json_writer.atomic_write_json("farm_zones.json", data)
+
+
 def delete_mob_json(code: str) -> list[str]:
     """Retire le mob `code` de mobs.json. Retourne les fichiers modifiés."""
     mobs = json_writer.load_json("mobs.json", default=[]) or []

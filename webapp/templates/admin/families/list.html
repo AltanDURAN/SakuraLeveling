@@ -1,0 +1,70 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Familles — Sakura Admin{% endblock %}
+
+{% block content %}
+<section class="list-page">
+    <header class="list-header">
+        <div>
+            <a href="/admin" class="breadcrumb">← Dashboard</a>
+            <h1>🧬 Familles <span class="count-pill">{{ families|length }}</span></h1>
+        </div>
+        <a href="/admin/mobs/new" class="btn btn-primary">+ Nouveau mob</a>
+    </header>
+
+    <p style="color: var(--muted); margin: 0 0 1rem;">
+        Une famille = le champ « famille » des mobs. Pour créer une famille,
+        donne ce nom de famille à des mobs (<a href="/admin/mobs">Mobs</a>).
+        Pour la faire spawn dans une zone, ajoute-la aux familles d'une zone
+        (<a href="/admin/zones">Zones</a>).
+    </p>
+
+    {% if families %}
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Famille</th>
+                    <th>Mobs</th>
+                    <th>Zone de spawn</th>
+                    <th>Essences / kill</th>
+                    <th>Drop commun</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in families %}
+                <tr>
+                    <td><strong>{{ f.name }}</strong> <span class="count-pill">{{ f.mobs|length }}</span></td>
+                    <td>
+                        {% for mob in f.mobs %}
+                            <a href="/admin/mobs/{{ mob.code }}/edit" class="btn btn-small"
+                               style="margin:0.1rem;">{{ mob.name }}{% if mob.element %} · {{ mob.element }}{% endif %}</a>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% if f.zone %}
+                            <a href="/admin/zones/{{ f.zone.channel_id }}/edit">{{ f.zone.name or f.zone.channel_id }}</a>
+                        {% else %}
+                            <span style="color: var(--muted);">zone de base</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if f.essences[0] == f.essences[1] %}{{ f.essences[0] }}
+                        {% else %}{{ f.essences[0] }}–{{ f.essences[1] }}{% endif %}
+                    </td>
+                    <td>
+                        {% if f.common_drop %}
+                            <code>{{ f.common_drop.item_code }}</code>
+                            ({{ (f.common_drop.drop_rate * 100) | round(0, 'floor') | int }}%)
+                        {% else %}—{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><p>Aucune famille (aucun mob).</p></div>
+    {% endif %}
+</section>
+{% endblock %}

@@ -26,6 +26,7 @@ def invalidate_content_caches() -> None:
         ("app.infrastructure.world_boss.boss_definition_loader", "clear_cache"),
         ("app.infrastructure.elements.element_skill_loader", "clear_cache"),
         ("app.infrastructure.loot.family_drop_loader", "clear_cache"),
+        ("app.infrastructure.encounters.farm_zone_loader", "clear_cache"),
         ("app.infrastructure.daily_quests.quest_loader", "clear_cache"),
         ("app.infrastructure.weekly_quests.quest_loader", "clear_cache"),
     ]

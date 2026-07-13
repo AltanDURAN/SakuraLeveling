@@ -1,0 +1,72 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Zones de farm — Sakura Admin{% endblock %}
+
+{% block content %}
+<section class="list-page">
+    <header class="list-header">
+        <div>
+            <a href="/admin" class="breadcrumb">← Dashboard</a>
+            <h1>🗺️ Zones de farm <span class="count-pill">{{ zones|length }}</span></h1>
+        </div>
+        <a href="/admin/zones/new" class="btn btn-primary">+ Nouvelle zone</a>
+    </header>
+
+    <p style="color: var(--muted); margin: 0 0 1rem;">
+        Chaque zone = un salon de spawn + les familles qui y apparaissent + un
+        décor + une fourchette d'essences par kill. ⚠️ Le bot doit être
+        redémarré pour appliquer les changements de zone.
+    </p>
+
+    {% if zones %}
+    <div class="table-wrapper">
+        <table class="data-table" data-sortable>
+            <thead>
+                <tr>
+                    <th data-sort-key="name">Nom</th>
+                    <th data-sort-key="channel">Salon (ID)</th>
+                    <th data-sort-key="families">Familles</th>
+                    <th data-sort-key="bg">Décor</th>
+                    <th data-sort-key="ess">Essences / kill</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for z in zones %}
+                <tr>
+                    <td><strong>{{ z.name or "—" }}</strong></td>
+                    <td><code>{{ z.channel_id }}</code></td>
+                    <td>
+                        {% for fam in z.families %}
+                            <span class="count-pill">{{ fam }}</span>
+                        {% else %}—{% endfor %}
+                    </td>
+                    <td>{{ z.background or "—" }}</td>
+                    <td>
+                        {% if z.essences_min == z.essences_max %}
+                            {{ z.essences_min }}
+                        {% else %}
+                            {{ z.essences_min }}–{{ z.essences_max }}
+                        {% endif %}
+                    </td>
+                    <td style="white-space:nowrap;">
+                        <a href="/admin/zones/{{ z.channel_id }}/edit" class="btn btn-small">Éditer</a>
+                        <form method="post" action="/admin/zones/{{ z.channel_id }}/delete"
+                              style="display:inline; margin-left:0.3rem;"
+                              onsubmit="return confirm('⚠️ Supprimer la zone « {{ z.name }} » ?\n\nLes familles concernées retomberont sur la zone de base. Irréversible.');">
+                            <button type="submit" class="btn btn-small" style="background: var(--danger); color: white;">Suppr.</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>Aucune zone configurée. Les familles tombent sur la zone de base
+           (salon <code>{{ defaults.channel_id }}</code>).</p>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

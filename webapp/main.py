@@ -50,6 +50,8 @@ from webapp.admin.routers.mobs_router import router as admin_mobs_router
 from webapp.admin.routers.players_router import router as admin_players_router
 from webapp.admin.routers.roles_router import router as admin_roles_router
 from webapp.admin.routers.shop_router import router as admin_shop_router
+from webapp.admin.routers.zones_router import router as admin_zones_router
+from webapp.admin.routers.families_router import router as admin_families_router
 
 
 WEBAPP_DIR = Path(__file__).resolve().parent
@@ -86,6 +88,8 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 app.include_router(admin_auth_router)
 app.include_router(admin_items_router)
 app.include_router(admin_mobs_router)
+app.include_router(admin_zones_router)
+app.include_router(admin_families_router)
 app.include_router(admin_shop_router)
 app.include_router(admin_players_router)
 app.include_router(admin_roles_router)

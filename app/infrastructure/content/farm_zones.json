@@ -1,11 +1,30 @@
 {
-  "_comment": "Zones de farm : FAMILLE de mob -> { channel_id: salon de spawn, background: décor dans assets/landscapes/, essences_per_kill: essences élémentaires droppées par kill dans cette zone }. Familles non listées → default. slime + gobelin partagent la zone de base. À terme : accès aux zones avancées gated par un pass de la guilde des aventuriers. channel_id=0 → zone non configurée, spawn dans la zone de base en attendant.",
+  "_comment": "Zones de farm (format zone-centré, édité par l'admin web). Chaque zone : name (nom affiché), channel_id (salon de spawn), families (familles de mobs qui y spawnent), background (décor dans assets/landscapes/), essences_min/essences_max (fourchette d'essences élémentaires droppées par kill, tirage aléatoire dans [min,max]). Familles non listées → zone de base (default_*). channel_id=0 → zone non configurée. À terme : accès aux zones avancées gated par un pass de la guilde des aventuriers.",
   "default_channel_id": 1485329739605348484,
   "default_background": "clairiere_sinistre.png",
-  "default_essences_per_kill": 1,
-  "zones": {
-    "slime": {"channel_id": 1485329739605348484, "background": "clairiere_sinistre.png", "essences_per_kill": 1},
-    "gobelin": {"channel_id": 1485329739605348484, "background": "clairiere_sinistre.png", "essences_per_kill": 1},
-    "mort-vivant": {"channel_id": 1525863083321462914, "background": "cimetiere_abandonne.png", "essences_per_kill": 2}
-  }
+  "default_essences_min": 1,
+  "default_essences_max": 1,
+  "zones": [
+    {
+      "name": "Clairière sinistre",
+      "channel_id": 1485329739605348484,
+      "families": [
+        "slime",
+        "gobelin"
+      ],
+      "background": "clairiere_sinistre.png",
+      "essences_min": 1,
+      "essences_max": 1
+    },
+    {
+      "name": "Cimetière abandonné",
+      "channel_id": 1525863083321462914,
+      "families": [
+        "mort-vivant"
+      ],
+      "background": "cimetiere_abandonne.png",
+      "essences_min": 1,
+      "essences_max": 2
+    }
+  ]
 }

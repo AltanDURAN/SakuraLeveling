@@ -187,17 +187,31 @@ async def mobs_create(
             gold_reward=_parse_int(form_data.get("gold_reward"), 0),
             spawn_weight=_parse_int(form_data.get("spawn_weight"), 1),
         )
+        description = form_data.get("description", "").strip()
+        image_name = form_data.get("image_name", "").strip()
+        family = form_data.get("family", "").strip() or "unknown"
+        element = form_data.get("element", "").strip()
+        loot_table = _parse_loot_table(form_data.get("loot_table"))
         repo.create(
             code=code,
             name=name,
-            description=form_data.get("description", "").strip(),
-            image_name=form_data.get("image_name", "").strip(),
-            family=form_data.get("family", "").strip() or "unknown",
-            element=form_data.get("element", "").strip(),
-            loot_table=_parse_loot_table(form_data.get("loot_table")),
+            description=description,
+            image_name=image_name,
+            family=family,
+            element=element,
+            loot_table=loot_table,
             **stats,
         )
 
+    # Reseed-safe : réécrit aussi mobs.json (sinon le mob est perdu au reseed).
+    content_sync.upsert_mob_json(content_sync.build_mob_dict(
+        code=code, name=name, family=family, description=description,
+        current_hp=stats["max_hp"], image_name=image_name, element=element,
+        loot_table=loot_table, **stats,
+    ))
+    git_sync.push_content(
+        ["app/infrastructure/content/mobs.json"], f"admin: mob {code} créé",
+    )
     return RedirectResponse(f"/admin/mobs?q={code}", status_code=303)
 
 
@@ -252,16 +266,31 @@ async def mobs_update(
             gold_reward=_parse_int(form_data.get("gold_reward"), existing.gold_reward),
             spawn_weight=_parse_int(form_data.get("spawn_weight"), existing.spawn_weight),
         )
+        name = form_data.get("name", existing.name)
+        description = form_data.get("description", existing.description)
+        image_name = form_data.get("image_name", existing.image_name).strip() or existing.image_name
+        family = form_data.get("family", existing.family or "").strip() or existing.family
+        element = form_data.get("element", existing.element or "").strip()
+        loot_table = _parse_loot_table(form_data.get("loot_table"))
         repo.update_by_code(
             code=code,
-            name=form_data.get("name", existing.name),
-            description=form_data.get("description", existing.description),
-            image_name=form_data.get("image_name", existing.image_name).strip() or existing.image_name,
-            family=form_data.get("family", existing.family or "").strip() or existing.family,
-            element=form_data.get("element", existing.element or "").strip(),
-            loot_table=_parse_loot_table(form_data.get("loot_table")),
+            name=name,
+            description=description,
+            image_name=image_name,
+            family=family,
+            element=element,
+            loot_table=loot_table,
             **stats,
         )
+
+    # Reseed-safe : réécrit aussi mobs.json.
+    content_sync.upsert_mob_json(content_sync.build_mob_dict(
+        code=code, name=name, family=family, description=description,
+        image_name=image_name, element=element, loot_table=loot_table, **stats,
+    ))
+    git_sync.push_content(
+        ["app/infrastructure/content/mobs.json"], f"admin: mob {code} édité",
+    )
     return RedirectResponse(f"/admin/mobs?q={code}", status_code=303)
 
 

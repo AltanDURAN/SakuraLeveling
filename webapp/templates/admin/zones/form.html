@@ -1,0 +1,88 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{% if zone %}Éditer une zone{% else %}Nouvelle zone{% endif %} — Sakura Admin{% endblock %}
+
+{% block content %}
+{% set fd = form_data if form_data is defined else {} %}
+{% set families_str = fd.get('families', (zone.families | join(', ')) if zone else '') %}
+<section class="form-page">
+    <a href="/admin/zones" class="breadcrumb">← Zones</a>
+    <h1>{% if zone %}Éditer la zone{% else %}Nouvelle zone{% endif %}</h1>
+
+    <form method="post"
+          action="{% if zone %}/admin/zones/{{ zone.channel_id }}{% else %}/admin/zones{% endif %}"
+          class="form-grid">
+
+        <div class="form-section">
+            <h2 class="form-section-title">Identité</h2>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Nom de la zone</span>
+                    <input type="text" name="name" class="input"
+                           value="{{ fd.get('name', zone.name if zone else '') }}"
+                           placeholder="Clairière sinistre">
+                    {% if errors.get('name') %}<span class="field-error">{{ errors['name'] }}</span>{% endif %}
+                </label>
+                <label class="field">
+                    <span class="field-label">ID du salon Discord</span>
+                    <input type="number" name="channel_id" class="input"
+                           value="{{ fd.get('channel_id', zone.channel_id if zone else '') }}"
+                           placeholder="1485329739605348484">
+                    {% if errors.get('channel_id') %}<span class="field-error">{{ errors['channel_id'] }}</span>{% endif %}
+                </label>
+                <label class="field">
+                    <span class="field-label">Décor (asset dans assets/landscapes/)</span>
+                    <input type="text" name="background" class="input"
+                           value="{{ fd.get('background', zone.background if zone else '') }}"
+                           placeholder="clairiere_sinistre.png">
+                </label>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Familles qui spawnent ici</h2>
+            <label class="field">
+                <span class="field-label">Familles (séparées par des virgules)</span>
+                <input type="text" name="families" class="input" list="families-list"
+                       value="{{ families_str }}"
+                       placeholder="slime, gobelin">
+                <small style="color: var(--muted);">
+                    Une famille = le champ « famille » d'un mob. Les familles non
+                    listées dans une zone tombent sur la zone de base.
+                </small>
+            </label>
+            <datalist id="families-list">
+                {% for fam in all_families %}<option value="{{ fam }}">{% endfor %}
+            </datalist>
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Essences élémentaires par kill</h2>
+            <p style="color: var(--muted); margin: 0 0 0.6rem;">
+                Nombre d'essences droppées à chaque kill, tiré aléatoirement dans
+                la fourchette [min, max]. Ex : zone 1 = 1–1, zone 2 = 1–2,
+                zone 3 = 1–3.
+            </p>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Minimum</span>
+                    <input type="number" name="essences_min" class="input" min="0"
+                           value="{{ fd.get('essences_min', zone.essences_min if zone else 1) }}">
+                </label>
+                <label class="field">
+                    <span class="field-label">Maximum</span>
+                    <input type="number" name="essences_max" class="input" min="0"
+                           value="{{ fd.get('essences_max', zone.essences_max if zone else 1) }}">
+                </label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                {% if zone %}Enregistrer{% else %}Créer la zone{% endif %}
+            </button>
+            <a href="/admin/zones" class="btn btn-ghost">Annuler</a>
+        </div>
+    </form>
+</section>
+{% endblock %}
