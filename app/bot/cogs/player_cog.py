@@ -287,7 +287,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         # informations en fields). Si la génération échoue, on retombe
         # sur l'embed texte historique.
         try:
-            from app.bot.rendering.profile_banner import compose_profile_banner
+            from app.bot.rendering.profile_card_image import render_profile_card
             from app.domain.services.progression_service import ProgressionService
             from app.shared.paths import GENERATED_PROFILES_DIR
 
@@ -317,29 +317,39 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                     "dodges_total": getattr(career_stats, "dodges_total", 0),
                 }
 
+            # Dates façon carte web (%d/%m/%Y) : arrivée + dernière commande.
+            _created = getattr(profile.player, "created_at", None)
+            _last_seen = getattr(profile.player, "last_seen_at", None)
+            joined = _created.strftime("%d/%m/%Y") if _created else "—"
+            last_seen = _last_seen.strftime("%d/%m/%Y") if _last_seen else "—"
+
             # Rendu Pillow sync + download avatar Discord : off-thread pour ne
-            # pas bloquer l'event loop (cf. audit B5).
+            # pas bloquer l'event loop (cf. audit B5). La carte reproduit la
+            # fiche du site admin (header + barres + grille de stats).
             await asyncio.to_thread(
-                compose_profile_banner,
+                render_profile_card,
                 output_path=str(banner_path),
                 display_name=profile.player.display_name,
+                username=getattr(profile.player, "username", None) or profile.player.display_name,
+                discord_id=profile.player.discord_id,
                 avatar_url=avatar_url,
                 level=profile.progression.level,
-                xp_current=profile.progression.xp,
-                xp_required=xp_required,
-                gold=profile.resources.gold,
+                class_name=class_name or "—",
                 rank_label=rank_label,
-                power_score=formatted_power_score,
-                class_name=class_name,
-                active_title=active_title_name,
-                duel_position=duel_rank.rank_position if duel_rank else None,
-                duel_wins=duel_rank.wins if duel_rank else 0,
-                duel_losses=duel_rank.losses if duel_rank else 0,
-                daily_streak=profile.resources.daily_streak,
+                gold=profile.resources.gold,
                 skill_points=profile.progression.skill_points,
+                daily_streak=profile.resources.daily_streak,
+                power=formatted_power_score,
+                joined=joined,
+                last_seen=last_seen,
+                bars={
+                    "hp": {"cur": regenerated_current_hp, "max": stats.max_hp,
+                           "regen": stats.hp_regeneration},
+                    "mana": {"cur": regenerated_current_mana, "max": stats.mana_max,
+                             "regen": stats.mana_regeneration},
+                    "xp": {"cur": profile.progression.xp, "max": xp_required},
+                },
                 stats={
-                    "max_hp": stats.max_hp,
-                    "current_hp": regenerated_current_hp,
                     "attack": stats.attack,
                     "defense": stats.defense,
                     "speed": stats.speed,
@@ -347,11 +357,8 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                     "crit_damage": stats.crit_damage,
                     "dodge": stats.dodge,
                     "hp_regeneration": stats.hp_regeneration,
-                    "mana_max": stats.mana_max,
-                    "current_mana": regenerated_current_mana,
                     "mana_regeneration": stats.mana_regeneration,
                 },
-                career=career_payload,
             )
 
             # Carte principale = bannière PNG + boutons de navigation vers les

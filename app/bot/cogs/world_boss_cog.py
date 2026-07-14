@@ -200,6 +200,13 @@ class WorldBossCog(commands.Cog):
         self.auto_spawn_loop.cancel()
         self.daily_fight_loop.cancel()
 
+    async def _resolve_active_boss_id(self) -> int | None:
+        """Id du boss actuellement actif, ou None. (Le même helper existe sur
+        WorldBossView ; ici pour la boucle quotidienne du cog.)"""
+        with get_db_session() as session:
+            boss = WorldBossRepository(session).get_active()
+        return boss.id if boss else None
+
     @tasks.loop(time=_DAILY_FIGHT_TIME)
     async def daily_fight_loop(self) -> None:
         """Combat quotidien automatique à 21h (Paris) : tous les inscrits du
