@@ -345,17 +345,6 @@ def _draw_xp_bar(
             b = int(c1[2] + (c2[2] - c1[2]) * ratio)
             gd.line((x, 0, x, size[1] - 4), fill=(r, g, b, 255))
 
-        # Bande lumineuse horizontale en haut (effet "shine")
-        shine_h = max(2, (size[1] - 4) // 4)
-        for sy in range(shine_h):
-            shine_alpha = int(140 - sy * 20)
-            if shine_alpha <= 0:
-                break
-            gd.line(
-                (0, sy, fill_w - 1, sy),
-                fill=(255, 255, 255, shine_alpha),
-            )
-
         mask = Image.new("L", gradient.size, 0)
         ImageDraw.Draw(mask).rounded_rectangle(
             [(0, 0), (gradient.size[0] - 1, gradient.size[1] - 1)],
@@ -804,8 +793,8 @@ def compose_profile_banner(
     else:
         xp_text = f"⚡ XP : {format_int(xp_current)}"
     cur_bar_y = _labeled_bar(
-        cur_bar_y, xp_progress, xp_text, COLORS["xp_color"],
-        None, None, (100, 200, 255),
+        cur_bar_y, xp_progress, xp_text, (206, 150, 255, 255),
+        (150, 70, 225), (206, 130, 255), (190, 120, 255),
     )
 
     # Ligne d'infos compactes (or, daily streak, duel, skill points)
