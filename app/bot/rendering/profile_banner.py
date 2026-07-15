@@ -298,7 +298,6 @@ def _draw_xp_bar(
        - particules / sparkles dispersés sur le rempli
        - tête de progression brillante
     """
-    import random
     progress = max(0.0, min(1.0, progress))
     overlay = Image.new("RGBA", size, (0, 0, 0, 0))
     od = ImageDraw.Draw(overlay)
@@ -353,20 +352,6 @@ def _draw_xp_bar(
         )
         gradient.putalpha(mask)
         overlay.alpha_composite(gradient, (2, 2))
-
-        # Particules / sparkles : petits points blancs aléatoires
-        # dispersés sur la portion remplie. Donne un effet "magique".
-        rng = random.Random(seed)
-        n_particles = max(3, fill_w // 35)
-        for _ in range(n_particles):
-            px = rng.randint(8, max(8, fill_w - 4))
-            py = rng.randint(4, size[1] - 6)
-            radius = rng.choice([1, 1, 2])
-            alpha = rng.randint(160, 230)
-            od.ellipse(
-                (px - radius, py - radius, px + radius, py + radius),
-                fill=(255, 255, 255, alpha),
-            )
 
         # Tête de progression : disque brillant à l'extrémité droite du
         # rempli, simule un "bulbe" de lumière qui suit la barre.
