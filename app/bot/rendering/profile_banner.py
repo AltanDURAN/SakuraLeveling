@@ -353,36 +353,6 @@ def _draw_xp_bar(
         gradient.putalpha(mask)
         overlay.alpha_composite(gradient, (2, 2))
 
-        # Tête de progression : disque brillant à l'extrémité droite du
-        # rempli, simule un "bulbe" de lumière qui suit la barre.
-        head_x = fill_w + 2
-        head_r = (size[1] - 4) // 2 + 2
-        # Halo doux autour de la tête
-        head_overlay = Image.new("RGBA", size, (0, 0, 0, 0))
-        hod = ImageDraw.Draw(head_overlay)
-        for r_offset in range(6, 0, -1):
-            alpha = int(15 + (6 - r_offset) * 18)
-            hod.ellipse(
-                (
-                    head_x - head_r - r_offset,
-                    size[1] // 2 - head_r - r_offset,
-                    head_x + head_r + r_offset,
-                    size[1] // 2 + head_r + r_offset,
-                ),
-                fill=(glow_color[0], glow_color[1], glow_color[2], alpha),
-            )
-        # Disque blanc plein au cœur de la tête
-        hod.ellipse(
-            (
-                head_x - head_r // 2,
-                size[1] // 2 - head_r // 2,
-                head_x + head_r // 2,
-                size[1] // 2 + head_r // 2,
-            ),
-            fill=(255, 255, 255, 240),
-        )
-        overlay.alpha_composite(head_overlay)
-
     base.alpha_composite(overlay, origin)
 
 
