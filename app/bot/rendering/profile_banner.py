@@ -286,10 +286,14 @@ def _draw_xp_bar(
     progress: float,
     *,
     seed: int = 0,
+    fill_start: tuple[int, int, int] | None = None,
+    fill_end: tuple[int, int, int] | None = None,
+    glow_color: tuple[int, int, int] = (100, 200, 255),
 ) -> None:
-    """Barre d'XP horizontale stylée :
+    """Barre de progression horizontale stylée (XP par défaut, réutilisée
+    pour PV/Mana via `fill_start`/`fill_end`/`glow_color`) :
        - fond sombre + bord blanc
-       - remplissage gradient bleu → cyan
+       - remplissage gradient (bleu → cyan par défaut)
        - halo extérieur lumineux autour de la portion remplie
        - particules / sparkles dispersés sur le rempli
        - tête de progression brillante
@@ -315,7 +319,6 @@ def _draw_xp_bar(
         # un effet "néon" cyan.
         glow = Image.new("RGBA", size, (0, 0, 0, 0))
         gld = ImageDraw.Draw(glow)
-        glow_color = (100, 200, 255)
         for thickness in range(6, 0, -1):
             alpha = int(20 + (6 - thickness) * 8)
             gld.rounded_rectangle(
@@ -333,8 +336,8 @@ def _draw_xp_bar(
         # Remplissage gradient
         gradient = Image.new("RGBA", (fill_w, size[1] - 4), (0, 0, 0, 0))
         gd = ImageDraw.Draw(gradient)
-        c1 = COLORS["xp_bar_fill_start"]
-        c2 = COLORS["xp_bar_fill_end"]
+        c1 = fill_start if fill_start is not None else COLORS["xp_bar_fill_start"]
+        c2 = fill_end if fill_end is not None else COLORS["xp_bar_fill_end"]
         for x in range(fill_w):
             ratio = x / max(1, fill_w - 1)
             r = int(c1[0] + (c2[0] - c1[0]) * ratio)
@@ -392,7 +395,7 @@ def _draw_xp_bar(
                     head_x + head_r + r_offset,
                     size[1] // 2 + head_r + r_offset,
                 ),
-                fill=(180, 230, 255, alpha),
+                fill=(glow_color[0], glow_color[1], glow_color[2], alpha),
             )
         # Disque blanc plein au cœur de la tête
         hod.ellipse(
@@ -692,9 +695,6 @@ def compose_profile_banner(
     info_font = _try_font(28, bold=True)
     label_font = _try_font(24, bold=True)
     value_font = _try_font(42, bold=True)
-    # Card PV : "current/max" peut être long (ex 1.2K/1.5K), on rétrécit
-    # pour éviter le débordement.
-    value_font_compact = _try_font(32, bold=True)
     section_font = _try_font(30, bold=True)
     rank_font = _try_font(80, bold=True)
     pwr_inner_font_size = 24  # utilisé plus bas dans l'appel au badge
@@ -751,30 +751,65 @@ def compose_profile_banner(
         fill=COLORS["text_secondary"],
     )
 
-    # Barre d'XP — full width depuis info_x jusqu'au début de la zone badge.
-    bar_y = level_y + sub_font.size + 16
+    # Barres PV / Mana / XP — full width depuis info_x jusqu'au début de la
+    # zone badge. PV/Mana remplacent les anciennes cards (info désormais dans
+    # les barres) ; l'XP garde son style cyan historique.
+    bars_x = info_x
     bar_w = WIDTH - info_x - 220
-    bar_h = 32
-    # Cap au cas où l'XP a temporairement dépassé le seuil (bug historique
-    # de level-up non appliqué) — on ne veut jamais afficher 105%.
-    raw_progress = (xp_current / xp_required) if xp_required > 0 else 0.0
-    progress = min(1.0, max(0.0, raw_progress))
-    pct = int(round(progress * 100))
-    _draw_xp_bar(
-        bg, (info_x, bar_y), (bar_w, bar_h), progress,
-        seed=hash(display_name) & 0xFFFF,
+    bar_h = 28
+    _seed = hash(display_name) & 0xFFFF
+
+    def _labeled_bar(y, ratio, text, text_color, fill_start, fill_end, glow):
+        _draw_xp_bar(
+            bg, (bars_x, y), (bar_w, bar_h), ratio, seed=_seed,
+            fill_start=fill_start, fill_end=fill_end, glow_color=glow,
+        )
+        draw_text_with_emojis(
+            bg, (bars_x, y + bar_h + 5), text, xp_label_font, fill=text_color,
+        )
+        return y + bar_h + 5 + xp_label_font.size + 12
+
+    cur_bar_y = level_y + sub_font.size + 14
+
+    # --- PV (rouge) ---
+    hp_max = int(stats.get("max_hp", 0)) or 1
+    hp_cur = int(stats.get("current_hp", hp_max))
+    hp_regen = int(stats.get("hp_regeneration", 0))
+    hp_text = f"❤️ PV : {format_int(hp_cur)} / {format_int(hp_max)}"
+    if hp_regen:
+        hp_text += f"  (+{hp_regen}/min)"
+    cur_bar_y = _labeled_bar(
+        cur_bar_y, hp_cur / hp_max, hp_text, (255, 150, 160, 255),
+        (200, 50, 60), (255, 110, 120), (255, 90, 90),
     )
+
+    # --- Mana (bleu) ---
+    mana_max = int(stats.get("mana_max", 0)) or 1
+    mana_cur = int(stats.get("current_mana", mana_max))
+    mana_regen = int(stats.get("mana_regeneration", 0))
+    mana_text = f"🔷 Mana : {format_int(mana_cur)} / {format_int(mana_max)}"
+    if mana_regen:
+        mana_text += f"  (+{mana_regen}/min)"
+    cur_bar_y = _labeled_bar(
+        cur_bar_y, mana_cur / mana_max, mana_text, (150, 190, 255, 255),
+        (60, 110, 235), (120, 180, 255), (110, 160, 255),
+    )
+
+    # --- XP (cyan, style historique) ---
+    raw_progress = (xp_current / xp_required) if xp_required > 0 else 0.0
+    xp_progress = min(1.0, max(0.0, raw_progress))
+    pct = int(round(xp_progress * 100))
     if xp_required > 0:
         xp_text = f"⚡ XP : {format_int(xp_current)} / {format_int(xp_required)}  ({pct}%)"
     else:
         xp_text = f"⚡ XP : {format_int(xp_current)}"
-    draw_text_with_emojis(
-        bg, (info_x, bar_y + bar_h + 8), xp_text, xp_label_font,
-        fill=COLORS["xp_color"],
+    cur_bar_y = _labeled_bar(
+        cur_bar_y, xp_progress, xp_text, COLORS["xp_color"],
+        None, None, (100, 200, 255),
     )
 
     # Ligne d'infos compactes (or, daily streak, duel, skill points)
-    bottom_info_y = bar_y + bar_h + xp_label_font.size + 22
+    bottom_info_y = cur_bar_y + 2
     parts: list[tuple[str, tuple[int, int, int, int]]] = [
         (f"💰 {_format_compact(gold)} or", COLORS["gold_color"]),
     ]
@@ -839,62 +874,36 @@ def compose_profile_banner(
     card_w = available // grid_cols
     card_h = 130
 
-    # Combat : valeurs principales en format compact (PV/Atk/Def peuvent
-    # devenir gros en endgame), pourcentages restent en chiffres pleins
-    # car ils sont bornés [0..200] selon les caps.
-    # PV : on affiche "current/max" si current est connu (sinon juste max).
-    max_hp_value = int(stats.get("max_hp", 0))
-    current_hp_value = stats.get("current_hp")
-    if current_hp_value is not None:
-        hp_display = (
-            f"{_format_compact(int(current_hp_value))}"
-            f"/{_format_compact(max_hp_value)}"
-        )
-    else:
-        hp_display = _format_compact(max_hp_value)
-    # Mana : "current/max" comme les PV (ressource des compétences actives).
-    mana_max_value = int(stats.get("mana_max", 0))
-    current_mana_value = stats.get("current_mana")
-    if current_mana_value is not None:
-        mana_display = (
-            f"{_format_compact(int(current_mana_value))}"
-            f"/{_format_compact(mana_max_value)}"
-        )
-    else:
-        mana_display = _format_compact(mana_max_value)
+    # PV / Mana / Régén sont désormais dans les barres du header — on ne
+    # garde ici que les stats de combat "pures". Grille 3 colonnes
+    # (6 cards = 2 rangées pleines et équilibrées).
+    combat_cols = 3
+    combat_available = WIDTH - 2 * margin - spacing * (combat_cols - 1)
+    combat_card_w = combat_available // combat_cols
     combat_cards = [
-        ("❤️", "PV", hp_display, "hp"),
         ("⚔️", "Attaque", _format_compact(int(stats.get("attack", 0))), "atk"),
         ("🛡️", "Défense", _format_compact(int(stats.get("defense", 0))), "def"),
         ("💨", "Vitesse", str(stats.get("speed", 0)), "speed"),
-        ("🔷", "Mana", mana_display, "mana"),
-        ("🌊", "Régén M", str(stats.get("mana_regeneration", 0)), "mana"),
         ("🎯", "Crit %", f"{int(stats.get('crit_chance', 0))}%", "crit_chance"),
         ("💥", "Crit dmg", f"{int(stats.get('crit_damage', 100))}%", "crit_damage"),
         ("🌀", "Esquive", f"{int(stats.get('dodge', 0))}%", "dodge"),
-        ("✨", "Régen", str(stats.get("hp_regeneration", 0)), "regen"),
     ]
 
     for idx, (emoji, label, value, accent_key) in enumerate(combat_cards):
-        row = idx // grid_cols
-        col = idx % grid_cols
-        x = margin + col * (card_w + spacing)
+        row = idx // combat_cols
+        col = idx % combat_cols
+        x = margin + col * (combat_card_w + spacing)
         y = combat_grid_y + row * (card_h + spacing)
-        # PV/Mana peuvent afficher "current/max" → fonte rétrécie pour ne pas
-        # déborder de la card.
-        card_value_font = (
-            value_font_compact if accent_key in ("hp", "mana") else value_font
-        )
         _draw_stat_card(
-            bg, (x, y), (card_w, card_h),
-            emoji, label, value, label_font, card_value_font,
+            bg, (x, y), (combat_card_w, card_h),
+            emoji, label, value, label_font, value_font,
             accent_key=accent_key,
         )
 
     # ----- CAREER SECTION -----
     # Nombre de rangées de la grille de combat (dynamique : dépend du nombre
     # de cards, ex. 10 cards / 4 colonnes = 3 rangées).
-    combat_rows = -(-len(combat_cards) // grid_cols)  # ceil division
+    combat_rows = -(-len(combat_cards) // combat_cols)  # ceil division
     section_career_y = combat_grid_y + combat_rows * (card_h + spacing) + 20
     _draw_section_header(
         bg, (margin, section_career_y), "📈  STATISTIQUES DE CARRIÈRE",
