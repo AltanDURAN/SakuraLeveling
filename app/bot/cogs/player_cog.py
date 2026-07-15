@@ -241,43 +241,6 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 profile.player.id
             )
 
-            # Données des SOUS-CARTES (navigation par boutons du /profil).
-            from app.infrastructure.db.repositories.inventory_repository import (
-                InventoryRepository,
-            )
-            from app.infrastructure.db.repositories.element_essence_repository import (
-                ElementEssenceRepository,
-            )
-            from app.infrastructure.elements import element_skill_loader as _esl
-
-            _inv = InventoryRepository(session).list_by_player_id(profile.player.id)
-            card_inventory = sorted(
-                [{"name": it.item_definition.name, "quantity": it.quantity} for it in _inv],
-                key=lambda x: x["name"].lower(),
-            )
-            card_equipment = sorted(
-                [{"slot": e.slot, "name": e.item_definition.name} for e in equipped_items],
-                key=lambda x: x["slot"],
-            )
-            card_skills = []
-            for _i, _code in enumerate(
-                (profile.player.skill_slot_1, profile.player.skill_slot_2), start=1
-            ):
-                _sk = _esl.get_skill(_code) if _code else None
-                card_skills.append({
-                    "slot": _i, "code": _code or None,
-                    "label": (f"{_sk.emoji} {_sk.element}/{_sk.role}" if _sk else None),
-                })
-            card_essences = ElementEssenceRepository(session).get_essences(profile.player.id)
-            _title_codes = PlayerTitleRepository(session).list_codes_for_player(profile.player.id)
-            card_titles = []
-            for _c in _title_codes:
-                _d = _get_title_def(_c)
-                card_titles.append({
-                    "name": _d.name if _d else _c, "active": _c == active_title_code,
-                })
-            card_titles.sort(key=lambda t: (not t["active"], t["name"]))
-
         # NB : l'embed texte de fallback n'est construit QUE dans le except
         # (cf. plus bas) — inutile de le calculer à chaque appel sur le chemin
         # nominal (bannière image).
@@ -287,7 +250,9 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         # informations en fields). Si la génération échoue, on retombe
         # sur l'embed texte historique.
         try:
-            from app.bot.rendering.profile_card_image import render_profile_card
+            from app.bot.rendering.profile_banner import (
+                compose_profile_banner, _rank_color,
+            )
             from app.domain.services.progression_service import ProgressionService
             from app.shared.paths import GENERATED_PROFILES_DIR
 
@@ -317,39 +282,29 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                     "dodges_total": getattr(career_stats, "dodges_total", 0),
                 }
 
-            # Dates façon carte web (%d/%m/%Y) : arrivée + dernière commande.
-            _created = getattr(profile.player, "created_at", None)
-            _last_seen = getattr(profile.player, "last_seen_at", None)
-            joined = _created.strftime("%d/%m/%Y") if _created else "—"
-            last_seen = _last_seen.strftime("%d/%m/%Y") if _last_seen else "—"
-
             # Rendu Pillow sync + download avatar Discord : off-thread pour ne
-            # pas bloquer l'event loop (cf. audit B5). La carte reproduit la
-            # fiche du site admin (header + barres + grille de stats).
+            # pas bloquer l'event loop (cf. audit B5).
             await asyncio.to_thread(
-                render_profile_card,
+                compose_profile_banner,
                 output_path=str(banner_path),
                 display_name=profile.player.display_name,
-                username=getattr(profile.player, "username", None) or profile.player.display_name,
-                discord_id=profile.player.discord_id,
                 avatar_url=avatar_url,
                 level=profile.progression.level,
-                class_name=class_name or "—",
-                rank_label=rank_label,
+                xp_current=profile.progression.xp,
+                xp_required=xp_required,
                 gold=profile.resources.gold,
-                skill_points=profile.progression.skill_points,
+                rank_label=rank_label,
+                power_score=formatted_power_score,
+                class_name=class_name,
+                active_title=active_title_name,
+                duel_position=duel_rank.rank_position if duel_rank else None,
+                duel_wins=duel_rank.wins if duel_rank else 0,
+                duel_losses=duel_rank.losses if duel_rank else 0,
                 daily_streak=profile.resources.daily_streak,
-                power=formatted_power_score,
-                joined=joined,
-                last_seen=last_seen,
-                bars={
-                    "hp": {"cur": regenerated_current_hp, "max": stats.max_hp,
-                           "regen": stats.hp_regeneration},
-                    "mana": {"cur": regenerated_current_mana, "max": stats.mana_max,
-                             "regen": stats.mana_regeneration},
-                    "xp": {"cur": profile.progression.xp, "max": xp_required},
-                },
+                skill_points=profile.progression.skill_points,
                 stats={
+                    "max_hp": stats.max_hp,
+                    "current_hp": regenerated_current_hp,
                     "attack": stats.attack,
                     "defense": stats.defense,
                     "speed": stats.speed,
@@ -357,47 +312,19 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                     "crit_damage": stats.crit_damage,
                     "dodge": stats.dodge,
                     "hp_regeneration": stats.hp_regeneration,
+                    "mana_max": stats.mana_max,
+                    "current_mana": regenerated_current_mana,
                     "mana_regeneration": stats.mana_regeneration,
                 },
+                career=career_payload,
             )
 
-            # Carte principale = bannière PNG + boutons de navigation vers les
-            # sous-cartes (façon fiche web, sans navigation inter-joueurs).
-            from app.bot.embeds.profile_card_embeds import (
-                build_main_image_embed, build_all_subcards,
-            )
-            from app.bot.views.profile_card_view import ProfileCardView
-
-            image_embed = build_main_image_embed(
-                display_name=profile.player.display_name,
-                rank_label=rank_label,
-                attachment_filename=banner_filename,
-            )
-            card_data = {
-                "display_name": profile.player.display_name,
-                "avatar_url": avatar_url,
-                "rank": rank_label,
-                "inventory": card_inventory,
-                "equipment": card_equipment,
-                "skills": card_skills,
-                "titles": card_titles,
-                "affinities": affinities,
-                "essences": card_essences,
-                "career": {**career_payload, "total_kills": total_kills},
-                "duel": None if duel_rank is None else {
-                    "rank_position": duel_rank.rank_position,
-                    "wins": duel_rank.wins, "losses": duel_rank.losses,
-                },
-            }
-            view = ProfileCardView(
-                author_id=interaction.user.id,
-                banner_path=str(banner_path),
-                banner_filename=banner_filename,
-                main_embed=image_embed,
-                subcards=build_all_subcards(card_data),
-            )
+            # /profil = bannière PNG seule (l'embed n'est qu'un conteneur pour
+            # l'image, pas de navigation ni de duplication en fields).
+            image_embed = discord.Embed(color=discord.Color.from_rgb(*_rank_color(rank_label)))
+            image_embed.set_image(url=f"attachment://{banner_filename}")
             file = discord.File(str(banner_path), filename=banner_filename)
-            await interaction.followup.send(embed=image_embed, file=file, view=view)
+            await interaction.followup.send(embed=image_embed, file=file)
             return
         except Exception as _e:
             import logging
