@@ -17,6 +17,7 @@ from discord.ext import commands
 import logging
 
 from app.bot.cogs._mixins import BetaChannelOnlyMixin
+from app.bot.rank_roles import ensure_start_rank_role
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
@@ -85,6 +86,19 @@ class OnboardingCog(BetaChannelOnlyMixin, commands.Cog):
         description="Guide de démarrage pour les nouveaux joueurs",
     )
     async def demarrer(self, interaction: discord.Interaction) -> None:
+        # Début d'aventure : on crée le profil (idempotent) et on attribue le
+        # rôle Rang F pour débloquer l'accès à la première zone de farm.
+        try:
+            with get_db_session() as session:
+                PlayerRepository(session).get_or_create_by_discord_id(
+                    discord_id=interaction.user.id,
+                    username=interaction.user.name,
+                    display_name=interaction.user.display_name,
+                )
+        except Exception:
+            _logger.warning("demarrer: échec création profil %s", interaction.user.id, exc_info=True)
+        if isinstance(interaction.user, discord.Member):
+            await ensure_start_rank_role(interaction.user)
         await interaction.response.send_message(
             embed=build_welcome_embed(interaction.user.display_name), ephemeral=True
         )
@@ -125,6 +139,9 @@ class OnboardingCog(BetaChannelOnlyMixin, commands.Cog):
                     await member.add_roles(role, reason="Nouveau membre — rôle auto")
                 except discord.DiscordException as exc:
                     _logger.warning("Onboarding: échec rôle %s → %s : %s", role_id, member.id, exc)
+
+        # 2b. Rang F (accès à la première zone de farm) — best-effort.
+        await ensure_start_rank_role(member)
 
         embed = build_welcome_embed(member.display_name)
 

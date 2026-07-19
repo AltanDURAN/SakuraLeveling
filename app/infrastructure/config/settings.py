@@ -36,6 +36,12 @@ class Settings(BaseSettings):
     # sur l'ancienne liste DB). Le bot doit avoir "Gérer les rôles" et être
     # au-dessus de ce rôle dans la hiérarchie.
     chad_role_id: int = 0
+    # Rôles Discord de RANG (accès aux zones de farm gaté par palier). Format
+    # env RANK_ROLE_IDS : "F:123,E:456,D:...,C:...,B:...,A:...,S:...,SS:...,SSS:...".
+    # Tout le monde démarre au Rang F (attribué automatiquement au 1er contact) ;
+    # la montée en rang se gagne via des épreuves (à venir) ou `/admin set_rank`.
+    # Le bot doit avoir "Gérer les rôles" et être AU-DESSUS de ces rôles.
+    rank_role_ids: str = ""
     # URL publique du webapp skill tree (utilisée par le bouton 'Vue détaillée'
     # de /skill). Sans valeur, on retombe sur l'URL locale http://localhost:8000.
     webapp_base_url: str = "http://localhost:8000"
@@ -83,6 +89,21 @@ class Settings(BaseSettings):
             for part in self.command_channels.split(",")
             if part.strip()
         ]
+
+    @property
+    def rank_roles(self) -> dict[str, int]:
+        """Mapping rang (F, E, D, C, B, A, S, SS, SSS) → Discord role id.
+        Parsé depuis RANK_ROLE_IDS. Vide → feature de rang désactivée."""
+        out: dict[str, int] = {}
+        for part in self.rank_role_ids.split(","):
+            part = part.strip()
+            if not part or ":" not in part:
+                continue
+            rank, _, rid = part.partition(":")
+            rank, rid = rank.strip().upper(), rid.strip()
+            if rank and rid.isdigit():
+                out[rank] = int(rid)
+        return out
 
     @property
     def admin_ids(self) -> list[int]:

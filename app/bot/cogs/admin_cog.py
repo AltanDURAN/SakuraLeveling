@@ -6,6 +6,8 @@ from app.application.services.set_bonus_resolver import resolve_set_bonuses
 from app.application.services.player_stats_resolver import resolve_player_stats
 from app.application.use_cases.reset_player import ResetPlayerUseCase
 from app.bot.checks.admin_check import admin_only
+from app.bot.rank_roles import RANK_ORDER, set_rank_role
+from app.infrastructure.config.settings import settings
 from app.shared.enums import EquipmentSlot
 from app.shared.formatters import format_int as _format_int
 from app.domain.services.progression_service import ProgressionService
@@ -459,6 +461,46 @@ class AdminCog(commands.Cog):
             f"✅ Classe de {target.mention} définie à **{class_def.name}**.",
             ephemeral=True,
         )
+
+    # -------------------------- Rang (rôle Discord d'accès aux zones) --------------------------
+
+    @admin.command(
+        name="set_rank",
+        description="Attribue un rôle de RANG (accès zones) à un joueur — retire les autres rangs",
+    )
+    @app_commands.describe(
+        target="Joueur ciblé",
+        rank="Rang à attribuer (F, E, D, C, B, A, S, SS, SSS)",
+    )
+    @app_commands.choices(
+        rank=[app_commands.Choice(name=r, value=r) for r in RANK_ORDER]
+    )
+    @admin_only
+    async def set_rank(
+        self,
+        interaction: discord.Interaction,
+        target: discord.Member,
+        rank: app_commands.Choice[str],
+    ) -> None:
+        await interaction.response.defer(ephemeral=True)
+        if not settings.rank_roles:
+            await interaction.followup.send(
+                "❌ Aucun rôle de rang configuré (`RANK_ROLE_IDS` vide dans `.env`).",
+                ephemeral=True,
+            )
+            return
+        ok = await set_rank_role(target, rank.value)
+        if ok:
+            await interaction.followup.send(
+                f"✅ {target.mention} est désormais **Rang {rank.value}**.",
+                ephemeral=True,
+            )
+        else:
+            await interaction.followup.send(
+                f"❌ Échec : rôle du Rang {rank.value} introuvable, ou le bot ne peut "
+                "pas gérer ce rôle (permission « Gérer les rôles » + hiérarchie).",
+                ephemeral=True,
+            )
 
     # -------------------------- Kill counter --------------------------
 
