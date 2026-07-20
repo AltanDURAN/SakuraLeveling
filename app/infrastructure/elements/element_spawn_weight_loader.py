@@ -21,11 +21,19 @@ CONTENT_PATH = Path(__file__).resolve().parents[1] / "content" / "element_spawn_
 
 _ALL = [e.value for e in ALL_ELEMENTS]
 _cache: dict[str, int] | None = None
+_cache_mtime: float | None = None
 
 
 def _load() -> dict[str, int]:
-    global _cache
-    if _cache is None:
+    """Charge les poids avec cache invalidé par mtime : une édition du JSON
+    (ex : via l'admin web) est prise en compte au prochain spawn SANS
+    redémarrage du bot."""
+    global _cache, _cache_mtime
+    try:
+        mtime = CONTENT_PATH.stat().st_mtime
+    except OSError:
+        mtime = None
+    if _cache is None or mtime != _cache_mtime:
         weights: dict[str, int] = {}
         if CONTENT_PATH.exists():
             with CONTENT_PATH.open("r", encoding="utf-8") as fh:
@@ -41,6 +49,7 @@ def _load() -> dict[str, int]:
         if not any(weights.get(e, 0) > 0 for e in _ALL):
             weights = {e: 1 for e in _ALL}
         _cache = weights
+        _cache_mtime = mtime
     return _cache
 
 

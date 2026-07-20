@@ -19,44 +19,58 @@ from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
 
 # ---------------------------------------------------------------------------
 # CODE COULEUR — 8 éléments, teintes distinctes (aucune paire proche), logiques.
-#   feu=rouge · eau=bleu · plante=vert · lumiere=jaune/or · terre=brun
-#   glace=cyan clair · vent=vert-air (lime) · tenebre=violet
-# Réparties sur la roue chromatique pour rester lisibles d'un coup d'œil ; les
-# deux plus proches (glace/eau) restent séparées par la teinte + l'icône.
+#   feu=rouge · eau=bleu · plante=vert · lumiere=jaune/or brillant · terre=marron
+#   glace=cyan clair · vent=turquoise (bien séparé du vert plante) · tenebre=sombre
+# `ELEMENT_COLORS` = couleur "marque" : anneau du badge + libellé + pastille.
 # ---------------------------------------------------------------------------
 ELEMENT_COLORS: dict[str, tuple[int, int, int]] = {
     "feu":     (230, 66, 45),    # rouge vif
-    "terre":   (166, 107, 63),   # brun
-    "lumiere": (245, 205, 60),   # jaune doré
-    "vent":    (166, 217, 59),   # vert-air (lime)
-    "plante":  (63, 176, 74),    # vert
-    "glace":   (102, 208, 232),  # cyan clair
-    "eau":     (46, 111, 230),   # bleu
-    "tenebre": (155, 84, 214),   # violet
+    "eau":     (34, 88, 200),    # bleu (plus foncé)
+    "plante":  (40, 138, 60),    # vert (plus foncé)
+    "vent":    (92, 216, 198),   # turquoise clair (≠ vert plante)
+    "terre":   (120, 74, 40),    # marron (plus foncé)
+    "glace":   (160, 228, 246),  # cyan très clair
+    "lumiere": (255, 224, 110),  # jaune doré brillant
+    "tenebre": (104, 92, 122),   # sombre (anneau lisible, peu violet)
+}
+
+# Réglage de la TEINTE du monstre (colorisation duotone). Par défaut :
+# mid = couleur marque, dark_f = 0.20, light_f = 0.78. Override par élément :
+#   - tenebre : mid quasi-noir + hautes lumières basses → "ombre", pas violet
+#   - lumiere : hautes lumières poussées vers le blanc → plus brillant
+#   - terre   : hautes lumières retenues → marron riche, pas beige délavé
+_TINT_OVERRIDES: dict[str, dict] = {
+    "tenebre": {"mid": (48, 45, 58), "dark_f": 0.11, "light_f": 0.42},
+    "lumiere": {"light_f": 0.90},
+    "terre":   {"light_f": 0.60},
 }
 
 
-def _shades(color: tuple[int, int, int]) -> tuple[tuple, tuple]:
-    """Ombre (bas) et lumière (haut) dérivées de la couleur d'élément, pour la
-    colorisation duotone qui préserve le relief du monstre."""
-    r, g, b = color
-    dark = (int(r * 0.20), int(g * 0.20), int(b * 0.20))
-    light = (int(r + (255 - r) * 0.78), int(g + (255 - g) * 0.78), int(b + (255 - b) * 0.78))
-    return dark, light
+def _tint_stops(element: str) -> tuple[tuple, tuple, tuple]:
+    """(ombre, milieu, lumière) pour la colorisation duotone d'un élément."""
+    brand = ELEMENT_COLORS[element]
+    cfg = _TINT_OVERRIDES.get(element, {})
+    mid = cfg.get("mid", brand)
+    dark_f = cfg.get("dark_f", 0.20)
+    light_f = cfg.get("light_f", 0.78)
+    r, g, b = mid
+    dark = (int(r * dark_f), int(g * dark_f), int(b * dark_f))
+    light = (int(r + (255 - r) * light_f), int(g + (255 - g) * light_f), int(b + (255 - b) * light_f))
+    return dark, mid, light
 
 
 def tint_by_element(image: Image.Image, element: str) -> Image.Image:
     """Décline une image de monstre selon `element` : désaturation puis
     colorisation duotone avec la couleur de l'élément. Préserve la transparence.
     Élément inconnu / neutre ("") → image inchangée (RGBA)."""
-    color = ELEMENT_COLORS.get((element or "").strip().lower())
+    code = (element or "").strip().lower()
     rgba = image.convert("RGBA")
-    if color is None:
+    if code not in ELEMENT_COLORS:
         return rgba
     alpha = rgba.getchannel("A")
     luminance = rgba.convert("L")
-    dark, light = _shades(color)
-    colored = ImageOps.colorize(luminance, black=dark, white=light, mid=color).convert("RGBA")
+    dark, mid, light = _tint_stops(code)
+    colored = ImageOps.colorize(luminance, black=dark, white=light, mid=mid).convert("RGBA")
     colored.putalpha(alpha)
     return colored
 

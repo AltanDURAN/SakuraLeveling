@@ -73,6 +73,8 @@ class EncounterCog(commands.Cog):
         self._zone_next_spawn: dict[int, datetime] = {}
         # Mob forcé au prochain spawn de la zone (/admin spawn_encounter).
         self._zone_forced_mob: dict[int, str] = {}
+        # Élément forcé au prochain spawn de la zone (/admin spawn_encounter).
+        self._zone_forced_element: dict[int, str] = {}
         # Event de résolution anticipée (/admin start_encounter) par zone.
         self._zone_early_resolve: dict[int, asyncio.Event] = {}
         # Tâche asyncio de chaque zone.
@@ -165,43 +167,67 @@ class EncounterCog(commands.Cog):
             eligible, weights=[m.spawn_weight for m in eligible], k=1
         )[0]
 
-    def trigger_immediate_spawn(self, mob_code: str | None = None) -> tuple[bool, str]:
-        """Force le spawn immédiat d'un encounter dans la zone concernée.
+    def trigger_immediate_spawn(
+        self,
+        mob_code: str | None = None,
+        element: str | None = None,
+        channel_id: int | None = None,
+    ) -> tuple[bool, str]:
+        """Force le spawn immédiat d'un encounter.
 
-        Si `mob_code` est fourni, la zone est déduite de la FAMILLE du mob ;
-        sinon on force la zone de base (tirage aléatoire parmi ses mobs). Si un
-        combat est déjà actif dans cette zone, il est annulé pour faire place.
+        Zone ciblée, par priorité :
+          1. `channel_id` (le salon d'où vient la commande) SI c'est un salon de
+             zone spawnable → le mob apparaît là où l'admin a tapé la commande ;
+          2. sinon la FAMILLE du mob (si `mob_code` fourni) ;
+          3. sinon la zone de base.
+        `element` (optionnel) force l'élément du spawn ; sinon aléatoire pondéré.
+        Un combat déjà actif dans la zone est annulé pour faire place.
         """
+        mob = None
         if mob_code is not None:
             with get_db_session() as session:
                 mob = MobRepository(session).get_by_code(mob_code)
             if mob is None:
                 return False, f"Mob `{mob_code}` introuvable."
-            channel_id = get_spawn_channel_for_family(mob.family)
+
+        zone_channels = set(list_zone_channels())
+        if channel_id is not None and channel_id in zone_channels:
+            target = channel_id
+        elif mob is not None:
+            target = get_spawn_channel_for_family(mob.family)
         else:
-            channel_id = default_channel_id()
+            target = default_channel_id()
 
         cancelled_existing = False
-        existing = self.active_encounters.pop(channel_id, None)
+        existing = self.active_encounters.pop(target, None)
         if existing is not None:
             # Réveille le combat en cours : sa boucle verra qu'il n'est plus
             # l'encounter courant de la zone et s'auto-annulera.
-            event = self._zone_early_resolve.get(channel_id)
+            event = self._zone_early_resolve.get(target)
             if event is not None:
                 event.set()
             cancelled_existing = True
 
         if mob_code is not None:
-            self._zone_forced_mob[channel_id] = mob_code
+            self._zone_forced_mob[target] = mob_code
         else:
-            self._zone_forced_mob.pop(channel_id, None)
-        self._zone_next_spawn[channel_id] = datetime.now(UTC) - timedelta(seconds=1)
+            self._zone_forced_mob.pop(target, None)
+        if element:
+            self._zone_forced_element[target] = element
+        else:
+            self._zone_forced_element.pop(target, None)
+        self._zone_next_spawn[target] = datetime.now(UTC) - timedelta(seconds=1)
 
-        suffix = f" ({mob_code})" if mob_code else ""
+        parts = []
+        if mob_code:
+            parts.append(mob_code)
+        if element:
+            parts.append(f"élément {element}")
+        suffix = f" ({', '.join(parts)})" if parts else ""
         prefix = "Combat précédent annulé. " if cancelled_existing else ""
         return True, (
             f"{prefix}Spawn forcé{suffix} : un monstre apparaît dans quelques "
-            f"secondes (salon `{channel_id}`)."
+            f"secondes (salon `{target}`)."
         )
 
     def request_early_resolve(self) -> tuple[bool, str]:
@@ -267,19 +293,20 @@ class EncounterCog(commands.Cog):
             return
 
         forced_code = self._zone_forced_mob.pop(channel_id, None)
+        forced_element = self._zone_forced_element.pop(channel_id, None)
         mob = self._pick_mob_for_zone(channel_id, forced_code)
         if mob is None:
             self._zone_next_spawn[channel_id] = now + timedelta(minutes=1)
             return
 
-        await self._run_encounter(channel_id, mob)
+        await self._run_encounter(channel_id, mob, forced_element=forced_element)
 
     def _reschedule(self, channel_id: int, minutes: int = 1) -> None:
         """Libère la zone et pose le prochain spawn."""
         self.active_encounters.pop(channel_id, None)
         self._zone_next_spawn[channel_id] = datetime.now(UTC) + timedelta(minutes=minutes)
 
-    async def _run_encounter(self, channel_id: int, mob) -> None:
+    async def _run_encounter(self, channel_id: int, mob, forced_element: str | None = None) -> None:
         """Cycle de vie complet d'un encounter dans une zone : spawn → fenêtre
         de recrutement (5 min ou résolution anticipée) → combat animé → récap.
         Opère sur un encounter LOCAL indexé par `channel_id` ; ne touche jamais
@@ -293,13 +320,17 @@ class EncounterCog(commands.Cog):
         background_path = LANDSCAPES_ASSETS_DIR / get_background_for_family(mob.family)
         self._zone_bg[channel_id] = str(background_path)
 
-        # Élément spawné : un mob à élément FORCÉ (mob.element non vide) le garde ;
-        # sinon on tire un élément aléatoire pondéré (chaque monstre peut spawner
-        # sous n'importe quel élément).
+        # Élément spawné : priorité à l'élément FORCÉ (/admin spawn_encounter) ;
+        # sinon l'élément stocké du mob (rare, forcé au contenu) ; sinon un tirage
+        # aléatoire pondéré (chaque monstre peut spawner sous n'importe quel élément).
         from app.infrastructure.elements.element_spawn_weight_loader import (
             pick_random_element,
         )
-        spawn_element = (getattr(mob, "element", "") or "").strip() or pick_random_element()
+        spawn_element = (
+            (forced_element or "").strip()
+            or (getattr(mob, "element", "") or "").strip()
+            or pick_random_element()
+        )
 
         mob_state = EncounterMobState(
             code=mob.code,

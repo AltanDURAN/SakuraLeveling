@@ -8,7 +8,7 @@ from app.application.use_cases.reset_player import ResetPlayerUseCase
 from app.bot.checks.admin_check import admin_only
 from app.bot.rank_roles import RANK_ORDER, set_rank_role
 from app.infrastructure.config.settings import settings
-from app.shared.enums import EquipmentSlot
+from app.shared.enums import ALL_ELEMENTS, ELEMENT_LABELS, EquipmentSlot
 from app.shared.formatters import format_int as _format_int
 from app.domain.services.progression_service import ProgressionService
 from app.domain.services.shop_pricing_service import ShopPricingService
@@ -724,16 +724,24 @@ class AdminCog(commands.Cog):
 
     @admin.command(
         name="spawn_encounter",
-        description="Force le spawn immédiat d'un encounter (mob aléatoire ou spécifique)",
+        description="Force le spawn immédiat d'un encounter (mob + élément optionnels)",
     )
     @app_commands.describe(
-        mob_code="Code du mob à faire spawn (optionnel : random sinon)"
+        mob_code="Code du mob à faire spawn (optionnel : random sinon)",
+        element="Élément forcé (optionnel : aléatoire pondéré sinon)",
+    )
+    @app_commands.choices(
+        element=[
+            app_commands.Choice(name=ELEMENT_LABELS[e.value], value=e.value)
+            for e in ALL_ELEMENTS
+        ]
     )
     @admin_only
     async def spawn_encounter(
         self,
         interaction: discord.Interaction,
         mob_code: str | None = None,
+        element: app_commands.Choice[str] | None = None,
     ) -> None:
         encounter_cog = self.bot.get_cog("EncounterCog")
         if encounter_cog is None:
@@ -743,7 +751,13 @@ class AdminCog(commands.Cog):
             )
             return
 
-        success, message = encounter_cog.trigger_immediate_spawn(mob_code=mob_code)
+        # channel_id : le salon d'où vient la commande → le mob spawn ICI si
+        # c'est une zone spawnable (sinon fallback famille / zone de base).
+        success, message = encounter_cog.trigger_immediate_spawn(
+            mob_code=mob_code,
+            element=element.value if element else None,
+            channel_id=interaction.channel_id,
+        )
         await interaction.response.send_message(
             f"{'✅' if success else '⚠️'} {message}",
             ephemeral=True,
