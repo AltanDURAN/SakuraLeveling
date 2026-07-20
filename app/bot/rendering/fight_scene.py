@@ -1,14 +1,34 @@
 from PIL import Image, ImageDraw, ImageFont
 
-from app.bot.rendering.element_visuals import tint_by_element
+from app.bot.rendering.element_visuals import make_element_badge, tint_by_element
 from app.bot.rendering.image_utils import (
     add_hp_hue,
     add_outline,
     crop_to_circle,
     download_image,
+    get_hp_color,
     load_background,
 )
 from app.shared.paths import MOBS_ASSETS_DIR
+
+
+def _draw_ratio_bar(base, draw, x1, y1, x2, y2, current, maximum) -> None:
+    """Barre de vie arrondie, MÊME règle pour mob et joueurs : la couleur de
+    remplissage suit le % de PV (vert plein → rouge à bas PV via get_hp_color),
+    vide à 0%. Track sombre + fin liseré."""
+    r = (y2 - y1) // 2
+    draw.rounded_rectangle([x1, y1, x2, y2], radius=r,
+                           fill=(22, 18, 26, 235), outline=(255, 255, 255, 45), width=2)
+    ratio = max(0.0, min(1.0, current / maximum)) if maximum > 0 else 0.0
+    fill_w = int((x2 - x1 - 6) * ratio)
+    if fill_w > 6:
+        color = get_hp_color(current, maximum)
+        fill = Image.new("RGBA", (fill_w, y2 - y1 - 6), (color[0], color[1], color[2], 255))
+        mask = Image.new("L", fill.size, 0)
+        ImageDraw.Draw(mask).rounded_rectangle(
+            [0, 0, fill_w - 1, fill.size[1] - 1], radius=(y2 - y1 - 6) // 2, fill=255)
+        fill.putalpha(mask)
+        base.alpha_composite(fill, (x1 + 3, y1 + 3))
 
 
 def compose_players_banner(
@@ -47,10 +67,12 @@ def compose_players_banner(
 
     try:
         title_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 48)
-        stat_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 36)
+        stat_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 34)
+        hp_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 26)
     except Exception:
         title_font = ImageFont.load_default()
         stat_font = ImageFont.load_default()
+        hp_font = ImageFont.load_default()
 
     if mob is not None:
         mob_name = mob.get("name", "Monstre")
@@ -88,69 +110,69 @@ def compose_players_banner(
             mob_img = tint_by_element(mob_img, mob_element)
         result.alpha_composite(mob_img, (mob_x, mob_y))
 
-        x1 = 92
-        y1 = 126
-        y2 = y1 + 90
+        # ----- BANDEAU MOB (emplacement haut du cadre, position fixe) -----
+        slot_left, slot_right = 70, 955
 
-        hp_ratio = 0.0
-        if mob_max_hp > 0:
-            hp_ratio = max(0.0, min(1.0, mob_current_hp / mob_max_hp))
+        # Badge d'élément à gauche (place fixe). Neutre → pas de badge.
+        name_x = slot_left + 30
+        if mob_element:
+            badge = make_element_badge(mob_element, diameter=96)
+            if badge is not None:
+                result.alpha_composite(badge, (slot_left, 116))
+                name_x = slot_left + 96 + 22
 
-        x2 = x1 + int(825 * hp_ratio)
+        # Nom + power score (power aligné à droite du bandeau)
+        draw.text((name_x, 118), mob_name, font=title_font, fill=(255, 255, 255, 255))
+        mob_power = mob.get("power_score", "")
+        if mob_power:
+            ptxt = f"[ {mob_power} ]"
+            pw = draw.textlength(ptxt, font=stat_font)
+            draw.text((slot_right - pw, 128), ptxt, font=stat_font, fill=(235, 226, 236, 255))
 
-        mob_power = mob.get("power_score", "XXXX")
-        mob_info = f"{mob_name} • [{mob_power}]"
-
-        if mob_current_hp > 0 and x2 > x1:
-            draw.rounded_rectangle(
-                [(x1, y1), (x2, y2)],
-                radius=20,
-                fill=(0, 130, 0, 255),
-            )
-        else:
-            mob_info = f"{mob_name} • [Mort]"
-
-        draw.text((106, 146), mob_info, font=title_font, fill=(255, 255, 255, 255))
+        # Barre de vie du mob : MÊME règle que les joueurs (vert→rouge selon %),
+        # vide à 0%.
+        bar_y1, bar_y2 = 170, 210
+        _draw_ratio_bar(result, draw, name_x, bar_y1, slot_right, bar_y2,
+                        mob_current_hp, mob_max_hp)
+        hp_txt = f"{mob_current_hp} / {mob_max_hp}" if mob_current_hp > 0 else "Vaincu"
+        htw = draw.textlength(hp_txt, font=hp_font)
+        draw.text(((name_x + slot_right) / 2 - htw / 2, bar_y1 + 6),
+                  hp_txt, font=hp_font, fill=(255, 255, 255, 255))
 
     if not players:
         result.save(output_path)
         print(f"Aucun player. Image sauvegardée : {output_path}")
         return
 
+    # ----- BANDEAU JOUEURS (emplacement bas du cadre, position fixe) -----
     count = len(players)
-    avatar_size = 100
-    outline_size = 3
-    bottom_margin = 63
+    av_d = 104
+    slot_x1, slot_x2 = 70, 955
+    step = (slot_x2 - slot_x1) / max(1, count)
+    av_y = 1322
 
-    usable_width = bg_width - 80
-    if len(players) > 4:
-        usable_width -= 120
-
-    centers_x = [int((i + 1) * usable_width / (count + 1)) for i in range(count)]
-    avatar_y = bg_height - bottom_margin - avatar_size
-
-    for player, center_x in zip(players, centers_x):
+    for i, player in enumerate(players):
+        center_x = int(slot_x1 + step * (i + 0.5))
         try:
             raw_avatar = download_image(player["avatar_url"])
         except Exception:
-            raw_avatar = Image.new("RGBA", (avatar_size, avatar_size), (120, 120, 120, 255))
+            raw_avatar = Image.new("RGBA", (av_d, av_d), (120, 120, 120, 255))
 
-        hue = add_hp_hue(
-            raw_avatar,
-            current_hp=player["current_hp"],
-            max_hp=player["max_hp"],
-            alpha=0.36,
-        )
+        cur = int(player.get("current_hp", 0) or 0)
+        mx = int(player.get("max_hp", 1) or 1)
+        hue = add_hp_hue(raw_avatar, current_hp=cur, max_hp=mx, alpha=0.36)
+        avatar = add_outline(crop_to_circle(hue, av_d), outline_size=3)
+        result.alpha_composite(avatar, (center_x - avatar.width // 2, av_y))
 
-        circle = crop_to_circle(hue, avatar_size)
-        avatar = add_outline(circle, outline_size=outline_size)
+        # Mini barre de vie (même règle vert→rouge que le mob).
+        bar_y = av_y + avatar.height + 2
+        _draw_ratio_bar(result, draw, center_x - 52, bar_y, center_x + 52, bar_y + 18, cur, mx)
 
-        aw, ah = avatar.size
-        avatar_x = center_x - aw // 2 + 31
-        result.alpha_composite(avatar, (avatar_x, avatar_y))
-
-    if players_power_score:
-        draw.text((850, 1400), f"[{players_power_score}]", font=stat_font, fill=(255, 255, 255, 255))
+        name = player.get("name", "")
+        if name:
+            nw = draw.textlength(name, font=hp_font)
+            draw.text((center_x - nw / 2, bar_y + 20), name, font=hp_font,
+                      fill=(240, 240, 245, 255))
 
     result.save(output_path)
     print(f"Image créée : {output_path}")
