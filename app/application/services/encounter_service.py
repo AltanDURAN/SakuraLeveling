@@ -168,6 +168,19 @@ class EncounterService:
             if mob is None:
                 return None
 
+            # Système élémentaire ACTIF en encounter : le monstre spawné a un
+            # élément (encounter.mob_state.element) → avantage ±30% dans les
+            # deux sens selon les affinités du joueur et son élément d'attaque
+            # (compétence offensive équipée, sinon affinité la plus haute).
+            from app.domain.services import element_service
+            from app.domain.services.skill_effect_service import offensive_element
+            from app.infrastructure.elements import element_skill_loader
+            mob_element = (encounter.mob_state.element or "").strip()
+            mob_aff = element_service.single_element_affinities(mob_element) if mob_element else None
+            affinity_repo = ElementAffinityRepository(session)
+            elemental_out: dict[int, float] = {}
+            elemental_in: dict[int, float] = {}
+
             party = []
             title_bonuses_by_player: dict = {}
 
@@ -201,6 +214,25 @@ class EncounterService:
                     set_bonuses=set_bonuses,
                 )
 
+                # Multiplicateurs élémentaires (si le mob a un élément).
+                if mob_aff is not None:
+                    aff = affinity_repo.get_affinities(participant.player_id)
+                    equipped_skills = [
+                        element_skill_loader.get_skill(code)
+                        for code in (profile.player.skill_slot_1, profile.player.skill_slot_2)
+                        if code
+                    ]
+                    player_elem = offensive_element(equipped_skills) or (
+                        max(aff, key=aff.get) if aff else ""
+                    )
+                    if player_elem:
+                        elemental_out[participant.player_id] = element_service.damage_multiplier(
+                            player_elem, aff, mob_aff,
+                        )
+                    elemental_in[participant.player_id] = element_service.damage_multiplier(
+                        mob_element, mob_aff, aff,
+                    )
+
                 party.append(
                     {
                         "player_id": participant.player_id,
@@ -220,6 +252,8 @@ class EncounterService:
             party=party,
             mob=mob,
             title_bonuses_by_player=title_bonuses_by_player,
+            elemental_mult_by_player=elemental_out,
+            incoming_elemental_mult_by_player=elemental_in,
         )
 
     def persist_final_players_hp(self, result) -> None:

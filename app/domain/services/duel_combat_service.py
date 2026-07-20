@@ -23,7 +23,11 @@ class DuelCombatService:
         self,
         a_stats: Stats,
         b_stats: Stats,
+        a_damage_mult: float = 1.0,
+        b_damage_mult: float = 1.0,
     ) -> DuelResult:
+        # a_damage_mult / b_damage_mult : avantage élémentaire (±30%) appliqué
+        # aux dégâts sortants, APRÈS défense (même règle que le combat de party).
         a_hp = a_stats.max_hp
         b_hp = b_stats.max_hp
 
@@ -55,6 +59,8 @@ class DuelCombatService:
                     is_crit = True
 
                 damage = max(1, raw_attack - b_stats.defense)
+                if a_damage_mult != 1.0:
+                    damage = max(1, round(damage * a_damage_mult))
 
                 if random.random() < (b_stats.dodge / 100):
                     damage = 0
@@ -101,6 +107,8 @@ class DuelCombatService:
                     is_crit = True
 
                 damage = max(1, raw_attack - a_stats.defense)
+                if b_damage_mult != 1.0:
+                    damage = max(1, round(damage * b_damage_mult))
 
                 if random.random() < (a_stats.dodge / 100):
                     damage = 0

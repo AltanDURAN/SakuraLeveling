@@ -150,10 +150,18 @@ class ChallengePlayerUseCase:
             target_profile, skill_service, session,
         )
 
+        # Avantage élémentaire (±30%) : élément d'attaque de chacun (compétence
+        # offensive équipée, sinon affinité la plus haute) vs affinités de
+        # l'adversaire. Symétrique.
+        chal_mult = self._elemental_damage_mult(challenger_profile, target_profile, session)
+        tgt_mult = self._elemental_damage_mult(target_profile, challenger_profile, session)
+
         # Combat (a = challenger, b = target). Démarre full HP des deux côtés.
         result = self.duel_combat_service.fight_player_vs_player(
             a_stats=challenger_stats,
             b_stats=target_stats,
+            a_damage_mult=chal_mult,
+            b_damage_mult=tgt_mult,
         )
 
         challenger_won = result.winner == "a"
@@ -218,6 +226,30 @@ class ChallengePlayerUseCase:
             swapped=challenger_won,
             challenger_won=challenger_won,
         )
+
+    def _elemental_damage_mult(self, attacker_profile, defender_profile, session) -> float:
+        """Multiplicateur de dégâts élémentaire (±30%) de l'attaquant vs le
+        défenseur : élément d'attaque de l'attaquant (compétence offensive
+        équipée, sinon affinité la plus haute) confronté aux affinités des deux.
+        1.0 si l'attaquant n'a aucun élément."""
+        from app.domain.services import element_service
+        from app.domain.services.skill_effect_service import offensive_element
+        from app.infrastructure.elements import element_skill_loader
+        from app.infrastructure.db.repositories.element_affinity_repository import (
+            ElementAffinityRepository,
+        )
+        aff_repo = ElementAffinityRepository(session)
+        a_aff = aff_repo.get_affinities(attacker_profile.player.id)
+        d_aff = aff_repo.get_affinities(defender_profile.player.id)
+        skills = [
+            element_skill_loader.get_skill(c)
+            for c in (attacker_profile.player.skill_slot_1, attacker_profile.player.skill_slot_2)
+            if c
+        ]
+        elem = offensive_element(skills) or (max(a_aff, key=a_aff.get) if a_aff else "")
+        if not elem:
+            return 1.0
+        return element_service.damage_multiplier(elem, a_aff, d_aff)
 
     def _compute_stats(self, profile, skill_service: SkillTreeService, session):
         equipped_items = self.equipment_repository.list_by_player_id(profile.player.id)
