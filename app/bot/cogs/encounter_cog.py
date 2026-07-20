@@ -293,6 +293,14 @@ class EncounterCog(commands.Cog):
         background_path = LANDSCAPES_ASSETS_DIR / get_background_for_family(mob.family)
         self._zone_bg[channel_id] = str(background_path)
 
+        # Élément spawné : un mob à élément FORCÉ (mob.element non vide) le garde ;
+        # sinon on tire un élément aléatoire pondéré (chaque monstre peut spawner
+        # sous n'importe quel élément).
+        from app.infrastructure.elements.element_spawn_weight_loader import (
+            pick_random_element,
+        )
+        spawn_element = (getattr(mob, "element", "") or "").strip() or pick_random_element()
+
         mob_state = EncounterMobState(
             code=mob.code,
             name=mob.name,
@@ -306,6 +314,7 @@ class EncounterCog(commands.Cog):
             crit_damage=mob.crit_damage,
             dodge=mob.dodge,
             hp_regeneration=mob.hp_regeneration,
+            element=spawn_element,
         )
 
         encounter = ActiveEncounter.create(
@@ -336,6 +345,7 @@ class EncounterCog(commands.Cog):
             "crit_damage": encounter.mob_state.crit_damage,
             "dodge": encounter.mob_state.dodge,
             "hp_regeneration": encounter.mob_state.hp_regeneration,
+            "element": encounter.mob_state.element,
             "power_score": mob_score,
         }
 
@@ -445,6 +455,9 @@ class EncounterCog(commands.Cog):
             )
 
             mob_payload = dict(turn_log.mob_state)
+            # L'élément est fixe pour tout l'encounter → on l'injecte depuis la
+            # source unique (mob_state), la teinte/badge persiste pendant le combat.
+            mob_payload["element"] = encounter.mob_state.element
             mob_payload["power_score"] = self.power_score_service.format_score(
                 self.power_score_service.calculate_from_stats(
                     Stats(
@@ -592,6 +605,7 @@ class EncounterCog(commands.Cog):
             "crit_damage": encounter.mob_state.crit_damage,
             "dodge": encounter.mob_state.dodge,
             "hp_regeneration": encounter.mob_state.hp_regeneration,
+            "element": encounter.mob_state.element,
             "power_score": mob_score,
         }
 

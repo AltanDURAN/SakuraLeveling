@@ -411,6 +411,7 @@ class EncounterService:
                     player_id=participant.player_id,
                     mob=mob,
                     essences_per_kill=essences_per_kill,
+                    element_override=getattr(encounter.mob_state, "element", "") or "",
                 )
 
                 # Check titres : kills_family / kills_total / kills_mob.
@@ -539,13 +540,18 @@ class EncounterService:
         player_id: int,
         mob,
         essences_per_kill: int,
+        element_override: str = "",
     ) -> list[EssenceGain]:
         """Dépose les essences des élément(s) du mob et convertit
         automatiquement en niveaux d'affinité (coût N→N+1 = N+1). Renvoie les
-        gains pour affichage dans le récap. Mob neutre → aucun gain."""
+        gains pour affichage dans le récap. Mob neutre → aucun gain.
+
+        `element_override` : élément SPAWNÉ (roulé au spawn) — prioritaire sur
+        `mob.element` stocké, pour que les essences correspondent à l'élément
+        réellement affiché sur la scène."""
         from app.shared.enums import parse_elements
 
-        elements = parse_elements(getattr(mob, "element", "") or "")
+        elements = parse_elements((element_override or "").strip() or (getattr(mob, "element", "") or ""))
         if not elements or essences_per_kill <= 0:
             return []
 

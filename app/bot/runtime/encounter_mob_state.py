@@ -15,3 +15,6 @@ class EncounterMobState:
     crit_damage: int
     dodge: int
     hp_regeneration: int
+    # Élément SPAWNÉ (roulé au spawn, pondéré) — pilote la teinte + le badge de
+    # la scène et le type d'essences droppées. "" = neutre.
+    element: str = ""

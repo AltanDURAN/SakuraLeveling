@@ -1,5 +1,6 @@
 from PIL import Image, ImageDraw, ImageFont
 
+from app.bot.rendering.element_visuals import make_element_badge, tint_by_element
 from app.bot.rendering.image_utils import (
     add_hp_hue,
     add_outline,
@@ -8,6 +9,11 @@ from app.bot.rendering.image_utils import (
     load_background,
 )
 from app.shared.paths import MOBS_ASSETS_DIR
+
+# Badge d'élément : taille et position FIXES sur la scène (coin haut-droit,
+# au-dessus de la barre de vie du mob), identiques quel que soit l'élément.
+_ELEMENT_BADGE_DIAMETER = 108
+_ELEMENT_BADGE_POS = (888, 14)
 
 
 def compose_players_banner(
@@ -80,6 +86,11 @@ def compose_players_banner(
             )
 
         mob_img = raw_mob_image.resize((mob_avatar_size, mob_avatar_size))
+        # Décline le monstre selon son élément (teinte générée). Neutre/""
+        # → image inchangée.
+        mob_element = mob.get("element") or ""
+        if mob_element:
+            mob_img = tint_by_element(mob_img, mob_element)
         result.alpha_composite(mob_img, (mob_x, mob_y))
 
         x1 = 92
@@ -105,6 +116,13 @@ def compose_players_banner(
             mob_info = f"{mob_name} • [Mort]"
 
         draw.text((106, 146), mob_info, font=title_font, fill=(255, 255, 255, 255))
+
+        # Badge d'élément (icône) — position & taille fixes, quel que soit
+        # l'élément. Neutre → pas de badge.
+        if mob_element:
+            badge = make_element_badge(mob_element, diameter=_ELEMENT_BADGE_DIAMETER)
+            if badge is not None:
+                result.alpha_composite(badge, _ELEMENT_BADGE_POS)
 
     if not players:
         result.save(output_path)

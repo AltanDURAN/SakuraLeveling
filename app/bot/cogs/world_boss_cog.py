@@ -461,6 +461,7 @@ class WorldBossCog(commands.Cog):
                         "crit_damage": boss.crit_damage,
                         "dodge": boss.dodge,
                         "hp_regeneration": 0,
+                        "element": getattr(boss, "element", "") or "",
                     },
                     output_path=str(out),
                     background_path=str(
