@@ -13,7 +13,6 @@ from PIL import Image, ImageDraw, ImageFont
 
 from app.bot.rendering.element_visuals import make_element_badge, tint_by_element
 from app.bot.rendering.image_utils import (
-    add_hp_hue,
     add_outline,
     crop_to_circle,
     download_image,
@@ -168,8 +167,9 @@ def compose_players_banner(
 
             cur = int(player.get("current_hp", 0) or 0)
             mx = int(player.get("max_hp", 1) or 1)
-            hue = add_hp_hue(raw_avatar, current_hp=cur, max_hp=mx, alpha=0.36)
-            avatar = add_outline(crop_to_circle(hue, av_d), outline_size=3)
+            # Pas de teinte PV sur l'avatar : la mini-barre de vie sous l'avatar
+            # porte déjà l'info de PV (évite le doublon).
+            avatar = add_outline(crop_to_circle(raw_avatar, av_d), outline_size=3)
             result.alpha_composite(avatar, (center_x - avatar.width // 2, av_y))
 
             bar_y = av_y + avatar.height + 2
