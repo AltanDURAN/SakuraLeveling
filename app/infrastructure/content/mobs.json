@@ -276,7 +276,6 @@
     "code": "momie",
     "name": "Momie",
     "family": "mort-vivant",
-    "element": "terre",
     "description": "Un corps embaumé aux bandelettes maudites, quasi increvable.",
     "max_hp": 1691,
     "current_hp": 1691,
@@ -290,8 +289,9 @@
     "xp_reward": 399,
     "gold_reward": 191,
     "spawn_weight": 10,
-    "loot_table": null,
-    "image_name": "momie.png"
+    "loot_table": [],
+    "image_name": "momie.png",
+    "element": "terre"
   },
   {
     "code": "gargouille",
