@@ -213,7 +213,6 @@
     "code": "squelette",
     "name": "Squelette",
     "family": "mort-vivant",
-    "element": "tenebre",
     "description": "Un pantin d'os réanimé. Le premier pas dans le royaume des morts.",
     "max_hp": 714,
     "current_hp": 714,
@@ -227,8 +226,9 @@
     "xp_reward": 237,
     "gold_reward": 114,
     "spawn_weight": 25,
-    "loot_table": null,
-    "image_name": "squelette.png"
+    "loot_table": [],
+    "image_name": "squelette.png",
+    "element": "tenebre"
   },
   {
     "code": "zombie",
