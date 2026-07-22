@@ -297,7 +297,6 @@
     "code": "gargouille",
     "name": "Gargouille",
     "family": "mort-vivant",
-    "element": "terre",
     "description": "Une statue de pierre animée qui frappe comme un bélier.",
     "max_hp": 1020,
     "current_hp": 1020,
@@ -311,8 +310,9 @@
     "xp_reward": 456,
     "gold_reward": 219,
     "spawn_weight": 7,
-    "loot_table": null,
-    "image_name": "gargouille.png"
+    "loot_table": [],
+    "image_name": "gargouille.png",
+    "element": "terre"
   },
   {
     "code": "liche_maudite",
