@@ -53,25 +53,40 @@
                 <textarea name="description" class="input textarea" rows="2">{{ fd.get('description', mob.description if mob else '') }}</textarea>
             </label>
             {% set cur_img = fd.get('image_name', mob.image_name if mob else '') %}
-            <div class="form-row" style="align-items: flex-end;">
-                <label class="field">
+            <div class="form-row" style="align-items: flex-end; gap: 1.4rem;"
+                 x-data="{ preview: '{{ ('/assets/mobs/' ~ cur_img) if cur_img else '' }}',
+                           onFile(e){ const f = e.target.files[0]; if (f) this.preview = URL.createObjectURL(f); } }">
+                <label class="field" style="flex: 1;">
                     <span class="field-label">Uploader une image (PNG/JPG/WebP/GIF, ≤ 8 Mo)</span>
                     <input type="file" name="image_file" class="input"
-                           accept=".png,.jpg,.jpeg,.webp,.gif">
+                           accept=".png,.jpg,.jpeg,.webp,.gif"
+                           x-on:change="onFile($event)">
                     {% if errors.get('image_file') %}<span class="field-error">{{ errors['image_file'] }}</span>{% endif %}
                     <small style="color: var(--muted);">
                         L'image est enregistrée sous <code>{{ (mob.code if mob else 'code') }}.&lt;ext&gt;</code>
                         dans assets/mobs/. Laisse vide pour garder l'image actuelle.
+                        <strong>L'aperçu se met à jour dès que tu choisis un fichier.</strong>
                     </small>
                 </label>
-                {% if cur_img %}
                 <div class="field" style="flex: 0 0 auto;">
-                    <span class="field-label">Aperçu actuel</span>
-                    <img src="/assets/mobs/{{ cur_img }}" alt="{{ cur_img }}"
-                         style="max-height: 80px; max-width: 120px; border-radius: 8px; border: 1px solid var(--border);"
-                         onerror="this.style.display='none'">
+                    <span class="field-label">Aperçu</span>
+                    <div style="width: 210px; height: 210px; display: flex; align-items: center;
+                                justify-content: center; border-radius: 12px;
+                                border: 1px solid var(--border); overflow: hidden;
+                                background-color: #e4e4ea;
+                                background-image:
+                                  linear-gradient(45deg, #bcbcc6 25%, transparent 25%),
+                                  linear-gradient(-45deg, #bcbcc6 25%, transparent 25%),
+                                  linear-gradient(45deg, transparent 75%, #bcbcc6 75%),
+                                  linear-gradient(-45deg, transparent 75%, #bcbcc6 75%);
+                                background-size: 22px 22px;
+                                background-position: 0 0, 0 11px, 11px -11px, -11px 0;">
+                        <img x-show="preview" :src="preview" alt="Aperçu"
+                             style="max-width: 198px; max-height: 198px; object-fit: contain;"
+                             onerror="this.style.display='none'">
+                        <span x-show="!preview" style="color: #6b6b78; font-size: 0.85rem;">Aucune image</span>
+                    </div>
                 </div>
-                {% endif %}
             </div>
             {{ field('image_name', 'Nom d\'image (si tu ne fais pas d\'upload — asset existant dans assets/mobs/)', cur_img, errors, placeholder='goblin_warrior.png') }}
         </div>
