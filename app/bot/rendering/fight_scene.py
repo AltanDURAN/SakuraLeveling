@@ -37,11 +37,12 @@ _PANEL_BORDER = (255, 255, 255, 32)
 # (bounding box du contenu non transparent) relativement à son canvas source.
 # Un monstre qui remplit tout son canvas 4000² apparaît à `_MOB_MAX_SPAN` px ;
 # un monstre 2× plus petit sur son canvas apparaît 2× plus petit → l'échelle
-# voulue entre monstres est préservée. Ancré au sol (`_GROUND_Y`, derrière le
-# bandeau du bas), centré horizontalement.
+# voulue entre monstres est préservée. Le monstre reste TOUJOURS contenu entre
+# les deux bandeaux (`_STAGE_TOP` → `_STAGE_BOTTOM`) : barre de vie au-dessus,
+# barre des joueurs en dessous. Ancré au sol (`_STAGE_BOTTOM`), centré.
 _MOB_MAX_SPAN = 820      # taille écran du plus grand côté pour un mob plein canvas
-_STAGE_TOP = 185         # haut de la zone monstre (sous le bandeau du haut)
-_GROUND_Y = 990          # ligne de sol (les pieds passent derrière le bandeau bas)
+_STAGE_TOP = 185         # sous le bandeau du haut (barre de vie du mob)
+_STAGE_BOTTOM = 838      # juste au-dessus du bandeau du bas (barre des joueurs)
 _DECOR_ZOOM = 1.6        # 1.0 = pas de zoom ; plus grand = plus rapproché (décor + mou)
 
 
@@ -84,13 +85,14 @@ def _prepare_mob(raw_mob: Image.Image, element: str):
     canvas_dim = max(raw_mob.width, raw_mob.height)
     frac = max(cw, ch) / canvas_dim  # part du canvas occupée → échelle voulue
     scale = (_MOB_MAX_SPAN * frac) / max(cw, ch)
-    # Bornes : le monstre doit tenir dans la scène.
-    scale = min(scale, (_GROUND_Y - _STAGE_TOP) / ch, (SCENE_W * 0.72) / cw)
+    # Bornes : le monstre doit rester ENTRE les deux bandeaux (hauteur) et dans
+    # le cadre (largeur).
+    scale = min(scale, (_STAGE_BOTTOM - _STAGE_TOP) / ch, (SCENE_W * 0.72) / cw)
     nw, nh = max(1, round(cw * scale)), max(1, round(ch * scale))
     mob_img = content.resize((nw, nh), Image.LANCZOS)
     if element:
         mob_img = tint_by_element(mob_img, element)
-    return mob_img, ((SCENE_W - nw) // 2, _GROUND_Y - nh)
+    return mob_img, ((SCENE_W - nw) // 2, _STAGE_BOTTOM - nh)
 
 
 def _panel(base: Image.Image, box, radius: int) -> None:
