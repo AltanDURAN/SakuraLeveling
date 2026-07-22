@@ -9,7 +9,7 @@ remplir le paysage sans distorsion. Quand des fonds paysage « propres » (sans
 cadre) seront fournis, le rendu sera parfait sans rien changer d'autre.
 """
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 from app.bot.rendering.element_visuals import make_element_badge, tint_by_element
 from app.bot.rendering.image_utils import (
@@ -120,7 +120,9 @@ def compose_players_banner(
             print(f"Erreur chargement image mob pour {mob_name} : {e}")
             raw_mob = Image.new("RGBA", (_MOB_SIZE, _MOB_SIZE), (120, 120, 120, 255))
 
-        mob_img = raw_mob.resize((_MOB_SIZE, _MOB_SIZE))
+        # LANCZOS : indispensable pour une réduction violente (ex 4000→520) —
+        # bien plus net que le bicubique par défaut.
+        mob_img = raw_mob.resize((_MOB_SIZE, _MOB_SIZE), Image.LANCZOS)
         if mob_element:
             mob_img = tint_by_element(mob_img, mob_element)
         result.alpha_composite(mob_img, _MOB_POS)
@@ -181,5 +183,11 @@ def compose_players_banner(
                 draw.text((center_x - nw / 2, bar_y + 20), name, font=hp_font,
                           fill=(240, 240, 245, 255))
 
-    result.save(output_path)
+    # Léger renforcement de netteté : compense le ramollissement de la
+    # vignette WebP que Discord génère pour l'aperçu inline. Dosé faible pour
+    # ne pas créer d'artefacts sur la vue plein écran.
+    final = result.convert("RGB").filter(
+        ImageFilter.UnsharpMask(radius=2, percent=95, threshold=2)
+    )
+    final.save(output_path)
     print(f"Image créée : {output_path}")
