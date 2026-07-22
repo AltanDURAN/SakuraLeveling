@@ -3,10 +3,13 @@
 Gabarit **3:2 paysage (1536×1024)** : s'affiche grand sur PC (Discord plafonne
 la hauteur des images inline) tout en restant confortable sur mobile.
 
-Le HUD est **auto-portant** : bandeaux dessinés par code (haut = mob, bas =
-joueurs), indépendants du décor. Le fond de zone est recadré (cover) pour
-remplir le paysage sans distorsion. Quand des fonds paysage « propres » (sans
-cadre) seront fournis, le rendu sera parfait sans rien changer d'autre.
+Cadrage « rapproché » : le monstre est **grand dans le cadre** (recadrage d'une
+source haute résolution → pas d'upscale du monstre → net même dans la vignette
+compressée de l'aperçu Discord) et le **décor est zoomé** (`_DECOR_ZOOM`) pour
+donner l'échelle. Le HUD est **auto-portant** : bandeaux dessinés par code
+PAR-DESSUS le monstre (haut = mob, bas = joueurs, pieds du monstre cachés
+derrière). Quand des fonds paysage haute résolution seront fournis, le décor
+zoomé sera parfaitement net sans rien changer d'autre.
 """
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
@@ -27,10 +30,14 @@ SCENE_W, SCENE_H = 1536, 1024
 # Bandeaux HUD (positions FIXES, quelle que soit la zone).
 _TOP_PANEL = (28, 22, SCENE_W - 28, 170)
 _BOTTOM_PANEL = (28, 846, SCENE_W - 28, 1010)
-_MOB_SIZE = 520
-_MOB_POS = ((SCENE_W - _MOB_SIZE) // 2, 250)
 _PANEL_FILL = (12, 10, 16, 165)
 _PANEL_BORDER = (255, 255, 255, 32)
+
+# Cadrage rapproché : monstre grand (recadré depuis la source HD, pas d'upscale)
+# + décor zoomé pour l'échelle. Réglables librement.
+_MOB_SIZE = 880
+_MOB_POS = ((SCENE_W - _MOB_SIZE) // 2, 175)
+_DECOR_ZOOM = 1.6  # 1.0 = pas de zoom ; plus grand = plus rapproché (décor + mou)
 
 
 def _cover_fit(image: Image.Image, w: int, h: int) -> Image.Image:
@@ -45,6 +52,15 @@ def _cover_fit(image: Image.Image, w: int, h: int) -> Image.Image:
     left = (nw - w) // 2
     top = (nh - h) // 2
     return resized.crop((left, top, left + w, top + h))
+
+
+def _zoom_decor(image: Image.Image, factor: float) -> Image.Image:
+    """Recadre le centre de l'image (facteur de zoom) → décor « rapproché »."""
+    if factor <= 1.0:
+        return image
+    cw, ch = int(image.width / factor), int(image.height / factor)
+    cx, cy = (image.width - cw) // 2, (image.height - ch) // 2
+    return image.crop((cx, cy, cx + cw, cy + ch))
 
 
 def _panel(base: Image.Image, box, radius: int) -> None:
@@ -86,7 +102,7 @@ def compose_players_banner(
 ):
     """players = [{avatar_url, current_hp, max_hp, name}], mob = {name,
     image_name, current_hp, max_hp, element, power_score}."""
-    raw_bg = load_background(background_path, size=(SCENE_W, SCENE_H))
+    raw_bg = _zoom_decor(load_background(background_path, size=(SCENE_W, SCENE_H)), _DECOR_ZOOM)
     result = _cover_fit(raw_bg, SCENE_W, SCENE_H)
     draw = ImageDraw.Draw(result)
 
@@ -99,10 +115,8 @@ def compose_players_banner(
         stat_font = ImageFont.load_default()
         hp_font = ImageFont.load_default()
 
-    # Bandeaux HUD (auto-portants).
-    _panel(result, _TOP_PANEL, radius=26)
-    _panel(result, _BOTTOM_PANEL, radius=26)
-
+    # ----- 1. Monstre (les bandeaux HUD passeront PAR-DESSUS) -----
+    mob_element = ""
     if mob is not None:
         mob_name = mob.get("name", "Monstre")
         mob_current_hp = int(mob.get("current_hp", 0) or 0)
@@ -110,7 +124,6 @@ def compose_players_banner(
         mob_image_name = mob.get("image_name")
         mob_element = mob.get("element") or ""
 
-        # ----- Monstre (centré, teinté selon l'élément) -----
         try:
             if mob_image_name:
                 raw_mob = Image.open(MOBS_ASSETS_DIR / mob_image_name).convert("RGBA")
@@ -120,14 +133,15 @@ def compose_players_banner(
             print(f"Erreur chargement image mob pour {mob_name} : {e}")
             raw_mob = Image.new("RGBA", (_MOB_SIZE, _MOB_SIZE), (120, 120, 120, 255))
 
-        # LANCZOS : indispensable pour une réduction violente (ex 4000→520) —
-        # bien plus net que le bicubique par défaut.
+        # LANCZOS : réduction propre depuis la source HD (ex 4000→880).
         mob_img = raw_mob.resize((_MOB_SIZE, _MOB_SIZE), Image.LANCZOS)
         if mob_element:
             mob_img = tint_by_element(mob_img, mob_element)
         result.alpha_composite(mob_img, _MOB_POS)
 
-        # ----- Bandeau MOB (haut) : badge élément + nom + power + barre PV -----
+    # ----- 2. Bandeau MOB (haut) : badge élément + nom + power + barre PV -----
+    _panel(result, _TOP_PANEL, radius=26)
+    if mob is not None:
         p_left, p_top, p_right, p_bottom = _TOP_PANEL
         name_x = p_left + 34
         if mob_element:
@@ -152,7 +166,8 @@ def compose_players_banner(
         draw.text(((name_x + p_right - 20) / 2 - htw / 2, bar_y1 + 6),
                   hp_txt, font=hp_font, fill=(255, 255, 255, 255))
 
-    # ----- Bandeau JOUEURS (bas) : avatars alignés + mini-barre PV + nom -----
+    # ----- 3. Bandeau JOUEURS (bas) : avatars + mini-barre PV + nom -----
+    _panel(result, _BOTTOM_PANEL, radius=26)
     if players:
         count = len(players)
         av_d = 96
@@ -169,8 +184,7 @@ def compose_players_banner(
 
             cur = int(player.get("current_hp", 0) or 0)
             mx = int(player.get("max_hp", 1) or 1)
-            # Pas de teinte PV sur l'avatar : la mini-barre de vie sous l'avatar
-            # porte déjà l'info de PV (évite le doublon).
+            # Pas de teinte PV sur l'avatar : la mini-barre porte déjà l'info.
             avatar = add_outline(crop_to_circle(raw_avatar, av_d), outline_size=3)
             result.alpha_composite(avatar, (center_x - avatar.width // 2, av_y))
 
@@ -183,9 +197,9 @@ def compose_players_banner(
                 draw.text((center_x - nw / 2, bar_y + 20), name, font=hp_font,
                           fill=(240, 240, 245, 255))
 
-    # Léger renforcement de netteté : compense le ramollissement de la
-    # vignette WebP que Discord génère pour l'aperçu inline. Dosé faible pour
-    # ne pas créer d'artefacts sur la vue plein écran.
+    # Léger renforcement de netteté : compense le ramollissement de la vignette
+    # WebP que Discord génère pour l'aperçu inline. Dosé faible pour ne pas
+    # créer d'artefacts sur la vue plein écran.
     final = result.convert("RGB").filter(
         ImageFilter.UnsharpMask(radius=2, percent=95, threshold=2)
     )
