@@ -46,14 +46,14 @@ _LANDSCAPE = {
     "W": 1536, "H": 1024,
     "top": (28, 22, 1508, 170), "bottom": (28, 846, 1508, 1010),
     "stage_top": 185, "stage_bottom": 838,
-    "decor_zoom": 1.6,
+    "zoom_min": 1.4, "zoom_max": 2.4,
     "title": 54, "stat": 36, "hp": 28, "badge": 104, "av_d": 96,
 }
 _PORTRAIT = {
     "W": 1024, "H": 1536,
     "top": (20, 18, 1004, 150), "bottom": (20, 1362, 1004, 1518),
     "stage_top": 165, "stage_bottom": 1356,
-    "decor_zoom": 1.4,
+    "zoom_min": 1.3, "zoom_max": 2.1,
     "title": 46, "stat": 30, "hp": 26, "badge": 96, "av_d": 88,
 }
 
@@ -160,7 +160,21 @@ def compose_players_banner(
     (paysage/portrait) est choisie automatiquement selon la forme du monstre."""
     L, raw_mob = _choose_layout(mob)
     W, H = L["W"], L["H"]
-    result = _cover_fit(_zoom_decor(load_background(background_path, size=(W, H)), L["decor_zoom"]), W, H)
+
+    # Préparer le monstre D'ABORD : sa taille pilote le zoom du fond (cohérence
+    # d'échelle mob/décor).
+    mob_img = mob_pos = None
+    if mob is not None:
+        if raw_mob is None:  # image absente/illisible → placeholder gris
+            raw_mob = Image.new("RGBA", (600, 600), (120, 120, 120, 255))
+        mob_img, mob_pos = _fit_mob(raw_mob, mob.get("element") or "", L)
+
+    # Zoom du fond PROPORTIONNEL à la taille du monstre : gros monstre → caméra
+    # rapprochée (décor très zoomé) ; petit monstre → plan plus large. L'échelle
+    # entre le monstre et le décor reste ainsi cohérente.
+    mob_fill = (mob_img.height / (L["stage_bottom"] - L["stage_top"])) if mob_img else 0.0
+    decor_zoom = L["zoom_min"] + (L["zoom_max"] - L["zoom_min"]) * min(1.0, mob_fill)
+    result = _cover_fit(_zoom_decor(load_background(background_path, size=(W, H)), decor_zoom), W, H)
     draw = ImageDraw.Draw(result)
 
     try:
@@ -171,10 +185,7 @@ def compose_players_banner(
         title_font = stat_font = hp_font = ImageFont.load_default()
 
     # ----- 1. Monstre (les bandeaux HUD passeront PAR-DESSUS) -----
-    if mob is not None:
-        if raw_mob is None:  # image absente/illisible → placeholder gris
-            raw_mob = Image.new("RGBA", (600, 600), (120, 120, 120, 255))
-        mob_img, mob_pos = _fit_mob(raw_mob, mob.get("element") or "", L)
+    if mob_img is not None:
         result.alpha_composite(mob_img, mob_pos)
 
     # ----- 2. Bandeau MOB (haut) : badge + nom + power + barre PV -----
