@@ -33,11 +33,16 @@ _BOTTOM_PANEL = (28, 846, SCENE_W - 28, 1010)
 _PANEL_FILL = (12, 10, 16, 165)
 _PANEL_BORDER = (255, 255, 255, 32)
 
-# Cadrage rapproché : monstre grand (recadré depuis la source HD, pas d'upscale)
-# + décor zoomé pour l'échelle. Réglables librement.
-_MOB_SIZE = 880
-_MOB_POS = ((SCENE_W - _MOB_SIZE) // 2, 175)
-_DECOR_ZOOM = 1.6  # 1.0 = pas de zoom ; plus grand = plus rapproché (décor + mou)
+# Cadrage adaptatif : le monstre est dimensionné d'après ses PIXELS RÉELS
+# (bounding box du contenu non transparent) relativement à son canvas source.
+# Un monstre qui remplit tout son canvas 4000² apparaît à `_MOB_MAX_SPAN` px ;
+# un monstre 2× plus petit sur son canvas apparaît 2× plus petit → l'échelle
+# voulue entre monstres est préservée. Ancré au sol (`_GROUND_Y`, derrière le
+# bandeau du bas), centré horizontalement.
+_MOB_MAX_SPAN = 820      # taille écran du plus grand côté pour un mob plein canvas
+_STAGE_TOP = 185         # haut de la zone monstre (sous le bandeau du haut)
+_GROUND_Y = 990          # ligne de sol (les pieds passent derrière le bandeau bas)
+_DECOR_ZOOM = 1.6        # 1.0 = pas de zoom ; plus grand = plus rapproché (décor + mou)
 
 
 def _cover_fit(image: Image.Image, w: int, h: int) -> Image.Image:
@@ -61,6 +66,31 @@ def _zoom_decor(image: Image.Image, factor: float) -> Image.Image:
     cw, ch = int(image.width / factor), int(image.height / factor)
     cx, cy = (image.width - cw) // 2, (image.height - ch) // 2
     return image.crop((cx, cy, cx + cw, cy + ch))
+
+
+def _prepare_mob(raw_mob: Image.Image, element: str):
+    """Dimensionne et positionne le monstre d'après ses PIXELS RÉELS.
+
+    Détecte la bbox du contenu non transparent (canal alpha), en déduit la part
+    du canvas occupée par le monstre (= sa taille réelle voulue), le met à
+    l'échelle proportionnellement (préserve l'échelle relative entre monstres),
+    l'ancre au sol et le centre. Renvoie (image, position)."""
+    raw_mob = raw_mob.convert("RGBA")
+    bbox = raw_mob.getchannel("A").getbbox()
+    if bbox is None:  # entièrement transparent → fallback plein canvas
+        bbox = (0, 0, raw_mob.width, raw_mob.height)
+    content = raw_mob.crop(bbox)
+    cw, ch = content.size
+    canvas_dim = max(raw_mob.width, raw_mob.height)
+    frac = max(cw, ch) / canvas_dim  # part du canvas occupée → échelle voulue
+    scale = (_MOB_MAX_SPAN * frac) / max(cw, ch)
+    # Bornes : le monstre doit tenir dans la scène.
+    scale = min(scale, (_GROUND_Y - _STAGE_TOP) / ch, (SCENE_W * 0.72) / cw)
+    nw, nh = max(1, round(cw * scale)), max(1, round(ch * scale))
+    mob_img = content.resize((nw, nh), Image.LANCZOS)
+    if element:
+        mob_img = tint_by_element(mob_img, element)
+    return mob_img, ((SCENE_W - nw) // 2, _GROUND_Y - nh)
 
 
 def _panel(base: Image.Image, box, radius: int) -> None:
@@ -133,11 +163,9 @@ def compose_players_banner(
             print(f"Erreur chargement image mob pour {mob_name} : {e}")
             raw_mob = Image.new("RGBA", (_MOB_SIZE, _MOB_SIZE), (120, 120, 120, 255))
 
-        # LANCZOS : réduction propre depuis la source HD (ex 4000→880).
-        mob_img = raw_mob.resize((_MOB_SIZE, _MOB_SIZE), Image.LANCZOS)
-        if mob_element:
-            mob_img = tint_by_element(mob_img, mob_element)
-        result.alpha_composite(mob_img, _MOB_POS)
+        # Dimensionnement adaptatif d'après les pixels réels du monstre.
+        mob_img, mob_pos = _prepare_mob(raw_mob, mob_element)
+        result.alpha_composite(mob_img, mob_pos)
 
     # ----- 2. Bandeau MOB (haut) : badge élément + nom + power + barre PV -----
     _panel(result, _TOP_PANEL, radius=26)
