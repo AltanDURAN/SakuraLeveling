@@ -234,7 +234,6 @@
     "code": "zombie",
     "name": "Zombie",
     "family": "mort-vivant",
-    "element": "plante",
     "description": "Une carcasse putride et lente, mais coriace.",
     "max_hp": 1209,
     "current_hp": 1209,
@@ -248,8 +247,9 @@
     "xp_reward": 273,
     "gold_reward": 131,
     "spawn_weight": 20,
-    "loot_table": null,
-    "image_name": "zombie.png"
+    "loot_table": [],
+    "image_name": "zombie.png",
+    "element": "plante"
   },
   {
     "code": "fantome",
