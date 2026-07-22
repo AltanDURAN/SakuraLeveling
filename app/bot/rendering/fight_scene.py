@@ -1,15 +1,14 @@
 """Scène de combat rendue en image (fond + monstre + HUD joueurs).
 
-Gabarit **3:2 paysage (1536×1024)** : s'affiche grand sur PC (Discord plafonne
-la hauteur des images inline) tout en restant confortable sur mobile.
+**Orientation adaptative** : le cadre est choisi d'après la forme réelle du
+monstre (bbox du contenu non transparent). Un monstre nettement plus HAUT que
+large sort en **portrait** (il remplit mieux le cadre → on le voit beaucoup
+mieux, surtout sur mobile) ; sinon **paysage** (qui s'affiche grand sur PC).
 
-Cadrage « rapproché » : le monstre est **grand dans le cadre** (recadrage d'une
-source haute résolution → pas d'upscale du monstre → net même dans la vignette
-compressée de l'aperçu Discord) et le **décor est zoomé** (`_DECOR_ZOOM`) pour
-donner l'échelle. Le HUD est **auto-portant** : bandeaux dessinés par code
-PAR-DESSUS le monstre (haut = mob, bas = joueurs, pieds du monstre cachés
-derrière). Quand des fonds paysage haute résolution seront fournis, le décor
-zoomé sera parfaitement net sans rien changer d'autre.
+Dans les deux cas : décor recadré/zoomé (sans distorsion), monstre dimensionné
+d'après ses pixels réels (échelle relative préservée) et contenu ENTRE les deux
+bandeaux, HUD auto-portant (haut = mob + barre de vie, bas = joueurs). Barres de
+vie mob et joueurs : même règle couleur (vert→rouge selon les PV).
 """
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
@@ -24,75 +23,53 @@ from app.bot.rendering.image_utils import (
 )
 from app.shared.paths import MOBS_ASSETS_DIR
 
-# Gabarit paysage 3:2.
-SCENE_W, SCENE_H = 1536, 1024
-
-# Bandeaux HUD (positions FIXES, quelle que soit la zone).
-_TOP_PANEL = (28, 22, SCENE_W - 28, 170)
-_BOTTOM_PANEL = (28, 846, SCENE_W - 28, 1010)
 _PANEL_FILL = (12, 10, 16, 165)
 _PANEL_BORDER = (255, 255, 255, 32)
 
-# Cadrage adaptatif : le monstre est dimensionné d'après ses PIXELS RÉELS
-# (bounding box du contenu non transparent) relativement à son canvas source.
-# Un monstre qui remplit tout son canvas 4000² apparaît à `_MOB_MAX_SPAN` px ;
-# un monstre 2× plus petit sur son canvas apparaît 2× plus petit → l'échelle
-# voulue entre monstres est préservée. Le monstre reste TOUJOURS contenu entre
-# les deux bandeaux (`_STAGE_TOP` → `_STAGE_BOTTOM`) : barre de vie au-dessus,
-# barre des joueurs en dessous. Ancré au sol (`_STAGE_BOTTOM`), centré.
-_MOB_MAX_SPAN = 820      # taille écran du plus grand côté pour un mob plein canvas
-_STAGE_TOP = 185         # sous le bandeau du haut (barre de vie du mob)
-_STAGE_BOTTOM = 838      # juste au-dessus du bandeau du bas (barre des joueurs)
-_DECOR_ZOOM = 1.6        # 1.0 = pas de zoom ; plus grand = plus rapproché (décor + mou)
+# Bascule en portrait si le contenu du monstre est au moins 1.2× plus haut que
+# large. Réglable (plus grand = passe en portrait moins souvent).
+_PORTRAIT_THRESHOLD = 1.2
+
+# Deux mises en page. `mob_max_span` = taille écran du plus grand côté pour un
+# monstre qui remplit tout son canvas source ; l'échelle réelle est ensuite
+# proportionnelle à la part du canvas occupée. Le monstre est borné pour rester
+# entre `stage_top` et `stage_bottom` (entre les deux bandeaux).
+_LANDSCAPE = {
+    "W": 1536, "H": 1024,
+    "top": (28, 22, 1508, 170), "bottom": (28, 846, 1508, 1010),
+    "stage_top": 185, "stage_bottom": 838,
+    "mob_max_span": 820, "decor_zoom": 1.6,
+    "title": 54, "stat": 36, "hp": 28, "badge": 104, "av_d": 96,
+}
+_PORTRAIT = {
+    "W": 1024, "H": 1536,
+    "top": (20, 18, 1004, 150), "bottom": (20, 1362, 1004, 1518),
+    "stage_top": 165, "stage_bottom": 1356,
+    "mob_max_span": 1200, "decor_zoom": 1.4,
+    "title": 46, "stat": 30, "hp": 26, "badge": 96, "av_d": 88,
+}
 
 
 def _cover_fit(image: Image.Image, w: int, h: int) -> Image.Image:
-    """Redimensionne l'image pour COUVRIR (w, h) en gardant le ratio, puis
-    recadre au centre. Pas de distorsion (contrairement à un étirement)."""
+    """Redimensionne pour COUVRIR (w, h) en gardant le ratio, puis recadre au
+    centre. Pas de distorsion."""
     image = image.convert("RGBA")
     if image.size == (w, h):
         return image
     scale = max(w / image.width, h / image.height)
     nw, nh = max(w, int(image.width * scale)), max(h, int(image.height * scale))
     resized = image.resize((nw, nh), Image.LANCZOS)
-    left = (nw - w) // 2
-    top = (nh - h) // 2
+    left, top = (nw - w) // 2, (nh - h) // 2
     return resized.crop((left, top, left + w, top + h))
 
 
 def _zoom_decor(image: Image.Image, factor: float) -> Image.Image:
-    """Recadre le centre de l'image (facteur de zoom) → décor « rapproché »."""
+    """Recadre le centre (facteur de zoom) → décor « rapproché »."""
     if factor <= 1.0:
         return image
     cw, ch = int(image.width / factor), int(image.height / factor)
     cx, cy = (image.width - cw) // 2, (image.height - ch) // 2
     return image.crop((cx, cy, cx + cw, cy + ch))
-
-
-def _prepare_mob(raw_mob: Image.Image, element: str):
-    """Dimensionne et positionne le monstre d'après ses PIXELS RÉELS.
-
-    Détecte la bbox du contenu non transparent (canal alpha), en déduit la part
-    du canvas occupée par le monstre (= sa taille réelle voulue), le met à
-    l'échelle proportionnellement (préserve l'échelle relative entre monstres),
-    l'ancre au sol et le centre. Renvoie (image, position)."""
-    raw_mob = raw_mob.convert("RGBA")
-    bbox = raw_mob.getchannel("A").getbbox()
-    if bbox is None:  # entièrement transparent → fallback plein canvas
-        bbox = (0, 0, raw_mob.width, raw_mob.height)
-    content = raw_mob.crop(bbox)
-    cw, ch = content.size
-    canvas_dim = max(raw_mob.width, raw_mob.height)
-    frac = max(cw, ch) / canvas_dim  # part du canvas occupée → échelle voulue
-    scale = (_MOB_MAX_SPAN * frac) / max(cw, ch)
-    # Bornes : le monstre doit rester ENTRE les deux bandeaux (hauteur) et dans
-    # le cadre (largeur).
-    scale = min(scale, (_STAGE_BOTTOM - _STAGE_TOP) / ch, (SCENE_W * 0.72) / cw)
-    nw, nh = max(1, round(cw * scale)), max(1, round(ch * scale))
-    mob_img = content.resize((nw, nh), Image.LANCZOS)
-    if element:
-        mob_img = tint_by_element(mob_img, element)
-    return mob_img, ((SCENE_W - nw) // 2, _STAGE_BOTTOM - nh)
 
 
 def _panel(base: Image.Image, box, radius: int) -> None:
@@ -107,9 +84,8 @@ def _panel(base: Image.Image, box, radius: int) -> None:
 
 
 def _draw_ratio_bar(base, draw, x1, y1, x2, y2, current, maximum) -> None:
-    """Barre de vie arrondie, MÊME règle pour mob et joueurs : la couleur de
-    remplissage suit le % de PV (vert plein → rouge à bas PV via get_hp_color),
-    vide à 0%. Track sombre + fin liseré."""
+    """Barre de vie arrondie, MÊME règle mob/joueurs : couleur selon le % de PV
+    (vert plein → rouge à bas PV via get_hp_color), vide à 0%."""
     r = (y2 - y1) // 2
     draw.rounded_rectangle([x1, y1, x2, y2], radius=r,
                            fill=(22, 18, 26, 235), outline=(255, 255, 255, 55), width=2)
@@ -125,6 +101,43 @@ def _draw_ratio_bar(base, draw, x1, y1, x2, y2, current, maximum) -> None:
         base.alpha_composite(fill, (x1 + 3, y1 + 3))
 
 
+def _choose_layout(mob):
+    """Charge l'image du monstre (une fois) et choisit paysage/portrait d'après
+    la forme réelle de son contenu. Renvoie (layout, raw_mob | None)."""
+    raw = None
+    if mob is not None and mob.get("image_name"):
+        try:
+            raw = Image.open(MOBS_ASSETS_DIR / mob["image_name"]).convert("RGBA")
+        except Exception as e:
+            print(f"Erreur chargement image mob : {e}")
+            raw = None
+        if raw is not None:
+            bbox = raw.getchannel("A").getbbox()
+            if bbox:
+                cw, ch = bbox[2] - bbox[0], bbox[3] - bbox[1]
+                if ch >= cw * _PORTRAIT_THRESHOLD:
+                    return _PORTRAIT, raw
+    return _LANDSCAPE, raw
+
+
+def _fit_mob(raw_mob, element, L):
+    """Dimensionne le monstre d'après ses pixels réels (échelle relative
+    préservée), le borne entre les deux bandeaux, l'ancre au sol et le centre."""
+    raw_mob = raw_mob.convert("RGBA")
+    bbox = raw_mob.getchannel("A").getbbox() or (0, 0, raw_mob.width, raw_mob.height)
+    content = raw_mob.crop(bbox)
+    cw, ch = content.size
+    canvas_dim = max(raw_mob.width, raw_mob.height)
+    frac = max(cw, ch) / canvas_dim
+    scale = (L["mob_max_span"] * frac) / max(cw, ch)
+    scale = min(scale, (L["stage_bottom"] - L["stage_top"]) / ch, (L["W"] * 0.82) / cw)
+    nw, nh = max(1, round(cw * scale)), max(1, round(ch * scale))
+    mob_img = content.resize((nw, nh), Image.LANCZOS)
+    if element:
+        mob_img = tint_by_element(mob_img, element)
+    return mob_img, ((L["W"] - nw) // 2, L["stage_bottom"] - nh)
+
+
 def compose_players_banner(
     players: list[dict],
     output_path: str = "result.png",
@@ -133,77 +146,66 @@ def compose_players_banner(
     players_power_score: str = "",
 ):
     """players = [{avatar_url, current_hp, max_hp, name}], mob = {name,
-    image_name, current_hp, max_hp, element, power_score}."""
-    raw_bg = _zoom_decor(load_background(background_path, size=(SCENE_W, SCENE_H)), _DECOR_ZOOM)
-    result = _cover_fit(raw_bg, SCENE_W, SCENE_H)
+    image_name, current_hp, max_hp, element, power_score}. L'orientation
+    (paysage/portrait) est choisie automatiquement selon la forme du monstre."""
+    L, raw_mob = _choose_layout(mob)
+    W, H = L["W"], L["H"]
+    result = _cover_fit(_zoom_decor(load_background(background_path, size=(W, H)), L["decor_zoom"]), W, H)
     draw = ImageDraw.Draw(result)
 
     try:
-        title_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 54)
-        stat_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 36)
-        hp_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 28)
+        title_font = ImageFont.truetype("DejaVuSans-Bold.ttf", L["title"])
+        stat_font = ImageFont.truetype("DejaVuSans-Bold.ttf", L["stat"])
+        hp_font = ImageFont.truetype("DejaVuSans-Bold.ttf", L["hp"])
     except Exception:
-        title_font = ImageFont.load_default()
-        stat_font = ImageFont.load_default()
-        hp_font = ImageFont.load_default()
+        title_font = stat_font = hp_font = ImageFont.load_default()
 
     # ----- 1. Monstre (les bandeaux HUD passeront PAR-DESSUS) -----
-    mob_element = ""
     if mob is not None:
-        mob_name = mob.get("name", "Monstre")
-        mob_current_hp = int(mob.get("current_hp", 0) or 0)
-        mob_max_hp = int(mob.get("max_hp", 0) or 0)
-        mob_image_name = mob.get("image_name")
-        mob_element = mob.get("element") or ""
-
-        try:
-            if mob_image_name:
-                raw_mob = Image.open(MOBS_ASSETS_DIR / mob_image_name).convert("RGBA")
-            else:
-                raw_mob = Image.new("RGBA", (_MOB_SIZE, _MOB_SIZE), (120, 120, 120, 255))
-        except Exception as e:
-            print(f"Erreur chargement image mob pour {mob_name} : {e}")
-            raw_mob = Image.new("RGBA", (_MOB_SIZE, _MOB_SIZE), (120, 120, 120, 255))
-
-        # Dimensionnement adaptatif d'après les pixels réels du monstre.
-        mob_img, mob_pos = _prepare_mob(raw_mob, mob_element)
+        if raw_mob is None:  # image absente/illisible → placeholder gris
+            raw_mob = Image.new("RGBA", (600, 600), (120, 120, 120, 255))
+        mob_img, mob_pos = _fit_mob(raw_mob, mob.get("element") or "", L)
         result.alpha_composite(mob_img, mob_pos)
 
-    # ----- 2. Bandeau MOB (haut) : badge élément + nom + power + barre PV -----
-    _panel(result, _TOP_PANEL, radius=26)
+    # ----- 2. Bandeau MOB (haut) : badge + nom + power + barre PV -----
+    _panel(result, L["top"], radius=26)
     if mob is not None:
-        p_left, p_top, p_right, p_bottom = _TOP_PANEL
-        name_x = p_left + 34
+        pl, pt, pr, pb = L["top"]
+        badge_d = L["badge"]
+        name_x = pl + 32
+        mob_element = mob.get("element") or ""
         if mob_element:
-            badge = make_element_badge(mob_element, diameter=104)
+            badge = make_element_badge(mob_element, diameter=badge_d)
             if badge is not None:
-                result.alpha_composite(badge, (p_left + 22, p_top + 22))
-                name_x = p_left + 22 + 104 + 24
+                result.alpha_composite(badge, (pl + 20, pt + (pb - pt - badge_d) // 2))
+                name_x = pl + 20 + badge_d + 20
 
-        draw.text((name_x, p_top + 20), mob_name, font=title_font, fill=(255, 255, 255, 255))
+        draw.text((name_x, pt + 14), mob.get("name", "Monstre"), font=title_font,
+                  fill=(255, 255, 255, 255))
         mob_power = mob.get("power_score", "")
         if mob_power:
             ptxt = f"[ {mob_power} ]"
-            pw = draw.textlength(ptxt, font=stat_font)
-            draw.text((p_right - 20 - pw, p_top + 30), ptxt, font=stat_font,
-                      fill=(235, 226, 236, 255))
+            draw.text((pr - 18 - draw.textlength(ptxt, font=stat_font), pt + 22),
+                      ptxt, font=stat_font, fill=(235, 226, 236, 255))
 
-        bar_y1, bar_y2 = p_top + 92, p_top + 132
-        _draw_ratio_bar(result, draw, name_x, bar_y1, p_right - 20, bar_y2,
-                        mob_current_hp, mob_max_hp)
-        hp_txt = f"{mob_current_hp} / {mob_max_hp}" if mob_current_hp > 0 else "Vaincu"
-        htw = draw.textlength(hp_txt, font=hp_font)
-        draw.text(((name_x + p_right - 20) / 2 - htw / 2, bar_y1 + 6),
-                  hp_txt, font=hp_font, fill=(255, 255, 255, 255))
+        cur = int(mob.get("current_hp", 0) or 0)
+        mx = int(mob.get("max_hp", 0) or 0)
+        bar_y2, bar_y1 = pb - 16, pb - 56
+        _draw_ratio_bar(result, draw, name_x, bar_y1, pr - 18, bar_y2, cur, mx)
+        hp_txt = f"{cur} / {mx}" if cur > 0 else "Vaincu"
+        draw.text(((name_x + pr - 18) / 2 - draw.textlength(hp_txt, font=hp_font) / 2,
+                   bar_y1 + 6), hp_txt, font=hp_font, fill=(255, 255, 255, 255))
 
     # ----- 3. Bandeau JOUEURS (bas) : avatars + mini-barre PV + nom -----
-    _panel(result, _BOTTOM_PANEL, radius=26)
+    _panel(result, L["bottom"], radius=26)
     if players:
+        bl, bt, br, bb = L["bottom"]
         count = len(players)
-        av_d = 96
-        slot_x1, slot_x2 = _BOTTOM_PANEL[0] + 32, _BOTTOM_PANEL[2] - 32
+        slot_x1, slot_x2 = bl + 28, br - 28
         step = (slot_x2 - slot_x1) / max(1, count)
-        av_y = _BOTTOM_PANEL[1] + 8
+        av_d = max(48, min(L["av_d"], int(step) - 8))  # rétrécit si gros groupe
+        bar_half = int(av_d * 0.58)
+        av_y = bt + 8
 
         for i, player in enumerate(players):
             center_x = int(slot_x1 + step * (i + 0.5))
@@ -214,12 +216,12 @@ def compose_players_banner(
 
             cur = int(player.get("current_hp", 0) or 0)
             mx = int(player.get("max_hp", 1) or 1)
-            # Pas de teinte PV sur l'avatar : la mini-barre porte déjà l'info.
             avatar = add_outline(crop_to_circle(raw_avatar, av_d), outline_size=3)
             result.alpha_composite(avatar, (center_x - avatar.width // 2, av_y))
 
             bar_y = av_y + avatar.height + 2
-            _draw_ratio_bar(result, draw, center_x - 54, bar_y, center_x + 54, bar_y + 18, cur, mx)
+            _draw_ratio_bar(result, draw, center_x - bar_half, bar_y,
+                            center_x + bar_half, bar_y + 18, cur, mx)
 
             name = player.get("name", "")
             if name:
@@ -227,9 +229,7 @@ def compose_players_banner(
                 draw.text((center_x - nw / 2, bar_y + 20), name, font=hp_font,
                           fill=(240, 240, 245, 255))
 
-    # Léger renforcement de netteté : compense le ramollissement de la vignette
-    # WebP que Discord génère pour l'aperçu inline. Dosé faible pour ne pas
-    # créer d'artefacts sur la vue plein écran.
+    # Léger renforcement de netteté (compense la vignette WebP de l'aperçu).
     final = result.convert("RGB").filter(
         ImageFilter.UnsharpMask(radius=2, percent=95, threshold=2)
     )
