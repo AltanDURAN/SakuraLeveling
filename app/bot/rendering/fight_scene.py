@@ -30,6 +30,14 @@ _PANEL_BORDER = (255, 255, 255, 32)
 # large. Réglable (plus grand = passe en portrait moins souvent).
 _PORTRAIT_THRESHOLD = 1.2
 
+# Le monstre est recadré sur ses pixels réels puis mis à l'échelle pour REMPLIR
+# la zone disponible entre les deux bandeaux. `_SCALE_POWER` atténue l'écart de
+# taille entre monstres selon la part de leur canvas qu'ils occupent :
+#   0.0 = tous remplissent pareil (aucune différence d'échelle) ;
+#   0.3 = remplissent presque, léger « petit reste un peu plus petit » (défaut) ;
+#   1.0 = échelle stricte (un mob à 50% de son canvas = 50% de la taille).
+_SCALE_POWER = 0.3
+
 # Deux mises en page. `mob_max_span` = taille écran du plus grand côté pour un
 # monstre qui remplit tout son canvas source ; l'échelle réelle est ensuite
 # proportionnelle à la part du canvas occupée. Le monstre est borné pour rester
@@ -38,14 +46,14 @@ _LANDSCAPE = {
     "W": 1536, "H": 1024,
     "top": (28, 22, 1508, 170), "bottom": (28, 846, 1508, 1010),
     "stage_top": 185, "stage_bottom": 838,
-    "mob_max_span": 820, "decor_zoom": 1.6,
+    "decor_zoom": 1.6,
     "title": 54, "stat": 36, "hp": 28, "badge": 104, "av_d": 96,
 }
 _PORTRAIT = {
     "W": 1024, "H": 1536,
     "top": (20, 18, 1004, 150), "bottom": (20, 1362, 1004, 1518),
     "stage_top": 165, "stage_bottom": 1356,
-    "mob_max_span": 1200, "decor_zoom": 1.4,
+    "decor_zoom": 1.4,
     "title": 46, "stat": 30, "hp": 26, "badge": 96, "av_d": 88,
 }
 
@@ -128,9 +136,11 @@ def _fit_mob(raw_mob, element, L):
     content = raw_mob.crop(bbox)
     cw, ch = content.size
     canvas_dim = max(raw_mob.width, raw_mob.height)
+    # Échelle pour REMPLIR la zone (entre les deux bandeaux), en gardant l'aspect.
+    fill_scale = min((L["stage_bottom"] - L["stage_top"]) / ch, (L["W"] * 0.82) / cw)
+    # Atténuation d'échelle selon la part du canvas occupée (voir _SCALE_POWER).
     frac = max(cw, ch) / canvas_dim
-    scale = (L["mob_max_span"] * frac) / max(cw, ch)
-    scale = min(scale, (L["stage_bottom"] - L["stage_top"]) / ch, (L["W"] * 0.82) / cw)
+    scale = fill_scale * (frac ** _SCALE_POWER)
     nw, nh = max(1, round(cw * scale)), max(1, round(ch * scale))
     mob_img = content.resize((nw, nh), Image.LANCZOS)
     if element:
