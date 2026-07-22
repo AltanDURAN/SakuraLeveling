@@ -318,7 +318,6 @@
     "code": "liche_maudite",
     "name": "Liche maudite",
     "family": "mort-vivant",
-    "element": "tenebre",
     "description": "Un sorcier mort-vivant dont la magie noire dévaste.",
     "max_hp": 1193,
     "current_hp": 1193,
@@ -332,8 +331,9 @@
     "xp_reward": 541,
     "gold_reward": 260,
     "spawn_weight": 4,
-    "loot_table": null,
-    "image_name": "liche_maudite.png"
+    "loot_table": [],
+    "image_name": "liche_maudite.png",
+    "element": "tenebre"
   },
   {
     "code": "banshee",
