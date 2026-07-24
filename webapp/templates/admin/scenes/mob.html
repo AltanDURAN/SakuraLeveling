@@ -8,13 +8,22 @@
     offsetX: {{ placement.offset_x|default(0.0) }},
     shadow: {{ 'true' if placement.shadow|default(true) else 'false' }},
     weights: { {% for e in elements %}'{{ e.code }}': {{ e.weight }}{% if not loop.last %},{% endif %}{% endfor %} },
+    zoneSpots: {{ zone_spots|tojson }}, defaultBg: '{{ default_bg }}',
     current: '',
-    mobW:0, mobH:0, stageW:432, stageH:540, groundY:0.86, serverUrl:'',
-    get active(){ return Object.keys(this.weights).filter(k => (parseInt(this.weights[k])||0) > 0); },
+    mobW:0, mobH:0, stageW:432, stageH:540, serverUrl:'',
+    get active(){ const w = Object.keys(this.weights).filter(k => (parseInt(this.weights[k])||0) > 0);
+      return w.length ? w : Object.keys(this.zoneSpots); },
     ensureCurrent(){ const a=this.active; if(a.length && !a.includes(this.current)) this.current=a[0]; },
     get spriteSrc(){ return '/admin/scenes/mob-content/{{ mob.image_name }}?element=' + (this.current||''); },
-    get mobPxH(){ return this.scale*this.stageH; },
-    get mobPxW(){ return this.mobH ? this.mobPxH*this.mobW/this.mobH : this.mobPxH; },
+    get spot(){ return this.zoneSpots[this.current] || null; },
+    get bg(){ return (this.spot && this.spot.background) ? this.spot.background : this.defaultBg; },
+    get groundY(){ return this.spot ? this.spot.ground_y : 0.86; },
+    get mobPxH(){ return this.scale * this.stageH; },
+    get mobPxW(){ return this.mobH ? this.mobPxH * this.mobW / this.mobH : this.mobPxH; },
+    get mobLeft(){ return (0.5 + Number(this.offsetX)) * this.stageW - this.mobPxW / 2; },
+    get mobTop(){ return this.groundY * this.stageH - this.mobPxH; },
+    get shadowW(){ return this.mobPxW * 0.8; },
+    get shadowH(){ return Math.max(5, this.mobPxW * 0.14); },
     onSprite(e){ this.mobW=e.target.naturalWidth; this.mobH=e.target.naturalHeight; },
     realPreview(){ const p=new URLSearchParams({element:this.current||'', scale:(+this.scale).toFixed(4),
       offset_x:(+this.offsetX).toFixed(4), shadow:this.shadow?'1':'0', t:Date.now()});
@@ -40,18 +49,21 @@
       </div>
       <div style="position:relative; width:432px; height:540px; overflow:hidden; border-radius:14px;
                   border:1px solid var(--border); background:#20222e;">
+        <!-- décor du spot (fond) -->
+        <img :src="'/assets/landscapes/' + bg" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover;"
+             onerror="this.style.display='none'">
         <div style="position:absolute; left:0; right:0; height:0; border-top:2px dashed #ff5da2;"
              :style="`top:${groundY*stageH}px;`"></div>
         <div x-show="shadow" style="position:absolute; border-radius:50%; background:rgba(0,0,0,.45); filter:blur(5px);"
-             :style="`width:${mobPxW*0.8}px; height:${Math.max(5,mobPxW*0.14)}px; left:${(0.5+offsetX)*stageW - mobPxW*0.4}px; top:${groundY*stageH - Math.max(5,mobPxW*0.14)/2}px;`"></div>
+             :style="`width:${shadowW}px; height:${shadowH}px; left:${(0.5+Number(offsetX))*stageW - shadowW/2}px; top:${groundY*stageH - shadowH/2}px;`"></div>
         <img :src="spriteSrc" x-on:load="onSprite($event)" style="position:absolute; max-width:none;"
-             :style="`height:${mobPxH}px; width:${mobPxW}px; left:${(0.5+offsetX)*stageW - mobPxW/2}px; top:${groundY*stageH - mobPxH}px;`">
+             :style="`height:${mobPxH}px; width:${mobPxW}px; left:${mobLeft}px; top:${mobTop}px;`">
         <div style="position:absolute; background:rgba(12,10,16,.62); border:1px solid rgba(255,255,255,.15);"
              :style="`left:{{(tp[0]/frame_w*100)|round(2)}}%; top:{{(tp[1]/frame_h*100)|round(2)}}%; width:{{((tp[2]-tp[0])/frame_w*100)|round(2)}}%; height:{{((tp[3]-tp[1])/frame_h*100)|round(2)}}%;`"></div>
         <div style="position:absolute; background:rgba(12,10,16,.62); border:1px solid rgba(255,255,255,.15);"
              :style="`left:{{(bp[0]/frame_w*100)|round(2)}}%; top:{{(bp[1]/frame_h*100)|round(2)}}%; width:{{((bp[2]-bp[0])/frame_w*100)|round(2)}}%; height:{{((bp[3]-bp[1])/frame_h*100)|round(2)}}%;`"></div>
       </div>
-      <p style="color:var(--muted); font-size:.85rem; margin:.4rem 0 0;">Aperçu instantané. La ligne rose = sol de référence (le vrai sol vient du spot de la zone).</p>
+      <p style="color:var(--muted); font-size:.85rem; margin:.4rem 0 0;">Aperçu instantané (fond = décor du spot). La ligne rose = sol. « Aperçu réel » pour le rendu exact.</p>
     </div>
 
     <!-- CONTRÔLES -->
