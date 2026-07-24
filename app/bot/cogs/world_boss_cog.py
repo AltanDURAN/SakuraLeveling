@@ -450,6 +450,7 @@ class WorldBossCog(commands.Cog):
                     compose_players_banner,
                     players=player_payload,
                     mob={
+                        "code": boss.code,
                         "name": boss.name,
                         "image_name": mob_image_name,
                         "current_hp": boss.current_hp,

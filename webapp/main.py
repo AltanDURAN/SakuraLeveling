@@ -52,6 +52,7 @@ from webapp.admin.routers.roles_router import router as admin_roles_router
 from webapp.admin.routers.shop_router import router as admin_shop_router
 from webapp.admin.routers.zones_router import router as admin_zones_router
 from webapp.admin.routers.weights_router import router as admin_weights_router
+from webapp.admin.routers.scenes_router import router as admin_scenes_router
 from webapp.admin.routers.families_router import router as admin_families_router
 from webapp.admin.routers.skills_element_router import router as admin_competences_router
 
@@ -96,6 +97,7 @@ app.include_router(admin_items_router)
 app.include_router(admin_mobs_router)
 app.include_router(admin_zones_router)
 app.include_router(admin_weights_router)
+app.include_router(admin_scenes_router)
 app.include_router(admin_families_router)
 app.include_router(admin_competences_router)
 app.include_router(admin_shop_router)
