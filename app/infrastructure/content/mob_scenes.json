@@ -1,4 +1,0 @@
-{
-  "_comment": "Composition de la scène de spawn, PAR MONSTRE (éditée via l'admin web : Monde › Scènes). Coordonnées en FRACTIONS (0-1). crop = portion visible de l'environnement ; mob = placement (x centre, y pieds, scale hauteur).",
-  "scenes": {}
-}
