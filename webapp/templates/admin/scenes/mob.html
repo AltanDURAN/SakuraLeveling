@@ -2,13 +2,19 @@
 {% block title %}{{ mob.name }} — placement — Sakura Admin{% endblock %}
 {% block content %}
 {% set tp = top_panel %}{% set bp = bottom_panel %}
+{# Données passées via un attribut SIMPLE-quote : tojson échappe les quotes
+   simples (mais pas les doubles), donc on ne peut pas l'injecter dans x-data
+   (double-quote) sans casser l'attribut. #}
+<div id="mob-scene-data" hidden
+     data-spots='{{ zone_spots|tojson }}' data-bg="{{ default_bg }}"></div>
 <section class="form-page"
   x-data="{
     scale: {{ placement.scale|default(0.6) }},
     offsetX: {{ placement.offset_x|default(0.0) }},
     shadow: {{ 'true' if placement.shadow|default(true) else 'false' }},
     weights: { {% for e in elements %}'{{ e.code }}': {{ e.weight }}{% if not loop.last %},{% endif %}{% endfor %} },
-    zoneSpots: {{ zone_spots|tojson }}, defaultBg: '{{ default_bg }}',
+    zoneSpots: JSON.parse(document.getElementById('mob-scene-data').dataset.spots || '{}'),
+    defaultBg: document.getElementById('mob-scene-data').dataset.bg || '',
     current: '',
     mobW:0, mobH:0, stageW:432, stageH:540, serverUrl:'',
     get active(){ const w = Object.keys(this.weights).filter(k => (parseInt(this.weights[k])||0) > 0);
