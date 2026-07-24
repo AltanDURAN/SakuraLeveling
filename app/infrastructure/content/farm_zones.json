@@ -41,13 +41,13 @@
         {
           "element": "terre",
           "time": "always",
-          "background": "clairiere_sinistre.png",
+          "background": "clairiere_sinistre_terre.png",
           "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
+            "x": 0.0,
+            "y": 0.0,
+            "w": 1.0
           },
-          "ground_y": 0.86
+          "ground_y": 0.78
         },
         {
           "element": "tenebre",
