@@ -93,15 +93,17 @@ def mob_content(raw_mob: Image.Image) -> Image.Image:
 
 def place_mob(content: Image.Image, placement: dict, ground_y: float) -> tuple[Image.Image, tuple[int, int]]:
     """Place le monstre : `scale` = hauteur du monstre / hauteur du cadre,
-    `offset_x` = décalage horizontal (fraction, 0 = centré). Les pieds se posent
-    sur `ground_y` (fraction) — la ligne de sol du spot."""
+    `offset_x` = décalage horizontal (fraction, 0 = centré), `offset_y` =
+    décalage vertical (fraction, <0 = plus haut, utile pour un monstre qui
+    flotte). Les pieds se posent sur `ground_y` + `offset_y` (fractions)."""
     scale_frac = max(0.05, min(1.5, float(placement.get("scale", 0.62) or 0.62)))
     target_h = max(1, int(round(scale_frac * FRAME_H)))
     ratio = target_h / content.height
     nw = max(1, int(round(content.width * ratio)))
     img = content.resize((nw, target_h), Image.LANCZOS)
     cx = (0.5 + float(placement.get("offset_x", 0.0) or 0.0)) * FRAME_W
-    fy = max(0.0, min(1.0, float(ground_y if ground_y is not None else 0.86))) * FRAME_H
+    base_y = float(ground_y if ground_y is not None else 0.86)
+    fy = max(0.0, min(1.2, base_y + float(placement.get("offset_y", 0.0) or 0.0))) * FRAME_H
     return img, (int(round(cx - nw / 2)), int(round(fy - target_h)))
 
 

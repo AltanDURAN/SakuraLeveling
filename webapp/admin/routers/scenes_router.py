@@ -250,7 +250,7 @@ async def mob_editor(
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Monstre `{code}` introuvable.")
     mob_placement_loader.reload_cache()
     placement = mob_placement_loader.get_mob_placement(code) or {
-        "scale": 0.6, "offset_x": 0.0, "shadow": True, "element_weights": {}}
+        "scale": 0.6, "offset_x": 0.0, "offset_y": 0.0, "shadow": True, "element_weights": {}}
     weights = placement.get("element_weights") or {}
     elements = [
         {"code": e.value, "label": ELEMENT_LABELS[e.value], "emoji": ELEMENT_EMOJIS[e.value],
@@ -291,6 +291,7 @@ async def mob_preview(
     p = request.query_params
     element = p.get("element", mob.element or "")
     placement = {"scale": _f(p, "scale", 0.6), "offset_x": _f(p, "offset_x", 0.0),
+                 "offset_y": _f(p, "offset_y", 0.0),
                  "shadow": str(p.get("shadow", "1")).lower() not in {"0", "false", "off"}}
     # décor : le spot de la zone du monstre pour cet élément (sinon fallback)
     spot = None
@@ -325,6 +326,7 @@ async def mob_save(code: str, request: Request, user: AdminUser = Depends(requir
     placement = {
         "scale": _f(form, "scale", 0.6),
         "offset_x": _f(form, "offset_x", 0.0),
+        "offset_y": _f(form, "offset_y", 0.0),
         "shadow": str(form.get("shadow", "1")).lower() not in {"0", "false", "off"},
         "element_weights": weights,
     }
