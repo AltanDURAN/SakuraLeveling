@@ -95,6 +95,7 @@ def list_zones() -> list[dict]:
                 "background": entry.get("background") or default_background(),
                 "essences_min": lo,
                 "essences_max": hi,
+                "spots": entry.get("spots") or [],
             })
     return zones
 
@@ -166,6 +167,30 @@ def get_essences_range_for_family(family: str | None) -> tuple[int, int]:
     if z:
         return int(z["essences_min"]), int(z["essences_max"])
     return default_essences_range()
+
+
+def get_zone_by_channel(channel_id: int) -> dict | None:
+    """Zone dont le salon de spawn est `channel_id` (ou None)."""
+    for z in list_zones():
+        if int(z.get("channel_id", 0) or 0) == int(channel_id or 0):
+            return z
+    return None
+
+
+def get_spots(channel_id: int) -> list[dict]:
+    """Spots élémentaires d'une zone (liste éventuellement vide)."""
+    z = get_zone_by_channel(channel_id)
+    spots = (z or {}).get("spots") or []
+    return spots if isinstance(spots, list) else []
+
+
+def get_spot(channel_id: int, element: str) -> dict | None:
+    """Composition du spot (zone, élément) : {background, crop, ground_y}."""
+    element = (element or "").strip().lower()
+    for s in get_spots(channel_id):
+        if str(s.get("element", "")).strip().lower() == element:
+            return s
+    return None
 
 
 def list_zone_channels() -> list[int]:

@@ -306,6 +306,15 @@ class EncounterCog(commands.Cog):
         self.active_encounters.pop(channel_id, None)
         self._zone_next_spawn[channel_id] = datetime.now(UTC) + timedelta(minutes=minutes)
 
+    def _scene_inputs(self, channel_id: int, encounter) -> tuple[dict | None, dict | None]:
+        """(spot, placement) pour le rendu : décor du couple (zone, élément
+        spawné) + placement propre au monstre. None/None → rendu automatique."""
+        from app.infrastructure.encounters import farm_zone_loader, mob_placement_loader
+        element = getattr(encounter.mob_state, "element", "") or ""
+        spot = farm_zone_loader.get_spot(channel_id, element) if element else None
+        placement = mob_placement_loader.get_mob_placement(encounter.mob_state.code)
+        return spot, placement
+
     async def _run_encounter(self, channel_id: int, mob, forced_element: str | None = None) -> None:
         """Cycle de vie complet d'un encounter dans une zone : spawn → fenêtre
         de recrutement (5 min ou résolution anticipée) → combat animé → récap.
@@ -321,16 +330,17 @@ class EncounterCog(commands.Cog):
         self._zone_bg[channel_id] = str(background_path)
 
         # Élément spawné : priorité à l'élément FORCÉ (/admin spawn_encounter) ;
-        # sinon l'élément stocké du mob (rare, forcé au contenu) ; sinon un tirage
-        # aléatoire pondéré (chaque monstre peut spawner sous n'importe quel élément).
+        # sinon l'élément stocké du mob (rare, forcé au contenu) ; sinon on le
+        # résout via les SPOTS de la zone (élément dispo à cette heure ∩ poids du
+        # monstre) ; ultime repli = tirage global pondéré.
         from app.infrastructure.elements.element_spawn_weight_loader import (
             pick_random_element,
         )
-        spawn_element = (
-            (forced_element or "").strip()
-            or (getattr(mob, "element", "") or "").strip()
-            or pick_random_element()
-        )
+        from app.infrastructure.encounters.element_spot_resolver import resolve_spawn
+        spawn_element = (forced_element or "").strip() or (getattr(mob, "element", "") or "").strip()
+        if not spawn_element:
+            resolved, _ = resolve_spawn(channel_id, mob.code)
+            spawn_element = resolved or pick_random_element()
 
         mob_state = EncounterMobState(
             code=mob.code,
@@ -385,6 +395,7 @@ class EncounterCog(commands.Cog):
         # Sans to_thread, ça bloque tout l'event loop pendant le rendu (~1-2s
         # + jusqu'à 15s par avatar lent) → heartbeat Discord et autres
         # interactions gelés. Cf. audit Phase 1 finding B5.
+        _spot, _placement = self._scene_inputs(channel_id, encounter)
         await asyncio.to_thread(
             compose_players_banner,
             players=[],
@@ -392,6 +403,8 @@ class EncounterCog(commands.Cog):
             output_path=str(spawn_output_full),
             background_path=str(background_path),
             players_power_score="",
+            spot=_spot,
+            placement=_placement,
         )
 
         embed, file = build_encounter_embed(
@@ -506,6 +519,7 @@ class EncounterCog(commands.Cog):
                 )
             )
 
+            _spot, _placement = self._scene_inputs(channel_id, encounter)
             await asyncio.to_thread(
                 compose_players_banner,
                 players=turn_log.players_state,
@@ -513,6 +527,8 @@ class EncounterCog(commands.Cog):
                 output_path=str(current_output_full),
                 background_path=str(background_path),
                 players_power_score=players_power_score,
+                spot=_spot,
+                placement=_placement,
             )
 
             turn_embed, file = build_encounter_embed(
@@ -661,6 +677,7 @@ class EncounterCog(commands.Cog):
             players_stats_for_score
         ) if players_stats_for_score else "0"
 
+        _spot, _placement = self._scene_inputs(channel_id, encounter)
         await asyncio.to_thread(
             compose_players_banner,
             players=players,
@@ -668,6 +685,8 @@ class EncounterCog(commands.Cog):
             output_path=str(output_full),
             background_path=str(background_path),
             players_power_score=players_power_score,
+            spot=_spot,
+            placement=_placement,
         )
 
         embed, file = build_encounter_embed(

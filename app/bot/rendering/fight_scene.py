@@ -5,10 +5,12 @@ s'affiche le plus large sur PC (Discord plafonne la hauteur des images inline,
 donc tous les formats verticaux finissent à la même hauteur — seule la largeur
 varie) tout en restant franchement vertical sur mobile.
 
-**Composition par monstre** : si le monstre a une scène composée dans l'admin
-(`mob_scenes.json`), on applique exactement le cadrage du décor et le placement
-du monstre choisis. Sinon, placement automatique (décor de la zone + monstre
-recadré sur ses pixels réels, posé au sol).
+**Décor découplé du monstre** :
+  - `spot` = environnement (background, crop, ground_y) — vient du couple
+    (zone, élément) ; partagé par tous les monstres de cet élément dans la zone.
+  - `placement` = placement du monstre (scale, offset_x, shadow) — propre au
+    monstre ; ses pieds se posent sur `ground_y` du spot.
+Sans spot/placement → rendu automatique (décor zoomé + monstre posé au sol).
 
 Le HUD est auto-portant et dessiné PAR-DESSUS le monstre : bandeau haut (badge
 d'élément + nom + power + barre de vie), bandeau bas (joueurs : avatar +
@@ -25,7 +27,6 @@ from app.bot.rendering.image_utils import (
     get_hp_color,
     load_background,
 )
-from app.infrastructure.encounters.mob_scene_loader import get_mob_scene
 from app.shared.paths import LANDSCAPES_ASSETS_DIR, MOBS_ASSETS_DIR
 
 # --- Cadre fixe 4:5 ---
@@ -90,17 +91,17 @@ def mob_content(raw_mob: Image.Image) -> Image.Image:
     return raw_mob.crop(bbox)
 
 
-def place_mob(content: Image.Image, placement: dict) -> tuple[Image.Image, tuple[int, int]]:
-    """Place le monstre d'après une composition en fractions :
-    `x` = centre horizontal, `y` = position des pieds, `scale` = hauteur du
-    monstre rapportée à la hauteur du cadre."""
-    scale_frac = max(0.05, min(1.5, float(placement.get("scale", 0.8) or 0.8)))
+def place_mob(content: Image.Image, placement: dict, ground_y: float) -> tuple[Image.Image, tuple[int, int]]:
+    """Place le monstre : `scale` = hauteur du monstre / hauteur du cadre,
+    `offset_x` = décalage horizontal (fraction, 0 = centré). Les pieds se posent
+    sur `ground_y` (fraction) — la ligne de sol du spot."""
+    scale_frac = max(0.05, min(1.5, float(placement.get("scale", 0.62) or 0.62)))
     target_h = max(1, int(round(scale_frac * FRAME_H)))
     ratio = target_h / content.height
     nw = max(1, int(round(content.width * ratio)))
     img = content.resize((nw, target_h), Image.LANCZOS)
-    cx = float(placement.get("x", 0.5) or 0.5) * FRAME_W
-    fy = float(placement.get("y", 0.88) or 0.88) * FRAME_H
+    cx = (0.5 + float(placement.get("offset_x", 0.0) or 0.0)) * FRAME_W
+    fy = max(0.0, min(1.0, float(ground_y if ground_y is not None else 0.86))) * FRAME_H
     return img, (int(round(cx - nw / 2)), int(round(fy - target_h)))
 
 
@@ -170,20 +171,24 @@ def render_scene(
     mob: dict | None,
     players: list[dict] | None = None,
     background_path: str | None = None,
-    scene: dict | None = None,
+    spot: dict | None = None,
+    placement: dict | None = None,
 ) -> Image.Image:
     """Compose la scène complète et renvoie l'image (RGB). Utilisé par le bot
-    ET par l'aperçu de l'éditeur admin → WYSIWYG garanti."""
+    ET par l'aperçu de l'éditeur admin → WYSIWYG garanti.
+
+    `spot` = environnement (background, crop, ground_y). `placement` = placement
+    du monstre (scale, offset_x, shadow). Sans eux → rendu automatique."""
     players = players or []
     mob = mob or None
 
-    # ---- Décor ----
+    # ---- Décor (vient du spot) ----
     bg_path = background_path
-    if scene and scene.get("background"):
-        bg_path = str(LANDSCAPES_ASSETS_DIR / scene["background"])
+    if spot and spot.get("background"):
+        bg_path = str(LANDSCAPES_ASSETS_DIR / spot["background"])
     raw_bg = load_background(bg_path, size=(FRAME_W, FRAME_H))
-    if scene and scene.get("crop"):
-        result = crop_background(raw_bg, scene["crop"])
+    if spot and spot.get("crop"):
+        result = crop_background(raw_bg, spot["crop"])
     else:
         zoomed = raw_bg
         if _AUTO_DECOR_ZOOM > 1.0:
@@ -204,11 +209,14 @@ def render_scene(
     # ---- Monstre (le HUD passera par-dessus) ----
     if mob is not None:
         content = mob_content(_load_mob_image(mob.get("image_name")))
-        if scene and scene.get("mob"):
-            mob_img, mob_pos = place_mob(content, scene["mob"])
+        if placement:
+            ground_y = (spot or {}).get("ground_y", 0.86)
+            mob_img, mob_pos = place_mob(content, placement, ground_y)
+            shadow = placement.get("shadow", True)
         else:
             mob_img, mob_pos = _auto_place_mob(content)
-        if (scene or {}).get("shadow", True):
+            shadow = True
+        if shadow:
             draw_contact_shadow(result, mob_pos, mob_img.size)
         element = mob.get("element") or ""
         if element:
@@ -281,10 +289,15 @@ def compose_players_banner(
     background_path: str | None = None,
     mob: dict | None = None,
     players_power_score: str = "",
+    spot: dict | None = None,
+    placement: dict | None = None,
 ):
-    """Point d'entrée du bot. La composition du monstre (si elle existe) est
-    chargée depuis `mob_scenes.json` via son code."""
-    scene = get_mob_scene(mob.get("code")) if mob else None
-    image = render_scene(mob=mob, players=players, background_path=background_path, scene=scene)
+    """Point d'entrée du bot. `spot` (environnement du couple zone×élément) et
+    `placement` (placement du monstre) sont résolus par l'appelant (encounter).
+    Sans eux → rendu automatique (fallback)."""
+    image = render_scene(
+        mob=mob, players=players, background_path=background_path,
+        spot=spot, placement=placement,
+    )
     image.save(output_path)
     print(f"Image créée : {output_path}")

@@ -1,0 +1,48 @@
+{% extends "admin/base.html" %}
+{% block title %}Scènes de spawn — Sakura Admin{% endblock %}
+{% block content %}
+<section class="form-page">
+    <h1>🎬 Scènes de spawn</h1>
+    <p style="color:var(--muted); max-width:72ch;">
+        Le décor d'un spawn dépend du couple <strong>(zone × élément)</strong> = un
+        <strong>spot</strong> (décor + ligne de sol + fenêtre horaire jour/nuit). Le
+        <strong>monstre</strong> ne garde que sa taille/placement et ses éléments possibles.
+    </p>
+
+    <div class="form-section">
+        <h2 class="form-section-title">Spots élémentaires par zone</h2>
+        {% for z in zones %}
+        <div style="margin-bottom:1rem;">
+            <strong>{{ z.name }}</strong>
+            <div style="display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.4rem;">
+                {% for s in z.spots %}
+                <a href="/admin/scenes/spot/{{ z.channel_id }}/{{ s.element }}"
+                   class="btn {{ 'btn-primary' if s.composed else 'btn-ghost' }}"
+                   style="padding:.35rem .7rem;">
+                    {{ s.emoji }} {{ s.label }}
+                    {% if s.time == 'day' %}☀️{% elif s.time == 'night' %}🌙{% endif %}
+                    {% if s.composed %}✅{% endif %}
+                </a>
+                {% else %}
+                <span style="color:var(--muted);">Aucun spot (zone non configurée).</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="form-section">
+        <h2 class="form-section-title">Monstres (placement + éléments)</h2>
+        <div style="display:flex; flex-wrap:wrap; gap:.5rem;">
+            {% for m in mobs %}
+            <a href="/admin/scenes/mob/{{ m.code }}" class="btn btn-ghost"
+               style="display:flex; align-items:center; gap:.4rem; padding:.35rem .6rem;">
+                {% if m.image_name %}<img src="/assets/mobs/{{ m.image_name }}" alt=""
+                     style="width:26px;height:26px;object-fit:contain;">{% endif %}
+                {{ m.name }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

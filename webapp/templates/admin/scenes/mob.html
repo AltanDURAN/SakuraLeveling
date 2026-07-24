@@ -1,0 +1,78 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ mob.name }} — placement — Sakura Admin{% endblock %}
+{% block content %}
+<section class="form-page"
+  x-data="{
+    scale: {{ placement.scale|default(0.6) }},
+    offsetX: {{ placement.offset_x|default(0.0) }},
+    shadow: {{ 'true' if placement.shadow|default(true) else 'false' }},
+    weights: { {% for e in elements %}'{{ e.code }}': {{ e.weight }}{% if not loop.last %},{% endif %}{% endfor %} },
+    current: '',
+    get active(){ return Object.keys(this.weights).filter(k => (parseInt(this.weights[k])||0) > 0); },
+    ensureCurrent(){ const a=this.active; if(!a.includes(this.current)) this.current = a[0] || ''; },
+    get previewUrl(){ if(!this.current) return '';
+      const p=new URLSearchParams({element:this.current, scale:(+this.scale).toFixed(4),
+        offset_x:(+this.offsetX).toFixed(4), shadow:this.shadow?'1':'0', t:Date.now()});
+      return '/admin/scenes/mob/{{ mob.code }}/preview.png?'+p.toString(); }
+  }" x-init="ensureCurrent()">
+
+  <a href="/admin/scenes" class="breadcrumb">← Scènes</a>
+  <h1>{% if mob.image_name %}<img src="/assets/mobs/{{ mob.image_name }}" style="height:1.4em;vertical-align:middle;">{% endif %}
+      {{ mob.name }} <code style="color:var(--muted);font-size:1rem;">{{ mob.code }}</code></h1>
+  {% if saved %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(80,200,120,.15);border:1px solid rgba(80,200,120,.4);">✅ Enregistré (effet au prochain spawn, sans redémarrer le bot).</div>{% endif %}
+
+  <div style="display:flex; gap:1.6rem; flex-wrap:wrap; align-items:flex-start;">
+    <form method="post" action="/admin/scenes/mob/{{ mob.code }}"
+          style="flex:1 1 340px; min-width:300px; display:flex; flex-direction:column; gap:1rem;">
+      <div class="form-section">
+        <h2 class="form-section-title">Placement</h2>
+        <label class="field"><span class="field-label">Taille — <span x-text="Math.round(scale*100)+'% du cadre'"></span></span>
+          <input type="range" min="0.1" max="1.1" step="0.01" x-model.number="scale" name="scale"></label>
+        <label class="field"><span class="field-label">Décalage horizontal — <span x-text="Math.round(offsetX*100)"></span></span>
+          <input type="range" min="-0.4" max="0.4" step="0.01" x-model.number="offsetX" name="offset_x"></label>
+        <label class="field" style="flex-direction:row; align-items:center; gap:.5rem;">
+          <input type="checkbox" x-model="shadow"><span class="field-label" style="margin:0;">Ombre de contact</span></label>
+        <input type="hidden" name="shadow" :value="shadow?'1':'0'">
+      </div>
+
+      <div class="form-section">
+        <h2 class="form-section-title">Éléments possibles (poids de spawn)</h2>
+        <p style="color:var(--muted); margin:0 0 .6rem;">
+          Poids <strong>0</strong> = ce monstre ne prend pas cet élément. <strong>&gt;0</strong> = éligible
+          (proba relative). Il faut aussi que sa zone ait un <em>spot</em> pour l'élément. Tout à 0 = hérite
+          des éléments de sa zone.
+        </p>
+        <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:.5rem;">
+          {% for e in elements %}
+          <label class="field" style="flex-direction:row; align-items:center; gap:.5rem; margin:0;">
+            <span style="font-size:1.2rem;">{{ e.emoji }}</span>
+            <span style="flex:1;">{{ e.label }}</span>
+            <input type="number" min="0" max="99" class="input" style="width:4.5rem; padding:.3rem .4rem;"
+                   name="weight_{{ e.code }}" x-model.number="weights['{{ e.code }}']" x-on:input="ensureCurrent()">
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+      </div>
+    </form>
+
+    <div style="flex:0 0 auto;">
+      <div class="field-label" style="margin-bottom:.4rem;">Aperçu par élément</div>
+      <!-- onglets = éléments possibles -->
+      <div style="display:flex; flex-wrap:wrap; gap:.35rem; margin-bottom:.5rem;">
+        <template x-for="code in active" :key="code">
+          <button type="button" class="btn"
+                  :class="current===code ? 'btn-primary' : 'btn-ghost'"
+                  style="padding:.3rem .6rem;" x-on:click="current=code" x-text="code"></button>
+        </template>
+        <span x-show="active.length===0" style="color:var(--muted);">Mets un poids &gt; 0 pour prévisualiser.</span>
+      </div>
+      <img x-show="previewUrl" :src="previewUrl"
+           style="width:340px; border-radius:12px; border:1px solid var(--border);">
+    </div>
+  </div>
+</section>
+{% endblock %}

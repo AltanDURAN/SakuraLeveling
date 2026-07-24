@@ -1,0 +1,98 @@
+{% extends "admin/base.html" %}
+{% block title %}Spot {{ label }} — {{ zone.name }} — Sakura Admin{% endblock %}
+{% block content %}
+{% set tp = top_panel %}{% set bp = bottom_panel %}
+<section class="form-page"
+  x-data="{
+    bg: '{{ spot.background }}',
+    cropX: {{ spot.crop.x }}, cropY: {{ spot.crop.y }}, cropW: {{ spot.crop.w }},
+    groundY: {{ spot.ground_y }},
+    bgW:0, bgH:0, stageW:432, stageH:540, frameRatio:{{ frame_h }}/{{ frame_w }},
+    previewUrl:'', dragging:false, lastX:0, lastY:0,
+    get dispW(){ return this.stageW/Math.max(0.05,this.cropW); },
+    get dispH(){ return this.bgW ? this.dispW*this.bgH/this.bgW : this.stageH; },
+    get cropH(){ return this.bgH ? (this.cropW*this.bgW*this.frameRatio)/this.bgH : 1; },
+    onBgLoad(e){ this.bgW=e.target.naturalWidth; this.bgH=e.target.naturalHeight; this.clamp(); },
+    clamp(){ this.cropW=Math.min(1,Math.max(0.05,this.cropW));
+             this.cropX=Math.min(Math.max(0,this.cropX),Math.max(0,1-this.cropW));
+             this.cropY=Math.min(Math.max(0,this.cropY),Math.max(0,1-this.cropH)); },
+    onMove(e){ if(!this.dragging)return; const dx=e.clientX-this.lastX,dy=e.clientY-this.lastY;
+               this.lastX=e.clientX; this.lastY=e.clientY;
+               this.cropX-=dx/this.dispW; this.cropY-=dy/this.dispH; this.clamp(); },
+    refresh(){ const p=new URLSearchParams({background:this.bg,
+      crop_x:this.cropX.toFixed(4),crop_y:this.cropY.toFixed(4),crop_w:this.cropW.toFixed(4),
+      ground_y:this.groundY.toFixed(4),t:Date.now()});
+      this.previewUrl='/admin/scenes/spot/{{ zone.channel_id }}/{{ element }}/preview.png?'+p.toString(); }
+  }"
+  x-on:mousemove.window="onMove($event)" x-on:mouseup.window="dragging=false">
+
+  <a href="/admin/scenes" class="breadcrumb">← Scènes</a>
+  <h1>{{ emoji }} Spot {{ label }} — {{ zone.name }}</h1>
+  {% if saved %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(80,200,120,.15);border:1px solid rgba(80,200,120,.4);">✅ Spot enregistré.</div>{% endif %}
+
+  <div style="display:flex; gap:1.6rem; flex-wrap:wrap; align-items:flex-start;">
+    <div style="flex:0 0 auto;">
+      <div class="field-label" style="margin-bottom:.4rem;">Cadrage du décor — glisse pour te déplacer</div>
+      <div style="position:relative; width:432px; height:540px; overflow:hidden; border-radius:14px;
+                  border:2px dashed var(--accent); background:#111; cursor:grab; user-select:none;"
+           x-on:mousedown="dragging=true; lastX=$event.clientX; lastY=$event.clientY">
+        <img :src="'/assets/landscapes/'+bg" x-on:load="onBgLoad($event)"
+             style="position:absolute; max-width:none; pointer-events:none;"
+             :style="`width:${dispW}px; left:${-cropX*dispW}px; top:${-cropY*dispH}px;`">
+        {% if sample %}
+        <img src="/admin/scenes/mob-content/{{ sample.image_name }}?element={{ element }}"
+             style="position:absolute; max-width:none; pointer-events:none; opacity:.92;"
+             :style="`height:${0.6*stageH}px; left:${0.5*stageW - 0.5*0.6*stageH*0.6}px; top:${groundY*stageH - 0.6*stageH}px;`">
+        {% endif %}
+        <!-- ligne de sol -->
+        <div style="position:absolute; left:0; right:0; height:0; border-top:2px dashed #ff5da2; pointer-events:none;"
+             :style="`top:${groundY*stageH}px;`"></div>
+        <!-- HUD repères -->
+        <div style="position:absolute; background:rgba(12,10,16,.6); border:1px solid rgba(255,255,255,.15); pointer-events:none;"
+             :style="`left:{{(tp[0]/frame_w*100)|round(2)}}%; top:{{(tp[1]/frame_h*100)|round(2)}}%; width:{{((tp[2]-tp[0])/frame_w*100)|round(2)}}%; height:{{((tp[3]-tp[1])/frame_h*100)|round(2)}}%;`"></div>
+        <div style="position:absolute; background:rgba(12,10,16,.6); border:1px solid rgba(255,255,255,.15); pointer-events:none;"
+             :style="`left:{{(bp[0]/frame_w*100)|round(2)}}%; top:{{(bp[1]/frame_h*100)|round(2)}}%; width:{{((bp[2]-bp[0])/frame_w*100)|round(2)}}%; height:{{((bp[3]-bp[1])/frame_h*100)|round(2)}}%;`"></div>
+      </div>
+    </div>
+
+    <form method="post" action="/admin/scenes/spot/{{ zone.channel_id }}/{{ element }}"
+          enctype="multipart/form-data" style="flex:1 1 300px; min-width:280px; display:flex; flex-direction:column; gap:1rem;">
+      <div class="form-section">
+        <h2 class="form-section-title">Décor</h2>
+        <label class="field"><span class="field-label">Image de fond</span>
+          <select name="background" class="input" x-model="bg">
+            {% for b in backgrounds %}<option value="{{ b }}">{{ b }}</option>{% endfor %}
+          </select></label>
+        <label class="field"><span class="field-label">…ou uploader (≤ 8 Mo)</span>
+          <input type="file" name="background_file" class="input" accept=".png,.jpg,.jpeg,.webp,.gif"></label>
+        <label class="field"><span class="field-label">Zoom — <span x-text="Math.round(100/cropW)+'%'"></span></span>
+          <input type="range" min="0.05" max="1" step="0.01" x-model.number="cropW" x-on:input="clamp()"></label>
+      </div>
+      <div class="form-section">
+        <h2 class="form-section-title">Sol & horaire</h2>
+        <label class="field"><span class="field-label">Ligne de sol — <span x-text="Math.round(groundY*100)+'%'"></span> (où les pieds se posent)</span>
+          <input type="range" min="0.3" max="0.98" step="0.005" x-model.number="groundY"></label>
+        <label class="field"><span class="field-label">Disponibilité</span>
+          <select name="time" class="input">
+            <option value="always" {% if spot.time=='always' %}selected{% endif %}>Toujours</option>
+            <option value="day" {% if spot.time=='day' %}selected{% endif %}>Jour (6h–18h)</option>
+            <option value="night" {% if spot.time=='night' %}selected{% endif %}>Nuit (18h–6h)</option>
+          </select></label>
+      </div>
+      <input type="hidden" name="crop_x" :value="cropX.toFixed(4)">
+      <input type="hidden" name="crop_y" :value="cropY.toFixed(4)">
+      <input type="hidden" name="crop_w" :value="cropW.toFixed(4)">
+      <input type="hidden" name="ground_y" :value="groundY.toFixed(4)">
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Enregistrer le spot</button>
+        <button type="button" class="btn btn-ghost" x-on:click="refresh()">Aperçu réel</button>
+      </div>
+    </form>
+
+    <div style="flex:0 0 auto;" x-show="previewUrl">
+      <div class="field-label" style="margin-bottom:.4rem;">Aperçu réel (rendu du bot)</div>
+      <img :src="previewUrl" style="width:320px; border-radius:12px; border:1px solid var(--border);">
+    </div>
+  </div>
+</section>
+{% endblock %}
