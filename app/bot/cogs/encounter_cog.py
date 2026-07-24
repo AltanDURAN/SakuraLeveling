@@ -365,6 +365,7 @@ class EncounterCog(commands.Cog):
         mob_score = self.power_score_service.calculate_and_format_from_mob(mob)
 
         spawn_mob_payload = {
+            "code": encounter.mob_state.code,
             "name": encounter.mob_state.name,
             "image_name": encounter.mob_state.image_name,
             "current_hp": encounter.mob_state.current_hp,
@@ -488,6 +489,7 @@ class EncounterCog(commands.Cog):
             mob_payload = dict(turn_log.mob_state)
             # L'élément est fixe pour tout l'encounter → on l'injecte depuis la
             # source unique (mob_state), la teinte/badge persiste pendant le combat.
+            mob_payload["code"] = encounter.mob_state.code
             mob_payload["element"] = encounter.mob_state.element
             mob_payload["power_score"] = self.power_score_service.format_score(
                 self.power_score_service.calculate_from_stats(
@@ -625,6 +627,7 @@ class EncounterCog(commands.Cog):
         )
 
         mob_payload = {
+            "code": encounter.mob_state.code,
             "name": encounter.mob_state.name,
             "image_name": encounter.mob_state.image_name,
             "current_hp": encounter.mob_state.current_hp,
