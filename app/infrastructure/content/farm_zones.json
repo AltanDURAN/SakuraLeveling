@@ -1,5 +1,5 @@
 {
-  "_comment": "Zones de farm (format zone-centré, édité par l'admin web). Chaque zone : name, channel_id (salon de spawn), families (familles qui y spawnent), background (décor par défaut), essences_min/max (fourchette d'essences par kill). Chaque zone a aussi des SPOTS élémentaires : spots[] = {element, time (always|day|night, réf Europe/Paris : day 6h-18h, night 18h-6h), background, crop {x,y,w} en fractions, ground_y en fraction (ligne de sol où le monstre pose ses pieds)}. Un monstre spawne dans l'un des éléments dont sa zone a un spot (dispo à l'heure courante) ET pour lequel il a un poids > 0 (poids par élément du monstre, sinon poids globaux element_spawn_weights.json). Le décor du spawn = celui du spot. Composé via l'admin (Monde › Zones › spot). À terme : accès aux zones avancées gated par un rang.",
+  "_comment": "Zones de farm (édité par l'admin web). Chaque zone : name, channel_id (salon de spawn), families (familles qui y spawnent), background (décor par défaut, utilisé en fallback si un monstre n'a pas de scène composée), essences_min/max (fourchette d'essences par kill). La composition visuelle du spawn (fond, cadrage, placement) et l'élément spawné sont désormais définis PAR MONSTRE dans mob_scenes.json (admin › Scènes).",
   "default_channel_id": 1485329739605348484,
   "default_background": "clairiere_sinistre.png",
   "default_essences_min": 1,
@@ -8,171 +8,26 @@
     {
       "name": "Clairière sinistre",
       "channel_id": 1485329739605348484,
-      "families": [
-        "slime",
-        "gobelin"
-      ],
+      "families": ["slime", "gobelin"],
       "background": "clairiere_sinistre.png",
       "essences_min": 1,
-      "essences_max": 1,
-      "spots": [
-        {
-          "element": "plante",
-          "time": "always",
-          "background": "clairiere_sinistre.png",
-          "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
-          },
-          "ground_y": 0.86
-        },
-        {
-          "element": "eau",
-          "time": "always",
-          "background": "clairiere_sinistre.png",
-          "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
-          },
-          "ground_y": 0.86
-        },
-        {
-          "element": "terre",
-          "time": "always",
-          "background": "clairiere_sinistre.png",
-          "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
-          },
-          "ground_y": 0.86
-        },
-        {
-          "element": "tenebre",
-          "time": "night",
-          "background": "clairiere_sinistre.png",
-          "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
-          },
-          "ground_y": 0.86
-        },
-        {
-          "element": "lumiere",
-          "time": "day",
-          "background": "clairiere_sinistre.png",
-          "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
-          },
-          "ground_y": 0.86
-        }
-      ]
+      "essences_max": 1
     },
     {
       "name": "Cimetière abandonné",
       "channel_id": 1525863083321462914,
-      "families": [
-        "mort-vivant"
-      ],
+      "families": ["mort-vivant"],
       "background": "cimetiere_abandonne.png",
       "essences_min": 1,
-      "essences_max": 2,
-      "spots": [
-        {
-          "element": "glace",
-          "time": "always",
-          "background": "cimetiere_abandonne.png",
-          "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
-          },
-          "ground_y": 0.86
-        },
-        {
-          "element": "vent",
-          "time": "always",
-          "background": "cimetiere_abandonne.png",
-          "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
-          },
-          "ground_y": 0.86
-        },
-        {
-          "element": "tenebre",
-          "time": "night",
-          "background": "cimetiere_abandonne.png",
-          "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
-          },
-          "ground_y": 0.86
-        },
-        {
-          "element": "lumiere",
-          "time": "day",
-          "background": "cimetiere_abandonne.png",
-          "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
-          },
-          "ground_y": 0.86
-        }
-      ]
+      "essences_max": 2
     },
     {
       "name": "Berceau cataclysmique",
       "channel_id": 1485329905737797652,
-      "families": [
-        "demoniaque"
-      ],
+      "families": ["demoniaque"],
       "background": "berceau_cataclysmique.png",
       "essences_min": 1,
-      "essences_max": 3,
-      "spots": [
-        {
-          "element": "feu",
-          "time": "always",
-          "background": "berceau_cataclysmique.png",
-          "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
-          },
-          "ground_y": 0.86
-        },
-        {
-          "element": "tenebre",
-          "time": "always",
-          "background": "berceau_cataclysmique.png",
-          "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
-          },
-          "ground_y": 0.86
-        },
-        {
-          "element": "terre",
-          "time": "always",
-          "background": "berceau_cataclysmique.png",
-          "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
-          },
-          "ground_y": 0.86
-        }
-      ]
+      "essences_max": 3
     }
   ]
 }
