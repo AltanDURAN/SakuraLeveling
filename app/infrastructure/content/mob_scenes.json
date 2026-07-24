@@ -1,0 +1,4 @@
+{
+  "_comment": "Scène de spawn composée PAR MONSTRE ET PAR ÉLÉMENT (admin › Scènes). Chaque scène : weight, time (always|day|night), background, crop{x,y,w}, mob{x,y,scale}, shadow. Fractions 0-1.",
+  "scenes": {}
+}

@@ -307,12 +307,25 @@ class EncounterCog(commands.Cog):
         self._zone_next_spawn[channel_id] = datetime.now(UTC) + timedelta(minutes=minutes)
 
     def _scene_inputs(self, channel_id: int, encounter) -> tuple[dict | None, dict | None]:
-        """(spot, placement) pour le rendu : décor du couple (zone, élément
-        spawné) + placement propre au monstre. None/None → rendu automatique."""
-        from app.infrastructure.encounters import farm_zone_loader, mob_placement_loader
+        """(spot, placement) pour le rendu, depuis la scène composée du couple
+        (monstre, élément spawné). None/None → rendu automatique (fallback)."""
+        from app.infrastructure.encounters import mob_scene_loader
         element = getattr(encounter.mob_state, "element", "") or ""
-        spot = farm_zone_loader.get_spot(channel_id, element) if element else None
-        placement = mob_placement_loader.get_mob_placement(encounter.mob_state.code)
+        scene = mob_scene_loader.get_scene(encounter.mob_state.code, element)
+        if not scene:
+            return None, None
+        m = scene.get("mob", {}) or {}
+        spot = {
+            "background": scene.get("background"),
+            "crop": scene.get("crop"),
+            "ground_y": m.get("y", 0.86),
+        }
+        placement = {
+            "scale": m.get("scale", 0.6),
+            "offset_x": m.get("x", 0.5) - 0.5,
+            "offset_y": 0.0,
+            "shadow": scene.get("shadow", True),
+        }
         return spot, placement
 
     async def _run_encounter(self, channel_id: int, mob, forced_element: str | None = None) -> None:
@@ -331,16 +344,15 @@ class EncounterCog(commands.Cog):
 
         # Élément spawné : priorité à l'élément FORCÉ (/admin spawn_encounter) ;
         # sinon l'élément stocké du mob (rare, forcé au contenu) ; sinon on le
-        # résout via les SPOTS de la zone (élément dispo à cette heure ∩ poids du
-        # monstre) ; ultime repli = tirage global pondéré.
+        # tire parmi les SCÈNES composées du monstre (dispo à cette heure,
+        # pondérées) ; ultime repli = tirage global pondéré.
         from app.infrastructure.elements.element_spawn_weight_loader import (
             pick_random_element,
         )
-        from app.infrastructure.encounters.element_spot_resolver import resolve_spawn
+        from app.infrastructure.encounters.mob_scene_loader import pick_element
         spawn_element = (forced_element or "").strip() or (getattr(mob, "element", "") or "").strip()
         if not spawn_element:
-            resolved, _ = resolve_spawn(channel_id, mob.code)
-            spawn_element = resolved or pick_random_element()
+            spawn_element = pick_element(mob.code) or pick_random_element()
 
         mob_state = EncounterMobState(
             code=mob.code,
