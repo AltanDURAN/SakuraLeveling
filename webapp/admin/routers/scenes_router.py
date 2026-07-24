@@ -257,10 +257,22 @@ async def mob_editor(
          "weight": int(weights.get(e.value, 0) or 0)}
         for e in ALL_ELEMENTS
     ]
+    # Décors des spots de la zone du monstre (pour le fond du stage live).
+    farm_zone_loader.clear_cache()
+    ch = farm_zone_loader.get_spawn_channel_for_family(mob.family)
+    zone_spots = {
+        str(s.get("element")): {
+            "background": s.get("background", ""),
+            "ground_y": s.get("ground_y", 0.86),
+        }
+        for s in farm_zone_loader.get_spots(ch)
+    }
+    default_bg = farm_zone_loader.get_background_for_family(mob.family)
     return get_templates().TemplateResponse(
         request, "admin/scenes/mob.html",
         context={
             "user": user, "mob": mob, "placement": placement, "elements": elements,
+            "zone_spots": zone_spots, "default_bg": default_bg,
             "frame_w": fight_scene.FRAME_W, "frame_h": fight_scene.FRAME_H,
             "top_panel": fight_scene.TOP_PANEL, "bottom_panel": fight_scene.BOTTOM_PANEL,
             "saved": saved,
