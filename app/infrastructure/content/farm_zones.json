@@ -6,13 +6,13 @@
   "default_essences_max": 1,
   "zones": [
     {
-      "name": "Clairière sinistre terre",
+      "name": "Clairière sinistre eau",
       "channel_id": 1485329739605348484,
       "families": [
         "slime",
         "gobelin"
       ],
-      "background": "clairiere_sinistre_terre.png",
+      "background": "clairiere_sinistre_eau.png",
       "essences_min": 1,
       "essences_max": 1
     },
