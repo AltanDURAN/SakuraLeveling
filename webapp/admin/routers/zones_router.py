@@ -16,6 +16,7 @@ from fastapi.responses import RedirectResponse
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.session import get_db_session
 from app.infrastructure.encounters import farm_zone_loader
+from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
 from app.shared.paths import LANDSCAPES_ASSETS_DIR
 from webapp.admin import content_sync, git_sync, uploads
 from webapp.admin.auth import AdminUser, require_admin
@@ -63,7 +64,8 @@ async def zones_list(request: Request, user: AdminUser = Depends(require_admin))
     }
     return get_templates().TemplateResponse(
         request, "admin/zones/list.html",
-        context={"user": user, "zones": zones, "defaults": defaults},
+        context={"user": user, "zones": zones, "defaults": defaults,
+                 "element_emojis": ELEMENT_EMOJIS, "element_labels": ELEMENT_LABELS},
     )
 
 
