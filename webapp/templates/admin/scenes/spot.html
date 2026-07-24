@@ -38,20 +38,18 @@
            x-on:mousedown="dragging=true; lastX=$event.clientX; lastY=$event.clientY">
         <img :src="'/assets/landscapes/'+bg" x-on:load="onBgLoad($event)"
              style="position:absolute; max-width:none; pointer-events:none;"
-             :style="`width:${dispW}px; left:${-cropX*dispW}px; top:${-cropY*dispH}px;`">
+             :style="{ width: dispW+'px', left: (-cropX*dispW)+'px', top: (-cropY*dispH)+'px' }">
         {% if sample %}
         <img src="/admin/scenes/mob-content/{{ sample.image_name }}?element={{ element }}"
              style="position:absolute; max-width:none; pointer-events:none; opacity:.92;"
-             :style="`height:${0.6*stageH}px; left:${0.5*stageW - 0.5*0.6*stageH*0.6}px; top:${groundY*stageH - 0.6*stageH}px;`">
+             :style="{ height: (0.6*stageH)+'px', left: (0.5*stageW - 0.18*stageH)+'px', top: (groundY*stageH - 0.6*stageH)+'px' }">
         {% endif %}
         <!-- ligne de sol -->
         <div style="position:absolute; left:0; right:0; height:0; border-top:2px dashed #ff5da2; pointer-events:none;"
-             :style="`top:${groundY*stageH}px;`"></div>
+             :style="{ top: (groundY*stageH)+'px' }"></div>
         <!-- HUD repères -->
-        <div style="position:absolute; background:rgba(12,10,16,.6); border:1px solid rgba(255,255,255,.15); pointer-events:none;"
-             :style="`left:{{(tp[0]/frame_w*100)|round(2)}}%; top:{{(tp[1]/frame_h*100)|round(2)}}%; width:{{((tp[2]-tp[0])/frame_w*100)|round(2)}}%; height:{{((tp[3]-tp[1])/frame_h*100)|round(2)}}%;`"></div>
-        <div style="position:absolute; background:rgba(12,10,16,.6); border:1px solid rgba(255,255,255,.15); pointer-events:none;"
-             :style="`left:{{(bp[0]/frame_w*100)|round(2)}}%; top:{{(bp[1]/frame_h*100)|round(2)}}%; width:{{((bp[2]-bp[0])/frame_w*100)|round(2)}}%; height:{{((bp[3]-bp[1])/frame_h*100)|round(2)}}%;`"></div>
+        <div style="position:absolute; pointer-events:none; background:rgba(12,10,16,.6); border:1px solid rgba(255,255,255,.15); left:{{(tp[0]/frame_w*100)|round(2)}}%; top:{{(tp[1]/frame_h*100)|round(2)}}%; width:{{((tp[2]-tp[0])/frame_w*100)|round(2)}}%; height:{{((tp[3]-tp[1])/frame_h*100)|round(2)}}%;"></div>
+        <div style="position:absolute; pointer-events:none; background:rgba(12,10,16,.6); border:1px solid rgba(255,255,255,.15); left:{{(bp[0]/frame_w*100)|round(2)}}%; top:{{(bp[1]/frame_h*100)|round(2)}}%; width:{{((bp[2]-bp[0])/frame_w*100)|round(2)}}%; height:{{((bp[3]-bp[1])/frame_h*100)|round(2)}}%;"></div>
       </div>
     </div>
 
