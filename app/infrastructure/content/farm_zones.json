@@ -8,7 +8,10 @@
     {
       "name": "Clairière sinistre terre",
       "channel_id": 1485329739605348484,
-      "families": [],
+      "families": [
+        "slime",
+        "gobelin"
+      ],
       "background": "clairiere_sinistre_terre.png",
       "essences_min": 1,
       "essences_max": 1
