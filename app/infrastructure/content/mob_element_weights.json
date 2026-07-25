@@ -12,6 +12,12 @@
       "terre": 33,
       "tenebre": 5,
       "lumiere": 5
+    },
+    "gobelin_assassin": {
+      "plante": 10,
+      "eau": 10,
+      "terre": 10,
+      "tenebre": 30
     }
   }
 }
