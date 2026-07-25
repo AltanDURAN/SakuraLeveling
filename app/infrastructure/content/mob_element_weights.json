@@ -5,6 +5,13 @@
       "glace": 1,
       "vent": 1,
       "tenebre": 1
+    },
+    "gobelin": {
+      "plante": 33,
+      "eau": 33,
+      "terre": 33,
+      "tenebre": 5,
+      "lumiere": 5
     }
   }
 }
