@@ -199,7 +199,7 @@
     "spawn_weight": 10,
     "loot_table": [
       {
-        "drop_rate": 0.03,
+        "drop_rate": 0.05,
         "item_code": "dagues_jumelles",
         "max_quantity": 1,
         "min_quantity": 1
@@ -209,6 +209,12 @@
         "item_code": "morceau_de_tissu",
         "max_quantity": 2,
         "min_quantity": 1
+      },
+      {
+        "item_code": "cape_silencieuse",
+        "drop_rate": 0.01,
+        "min_quantity": 1,
+        "max_quantity": 1
       }
     ],
     "image_name": "gobelin_assassin.png",
