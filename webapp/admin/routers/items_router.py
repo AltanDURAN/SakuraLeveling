@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.session import get_db_session
@@ -189,6 +190,50 @@ async def items_create(
     git_sync.push_content(["app/infrastructure/content/items.json"],
                           f"admin: item {code} créé")
     return RedirectResponse(f"/admin/items?q={code}", status_code=303)
+
+
+def _slugify(name: str) -> str:
+    s = re.sub(r"[^a-z0-9]+", "_", (name or "").strip().lower()).strip("_")
+    return s or "item"
+
+
+@router.post("/quick-create")
+async def items_quick_create(request: Request, user: AdminUser = Depends(require_admin)):
+    """Création MINIMALE d'un item (nom + catégorie + rareté), pensée pour être
+    appelée depuis l'éditeur de drops d'un monstre. JSON in/out. Le code est
+    dérivé du nom (unicité garantie). Éditable ensuite en détail dans Objets."""
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+    name = str(payload.get("name", "")).strip()
+    category = str(payload.get("category", "resource")).strip()
+    rarity = str(payload.get("rarity", "common")).strip()
+    if not name:
+        return JSONResponse({"error": "Nom requis."}, status_code=400)
+    if category not in {c.value for c in ItemCategory}:
+        category = "resource"
+    if rarity not in {r.value for r in ItemRarity}:
+        rarity = "common"
+
+    base = _slugify(name)
+    with get_db_session() as session:
+        repo = ItemRepository(session)
+        code, i = base, 2
+        while repo.get_by_code(code) is not None:
+            code, i = f"{base}_{i}", i + 1
+        fields = {
+            "code": code, "name": name, "description": "", "category": category,
+            "rarity": rarity, "stackable": category == "resource", "max_stack": None,
+            "sell_price": 0, "buy_price": None, "icon": None, "stat_bonuses": None,
+            "equipment_slot": None, "requires_two_hands": False, "family": "",
+        }
+        repo.create(**fields)
+    content_sync.upsert_item_json(content_sync.build_item_dict(**fields))
+    git_sync.push_content(["app/infrastructure/content/items.json"],
+                          f"admin: item {code} créé (quick)")
+    _logger.info("Admin %s a créé l'item %s (quick, depuis un drop)", user.discord_id, code)
+    return JSONResponse({"code": code, "name": name, "category": category, "rarity": rarity})
 
 
 @router.get("/{code}/edit", response_class=HTMLResponse)
