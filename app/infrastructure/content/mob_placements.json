@@ -2,9 +2,9 @@
   "_comment": "Placement du monstre dans le cadre (indépendant du décor, qui vient du spot de la zone) : scale, offset_x, shadow, element_weights (poids par élément : >0 = éligible). Vide = hérite des éléments de sa zone.",
   "placements": {
     "gobelin": {
-      "scale": 0.35,
-      "offset_x": -0.01,
-      "offset_y": -0.09,
+      "scale": 0.3,
+      "offset_x": -0.07,
+      "offset_y": -0.19,
       "shadow": true,
       "element_weights": {}
     }
