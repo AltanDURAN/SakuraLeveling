@@ -1,0 +1,97 @@
+{% extends "admin/base.html" %}
+{% block title %}Famille {{ family }} — Sakura Admin{% endblock %}
+{% block content %}
+<style>
+  .mem-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:.8rem; }
+  .mem-card { border:1px solid var(--border); border-radius:12px; padding:.7rem; display:flex; gap:.7rem; align-items:center; background:var(--card,rgba(255,255,255,.02)); }
+  .mem-thumb { width:48px; height:48px; flex:0 0 auto; border-radius:8px; object-fit:contain;
+      background-color:#e4e4ea;
+      background-image:linear-gradient(45deg,#c9c9d2 25%,transparent 25%),linear-gradient(-45deg,#c9c9d2 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#c9c9d2 75%),linear-gradient(-45deg,transparent 75%,#c9c9d2 75%);
+      background-size:10px 10px; background-position:0 0,0 5px,5px -5px,-5px 0; }
+  .mm { width:56px; text-align:center; }
+  .mm input { text-align:center; }
+  .mm .field-label { font-size:.68rem; }
+  .res-emoji { font-size:1.05rem; }
+  [x-cloak]{display:none!important;}
+</style>
+<script>window.FAM_RES = {{ resources|tojson }};</script>
+
+<section class="form-page"
+  x-init="$nextTick(() => { itemCode = '{{ item_code }}' })"
+  x-data="{
+    itemCode: '',
+    resources: window.FAM_RES.slice(),
+    newOpen:false, newName:'', creating:false, err:'',
+    async createRes(){
+      if(!this.newName.trim()){ this.err='Nom requis.'; return; }
+      this.creating=true; this.err='';
+      try{
+        const res=await fetch('/admin/items/quick-create',{method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({name:this.newName, category:'resource', rarity:'common'})});
+        const d=await res.json();
+        if(!res.ok){ this.err=d.error||'Échec.'; return; }
+        this.resources.push({code:d.code, name:d.name});
+        this.resources.sort((a,b)=>a.name.localeCompare(b.name));
+        this.itemCode=d.code; this.newOpen=false; this.newName='';
+      }catch(e){ this.err='Erreur réseau.'; }
+      finally{ this.creating=false; }
+    }
+  }">
+  <a href="/admin/familles" class="breadcrumb">← Familles</a>
+  <h1 style="text-transform:capitalize;">🧬 {{ family }} <span class="count-pill">{{ members|length }} monstre(s)</span></h1>
+  <p style="color:var(--muted); max-width:78ch;">Choisis la ressource commune, puis règle la quantité <strong>garantie</strong> (min/max) que lâche chaque monstre à sa mort.</p>
+
+  {% if saved %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(80,200,120,.15);border:1px solid rgba(80,200,120,.4);">✅ Drops de la famille enregistrés.</div>{% endif %}
+
+  <form method="post" action="/admin/familles/{{ family }}" style="display:flex; flex-direction:column; gap:1.1rem;">
+    <div class="form-section">
+      <h2 class="form-section-title">Ressource commune</h2>
+      <label class="field" style="max-width:420px;">
+        <span class="field-label">Item {{ res_emoji }} droppé par tous les membres de la famille</span>
+        <select class="input" name="item_code" x-model="itemCode">
+          <option value="">— Aucun drop de famille —</option>
+          <template x-for="r in resources" :key="r.code">
+            <option :value="r.code" x-text="r.name"></option>
+          </template>
+        </select>
+      </label>
+      <div style="margin-top:.5rem;">
+        <button type="button" class="btn btn-ghost btn-small" x-show="!newOpen" x-on:click="newOpen=true">➕ Créer une ressource</button>
+        <div x-show="newOpen" x-cloak style="display:flex; gap:.5rem; align-items:flex-end; flex-wrap:wrap; margin-top:.3rem;">
+          <label class="field" style="max-width:260px;"><span class="field-label">Nom de la ressource</span>
+            <input class="input" x-model="newName" placeholder="ex: Dent de gobelin" x-on:keydown.enter.prevent="createRes()"></label>
+          <button type="button" class="btn btn-primary btn-small" x-on:click="createRes()" :disabled="creating" x-text="creating?'Création…':'Créer & sélectionner'"></button>
+          <button type="button" class="btn btn-ghost btn-small" x-on:click="newOpen=false; err=''">Annuler</button>
+          <span x-show="err" x-cloak style="color:var(--danger); font-size:.82rem;" x-text="err"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section" :style="itemCode ? '' : 'opacity:.5; pointer-events:none;'">
+      <h2 class="form-section-title">Quantité garantie par monstre (min → max)</h2>
+      <p class="form-section-help" style="margin-top:0;" x-show="!itemCode">Choisis d'abord une ressource ci-dessus.</p>
+      <div class="mem-grid">
+        {% for m in members %}
+        <div class="mem-card">
+          {% if m.image_name %}<img class="mem-thumb" src="/assets/mobs/{{ m.image_name }}" alt="" onerror="this.style.visibility='hidden'">{% else %}<span class="mem-thumb"></span>{% endif %}
+          <div style="flex:1; min-width:0;">
+            <strong style="font-size:.9rem;">{{ m.name }}</strong>
+            {% if m.element %}<div style="color:var(--muted); font-size:.76rem;">élément {{ m.element }}</div>{% endif %}
+          </div>
+          <label class="mm field"><span class="field-label">Min</span>
+            <input type="number" min="0" max="99" class="input" name="min_{{ m.code }}" value="{{ m.min }}"></label>
+          <label class="mm field"><span class="field-label">Max</span>
+            <input type="number" min="0" max="99" class="input" name="max_{{ m.code }}" value="{{ m.max }}"></label>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="form-actions" style="justify-content:flex-end;">
+      <a href="/admin/familles" class="btn btn-ghost">Retour</a>
+      <button type="submit" class="btn btn-primary">💾 Enregistrer les drops</button>
+    </div>
+  </form>
+</section>
+{% endblock %}
