@@ -19,7 +19,7 @@
         {
           "element": "plante",
           "time": "always",
-          "background": "clairiere_sinistre.png",
+          "background": "clairiere_sinistre_plante.png",
           "crop": {
             "x": 0.11,
             "y": 0.12,
