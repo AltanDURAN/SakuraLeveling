@@ -16,14 +16,7 @@
     "xp_reward": 19,
     "gold_reward": 9,
     "spawn_weight": 60,
-    "loot_table": [
-      {
-        "item_code": "sang_slime",
-        "drop_rate": 0.15,
-        "min_quantity": 1,
-        "max_quantity": 1
-      }
-    ],
+    "loot_table": [],
     "image_name": "slime.png",
     "element": "eau"
   },
@@ -32,21 +25,21 @@
     "name": "Gobelin",
     "family": "gobelin",
     "description": "Une créature faible.",
-    "max_hp": 200,
-    "current_hp": 200,
-    "attack": 12,
-    "defense": 8,
-    "crit_chance": 10,
-    "crit_damage": 150,
-    "dodge": 5,
+    "max_hp": 238,
+    "current_hp": 238,
+    "attack": 18,
+    "defense": 10,
+    "crit_chance": 0,
+    "crit_damage": 100,
+    "dodge": 0,
     "hp_regeneration": 0,
-    "speed": 6,
-    "xp_reward": 14,
-    "gold_reward": 8,
+    "speed": 5,
+    "xp_reward": 50,
+    "gold_reward": 24,
     "spawn_weight": 40,
     "loot_table": [],
     "image_name": "gobelin.png",
-    "element": ""
+    "element": "terre"
   },
   {
     "code": "gobelin_combattant",
@@ -170,14 +163,7 @@
     "xp_reward": 300,
     "gold_reward": 144,
     "spawn_weight": 10,
-    "loot_table": [
-      {
-        "item_code": "sang_gobelin_hq",
-        "drop_rate": 0.15,
-        "min_quantity": 1,
-        "max_quantity": 1
-      }
-    ],
+    "loot_table": [],
     "image_name": "gobelin_superieur.png",
     "element": "feu"
   },
@@ -198,14 +184,7 @@
     "xp_reward": 325,
     "gold_reward": 156,
     "spawn_weight": 10,
-    "loot_table": [
-      {
-        "item_code": "sang_gobelin_hq",
-        "drop_rate": 0.15,
-        "min_quantity": 1,
-        "max_quantity": 1
-      }
-    ],
+    "loot_table": [],
     "image_name": "gobelin_assassin.png",
     "element": "tenebre"
   },
@@ -213,6 +192,7 @@
     "code": "squelette",
     "name": "Squelette",
     "family": "mort-vivant",
+    "element": "tenebre",
     "description": "Un pantin d'os réanimé. Le premier pas dans le royaume des morts.",
     "max_hp": 714,
     "current_hp": 714,
@@ -227,13 +207,13 @@
     "gold_reward": 114,
     "spawn_weight": 25,
     "loot_table": [],
-    "image_name": "squelette.png",
-    "element": "tenebre"
+    "image_name": "squelette.png"
   },
   {
     "code": "zombie",
     "name": "Zombie",
     "family": "mort-vivant",
+    "element": "plante",
     "description": "Une carcasse putride et lente, mais coriace.",
     "max_hp": 1209,
     "current_hp": 1209,
@@ -248,13 +228,13 @@
     "gold_reward": 131,
     "spawn_weight": 20,
     "loot_table": [],
-    "image_name": "zombie.png",
-    "element": "plante"
+    "image_name": "zombie.png"
   },
   {
     "code": "fantome",
     "name": "Fantôme",
     "family": "mort-vivant",
+    "element": "tenebre",
     "description": "Une âme errante insaisissable qui glisse entre les coups.",
     "max_hp": 668,
     "current_hp": 668,
@@ -269,13 +249,13 @@
     "gold_reward": 189,
     "spawn_weight": 15,
     "loot_table": [],
-    "image_name": "fantome.png",
-    "element": "tenebre"
+    "image_name": "fantome.png"
   },
   {
     "code": "momie",
     "name": "Momie",
     "family": "mort-vivant",
+    "element": "terre",
     "description": "Un corps embaumé aux bandelettes maudites, quasi increvable.",
     "max_hp": 1691,
     "current_hp": 1691,
@@ -290,13 +270,13 @@
     "gold_reward": 191,
     "spawn_weight": 10,
     "loot_table": [],
-    "image_name": "momie.png",
-    "element": "terre"
+    "image_name": "momie.png"
   },
   {
     "code": "gargouille",
     "name": "Gargouille",
     "family": "mort-vivant",
+    "element": "terre",
     "description": "Une statue de pierre animée qui frappe comme un bélier.",
     "max_hp": 1020,
     "current_hp": 1020,
@@ -311,13 +291,13 @@
     "gold_reward": 219,
     "spawn_weight": 7,
     "loot_table": [],
-    "image_name": "gargouille.png",
-    "element": "terre"
+    "image_name": "gargouille.png"
   },
   {
     "code": "liche_maudite",
     "name": "Liche maudite",
     "family": "mort-vivant",
+    "element": "tenebre",
     "description": "Un sorcier mort-vivant dont la magie noire dévaste.",
     "max_hp": 1193,
     "current_hp": 1193,
@@ -332,13 +312,13 @@
     "gold_reward": 260,
     "spawn_weight": 4,
     "loot_table": [],
-    "image_name": "liche_maudite.png",
-    "element": "tenebre"
+    "image_name": "liche_maudite.png"
   },
   {
     "code": "banshee",
     "name": "Banshee",
     "family": "mort-vivant",
+    "element": "glace",
     "description": "Un spectre hurlant dont le cri glaçant transperce l'âme.",
     "max_hp": 1188,
     "current_hp": 1188,
@@ -353,7 +333,6 @@
     "gold_reward": 352,
     "spawn_weight": 2,
     "loot_table": [],
-    "image_name": "banshee.png",
-    "element": "glace"
+    "image_name": "banshee.png"
   }
 ]
