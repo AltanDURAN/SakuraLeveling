@@ -1058,24 +1058,6 @@
     "family": "slime"
   },
   {
-    "code": "slime_ceinture",
-    "name": "Ceinture de slime",
-    "description": "Pièce de la panoplie slime — bonus de set actif dès 2 pièces.",
-    "category": "belt",
-    "rarity": "uncommon",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 6,
-    "buy_price": 18,
-    "icon": null,
-    "stat_bonuses": {
-      "max_hp": 80
-    },
-    "equipment_slot": "ceinture",
-    "requires_two_hands": false,
-    "family": "slime"
-  },
-  {
     "code": "slime_boucle_oreille",
     "name": "Boucle de slime",
     "description": "Pièce de la panoplie slime — bonus de set actif dès 2 pièces.",
