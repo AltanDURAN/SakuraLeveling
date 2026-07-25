@@ -15,7 +15,13 @@ from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.session import get_db_session
 from app.infrastructure.encounters import farm_zone_loader, mob_element_weight_loader
-from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
+from app.shared.enums import (
+    ELEMENT_EMOJIS,
+    ELEMENT_LABELS,
+    ITEM_CATEGORY_EMOJIS,
+    ITEM_CATEGORY_LABELS,
+    ITEM_RARITY_LABELS,
+)
 from app.shared.paths import MOBS_ASSETS_DIR
 from webapp.admin import content_sync, git_sync, json_writer, uploads
 from webapp.admin.auth import AdminUser, require_admin
@@ -282,6 +288,9 @@ async def mobs_list(
             "item_categories": item_categories,
             "rarity_colors": _RARITY_COLORS,
             "rarities": ["common", "uncommon", "rare", "epic", "legendary"],
+            "category_labels": ITEM_CATEGORY_LABELS,
+            "category_emojis": ITEM_CATEGORY_EMOJIS,
+            "rarity_labels": ITEM_RARITY_LABELS,
             "element_emojis": ELEMENT_EMOJIS, "element_labels": ELEMENT_LABELS,
             "saved": saved, "err": err,
         },
