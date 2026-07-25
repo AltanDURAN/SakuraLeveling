@@ -131,8 +131,8 @@
     "dodge": 0,
     "hp_regeneration": 0,
     "speed": 2,
-    "xp_reward": 206,
-    "gold_reward": 99,
+    "xp_reward": 110,
+    "gold_reward": 75,
     "spawn_weight": 20,
     "loot_table": [
       {
@@ -142,10 +142,10 @@
         "min_quantity": 1
       },
       {
-        "item_code": "bois",
         "drop_rate": 0.2,
-        "min_quantity": 1,
-        "max_quantity": 3
+        "item_code": "bois",
+        "max_quantity": 3,
+        "min_quantity": 1
       }
     ],
     "image_name": "gobelin_geant.png",
