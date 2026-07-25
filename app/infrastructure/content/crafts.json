@@ -1096,22 +1096,6 @@
     ]
   },
   {
-    "code": "slime_ceinture_recipe",
-    "name": "Ceinture de slime",
-    "result_item_code": "slime_ceinture",
-    "result_quantity": 1,
-    "ingredients": [
-      {
-        "item_code": "slime_gel",
-        "quantity": 2
-      },
-      {
-        "item_code": "leather_strip",
-        "quantity": 1
-      }
-    ]
-  },
-  {
     "code": "slime_boucle_oreille_recipe",
     "name": "Boucle de slime",
     "result_item_code": "slime_boucle_oreille",
@@ -2025,10 +2009,6 @@
     "result_item_code": "slime_ceinture_plus",
     "result_quantity": 1,
     "ingredients": [
-      {
-        "item_code": "slime_ceinture",
-        "quantity": 1
-      },
       {
         "item_code": "sang_slime",
         "quantity": 1
