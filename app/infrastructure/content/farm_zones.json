@@ -79,7 +79,7 @@
       "families": [
         "mort-vivant"
       ],
-      "background": "cimetiere_abandonne_glace.png",
+      "background": "cimetiere_abandonne_vent.png",
       "essences_min": 1,
       "essences_max": 2
     },
