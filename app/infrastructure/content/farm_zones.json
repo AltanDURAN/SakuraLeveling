@@ -52,7 +52,7 @@
         {
           "element": "tenebre",
           "time": "night",
-          "background": "clairiere_sinistre.png",
+          "background": "clairiere_sinistre_tenebre.png",
           "crop": {
             "x": 0.11,
             "y": 0.12,
