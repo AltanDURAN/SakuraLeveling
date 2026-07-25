@@ -9,6 +9,8 @@ from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi import HTTPException
 
+from app.bot.rendering.element_visuals import ELEMENT_COLORS
+from app.domain.services.power_score_service import PowerScoreService
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.session import get_db_session
@@ -23,6 +25,61 @@ from webapp.admin._shared import get_templates
 _logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin/mobs", tags=["admin-mobs"])
+
+_RARITY_COLORS = {
+    "common": "#9aa0aa", "uncommon": "#3fb950", "rare": "#4a9eff",
+    "epic": "#a371f7", "legendary": "#e3b341",
+}
+
+
+def _hex(rgb) -> str:
+    try:
+        r, g, b = rgb
+        return f"#{int(r):02x}{int(g):02x}{int(b):02x}"
+    except (TypeError, ValueError):
+        return "#96969b"
+
+
+def _mob_zone_ctx(mob) -> dict:
+    """Zone du monstre + ses éléments (spots) avec le poids actuel du monstre.
+    Sert de palette pour les tags élémentaires de la carte."""
+    farm_zone_loader.clear_cache()
+    ch = farm_zone_loader.get_spawn_channel_for_family(mob.family)
+    zone = farm_zone_loader.get_zone_by_channel(ch)
+    weights = mob_element_weight_loader.get_weights(mob.code)
+    elements = []
+    for s in farm_zone_loader.get_spots(ch):
+        el = str(s.get("element", "")).strip().lower()
+        if not el:
+            continue
+        elements.append({
+            "code": el, "label": ELEMENT_LABELS.get(el, el),
+            "emoji": ELEMENT_EMOJIS.get(el, ""),
+            "color": _hex(ELEMENT_COLORS.get(el)),
+            "time": s.get("time", "always"),
+            "weight": weights.get(el, 0),
+        })
+    return {
+        "name": (zone or {}).get("name", "") if zone else "",
+        "channel_id": ch, "elements": elements,
+    }
+
+
+def _loot_rows(mob, item_map: dict) -> list[dict]:
+    """Lignes de drop enrichies (nom + rareté de l'item) pour l'affichage."""
+    rows = []
+    for d in (mob.loot_table or []):
+        code = d.get("item_code")
+        it = item_map.get(code) or {}
+        rows.append({
+            "item_code": code,
+            "name": it.get("name", code),
+            "rarity": it.get("rarity", "common"),
+            "drop_rate": d.get("drop_rate", 0),
+            "min_quantity": d.get("min_quantity", 1),
+            "max_quantity": d.get("max_quantity", 1),
+        })
+    return rows
 
 _WEIGHTS_FILE = "mob_element_weights.json"
 _WEIGHTS_COMMENT = (
@@ -160,30 +217,60 @@ def _clamp_mob_stats(
 async def mobs_list(
     request: Request,
     user: AdminUser = Depends(require_admin),
-    family: str | None = None,
-    q: str | None = None,
+    saved: str | None = None,
+    err: str | None = None,
 ):
+    pss = PowerScoreService()
     with get_db_session() as session:
         mobs = MobRepository(session).list_all()
+        items = ItemRepository(session).list_all()
+    item_map = {it.code: {"name": it.name, "rarity": it.rarity, "category": it.category}
+                for it in items}
+    mobs.sort(key=lambda m: (m.family or "zzz", m.name))
 
-    if family:
-        mobs = [m for m in mobs if (m.family or "") == family]
-    if q:
-        q_lower = q.lower()
-        mobs = [
-            m for m in mobs
-            if q_lower in m.code.lower() or q_lower in m.name.lower()
-        ]
+    _stat_keys = ("max_hp", "attack", "defense", "speed",
+                  "crit_chance", "crit_damage", "dodge", "hp_regeneration")
+    cards = []
+    for m in mobs:
+        score = pss.calculate_from_mob(m)
+        zone = _mob_zone_ctx(m)
+        loot_rows = _loot_rows(m, item_map)
+        # État complet consommé par le composant Alpine de la carte (data-card).
+        state = {
+            "code": m.code, "name": m.name, "family": m.family or "",
+            "element": m.element or "", "description": m.description or "",
+            "image": m.image_name or "",
+            "weights": {e["code"]: e["weight"] for e in zone["elements"]},
+            "elements": zone["elements"],
+            "stats": {k: getattr(m, k) for k in _stat_keys},
+            "rewards": {"xp_reward": m.xp_reward, "gold_reward": m.gold_reward,
+                        "spawn_weight": m.spawn_weight},
+            "loot": [{"item_code": r["item_code"], "drop_rate": r["drop_rate"],
+                      "min_quantity": r["min_quantity"], "max_quantity": r["max_quantity"]}
+                     for r in loot_rows],
+        }
+        search = " ".join([m.name or "", m.family or ""]
+                          + [e["label"] for e in zone["elements"] if e["weight"] > 0]).lower()
+        cards.append({
+            "mob": m, "zone": zone, "state": state, "loot_rows": loot_rows,
+            "power_score": pss.format_score(score), "rank": pss.compute_rank(score),
+            "search": search,
+        })
 
-    mobs.sort(key=lambda m: (m.family or "zzz", m.code))
-
+    items_catalog = sorted(
+        ({"code": it.code, "name": it.name, "rarity": it.rarity, "category": it.category}
+         for it in items),
+        key=lambda x: (x["category"], x["name"]),
+    )
     return get_templates().TemplateResponse(
         request, "admin/mobs/list.html",
         context={
-            "user": user, "mobs": mobs,
-            "filter_family": family or "",
-            "filter_q": q or "",
+            "user": user, "cards": cards,
             "all_families": sorted({m.family for m in mobs if m.family}),
+            "items_catalog": items_catalog,
+            "rarity_colors": _RARITY_COLORS,
+            "element_emojis": ELEMENT_EMOJIS, "element_labels": ELEMENT_LABELS,
+            "saved": saved, "err": err,
         },
     )
 
@@ -295,30 +382,14 @@ async def mobs_create(
     if asset_path:
         push_paths.append(asset_path)
     git_sync.push_content(push_paths, f"admin: mob {code} créé")
-    return RedirectResponse(f"/admin/mobs?q={code}", status_code=303)
+    return RedirectResponse(f"/admin/mobs?saved={code}#mob-{code}", status_code=303)
 
 
-@router.get("/{code}/edit", response_class=HTMLResponse)
-async def mobs_edit_form(
-    code: str, request: Request,
-    user: AdminUser = Depends(require_admin),
-):
-    with get_db_session() as session:
-        mob = MobRepository(session).get_by_code(code)
-        if mob is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, f"Mob `{code}` introuvable.")
-        item_codes = [it.code for it in ItemRepository(session).list_all()]
-    return get_templates().TemplateResponse(
-        request, "admin/mobs/form.html",
-        context={
-            "user": user, "mob": mob,
-            # JSON compact pour initialiser l'éditeur Alpine (champ caché).
-            "loot_table_json": json.dumps(mob.loot_table or [], ensure_ascii=False),
-            "item_codes": item_codes,
-            "weight_elements": _mob_weight_elements(mob),
-            "errors": {},
-        },
-    )
+@router.get("/{code}/edit")
+async def mobs_edit_form(code: str, user: AdminUser = Depends(require_admin)):
+    """L'édition se fait désormais en place sur la carte du monstre : on
+    redirige vers la carte (deep-link `#mob-<code>`, dépliée à l'arrivée)."""
+    return RedirectResponse(f"/admin/mobs#mob-{code}", status_code=303)
 
 
 @router.post("/{code}")
@@ -360,15 +431,8 @@ async def mobs_update(
         # Upload d'image (optionnel) → écrase image_name par le fichier sauvé.
         image_name, asset_path, upload_err = await _save_mob_image(form, code, image_name)
         if upload_err:
-            return get_templates().TemplateResponse(
-                request, "admin/mobs/form.html",
-                context={
-                    "user": user, "mob": existing,
-                    "loot_table_json": json.dumps(loot_table or [], ensure_ascii=False),
-                    "form_data": form_data, "errors": {"image_file": upload_err},
-                },
-                status_code=400,
-            )
+            _logger.warning("Upload image mob %s refusé : %s", code, upload_err)
+            return RedirectResponse(f"/admin/mobs?err=upload#mob-{code}", status_code=303)
 
         repo.update_by_code(
             code=code,
@@ -396,7 +460,7 @@ async def mobs_update(
         updated = MobRepository(session).get_by_code(code)
     if updated is not None:
         _save_mob_weights(code, form_data, _mob_weight_elements(updated))
-    return RedirectResponse(f"/admin/mobs?q={code}", status_code=303)
+    return RedirectResponse(f"/admin/mobs?saved={code}#mob-{code}", status_code=303)
 
 
 @router.post("/{code}/delete")
