@@ -113,5 +113,24 @@
     "equipment_slot": null,
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "dagues_jumelles",
+    "name": "Dagues jumelles",
+    "description": "Une paire de dagues gobelines bien affutées.",
+    "category": "weapon",
+    "rarity": "rare",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 10,
+      "crit_damage": 20
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": true,
+    "family": ""
   }
 ]
