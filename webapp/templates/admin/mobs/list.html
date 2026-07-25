@@ -81,13 +81,13 @@
 window.SAKURA_RARITY = {{ rarity_colors|tojson }};
 window.SAKURA_CATEGORIES = {{ item_categories|tojson }};
 window.SAKURA_RARITIES = {{ rarities|tojson }};
-window.SAKURA_CATEMOJI = {
-  resource:'🪵', weapon:'⚔️', shield:'🛡️', helmet:'⛑️', chest:'👕', legs:'👖',
-  boots:'🥾', necklace:'📿', bracelet:'⛓️', ring:'💍', belt:'🎗️', cape:'🧥',
-  earring:'👂', consumable:'🧪', potion:'🧪'
-};
+window.SAKURA_CATEMOJI = {{ category_emojis|tojson }};
+window.SAKURA_CATLABEL = {{ category_labels|tojson }};
+window.SAKURA_RARLABEL = {{ rarity_labels|tojson }};
 function elImg(code){ return '/assets/items/'+code+'.png'; }
 function catEmoji(cat){ return window.SAKURA_CATEMOJI[cat] || '📦'; }
+function catLabel(cat){ return window.SAKURA_CATLABEL[cat] || cat; }
+function rarLabel(r){ return window.SAKURA_RARLABEL[r] || r; }
 function mobCard(el){
   const d = JSON.parse(el.dataset.card);
   const meta = {}; (d.elements||[]).forEach(e => meta[e.code]=e);
@@ -357,7 +357,7 @@ document.addEventListener('alpine:init', () => {
                   <span class="rdot" :style="{ background: rarityColor(itemRarity(row.item_code)) }"></span>
                   <strong x-text="itemName(row.item_code)" style="font-size:.88rem;"></strong>
                 </div>
-                <small style="color:var(--muted);" x-text="row.item_code+' · '+itemRarity(row.item_code)"></small>
+                <small style="color:var(--muted);" x-text="catLabel(itemCat(row.item_code))+' · '+rarLabel(itemRarity(row.item_code))"></small>
               </div>
               <label class="field" style="width:190px;">
                 <span class="field-label">Chance <span x-text="Math.round(row.drop_rate*100)+'%'"></span></span>
@@ -391,7 +391,9 @@ document.addEventListener('alpine:init', () => {
               <div class="drop-cats">
                 <button type="button" class="catchip" :class="{on: pickCat===''}" x-on:click="pickCat=''">Tout</button>
                 {% for cat in item_categories %}
-                <button type="button" class="catchip" :class="{on: pickCat==='{{ cat }}'}" x-on:click="pickCat='{{ cat }}'">{{ cat }}</button>
+                <button type="button" class="catchip" style="font-size:1.05rem; padding:.2rem .5rem;"
+                        :class="{on: pickCat==='{{ cat }}'}" x-on:click="pickCat='{{ cat }}'"
+                        title="{{ category_labels.get(cat, cat) }}">{{ category_emojis.get(cat, '📦') }}</button>
                 {% endfor %}
               </div>
               <div class="drop-body">
@@ -405,7 +407,7 @@ document.addEventListener('alpine:init', () => {
                         <span class="rdot" :style="{ background: rarityColor(it.rarity) }"></span>
                       </div>
                       <span class="nm" x-text="it.name"></span>
-                      <small style="color:var(--muted);" x-text="it.category+' · '+it.rarity"></small>
+                      <small style="color:var(--muted);" x-text="catLabel(it.category)+' · '+rarLabel(it.rarity)"></small>
                     </div>
                   </template>
                 </div>
@@ -423,10 +425,10 @@ document.addEventListener('alpine:init', () => {
                     <input class="input" placeholder="Nom de l'item" x-model="newItem.name">
                     <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
                       <select class="input" style="flex:1; min-width:130px;" x-model="newItem.category">
-                        {% for cat in item_categories %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}
+                        {% for cat in item_categories %}<option value="{{ cat }}">{{ category_emojis.get(cat, '📦') }} {{ category_labels.get(cat, cat) }}</option>{% endfor %}
                       </select>
                       <select class="input" style="flex:1; min-width:130px;" x-model="newItem.rarity">
-                        {% for rr in rarities %}<option value="{{ rr }}">{{ rr }}</option>{% endfor %}
+                        {% for rr in rarities %}<option value="{{ rr }}">{{ rarity_labels.get(rr, rr) }}</option>{% endfor %}
                       </select>
                     </div>
                     <div x-show="createErr" x-cloak style="color:var(--danger); font-size:.82rem;" x-text="createErr"></div>

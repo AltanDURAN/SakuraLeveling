@@ -140,6 +140,26 @@ class ItemRarity(str, Enum):
     LEGENDARY = "legendary"
 
 
+# Libellés FR + icônes des catégories / raretés d'items (affichage admin).
+ITEM_CATEGORY_LABELS: dict[str, str] = {
+    "resource": "Ressource", "weapon": "Arme", "shield": "Bouclier",
+    "helmet": "Casque", "chest": "Plastron", "legs": "Jambières",
+    "boots": "Bottes", "necklace": "Collier", "bracelet": "Bracelet",
+    "ring": "Bague", "belt": "Ceinture", "cape": "Cape", "earring": "Boucle d'oreille",
+    "consumable": "Consommable", "potion": "Potion",
+}
+ITEM_CATEGORY_EMOJIS: dict[str, str] = {
+    "resource": "🪵", "weapon": "⚔️", "shield": "🛡️", "helmet": "⛑️",
+    "chest": "👕", "legs": "👖", "boots": "🥾", "necklace": "📿",
+    "bracelet": "⛓️", "ring": "💍", "belt": "🎗️", "cape": "🧥",
+    "earring": "👂", "consumable": "🧪", "potion": "🧪",
+}
+ITEM_RARITY_LABELS: dict[str, str] = {
+    "common": "Commun", "uncommon": "Peu commun", "rare": "Rare",
+    "epic": "Épique", "legendary": "Légendaire",
+}
+
+
 class CooldownAction(StrEnum):
     DAILY = "daily"
 
