@@ -65,5 +65,21 @@
     "equipment_slot": null,
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "silex",
+    "name": "Silex",
+    "description": "",
+    "category": "resource",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": null,
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
