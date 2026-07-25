@@ -37,7 +37,20 @@
     "xp_reward": 50,
     "gold_reward": 24,
     "spawn_weight": 40,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "silex",
+        "drop_rate": 0.2,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "diamant",
+        "drop_rate": 0.03,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
     "image_name": "gobelin.png",
     "element": ""
   },
