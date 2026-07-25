@@ -124,22 +124,22 @@
     "description": "Une créature imposante.",
     "max_hp": 1000,
     "current_hp": 1000,
-    "attack": 35,
-    "defense": 30,
+    "attack": 60,
+    "defense": 25,
     "crit_chance": 10,
-    "crit_damage": 150,
+    "crit_damage": 200,
     "dodge": 0,
     "hp_regeneration": 0,
-    "speed": 3,
+    "speed": 2,
     "xp_reward": 206,
     "gold_reward": 99,
     "spawn_weight": 20,
     "loot_table": [
       {
-        "item_code": "diamant",
         "drop_rate": 0.1,
-        "min_quantity": 1,
-        "max_quantity": 1
+        "item_code": "diamant",
+        "max_quantity": 1,
+        "min_quantity": 1
       }
     ],
     "image_name": "gobelin_geant.png",
