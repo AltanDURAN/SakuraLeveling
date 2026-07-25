@@ -9,9 +9,9 @@
         "shadow": true
       },
       "eau": {
-        "scale": 0.3,
-        "offset_x": -0.07,
-        "offset_y": -0.19,
+        "scale": 0.37,
+        "offset_x": 0.01,
+        "offset_y": -0.06,
         "shadow": true
       },
       "terre": {
