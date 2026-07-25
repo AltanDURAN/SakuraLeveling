@@ -164,6 +164,15 @@ EQUIPMENT_SLOT_LABELS: dict[str, str] = {
     "collier": "Collier", "bracelet": "Bracelet", "bague": "Bague",
     "ceinture": "Ceinture", "cape": "Cape", "boucle_oreille": "Boucle d'oreille",
 }
+# Slot d'équipement DÉDUIT du type d'item (None = non équipable). Les armes et
+# boucliers vont en main droite par défaut (ambidextrie/2-mains gérées à l'équip).
+ITEM_CATEGORY_DEFAULT_SLOT: dict[str, str | None] = {
+    "weapon": "main_droite", "shield": "main_droite",
+    "helmet": "casque", "chest": "plastron", "legs": "jambieres", "boots": "bottes",
+    "necklace": "collier", "bracelet": "bracelet", "ring": "bague",
+    "belt": "ceinture", "cape": "cape", "earring": "boucle_oreille",
+    "resource": None, "consumable": None, "potion": None,
+}
 # Stat de bonus d'item : libellé FR + icône (affichage admin).
 STAT_LABELS: dict[str, str] = {
     "max_hp": "PV", "attack": "Attaque", "defense": "Défense", "speed": "Vitesse",

@@ -15,6 +15,7 @@ from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.session import get_db_session
 from app.shared.enums import (
     EQUIPMENT_SLOT_LABELS,
+    ITEM_CATEGORY_DEFAULT_SLOT,
     ITEM_CATEGORY_EMOJIS,
     ITEM_CATEGORY_LABELS,
     ITEM_RARITY_LABELS,
@@ -106,6 +107,7 @@ def _labels_ctx() -> dict:
         "slot_labels": EQUIPMENT_SLOT_LABELS,
         "stat_labels": STAT_LABELS,
         "stat_emojis": STAT_EMOJIS,
+        "category_slot": ITEM_CATEGORY_DEFAULT_SLOT,
     }
 
 
@@ -134,12 +136,15 @@ def _item_card_state(item) -> dict:
 
 def _collect_item_fields(form_data: dict[str, str], code: str, fallback_rarity: str = "common") -> dict:
     """Construit le dict de champs commun à create (repo.create) et update
-    (repo.update_by_code) + à la sync JSON. Source unique de vérité du parsing."""
+    (repo.update_by_code) + à la sync JSON. Source unique de vérité du parsing.
+
+    Le slot d'équipement est DÉDUIT du type (plus de champ à saisir)."""
+    category = form_data["category"].strip()
     return {
         "code": code,
         "name": form_data["name"].strip(),
         "description": form_data.get("description", "").strip(),
-        "category": form_data["category"].strip(),
+        "category": category,
         "rarity": form_data.get("rarity", fallback_rarity).strip() or fallback_rarity,
         "stackable": form_data.get("stackable") == "on",
         "max_stack": _parse_optional_int(form_data.get("max_stack")),
@@ -147,7 +152,7 @@ def _collect_item_fields(form_data: dict[str, str], code: str, fallback_rarity: 
         "buy_price": _parse_optional_int(form_data.get("buy_price")),
         "icon": form_data.get("icon", "").strip() or None,
         "stat_bonuses": _parse_stat_bonuses(form_data) or None,
-        "equipment_slot": form_data.get("equipment_slot", "").strip() or None,
+        "equipment_slot": ITEM_CATEGORY_DEFAULT_SLOT.get(category),
         "requires_two_hands": form_data.get("requires_two_hands") == "on",
         "family": form_data.get("family", "").strip(),
     }
