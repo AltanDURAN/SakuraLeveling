@@ -18,6 +18,13 @@
       "eau": 10,
       "terre": 10,
       "tenebre": 30
+    },
+    "gobelin_geant": {
+      "plante": 20,
+      "eau": 10,
+      "terre": 20,
+      "tenebre": 5,
+      "lumiere": 5
     }
   }
 }
