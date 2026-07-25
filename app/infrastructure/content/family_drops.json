@@ -35,5 +35,38 @@
         "max": 4
       }
     }
+  },
+  "mort-vivant": {
+    "item_code": "fragment_d_me",
+    "mobs": {
+      "banshee": {
+        "min": 2,
+        "max": 4
+      },
+      "fantome": {
+        "min": 1,
+        "max": 2
+      },
+      "gargouille": {
+        "min": 1,
+        "max": 3
+      },
+      "liche_maudite": {
+        "min": 2,
+        "max": 4
+      },
+      "momie": {
+        "min": 1,
+        "max": 2
+      },
+      "squelette": {
+        "min": 1,
+        "max": 1
+      },
+      "zombie": {
+        "min": 1,
+        "max": 1
+      }
+    }
   }
 }
