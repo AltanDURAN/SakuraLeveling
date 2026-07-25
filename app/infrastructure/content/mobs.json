@@ -35,7 +35,7 @@
     "hp_regeneration": 0,
     "speed": 6,
     "xp_reward": 14,
-    "gold_reward": 8,
+    "gold_reward": 9,
     "spawn_weight": 40,
     "loot_table": [
       {
