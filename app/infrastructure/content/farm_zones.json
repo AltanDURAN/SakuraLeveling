@@ -74,12 +74,12 @@
       ]
     },
     {
-      "name": "Cimetière abandonné",
+      "name": "Cimetière abandonné lumière",
       "channel_id": 1525863083321462914,
       "families": [
         "mort-vivant"
       ],
-      "background": "cimetiere_abandonne_tenebre.png",
+      "background": "cimetiere_abandonne_lumiere.png",
       "essences_min": 1,
       "essences_max": 2
     },
