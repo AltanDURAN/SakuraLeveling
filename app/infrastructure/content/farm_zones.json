@@ -63,7 +63,7 @@
         {
           "element": "lumiere",
           "time": "day",
-          "background": "clairiere_sinistre.png",
+          "background": "clairiere_sinistre_lumiere.png",
           "crop": {
             "x": 0.11,
             "y": 0.12,
