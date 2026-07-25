@@ -60,6 +60,20 @@
   .tag-num::-webkit-outer-spin-button, .tag-num::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
   .eltag .x { cursor:pointer; font-weight:800; opacity:.6; }
   .eltag .x:hover { opacity:1; }
+  /* Tuiles éditables (poids d'éléments), style « stats de combat » */
+  .etiles { display:flex; flex-wrap:wrap; gap:.55rem; }
+  .etile { position:relative; width:112px; display:flex; flex-direction:column; align-items:center; gap:.05rem;
+           padding:.5rem .3rem .45rem; border:1px solid var(--border); border-top:3px solid var(--acc,#888);
+           border-radius:11px; background:rgba(255,255,255,.02); }
+  .etile .ic { font-size:1.05rem; line-height:1.1; }
+  .etile .lb { font-size:.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:.02em; text-align:center; }
+  .etile input { width:100%; text-align:center; border:none; background:transparent; font-weight:800;
+                 font-size:1.05rem; color:inherit; padding:0; -moz-appearance:textfield; }
+  .etile input:focus { outline:none; }
+  .etile input::-webkit-outer-spin-button, .etile input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .etile .rm { position:absolute; top:.15rem; right:.3rem; cursor:pointer; opacity:.45; font-weight:800; font-size:.78rem; line-height:1; }
+  .etile .rm:hover { opacity:1; color:var(--danger); }
+  .etile .pct { font-size:.66rem; color:var(--muted); }
   /* Modale d'ajout de drops */
   .drop-modal { position:fixed; inset:0; z-index:1000; background:rgba(10,8,14,.55);
       display:flex; align-items:center; justify-content:center; padding:1rem; }
@@ -321,16 +335,17 @@ document.addEventListener('alpine:init', () => {
                style="color:#c9772f; background:rgba(224,161,58,.1); border:1px solid rgba(224,161,58,.35); border-radius:8px; padding:.5rem .7rem; margin-top:0;">
             ⚠️ Élément forcé « <span x-text="element"></span> » actif → les poids ci-dessous sont <strong>ignorés</strong> au spawn (ce monstre sort toujours en <span x-text="element"></span>). Mets « aucun » dans Identité pour activer le tirage par poids.
           </div>
-          <div style="display:flex; flex-wrap:wrap; gap:.5rem; align-items:center;">
+          <div class="etiles">
             <template x-for="c in activeEls()" :key="c">
-              <span class="eltag" :style="{ borderColor: elMeta(c).color, color: elMeta(c).color }">
-                <span x-text="elMeta(c).emoji"></span><span x-text="elMeta(c).label"></span>
-                <input type="number" min="1" max="999" class="tag-num" x-model.number="w[c]">
-                <span class="w" x-text="'('+elPct(c)+'%)'"></span>
-                <span class="x" x-on:click="removeEl(c)" title="Retirer">✕</span>
-              </span>
+              <div class="etile" :style="{ '--acc': elMeta(c).color }">
+                <span class="rm" x-on:click="removeEl(c)" title="Retirer">✕</span>
+                <span class="ic" x-text="elMeta(c).emoji"></span>
+                <span class="lb" :style="{ color: elMeta(c).color }" x-text="elMeta(c).label"></span>
+                <input type="number" min="1" max="999" x-model.number="w[c]">
+                <span class="pct" x-text="elPct(c)+'%'"></span>
+              </div>
             </template>
-            <span x-show="activeEls().length===0" style="color:var(--muted); font-size:.85rem;">Aucun élément (tirage uniforme sur la zone).</span>
+            <span x-show="activeEls().length===0" style="color:var(--muted); font-size:.85rem; align-self:center;">Aucun élément (tirage uniforme sur la zone).</span>
           </div>
           <div style="margin-top:.7rem;" x-show="addableEls().length">
             <select class="input" style="max-width:220px; display:inline-block;" x-on:change="addEl($event.target.value); $event.target.value=''">

@@ -39,6 +39,20 @@
   .hint { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px;
           border-radius:50%; border:1px solid var(--border); color:var(--muted); font-size:.68rem;
           cursor:help; margin-left:.3rem; font-style:normal; vertical-align:middle; }
+  /* Tuiles éditables (bonus de stats), style « stats de combat » */
+  .etiles { display:flex; flex-wrap:wrap; gap:.55rem; }
+  .etile { position:relative; width:108px; display:flex; flex-direction:column; align-items:center; gap:.05rem;
+           padding:.5rem .3rem .45rem; border:1px solid var(--border); border-top:3px solid var(--acc,#888);
+           border-radius:11px; background:rgba(255,255,255,.02); }
+  .etile .ic { font-size:1.05rem; line-height:1.1; }
+  .etile .lb { font-size:.66rem; color:var(--muted); text-transform:uppercase; letter-spacing:.02em; text-align:center; }
+  .etile input { width:100%; text-align:center; border:none; background:transparent; font-weight:800;
+                 font-size:1.05rem; color:inherit; padding:0; -moz-appearance:textfield; }
+  .etile input:focus { outline:none; }
+  .etile input::-webkit-outer-spin-button, .etile input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .etile .rm { position:absolute; top:.15rem; right:.3rem; cursor:pointer; opacity:.45; font-weight:800; font-size:.78rem; line-height:1; }
+  .etile .rm:hover { opacity:1; color:var(--danger); }
+  .etile .pct { font-size:.66rem; color:var(--muted); }
   [x-cloak] { display:none !important; }
 </style>
 
@@ -52,7 +66,10 @@ window.SAKURA_STATLABEL = {{ stat_labels|tojson }};
 window.SAKURA_STATEMOJI = {{ stat_emojis|tojson }};
 window.SAKURA_STATS = {{ supported_stats|tojson }};
 window.SAKURA_CATSLOT = {{ category_slot|tojson }};
+window.SAKURA_STATCOLOR = { max_hp:'#e5484d', attack:'#f0883e', defense:'#4a9eff', speed:'#2dd4bf',
+  crit_chance:'#e3b341', crit_damage:'#d16bff', dodge:'#14b8a6', hp_regeneration:'#22c55e' };
 function slotForCat(c){ return window.SAKURA_CATSLOT[c] || ''; }
+function statColor(s){ return window.SAKURA_STATCOLOR[s] || '#8a8a95'; }
 function itImg(code){ return '/assets/items/'+code+'.png'; }
 function catEmoji(c){ return window.SAKURA_CATEMOJI[c] || '📦'; }
 function catLabel(c){ return window.SAKURA_CATLABEL[c] || c; }
@@ -172,17 +189,18 @@ document.addEventListener('alpine:init', () => {
   <div class="form-section">
     <h2 class="form-section-title">Bonus de stats (équipement)</h2>
     <p class="form-section-help" style="margin-top:0;">Chaque stat ajoutée modifie les stats du joueur qui équipe l'objet. Valeurs négatives = malus autorisé.</p>
-    <div style="display:flex; flex-wrap:wrap; gap:.5rem; align-items:center;">
+    <div class="etiles">
       <template x-for="s in activeStats()" :key="s">
-        <span class="statchip">
-          <span x-text="statEmoji(s)"></span><span x-text="statLabel(s)"></span>
-          <input type="number" class="tag-num" x-model.number="stats[s]">
-          <span class="x" x-on:click="removeStat(s)" title="Retirer">✕</span>
-        </span>
+        <div class="etile" :style="{ '--acc': statColor(s) }">
+          <span class="rm" x-on:click="removeStat(s)" title="Retirer">✕</span>
+          <span class="ic" x-text="statEmoji(s)"></span>
+          <span class="lb" x-text="statLabel(s)"></span>
+          <input type="number" x-model.number="stats[s]">
+        </div>
       </template>
-      <span x-show="activeStats().length===0" style="color:var(--muted); font-size:.85rem;">Aucun bonus.</span>
+      <span x-show="activeStats().length===0" style="color:var(--muted); font-size:.85rem; align-self:center;">Aucun bonus.</span>
     </div>
-    <div style="margin-top:.6rem;" x-show="addableStats().length">
+    <div style="margin-top:.7rem;" x-show="addableStats().length">
       <select class="input" style="max-width:220px; display:inline-block;" x-on:change="addStat($event.target.value); $event.target.value=''">
         <option value="">+ Ajouter un bonus…</option>
         <template x-for="s in addableStats()" :key="s">
