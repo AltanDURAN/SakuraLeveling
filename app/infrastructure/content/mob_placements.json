@@ -1,4 +1,65 @@
 {
   "_comment": "Placement du monstre PAR ÉLÉMENT (indépendant du décor, qui vient du spot partagé de la zone) : placements[mob][element] = {weight (>0 = éligible), scale, offset_x, offset_y, shadow}. Vide = hérite des éléments de sa zone.",
-  "placements": {}
+  "placements": {
+    "gobelin": {
+      "plante": {
+        "weight": 0,
+        "scale": 0.3,
+        "offset_x": -0.07,
+        "offset_y": -0.19,
+        "shadow": true
+      },
+      "eau": {
+        "weight": 0,
+        "scale": 0.3,
+        "offset_x": -0.07,
+        "offset_y": -0.19,
+        "shadow": true
+      },
+      "terre": {
+        "weight": 0,
+        "scale": 0.3,
+        "offset_x": -0.07,
+        "offset_y": -0.19,
+        "shadow": true
+      },
+      "tenebre": {
+        "weight": 0,
+        "scale": 0.3,
+        "offset_x": -0.07,
+        "offset_y": -0.19,
+        "shadow": true
+      },
+      "lumiere": {
+        "weight": 0,
+        "scale": 0.3,
+        "offset_x": -0.07,
+        "offset_y": -0.19,
+        "shadow": true
+      }
+    },
+    "banshee": {
+      "glace": {
+        "weight": 1,
+        "scale": 0.6,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "vent": {
+        "weight": 1,
+        "scale": 0.6,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "tenebre": {
+        "weight": 1,
+        "scale": 0.6,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      }
+    }
+  }
 }
