@@ -3,8 +3,8 @@
   "placements": {
     "gobelin": {
       "scale": 0.35,
-      "offset_x": -0.02,
-      "offset_y": -0.1,
+      "offset_x": -0.01,
+      "offset_y": -0.09,
       "shadow": true,
       "element_weights": {}
     }
