@@ -123,21 +123,21 @@
     "dodge": 5,
     "hp_regeneration": 0,
     "speed": 12,
-    "xp_reward": 175,
-    "gold_reward": 84,
+    "xp_reward": 75,
+    "gold_reward": 50,
     "spawn_weight": 20,
     "loot_table": [
       {
-        "item_code": "morceau_de_tissu",
         "drop_rate": 0.15,
-        "min_quantity": 2,
-        "max_quantity": 3
+        "item_code": "morceau_de_tissu",
+        "max_quantity": 3,
+        "min_quantity": 2
       },
       {
-        "item_code": "petite_bombe",
         "drop_rate": 0.05,
-        "min_quantity": 1,
-        "max_quantity": 2
+        "item_code": "petite_bombe",
+        "max_quantity": 2,
+        "min_quantity": 1
       }
     ],
     "image_name": "gobelin_ballon.png",
