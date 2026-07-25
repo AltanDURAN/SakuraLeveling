@@ -197,7 +197,7 @@
     "attack": 40,
     "defense": 20,
     "crit_chance": 25,
-    "crit_damage": 175,
+    "crit_damage": 225,
     "dodge": 20,
     "hp_regeneration": 0,
     "speed": 20,
@@ -218,10 +218,10 @@
         "min_quantity": 1
       },
       {
-        "item_code": "cape_silencieuse",
         "drop_rate": 0.01,
-        "min_quantity": 1,
-        "max_quantity": 1
+        "item_code": "cape_silencieuse",
+        "max_quantity": 1,
+        "min_quantity": 1
       }
     ],
     "image_name": "gobelin_assassin.png",
