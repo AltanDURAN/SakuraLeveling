@@ -7,6 +7,17 @@
       "offset_y": -0.19,
       "shadow": true,
       "element_weights": {}
+    },
+    "banshee": {
+      "scale": 0.6,
+      "offset_x": 0.0,
+      "offset_y": 0.0,
+      "shadow": true,
+      "element_weights": {
+        "glace": 1,
+        "vent": 1,
+        "tenebre": 1
+      }
     }
   }
 }
