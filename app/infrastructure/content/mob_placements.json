@@ -15,9 +15,9 @@
         "shadow": true
       },
       "terre": {
-        "scale": 0.3,
-        "offset_x": -0.07,
-        "offset_y": -0.19,
+        "scale": 0.35,
+        "offset_x": 0.04,
+        "offset_y": -0.03,
         "shadow": true
       },
       "tenebre": {
