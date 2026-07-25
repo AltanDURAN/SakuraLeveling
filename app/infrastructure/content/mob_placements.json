@@ -1,4 +1,4 @@
 {
-  "_comment": "Placement du monstre dans le cadre (indépendant du décor, qui vient du spot de la zone) : scale, offset_x, shadow, element_weights (poids par élément : >0 = éligible). Vide = hérite des éléments de sa zone.",
+  "_comment": "Placement du monstre PAR ÉLÉMENT (indépendant du décor, qui vient du spot partagé de la zone) : placements[mob][element] = {weight (>0 = éligible), scale, offset_x, offset_y, shadow}. Vide = hérite des éléments de sa zone.",
   "placements": {}
 }

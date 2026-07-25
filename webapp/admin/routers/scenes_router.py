@@ -39,10 +39,11 @@ router = APIRouter(prefix="/admin/scenes", tags=["admin-scenes"])
 _ZONES_FILE = "farm_zones.json"
 _MOBS_FILE = "mob_placements.json"
 _MOBS_COMMENT = (
-    "Placement du monstre dans le cadre (indépendant du décor, qui vient du "
-    "spot de la zone) : scale, offset_x, shadow, element_weights (poids par "
-    "élément : >0 = éligible). Vide = hérite des éléments de sa zone."
+    "Placement du monstre PAR ÉLÉMENT (indépendant du décor, qui vient du spot "
+    "partagé de la zone) : placements[mob][element] = {weight (>0 = éligible), "
+    "scale, offset_x, offset_y, shadow}. Vide = hérite des éléments de sa zone."
 )
+_VALID_ELEMENTS = {e.value for e in ALL_ELEMENTS}
 
 
 def _safe(name: str) -> str:
@@ -240,39 +241,64 @@ async def spot_save(
 
 
 # ------------------------------------------------------------------ MONSTRE
+def _mob_zone_spots(mob) -> dict:
+    """Spots (par élément) de la zone du monstre : {element: spot}."""
+    farm_zone_loader.clear_cache()
+    ch = farm_zone_loader.get_spawn_channel_for_family(mob.family)
+    return {str(s.get("element")): s for s in farm_zone_loader.get_spots(ch)}
+
+
 @router.get("/mob/{code}")
-async def mob_editor(
-    code: str, request: Request, saved: int = 0, user: AdminUser = Depends(require_admin),
-):
+async def mob_redirect(code: str, user: AdminUser = Depends(require_admin)):
+    """Ouvre l'éditeur sur le 1er élément de la zone du monstre."""
     with get_db_session() as session:
         mob = MobRepository(session).get_by_code(code)
     if mob is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Monstre `{code}` introuvable.")
     mob_placement_loader.reload_cache()
-    placement = mob_placement_loader.get_mob_placement(code) or {
-        "scale": 0.6, "offset_x": 0.0, "offset_y": 0.0, "shadow": True, "element_weights": {}}
-    weights = placement.get("element_weights") or {}
-    elements = [
-        {"code": e.value, "label": ELEMENT_LABELS[e.value], "emoji": ELEMENT_EMOJIS[e.value],
-         "weight": int(weights.get(e.value, 0) or 0)}
-        for e in ALL_ELEMENTS
-    ]
-    # Décors des spots de la zone du monstre (pour le fond du stage live).
-    farm_zone_loader.clear_cache()
-    ch = farm_zone_loader.get_spawn_channel_for_family(mob.family)
-    zone_spots = {
-        str(s.get("element")): {
-            "background": s.get("background", ""),
-            "ground_y": s.get("ground_y", 0.86),
-        }
-        for s in farm_zone_loader.get_spots(ch)
+    elems = list(_mob_zone_spots(mob).keys()) or list(mob_placement_loader.get_mob_elements(code).keys()) or ["feu"]
+    return RedirectResponse(f"/admin/scenes/mob/{code}/{elems[0]}", status_code=307)
+
+
+@router.get("/mob/{code}/{element}")
+async def mob_editor(code: str, element: str, request: Request, saved: int = 0,
+                     user: AdminUser = Depends(require_admin)):
+    if element not in _VALID_ELEMENTS:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Élément inconnu.")
+    with get_db_session() as session:
+        mob = MobRepository(session).get_by_code(code)
+    if mob is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Monstre `{code}` introuvable.")
+    mob_placement_loader.reload_cache()
+    zone_channel = farm_zone_loader.get_spawn_channel_for_family(mob.family)
+    spots = _mob_zone_spots(mob)
+    placed = mob_placement_loader.get_mob_elements(code)
+    entry = placed.get(element) or {}
+    placement = {
+        "scale": entry.get("scale", 0.6), "offset_x": entry.get("offset_x", 0.0),
+        "offset_y": entry.get("offset_y", 0.0), "shadow": entry.get("shadow", True),
     }
-    default_bg = farm_zone_loader.get_background_for_family(mob.family)
+    weight = int(entry.get("weight", get_spawn_weights().get(element, 10)) or 0)
+    # Onglets = éléments de la zone (+ ceux déjà placés hors zone, par sécurité).
+    tab_elems = list(dict.fromkeys(list(spots.keys()) + list(placed.keys())))
+    tabs = [
+        {"code": e, "label": ELEMENT_LABELS.get(e, e), "emoji": ELEMENT_EMOJIS.get(e, ""),
+         "placed": e in placed, "time": (spots.get(e) or {}).get("time", "always")}
+        for e in tab_elems
+    ]
+    spot = spots.get(element)
+    spot_ctx = None
+    if spot:
+        spot_ctx = {"background": spot.get("background", ""),
+                    "crop": spot.get("crop") or {"x": 0, "y": 0, "w": 1},
+                    "ground_y": spot.get("ground_y", 0.86)}
     return get_templates().TemplateResponse(
         request, "admin/scenes/mob.html",
         context={
-            "user": user, "mob": mob, "placement": placement, "elements": elements,
-            "zone_spots": zone_spots, "default_bg": default_bg,
+            "user": user, "mob": mob, "element": element,
+            "label": ELEMENT_LABELS.get(element, element), "emoji": ELEMENT_EMOJIS.get(element, ""),
+            "placement": placement, "weight": weight, "tabs": tabs, "is_placed": element in placed,
+            "spot": spot_ctx, "has_spot": spot is not None, "zone_channel": zone_channel,
             "frame_w": fight_scene.FRAME_W, "frame_h": fight_scene.FRAME_H,
             "top_panel": fight_scene.TOP_PANEL, "bottom_panel": fight_scene.BOTTOM_PANEL,
             "saved": saved,
@@ -280,24 +306,19 @@ async def mob_editor(
     )
 
 
-@router.get("/mob/{code}/preview.png")
-async def mob_preview(
-    code: str, request: Request, user: AdminUser = Depends(require_admin),
-):
+@router.get("/mob/{code}/{element}/preview.png")
+async def mob_preview(code: str, element: str, request: Request,
+                      user: AdminUser = Depends(require_admin)):
     with get_db_session() as session:
         mob = MobRepository(session).get_by_code(code)
     if mob is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Monstre introuvable.")
     p = request.query_params
-    element = p.get("element", mob.element or "")
     placement = {"scale": _f(p, "scale", 0.6), "offset_x": _f(p, "offset_x", 0.0),
                  "offset_y": _f(p, "offset_y", 0.0),
                  "shadow": str(p.get("shadow", "1")).lower() not in {"0", "false", "off"}}
-    # décor : le spot de la zone du monstre pour cet élément (sinon fallback)
-    spot = None
     ch = farm_zone_loader.get_spawn_channel_for_family(mob.family)
-    if element:
-        spot = farm_zone_loader.get_spot(ch, element)
+    spot = farm_zone_loader.get_spot(ch, element)
     image = fight_scene.render_scene(
         mob={"code": mob.code, "name": mob.name, "image_name": mob.image_name,
              "element": element, "current_hp": max(1, int(mob.max_hp * 0.7)),
@@ -308,34 +329,43 @@ async def mob_preview(
     return Response(buf.getvalue(), media_type="image/png", headers={"Cache-Control": "no-store"})
 
 
-@router.post("/mob/{code}")
-async def mob_save(code: str, request: Request, user: AdminUser = Depends(require_admin)):
+@router.post("/mob/{code}/{element}")
+async def mob_save(code: str, element: str, request: Request,
+                   user: AdminUser = Depends(require_admin)):
+    if element not in _VALID_ELEMENTS:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Élément inconnu.")
     with get_db_session() as session:
         mob = MobRepository(session).get_by_code(code)
     if mob is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Monstre introuvable.")
     form = await request.form()
-    weights: dict[str, int] = {}
-    for e in ALL_ELEMENTS:
-        try:
-            w = max(0, int(str(form.get(f"weight_{e.value}", "0")).strip() or 0))
-        except (TypeError, ValueError):
-            w = 0
-        if w > 0:
-            weights[e.value] = w
-    placement = {
+    entry = {
+        "weight": max(0, int(_f(form, "weight", 10))),
         "scale": _f(form, "scale", 0.6),
         "offset_x": _f(form, "offset_x", 0.0),
         "offset_y": _f(form, "offset_y", 0.0),
         "shadow": str(form.get("shadow", "1")).lower() not in {"0", "false", "off"},
-        "element_weights": weights,
     }
     data = json_writer.load_json(_MOBS_FILE, {"placements": {}}) or {"placements": {}}
     placements = data.get("placements", {})
     if not isinstance(placements, dict):
         placements = {}
-    placements[code] = placement
+    placements.setdefault(code, {})[element] = entry
     json_writer.atomic_write_json(_MOBS_FILE, {"_comment": _MOBS_COMMENT, "placements": placements})
     mob_placement_loader.reload_cache()
-    _logger.info("Admin %s a édité le placement du monstre %s", user.discord_id, code)
-    return RedirectResponse(f"/admin/scenes/mob/{code}?saved=1", status_code=303)
+    _logger.info("Admin %s a placé %s/%s", user.discord_id, code, element)
+    return RedirectResponse(f"/admin/scenes/mob/{code}/{element}?saved=1", status_code=303)
+
+
+@router.post("/mob/{code}/{element}/delete")
+async def mob_delete(code: str, element: str, user: AdminUser = Depends(require_admin)):
+    data = json_writer.load_json(_MOBS_FILE, {"placements": {}}) or {"placements": {}}
+    placements = data.get("placements", {})
+    if isinstance(placements, dict) and code in placements and element in placements[code]:
+        del placements[code][element]
+        if not placements[code]:
+            del placements[code]
+        json_writer.atomic_write_json(_MOBS_FILE, {"_comment": _MOBS_COMMENT, "placements": placements})
+        mob_placement_loader.reload_cache()
+        _logger.info("Admin %s a retiré %s/%s", user.discord_id, code, element)
+    return RedirectResponse(f"/admin/scenes/mob/{code}", status_code=303)

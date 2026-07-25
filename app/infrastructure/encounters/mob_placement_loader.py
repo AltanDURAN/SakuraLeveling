@@ -1,12 +1,11 @@
-"""Placement du monstre dans le cadre, par monstre.
+"""Placement du monstre dans le cadre, PAR MONSTRE ET PAR ÉLÉMENT.
 
-Indépendant du décor (qui vient du spot de la zone). Un placement =
-{scale (hauteur mob / cadre), offset_x (fraction, 0 = centré), shadow,
-element_weights {element: poids}}.
-
-`element_weights` définit les éléments que PEUT prendre le monstre : poids > 0 =
-éligible (proba relative), 0/absent = non. Vide = le monstre hérite de tous les
-éléments de sa zone (avec les poids globaux). Cache invalidé par mtime.
+Indépendant du décor (qui vient du spot partagé de la zone). Chaque monstre peut
+avoir un placement DIFFÉRENT par élément :
+    placements[mob_code][element] = {weight, scale, offset_x, offset_y, shadow}
+`weight` > 0 = le monstre peut spawner sous cet élément (proba relative) ;
+0/absent = non. Un monstre sans aucune entrée hérite de tous les éléments de sa
+zone (poids globaux) avec un placement automatique. Cache invalidé par mtime.
 """
 
 from __future__ import annotations
@@ -44,26 +43,44 @@ def all_placements() -> dict:
     return dict(_load())
 
 
-def get_mob_placement(mob_code: str | None) -> dict | None:
+def get_mob_elements(mob_code: str | None) -> dict:
+    """Toutes les entrées par élément d'un monstre : {element: {weight, scale,
+    offset_x, offset_y, shadow}}."""
     if not mob_code:
-        return None
+        return {}
     p = _load().get(mob_code)
-    return p if isinstance(p, dict) else None
+    return dict(p) if isinstance(p, dict) else {}
 
 
 def get_element_weights(mob_code: str | None) -> dict:
-    """Poids par élément du monstre (dict possiblement vide)."""
-    p = get_mob_placement(mob_code) or {}
-    w = p.get("element_weights") or {}
-    if not isinstance(w, dict):
-        return {}
+    """Poids par élément (>0 = éligible). Vide → hérite de la zone."""
     out: dict[str, int] = {}
-    for k, v in w.items():
-        try:
-            out[str(k).strip().lower()] = max(0, int(v))
-        except (TypeError, ValueError):
+    for elem, entry in get_mob_elements(mob_code).items():
+        if not isinstance(entry, dict):
             continue
+        try:
+            w = max(0, int(entry.get("weight", 0)))
+        except (TypeError, ValueError):
+            w = 0
+        if w > 0:
+            out[str(elem).strip().lower()] = w
     return out
+
+
+def get_placement(mob_code: str | None, element: str | None) -> dict | None:
+    """Placement {scale, offset_x, offset_y, shadow} du couple (monstre,
+    élément), ou None (→ placement automatique)."""
+    if not mob_code or not element:
+        return None
+    entry = get_mob_elements(mob_code).get(str(element).strip().lower())
+    if not isinstance(entry, dict):
+        return None
+    return {
+        "scale": entry.get("scale", 0.6),
+        "offset_x": entry.get("offset_x", 0.0),
+        "offset_y": entry.get("offset_y", 0.0),
+        "shadow": entry.get("shadow", True),
+    }
 
 
 def reload_cache() -> None:
