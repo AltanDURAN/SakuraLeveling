@@ -27,9 +27,9 @@
         "shadow": true
       },
       "lumiere": {
-        "scale": 0.3,
-        "offset_x": -0.07,
-        "offset_y": -0.19,
+        "scale": 0.35,
+        "offset_x": -0.02,
+        "offset_y": -0.06,
         "shadow": true
       }
     },
