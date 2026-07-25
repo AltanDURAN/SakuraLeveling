@@ -132,5 +132,25 @@
     "equipment_slot": "main_droite",
     "requires_two_hands": true,
     "family": ""
+  },
+  {
+    "code": "cape_silencieuse",
+    "name": "Cape silencieuse",
+    "description": "Annule la première attaque subie.",
+    "category": "cape",
+    "rarity": "epic",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "speed": 4,
+      "crit_chance": 5,
+      "crit_damage": 10
+    },
+    "equipment_slot": "cape",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
