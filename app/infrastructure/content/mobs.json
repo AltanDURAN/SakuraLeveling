@@ -45,7 +45,7 @@
         "min_quantity": 1
       },
       {
-        "drop_rate": 0.03,
+        "drop_rate": 0.05,
         "item_code": "diamant",
         "max_quantity": 1,
         "min_quantity": 1
