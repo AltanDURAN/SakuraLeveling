@@ -13,21 +13,21 @@
     "dodge": 5,
     "hp_regeneration": 0,
     "speed": 5,
-    "xp_reward": 19,
-    "gold_reward": 9,
-    "spawn_weight": 60,
+    "xp_reward": 23,
+    "gold_reward": 15,
+    "spawn_weight": 40,
     "loot_table": [
       {
-        "item_code": "potion_soin",
         "drop_rate": 0.1,
-        "min_quantity": 1,
-        "max_quantity": 1
+        "item_code": "potion_soin",
+        "max_quantity": 1,
+        "min_quantity": 1
       },
       {
-        "item_code": "essence_de_vie",
         "drop_rate": 0.04,
-        "min_quantity": 1,
-        "max_quantity": 1
+        "item_code": "essence_de_vie",
+        "max_quantity": 1,
+        "min_quantity": 1
       }
     ],
     "image_name": "slime.png",
