@@ -30,6 +30,15 @@
              align-items:center; justify-content:center; cursor:pointer; color:var(--muted); font-weight:600; gap:.5rem; }
   .newcard:hover { border-color:#e26ba4; color:#e26ba4; }
   .toast { padding:.6rem .9rem; border-radius:10px; margin-bottom:1rem; }
+  .tag-num { border:none; background:transparent; width:2.7em; text-align:center; font-weight:800;
+             color:inherit; padding:0; -moz-appearance:textfield; font-size:.86rem; }
+  .tag-num:focus { outline:none; }
+  .tag-num::-webkit-outer-spin-button, .tag-num::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .statchip .x { cursor:pointer; font-weight:800; opacity:.6; }
+  .statchip .x:hover { opacity:1; }
+  .hint { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px;
+          border-radius:50%; border:1px solid var(--border); color:var(--muted); font-size:.68rem;
+          cursor:help; margin-left:.3rem; font-style:normal; vertical-align:middle; }
   [x-cloak] { display:none !important; }
 </style>
 
@@ -42,6 +51,8 @@ window.SAKURA_SLOTLABEL = {{ slot_labels|tojson }};
 window.SAKURA_STATLABEL = {{ stat_labels|tojson }};
 window.SAKURA_STATEMOJI = {{ stat_emojis|tojson }};
 window.SAKURA_STATS = {{ supported_stats|tojson }};
+window.SAKURA_CATSLOT = {{ category_slot|tojson }};
+function slotForCat(c){ return window.SAKURA_CATSLOT[c] || ''; }
 function itImg(code){ return '/assets/items/'+code+'.png'; }
 function catEmoji(c){ return window.SAKURA_CATEMOJI[c] || '📦'; }
 function catLabel(c){ return window.SAKURA_CATLABEL[c] || c; }
@@ -71,7 +82,9 @@ function itemCard(el){
     addStat(s){ if(s && !(s in this.stats)) this.stats[s]=1; },
     removeStat(s){ delete this.stats[s]; },
     statVal(s){ const v=this.stats[s]; return v===undefined?'':v; },
-    isEquipable(){ return !!this.slot; },
+    slotOf(){ return slotForCat(this.category); },
+    isEquipable(){ return !!slotForCat(this.category); },
+    isWeaponLike(){ return this.category==='weapon' || this.category==='shield'; },
   }
 }
 document.addEventListener('alpine:init', () => {
@@ -124,26 +137,31 @@ document.addEventListener('alpine:init', () => {
     <div style="display:flex; flex-direction:column; gap:1rem;">
       <div class="form-section">
         <h2 class="form-section-title">Équipement</h2>
-        <label class="field"><span class="field-label">Slot d'équipement</span>
-          <select class="input" name="equipment_slot" x-model="slot">
-            <option value="">— Non équipable (ressource/consommable) —</option>
-            {% for s in slots %}<option value="{{ s }}">{{ slot_labels.get(s,s) }}</option>{% endfor %}
+        <div class="field">
+          <span class="field-label">Emplacement <span class="hint" title="Déduit automatiquement du type choisi dans Identité.">ⓘ</span></span>
+          <div style="padding:.55rem .75rem; border:1px solid var(--border); border-radius:10px; background:var(--bg-soft);">
+            <template x-if="isEquipable()"><span>🎽 S'équipe en <strong x-text="slotLabel(slotOf())"></strong></span></template>
+            <template x-if="!isEquipable()"><span style="color:var(--muted);">Objet non équipable (ressource / consommable)</span></template>
+          </div>
+        </div>
+        <label class="field" style="flex-direction:row; align-items:center; gap:.5rem;" x-show="isWeaponLike()">
+          <input type="checkbox" name="requires_two_hands" x-model="twoHands"><span class="field-label" style="margin:0;">Arme/bouclier à 2 mains <span class="hint" title="Occupe la main droite ET la main gauche.">ⓘ</span></span></label>
+        <label class="field"><span class="field-label">Panoplie <span class="hint" title="Famille de set : plusieurs pièces de la même panoplie donnent des bonus (2/4/8/12). Laisse « Aucune » si l'objet n'appartient à aucune panoplie.">ⓘ</span></span>
+          <select class="input" name="family" x-model="family">
+            <option value="">— Aucune —</option>
+            {% for fam in all_families %}<option value="{{ fam }}">{{ fam }}</option>{% endfor %}
           </select></label>
-        <label class="field" style="flex-direction:row; align-items:center; gap:.5rem;" x-show="isEquipable()">
-          <input type="checkbox" name="requires_two_hands" x-model="twoHands"><span class="field-label" style="margin:0;">Arme à 2 mains (occupe les deux mains)</span></label>
-        <label class="field"><span class="field-label">Panoplie (famille de set) — vide si aucune</span>
-          <input class="input" name="family" list="fam-list" x-model="family" placeholder="iron, slime, gobelin…"></label>
       </div>
       <div class="form-section">
         <h2 class="form-section-title">Économie</h2>
         <label class="field" style="flex-direction:row; align-items:center; gap:.5rem;">
-          <input type="checkbox" name="stackable" x-model="stackable"><span class="field-label" style="margin:0;">Empilable</span></label>
+          <input type="checkbox" name="stackable" x-model="stackable"><span class="field-label" style="margin:0;">Empilable <span class="hint" title="Plusieurs exemplaires se regroupent sur une seule case d'inventaire (ressources, potions). Décoché pour l'équipement.">ⓘ</span></span></label>
         <div class="form-row form-row-stats">
-          <label class="field mini" x-show="stackable"><span class="field-label">Pile max</span>
+          <label class="field mini" x-show="stackable"><span class="field-label">Pile max <span class="hint" title="Nombre max d'exemplaires par pile (vide = illimité).">ⓘ</span></span>
             <input type="number" min="1" name="max_stack" class="input" x-model.number="maxStack"></label>
-          <label class="field mini"><span class="field-label">🪙 Prix boutique</span>
+          <label class="field mini"><span class="field-label">🪙 Prix boutique <span class="hint" title="Prix d'ACHAT par le joueur en boutique. Vide = non vendu en boutique.">ⓘ</span></span>
             <input type="number" min="0" name="buy_price" class="input" x-model.number="buyPrice"></label>
-          <label class="field mini"><span class="field-label">Valeur (vente)</span>
+          <label class="field mini"><span class="field-label">Valeur <span class="hint" title="Valeur de référence / revente de l'objet (prix indicatif).">ⓘ</span></span>
             <input type="number" min="0" name="sell_price" class="input" x-model.number="sellPrice"></label>
         </div>
       </div>
@@ -158,8 +176,8 @@ document.addEventListener('alpine:init', () => {
       <template x-for="s in activeStats()" :key="s">
         <span class="statchip">
           <span x-text="statEmoji(s)"></span><span x-text="statLabel(s)"></span>
-          <input type="number" x-model.number="stats[s]" style="width:64px; margin-left:.2rem; padding:.05rem .2rem;" class="input">
-          <span style="cursor:pointer; font-weight:800;" x-on:click="removeStat(s)" title="Retirer">✕</span>
+          <input type="number" class="tag-num" x-model.number="stats[s]">
+          <span class="x" x-on:click="removeStat(s)" title="Retirer">✕</span>
         </span>
       </template>
       <span x-show="activeStats().length===0" style="color:var(--muted); font-size:.85rem;">Aucun bonus.</span>
@@ -202,14 +220,13 @@ document.addEventListener('alpine:init', () => {
       <span class="field-label">Rechercher (nom, type, rareté, panoplie)</span>
       <input type="search" class="input" placeholder="épée, ceinture, épique, slime…" x-model="$store.ifilter.q">
     </label>
-    <div style="display:flex; flex-wrap:wrap; gap:.35rem; align-items:center;">
-      <button type="button" class="catchip" :class="{on: $store.ifilter.cat===''}" x-on:click="$store.ifilter.cat=''">Tout</button>
-      {% for c in categories %}
-      <button type="button" class="catchip" style="font-size:1.05rem; padding:.2rem .5rem;"
-              :class="{on: $store.ifilter.cat==='{{ c }}'}" x-on:click="$store.ifilter.cat='{{ c }}'"
-              title="{{ category_labels.get(c, c) }}">{{ category_emojis.get(c, '📦') }}</button>
-      {% endfor %}
-    </div>
+    <label class="field" style="max-width:250px;">
+      <span class="field-label">Type</span>
+      <select class="input" x-model="$store.ifilter.cat">
+        <option value="">Tous les types</option>
+        {% for c in categories %}<option value="{{ c }}">{{ category_emojis.get(c, '📦') }} {{ category_labels.get(c, c) }}</option>{% endfor %}
+      </select>
+    </label>
   </div>
 
   <div class="items-grid">
@@ -238,8 +255,8 @@ document.addEventListener('alpine:init', () => {
           <div style="display:flex; flex-wrap:wrap; gap:.3rem; margin:.35rem 0;">
             <span class="chip"><span x-text="catEmoji(category)"></span> <span x-text="catLabel(category)"></span></span>
             <span class="chip"><span class="rdot" :style="{background: rarColor(rarity)}"></span> <span x-text="rarLabel(rarity)"></span></span>
-            <template x-if="slot"><span class="chip" x-text="'🎽 '+slotLabel(slot)"></span></template>
-            <template x-if="twoHands"><span class="chip">✋ 2 mains</span></template>
+            <template x-if="isEquipable()"><span class="chip" x-text="'🎽 '+slotLabel(slotOf())"></span></template>
+            <template x-if="twoHands && isWeaponLike()"><span class="chip">✋ 2 mains</span></template>
             <template x-if="family"><span class="chip" x-text="'🧩 '+family"></span></template>
           </div>
           <div style="display:flex; flex-wrap:wrap; gap:.3rem;">

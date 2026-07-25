@@ -54,6 +54,12 @@
   .thumb-box img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; border-radius:6px; }
   .catchip { padding:.12rem .5rem; border-radius:999px; font-size:.74rem; border:1px solid var(--border); cursor:pointer; background:transparent; color:inherit; }
   .catchip.on { background:#e26ba4; color:#fff; border-color:transparent; }
+  .tag-num { border:none; background:transparent; width:2.7em; text-align:center; font-weight:800;
+             color:inherit; padding:0; -moz-appearance:textfield; font-size:.86rem; }
+  .tag-num:focus { outline:none; }
+  .tag-num::-webkit-outer-spin-button, .tag-num::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .eltag .x { cursor:pointer; font-weight:800; opacity:.6; }
+  .eltag .x:hover { opacity:1; }
   /* Modale d'ajout de drops */
   .drop-modal { position:fixed; inset:0; z-index:1000; background:rgba(10,8,14,.55);
       display:flex; align-items:center; justify-content:center; padding:1rem; }
@@ -319,10 +325,9 @@ document.addEventListener('alpine:init', () => {
             <template x-for="c in activeEls()" :key="c">
               <span class="eltag" :style="{ borderColor: elMeta(c).color, color: elMeta(c).color }">
                 <span x-text="elMeta(c).emoji"></span><span x-text="elMeta(c).label"></span>
-                <input type="number" min="1" max="999" x-model.number="w[c]"
-                       style="width:52px; margin-left:.2rem; padding:.05rem .2rem;" class="input">
+                <input type="number" min="1" max="999" class="tag-num" x-model.number="w[c]">
                 <span class="w" x-text="'('+elPct(c)+'%)'"></span>
-                <span style="cursor:pointer; font-weight:800;" x-on:click="removeEl(c)" title="Retirer">✕</span>
+                <span class="x" x-on:click="removeEl(c)" title="Retirer">✕</span>
               </span>
             </template>
             <span x-show="activeEls().length===0" style="color:var(--muted); font-size:.85rem;">Aucun élément (tirage uniforme sur la zone).</span>
@@ -389,12 +394,13 @@ document.addEventListener('alpine:init', () => {
                 <button type="button" class="btn btn-ghost" x-on:click="pickOpen=false">✕</button>
               </header>
               <div class="drop-cats">
-                <button type="button" class="catchip" :class="{on: pickCat===''}" x-on:click="pickCat=''">Tout</button>
-                {% for cat in item_categories %}
-                <button type="button" class="catchip" style="font-size:1.05rem; padding:.2rem .5rem;"
-                        :class="{on: pickCat==='{{ cat }}'}" x-on:click="pickCat='{{ cat }}'"
-                        title="{{ category_labels.get(cat, cat) }}">{{ category_emojis.get(cat, '📦') }}</button>
-                {% endfor %}
+                <label class="field" style="max-width:280px; margin:0;">
+                  <span class="field-label">Filtrer par type</span>
+                  <select class="input" x-model="pickCat">
+                    <option value="">Tous les types</option>
+                    {% for cat in item_categories %}<option value="{{ cat }}">{{ category_emojis.get(cat, '📦') }} {{ category_labels.get(cat, cat) }}</option>{% endfor %}
+                  </select>
+                </label>
               </div>
               <div class="drop-body">
                 <div class="item-grid">
