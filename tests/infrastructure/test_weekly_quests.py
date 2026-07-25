@@ -67,7 +67,7 @@ def session():
 
 def _seed_potions(session) -> None:
     now = datetime.now(UTC)
-    for code in ["potion_soin_i", "potion_soin_ii", "potion_soin_iii",
+    for code in ["potion_soin",
                  "iron_ingot", "leather_strip", "polished_stone",
                  "linen_cloth", "wood_log"]:
         item = ItemDefinitionModel(

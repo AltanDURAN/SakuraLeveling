@@ -8,7 +8,7 @@
     "objective_quantity": 30,
     "reward_gold": 500,
     "reward_xp": 200,
-    "reward_items": [["potion_soin_i", 3]],
+    "reward_items": [["potion_soin", 3]],
     "tier": "easy"
   },
   {
@@ -20,7 +20,7 @@
     "objective_quantity": 100,
     "reward_gold": 1500,
     "reward_xp": 600,
-    "reward_items": [["potion_soin_ii", 2]],
+    "reward_items": [["potion_soin", 2]],
     "tier": "medium"
   },
   {
@@ -32,7 +32,7 @@
     "objective_quantity": 30,
     "reward_gold": 600,
     "reward_xp": 250,
-    "reward_items": [["potion_soin_i", 3]],
+    "reward_items": [["potion_soin", 3]],
     "tier": "easy"
   },
   {
@@ -44,7 +44,7 @@
     "objective_quantity": 100,
     "reward_gold": 1800,
     "reward_xp": 700,
-    "reward_items": [["potion_soin_ii", 2]],
+    "reward_items": [["potion_soin", 2]],
     "tier": "medium"
   },
   {
@@ -56,7 +56,7 @@
     "objective_quantity": 30,
     "reward_gold": 1200,
     "reward_xp": 500,
-    "reward_items": [["potion_soin_ii", 2]],
+    "reward_items": [["potion_soin", 2]],
     "tier": "medium"
   },
   {
@@ -68,7 +68,7 @@
     "objective_quantity": 30,
     "reward_gold": 800,
     "reward_xp": 300,
-    "reward_items": [["potion_soin_i", 5]],
+    "reward_items": [["potion_soin", 5]],
     "tier": "easy"
   },
   {
@@ -80,7 +80,7 @@
     "objective_quantity": 5,
     "reward_gold": 800,
     "reward_xp": 300,
-    "reward_items": [["potion_soin_i", 5]],
+    "reward_items": [["potion_soin", 5]],
     "tier": "easy"
   },
   {
@@ -92,7 +92,7 @@
     "objective_quantity": 2000,
     "reward_gold": 1500,
     "reward_xp": 600,
-    "reward_items": [["potion_soin_ii", 2]],
+    "reward_items": [["potion_soin", 2]],
     "tier": "medium"
   },
   {
@@ -104,7 +104,7 @@
     "objective_quantity": 5000,
     "reward_gold": 1500,
     "reward_xp": 600,
-    "reward_items": [["potion_soin_ii", 2]],
+    "reward_items": [["potion_soin", 2]],
     "tier": "medium"
   },
   {
@@ -116,7 +116,7 @@
     "objective_quantity": 50,
     "reward_gold": 1500,
     "reward_xp": 600,
-    "reward_items": [["potion_soin_ii", 2]],
+    "reward_items": [["potion_soin", 2]],
     "tier": "medium"
   },
   {
@@ -128,7 +128,7 @@
     "objective_quantity": 10000,
     "reward_gold": 1800,
     "reward_xp": 700,
-    "reward_items": [["potion_soin_iii", 1]],
+    "reward_items": [["potion_soin", 1]],
     "tier": "medium"
   },
   {
@@ -140,7 +140,7 @@
     "objective_quantity": 5000,
     "reward_gold": 2000,
     "reward_xp": 800,
-    "reward_items": [["potion_soin_iii", 2]],
+    "reward_items": [["potion_soin", 2]],
     "tier": "hard"
   }
 ]

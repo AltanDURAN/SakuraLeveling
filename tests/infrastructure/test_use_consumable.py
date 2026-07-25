@@ -96,7 +96,7 @@ def _build_use_case(session):
 
 
 def test_potion_50_percent_heals_correctly(session):
-    item_id = _seed_potion(session, "potion_soin_i", 50)
+    item_id = _seed_potion(session, "potion_soin", 50)
     use_case = _build_use_case(session)
 
     # Premier appel auto-create profile + ajoute la potion en inventaire
@@ -115,7 +115,7 @@ def test_potion_50_percent_heals_correctly(session):
 
     result = use_case.execute(
         discord_id=1, username="alice", display_name="Alice",
-        item_code="potion_soin_i",
+        item_code="potion_soin",
     )
 
     assert result.success is True
@@ -126,7 +126,7 @@ def test_potion_50_percent_heals_correctly(session):
 
 def test_potion_caps_at_max_hp(session):
     """Potion 100% sur HP déjà presque pleins ne dépasse pas max_hp."""
-    item_id = _seed_potion(session, "potion_soin_iii", 100)
+    item_id = _seed_potion(session, "potion_soin", 100)
     use_case = _build_use_case(session)
 
     profile = PlayerRepository(session).get_or_create_by_discord_id(
@@ -144,7 +144,7 @@ def test_potion_caps_at_max_hp(session):
 
     result = use_case.execute(
         discord_id=1, username="alice", display_name="Alice",
-        item_code="potion_soin_iii",
+        item_code="potion_soin",
     )
 
     assert result.success is True
@@ -152,7 +152,7 @@ def test_potion_caps_at_max_hp(session):
 
 
 def test_potion_consumes_from_inventory(session):
-    item_id = _seed_potion(session, "potion_soin_i", 50)
+    item_id = _seed_potion(session, "potion_soin", 50)
     use_case = _build_use_case(session)
 
     profile = PlayerRepository(session).get_or_create_by_discord_id(
@@ -163,7 +163,7 @@ def test_potion_consumes_from_inventory(session):
 
     use_case.execute(
         discord_id=1, username="alice", display_name="Alice",
-        item_code="potion_soin_i",
+        item_code="potion_soin",
     )
 
     # Reste 2 en inventaire
@@ -173,7 +173,7 @@ def test_potion_consumes_from_inventory(session):
 
 
 def test_use_refused_if_not_in_inventory(session):
-    _seed_potion(session, "potion_soin_i", 50)
+    _seed_potion(session, "potion_soin", 50)
     use_case = _build_use_case(session)
 
     PlayerRepository(session).get_or_create_by_discord_id(
@@ -182,7 +182,7 @@ def test_use_refused_if_not_in_inventory(session):
 
     result = use_case.execute(
         discord_id=1, username="alice", display_name="Alice",
-        item_code="potion_soin_i",
+        item_code="potion_soin",
     )
     assert result.success is False
     assert "inventaire" in result.message
