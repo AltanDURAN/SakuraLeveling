@@ -194,8 +194,8 @@
     "dodge": 20,
     "hp_regeneration": 0,
     "speed": 20,
-    "xp_reward": 325,
-    "gold_reward": 156,
+    "xp_reward": 75,
+    "gold_reward": 50,
     "spawn_weight": 10,
     "loot_table": [
       {
