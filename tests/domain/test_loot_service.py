@@ -161,50 +161,64 @@ def test_multiplier_preserves_rare_drops_proportionally():
 # ---------- Drop commun de famille (couche V2) ----------
 
 
-def _make_mob_family(family: str, xp_reward: int) -> MobDefinition:
+def _make_mob_family(family: str, code: str = "m") -> MobDefinition:
     now = datetime.now(UTC)
     return MobDefinition(
-        id=1, code="m", name="m", description="", image_name=None,
+        id=1, code=code, name=code, description="", image_name=None,
         family=family, max_hp=10, current_hp=10, attack=1, defense=0,
-        xp_reward=xp_reward, gold_reward=1, spawn_weight=1, speed=1,
+        xp_reward=50, gold_reward=1, spawn_weight=1, speed=1,
         crit_chance=0, crit_damage=100, dodge=0, hp_regeneration=0,
         loot_table=[], created_at=now, updated_at=now,
     )
 
 
-_FAMILY_DROPS = {"gobelin": {"item_code": "gobelin_tooth", "drop_rate": 1.0}}
+# Nouveau modèle : famille → {item_code, mobs:{code:{min,max}}}, drop GARANTI.
+_FAMILY_DROPS = {"gobelin": {"item_code": "gobelin_tooth", "mobs": {
+    "gobelin": {"min": 1, "max": 2},
+    "gobelin_geant": {"min": 2, "max": 4},
+}}}
 
 
-def test_family_common_drop_always_with_rate_one():
+def test_family_drop_is_guaranteed():
     service = LootService()
-    mob = _make_mob_family("gobelin", xp_reward=50)
+    mob = _make_mob_family("gobelin", code="gobelin")
+    for _ in range(50):
+        drops = service.generate_loot(mob, family_drops=_FAMILY_DROPS)
+        assert drops and drops[0][0] == "gobelin_tooth"
 
-    drops = service.generate_loot(mob, family_drops=_FAMILY_DROPS)
-    assert len(drops) == 1
-    assert drops[0][0] == "gobelin_tooth"
 
-
-def test_family_common_drop_quantity_scales_with_power():
+def test_family_drop_quantity_uses_per_mob_min_max():
     service = LootService()
-    weak = _make_mob_family("gobelin", xp_reward=19)    # qty_max = 1
-    strong = _make_mob_family("gobelin", xp_reward=300)  # qty_max ~4
+    small = _make_mob_family("gobelin", code="gobelin")        # 1-2
+    big = _make_mob_family("gobelin", code="gobelin_geant")    # 2-4
 
-    weak_qtys = {service.generate_loot(weak, family_drops=_FAMILY_DROPS)[0][1] for _ in range(200)}
-    strong_qtys = {service.generate_loot(strong, family_drops=_FAMILY_DROPS)[0][1] for _ in range(200)}
+    small_q = {service.generate_loot(small, family_drops=_FAMILY_DROPS)[0][1] for _ in range(300)}
+    big_q = {service.generate_loot(big, family_drops=_FAMILY_DROPS)[0][1] for _ in range(300)}
 
-    assert weak_qtys == {1}            # mob faible : toujours 1
-    assert max(strong_qtys) >= 3       # mob fort : peut lâcher 3-4
+    assert small_q == {1, 2}
+    assert big_q == {2, 3, 4}
+
+
+def test_family_drop_defaults_to_one_when_mob_not_configured():
+    service = LootService()
+    mob = _make_mob_family("gobelin", code="gobelin_inconnu")  # pas dans mobs{}
+    qtys = {service.generate_loot(mob, family_drops=_FAMILY_DROPS)[0][1] for _ in range(50)}
+    assert qtys == {1}
 
 
 def test_family_drop_ignored_for_unknown_family():
     service = LootService()
-    mob = _make_mob_family("inconnue", xp_reward=50)
-
+    mob = _make_mob_family("inconnue", code="x")
     assert service.generate_loot(mob, family_drops=_FAMILY_DROPS) == []
+
+
+def test_family_drop_skipped_when_no_item_code():
+    service = LootService()
+    mob = _make_mob_family("gobelin", code="gobelin")
+    assert service.generate_loot(mob, family_drops={"gobelin": {"item_code": "", "mobs": {}}}) == []
 
 
 def test_no_family_drops_param_means_no_common_drop():
     service = LootService()
-    mob = _make_mob_family("gobelin", xp_reward=50)
-
+    mob = _make_mob_family("gobelin", code="gobelin")
     assert service.generate_loot(mob) == []

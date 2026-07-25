@@ -1,85 +1,49 @@
 {% extends "admin/base.html" %}
-
 {% block title %}Familles — Sakura Admin{% endblock %}
-
 {% block content %}
+<style>
+  .fam-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:1rem; }
+  .fam-card { border:1px solid var(--border); border-radius:16px; background:var(--card,rgba(255,255,255,.02));
+              padding:1rem; display:flex; flex-direction:column; gap:.6rem; }
+  .fam-card h2 { margin:0; font-size:1.15rem; text-transform:capitalize; }
+  .fam-meta { color:var(--muted); font-size:.85rem; display:flex; flex-wrap:wrap; gap:.3rem .8rem; }
+  .drop-line { padding:.5rem .7rem; border:1px solid var(--border); border-radius:10px; background:var(--bg-soft); font-size:.9rem; }
+</style>
 <section class="list-page">
-    <header class="list-header">
-        <div>
-            <a href="/admin" class="breadcrumb">← Dashboard</a>
-            <h1>🧬 Familles <span class="count-pill">{{ families|length }}</span></h1>
-        </div>
-        <a href="/admin/mobs/new" class="btn btn-primary">+ Nouveau mob</a>
-    </header>
-
-    <p style="color: var(--muted); margin: 0 0 1rem;">
-        Une famille = le champ « famille » des mobs. Pour créer une famille,
-        donne ce nom de famille à des mobs (<a href="/admin/mobs">Mobs</a>).
-        Pour la faire spawn dans une zone, ajoute-la aux familles d'une zone
-        (<a href="/admin/zones">Zones</a>).
-    </p>
-
-    {% if families %}
-    <div class="table-wrapper">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Famille</th>
-                    <th>Mobs</th>
-                    <th>Zone de spawn</th>
-                    <th>Essences / kill</th>
-                    <th>Drop commun (éditable)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for f in families %}
-                <tr>
-                    <td><strong>{{ f.name }}</strong> <span class="count-pill">{{ f.mobs|length }}</span></td>
-                    <td>
-                        {% for mob in f.mobs %}
-                            <a href="/admin/mobs/{{ mob.code }}/edit" class="btn btn-small"
-                               style="margin:0.1rem;">{{ mob.name }}{% if mob.element %} · {{ mob.element }}{% endif %}</a>
-                        {% endfor %}
-                    </td>
-                    <td>
-                        {% if f.zone %}
-                            <a href="/admin/zones/{{ f.zone.channel_id }}/edit">{{ f.zone.name or f.zone.channel_id }}</a>
-                        {% else %}
-                            <span style="color: var(--muted);">zone de base</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if f.essences[0] == f.essences[1] %}{{ f.essences[0] }}
-                        {% else %}{{ f.essences[0] }}–{{ f.essences[1] }}{% endif %}
-                    </td>
-                    <td>
-                        <form method="post" action="/admin/familles/{{ f.name }}/drop"
-                              style="display:flex; gap:0.3rem; align-items:center; flex-wrap:wrap;">
-                            <input type="text" name="item_code" list="all-items" class="input"
-                                   style="width: 140px;" placeholder="(aucun)"
-                                   value="{{ f.common_drop.item_code if f.common_drop else '' }}">
-                            <input type="number" name="drop_rate" step="0.05" min="0" max="1" class="input"
-                                   style="width: 78px;"
-                                   value="{{ f.common_drop.drop_rate if f.common_drop else 0.75 }}"
-                                   title="Taux de drop (0 à 1)">
-                            <button type="submit" class="btn btn-small">💾</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+  <header class="list-header">
+    <div>
+      <a href="/admin" class="breadcrumb">← Dashboard</a>
+      <h1>🧬 Familles <span class="count-pill">{{ families|length }}</span></h1>
     </div>
-    <datalist id="all-items">
-        {% for code in item_codes %}<option value="{{ code }}">{% endfor %}
-    </datalist>
-    <p style="color: var(--muted); margin-top: 0.8rem;">
-        Le <strong>drop commun</strong> est droppé par tous les mobs de la famille
-        (quantité ∝ puissance du mob). Laisse le champ item vide + 💾 pour le retirer.
-        ⚠️ Restart bot requis pour appliquer.
-    </p>
+    <a href="/admin/mobs" class="btn btn-ghost">Gérer les monstres</a>
+  </header>
+  <p style="color:var(--muted); max-width:76ch; margin:0 0 1rem;">
+    Une famille regroupe les monstres partageant le même champ « famille ». Chaque famille lâche
+    <strong>une ressource commune garantie</strong> : clique une famille pour choisir l'item et
+    régler la quantité <strong>min/max par monstre</strong> (ex : gobelin 1-2 dents, gobelin géant 2-4).
+  </p>
+
+  <div class="fam-grid">
+    {% for f in families %}
+    <a href="/admin/familles/{{ f.name }}" class="fam-card" style="text-decoration:none; color:inherit;">
+      <h2>{{ f.name }} <span class="count-pill">{{ f.mob_count }}</span></h2>
+      <div class="fam-meta">
+        <span>👾 {{ f.mob_count }} monstre(s)</span>
+        {% if f.zone %}<span>🗺️ {{ f.zone }}</span>{% endif %}
+      </div>
+      <div class="drop-line">
+        {% if f.item_code %}
+          🎁 Drop : <strong>{{ f.item_name }}</strong>
+          <span style="color:var(--muted);">· {{ f.configured }}/{{ f.mob_count }} monstre(s) réglé(s)</span>
+        {% else %}
+          <span style="color:var(--muted);">Aucun drop de famille défini</span>
+        {% endif %}
+      </div>
+      <span class="btn btn-small btn-primary" style="align-self:flex-start;">Configurer les drops →</span>
+    </a>
     {% else %}
-    <div class="empty-state"><p>Aucune famille (aucun mob).</p></div>
-    {% endif %}
+    <p style="color:var(--muted);">Aucune famille (crée des monstres avec un champ « famille »).</p>
+    {% endfor %}
+  </div>
 </section>
 {% endblock %}

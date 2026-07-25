@@ -246,10 +246,11 @@ def delete_skill_json(code: str) -> None:
 
 # ---------------------- Drops communs de famille ----------------------
 
-def upsert_family_drop_json(family: str, item_code: str, drop_rate: float) -> None:
-    """Définit (upsert) le drop commun d'une famille dans family_drops.json."""
+def upsert_family_drop_json(family: str, item_code: str, mobs: dict) -> None:
+    """Définit (upsert) le drop de famille : la ressource `item_code` + le
+    [min,max] PAR MONSTRE (`mobs` = {mob_code: {"min": int, "max": int}})."""
     data = json_writer.load_json("family_drops.json", default={}) or {}
-    data[family] = {"item_code": item_code, "drop_rate": float(drop_rate)}
+    data[family] = {"item_code": item_code, "mobs": mobs}
     json_writer.atomic_write_json("family_drops.json", data)
 
 

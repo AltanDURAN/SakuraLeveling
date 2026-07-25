@@ -16,10 +16,11 @@ class LootService:
         drop_rate de chaque entrée (ex : 1.10 = +10%). Cela préserve la rareté
         des items rares (un drop à 1% × 1.10 = 1.1%, pas 11%).
 
-        `family_drops` : mapping famille → {item_code, drop_rate}. Si fourni et
-        que la famille du mob y figure, on roll EN PLUS le drop commun de
-        famille (≥1 par famille). Sa quantité croît avec la puissance du mob
-        (proxy : xp_reward) — un mob faible lâche 1 ressource, un mob fort 1-N.
+        `family_drops` : mapping famille → {item_code, mobs:{code:{min,max}}}.
+        Si fourni et que la famille du mob y figure, on ajoute le drop de
+        famille — GARANTI (pas de roll de rareté), quantité tirée dans le
+        [min,max] PROPRE à ce monstre (défaut 1/1 si non défini). Le
+        `drop_rate_multiplier` ne s'applique PAS (drop garanti).
         """
         dropped_items: list[tuple[str, int]] = []
 
@@ -36,14 +37,16 @@ class LootService:
                 quantity = random.randint(min_quantity, max_quantity)
                 dropped_items.append((item_code, quantity))
 
-        # 2. Drop commun de famille (quantité ∝ puissance du mob).
+        # 2. Drop de famille GARANTI (quantité min/max propre au mob).
         if family_drops and mob.family:
             cfg = family_drops.get(mob.family)
-            if cfg:
-                rate = max(0.0, min(1.0, float(cfg["drop_rate"]) * drop_rate_multiplier))
-                if random.random() <= rate:
-                    qty_max = max(1, round(mob.xp_reward / 80))
-                    quantity = random.randint(1, qty_max)
-                    dropped_items.append((cfg["item_code"], quantity))
+            if cfg and cfg.get("item_code"):
+                entry = (cfg.get("mobs") or {}).get(mob.code) or {}
+                lo = max(0, int(entry.get("min", 1)))
+                hi = max(lo, int(entry.get("max", lo if lo else 1)))
+                if hi > 0:
+                    quantity = random.randint(lo, hi)
+                    if quantity > 0:
+                        dropped_items.append((cfg["item_code"], quantity))
 
         return dropped_items
