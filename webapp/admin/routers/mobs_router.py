@@ -230,6 +230,14 @@ async def mobs_list(
 
     _stat_keys = ("max_hp", "attack", "defense", "speed",
                   "crit_chance", "crit_damage", "dodge", "hp_regeneration")
+    # Total de poids de spawn PAR SALON (quel monstre sort dans la zone) → sert
+    # à afficher le poids d'un mob en proportion (40 / total (X%)).
+    farm_zone_loader.clear_cache()
+    channel_total: dict[int, int] = {}
+    for m in mobs:
+        ch = farm_zone_loader.get_spawn_channel_for_family(m.family)
+        channel_total[ch] = channel_total.get(ch, 0) + max(0, m.spawn_weight)
+
     cards = []
     for m in mobs:
         score = pss.calculate_from_mob(m)
@@ -245,6 +253,8 @@ async def mobs_list(
             "stats": {k: getattr(m, k) for k in _stat_keys},
             "rewards": {"xp_reward": m.xp_reward, "gold_reward": m.gold_reward,
                         "spawn_weight": m.spawn_weight},
+            "spawn_total": channel_total.get(
+                farm_zone_loader.get_spawn_channel_for_family(m.family), 0),
             "loot": [{"item_code": r["item_code"], "drop_rate": r["drop_rate"],
                       "min_quantity": r["min_quantity"], "max_quantity": r["max_quantity"]}
                      for r in loot_rows],
@@ -262,13 +272,16 @@ async def mobs_list(
          for it in items),
         key=lambda x: (x["category"], x["name"]),
     )
+    item_categories = sorted({it.category for it in items if it.category})
     return get_templates().TemplateResponse(
         request, "admin/mobs/list.html",
         context={
             "user": user, "cards": cards,
             "all_families": sorted({m.family for m in mobs if m.family}),
             "items_catalog": items_catalog,
+            "item_categories": item_categories,
             "rarity_colors": _RARITY_COLORS,
+            "rarities": ["common", "uncommon", "rare", "epic", "legendary"],
             "element_emojis": ELEMENT_EMOJIS, "element_labels": ELEMENT_LABELS,
             "saved": saved, "err": err,
         },

@@ -184,7 +184,7 @@ ELEMENT_EMOJIS: dict[str, str] = {
     Element.PLANTE.value:  "🌿",
     Element.GLACE.value:   "❄️",
     Element.VENT.value:    "🌪️",
-    Element.TERRE.value:   "🟫",
+    Element.TERRE.value:   "⛰️",
     Element.TENEBRE.value: "🌑",
     Element.LUMIERE.value: "☀️",
 }

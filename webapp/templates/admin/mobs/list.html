@@ -38,11 +38,35 @@
   .item-opt:hover { background:rgba(255,120,180,.14); }
   .toast { padding:.6rem .9rem; border-radius:10px; margin-bottom:1rem; }
   [x-cloak] { display:none !important; }
+  .stats-tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:.5rem; }
+  @media (max-width:560px){ .stats-tiles{ grid-template-columns:repeat(2,1fr); } }
+  .stat-tile { display:flex; flex-direction:column; align-items:center; gap:.1rem; padding:.45rem .3rem;
+      border:1px solid var(--border); border-top:3px solid var(--acc,#888); border-radius:10px; background:rgba(255,255,255,.02); }
+  .stat-tile .st-ic { font-size:1.05rem; line-height:1; }
+  .stat-tile .st-lb { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.02em; }
+  .stat-tile input { width:100%; text-align:center; border:none; background:transparent; font-weight:800;
+      font-size:1.02rem; color:inherit; padding:0; }
+  .stat-tile input:focus { outline:none; }
+  .eltag input:focus { outline:none; }
+  .thumb-box { position:relative; width:34px; height:34px; flex:0 0 auto; border-radius:6px;
+      display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.05); border:1px solid var(--border); }
+  .thumb-box .em { font-size:1.05rem; }
+  .thumb-box img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; border-radius:6px; }
+  .catchip { padding:.12rem .5rem; border-radius:999px; font-size:.74rem; border:1px solid var(--border); cursor:pointer; background:transparent; }
+  .catchip.on { background:var(--accent,#e26ba4); color:#fff; border-color:transparent; }
 </style>
 
 <script>window.SAKURA_ITEMS = {{ items_catalog|tojson }};
 window.SAKURA_RARITY = {{ rarity_colors|tojson }};
+window.SAKURA_CATEGORIES = {{ item_categories|tojson }};
+window.SAKURA_RARITIES = {{ rarities|tojson }};
+window.SAKURA_CATEMOJI = {
+  resource:'🪵', weapon:'⚔️', shield:'🛡️', helmet:'⛑️', chest:'👕', legs:'👖',
+  boots:'🥾', necklace:'📿', bracelet:'⛓️', ring:'💍', belt:'🎗️', cape:'🧥',
+  earring:'👂', consumable:'🧪', potion:'🧪'
+};
 function elImg(code){ return '/assets/items/'+code+'.png'; }
+function catEmoji(cat){ return window.SAKURA_CATEMOJI[cat] || '📦'; }
 function mobCard(el){
   const d = JSON.parse(el.dataset.card);
   const meta = {}; (d.elements||[]).forEach(e => meta[e.code]=e);
@@ -50,7 +74,9 @@ function mobCard(el){
     open:false, code:d.code, name:d.name, family:d.family, element:d.element,
     description:d.description, imageName:d.image,
     s:d.stats, r:d.rewards, w:d.weights, meta, rows:d.loot||[],
-    preview: d.image ? '/assets/mobs/'+d.image : '', itemSearch:'', pickOpen:false,
+    origSpawn:d.spawn_total||0, spawnBaseline:(d.rewards.spawn_weight||0),
+    preview: d.image ? '/assets/mobs/'+d.image : '', itemSearch:'', pickOpen:false, pickCat:'',
+    newOpen:false, newItem:{name:'', category:'resource', rarity:'common'}, creating:false, createErr:'',
     init(){ if(location.hash === '#mob-'+this.code){ this.open=true;
             this.$nextTick(()=>this.$root.scrollIntoView({behavior:'smooth',block:'center'})); } },
     onFile(e){ const f=e.target.files[0]; if(f) this.preview=URL.createObjectURL(f); },
@@ -59,8 +85,14 @@ function mobCard(el){
     addableEls(){ return Object.keys(this.w).filter(k=>this.w[k]===0); },
     addEl(c){ if(c && this.w[c]===0) this.w[c]=10; },
     removeEl(c){ this.w[c]=0; },
+    elTotal(){ return this.activeEls().reduce((a,c)=>a+(Number(this.w[c])||0),0); },
+    elPct(c){ const t=this.elTotal(); return t ? Math.round((Number(this.w[c])||0)/t*100) : 0; },
+    spawnTotalLive(){ return (this.origSpawn - this.spawnBaseline) + (Number(this.r.spawn_weight)||0); },
+    spawnPct(){ const t=this.spawnTotalLive(); return t ? Math.round((Number(this.r.spawn_weight)||0)/t*100) : 0; },
+    itemCat(c){ const it=(window.SAKURA_ITEMS||[]).find(x=>x.code===c); return it?it.category:'resource'; },
     filteredItems(){ const q=this.itemSearch.toLowerCase();
-      return (window.SAKURA_ITEMS||[]).filter(x=> !q || x.name.toLowerCase().includes(q) || x.code.toLowerCase().includes(q)).slice(0,40); },
+      return (window.SAKURA_ITEMS||[]).filter(x=> (!this.pickCat || x.category===this.pickCat) &&
+        (!q || x.name.toLowerCase().includes(q) || x.code.toLowerCase().includes(q))).slice(0,60); },
     itemName(c){ const it=(window.SAKURA_ITEMS||[]).find(x=>x.code===c); return it?it.name:c; },
     itemRarity(c){ const it=(window.SAKURA_ITEMS||[]).find(x=>x.code===c); return it?it.rarity:'common'; },
     rarityColor(rr){ return (window.SAKURA_RARITY||{})[rr] || '#8a8a95'; },
@@ -69,6 +101,20 @@ function mobCard(el){
       this.itemSearch=''; this.pickOpen=false; },
     removeRow(i){ this.rows.splice(i,1); },
     lootPayload(){ return JSON.stringify(this.rows.filter(x=>x.item_code)); },
+    async createItem(){
+      if(!this.newItem.name.trim()){ this.createErr='Nom requis.'; return; }
+      this.creating=true; this.createErr='';
+      try{
+        const res = await fetch('/admin/items/quick-create', { method:'POST',
+          headers:{'Content-Type':'application/json'}, body: JSON.stringify(this.newItem) });
+        const data = await res.json();
+        if(!res.ok){ this.createErr = data.error || 'Échec.'; return; }
+        window.SAKURA_ITEMS.push({code:data.code, name:data.name, rarity:data.rarity, category:data.category});
+        this.addRow(data.code);
+        this.newOpen=false; this.newItem={name:'', category:'resource', rarity:'common'};
+      }catch(e){ this.createErr='Erreur réseau.'; }
+      finally{ this.creating=false; }
+    },
   }
 }
 document.addEventListener('alpine:init', () => {
@@ -134,9 +180,7 @@ document.addEventListener('alpine:init', () => {
               <template x-for="c in activeEls()" :key="c">
                 <span class="eltag" :style="{ borderColor: elMeta(c).color, color: elMeta(c).color }">
                   <span x-text="elMeta(c).emoji"></span><span x-text="elMeta(c).label"></span>
-                  <span class="w" x-text="'×'+w[c]"></span>
-                  <template x-if="elMeta(c).time==='day'"><span>☀️</span></template>
-                  <template x-if="elMeta(c).time==='night'"><span>🌙</span></template>
+                  <span class="w" x-text="'×'+w[c]+' ('+elPct(c)+'%)'"></span>
                 </span>
               </template>
               <span x-show="activeEls().length===0" style="color:var(--muted); font-size:.8rem;">tous éléments (uniforme)</span>
@@ -153,7 +197,7 @@ document.addEventListener('alpine:init', () => {
           <div class="statline" style="margin-top:.25rem;">
             <span>✨ XP <b x-text="r.xp_reward"></b></span>
             <span>🪙 <b x-text="r.gold_reward"></b></span>
-            <span>🎲 poids <b x-text="r.spawn_weight"></b></span>
+            <span title="poids de spawn du monstre / total de la zone">🎲 <b x-text="r.spawn_weight"></b><span style="opacity:.7;" x-text="'/'+spawnTotalLive()+' ('+spawnPct()+'%)'"></span></span>
             <span>🎁 <b x-text="rows.length"></b> drop(s)</span>
           </div>
         </div>
@@ -209,27 +253,29 @@ document.addEventListener('alpine:init', () => {
           <div style="display:flex; flex-direction:column; gap:1rem;">
             <div class="form-section">
               <h2 class="form-section-title">Stats de combat</h2>
-              <div class="form-row form-row-stats">
-                <label class="field mini"><span class="field-label">❤️ PV</span><input type="number" name="max_hp" class="input" x-model.number="s.max_hp"></label>
-                <label class="field mini"><span class="field-label">⚔️ Atk</span><input type="number" name="attack" class="input" x-model.number="s.attack"></label>
-                <label class="field mini"><span class="field-label">🛡️ Déf</span><input type="number" name="defense" class="input" x-model.number="s.defense"></label>
-                <label class="field mini"><span class="field-label">💨 Vit</span><input type="number" name="speed" class="input" x-model.number="s.speed"></label>
-              </div>
-              <div class="form-row form-row-stats">
-                <label class="field mini"><span class="field-label">💥 Crit%</span><input type="number" name="crit_chance" class="input" x-model.number="s.crit_chance"></label>
-                <label class="field mini"><span class="field-label">Crit dmg</span><input type="number" name="crit_damage" class="input" x-model.number="s.crit_damage"></label>
-                <label class="field mini"><span class="field-label">🎯 Esq%</span><input type="number" name="dodge" class="input" x-model.number="s.dodge"></label>
-                <label class="field mini"><span class="field-label">Régen</span><input type="number" name="hp_regeneration" class="input" x-model.number="s.hp_regeneration"></label>
+              <div class="stats-tiles">
+                <label class="stat-tile" style="--acc:#e5484d"><span class="st-ic">❤️</span><span class="st-lb">PV</span><input type="number" name="max_hp" x-model.number="s.max_hp"></label>
+                <label class="stat-tile" style="--acc:#f0883e"><span class="st-ic">⚔️</span><span class="st-lb">Atk</span><input type="number" name="attack" x-model.number="s.attack"></label>
+                <label class="stat-tile" style="--acc:#4a9eff"><span class="st-ic">🛡️</span><span class="st-lb">Déf</span><input type="number" name="defense" x-model.number="s.defense"></label>
+                <label class="stat-tile" style="--acc:#2dd4bf"><span class="st-ic">💨</span><span class="st-lb">Vit</span><input type="number" name="speed" x-model.number="s.speed"></label>
+                <label class="stat-tile" style="--acc:#e3b341"><span class="st-ic">💥</span><span class="st-lb">Crit %</span><input type="number" name="crit_chance" x-model.number="s.crit_chance"></label>
+                <label class="stat-tile" style="--acc:#d16bff"><span class="st-ic">✴️</span><span class="st-lb">Crit dmg</span><input type="number" name="crit_damage" x-model.number="s.crit_damage"></label>
+                <label class="stat-tile" style="--acc:#14b8a6"><span class="st-ic">🎯</span><span class="st-lb">Esq %</span><input type="number" name="dodge" x-model.number="s.dodge"></label>
+                <label class="stat-tile" style="--acc:#22c55e"><span class="st-ic">💚</span><span class="st-lb">Régen</span><input type="number" name="hp_regeneration" x-model.number="s.hp_regeneration"></label>
               </div>
               <input type="hidden" name="current_hp" :value="s.max_hp">
             </div>
             <div class="form-section">
               <h2 class="form-section-title">Récompenses & spawn</h2>
-              <div class="form-row form-row-stats">
-                <label class="field mini"><span class="field-label">✨ XP</span><input type="number" name="xp_reward" class="input" x-model.number="r.xp_reward"></label>
-                <label class="field mini"><span class="field-label">🪙 Or</span><input type="number" name="gold_reward" class="input" x-model.number="r.gold_reward"></label>
-                <label class="field mini" style="max-width:130px;"><span class="field-label">🎲 Poids spawn</span><input type="number" name="spawn_weight" class="input" x-model.number="r.spawn_weight"></label>
+              <div class="stats-tiles" style="grid-template-columns:repeat(3,1fr);">
+                <label class="stat-tile" style="--acc:#7c9cff"><span class="st-ic">✨</span><span class="st-lb">XP</span><input type="number" name="xp_reward" x-model.number="r.xp_reward"></label>
+                <label class="stat-tile" style="--acc:#e3b341"><span class="st-ic">🪙</span><span class="st-lb">Or</span><input type="number" name="gold_reward" x-model.number="r.gold_reward"></label>
+                <label class="stat-tile" style="--acc:#e26ba4"><span class="st-ic">🎲</span><span class="st-lb">Poids</span><input type="number" name="spawn_weight" x-model.number="r.spawn_weight"></label>
               </div>
+              <p style="margin:.5rem 0 0; color:var(--muted); font-size:.82rem;">
+                🎲 Fréquence de spawn dans la zone : <strong x-text="r.spawn_weight"></strong> / <span x-text="spawnTotalLive()"></span>
+                (<strong x-text="spawnPct()+'%'"></strong> des apparitions).
+              </p>
             </div>
           </div>
         </div>
@@ -252,6 +298,7 @@ document.addEventListener('alpine:init', () => {
                 <span x-text="elMeta(c).emoji"></span><span x-text="elMeta(c).label"></span>
                 <input type="number" min="1" max="999" x-model.number="w[c]"
                        style="width:52px; margin-left:.2rem; padding:.05rem .2rem;" class="input">
+                <span class="w" x-text="'('+elPct(c)+'%)'"></span>
                 <span style="cursor:pointer; font-weight:800;" x-on:click="removeEl(c)" title="Retirer">✕</span>
               </span>
             </template>
@@ -280,7 +327,8 @@ document.addEventListener('alpine:init', () => {
           <p class="form-section-help" style="margin-top:0;">Un item par ligne. Chance = probabilité de drop (0–100%). Quantité tirée entre min et max.</p>
           <template x-for="(row,i) in rows" :key="i">
             <div class="loot-row">
-              <img class="loot-thumb" :src="elImg(row.item_code)" onerror="this.style.visibility='hidden'">
+              <span class="thumb-box"><span class="em" x-text="catEmoji(itemCat(row.item_code))"></span>
+                <img :src="elImg(row.item_code)" onerror="this.style.display='none'"></span>
               <div style="flex:1; min-width:120px;">
                 <div style="display:flex; align-items:center; gap:.35rem;">
                   <span class="rdot" :style="{ background: rarityColor(itemRarity(row.item_code)) }"></span>
@@ -301,19 +349,49 @@ document.addEventListener('alpine:init', () => {
           </template>
           <p x-show="rows.length===0" class="form-section-help">Aucun drop.</p>
 
-          <div class="item-pick" style="margin-top:.5rem; max-width:420px;">
+          <div class="item-pick" style="margin-top:.5rem; max-width:460px;">
             <input class="input" placeholder="+ Ajouter un item (rechercher par nom)…"
                    x-model="itemSearch" x-on:focus="pickOpen=true" x-on:click="pickOpen=true">
-            <div class="item-pop" x-show="pickOpen" x-on:click.outside="pickOpen=false" x-cloak>
+            <div class="item-pop" x-show="pickOpen" x-on:click.outside="pickOpen=false; newOpen=false" x-cloak>
+              <!-- filtre par catégorie -->
+              <div style="display:flex; flex-wrap:wrap; gap:.3rem; padding:.5rem; border-bottom:1px solid var(--border); position:sticky; top:0; background:inherit;">
+                <button type="button" class="catchip" :class="{on: pickCat===''}" x-on:click="pickCat=''">Tout</button>
+                {% for cat in item_categories %}
+                <button type="button" class="catchip" :class="{on: pickCat==='{{ cat }}'}" x-on:click="pickCat='{{ cat }}'">{{ cat }}</button>
+                {% endfor %}
+              </div>
               <template x-for="it in filteredItems()" :key="it.code">
                 <div class="item-opt" x-on:click="addRow(it.code)">
-                  <img class="loot-thumb" style="width:26px;height:26px;" :src="elImg(it.code)" onerror="this.style.visibility='hidden'">
+                  <span class="thumb-box" style="width:26px;height:26px;"><span class="em" style="font-size:.9rem;" x-text="catEmoji(it.category)"></span>
+                    <img :src="elImg(it.code)" onerror="this.style.display='none'"></span>
                   <span class="rdot" :style="{ background: rarityColor(it.rarity) }"></span>
                   <span style="flex:1;" x-text="it.name"></span>
                   <small style="color:var(--muted);" x-text="it.category"></small>
                 </div>
               </template>
-              <div x-show="filteredItems().length===0" style="padding:.5rem; color:var(--muted);">Aucun item.</div>
+              <div x-show="filteredItems().length===0" style="padding:.5rem; color:var(--muted);">Aucun item pour ce filtre.</div>
+              <!-- créer un item à la volée -->
+              <div style="border-top:1px solid var(--border); padding:.5rem;">
+                <button type="button" class="btn btn-small btn-ghost" x-show="!newOpen" x-on:click="newOpen=true; newItem.name=itemSearch">➕ Créer un nouvel item</button>
+                <div x-show="newOpen" x-cloak style="display:flex; flex-direction:column; gap:.4rem;">
+                  <strong style="font-size:.85rem;">Nouvel item</strong>
+                  <input class="input" placeholder="Nom de l'item" x-model="newItem.name">
+                  <div style="display:flex; gap:.4rem;">
+                    <select class="input" x-model="newItem.category">
+                      {% for cat in item_categories %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}
+                    </select>
+                    <select class="input" x-model="newItem.rarity">
+                      {% for rr in rarities %}<option value="{{ rr }}">{{ rr }}</option>{% endfor %}
+                    </select>
+                  </div>
+                  <div x-show="createErr" x-cloak style="color:var(--danger); font-size:.8rem;" x-text="createErr"></div>
+                  <div style="display:flex; gap:.4rem;">
+                    <button type="button" class="btn btn-small btn-primary" x-on:click="createItem()" :disabled="creating" x-text="creating ? 'Création…' : 'Créer & ajouter'"></button>
+                    <button type="button" class="btn btn-small btn-ghost" x-on:click="newOpen=false; createErr=''">Annuler</button>
+                  </div>
+                  <small style="color:var(--muted);">L'item est créé avec des valeurs par défaut — tu pourras l'affiner dans <a href="/admin/items" target="_blank">Objets</a>.</small>
+                </div>
+              </div>
             </div>
           </div>
           <input type="hidden" name="loot_table" :value="lootPayload()">
