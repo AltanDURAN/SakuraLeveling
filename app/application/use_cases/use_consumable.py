@@ -1,6 +1,6 @@
 """Use case d'utilisation d'un consommable depuis l'inventaire.
 
-V1 : ne supporte que `effect=heal_percent` (potions de soin I/II/III).
+V1 : ne supporte que `effect=heal_percent` (potion de soin unique : 10% PV max).
 L'effet est lu depuis `item.stat_bonuses["effect"]` + `["value"]`.
 
 Sécurité : décrément atomique de l'inventaire ; refus si quantité < 1

@@ -753,13 +753,13 @@ class CompleteWorldBossUseCase:
           supplémentaire pour ceux qui ont déjà eu des bonus")
 
     Récompenses V1 (génériques, à affiner) :
-        • Top damage / tank / heal : +200g, +100xp, +1 potion_soin_iii
-        • Base (tous) : +50g, +25xp, +1 potion_soin_i
+        • Top damage / tank / heal : +200g, +100xp, +1 potion_soin
+        • Base (tous) : +50g, +25xp, +1 potion_soin
     """
 
     # Récompense de base (présence suffit) — tous les participants.
     BASE_REWARD_GOLD = 50
-    BASE_REWARD_ITEM = ("potion_soin_i", 1)
+    BASE_REWARD_ITEM = ("potion_soin", 1)
     # XP ÉGALE pour tous (× multiplicateur de tier).
     XP_PER_TIER = 50
     # Pool d'or FIXE (× tier) réparti AU PRORATA de la contribution.
@@ -768,7 +768,7 @@ class CompleteWorldBossUseCase:
     TOP3_GOLD = (150, 100, 50)
     # Bonus top-1 par catégorie (dégâts/tank/soin/participation, × tier) + potion.
     CATEGORY_BONUS_GOLD = 100
-    CATEGORY_BONUS_ITEM = ("potion_soin_iii", 1)
+    CATEGORY_BONUS_ITEM = ("potion_soin", 1)
 
     def __init__(
         self,

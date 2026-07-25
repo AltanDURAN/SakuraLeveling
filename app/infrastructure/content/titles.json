@@ -107,7 +107,7 @@
     "effects": [
       {
         "type": "daily_bonus_item",
-        "target": "potion_soin_i",
+        "target": "potion_soin",
         "value": 1
       }
     ]

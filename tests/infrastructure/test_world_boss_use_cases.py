@@ -81,18 +81,17 @@ def _seed_mob(session) -> None:
 
 
 def _seed_potions(session) -> None:
-    """Seed les 2 potions utilisées comme récompenses (potion_soin_i et iii)."""
+    """Seed la potion de soin unique (récompense de boss)."""
     now = datetime.now(UTC)
-    for code, percent in [("potion_soin_i", 50), ("potion_soin_iii", 100)]:
-        item = ItemDefinitionModel(
-            code=code, name=code, description="", category="consumable",
-            rarity="common", stackable=True, max_stack=None,
-            sell_price=10, buy_price=30, icon=None,
-            stat_bonuses_json={"effect": "heal_percent", "value": percent},
-            equipment_slot=None, requires_two_hands=False,
-            created_at=now, updated_at=now,
-        )
-        session.add(item)
+    item = ItemDefinitionModel(
+        code="potion_soin", name="Potion de soin", description="",
+        category="consumable", rarity="common", stackable=True, max_stack=None,
+        sell_price=5, buy_price=20, icon=None,
+        stat_bonuses_json={"effect": "heal_percent", "value": 10},
+        equipment_slot=None, requires_two_hands=False,
+        created_at=now, updated_at=now,
+    )
+    session.add(item)
     session.commit()
 
 
@@ -326,7 +325,7 @@ def test_complete_distributes_rewards_to_top_and_base(session):
     # Rôles : Bob top tank, Alice top damage (cumulés avec leur rang global).
     assert "top_tank" in bob_reward.role or bob_reward.role.startswith("top")
     # Le top damage (Alice) reçoit une potion bonus de catégorie.
-    assert ("potion_soin_iii", 1) in alice_reward.items
+    assert ("potion_soin", 1) in alice_reward.items
 
 
 # ---------- Helpers ----------

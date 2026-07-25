@@ -237,12 +237,12 @@ def test_chasseur_legendaire_drop_rate_lookup():
 def test_taverne_addict_collects_daily_bonus_items():
     service = TitleBonusService()
     title = _title("taverne", [
-        {"type": "daily_bonus_item", "target": "potion_soin_i", "value": 1},
+        {"type": "daily_bonus_item", "target": "potion_soin", "value": 1},
     ])
 
     bonuses = service.aggregate([title])
 
-    assert ("potion_soin_i", 1) in bonuses.daily_bonus_items
+    assert ("potion_soin", 1) in bonuses.daily_bonus_items
 
 
 def test_aggregate_zero_or_missing_target_silently_ignored():
