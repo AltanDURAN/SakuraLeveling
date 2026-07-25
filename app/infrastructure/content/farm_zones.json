@@ -119,13 +119,13 @@
         {
           "element": "vent",
           "time": "always",
-          "background": "cimetiere_abandonne_lumiere.png",
+          "background": "cimetiere_abandonne_vent.png",
           "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
+            "x": 0.0,
+            "y": 0.0,
+            "w": 1.0
           },
-          "ground_y": 0.86
+          "ground_y": 0.875
         }
       ]
     },
