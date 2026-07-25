@@ -12,8 +12,10 @@ from fastapi import HTTPException
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.session import get_db_session
+from app.infrastructure.encounters import farm_zone_loader, mob_element_weight_loader
+from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
 from app.shared.paths import MOBS_ASSETS_DIR
-from webapp.admin import content_sync, git_sync, uploads
+from webapp.admin import content_sync, git_sync, json_writer, uploads
 from webapp.admin.auth import AdminUser, require_admin
 from webapp.admin._shared import get_templates
 
@@ -21,6 +23,57 @@ from webapp.admin._shared import get_templates
 _logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin/mobs", tags=["admin-mobs"])
+
+_WEIGHTS_FILE = "mob_element_weights.json"
+_WEIGHTS_COMMENT = (
+    "Poids de spawn élémentaires par monstre (édités sur la fiche du monstre) : "
+    "weights[mob][element] = poids (>0). Un monstre sans poids hérite d'un tirage "
+    "uniforme sur les éléments de sa zone."
+)
+
+
+def _mob_weight_elements(mob) -> list[dict]:
+    """Éléments de la zone du monstre + son poids actuel pour chacun. Sert à la
+    section « Poids de spawn élémentaires » de la fiche."""
+    farm_zone_loader.clear_cache()
+    ch = farm_zone_loader.get_spawn_channel_for_family(mob.family)
+    weights = mob_element_weight_loader.get_weights(mob.code)
+    out: list[dict] = []
+    for s in farm_zone_loader.get_spots(ch):
+        el = str(s.get("element", "")).strip().lower()
+        if not el:
+            continue
+        out.append({
+            "code": el, "label": ELEMENT_LABELS.get(el, el),
+            "emoji": ELEMENT_EMOJIS.get(el, ""), "time": s.get("time", "always"),
+            "weight": weights.get(el, 0),
+        })
+    return out
+
+
+def _save_mob_weights(code: str, form_data: dict, elements: list[dict]) -> bool:
+    """Écrit les poids élémentaires du monstre depuis le form (champs
+    `elem_weight_<el>`). Renvoie True si le fichier a changé."""
+    new_weights: dict[str, int] = {}
+    for el in elements:
+        raw = form_data.get(f"elem_weight_{el['code']}")
+        w = _parse_int(raw, el["weight"])
+        if w > 0:
+            new_weights[el["code"]] = w
+    data = json_writer.load_json(_WEIGHTS_FILE, {"weights": {}}) or {"weights": {}}
+    weights = data.get("weights", {})
+    if not isinstance(weights, dict):
+        weights = {}
+    before = weights.get(code)
+    if new_weights:
+        weights[code] = new_weights
+    else:
+        weights.pop(code, None)
+    if weights.get(code) == before:
+        return False
+    json_writer.atomic_write_json(_WEIGHTS_FILE, {"_comment": _WEIGHTS_COMMENT, "weights": weights})
+    mob_element_weight_loader.reload_cache()
+    return True
 
 
 async def _save_mob_image(form, code: str, fallback: str) -> tuple[str, str | None, str | None]:
@@ -262,6 +315,7 @@ async def mobs_edit_form(
             # JSON compact pour initialiser l'éditeur Alpine (champ caché).
             "loot_table_json": json.dumps(mob.loot_table or [], ensure_ascii=False),
             "item_codes": item_codes,
+            "weight_elements": _mob_weight_elements(mob),
             "errors": {},
         },
     )
@@ -336,6 +390,12 @@ async def mobs_update(
     if asset_path:
         push_paths.append(asset_path)
     git_sync.push_content(push_paths, f"admin: mob {code} édité")
+
+    # Poids de spawn élémentaires (fichier + push séparés via json_writer).
+    with get_db_session() as session:
+        updated = MobRepository(session).get_by_code(code)
+    if updated is not None:
+        _save_mob_weights(code, form_data, _mob_weight_elements(updated))
     return RedirectResponse(f"/admin/mobs?q={code}", status_code=303)
 
 

@@ -1,5 +1,5 @@
 {% extends "admin/base.html" %}
-{% block title %}Spot {{ label }} — {{ zone.name }} — Sakura Admin{% endblock %}
+{% block title %}Décor {{ label }} — {{ zone.name }} — Sakura Admin{% endblock %}
 {% block content %}
 {% set tp = top_panel %}{% set bp = bottom_panel %}
 <section class="form-page"
@@ -22,13 +22,14 @@
     refresh(){ const p=new URLSearchParams({background:this.bg,
       crop_x:this.cropX.toFixed(4),crop_y:this.cropY.toFixed(4),crop_w:this.cropW.toFixed(4),
       ground_y:this.groundY.toFixed(4),t:Date.now()});
-      this.previewUrl='/admin/scenes/spot/{{ zone.channel_id }}/{{ element }}/preview.png?'+p.toString(); }
+      this.previewUrl='/admin/zones/{{ zone.channel_id }}/spot/{{ element }}/preview.png?'+p.toString(); }
   }"
   x-on:mousemove.window="onMove($event)" x-on:mouseup.window="dragging=false">
 
-  <a href="/admin/scenes" class="breadcrumb">← Scènes</a>
-  <h1>{{ emoji }} Spot {{ label }} — {{ zone.name }}</h1>
-  {% if saved %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(80,200,120,.15);border:1px solid rgba(80,200,120,.4);">✅ Spot enregistré.</div>{% endif %}
+  <a href="/admin/zones/{{ zone.channel_id }}/edit" class="breadcrumb">← {{ zone.name }}</a>
+  <h1>{{ emoji }} Décor {{ label }} — {{ zone.name }}</h1>
+  <p style="color:var(--muted); margin:.2rem 0 0;">Le décor du spawn quand un monstre de cette zone sort sous l'élément <strong>{{ label }}</strong>. Cadre les pixels utiles, pose la ligne de sol, choisis la fenêtre horaire.</p>
+  {% if saved %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(80,200,120,.15);border:1px solid rgba(80,200,120,.4);">✅ Décor enregistré.</div>{% endif %}
 
   <div style="display:flex; gap:1.6rem; flex-wrap:wrap; align-items:flex-start;">
     <div style="flex:0 0 auto;">
@@ -51,9 +52,10 @@
         <div style="position:absolute; pointer-events:none; background:rgba(12,10,16,.6); border:1px solid rgba(255,255,255,.15); left:{{(tp[0]/frame_w*100)|round(2)}}%; top:{{(tp[1]/frame_h*100)|round(2)}}%; width:{{((tp[2]-tp[0])/frame_w*100)|round(2)}}%; height:{{((tp[3]-tp[1])/frame_h*100)|round(2)}}%;"></div>
         <div style="position:absolute; pointer-events:none; background:rgba(12,10,16,.6); border:1px solid rgba(255,255,255,.15); left:{{(bp[0]/frame_w*100)|round(2)}}%; top:{{(bp[1]/frame_h*100)|round(2)}}%; width:{{((bp[2]-bp[0])/frame_w*100)|round(2)}}%; height:{{((bp[3]-bp[1])/frame_h*100)|round(2)}}%;"></div>
       </div>
+      <p style="color:var(--muted); font-size:.85rem; margin:.4rem 0 0;">Bandeaux sombres = zones HUD (PV joueurs). Ligne rose = sol.</p>
     </div>
 
-    <form method="post" action="/admin/scenes/spot/{{ zone.channel_id }}/{{ element }}"
+    <form method="post" action="/admin/zones/{{ zone.channel_id }}/spot/{{ element }}"
           enctype="multipart/form-data" style="flex:1 1 300px; min-width:280px; display:flex; flex-direction:column; gap:1rem;">
       <div class="form-section">
         <h2 class="form-section-title">Décor</h2>
@@ -82,7 +84,7 @@
       <input type="hidden" name="crop_w" :value="cropW.toFixed(4)">
       <input type="hidden" name="ground_y" :value="groundY.toFixed(4)">
       <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Enregistrer le spot</button>
+        <button type="submit" class="btn btn-primary">Enregistrer le décor</button>
         <button type="button" class="btn btn-ghost" x-on:click="refresh()">Aperçu réel</button>
       </div>
     </form>

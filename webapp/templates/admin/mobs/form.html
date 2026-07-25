@@ -165,6 +165,35 @@
             {% for c in (item_codes or []) %}<option value="{{ c }}">{% endfor %}
         </datalist>
 
+        {% if mob %}
+        <div class="form-section" id="poids">
+            <h2 class="form-section-title">Poids de spawn élémentaires</h2>
+            <p class="form-section-help">
+                Répartis le spawn du monstre parmi les éléments de sa zone. Plus le poids est
+                grand, plus il sort souvent sous cet élément. <strong>0 = ne spawne jamais</strong>
+                sous cet élément. Si tout est à 0 → tirage <strong>uniforme</strong> sur la zone.
+                Le décor de chaque élément se compose dans <a href="/admin/zones">Zones</a> ;
+                le placement du monstre dans <a href="/admin/scenes/mob/{{ mob.code }}">Scènes</a>.
+            </p>
+            {% if weight_elements %}
+            <div class="form-row form-row-stats">
+                {% for el in weight_elements %}
+                <label class="field" style="max-width:150px;">
+                    <span class="field-label">{{ el.emoji }} {{ el.label }}{% if el.time == 'day' %} ☀️{% elif el.time == 'night' %} 🌙{% endif %}</span>
+                    <input type="number" min="0" max="999" name="elem_weight_{{ el.code }}"
+                           class="input" value="{{ el.weight }}">
+                </label>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="color:var(--muted);">
+                La zone de ce monstre (famille « {{ mob.family }} ») n'a pas encore d'éléments.
+                Ajoute-les en éditant la zone, puis reviens ici régler les poids.
+            </p>
+            {% endif %}
+        </div>
+        {% endif %}
+
         <div class="form-actions">
             <a href="/admin/mobs" class="btn btn-ghost">Annuler</a>
             <button type="submit" class="btn btn-primary">

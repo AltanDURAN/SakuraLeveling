@@ -32,16 +32,26 @@ from app.infrastructure.config.settings import settings
 CONTENT_PATH = Path(__file__).resolve().parents[1] / "content" / "farm_zones.json"
 
 _cache: dict | None = None
+_cache_mtime: float | None = None
 
 
 def _load() -> dict:
-    global _cache
-    if _cache is None:
+    """Cache invalidé par mtime : une édition de `farm_zones.json` (ex : décor
+    d'un spot via l'admin web) est prise en compte au prochain rendu SANS
+    redémarrage. NB : l'ajout d'une NOUVELLE zone (nouveau salon) nécessite tout
+    de même un redémarrage — la boucle d'encounter lit les salons au boot."""
+    global _cache, _cache_mtime
+    try:
+        mtime = CONTENT_PATH.stat().st_mtime
+    except OSError:
+        mtime = None
+    if _cache is None or mtime != _cache_mtime:
         if CONTENT_PATH.exists():
             with CONTENT_PATH.open("r", encoding="utf-8") as fh:
                 _cache = json.load(fh)
         else:
             _cache = {}
+        _cache_mtime = mtime
     return _cache
 
 
@@ -209,5 +219,6 @@ def list_zone_channels() -> list[int]:
 
 
 def clear_cache() -> None:
-    global _cache
+    global _cache, _cache_mtime
     _cache = None
+    _cache_mtime = None

@@ -44,11 +44,11 @@
                     </td>
                     <td>
                         {% for s in z.spots %}
-                            <a href="/admin/scenes/spot/{{ z.channel_id }}/{{ s.element }}"
+                            <a href="/admin/zones/{{ z.channel_id }}/spot/{{ s.element }}"
                                class="count-pill" style="text-decoration:none; margin:0 .15rem .2rem 0; display:inline-block;"
                                title="Composer le décor {{ element_labels.get(s.element, s.element) }} de cette zone">
                                {{ element_emojis.get(s.element, '') }} {{ element_labels.get(s.element, s.element) }}{% if s.time == 'day' %} ☀️{% elif s.time == 'night' %} 🌙{% endif %}</a>
-                        {% else %}<span style="color:var(--muted);">— (défini dans Scènes)</span>{% endfor %}
+                        {% else %}<span style="color:var(--muted);">— (à ajouter en éditant la zone)</span>{% endfor %}
                     </td>
                     <td>{{ z.background or "—" }}</td>
                     <td>
