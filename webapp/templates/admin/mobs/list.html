@@ -1,82 +1,335 @@
 {% extends "admin/base.html" %}
-
-{% block title %}Mobs — Sakura Admin{% endblock %}
+{% block title %}Monstres — Sakura Admin{% endblock %}
 
 {% block content %}
+<style>
+  .mobs-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(340px,1fr)); gap:1rem; }
+  .mob-card { border:1px solid var(--border); border-radius:16px; background:var(--card,rgba(255,255,255,.02));
+              overflow:hidden; display:flex; flex-direction:column; }
+  .mob-card.is-open { grid-column:1 / -1; }
+  .mob-head { display:flex; gap:.9rem; padding:.9rem; align-items:flex-start; }
+  .mob-portrait { width:96px; height:96px; flex:0 0 auto; border-radius:12px; overflow:hidden;
+      display:flex; align-items:center; justify-content:center;
+      background-color:#e4e4ea;
+      background-image:linear-gradient(45deg,#c9c9d2 25%,transparent 25%),linear-gradient(-45deg,#c9c9d2 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#c9c9d2 75%),linear-gradient(-45deg,transparent 75%,#c9c9d2 75%);
+      background-size:16px 16px; background-position:0 0,0 8px,8px -8px,-8px 0; }
+  .mob-portrait img { max-width:92px; max-height:92px; object-fit:contain; }
+  .rank-badge { font-weight:800; font-size:.8rem; padding:.15rem .5rem; border-radius:999px;
+                border:1px solid var(--border); background:rgba(120,120,200,.14); white-space:nowrap; }
+  .eltag { display:inline-flex; align-items:center; gap:.25rem; padding:.12rem .5rem; border-radius:999px;
+           font-size:.8rem; border:1.5px solid; font-weight:600; }
+  .eltag .w { font-size:.72rem; opacity:.8; }
+  .statline { display:flex; flex-wrap:wrap; gap:.3rem .7rem; font-size:.82rem; color:var(--muted); }
+  .statline b { color:var(--fg,inherit); }
+  .loot-chip { display:inline-flex; align-items:center; gap:.35rem; font-size:.8rem; padding:.15rem .45rem;
+               border-radius:8px; border:1px solid var(--border); }
+  .rdot { width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
+  .mob-body { border-top:1px solid var(--border); padding:1rem; display:flex; flex-direction:column; gap:1.1rem; }
+  .editor-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:1.1rem; }
+  @media (max-width:820px){ .editor-grid{ grid-template-columns:1fr; } }
+  .mini { max-width:110px; } .mini input { text-align:center; }
+  .loot-row { display:flex; align-items:center; gap:.5rem; padding:.4rem; border:1px solid var(--border);
+              border-radius:10px; margin-bottom:.4rem; flex-wrap:wrap; }
+  .loot-thumb { width:34px; height:34px; border-radius:6px; object-fit:contain; background:#e4e4ea; flex:0 0 auto; }
+  .item-pick { position:relative; }
+  .item-pop { position:absolute; z-index:20; top:100%; left:0; right:0; max-height:260px; overflow-y:auto;
+              background:var(--bg,#1b1b24); border:1px solid var(--border); border-radius:10px; margin-top:.25rem; box-shadow:0 8px 24px rgba(0,0,0,.3); }
+  .item-opt { display:flex; align-items:center; gap:.5rem; padding:.35rem .5rem; cursor:pointer; }
+  .item-opt:hover { background:rgba(255,120,180,.14); }
+  .toast { padding:.6rem .9rem; border-radius:10px; margin-bottom:1rem; }
+  [x-cloak] { display:none !important; }
+</style>
+
+<script>window.SAKURA_ITEMS = {{ items_catalog|tojson }};
+window.SAKURA_RARITY = {{ rarity_colors|tojson }};
+function elImg(code){ return '/assets/items/'+code+'.png'; }
+function mobCard(el){
+  const d = JSON.parse(el.dataset.card);
+  const meta = {}; (d.elements||[]).forEach(e => meta[e.code]=e);
+  return {
+    open:false, code:d.code, name:d.name, family:d.family, element:d.element,
+    description:d.description, imageName:d.image,
+    s:d.stats, r:d.rewards, w:d.weights, meta, rows:d.loot||[],
+    preview: d.image ? '/assets/mobs/'+d.image : '', itemSearch:'', pickOpen:false,
+    init(){ if(location.hash === '#mob-'+this.code){ this.open=true;
+            this.$nextTick(()=>this.$root.scrollIntoView({behavior:'smooth',block:'center'})); } },
+    onFile(e){ const f=e.target.files[0]; if(f) this.preview=URL.createObjectURL(f); },
+    elMeta(c){ return this.meta[c] || {label:c,emoji:'',color:'#8a8a95',time:'always'}; },
+    activeEls(){ return Object.keys(this.w).filter(k=>this.w[k]>0); },
+    addableEls(){ return Object.keys(this.w).filter(k=>this.w[k]===0); },
+    addEl(c){ if(c && this.w[c]===0) this.w[c]=10; },
+    removeEl(c){ this.w[c]=0; },
+    filteredItems(){ const q=this.itemSearch.toLowerCase();
+      return (window.SAKURA_ITEMS||[]).filter(x=> !q || x.name.toLowerCase().includes(q) || x.code.toLowerCase().includes(q)).slice(0,40); },
+    itemName(c){ const it=(window.SAKURA_ITEMS||[]).find(x=>x.code===c); return it?it.name:c; },
+    itemRarity(c){ const it=(window.SAKURA_ITEMS||[]).find(x=>x.code===c); return it?it.rarity:'common'; },
+    rarityColor(rr){ return (window.SAKURA_RARITY||{})[rr] || '#8a8a95'; },
+    addRow(c){ if(!c) return; if(this.rows.some(x=>x.item_code===c)) { this.pickOpen=false; return; }
+      this.rows.push({item_code:c, drop_rate:0.1, min_quantity:1, max_quantity:1});
+      this.itemSearch=''; this.pickOpen=false; },
+    removeRow(i){ this.rows.splice(i,1); },
+    lootPayload(){ return JSON.stringify(this.rows.filter(x=>x.item_code)); },
+  }
+}
+document.addEventListener('alpine:init', () => {
+  Alpine.store('mfilter', { q:'', fam:'',
+    match(el){ const q=this.q.toLowerCase();
+      const okQ = !q || (el.dataset.search||'').includes(q);
+      const okF = !this.fam || el.dataset.family===this.fam;
+      return okQ && okF; } });
+});
+</script>
+
 <section class="list-page">
-    <header class="list-header">
-        <div>
-            <a href="/admin" class="breadcrumb">← Dashboard</a>
-            <h1>👹 Mobs <span class="count-pill">{{ mobs|length }}</span></h1>
+  <header class="list-header">
+    <div>
+      <a href="/admin" class="breadcrumb">← Dashboard</a>
+      <h1>👾 Monstres <span class="count-pill">{{ cards|length }}</span></h1>
+    </div>
+    <a href="/admin/mobs/new" class="btn btn-primary">+ Nouveau monstre</a>
+  </header>
+
+  {% if saved %}<div class="toast" style="background:rgba(80,200,120,.15);border:1px solid rgba(80,200,120,.4);">✅ Monstre <strong>{{ saved }}</strong> enregistré.</div>{% endif %}
+  {% if err %}<div class="toast" style="background:rgba(230,90,90,.15);border:1px solid rgba(230,90,90,.4);">⚠️ Échec de l'upload d'image (format/poids). Le reste a été enregistré.</div>{% endif %}
+
+  <div x-data class="form-row" style="gap:.7rem; margin-bottom:1rem; align-items:flex-end;">
+    <label class="field" style="flex:1; min-width:220px;">
+      <span class="field-label">Rechercher (nom, famille, élément)</span>
+      <input type="search" class="input" placeholder="gobelin, eau, mort-vivant…" x-model="$store.mfilter.q">
+    </label>
+    <div style="display:flex; flex-wrap:wrap; gap:.35rem;">
+      <button type="button" class="btn btn-small" :class="$store.mfilter.fam==='' ? 'btn-primary':'btn-ghost'" x-on:click="$store.mfilter.fam=''">Toutes</button>
+      {% for fam in all_families %}
+      <button type="button" class="btn btn-small" :class="$store.mfilter.fam==='{{ fam }}' ? 'btn-primary':'btn-ghost'" x-on:click="$store.mfilter.fam='{{ fam }}'">{{ fam }}</button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="mobs-grid">
+    {% for card in cards %}
+    {% set m = card.mob %}
+    <div class="mob-card" id="mob-{{ m.code }}" :class="{'is-open':open}"
+         data-family="{{ m.family }}" data-search="{{ card.search }}"
+         data-card='{{ card.state|tojson }}'
+         x-data="mobCard($el)" x-show="$store.mfilter.match($el)">
+
+      <!-- ===== En-tête / résumé (toujours visible) ===== -->
+      <div class="mob-head">
+        <div class="mob-portrait">
+          <img x-show="preview" :src="preview" alt="" onerror="this.style.display='none'">
         </div>
-        <a href="/admin/mobs/new" class="btn btn-primary">+ Nouveau mob</a>
-    </header>
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; align-items:center; gap:.5rem; justify-content:space-between;">
+            <strong style="font-size:1.05rem;" x-text="name"></strong>
+            <span class="rank-badge" title="Rang / puissance calculés">{{ card.rank }} · {{ card.power_score }}</span>
+          </div>
+          <div style="color:var(--muted); font-size:.82rem; margin:.1rem 0 .4rem;">
+            <span x-text="family"></span>
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:.3rem; margin-bottom:.45rem;">
+            <template x-if="element">
+              <span class="eltag" style="border-color:#e0a13a; color:#e0a13a;">⚡ forcé : <span x-text="element" style="margin-left:.15rem;"></span></span>
+            </template>
+            <span x-show="!element" style="display:flex; flex-wrap:wrap; gap:.3rem;">
+              <template x-for="c in activeEls()" :key="c">
+                <span class="eltag" :style="{ borderColor: elMeta(c).color, color: elMeta(c).color }">
+                  <span x-text="elMeta(c).emoji"></span><span x-text="elMeta(c).label"></span>
+                  <span class="w" x-text="'×'+w[c]"></span>
+                  <template x-if="elMeta(c).time==='day'"><span>☀️</span></template>
+                  <template x-if="elMeta(c).time==='night'"><span>🌙</span></template>
+                </span>
+              </template>
+              <span x-show="activeEls().length===0" style="color:var(--muted); font-size:.8rem;">tous éléments (uniforme)</span>
+            </span>
+          </div>
+          <div class="statline">
+            <span>❤️ <b x-text="s.max_hp"></b></span>
+            <span>⚔️ <b x-text="s.attack"></b></span>
+            <span>🛡️ <b x-text="s.defense"></b></span>
+            <span>💨 <b x-text="s.speed"></b></span>
+            <span>💥 <b x-text="s.crit_chance+'%'"></b></span>
+            <span>🎯 <b x-text="s.dodge+'%'"></b></span>
+          </div>
+          <div class="statline" style="margin-top:.25rem;">
+            <span>✨ XP <b x-text="r.xp_reward"></b></span>
+            <span>🪙 <b x-text="r.gold_reward"></b></span>
+            <span>🎲 poids <b x-text="r.spawn_weight"></b></span>
+            <span>🎁 <b x-text="rows.length"></b> drop(s)</span>
+          </div>
+        </div>
+      </div>
 
-    <form class="filter-bar" method="get" action="/admin/mobs">
-        <input type="text" name="q" value="{{ filter_q }}"
-               placeholder="🔍 Recherche par code ou nom" class="input"
-               onchange="this.form.submit()">
-        <select name="family" class="input" onchange="this.form.submit()">
-            <option value="">Toutes familles</option>
-            {% for fam in all_families %}
-                <option value="{{ fam }}" {% if filter_family == fam %}selected{% endif %}>
-                    {{ fam }}
-                </option>
-            {% endfor %}
-        </select>
-        {% if filter_q or filter_family %}
-            <a href="/admin/mobs" class="btn btn-ghost">Reset</a>
-        {% endif %}
-    </form>
+      <div style="padding:0 .9rem .9rem; display:flex; gap:.5rem;">
+        <button type="button" class="btn btn-small" style="flex:1;" x-on:click="open=!open"
+                x-text="open ? 'Fermer' : 'Éditer'"></button>
+        <form method="post" action="/admin/mobs/{{ m.code }}/delete" style="margin:0;"
+              onsubmit="return confirm('Supprimer {{ m.name }} ? (retire aussi les kills)')">
+          <button type="submit" class="btn btn-small" style="background:var(--danger); color:#fff;">Suppr.</button>
+        </form>
+      </div>
 
-    {% if mobs %}
-    <div class="table-wrapper">
-        <table class="data-table" data-sortable>
-            <thead>
-                <tr>
-                    <th data-sort-key="code">Code</th>
-                    <th data-sort-key="name">Nom</th>
-                    <th data-sort-key="family">Famille</th>
-                    <th data-sort-key="hp">PV</th>
-                    <th data-sort-key="atk">Atk</th>
-                    <th data-sort-key="def">Def</th>
-                    <th data-sort-key="spd">Vit</th>
-                    <th data-sort-key="xp">XP</th>
-                    <th data-sort-key="gold">Or</th>
-                    <th data-sort-key="spawn">Spawn</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for mob in mobs %}
-                <tr>
-                    <td><code>{{ mob.code }}</code></td>
-                    <td>{{ mob.name }}</td>
-                    <td>{{ mob.family or "—" }}</td>
-                    <td>{{ mob.max_hp }}</td>
-                    <td>{{ mob.attack }}</td>
-                    <td>{{ mob.defense }}</td>
-                    <td>{{ mob.speed }}</td>
-                    <td>{{ mob.xp_reward }}</td>
-                    <td>{{ mob.gold_reward }}</td>
-                    <td>{{ mob.spawn_weight }}</td>
-                    <td style="white-space:nowrap;">
-                        <a href="/admin/mobs/{{ mob.code }}/edit" class="btn btn-small">Éditer</a>
-                        <form method="post" action="/admin/mobs/{{ mob.code }}/delete"
-                              style="display:inline; margin-left:0.3rem;"
-                              onsubmit="return confirm('⚠️ Supprimer définitivement le mob « {{ mob.name }} » ?\n\nIl sera retiré de mobs.json + les compteurs de kills associés. Irréversible.');">
-                            <button type="submit" class="btn btn-small" style="background: var(--danger); color: white;">Suppr.</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+      <!-- ===== Éditeur (déplié) ===== -->
+      <form class="mob-body" x-show="open" x-cloak method="post"
+            action="/admin/mobs/{{ m.code }}" enctype="multipart/form-data">
+        <div class="editor-grid">
+          <!-- Colonne gauche : image + identité -->
+          <div style="display:flex; flex-direction:column; gap:1rem;">
+            <div class="form-section">
+              <h2 class="form-section-title">Image</h2>
+              <div style="display:flex; gap:1rem; align-items:flex-end;">
+                <div class="mob-portrait" style="width:120px; height:120px;">
+                  <img x-show="preview" :src="preview" style="max-width:116px;max-height:116px;" onerror="this.style.display='none'">
+                </div>
+                <label class="field" style="flex:1;">
+                  <span class="field-label">Uploader (PNG/JPG/WebP/GIF ≤ 8 Mo)</span>
+                  <input type="file" name="image_file" class="input" accept=".png,.jpg,.jpeg,.webp,.gif" x-on:change="onFile($event)">
+                  <small style="color:var(--muted);">Aperçu live. Sauvée sous <code>{{ m.code }}.&lt;ext&gt;</code>.</small>
+                </label>
+              </div>
+              <input type="hidden" name="image_name" :value="imageName">
+            </div>
+            <div class="form-section">
+              <h2 class="form-section-title">Identité</h2>
+              <label class="field"><span class="field-label">Nom</span>
+                <input class="input" name="name" x-model="name"></label>
+              <label class="field"><span class="field-label">Famille</span>
+                <input class="input" name="family" list="fam-list" x-model="family"></label>
+              <label class="field"><span class="field-label">Élément forcé (rare — vide = tirage par poids)</span>
+                <select class="input" name="element" x-model="element">
+                  <option value="">— aucun (tirage élémentaire) —</option>
+                  {% for e in ['eau','feu','plante','glace','vent','terre','tenebre','lumiere'] %}
+                  <option value="{{ e }}">{{ e }}</option>{% endfor %}
+                </select></label>
+              <label class="field"><span class="field-label">Description</span>
+                <textarea class="input textarea" rows="2" name="description" x-model="description"></textarea></label>
+            </div>
+          </div>
+
+          <!-- Colonne droite : stats + récompenses -->
+          <div style="display:flex; flex-direction:column; gap:1rem;">
+            <div class="form-section">
+              <h2 class="form-section-title">Stats de combat</h2>
+              <div class="form-row form-row-stats">
+                <label class="field mini"><span class="field-label">❤️ PV</span><input type="number" name="max_hp" class="input" x-model.number="s.max_hp"></label>
+                <label class="field mini"><span class="field-label">⚔️ Atk</span><input type="number" name="attack" class="input" x-model.number="s.attack"></label>
+                <label class="field mini"><span class="field-label">🛡️ Déf</span><input type="number" name="defense" class="input" x-model.number="s.defense"></label>
+                <label class="field mini"><span class="field-label">💨 Vit</span><input type="number" name="speed" class="input" x-model.number="s.speed"></label>
+              </div>
+              <div class="form-row form-row-stats">
+                <label class="field mini"><span class="field-label">💥 Crit%</span><input type="number" name="crit_chance" class="input" x-model.number="s.crit_chance"></label>
+                <label class="field mini"><span class="field-label">Crit dmg</span><input type="number" name="crit_damage" class="input" x-model.number="s.crit_damage"></label>
+                <label class="field mini"><span class="field-label">🎯 Esq%</span><input type="number" name="dodge" class="input" x-model.number="s.dodge"></label>
+                <label class="field mini"><span class="field-label">Régen</span><input type="number" name="hp_regeneration" class="input" x-model.number="s.hp_regeneration"></label>
+              </div>
+              <input type="hidden" name="current_hp" :value="s.max_hp">
+            </div>
+            <div class="form-section">
+              <h2 class="form-section-title">Récompenses & spawn</h2>
+              <div class="form-row form-row-stats">
+                <label class="field mini"><span class="field-label">✨ XP</span><input type="number" name="xp_reward" class="input" x-model.number="r.xp_reward"></label>
+                <label class="field mini"><span class="field-label">🪙 Or</span><input type="number" name="gold_reward" class="input" x-model.number="r.gold_reward"></label>
+                <label class="field mini" style="max-width:130px;"><span class="field-label">🎲 Poids spawn</span><input type="number" name="spawn_weight" class="input" x-model.number="r.spawn_weight"></label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Éléments possibles (tags + poids) -->
+        <div class="form-section">
+          <h2 class="form-section-title">Éléments possibles &amp; poids de spawn</h2>
+          {% if card.zone.elements %}
+          <p class="form-section-help" style="margin-top:0;">
+            Zone <strong>{{ card.zone.name or '—' }}</strong>. Un tag = un élément sous lequel ce monstre peut spawner (poids éditable, plus grand = plus fréquent). Ajoute/retire librement ; retirer = poids 0. Aucun tag = tirage uniforme.
+            Les éléments disponibles viennent de la <a href="/admin/zones/{{ card.zone.channel_id }}/edit">zone</a>.
+          </p>
+          <div x-show="element" class="form-section-help" x-cloak
+               style="color:#c9772f; background:rgba(224,161,58,.1); border:1px solid rgba(224,161,58,.35); border-radius:8px; padding:.5rem .7rem; margin-top:0;">
+            ⚠️ Élément forcé « <span x-text="element"></span> » actif → les poids ci-dessous sont <strong>ignorés</strong> au spawn (ce monstre sort toujours en <span x-text="element"></span>). Mets « aucun » dans Identité pour activer le tirage par poids.
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:.5rem; align-items:center;">
+            <template x-for="c in activeEls()" :key="c">
+              <span class="eltag" :style="{ borderColor: elMeta(c).color, color: elMeta(c).color }">
+                <span x-text="elMeta(c).emoji"></span><span x-text="elMeta(c).label"></span>
+                <input type="number" min="1" max="999" x-model.number="w[c]"
+                       style="width:52px; margin-left:.2rem; padding:.05rem .2rem;" class="input">
+                <span style="cursor:pointer; font-weight:800;" x-on:click="removeEl(c)" title="Retirer">✕</span>
+              </span>
+            </template>
+            <span x-show="activeEls().length===0" style="color:var(--muted); font-size:.85rem;">Aucun élément (tirage uniforme sur la zone).</span>
+          </div>
+          <div style="margin-top:.7rem;" x-show="addableEls().length">
+            <select class="input" style="max-width:220px; display:inline-block;" x-on:change="addEl($event.target.value); $event.target.value=''">
+              <option value="">+ Ajouter un élément…</option>
+              <template x-for="c in addableEls()" :key="c">
+                <option :value="c" x-text="elMeta(c).emoji+' '+elMeta(c).label"></option>
+              </template>
+            </select>
+          </div>
+          <!-- Champs cachés : un poids par élément de la zone (0 = inactif). -->
+          {% for e in card.zone.elements %}
+          <input type="hidden" name="elem_weight_{{ e.code }}" :value="w['{{ e.code }}']">
+          {% endfor %}
+          {% else %}
+          <p class="form-section-help">La zone de « {{ m.family }} » n'a pas d'éléments. Ajoute-les dans <a href="/admin/zones">Zones</a>.</p>
+          {% endif %}
+        </div>
+
+        <!-- Table de drop -->
+        <div class="form-section">
+          <h2 class="form-section-title">Table de drop</h2>
+          <p class="form-section-help" style="margin-top:0;">Un item par ligne. Chance = probabilité de drop (0–100%). Quantité tirée entre min et max.</p>
+          <template x-for="(row,i) in rows" :key="i">
+            <div class="loot-row">
+              <img class="loot-thumb" :src="elImg(row.item_code)" onerror="this.style.visibility='hidden'">
+              <div style="flex:1; min-width:120px;">
+                <div style="display:flex; align-items:center; gap:.35rem;">
+                  <span class="rdot" :style="{ background: rarityColor(itemRarity(row.item_code)) }"></span>
+                  <strong x-text="itemName(row.item_code)" style="font-size:.88rem;"></strong>
+                </div>
+                <small style="color:var(--muted);" x-text="row.item_code+' · '+itemRarity(row.item_code)"></small>
+              </div>
+              <label class="field" style="width:190px;">
+                <span class="field-label">Chance <span x-text="Math.round(row.drop_rate*100)+'%'"></span></span>
+                <input type="range" min="0" max="1" step="0.01" x-model.number="row.drop_rate">
+              </label>
+              <label class="field mini" style="width:70px;"><span class="field-label">min</span>
+                <input type="number" min="1" class="input" x-model.number="row.min_quantity"></label>
+              <label class="field mini" style="width:70px;"><span class="field-label">max</span>
+                <input type="number" min="1" class="input" x-model.number="row.max_quantity"></label>
+              <button type="button" class="btn btn-small" style="background:var(--danger);color:#fff;" x-on:click="removeRow(i)">✕</button>
+            </div>
+          </template>
+          <p x-show="rows.length===0" class="form-section-help">Aucun drop.</p>
+
+          <div class="item-pick" style="margin-top:.5rem; max-width:420px;">
+            <input class="input" placeholder="+ Ajouter un item (rechercher par nom)…"
+                   x-model="itemSearch" x-on:focus="pickOpen=true" x-on:click="pickOpen=true">
+            <div class="item-pop" x-show="pickOpen" x-on:click.outside="pickOpen=false" x-cloak>
+              <template x-for="it in filteredItems()" :key="it.code">
+                <div class="item-opt" x-on:click="addRow(it.code)">
+                  <img class="loot-thumb" style="width:26px;height:26px;" :src="elImg(it.code)" onerror="this.style.visibility='hidden'">
+                  <span class="rdot" :style="{ background: rarityColor(it.rarity) }"></span>
+                  <span style="flex:1;" x-text="it.name"></span>
+                  <small style="color:var(--muted);" x-text="it.category"></small>
+                </div>
+              </template>
+              <div x-show="filteredItems().length===0" style="padding:.5rem; color:var(--muted);">Aucun item.</div>
+            </div>
+          </div>
+          <input type="hidden" name="loot_table" :value="lootPayload()">
+        </div>
+
+        <div class="form-actions" style="justify-content:flex-end;">
+          <button type="button" class="btn btn-ghost" x-on:click="open=false">Fermer</button>
+          <button type="submit" class="btn btn-primary">💾 Enregistrer {{ m.name }}</button>
+        </div>
+      </form>
     </div>
-    {% else %}
-    <div class="empty-state">
-        <p>Aucun mob correspondant aux filtres.</p>
-    </div>
-    {% endif %}
+    {% endfor %}
+  </div>
+
+  <datalist id="fam-list">
+    {% for fam in all_families %}<option value="{{ fam }}">{% endfor %}
+  </datalist>
 </section>
 {% endblock %}
