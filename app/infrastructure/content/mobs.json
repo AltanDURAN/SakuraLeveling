@@ -16,14 +16,7 @@
     "xp_reward": 19,
     "gold_reward": 9,
     "spawn_weight": 60,
-    "loot_table": [
-      {
-        "item_code": "sang_slime",
-        "drop_rate": 0.15,
-        "min_quantity": 1,
-        "max_quantity": 1
-      }
-    ],
+    "loot_table": [],
     "image_name": "slime.png",
     "element": "eau"
   },
@@ -170,14 +163,7 @@
     "xp_reward": 300,
     "gold_reward": 144,
     "spawn_weight": 10,
-    "loot_table": [
-      {
-        "item_code": "sang_gobelin_hq",
-        "drop_rate": 0.15,
-        "min_quantity": 1,
-        "max_quantity": 1
-      }
-    ],
+    "loot_table": [],
     "image_name": "gobelin_superieur.png",
     "element": "feu"
   },
@@ -198,14 +184,7 @@
     "xp_reward": 325,
     "gold_reward": 156,
     "spawn_weight": 10,
-    "loot_table": [
-      {
-        "item_code": "sang_gobelin_hq",
-        "drop_rate": 0.15,
-        "min_quantity": 1,
-        "max_quantity": 1
-      }
-    ],
+    "loot_table": [],
     "image_name": "gobelin_assassin.png",
     "element": "tenebre"
   },
@@ -227,7 +206,7 @@
     "xp_reward": 237,
     "gold_reward": 114,
     "spawn_weight": 25,
-    "loot_table": null,
+    "loot_table": [],
     "image_name": "squelette.png"
   },
   {
@@ -248,7 +227,7 @@
     "xp_reward": 273,
     "gold_reward": 131,
     "spawn_weight": 20,
-    "loot_table": null,
+    "loot_table": [],
     "image_name": "zombie.png"
   },
   {
@@ -269,7 +248,7 @@
     "xp_reward": 393,
     "gold_reward": 189,
     "spawn_weight": 15,
-    "loot_table": null,
+    "loot_table": [],
     "image_name": "fantome.png"
   },
   {
@@ -290,7 +269,7 @@
     "xp_reward": 399,
     "gold_reward": 191,
     "spawn_weight": 10,
-    "loot_table": null,
+    "loot_table": [],
     "image_name": "momie.png"
   },
   {
@@ -311,7 +290,7 @@
     "xp_reward": 456,
     "gold_reward": 219,
     "spawn_weight": 7,
-    "loot_table": null,
+    "loot_table": [],
     "image_name": "gargouille.png"
   },
   {
@@ -332,7 +311,7 @@
     "xp_reward": 541,
     "gold_reward": 260,
     "spawn_weight": 4,
-    "loot_table": null,
+    "loot_table": [],
     "image_name": "liche_maudite.png"
   },
   {
@@ -353,7 +332,7 @@
     "xp_reward": 733,
     "gold_reward": 352,
     "spawn_weight": 2,
-    "loot_table": null,
+    "loot_table": [],
     "image_name": "banshee.png"
   }
 ]
