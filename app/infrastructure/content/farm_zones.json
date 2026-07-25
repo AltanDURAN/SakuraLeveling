@@ -96,7 +96,7 @@
         },
         {
           "element": "tenebre",
-          "time": "always",
+          "time": "night",
           "background": "cimetiere_abandonne_tenebre.png",
           "crop": {
             "x": 0.0,
