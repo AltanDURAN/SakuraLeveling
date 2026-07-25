@@ -39,7 +39,7 @@
     "spawn_weight": 40,
     "loot_table": [],
     "image_name": "gobelin.png",
-    "element": "terre"
+    "element": ""
   },
   {
     "code": "gobelin_combattant",
