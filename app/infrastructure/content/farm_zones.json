@@ -79,55 +79,9 @@
       "families": [
         "mort-vivant"
       ],
-      "background": "cimetiere_abandonne.png",
+      "background": "cimetiere_abandonne_glace.png",
       "essences_min": 1,
-      "essences_max": 2,
-      "spots": [
-        {
-          "element": "glace",
-          "time": "always",
-          "background": "cimetiere_abandonne.png",
-          "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
-          },
-          "ground_y": 0.86
-        },
-        {
-          "element": "vent",
-          "time": "always",
-          "background": "cimetiere_abandonne.png",
-          "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
-          },
-          "ground_y": 0.86
-        },
-        {
-          "element": "tenebre",
-          "time": "night",
-          "background": "cimetiere_abandonne.png",
-          "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
-          },
-          "ground_y": 0.86
-        },
-        {
-          "element": "lumiere",
-          "time": "day",
-          "background": "cimetiere_abandonne.png",
-          "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
-          },
-          "ground_y": 0.86
-        }
-      ]
+      "essences_max": 2
     },
     {
       "name": "Berceau cataclysmique",
