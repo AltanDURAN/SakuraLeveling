@@ -3,9 +3,9 @@
   "placements": {
     "gobelin": {
       "plante": {
-        "scale": 0.3,
-        "offset_x": -0.07,
-        "offset_y": -0.19,
+        "scale": 0.4,
+        "offset_x": 0.02,
+        "offset_y": -0.03,
         "shadow": true
       },
       "eau": {
