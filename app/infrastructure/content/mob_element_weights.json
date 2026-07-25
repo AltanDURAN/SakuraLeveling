@@ -30,6 +30,12 @@
       "plante": 10,
       "eau": 10,
       "terre": 10
+    },
+    "gobelin_ballon": {
+      "plante": 20,
+      "terre": 20,
+      "tenebre": 5,
+      "lumiere": 5
     }
   }
 }
