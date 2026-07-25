@@ -158,6 +158,22 @@ ITEM_RARITY_LABELS: dict[str, str] = {
     "common": "Commun", "uncommon": "Peu commun", "rare": "Rare",
     "epic": "Épique", "legendary": "Légendaire",
 }
+EQUIPMENT_SLOT_LABELS: dict[str, str] = {
+    "casque": "Casque", "plastron": "Plastron", "jambieres": "Jambières",
+    "bottes": "Bottes", "main_droite": "Main droite", "main_gauche": "Main gauche",
+    "collier": "Collier", "bracelet": "Bracelet", "bague": "Bague",
+    "ceinture": "Ceinture", "cape": "Cape", "boucle_oreille": "Boucle d'oreille",
+}
+# Stat de bonus d'item : libellé FR + icône (affichage admin).
+STAT_LABELS: dict[str, str] = {
+    "max_hp": "PV", "attack": "Attaque", "defense": "Défense", "speed": "Vitesse",
+    "crit_chance": "Crit %", "crit_damage": "Crit dmg", "dodge": "Esquive %",
+    "hp_regeneration": "Régén PV",
+}
+STAT_EMOJIS: dict[str, str] = {
+    "max_hp": "❤️", "attack": "⚔️", "defense": "🛡️", "speed": "💨",
+    "crit_chance": "💥", "crit_damage": "✴️", "dodge": "🎯", "hp_regeneration": "💚",
+}
 
 
 class CooldownAction(StrEnum):
