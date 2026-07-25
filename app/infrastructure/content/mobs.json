@@ -127,7 +127,7 @@
     "attack": 60,
     "defense": 25,
     "crit_chance": 10,
-    "crit_damage": 200,
+    "crit_damage": 150,
     "dodge": 0,
     "hp_regeneration": 0,
     "speed": 2,
