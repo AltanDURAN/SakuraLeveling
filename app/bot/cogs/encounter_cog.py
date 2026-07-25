@@ -312,7 +312,7 @@ class EncounterCog(commands.Cog):
         from app.infrastructure.encounters import farm_zone_loader, mob_placement_loader
         element = getattr(encounter.mob_state, "element", "") or ""
         spot = farm_zone_loader.get_spot(channel_id, element) if element else None
-        placement = mob_placement_loader.get_mob_placement(encounter.mob_state.code)
+        placement = mob_placement_loader.get_placement(encounter.mob_state.code, element)
         return spot, placement
 
     async def _run_encounter(self, channel_id: int, mob, forced_element: str | None = None) -> None:

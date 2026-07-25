@@ -1,123 +1,112 @@
 {% extends "admin/base.html" %}
-{% block title %}{{ mob.name }} — placement — Sakura Admin{% endblock %}
+{% block title %}{{ mob.name }} · {{ label }} — placement — Sakura Admin{% endblock %}
 {% block content %}
 {% set tp = top_panel %}{% set bp = bottom_panel %}
-{# Données passées via un attribut SIMPLE-quote : tojson échappe les quotes
-   simples (mais pas les doubles), donc on ne peut pas l'injecter dans x-data
-   (double-quote) sans casser l'attribut. #}
-<div id="mob-scene-data" hidden
-     data-spots='{{ zone_spots|tojson }}' data-bg="{{ default_bg }}"></div>
 <section class="form-page"
   x-data="{
-    scale: {{ placement.scale|default(0.6) }},
-    offsetX: {{ placement.offset_x|default(0.0) }},
-    offsetY: {{ placement.offset_y|default(0.0) }},
-    shadow: {{ 'true' if placement.shadow|default(true) else 'false' }},
-    weights: { {% for e in elements %}'{{ e.code }}': {{ e.weight }}{% if not loop.last %},{% endif %}{% endfor %} },
-    zoneSpots: JSON.parse(document.getElementById('mob-scene-data').dataset.spots || '{}'),
-    defaultBg: document.getElementById('mob-scene-data').dataset.bg || '',
-    current: '',
-    mobW:0, mobH:0, stageW:432, stageH:540, serverUrl:'',
-    get active(){ const w = Object.keys(this.weights).filter(k => (parseInt(this.weights[k])||0) > 0);
-      return w.length ? w : Object.keys(this.zoneSpots); },
-    ensureCurrent(){ const a=this.active; if(a.length && !a.includes(this.current)) this.current=a[0]; },
-    get spriteSrc(){ return '/admin/scenes/mob-content/{{ mob.image_name }}?element=' + (this.current||''); },
-    get spot(){ return this.zoneSpots[this.current] || null; },
-    get bg(){ return (this.spot && this.spot.background) ? this.spot.background : this.defaultBg; },
-    get groundY(){ return this.spot ? this.spot.ground_y : 0.86; },
-    get mobPxH(){ return this.scale * this.stageH; },
-    get mobPxW(){ return this.mobH ? this.mobPxH * this.mobW / this.mobH : this.mobPxH; },
-    get feetY(){ return (this.groundY + Number(this.offsetY)) * this.stageH; },
-    get mobLeft(){ return (0.5 + Number(this.offsetX)) * this.stageW - this.mobPxW / 2; },
+    bg: '{{ spot.background if spot else '' }}',
+    cropX: {{ spot.crop.x if spot else 0 }}, cropY: {{ spot.crop.y if spot else 0 }}, cropW: {{ spot.crop.w if spot else 1 }},
+    groundY: {{ spot.ground_y if spot else 0.86 }},
+    scale: {{ placement.scale }}, offsetX: {{ placement.offset_x }}, offsetY: {{ placement.offset_y }},
+    shadow: {{ 'true' if placement.shadow else 'false' }},
+    bgW:0, bgH:0, mobW:0, mobH:0, stageW:432, stageH:540, frameRatio:{{ frame_h }}/{{ frame_w }}, serverUrl:'',
+    dragging:false, lastX:0, lastY:0,
+    get dispW(){ return this.stageW/Math.max(0.05,this.cropW); },
+    get dispH(){ return this.bgW ? this.dispW*this.bgH/this.bgW : this.stageH; },
+    get feetY(){ return (this.groundY + Number(this.offsetY))*this.stageH; },
+    get mobPxH(){ return this.scale*this.stageH; },
+    get mobPxW(){ return this.mobH ? this.mobPxH*this.mobW/this.mobH : this.mobPxH; },
+    get mobLeft(){ return (0.5+Number(this.offsetX))*this.stageW - this.mobPxW/2; },
     get mobTop(){ return this.feetY - this.mobPxH; },
-    get shadowW(){ return this.mobPxW * 0.8; },
-    get shadowH(){ return Math.max(5, this.mobPxW * 0.14); },
-    onSprite(e){ this.mobW=e.target.naturalWidth; this.mobH=e.target.naturalHeight; },
-    realPreview(){ const p=new URLSearchParams({element:this.current||'', scale:(+this.scale).toFixed(4),
-      offset_x:(+this.offsetX).toFixed(4), offset_y:(+this.offsetY).toFixed(4), shadow:this.shadow?'1':'0', t:Date.now()});
-      this.serverUrl='/admin/scenes/mob/{{ mob.code }}/preview.png?'+p.toString(); }
-  }" x-init="ensureCurrent()">
+    get shadowW(){ return this.mobPxW*0.8; },
+    get shadowH(){ return Math.max(5, this.mobPxW*0.14); },
+    onBgLoad(e){ this.bgW=e.target.naturalWidth; this.bgH=e.target.naturalHeight; },
+    onMobLoad(e){ this.mobW=e.target.naturalWidth; this.mobH=e.target.naturalHeight; },
+    startMob(e){ this.dragging=true; this.lastX=e.clientX; this.lastY=e.clientY; },
+    onMove(e){ if(!this.dragging)return; const dx=e.clientX-this.lastX, dy=e.clientY-this.lastY;
+      this.lastX=e.clientX; this.lastY=e.clientY;
+      this.offsetX=Math.min(0.5,Math.max(-0.5,this.offsetX+dx/this.stageW));
+      this.offsetY=Math.min(0.4,Math.max(-0.4,this.offsetY+dy/this.stageH)); },
+    refresh(){ const p=new URLSearchParams({scale:(+this.scale).toFixed(4),
+      offset_x:(+this.offsetX).toFixed(4), offset_y:(+this.offsetY).toFixed(4),
+      shadow:this.shadow?'1':'0', t:Date.now()});
+      this.serverUrl='/admin/scenes/mob/{{ mob.code }}/{{ element }}/preview.png?'+p.toString(); }
+  }"
+  x-on:mousemove.window="onMove($event)" x-on:mouseup.window="dragging=false">
 
   <a href="/admin/scenes" class="breadcrumb">← Scènes</a>
-  <h1>{% if mob.image_name %}<img src="/assets/mobs/{{ mob.image_name }}" style="height:1.4em;vertical-align:middle;">{% endif %}
-      {{ mob.name }} <code style="color:var(--muted);font-size:1rem;">{{ mob.code }}</code></h1>
-  {% if saved %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(80,200,120,.15);border:1px solid rgba(80,200,120,.4);">✅ Enregistré (effet au prochain spawn, sans redémarrer le bot).</div>{% endif %}
+  <h1>{% if mob.image_name %}<img src="/assets/mobs/{{ mob.image_name }}" style="height:1.3em;vertical-align:middle;">{% endif %}
+      {{ mob.name }} — {{ emoji }} {{ label }}</h1>
+  <p style="color:var(--muted); margin:.2rem 0 0;">Placement du monstre <strong>pour cet élément</strong>. Le décor vient du spot partagé de la zone (édité séparément).</p>
+
+  <!-- onglets élément (= éléments de la zone) -->
+  <div style="display:flex; flex-wrap:wrap; gap:.35rem; margin:.6rem 0 1rem;">
+    {% for t in tabs %}
+    <a href="/admin/scenes/mob/{{ mob.code }}/{{ t.code }}" class="btn {{ 'btn-primary' if t.code==element else 'btn-ghost' }}"
+       style="padding:.3rem .6rem;">{{ t.emoji }} {{ t.label }}{% if t.time=='day' %} ☀️{% elif t.time=='night' %} 🌙{% endif %}{% if t.placed %} ✅{% endif %}</a>
+    {% else %}<span style="color:var(--muted);">Cette zone n'a pas de spots élémentaires.</span>{% endfor %}
+  </div>
+
+  {% if saved %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(80,200,120,.15);border:1px solid rgba(80,200,120,.4);">✅ Placement {{ label }} enregistré.</div>{% endif %}
+  {% if not has_spot %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(240,180,80,.15);border:1px solid rgba(240,180,80,.4);">⚠️ Pas encore de décor pour ce spot. <a href="/admin/scenes/spot/{{ zone_channel }}/{{ element }}">Compose le décor {{ label }} de la zone</a> (fond gris en attendant).</div>{% endif %}
 
   <div style="display:flex; gap:1.6rem; flex-wrap:wrap; align-items:flex-start;">
-
-    <!-- STAGE LIVE (instantané, côté navigateur) -->
     <div style="flex:0 0 auto;">
-      <!-- onglets = éléments possibles -->
-      <div style="display:flex; flex-wrap:wrap; gap:.35rem; margin-bottom:.5rem;">
-        <template x-for="code in active" :key="code">
-          <button type="button" class="btn" :class="current===code ? 'btn-primary' : 'btn-ghost'"
-                  style="padding:.3rem .6rem;" x-on:click="current=code" x-text="code"></button>
-        </template>
-        <span x-show="active.length===0" style="color:var(--muted);">Aucun élément (poids &gt; 0) — aperçu neutre.</span>
-      </div>
-      <div style="position:relative; width:432px; height:540px; overflow:hidden; border-radius:14px;
-                  border:1px solid var(--border); background:#20222e;">
-        <!-- décor du spot (fond) -->
-        <img :src="'/assets/landscapes/' + bg" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover;"
+      <div class="field-label" style="margin-bottom:.4rem;">Glisse le monstre pour le positionner</div>
+      <div style="position:relative; width:432px; height:540px; overflow:hidden; border-radius:14px; border:1px solid var(--border); background:#20222e;">
+        <img x-show="bg" :src="'/assets/landscapes/'+bg" x-on:load="onBgLoad($event)"
+             style="position:absolute; max-width:none; pointer-events:none;"
+             :style="{ width: dispW+'px', left: (-cropX*dispW)+'px', top: (-cropY*dispH)+'px' }"
              onerror="this.style.display='none'">
-        <div style="position:absolute; left:0; right:0; height:0; border-top:2px dashed #ff5da2;"
-             :style="{ top: (groundY*stageH)+'px' }"></div>
         <div x-show="shadow" style="position:absolute; border-radius:50%; background:rgba(0,0,0,.45); filter:blur(5px);"
              :style="{ width: shadowW+'px', height: shadowH+'px', left: ((0.5+Number(offsetX))*stageW - shadowW/2)+'px', top: (feetY - shadowH/2)+'px' }"></div>
-        <img :src="spriteSrc" x-on:load="onSprite($event)" style="position:absolute; max-width:none;"
+        <img :src="'/admin/scenes/mob-content/{{ mob.image_name }}?element={{ element }}'" x-on:load="onMobLoad($event)"
+             x-on:mousedown="startMob($event)"
+             style="position:absolute; max-width:none; cursor:move;"
              :style="{ height: mobPxH+'px', width: mobPxW+'px', left: mobLeft+'px', top: mobTop+'px' }">
-        <div style="position:absolute; background:rgba(12,10,16,.62); border:1px solid rgba(255,255,255,.15); left:{{(tp[0]/frame_w*100)|round(2)}}%; top:{{(tp[1]/frame_h*100)|round(2)}}%; width:{{((tp[2]-tp[0])/frame_w*100)|round(2)}}%; height:{{((tp[3]-tp[1])/frame_h*100)|round(2)}}%;"></div>
-        <div style="position:absolute; background:rgba(12,10,16,.62); border:1px solid rgba(255,255,255,.15); left:{{(bp[0]/frame_w*100)|round(2)}}%; top:{{(bp[1]/frame_h*100)|round(2)}}%; width:{{((bp[2]-bp[0])/frame_w*100)|round(2)}}%; height:{{((bp[3]-bp[1])/frame_h*100)|round(2)}}%;"></div>
+        <div style="position:absolute; left:0; right:0; height:0; border-top:2px dashed #ff5da2; pointer-events:none;"
+             :style="{ top: feetY+'px' }"></div>
+        <div style="position:absolute; pointer-events:none; background:rgba(12,10,16,.6); border:1px solid rgba(255,255,255,.15); left:{{(tp[0]/frame_w*100)|round(2)}}%; top:{{(tp[1]/frame_h*100)|round(2)}}%; width:{{((tp[2]-tp[0])/frame_w*100)|round(2)}}%; height:{{((tp[3]-tp[1])/frame_h*100)|round(2)}}%;"></div>
+        <div style="position:absolute; pointer-events:none; background:rgba(12,10,16,.6); border:1px solid rgba(255,255,255,.15); left:{{(bp[0]/frame_w*100)|round(2)}}%; top:{{(bp[1]/frame_h*100)|round(2)}}%; width:{{((bp[2]-bp[0])/frame_w*100)|round(2)}}%; height:{{((bp[3]-bp[1])/frame_h*100)|round(2)}}%;"></div>
       </div>
-      <p style="color:var(--muted); font-size:.85rem; margin:.4rem 0 0;">Aperçu instantané (fond = décor du spot). La ligne rose = sol. « Aperçu réel » pour le rendu exact.</p>
+      <p style="color:var(--muted); font-size:.85rem; margin:.4rem 0 0;">Ligne rose = sol du spot. Décalage vertical = flotte au-dessus/en-dessous.</p>
     </div>
 
-    <!-- CONTRÔLES -->
-    <form method="post" action="/admin/scenes/mob/{{ mob.code }}"
-          style="flex:1 1 320px; min-width:300px; display:flex; flex-direction:column; gap:1rem;">
+    <form method="post" action="/admin/scenes/mob/{{ mob.code }}/{{ element }}"
+          style="flex:1 1 300px; min-width:280px; display:flex; flex-direction:column; gap:1rem;">
       <div class="form-section">
-        <h2 class="form-section-title">Placement</h2>
-        <label class="field"><span class="field-label">Taille — <span x-text="Math.round(scale*100)+'% du cadre'"></span></span>
+        <h2 class="form-section-title">Placement ({{ label }})</h2>
+        <label class="field"><span class="field-label">Taille — <span x-text="Math.round(scale*100)+'%'"></span></span>
           <input type="range" min="0.1" max="1.1" step="0.01" x-model.number="scale" name="scale"></label>
         <label class="field"><span class="field-label">Décalage horizontal — <span x-text="Math.round(offsetX*100)"></span></span>
           <input type="range" min="-0.4" max="0.4" step="0.01" x-model.number="offsetX" name="offset_x"></label>
-        <label class="field"><span class="field-label">Décalage vertical — <span x-text="Math.round(offsetY*100)"></span> (négatif = plus haut / flotte)</span>
+        <label class="field"><span class="field-label">Décalage vertical — <span x-text="Math.round(offsetY*100)"></span> (négatif = plus haut)</span>
           <input type="range" min="-0.35" max="0.35" step="0.01" x-model.number="offsetY" name="offset_y"></label>
         <label class="field" style="flex-direction:row; align-items:center; gap:.5rem;">
           <input type="checkbox" x-model="shadow"><span class="field-label" style="margin:0;">Ombre de contact</span></label>
         <input type="hidden" name="shadow" :value="shadow?'1':'0'">
       </div>
-
       <div class="form-section">
-        <h2 class="form-section-title">Éléments possibles (poids de spawn)</h2>
-        <p style="color:var(--muted); margin:0 0 .6rem;">
-          Poids <strong>0</strong> = ce monstre ne prend pas cet élément. <strong>&gt;0</strong> = éligible
-          (proba relative). Il faut aussi que sa zone ait un <em>spot</em> pour l'élément. Tout à 0 = hérite
-          des éléments de sa zone.
-        </p>
-        <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:.5rem;">
-          {% for e in elements %}
-          <label class="field" style="flex-direction:row; align-items:center; gap:.5rem; margin:0;">
-            <span style="font-size:1.2rem;">{{ e.emoji }}</span>
-            <span style="flex:1;">{{ e.label }}</span>
-            <input type="number" min="0" max="99" class="input" style="width:4.5rem; padding:.3rem .4rem;"
-                   name="weight_{{ e.code }}" x-model.number="weights['{{ e.code }}']" x-on:input="ensureCurrent()">
-          </label>
-          {% endfor %}
-        </div>
+        <h2 class="form-section-title">Spawn</h2>
+        <label class="field"><span class="field-label">Poids de spawn (0 = ce monstre ne prend pas {{ label }})</span>
+          <input type="number" min="0" max="999" name="weight" class="input" value="{{ weight }}"></label>
       </div>
-
       <div class="form-actions">
         <button type="submit" class="btn btn-primary">Enregistrer</button>
-        <button type="button" class="btn btn-ghost" x-on:click="realPreview()">Aperçu réel (rendu du bot)</button>
+        <button type="button" class="btn btn-ghost" x-on:click="refresh()">Aperçu réel</button>
       </div>
     </form>
 
-    <!-- APERÇU SERVEUR (à la demande) -->
     <div style="flex:0 0 auto;" x-show="serverUrl">
       <div class="field-label" style="margin-bottom:.4rem;">Aperçu réel</div>
       <img :src="serverUrl" style="width:320px; border-radius:12px; border:1px solid var(--border);">
     </div>
   </div>
+
+  {% if is_placed %}
+  <form method="post" action="/admin/scenes/mob/{{ mob.code }}/{{ element }}/delete" style="margin-top:1rem;">
+    <button type="submit" class="btn btn-ghost" onclick="return confirm('Retirer {{ label }} de ce monstre ?')">Retirer cet élément du monstre</button>
+  </form>
+  {% endif %}
 </section>
 {% endblock %}
