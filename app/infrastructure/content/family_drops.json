@@ -1,1 +1,39 @@
-{}
+{
+  "gobelin": {
+    "item_code": "dent_de_gobelin",
+    "mobs": {
+      "gobelin": {
+        "min": 1,
+        "max": 1
+      },
+      "gobelin_assassin": {
+        "min": 2,
+        "max": 3
+      },
+      "gobelin_ballon": {
+        "min": 2,
+        "max": 3
+      },
+      "gobelin_chaman": {
+        "min": 1,
+        "max": 2
+      },
+      "gobelin_combattant": {
+        "min": 1,
+        "max": 2
+      },
+      "gobelin_geant": {
+        "min": 1,
+        "max": 3
+      },
+      "gobelin_runique": {
+        "min": 1,
+        "max": 3
+      },
+      "gobelin_superieur": {
+        "min": 2,
+        "max": 4
+      }
+    }
+  }
+}
