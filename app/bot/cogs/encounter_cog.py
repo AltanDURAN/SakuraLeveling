@@ -332,15 +332,15 @@ class EncounterCog(commands.Cog):
         # Élément spawné : priorité à l'élément FORCÉ (/admin spawn_encounter) ;
         # sinon l'élément stocké du mob (rare, forcé au contenu) ; sinon on le
         # résout via les SPOTS de la zone (élément dispo à cette heure ∩ poids du
-        # monstre) ; ultime repli = tirage global pondéré.
-        from app.infrastructure.elements.element_spawn_weight_loader import (
-            pick_random_element,
-        )
+        # monstre) ; ultime repli (zone sans spot) = tirage uniforme.
+        import random as _random
+
         from app.infrastructure.encounters.element_spot_resolver import resolve_spawn
+        from app.shared.enums import ALL_ELEMENTS
         spawn_element = (forced_element or "").strip() or (getattr(mob, "element", "") or "").strip()
         if not spawn_element:
             resolved, _ = resolve_spawn(channel_id, mob.code)
-            spawn_element = resolved or pick_random_element()
+            spawn_element = resolved or _random.choice([e.value for e in ALL_ELEMENTS])
 
         mob_state = EncounterMobState(
             code=mob.code,

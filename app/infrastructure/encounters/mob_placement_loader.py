@@ -1,11 +1,15 @@
-"""Placement du monstre dans le cadre, PAR MONSTRE ET PAR ÉLÉMENT.
+"""Placement VISUEL du monstre dans le cadre, PAR MONSTRE ET PAR ÉLÉMENT.
 
-Indépendant du décor (qui vient du spot partagé de la zone). Chaque monstre peut
-avoir un placement DIFFÉRENT par élément :
-    placements[mob_code][element] = {weight, scale, offset_x, offset_y, shadow}
-`weight` > 0 = le monstre peut spawner sous cet élément (proba relative) ;
-0/absent = non. Un monstre sans aucune entrée hérite de tous les éléments de sa
-zone (poids globaux) avec un placement automatique. Cache invalidé par mtime.
+Indépendant :
+  • du décor (qui vient du spot partagé de la zone, cf. `farm_zone_loader`) ;
+  • du poids de spawn (défini sur la fiche du monstre, cf.
+    `mob_element_weight_loader`).
+
+    placements[mob_code][element] = {scale, offset_x, offset_y, shadow}
+
+Chaque monstre peut avoir un placement DIFFÉRENT par élément (ex : gobelin bas
+en clairière eau, plus haut en clairière terre). Un couple (monstre, élément)
+sans entrée → placement automatique. Cache invalidé par mtime.
 """
 
 from __future__ import annotations
@@ -44,27 +48,12 @@ def all_placements() -> dict:
 
 
 def get_mob_elements(mob_code: str | None) -> dict:
-    """Toutes les entrées par élément d'un monstre : {element: {weight, scale,
-    offset_x, offset_y, shadow}}."""
+    """Toutes les entrées de placement par élément d'un monstre :
+    {element: {scale, offset_x, offset_y, shadow}}."""
     if not mob_code:
         return {}
     p = _load().get(mob_code)
     return dict(p) if isinstance(p, dict) else {}
-
-
-def get_element_weights(mob_code: str | None) -> dict:
-    """Poids par élément (>0 = éligible). Vide → hérite de la zone."""
-    out: dict[str, int] = {}
-    for elem, entry in get_mob_elements(mob_code).items():
-        if not isinstance(entry, dict):
-            continue
-        try:
-            w = max(0, int(entry.get("weight", 0)))
-        except (TypeError, ValueError):
-            w = 0
-        if w > 0:
-            out[str(elem).strip().lower()] = w
-    return out
 
 
 def get_placement(mob_code: str | None, element: str | None) -> dict | None:

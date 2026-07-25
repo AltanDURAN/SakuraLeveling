@@ -4,9 +4,10 @@ Un monstre spawne dans un élément choisi ainsi :
   candidats = éléments dont la ZONE a un spot disponible à l'heure courante
               (time = always/day/night, réf Europe/Paris)
               ∩ éléments que le MONSTRE peut prendre (poids > 0 ; s'il n'a
-                aucun poids défini, il hérite de tous les éléments de la zone).
-  proba = poids du monstre pour l'élément, sinon poids global
-          (element_spawn_weights.json).
+                aucun poids défini, il hérite d'un tirage UNIFORME sur tous les
+                éléments de la zone).
+  proba = poids du monstre pour l'élément (défini sur la fiche du monstre,
+          `mob_element_weights.json`), sinon poids uniforme (=1).
 Puis on renvoie (element, spot) — le spot porte le décor du spawn.
 
 Fallback : zone sans spots → (None, None) → l'appelant retombe sur l'ancien
@@ -18,8 +19,7 @@ from __future__ import annotations
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from app.infrastructure.encounters import farm_zone_loader, mob_placement_loader
-from app.infrastructure.elements.element_spawn_weight_loader import get_spawn_weights
+from app.infrastructure.encounters import farm_zone_loader, mob_element_weight_loader
 
 _PARIS = ZoneInfo("Europe/Paris")
 
@@ -57,8 +57,7 @@ def resolve_spawn(
         return None, None
 
     day = _is_day(now)
-    mob_weights = mob_placement_loader.get_element_weights(mob_code)
-    global_weights = get_spawn_weights()
+    mob_weights = mob_element_weight_loader.get_weights(mob_code)
 
     candidates: list[str] = []
     weights: list[int] = []
@@ -71,10 +70,8 @@ def resolve_spawn(
             if w <= 0:
                 continue
         else:
-            # Monstre sans poids défini : hérite de l'élément avec le poids global.
-            w = global_weights.get(elem, 1)
-            if w <= 0:
-                w = 1
+            # Monstre sans poids défini : tirage uniforme sur les éléments de la zone.
+            w = 1
         candidates.append(elem)
         weights.append(w)
 

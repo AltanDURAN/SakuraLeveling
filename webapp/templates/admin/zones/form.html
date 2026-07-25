@@ -103,5 +103,59 @@
             <a href="/admin/zones" class="btn btn-ghost">Annuler</a>
         </div>
     </form>
+
+    {% if zone %}
+    {% set present = (zone.spots or []) | map(attribute='element') | list %}
+    <div class="form-section" style="margin-top:1.4rem;">
+        <h2 class="form-section-title">🎨 Éléments &amp; décors de la zone</h2>
+        <p style="color:var(--muted); margin:0 0 .8rem; max-width:74ch;">
+            Chaque élément susceptible de spawner ici a son propre décor (« clairière sinistre eau »,
+            « … terre », etc.). Ajoute un élément, puis compose son décor. Les monstres de la zone
+            spawneront sous l'un de ces éléments selon leurs poids (réglés sur leur fiche).
+        </p>
+
+        {% if zone.spots %}
+        <div style="display:flex; flex-direction:column; gap:.5rem;">
+            {% for s in zone.spots %}
+            <div style="display:flex; align-items:center; gap:.6rem; padding:.5rem .7rem; border:1px solid var(--border); border-radius:10px;">
+                <span style="font-size:1.15rem;">{{ element_emojis.get(s.element, '') }}</span>
+                <strong style="min-width:6rem;">{{ element_labels.get(s.element, s.element) }}</strong>
+                <span class="count-pill">{% if s.time == 'day' %}☀️ jour{% elif s.time == 'night' %}🌙 nuit{% else %}toujours{% endif %}</span>
+                {% if s.background %}
+                <img src="/assets/landscapes/{{ s.background }}" alt="" style="height:34px; border-radius:6px; border:1px solid var(--border);" onerror="this.style.display='none'">
+                {% else %}<span style="color:var(--muted); font-size:.85rem;">décor non composé</span>{% endif %}
+                <span style="flex:1;"></span>
+                <a href="/admin/zones/{{ zone.channel_id }}/spot/{{ s.element }}" class="btn btn-small">Composer le décor</a>
+                <form method="post" action="/admin/zones/{{ zone.channel_id }}/spot/{{ s.element }}/delete"
+                      onsubmit="return confirm('Retirer l\'élément {{ element_labels.get(s.element, s.element) }} de cette zone ?');" style="margin:0;">
+                    <button type="submit" class="btn btn-small" style="background:var(--danger); color:#fff;">Retirer</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="color:var(--muted);">Aucun élément pour l'instant.</p>
+        {% endif %}
+
+        {% set available = all_elements | reject('in', present) | list %}
+        {% if available %}
+        <form method="post" x-data="{ el: '{{ available[0] }}' }"
+              :action="`/admin/zones/{{ zone.channel_id }}/spot/${el}/add`"
+              style="display:flex; align-items:flex-end; gap:.6rem; margin-top:1rem;">
+            <label class="field" style="max-width:220px; margin:0;">
+                <span class="field-label">Ajouter un élément</span>
+                <select class="input" x-model="el">
+                    {% for e in available %}<option value="{{ e }}">{{ element_emojis.get(e, '') }} {{ element_labels.get(e, e) }}</option>{% endfor %}
+                </select>
+            </label>
+            <button type="submit" class="btn btn-primary">+ Ajouter &amp; composer</button>
+        </form>
+        {% else %}
+        <p style="color:var(--muted); margin-top:1rem;">Tous les éléments sont déjà présents.</p>
+        {% endif %}
+    </div>
+    {% else %}
+    <p style="color:var(--muted); margin-top:1rem;">💡 Crée la zone d'abord, puis reviens l'éditer pour ajouter ses éléments &amp; décors.</p>
+    {% endif %}
 </section>
 {% endblock %}

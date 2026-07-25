@@ -43,12 +43,13 @@
   <div style="display:flex; flex-wrap:wrap; gap:.35rem; margin:.6rem 0 1rem;">
     {% for t in tabs %}
     <a href="/admin/scenes/mob/{{ mob.code }}/{{ t.code }}" class="btn {{ 'btn-primary' if t.code==element else 'btn-ghost' }}"
-       style="padding:.3rem .6rem;">{{ t.emoji }} {{ t.label }}{% if t.time=='day' %} ☀️{% elif t.time=='night' %} 🌙{% endif %}{% if t.placed %} ✅{% endif %}</a>
-    {% else %}<span style="color:var(--muted);">Cette zone n'a pas de spots élémentaires.</span>{% endfor %}
+       style="padding:.3rem .6rem;{% if t.weight == 0 %}opacity:.55;{% endif %}"
+       title="{% if t.weight > 0 %}poids de spawn {{ t.weight }}{% else %}poids 0 — ne spawnera pas sous cet élément (réglable sur la fiche du monstre){% endif %}">{{ t.emoji }} {{ t.label }}{% if t.time=='day' %} ☀️{% elif t.time=='night' %} 🌙{% endif %}{% if t.placed %} ✅{% endif %}</a>
+    {% else %}<span style="color:var(--muted);">Cette zone n'a pas d'éléments (ajoute-les dans <a href="/admin/zones/{{ zone_channel }}/edit">la zone</a>).</span>{% endfor %}
   </div>
 
   {% if saved %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(80,200,120,.15);border:1px solid rgba(80,200,120,.4);">✅ Placement {{ label }} enregistré.</div>{% endif %}
-  {% if not has_spot %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(240,180,80,.15);border:1px solid rgba(240,180,80,.4);">⚠️ Pas encore de décor pour ce spot. <a href="/admin/scenes/spot/{{ zone_channel }}/{{ element }}">Compose le décor {{ label }} de la zone</a> (fond gris en attendant).</div>{% endif %}
+  {% if not has_spot %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(240,180,80,.15);border:1px solid rgba(240,180,80,.4);">⚠️ Pas encore de décor pour ce spot. <a href="/admin/zones/{{ zone_channel }}/spot/{{ element }}">Compose le décor {{ label }} de la zone</a> (fond gris en attendant).</div>{% endif %}
 
   <div style="display:flex; gap:1.6rem; flex-wrap:wrap; align-items:flex-start;">
     <div style="flex:0 0 auto;">
@@ -87,9 +88,15 @@
         <input type="hidden" name="shadow" :value="shadow?'1':'0'">
       </div>
       <div class="form-section">
-        <h2 class="form-section-title">Spawn</h2>
-        <label class="field"><span class="field-label">Poids de spawn (0 = ce monstre ne prend pas {{ label }})</span>
-          <input type="number" min="0" max="999" name="weight" class="input" value="{{ weight }}"></label>
+        <h2 class="form-section-title">Spawn ({{ label }})</h2>
+        {% if weight > 0 %}
+        <p style="margin:0; color:var(--muted);">Poids de spawn actuel : <strong>{{ weight }}</strong>.</p>
+        {% elif has_weights %}
+        <p style="margin:0; color:#c9772f;">Poids <strong>0</strong> — ce monstre <strong>ne spawnera pas</strong> sous {{ label }} (le placement reste enregistré au cas où).</p>
+        {% else %}
+        <p style="margin:0; color:var(--muted);">Aucun poids défini → tirage <strong>uniforme</strong> sur les éléments de la zone.</p>
+        {% endif %}
+        <p style="margin:.4rem 0 0;"><a href="/admin/mobs/{{ mob.code }}/edit#poids" class="btn btn-ghost" style="padding:.25rem .55rem;">Régler les poids sur la fiche du monstre →</a></p>
       </div>
       <div class="form-actions">
         <button type="submit" class="btn btn-primary">Enregistrer</button>
