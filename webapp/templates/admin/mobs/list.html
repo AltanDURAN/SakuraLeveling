@@ -52,8 +52,29 @@
       display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.05); border:1px solid var(--border); }
   .thumb-box .em { font-size:1.05rem; }
   .thumb-box img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; border-radius:6px; }
-  .catchip { padding:.12rem .5rem; border-radius:999px; font-size:.74rem; border:1px solid var(--border); cursor:pointer; background:transparent; }
-  .catchip.on { background:var(--accent,#e26ba4); color:#fff; border-color:transparent; }
+  .catchip { padding:.12rem .5rem; border-radius:999px; font-size:.74rem; border:1px solid var(--border); cursor:pointer; background:transparent; color:inherit; }
+  .catchip.on { background:#e26ba4; color:#fff; border-color:transparent; }
+  /* Modale d'ajout de drops */
+  .drop-modal { position:fixed; inset:0; z-index:1000; background:rgba(10,8,14,.55);
+      display:flex; align-items:center; justify-content:center; padding:1rem; }
+  .drop-panel { width:min(980px,96vw); max-height:90vh; display:flex; flex-direction:column;
+      background:var(--bg-elev); color:var(--text); border:1px solid var(--border);
+      border-radius:16px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.4); }
+  .drop-panel > header { padding:.9rem 1rem; border-bottom:1px solid var(--border);
+      display:flex; gap:.7rem; align-items:center; }
+  .drop-cats { display:flex; flex-wrap:wrap; gap:.35rem; padding:.6rem 1rem; border-bottom:1px solid var(--border); }
+  .drop-body { padding:1rem; overflow-y:auto; flex:1; }
+  .item-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(158px,1fr)); gap:.6rem; }
+  .item-card { border:1px solid var(--border); border-radius:10px; padding:.55rem; cursor:pointer;
+      display:flex; flex-direction:column; gap:.4rem; position:relative; background:var(--bg-soft); }
+  .item-card:hover { border-color:#e26ba4; }
+  .item-card.picked { border-color:#3fb950; background:rgba(63,185,80,.12); }
+  .item-card .chk { position:absolute; top:.35rem; right:.45rem; color:#3fb950; font-weight:900; font-size:1rem; }
+  .item-card .nm { font-size:.86rem; font-weight:600; line-height:1.15; }
+  .drop-foot { padding:.75rem 1rem; border-top:1px solid var(--border); display:flex;
+      justify-content:space-between; align-items:center; gap:.6rem; flex-wrap:wrap; }
+  .newitem-box { border:1px dashed var(--border); border-radius:10px; padding:.7rem; margin-top:.9rem;
+      display:flex; flex-direction:column; gap:.5rem; background:var(--bg-soft); }
 </style>
 
 <script>window.SAKURA_ITEMS = {{ items_catalog|tojson }};
@@ -96,9 +117,11 @@ function mobCard(el){
     itemName(c){ const it=(window.SAKURA_ITEMS||[]).find(x=>x.code===c); return it?it.name:c; },
     itemRarity(c){ const it=(window.SAKURA_ITEMS||[]).find(x=>x.code===c); return it?it.rarity:'common'; },
     rarityColor(rr){ return (window.SAKURA_RARITY||{})[rr] || '#8a8a95'; },
-    addRow(c){ if(!c) return; if(this.rows.some(x=>x.item_code===c)) { this.pickOpen=false; return; }
-      this.rows.push({item_code:c, drop_rate:0.1, min_quantity:1, max_quantity:1});
-      this.itemSearch=''; this.pickOpen=false; },
+    addRow(c){ if(!c || this.rows.some(x=>x.item_code===c)) return;
+      this.rows.push({item_code:c, drop_rate:0.1, min_quantity:1, max_quantity:1}); },
+    hasItem(c){ return this.rows.some(x=>x.item_code===c); },
+    removeByCode(c){ this.rows = this.rows.filter(x=>x.item_code!==c); },
+    toggleItem(c){ this.hasItem(c) ? this.removeByCode(c) : this.addRow(c); },
     removeRow(i){ this.rows.splice(i,1); },
     lootPayload(){ return JSON.stringify(this.rows.filter(x=>x.item_code)); },
     async createItem(){
@@ -349,52 +372,81 @@ document.addEventListener('alpine:init', () => {
           </template>
           <p x-show="rows.length===0" class="form-section-help">Aucun drop.</p>
 
-          <div class="item-pick" style="margin-top:.5rem; max-width:460px;">
-            <input class="input" placeholder="+ Ajouter un item (rechercher par nom)…"
-                   x-model="itemSearch" x-on:focus="pickOpen=true" x-on:click="pickOpen=true">
-            <div class="item-pop" x-show="pickOpen" x-on:click.outside="pickOpen=false; newOpen=false" x-cloak>
-              <!-- filtre par catégorie -->
-              <div style="display:flex; flex-wrap:wrap; gap:.3rem; padding:.5rem; border-bottom:1px solid var(--border); position:sticky; top:0; background:inherit;">
+          <button type="button" class="btn btn-primary" style="margin-top:.6rem;"
+                  x-on:click="pickOpen=true; itemSearch=''; pickCat=''">➕ Ajouter des drops</button>
+          <input type="hidden" name="loot_table" :value="lootPayload()">
+
+          <!-- ===== Modale plein écran : catalogue d'items ===== -->
+          <template x-teleport="body">
+          <div class="drop-modal" x-show="pickOpen" x-cloak
+               x-on:keydown.escape.window="pickOpen=false" x-on:click.self="pickOpen=false">
+            <template x-if="pickOpen">
+            <div class="drop-panel">
+              <header>
+                <strong style="font-size:1.05rem; white-space:nowrap;">🎁 Drops — {{ m.name }}</strong>
+                <input class="input" style="flex:1;" placeholder="Rechercher un item par nom…" x-model="itemSearch"
+                       x-on:keydown.enter.prevent="if(filteredItems().length===1) toggleItem(filteredItems()[0].code)">
+                <button type="button" class="btn btn-ghost" x-on:click="pickOpen=false">✕</button>
+              </header>
+              <div class="drop-cats">
                 <button type="button" class="catchip" :class="{on: pickCat===''}" x-on:click="pickCat=''">Tout</button>
                 {% for cat in item_categories %}
                 <button type="button" class="catchip" :class="{on: pickCat==='{{ cat }}'}" x-on:click="pickCat='{{ cat }}'">{{ cat }}</button>
                 {% endfor %}
               </div>
-              <template x-for="it in filteredItems()" :key="it.code">
-                <div class="item-opt" x-on:click="addRow(it.code)">
-                  <span class="thumb-box" style="width:26px;height:26px;"><span class="em" style="font-size:.9rem;" x-text="catEmoji(it.category)"></span>
-                    <img :src="elImg(it.code)" onerror="this.style.display='none'"></span>
-                  <span class="rdot" :style="{ background: rarityColor(it.rarity) }"></span>
-                  <span style="flex:1;" x-text="it.name"></span>
-                  <small style="color:var(--muted);" x-text="it.category"></small>
+              <div class="drop-body">
+                <div class="item-grid">
+                  <template x-for="it in filteredItems()" :key="it.code">
+                    <div class="item-card" :class="{picked: hasItem(it.code)}" x-on:click="toggleItem(it.code)">
+                      <span class="chk" x-show="hasItem(it.code)">✓</span>
+                      <div class="ic" style="display:flex; align-items:center; gap:.45rem;">
+                        <span class="thumb-box"><span class="em" x-text="catEmoji(it.category)"></span>
+                          <img :src="elImg(it.code)" onerror="this.style.display='none'"></span>
+                        <span class="rdot" :style="{ background: rarityColor(it.rarity) }"></span>
+                      </div>
+                      <span class="nm" x-text="it.name"></span>
+                      <small style="color:var(--muted);" x-text="it.category+' · '+it.rarity"></small>
+                    </div>
+                  </template>
                 </div>
-              </template>
-              <div x-show="filteredItems().length===0" style="padding:.5rem; color:var(--muted);">Aucun item pour ce filtre.</div>
-              <!-- créer un item à la volée -->
-              <div style="border-top:1px solid var(--border); padding:.5rem;">
-                <button type="button" class="btn btn-small btn-ghost" x-show="!newOpen" x-on:click="newOpen=true; newItem.name=itemSearch">➕ Créer un nouvel item</button>
-                <div x-show="newOpen" x-cloak style="display:flex; flex-direction:column; gap:.4rem;">
-                  <strong style="font-size:.85rem;">Nouvel item</strong>
-                  <input class="input" placeholder="Nom de l'item" x-model="newItem.name">
-                  <div style="display:flex; gap:.4rem;">
-                    <select class="input" x-model="newItem.category">
-                      {% for cat in item_categories %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}
-                    </select>
-                    <select class="input" x-model="newItem.rarity">
-                      {% for rr in rarities %}<option value="{{ rr }}">{{ rr }}</option>{% endfor %}
-                    </select>
+                <div x-show="filteredItems().length===0" style="padding:1rem; color:var(--muted); text-align:center;">
+                  Aucun item pour ce filtre. Crée-le ci-dessous 👇
+                </div>
+
+                <!-- créer un item à la volée -->
+                <div class="newitem-box">
+                  <button type="button" class="btn btn-ghost" style="align-self:flex-start;" x-show="!newOpen"
+                          x-on:click="newOpen=true; newItem.name=itemSearch">➕ Créer un nouvel item</button>
+                  <template x-if="newOpen">
+                  <div style="display:flex; flex-direction:column; gap:.5rem;">
+                    <strong style="font-size:.9rem;">Nouvel item</strong>
+                    <input class="input" placeholder="Nom de l'item" x-model="newItem.name">
+                    <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+                      <select class="input" style="flex:1; min-width:130px;" x-model="newItem.category">
+                        {% for cat in item_categories %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}
+                      </select>
+                      <select class="input" style="flex:1; min-width:130px;" x-model="newItem.rarity">
+                        {% for rr in rarities %}<option value="{{ rr }}">{{ rr }}</option>{% endfor %}
+                      </select>
+                    </div>
+                    <div x-show="createErr" x-cloak style="color:var(--danger); font-size:.82rem;" x-text="createErr"></div>
+                    <div style="display:flex; gap:.5rem;">
+                      <button type="button" class="btn btn-primary" x-on:click="createItem()" :disabled="creating" x-text="creating ? 'Création…' : 'Créer & ajouter au drop'"></button>
+                      <button type="button" class="btn btn-ghost" x-on:click="newOpen=false; createErr=''">Annuler</button>
+                    </div>
+                    <small style="color:var(--muted);">Valeurs par défaut — affinables ensuite dans <a href="/admin/items" target="_blank">Objets</a>.</small>
                   </div>
-                  <div x-show="createErr" x-cloak style="color:var(--danger); font-size:.8rem;" x-text="createErr"></div>
-                  <div style="display:flex; gap:.4rem;">
-                    <button type="button" class="btn btn-small btn-primary" x-on:click="createItem()" :disabled="creating" x-text="creating ? 'Création…' : 'Créer & ajouter'"></button>
-                    <button type="button" class="btn btn-small btn-ghost" x-on:click="newOpen=false; createErr=''">Annuler</button>
-                  </div>
-                  <small style="color:var(--muted);">L'item est créé avec des valeurs par défaut — tu pourras l'affiner dans <a href="/admin/items" target="_blank">Objets</a>.</small>
+                  </template>
                 </div>
               </div>
+              <div class="drop-foot">
+                <span style="color:var(--muted); font-size:.9rem;"><strong x-text="rows.length"></strong> item(s) dans le drop · clique une carte pour ajouter/retirer</span>
+                <button type="button" class="btn btn-primary" x-on:click="pickOpen=false">Terminé</button>
+              </div>
             </div>
+            </template>
           </div>
-          <input type="hidden" name="loot_table" :value="lootPayload()">
+          </template>
         </div>
 
         <div class="form-actions" style="justify-content:flex-end;">
