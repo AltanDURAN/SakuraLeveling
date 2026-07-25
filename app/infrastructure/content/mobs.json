@@ -140,6 +140,12 @@
         "item_code": "diamant",
         "max_quantity": 1,
         "min_quantity": 1
+      },
+      {
+        "item_code": "bois",
+        "drop_rate": 0.2,
+        "min_quantity": 1,
+        "max_quantity": 3
       }
     ],
     "image_name": "gobelin_geant.png",
