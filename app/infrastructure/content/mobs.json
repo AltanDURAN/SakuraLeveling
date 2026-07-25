@@ -197,9 +197,22 @@
     "xp_reward": 325,
     "gold_reward": 156,
     "spawn_weight": 10,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "dagues_jumelles",
+        "drop_rate": 0.03,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "morceau_de_tissu",
+        "drop_rate": 0.2,
+        "min_quantity": 1,
+        "max_quantity": 2
+      }
+    ],
     "image_name": "gobelin_assassin.png",
-    "element": "tenebre"
+    "element": ""
   },
   {
     "code": "squelette",
