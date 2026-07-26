@@ -159,7 +159,7 @@
       "eau": {
         "scale": 0.47,
         "offset_x": -0.02,
-        "offset_y": 0.06,
+        "offset_y": 0.05,
         "shadow": true
       },
       "terre": {
