@@ -46,6 +46,11 @@
       "feu": 20,
       "tenebre": 30,
       "terre": 10
+    },
+    "cerbere": {
+      "feu": 30,
+      "tenebre": 5,
+      "terre": 20
     }
   }
 }
