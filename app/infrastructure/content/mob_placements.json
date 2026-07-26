@@ -205,6 +205,12 @@
         "offset_x": -0.1,
         "offset_y": -0.14,
         "shadow": true
+      },
+      "lumiere": {
+        "scale": 0.54,
+        "offset_x": -0.1,
+        "offset_y": -0.06,
+        "shadow": true
       }
     }
   }
