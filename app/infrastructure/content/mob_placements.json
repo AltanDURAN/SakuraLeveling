@@ -84,6 +84,14 @@
         "offset_y": -0.06,
         "shadow": true
       }
+    },
+    "gobelin_ballon": {
+      "plante": {
+        "scale": 0.48,
+        "offset_x": -0.02,
+        "offset_y": -0.26,
+        "shadow": true
+      }
     }
   }
 }
