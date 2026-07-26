@@ -148,6 +148,14 @@
         "offset_y": -0.05,
         "shadow": true
       }
+    },
+    "gobelin_combattant": {
+      "plante": {
+        "scale": 0.47,
+        "offset_x": -0.02,
+        "offset_y": 0.06,
+        "shadow": true
+      }
     }
   }
 }
