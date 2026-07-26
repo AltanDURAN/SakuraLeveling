@@ -10,6 +10,7 @@ from app.application.use_cases.weekly_quests import WeeklyQuestProgressService
 from app.domain.services.health_regeneration_service import HealthRegenerationService
 from app.domain.services.title_bonus_service import TitleBonusService
 from app.domain.services.loot_service import LootService
+from app.domain.services.mob_ability_service import get_mob_abilities
 from app.infrastructure.loot.family_drop_loader import get_family_drops
 from app.domain.services.party_combat_service import PartyCombatService
 from app.domain.services.power_score_service import PowerScoreService
@@ -254,6 +255,7 @@ class EncounterService:
             title_bonuses_by_player=title_bonuses_by_player,
             elemental_mult_by_player=elemental_out,
             incoming_elemental_mult_by_player=elemental_in,
+            mob_abilities=get_mob_abilities(mob.code),
         )
 
     def persist_final_players_hp(self, result) -> None:
