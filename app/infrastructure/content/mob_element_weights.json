@@ -61,6 +61,11 @@
       "feu": 15,
       "tenebre": 5,
       "terre": 25
+    },
+    "ogre_demoniaque": {
+      "feu": 20,
+      "tenebre": 10,
+      "terre": 30
     }
   }
 }
