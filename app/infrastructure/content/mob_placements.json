@@ -438,6 +438,14 @@
         "offset_y": 0.0,
         "shadow": true
       }
+    },
+    "slime": {
+      "plante": {
+        "scale": 0.22,
+        "offset_x": -0.02,
+        "offset_y": 0.02,
+        "shadow": true
+      }
     }
   }
 }
