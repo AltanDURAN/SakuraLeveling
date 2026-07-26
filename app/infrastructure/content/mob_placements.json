@@ -116,6 +116,14 @@
         "offset_y": -0.26,
         "shadow": true
       }
+    },
+    "gobelin_chaman": {
+      "plante": {
+        "scale": 0.48,
+        "offset_x": 0.0,
+        "offset_y": -0.01,
+        "shadow": true
+      }
     }
   }
 }
