@@ -142,13 +142,13 @@
         {
           "element": "feu",
           "time": "always",
-          "background": "berceau_cataclysmique.png",
+          "background": "berceau_cataclysmique_feu.png",
           "crop": {
-            "x": 0.11,
+            "x": 0.0,
             "y": 0.12,
-            "w": 0.78
+            "w": 1.0
           },
-          "ground_y": 0.86
+          "ground_y": 0.875
         },
         {
           "element": "tenebre",
