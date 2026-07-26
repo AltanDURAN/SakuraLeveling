@@ -41,6 +41,11 @@
       "feu": 30,
       "tenebre": 20,
       "terre": 10
+    },
+    "archidemon": {
+      "feu": 20,
+      "tenebre": 30,
+      "terre": 10
     }
   }
 }
