@@ -59,6 +59,12 @@
         "offset_x": -0.05,
         "offset_y": -0.02,
         "shadow": true
+      },
+      "eau": {
+        "scale": 0.36,
+        "offset_x": -0.04,
+        "offset_y": -0.08,
+        "shadow": true
       }
     }
   }
