@@ -29,6 +29,7 @@ class PartyCombatService:
         boss_reflect_pct: int = 0,
         boss_adds: dict | None = None,
         max_turns: int = 0,
+        mob_abilities: dict | None = None,
     ) -> PartyBattleResult:
         title_bonuses_by_player = title_bonuses_by_player or {}
         # Multiplicateurs élémentaires (world boss). Absents pour les
@@ -41,6 +42,8 @@ class PartyCombatService:
         # Absentes hors world boss → aucun effet. Résolues par tour (basique, ou
         # spéciale à 10% qui la remplace). Effets en % de stats.
         skill_loadouts_by_player = skill_loadouts_by_player or {}
+        # Capacités spéciales du monstre (particularités propres). Vide = aucune.
+        mob_abilities = mob_abilities or {}
         _skill_svc = SkillEffectService()
         mob_family = mob.family or ""
         mob_hp = mob.current_hp
@@ -86,6 +89,35 @@ class PartyCombatService:
         adds_max = int(boss_adds.get("max_active", 0))
         active_adds = 0
         round_count = 0
+
+        # ─── Particularité : frappe d'ouverture prioritaire (assassin) ───
+        # Avant tout, même si le mob n'est pas le plus rapide. Toujours critique,
+        # cible la plus faible, série de kills (×2, ×3, …) tant qu'elle tue.
+        if "opening_assassinate" in mob_abilities and mob_hp > 0:
+            streak = 0
+            while any(p["hp"] > 0 for p in alive_party):
+                streak += 1
+                target = min(
+                    (p for p in alive_party if p["hp"] > 0),
+                    key=lambda p: (p["hp"], p["max_hp"]),
+                )
+                dmg, crit, dodged = self._resolve_mob_hit(
+                    mob, target, contributions, title_bonuses_by_player,
+                    incoming_elemental_mult_by_player, mob_family,
+                    extra_multiplier=streak, force_crit=True,
+                )
+                turns += 1
+                if dodged:
+                    action = f"⚡ {mob.name} fond sur {target['name']} (assassinat) — esquivé !"
+                else:
+                    mult = f" ×{streak}" if streak > 1 else ""
+                    action = f"⚡ {mob.name} assassine {target['name']} : {dmg} dégâts (CRIT{mult})"
+                    if target["hp"] <= 0:
+                        action += " — 💀 exécuté !"
+                turn_logs.append(self._snapshot(turns, [], action, alive_party, mob, mob_hp))
+                # La série continue seulement sur un kill effectif.
+                if dodged or target["hp"] > 0:
+                    break
 
         while mob_hp > 0 and any(player["hp"] > 0 for player in alive_party):
             round_count += 1
@@ -204,44 +236,8 @@ class PartyCombatService:
                         action_text += f" (renvoi {reflected})"
 
                     turn_logs.append(
-                        PartyBattleTurnLog(
-                            turn_number=turns,
-                            player_actions=[action_text],
-                            mob_action=mob_action_text,
-                            players_state=[
-                                {
-                                    "player_id": member["player_id"],
-                                    "user_id": member["user_id"],
-                                    "name": member["name"],
-                                    "avatar_url": member["avatar_url"],
-                                    "current_hp": member["hp"],
-                                    "max_hp": member["max_hp"],
-                                    "current_mana": member["mana"],
-                                    "mana_max": member["mana_max"],
-                                    "attack": member["stats"].attack,
-                                    "defense": member["stats"].defense,
-                                    "speed": member["stats"].speed,
-                                    "crit_chance": member["stats"].crit_chance,
-                                    "crit_damage": member["stats"].crit_damage,
-                                    "dodge": member["stats"].dodge,
-                                    "hp_regeneration": member["stats"].hp_regeneration,
-                                }
-                                for member in alive_party
-                            ],
-                            mob_state={
-                                "name": mob.name,
-                                "image_name": mob.image_name,
-                                "current_hp": mob_hp,
-                                "max_hp": mob.max_hp,
-                                "attack": mob.attack,
-                                "defense": mob.defense,
-                                "speed": mob.speed,
-                                "crit_chance": mob.crit_chance,
-                                "crit_damage": mob.crit_damage,
-                                "dodge": mob.dodge,
-                                "hp_regeneration": mob.hp_regeneration,
-                            },
-                        )
+                        self._snapshot(turns, [action_text], mob_action_text,
+                                       alive_party, mob, mob_hp)
                     )
 
                     # Effets défensifs / support des compétences (résolus plus
@@ -289,103 +285,19 @@ class PartyCombatService:
 
                 possible_targets = [player for player in alive_party if player["hp"] > 0]
                 target = random.choice(possible_targets)
-                target_stats: Stats = target["stats"]
 
-                if random.random() < (target_stats.dodge / 100):
-                    contributions[target["player_id"]].dodges += 1
+                mob_damage, mob_crit, dodged = self._resolve_mob_hit(
+                    mob, target, contributions, title_bonuses_by_player,
+                    incoming_elemental_mult_by_player, mob_family,
+                )
+                if dodged:
                     mob_action = f"{mob.name} attaque {target['name']}, mais l'attaque est esquivée."
                 else:
-                    # Calcul en cascade pour pouvoir comptabiliser le "tanked"
-                    # (= ce qu'on aurait pris sans défense ni titre).
-                    raw_attack = mob.attack
-                    mob_crit = False
-                    if random.random() < (mob.crit_chance / 100):
-                        raw_attack = int(raw_attack * (mob.crit_damage / 100))
-                        mob_crit = True
-
-                    after_defense = max(1, raw_attack - target_stats.defense)
-
-                    target_title_bonus = title_bonuses_by_player.get(target["player_id"])
-                    if target_title_bonus is not None and mob_family:
-                        mob_damage = max(
-                            1,
-                            round(
-                                after_defense
-                                * target_title_bonus.damage_received_multiplier_from(
-                                    mob_family
-                                )
-                            ),
-                        )
-                    else:
-                        mob_damage = after_defense
-
-                    # Avantage élémentaire cible → joueur (±30%). Neutre hors boss.
-                    incoming_mult = incoming_elemental_mult_by_player.get(
-                        target["player_id"], 1.0
-                    )
-                    if incoming_mult != 1.0:
-                        mob_damage = max(1, round(mob_damage * incoming_mult))
-
-                    # Bouclier (compétences défensives/support) : absorbe en
-                    # priorité, avant les PV. damage_tanked (plus bas) reste le
-                    # brut entrant → un tank touché peu garde son crédit de tank.
-                    if target["shield"] > 0 and mob_damage > 0:
-                        absorbed = min(target["shield"], mob_damage)
-                        target["shield"] -= absorbed
-                        mob_damage -= absorbed
-
-                    target_hp_before = target["hp"]
-                    target["hp"] -= mob_damage
-                    target["hp"] = max(0, target["hp"])
-                    # damage_tanked = le brut entrant (après crit, avant
-                    # réductions). Capture la "valeur encaissée" même
-                    # quand la défense + titre absorbent une part.
-                    contributions[target["player_id"]].damage_tanked += raw_attack
-
                     mob_action = f"{mob.name} attaque {target['name']} et inflige {mob_damage} dégâts."
                     if mob_crit and mob_damage > 0:
                         mob_action += " (CRIT)"
 
-                turn_logs.append(
-                    PartyBattleTurnLog(
-                        turn_number=turns,
-                        player_actions=[],
-                        mob_action=mob_action,
-                        players_state=[
-                            {
-                                "player_id": member["player_id"],
-                                "user_id": member["user_id"],
-                                "name": member["name"],
-                                "avatar_url": member["avatar_url"],
-                                "current_hp": member["hp"],
-                                "max_hp": member["max_hp"],
-                                "current_mana": member["mana"],
-                                "mana_max": member["mana_max"],
-                                "attack": member["stats"].attack,
-                                "defense": member["stats"].defense,
-                                "speed": member["stats"].speed,
-                                "crit_chance": member["stats"].crit_chance,
-                                "crit_damage": member["stats"].crit_damage,
-                                "dodge": member["stats"].dodge,
-                                "hp_regeneration": member["stats"].hp_regeneration,
-                            }
-                            for member in alive_party
-                        ],
-                        mob_state={
-                            "name": mob.name,
-                            "image_name": mob.image_name,
-                            "current_hp": mob_hp,
-                            "max_hp": mob.max_hp,
-                            "attack": mob.attack,
-                            "defense": mob.defense,
-                            "speed": mob.speed,
-                            "crit_chance": mob.crit_chance,
-                            "crit_damage": mob.crit_damage,
-                            "dodge": mob.dodge,
-                            "hp_regeneration": mob.hp_regeneration,
-                        },
-                    )
-                )
+                turn_logs.append(self._snapshot(turns, [], mob_action, alive_party, mob, mob_hp))
 
                 if not any(player["hp"] > 0 for player in alive_party):
                     break
@@ -411,6 +323,32 @@ class PartyCombatService:
 
             if not acted:
                 continue
+
+        # ─── Particularité : explosion à la mort (kamikaze) ───
+        # Le mob mort inflige `attack_multiplier` × attaque à CHAQUE joueur
+        # vivant (peut critiquer, peut être esquivé). Ceux qui en meurent
+        # perdent or/loot/kill (survived=False plus bas).
+        cfg = mob_abilities.get("death_explosion")
+        if cfg and mob_hp <= 0:
+            victims = [p for p in alive_party if p["hp"] > 0]
+            if victims:
+                mult = int(cfg.get("attack_multiplier", 3))
+                parts = []
+                for target in victims:
+                    dmg, crit, dodged = self._resolve_mob_hit(
+                        mob, target, contributions, title_bonuses_by_player,
+                        incoming_elemental_mult_by_player, mob_family,
+                        extra_multiplier=mult,
+                    )
+                    if dodged:
+                        parts.append(f"{target['name']} esquive")
+                    else:
+                        tag = " CRIT" if crit else ""
+                        dead = " 💀" if target["hp"] <= 0 else ""
+                        parts.append(f"{target['name']} −{dmg}{tag}{dead}")
+                turns += 1
+                action = f"💥 {mob.name} explose à sa mort ! " + " · ".join(parts)
+                turn_logs.append(self._snapshot(turns, [], action, alive_party, mob, mob_hp))
 
         for member in alive_party:
             contribution = contributions[member["player_id"]]
@@ -439,4 +377,98 @@ class PartyCombatService:
             ),
             turn_logs=turn_logs,
             contributions=list(contributions.values()),
+        )
+
+    # ------------------------------------------------------------------ helpers
+    def _resolve_mob_hit(
+        self, mob, target, contributions, title_bonuses_by_player,
+        incoming_mult_by_player, mob_family,
+        extra_multiplier: float = 1.0, force_crit: bool = False, can_dodge: bool = True,
+    ) -> tuple[int, bool, bool]:
+        """Applique un coup du mob sur un joueur (combat soustractif : crit AVANT
+        défense, puis bouclier, puis PV). Mutations : hp/shield de la cible +
+        contributions (damage_tanked / dodges). Renvoie (dégâts, crit, esquivé).
+
+        `extra_multiplier` : multiplie l'attaque après le crit (×2, ×3 en série
+        d'assassinat ; ×N pour l'explosion). `force_crit` force le critique.
+        """
+        tstats: Stats = target["stats"]
+
+        if can_dodge and tstats.dodge > 0 and random.random() < (tstats.dodge / 100):
+            contributions[target["player_id"]].dodges += 1
+            return 0, False, True
+
+        raw_attack = mob.attack
+        crit = force_crit or (random.random() < (mob.crit_chance / 100))
+        if crit:
+            raw_attack = int(raw_attack * (mob.crit_damage / 100))
+        if extra_multiplier != 1.0:
+            raw_attack = int(raw_attack * extra_multiplier)
+
+        after_defense = max(1, raw_attack - tstats.defense)
+
+        tb = title_bonuses_by_player.get(target["player_id"])
+        if tb is not None and mob_family:
+            mob_damage = max(
+                1, round(after_defense * tb.damage_received_multiplier_from(mob_family))
+            )
+        else:
+            mob_damage = after_defense
+
+        incoming_mult = incoming_mult_by_player.get(target["player_id"], 1.0)
+        if incoming_mult != 1.0:
+            mob_damage = max(1, round(mob_damage * incoming_mult))
+
+        # Bouclier : absorbe en priorité, avant les PV.
+        if target["shield"] > 0 and mob_damage > 0:
+            absorbed = min(target["shield"], mob_damage)
+            target["shield"] -= absorbed
+            mob_damage -= absorbed
+
+        target["hp"] = max(0, target["hp"] - mob_damage)
+        # damage_tanked = le brut entrant (après crit/multiplicateur, avant
+        # réductions) : capture la "valeur encaissée" même si défense/bouclier
+        # en absorbent une part.
+        contributions[target["player_id"]].damage_tanked += raw_attack
+        return mob_damage, crit, False
+
+    def _snapshot(self, turns, player_actions, mob_action, alive_party, mob, mob_hp) -> PartyBattleTurnLog:
+        """Construit un PartyBattleTurnLog (état complet équipe + mob) pour un tour."""
+        return PartyBattleTurnLog(
+            turn_number=turns,
+            player_actions=player_actions,
+            mob_action=mob_action,
+            players_state=[
+                {
+                    "player_id": member["player_id"],
+                    "user_id": member["user_id"],
+                    "name": member["name"],
+                    "avatar_url": member["avatar_url"],
+                    "current_hp": member["hp"],
+                    "max_hp": member["max_hp"],
+                    "current_mana": member["mana"],
+                    "mana_max": member["mana_max"],
+                    "attack": member["stats"].attack,
+                    "defense": member["stats"].defense,
+                    "speed": member["stats"].speed,
+                    "crit_chance": member["stats"].crit_chance,
+                    "crit_damage": member["stats"].crit_damage,
+                    "dodge": member["stats"].dodge,
+                    "hp_regeneration": member["stats"].hp_regeneration,
+                }
+                for member in alive_party
+            ],
+            mob_state={
+                "name": mob.name,
+                "image_name": mob.image_name,
+                "current_hp": mob_hp,
+                "max_hp": mob.max_hp,
+                "attack": mob.attack,
+                "defense": mob.defense,
+                "speed": mob.speed,
+                "crit_chance": mob.crit_chance,
+                "crit_damage": mob.crit_damage,
+                "dodge": mob.dodge,
+                "hp_regeneration": mob.hp_regeneration,
+            },
         )
