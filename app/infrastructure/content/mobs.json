@@ -196,7 +196,7 @@
     "spawn_weight": 20,
     "loot_table": [],
     "image_name": "gobelin_runique.png",
-    "element": "lumiere"
+    "element": ""
   },
   {
     "code": "gobelin_superieur",
