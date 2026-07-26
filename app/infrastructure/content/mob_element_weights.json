@@ -78,6 +78,13 @@
       "terre": 15,
       "tenebre": 5,
       "lumiere": 5
+    },
+    "gobelin_superieur": {
+      "plante": 10,
+      "eau": 10,
+      "terre": 10,
+      "tenebre": 15,
+      "lumiere": 15
     }
   }
 }
