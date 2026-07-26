@@ -65,6 +65,14 @@ ASSIGN: dict[str, tuple[int, str]] = {
     "gobelin_geant":      (33, "blinde"),     # D- (tank)
     "gobelin_runique":    (38, "brute"),      # D
     "gobelin_superieur":  (48, "standard"),   # C-
+    # --- Famille démoniaque (Berceau cataclysmique, zone D) — du + faible au + fort
+    "diablotin":          (56, "rapide"),     # petit imp véloce, fragile
+    "demon_cornu":        (64, "standard"),   # fantassin équilibré
+    "ogre_demoniaque":    (72, "brute"),      # cogneur massif
+    "cerbere":            (80, "standard"),   # molosse robuste à trois têtes
+    "succube":            (88, "brute"),      # glass cannon magique
+    "ange_dechu":         (96, "standard"),   # élite polyvalente
+    "archidemon":         (108, "blinde"),    # seigneur des enfers, mur/apogée
 }
 
 
