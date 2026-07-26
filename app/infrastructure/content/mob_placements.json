@@ -353,6 +353,12 @@
         "offset_x": -0.02,
         "offset_y": 0.01,
         "shadow": true
+      },
+      "vent": {
+        "scale": 0.51,
+        "offset_x": -0.02,
+        "offset_y": 0.01,
+        "shadow": true
       }
     }
   }
