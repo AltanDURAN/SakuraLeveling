@@ -308,6 +308,14 @@
         "offset_y": -0.1,
         "shadow": true
       }
+    },
+    "gargouille": {
+      "lumiere": {
+        "scale": 0.4,
+        "offset_x": -0.06,
+        "offset_y": -0.3,
+        "shadow": false
+      }
     }
   }
 }
