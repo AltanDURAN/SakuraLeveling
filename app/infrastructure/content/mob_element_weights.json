@@ -36,6 +36,11 @@
       "terre": 20,
       "tenebre": 5,
       "lumiere": 5
+    },
+    "ange_dechu": {
+      "feu": 30,
+      "tenebre": 20,
+      "terre": 10
     }
   }
 }
