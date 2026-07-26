@@ -51,6 +51,11 @@
       "feu": 30,
       "tenebre": 5,
       "terre": 20
+    },
+    "diablotin": {
+      "feu": 20,
+      "tenebre": 5,
+      "terre": 20
     }
   }
 }
