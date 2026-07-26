@@ -2,9 +2,10 @@
   "_comment": "Poids de spawn élémentaires par monstre (édités sur la fiche du monstre) : weights[mob][element] = poids (>0). Un monstre sans poids hérite d'un tirage uniforme sur les éléments de sa zone.",
   "weights": {
     "banshee": {
-      "glace": 1,
-      "vent": 1,
-      "tenebre": 1
+      "lumiere": 5,
+      "tenebre": 10,
+      "glace": 20,
+      "vent": 20
     },
     "gobelin": {
       "plante": 33,
