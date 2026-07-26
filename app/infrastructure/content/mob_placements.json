@@ -180,6 +180,14 @@
         "offset_y": 0.07,
         "shadow": true
       }
+    },
+    "gobelin_geant": {
+      "plante": {
+        "scale": 0.58,
+        "offset_x": -0.05,
+        "offset_y": 0.01,
+        "shadow": true
+      }
     }
   }
 }
