@@ -217,7 +217,7 @@
     "spawn_weight": 10,
     "loot_table": [],
     "image_name": "gobelin_superieur.png",
-    "element": "feu"
+    "element": ""
   },
   {
     "code": "gobelin_assassin",
