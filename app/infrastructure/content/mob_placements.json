@@ -47,7 +47,7 @@
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.52,
+        "scale": 0.5,
         "offset_x": -0.06,
         "offset_y": -0.05,
         "shadow": true
