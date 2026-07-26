@@ -77,6 +77,12 @@
         "offset_x": -0.13,
         "offset_y": -0.14,
         "shadow": true
+      },
+      "lumiere": {
+        "scale": 0.35,
+        "offset_x": -0.11,
+        "offset_y": -0.06,
+        "shadow": true
       }
     }
   }
