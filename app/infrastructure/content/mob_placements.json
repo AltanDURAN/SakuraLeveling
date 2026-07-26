@@ -334,6 +334,14 @@
         "offset_y": -0.3,
         "shadow": false
       }
+    },
+    "liche_maudite": {
+      "lumiere": {
+        "scale": 0.51,
+        "offset_x": -0.02,
+        "offset_y": 0.01,
+        "shadow": true
+      }
     }
   }
 }
