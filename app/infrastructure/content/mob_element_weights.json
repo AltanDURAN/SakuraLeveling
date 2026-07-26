@@ -66,6 +66,11 @@
       "feu": 20,
       "tenebre": 10,
       "terre": 25
+    },
+    "succube": {
+      "feu": 20,
+      "tenebre": 30,
+      "terre": 10
     }
   }
 }
