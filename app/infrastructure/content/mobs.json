@@ -452,7 +452,6 @@
     "code": "fantome",
     "name": "Fantôme",
     "family": "mort-vivant",
-    "element": "tenebre",
     "description": "Une âme errante insaisissable qui glisse entre les coups.",
     "max_hp": 668,
     "current_hp": 668,
@@ -467,7 +466,8 @@
     "gold_reward": 189,
     "spawn_weight": 15,
     "loot_table": [],
-    "image_name": "fantome.png"
+    "image_name": "fantome.png",
+    "element": ""
   },
   {
     "code": "momie",
