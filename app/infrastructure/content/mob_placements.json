@@ -386,6 +386,14 @@
         "offset_y": -0.05,
         "shadow": true
       }
+    },
+    "squelette": {
+      "lumiere": {
+        "scale": 0.45,
+        "offset_x": -0.07,
+        "offset_y": 0.0,
+        "shadow": true
+      }
     }
   }
 }
