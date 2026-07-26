@@ -405,6 +405,12 @@
         "offset_x": -0.07,
         "offset_y": 0.0,
         "shadow": true
+      },
+      "vent": {
+        "scale": 0.45,
+        "offset_x": -0.07,
+        "offset_y": 0.0,
+        "shadow": true
       }
     }
   }
