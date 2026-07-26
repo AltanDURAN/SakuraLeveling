@@ -65,6 +65,12 @@
         "offset_x": -0.04,
         "offset_y": -0.08,
         "shadow": true
+      },
+      "terre": {
+        "scale": 0.34,
+        "offset_x": -0.04,
+        "offset_y": -0.04,
+        "shadow": true
       }
     }
   }
