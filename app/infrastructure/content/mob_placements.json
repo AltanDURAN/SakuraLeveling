@@ -466,8 +466,8 @@
       },
       "lumiere": {
         "scale": 0.2,
-        "offset_x": -0.11,
-        "offset_y": -0.03,
+        "offset_x": -0.1,
+        "offset_y": -0.04,
         "shadow": true
       }
     }
