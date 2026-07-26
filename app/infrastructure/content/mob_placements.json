@@ -47,9 +47,9 @@
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.6,
-        "offset_x": 0.0,
-        "offset_y": 0.0,
+        "scale": 0.52,
+        "offset_x": -0.06,
+        "offset_y": -0.05,
         "shadow": true
       },
       "lumiere": {
