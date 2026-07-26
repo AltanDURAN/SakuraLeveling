@@ -295,6 +295,12 @@
         "offset_x": -0.07,
         "offset_y": -0.1,
         "shadow": true
+      },
+      "glace": {
+        "scale": 0.44,
+        "offset_x": -0.07,
+        "offset_y": -0.1,
+        "shadow": true
       }
     }
   }
