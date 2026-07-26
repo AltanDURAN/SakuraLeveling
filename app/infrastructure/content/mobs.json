@@ -536,7 +536,6 @@
     "code": "banshee",
     "name": "Banshee",
     "family": "mort-vivant",
-    "element": "glace",
     "description": "Un spectre hurlant dont le cri glaçant transperce l'âme.",
     "max_hp": 1188,
     "current_hp": 1188,
@@ -551,6 +550,7 @@
     "gold_reward": 352,
     "spawn_weight": 2,
     "loot_table": [],
-    "image_name": "banshee.png"
+    "image_name": "banshee.png",
+    "element": ""
   }
 ]
