@@ -463,6 +463,12 @@
         "offset_x": -0.15,
         "offset_y": -0.11,
         "shadow": true
+      },
+      "lumiere": {
+        "scale": 0.2,
+        "offset_x": -0.11,
+        "offset_y": -0.03,
+        "shadow": true
       }
     }
   }
