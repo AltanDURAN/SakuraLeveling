@@ -163,9 +163,9 @@
         "shadow": true
       },
       "terre": {
-        "scale": 0.46,
+        "scale": 0.47,
         "offset_x": -0.02,
-        "offset_y": 0.14,
+        "offset_y": 0.15,
         "shadow": true
       }
     }
