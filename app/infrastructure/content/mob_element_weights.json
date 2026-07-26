@@ -86,6 +86,12 @@
       "terre": 10,
       "tenebre": 15,
       "lumiere": 15
+    },
+    "fantome": {
+      "lumiere": 10,
+      "tenebre": 10,
+      "glace": 20,
+      "vent": 20
     }
   }
 }
