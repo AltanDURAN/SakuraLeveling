@@ -71,6 +71,13 @@
       "feu": 20,
       "tenebre": 30,
       "terre": 10
+    },
+    "gobelin_runique": {
+      "plante": 10,
+      "eau": 10,
+      "terre": 15,
+      "tenebre": 5,
+      "lumiere": 5
     }
   }
 }
