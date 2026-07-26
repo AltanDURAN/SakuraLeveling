@@ -99,9 +99,9 @@
         "shadow": true
       },
       "terre": {
-        "scale": 0.48,
-        "offset_x": -0.01,
-        "offset_y": -0.18,
+        "scale": 0.46,
+        "offset_x": -0.02,
+        "offset_y": -0.2,
         "shadow": true
       },
       "tenebre": {
