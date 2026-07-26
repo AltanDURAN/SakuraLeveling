@@ -51,6 +51,12 @@
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
+      },
+      "lumiere": {
+        "scale": 0.5,
+        "offset_x": -0.06,
+        "offset_y": -0.05,
+        "shadow": true
       }
     },
     "gobelin_assassin": {
