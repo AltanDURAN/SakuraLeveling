@@ -212,6 +212,14 @@
         "offset_y": -0.06,
         "shadow": true
       }
+    },
+    "gobelin_runique": {
+      "plante": {
+        "scale": 0.5,
+        "offset_x": -0.02,
+        "offset_y": 0.02,
+        "shadow": true
+      }
     }
   }
 }
