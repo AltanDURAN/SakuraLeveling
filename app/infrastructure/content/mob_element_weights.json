@@ -92,6 +92,11 @@
       "tenebre": 10,
       "glace": 20,
       "vent": 20
+    },
+    "zombie": {
+      "tenebre": 15,
+      "glace": 10,
+      "vent": 10
     }
   }
 }
