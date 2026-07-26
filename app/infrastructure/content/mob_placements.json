@@ -52,6 +52,14 @@
         "offset_y": 0.0,
         "shadow": true
       }
+    },
+    "gobelin_assassin": {
+      "plante": {
+        "scale": 0.4,
+        "offset_x": -0.05,
+        "offset_y": -0.02,
+        "shadow": true
+      }
     }
   }
 }
