@@ -123,6 +123,12 @@
         "offset_x": 0.01,
         "offset_y": -0.01,
         "shadow": true
+      },
+      "eau": {
+        "scale": 0.4,
+        "offset_x": 0.0,
+        "offset_y": -0.09,
+        "shadow": true
       }
     }
   }
