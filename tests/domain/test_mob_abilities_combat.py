@@ -133,10 +133,66 @@ def test_opening_targets_weakest_first():
     assert _contrib(r, 1).final_hp == 5000 - 400   # seulement le strike2 (×2) encaissé
 
 
+CHARM = {"charm": {}}
+
+
+def test_charm_solo_is_instant_loss():
+    svc = PartyCombatService()
+    mob = _mob(hp=1000, attack=10, speed=1)
+    party = [_player(1, hp=500, attack=50)]
+    r = svc.fight_party_vs_mob(party=party, mob=mob, mob_abilities=CHARM)
+    assert r.victory is False                 # la succube gagne d'emblée
+    assert _contrib(r, 1).final_hp == 0       # le joueur isolé est dévoré
+    assert _contrib(r, 1).survived is False
+
+
+def test_charm_mob_untouchable_while_charmed_alive():
+    svc = PartyCombatService()
+    mob = _mob(hp=100, attack=1, speed=1)
+    # P1 = le plus puissant (gros PV) → charmé et intuable par le faible P2.
+    party = [
+        _player(1, hp=10000, attack=100, speed=5),  # charmé, écrase P2
+        _player(2, hp=100, attack=1, speed=5),      # ne peut pas tuer P1
+    ]
+    r = svc.fight_party_vs_mob(party=party, mob=mob, mob_abilities=CHARM)
+    assert r.victory is False
+    assert r.mob_remaining_hp == 100              # la succube n'a JAMAIS été touchée
+    assert _contrib(r, 2).survived is False       # le charmé a tué son allié
+
+
+def test_charm_freed_then_succube_killable():
+    svc = PartyCombatService()
+    mob = _mob(hp=100, attack=5, speed=1)
+    # P1 le plus puissant (grosse attaque) MAIS fragile → charmé, mais P2 rapide
+    # l'abat avant qu'il n'agisse, puis achève la succube.
+    party = [
+        _player(1, hp=50, attack=2000, speed=1),    # charmé (puissance max)
+        _player(2, hp=500, attack=100, speed=99),   # libère P1 puis tue la succube
+    ]
+    r = svc.fight_party_vs_mob(party=party, mob=mob, mob_abilities=CHARM)
+    assert r.victory is True                        # succube tuée APRÈS le charmé
+    assert _contrib(r, 1).survived is False         # le charmé (abattu) perd tout
+    assert _contrib(r, 2).survived is True
+
+
+def test_charm_targets_strongest_player():
+    svc = PartyCombatService()
+    mob = _mob(hp=100, attack=1, speed=1)
+    party = [
+        _player(1, hp=100, attack=10, speed=5),       # faible
+        _player(2, hp=8000, attack=300, speed=5),     # le plus puissant → charmé
+    ]
+    r = svc.fight_party_vs_mob(party=party, mob=mob, mob_abilities=CHARM)
+    # P2 charmé → il écrase P1 (faible) et la succube reste intouchable.
+    assert r.mob_remaining_hp == 100
+    assert _contrib(r, 1).survived is False
+
+
 # ─────────────────────────────── registre ───────────────────────────────
 
 def test_ability_registry_maps_codes():
     assert "death_explosion" in get_mob_abilities("gobelin_runique")
     assert "opening_assassinate" in get_mob_abilities("gobelin_assassin")
+    assert "charm" in get_mob_abilities("succube")
     assert get_mob_abilities("gobelin") == {}
     assert get_mob_abilities(None) == {}
