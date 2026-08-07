@@ -204,8 +204,11 @@ async def skill_page(request: Request, discord_id: int):
 async def bestiary_page(request: Request):
     """Catalogue public des monstres du jeu."""
     from app.infrastructure.db.repositories.item_repository import ItemRepository
+    from app.domain.services.adventurers_guild import specialties_revealed
+    from app.domain.services.mob_ability_service import get_mob_ability_summary
 
     pss = PowerScoreService()
+    reveal = specialties_revealed()
 
     with get_db_session() as session:
         mobs = MobRepository(session).list_all()
@@ -219,11 +222,17 @@ async def bestiary_page(request: Request):
             {**entry, "item_name": items_by_code.get(entry.get("item_code", ""), entry.get("item_code", ""))}
             for entry in (m.loot_table or [])
         ]
+        summary = get_mob_ability_summary(m.code)
+        specialty = None
+        if summary:
+            specialty = summary if reveal else "???"
         rendered_mobs.append({
             "code": m.code,
             "name": m.name,
             "family": m.family,
             "description": m.description,
+            "specialty": specialty,
+            "specialty_hidden": bool(summary) and not reveal,
             "max_hp": m.max_hp,
             "attack": m.attack,
             "defense": m.defense,

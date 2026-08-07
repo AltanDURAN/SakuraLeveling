@@ -35,6 +35,14 @@
             <p class="mob-description">{{ mob.description }}</p>
             {% endif %}
 
+            {% if mob.specialty %}
+            <div class="mob-specialty{% if mob.specialty_hidden %} mob-specialty--hidden{% endif %}"
+                 {% if mob.specialty_hidden %}title="Débloqué au niveau 2 de la Guilde des aventuriers"{% endif %}>
+                <span class="spec-title">⭐ Spécialité</span>
+                <span class="spec-text">{{ mob.specialty }}</span>
+            </div>
+            {% endif %}
+
             <div class="mob-stats">
                 <div class="stat"><span class="stat-label">❤️ PV</span><span class="stat-value">{{ "{:,}".format(mob.max_hp).replace(",", " ") }}</span></div>
                 <div class="stat"><span class="stat-label">⚔️ Atk</span><span class="stat-value">{{ "{:,}".format(mob.attack).replace(",", " ") }}</span></div>

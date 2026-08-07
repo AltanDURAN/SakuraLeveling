@@ -188,6 +188,91 @@ def test_charm_targets_strongest_player():
     assert _contrib(r, 1).survived is False
 
 
+def _first_player_hit_log(r):
+    return next(log for log in r.turn_logs if log.player_actions)
+
+
+def test_revive_needs_two_kills():
+    svc = PartyCombatService()
+    mob = _mob(hp=1, attack=1, speed=1)  # max_hp = 1
+    party = [_player(1, hp=100000, attack=999, speed=99)]
+    r = svc.fight_party_vs_mob(party=party, mob=mob,
+                               mob_abilities={"revive": {"atk_pct": 100, "def_pct": 100}})
+    assert r.victory is True
+    assert any("renaît" in (log.mob_action or "") for log in r.turn_logs)
+
+
+def test_shield_absorbs_before_hp():
+    svc = PartyCombatService()
+    mob = _mob(hp=100, attack=1, speed=1)  # bouclier = max_hp = 100
+    party = [_player(1, hp=100000, attack=50, speed=99)]
+    r = svc.fight_party_vs_mob(party=party, mob=mob,
+                               mob_abilities={"shield": {"reset_on_kill": True}})
+    first = _first_player_hit_log(r)
+    assert first.mob_state["current_hp"] == 100      # PV intacts au 1er coup
+    assert first.mob_state["shield"] == 50           # le bouclier a encaissé (100−50)
+    assert r.victory is True                         # brisé puis tué
+
+
+def test_fantome_dodges_first_attack_of_each_player():
+    svc = PartyCombatService()
+    mob = _mob(hp=100, attack=1, speed=1)
+    party = [_player(1, hp=100000, attack=50, speed=99)]
+    r = svc.fight_party_vs_mob(party=party, mob=mob, mob_abilities={"first_hit_dodge": {}})
+    first = _first_player_hit_log(r)
+    assert first.mob_state["current_hp"] == 100      # 1re attaque esquivée
+    assert "dissipe" in (first.mob_action or "")
+
+
+def test_multi_hit_strikes_three_times():
+    svc = PartyCombatService()
+    # 3 coups de 100 = 300 > 250 PV → le joueur meurt en un seul tour de mob.
+    mob = _mob(hp=100000, attack=100, speed=99)
+    party = [_player(1, hp=250, attack=1, speed=1)]
+    r = svc.fight_party_vs_mob(party=party, mob=mob, mob_abilities={"multi_hit": {"hits": 3}})
+    assert _contrib(r, 1).survived is False
+
+
+def test_aoe_hits_every_player():
+    svc = PartyCombatService()
+    mob = _mob(hp=100000, attack=100, speed=100)
+    party = [_player(i, hp=1000, attack=1, speed=1) for i in (1, 2, 3)]
+    r = svc.fight_party_vs_mob(party=party, mob=mob, mob_abilities={"aoe": {}}, max_turns=1)
+    for pid in (1, 2, 3):
+        assert _contrib(r, pid).final_hp == 900      # tous touchés (−100) en un tour
+
+
+def test_lifesteal_heals_the_mob():
+    svc = PartyCombatService()
+    mob = _mob(hp=100, attack=50, speed=5)  # max_hp 100 ; guérit 20% des dégâts
+    mob.max_hp = 1000
+    party = [_player(1, hp=100000, attack=1, speed=1)]
+    r = svc.fight_party_vs_mob(party=party, mob=mob,
+                               mob_abilities={"lifesteal": {"pct": 20}}, max_turns=300)
+    assert r.mob_remaining_hp > 100                  # a régénéré au-delà du départ
+
+
+def test_chaman_heals_once_below_half():
+    svc = PartyCombatService()
+    mob = _mob(hp=100, attack=1, speed=5)  # max_hp 100
+    party = [_player(1, hp=100000, attack=30, speed=5)]
+    r = svc.fight_party_vs_mob(party=party, mob=mob,
+                               mob_abilities={"heal_once_below": {"hp_pct": 50}})
+    assert any("se soigne" in (log.mob_action or "") for log in r.turn_logs)
+    assert r.victory is True                         # soigné une fois puis vaincu
+
+
+def test_all_ability_configs_run_without_error():
+    from app.domain.services.mob_ability_service import MOB_ABILITIES
+    svc = PartyCombatService()
+    for code, cfg in MOB_ABILITIES.items():
+        mob = _mob(hp=300, attack=20, defense=5, speed=8, crit_chance=10, crit_damage=150)
+        party = [_player(1, hp=400, attack=40, speed=8),
+                 _player(2, hp=500, attack=35, speed=6)]
+        r = svc.fight_party_vs_mob(party=party, mob=mob, mob_abilities=cfg, max_turns=400)
+        assert r is not None and isinstance(r.turns, int)
+
+
 # ─────────────────────────────── registre ───────────────────────────────
 
 def test_ability_registry_maps_codes():

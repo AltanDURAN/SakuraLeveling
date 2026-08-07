@@ -14,6 +14,8 @@
       background-image:linear-gradient(45deg,#c9c9d2 25%,transparent 25%),linear-gradient(-45deg,#c9c9d2 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#c9c9d2 75%),linear-gradient(-45deg,transparent 75%,#c9c9d2 75%);
       background-size:16px 16px; background-position:0 0,0 8px,8px -8px,-8px 0; }
   .mob-portrait img { max-width:92px; max-height:92px; object-fit:contain; }
+  .spec-badge { font-weight:700; font-size:.72rem; padding:.15rem .5rem; border-radius:999px; cursor:help;
+                background:linear-gradient(90deg,#e26ba4,#a371f7); color:#fff; white-space:nowrap; }
   .rank-badge { font-weight:800; font-size:.8rem; padding:.15rem .5rem; border-radius:999px;
                 border:1px solid var(--border); background:rgba(120,120,200,.14); white-space:nowrap; }
   .eltag { display:inline-flex; align-items:center; gap:.25rem; padding:.12rem .5rem; border-radius:999px;
@@ -210,7 +212,10 @@ document.addEventListener('alpine:init', () => {
         <div style="flex:1; min-width:0;">
           <div style="display:flex; align-items:center; gap:.5rem; justify-content:space-between;">
             <strong style="font-size:1.05rem;" x-text="name"></strong>
-            <span class="rank-badge" title="Rang / puissance calculés">{{ card.rank }} · {{ card.power_score }}</span>
+            <span style="display:flex; align-items:center; gap:.35rem;">
+              {% if card.special %}<span class="spec-badge" title="{{ card.special }}">⭐ Spécialité</span>{% endif %}
+              <span class="rank-badge" title="Rang / puissance calculés">{{ card.rank }} · {{ card.power_score }}</span>
+            </span>
           </div>
           <div style="color:var(--muted); font-size:.82rem; margin:.1rem 0 .4rem;">
             <span x-text="family"></span>

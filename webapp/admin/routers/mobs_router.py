@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi import HTTPException
 
 from app.bot.rendering.element_visuals import ELEMENT_COLORS
+from app.domain.services.mob_ability_service import get_mob_ability_summary
 from app.domain.services.power_score_service import PowerScoreService
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
@@ -270,7 +271,7 @@ async def mobs_list(
         cards.append({
             "mob": m, "zone": zone, "state": state, "loot_rows": loot_rows,
             "power_score": pss.format_score(score), "rank": pss.compute_rank(score),
-            "search": search,
+            "search": search, "special": get_mob_ability_summary(m.code),
         })
 
     items_catalog = sorted(
