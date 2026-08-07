@@ -7,6 +7,7 @@ from app.domain.entities.element_skill import (
     SKILL_KIND_SHIELD_TEAM,
 )
 from app.domain.entities.mob_definition import MobDefinition
+from app.domain.services.power_score_service import PowerScoreService
 from app.domain.services.skill_effect_service import SkillEffectService
 from app.domain.services.title_bonus_service import TitleBonuses
 from app.domain.value_objects.party_battle_result import PartyBattleResult
@@ -82,6 +83,23 @@ class PartyCombatService:
             for member in alive_party
         }
 
+        # État du charme (succube). charmed_id = joueur retourné contre l'équipe,
+        # ou None. Tant qu'il vit : le mob est intouchable, la succube passive,
+        # le charmé frappe ses alliés, les autres doivent l'abattre.
+        charmed_id: int | None = None
+        _power = PowerScoreService()
+
+        def _charmed_member():
+            return next((p for p in alive_party if p["player_id"] == charmed_id), None)
+
+        def _charmed_alive() -> bool:
+            m = _charmed_member()
+            return m is not None and m["hp"] > 0
+
+        def _party_alive() -> bool:
+            """Vivant ET non-charmé (le charmé compte pour l'ennemi)."""
+            return any(p["hp"] > 0 and p["player_id"] != charmed_id for p in alive_party)
+
         # État des modifiers boss dynamiques (neutres hors world boss).
         boss_adds = boss_adds or {}
         adds_attack = int(boss_adds.get("attack", 0))
@@ -119,7 +137,24 @@ class PartyCombatService:
                 if dodged or target["hp"] > 0:
                     break
 
-        while mob_hp > 0 and any(player["hp"] > 0 for player in alive_party):
+        # ─── Particularité : charme (succube) ───
+        if "charm" in mob_abilities and mob_hp > 0:
+            living = [p for p in alive_party if p["hp"] > 0]
+            if living:
+                charmed = max(living, key=lambda p: _power.calculate_from_stats(p["stats"]))
+                charmed_id = charmed["player_id"]
+                if not _party_alive():
+                    # Seul face à la succube → charmé et dévoré immédiatement.
+                    charmed["hp"] = 0
+                    action = (f"💋 {mob.name} charme {charmed['name']}… "
+                              f"seul et envoûté, il est dévoré ! Défaite.")
+                else:
+                    action = (f"💋 {mob.name} charme {charmed['name']} (le plus puissant) ! "
+                              f"Retourné contre les siens — abattez-le pour atteindre {mob.name}.")
+                turns += 1
+                turn_logs.append(self._snapshot(turns, [], action, alive_party, mob, mob_hp))
+
+        while mob_hp > 0 and _party_alive():
             round_count += 1
             # Cap de sécurité : évite une boucle infinie si l'auto-soin du boss
             # dépasse les DPS de l'équipe (ni mort ni victoire).
@@ -134,9 +169,41 @@ class PartyCombatService:
 
             for player in alive_party:
                 while player["gauge"] >= 100 and player["hp"] > 0 and mob_hp > 0:
+                    # ── Charme : le joueur charmé frappe un allié non-charmé ──
+                    if player["player_id"] == charmed_id:
+                        prey = [p for p in alive_party
+                                if p["player_id"] != charmed_id and p["hp"] > 0]
+                        if not prey:
+                            break
+                        turns += 1
+                        acted = True
+                        player["gauge"] -= 100
+                        victim = random.choice(prey)
+                        dmg, crit, dodged = self._pvp_hit(player, victim, contributions)
+                        act = (f"😈 {player['name']} (charmé) attaque {victim['name']} — esquive !"
+                               if dodged else
+                               f"😈 {player['name']} (charmé) frappe {victim['name']} : {dmg} dégâts"
+                               + (" CRIT" if crit else "")
+                               + (" 💀" if victim["hp"] <= 0 else ""))
+                        turn_logs.append(self._snapshot(turns, [], act, alive_party, mob, mob_hp))
+                        continue
+
                     turns += 1
                     acted = True
                     player["gauge"] -= 100
+
+                    # ── Charme : les non-charmés doivent d'abord abattre le charmé ──
+                    if _charmed_alive():
+                        victim = _charmed_member()
+                        dmg, crit, dodged = self._pvp_hit(player, victim, contributions)
+                        freed = victim["hp"] <= 0 and not dodged
+                        act = (f"{player['name']} vise {victim['name']} (charmé) — esquive !"
+                               if dodged else
+                               f"{player['name']} frappe {victim['name']} (charmé) : {dmg} dégâts"
+                               + (" CRIT" if crit else "")
+                               + (f" — 💔 {victim['name']} est libéré !" if freed else ""))
+                        turn_logs.append(self._snapshot(turns, [], act, alive_party, mob, mob_hp))
+                        continue
 
                     stats: Stats = player["stats"]
 
@@ -276,14 +343,19 @@ class PartyCombatService:
                     if mob_hp <= 0:
                         break
 
-            while mob_gauge >= 100 and mob_hp > 0 and any(player["hp"] > 0 for player in alive_party):
+            # Tant que le charmé vit, la succube est protégée et PASSIVE (elle
+            # n'attaque pas et ne cumule pas de jauge).
+            if _charmed_alive():
+                mob_gauge = 0
+            while mob_gauge >= 100 and mob_hp > 0 and _party_alive() and not _charmed_alive():
                 turns += 1
                 acted = True
                 mob_gauge -= 100
 
                 # NOTE: hp_regeneration des mobs ne s'applique PAS en combat (V2).
 
-                possible_targets = [player for player in alive_party if player["hp"] > 0]
+                possible_targets = [p for p in alive_party
+                                    if p["hp"] > 0 and p["player_id"] != charmed_id]
                 target = random.choice(possible_targets)
 
                 mob_damage, mob_crit, dodged = self._resolve_mob_hit(
@@ -299,7 +371,7 @@ class PartyCombatService:
 
                 turn_logs.append(self._snapshot(turns, [], mob_action, alive_party, mob, mob_hp))
 
-                if not any(player["hp"] > 0 for player in alive_party):
+                if not _party_alive():
                     break
 
             # Invocations (adds) : apparaissent périodiquement puis frappent
@@ -431,6 +503,29 @@ class PartyCombatService:
         # en absorbent une part.
         contributions[target["player_id"]].damage_tanked += raw_attack
         return mob_damage, crit, False
+
+    def _pvp_hit(self, attacker, target, contributions) -> tuple[int, bool, bool]:
+        """Coup joueur → joueur (charme) : crit AVANT défense, puis bouclier,
+        puis PV. Renvoie (dégâts, crit, esquivé)."""
+        astats: Stats = attacker["stats"]
+        tstats: Stats = target["stats"]
+
+        if tstats.dodge > 0 and random.random() < (tstats.dodge / 100):
+            contributions[target["player_id"]].dodges += 1
+            return 0, False, True
+
+        raw = astats.attack
+        crit = random.random() < (astats.crit_chance / 100)
+        if crit:
+            raw = int(raw * (astats.crit_damage / 100))
+        dmg = max(1, raw - tstats.defense)
+        if target["shield"] > 0 and dmg > 0:
+            absorbed = min(target["shield"], dmg)
+            target["shield"] -= absorbed
+            dmg -= absorbed
+        target["hp"] = max(0, target["hp"] - dmg)
+        contributions[target["player_id"]].damage_tanked += raw
+        return dmg, crit, False
 
     def _snapshot(self, turns, player_actions, mob_action, alive_party, mob, mob_hp) -> PartyBattleTurnLog:
         """Construit un PartyBattleTurnLog (état complet équipe + mob) pour un tour."""
