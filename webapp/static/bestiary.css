@@ -72,6 +72,33 @@
     line-height: 1.4;
 }
 
+.mob-specialty {
+    margin: 10px 0;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: linear-gradient(90deg, rgba(226,107,164,.18), rgba(163,113,247,.18));
+    border: 1px solid rgba(163,113,247,.45);
+    font-size: 12.5px;
+    line-height: 1.4;
+}
+.mob-specialty .spec-title {
+    display: block;
+    font-weight: 800;
+    color: #e8a6d6;
+    margin-bottom: 2px;
+    letter-spacing: .02em;
+}
+.mob-specialty .spec-text { color: #e6e6f0; }
+.mob-specialty--hidden {
+    background: rgba(255,255,255,.05);
+    border-color: rgba(255,255,255,.15);
+}
+.mob-specialty--hidden .spec-text {
+    color: #8a8a9a;
+    letter-spacing: .15em;
+    font-weight: 700;
+}
+
 .mob-stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);

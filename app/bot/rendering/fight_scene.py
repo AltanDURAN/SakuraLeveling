@@ -251,6 +251,16 @@ def render_scene(
         hp_txt = f"{cur} / {mx}" if cur > 0 else "Vaincu"
         draw.text(((name_x + pr - 16) / 2 - draw.textlength(hp_txt, font=hp_font) / 2,
                    bar_y1 + 5), hp_txt, font=hp_font, fill=(255, 255, 255, 255))
+        # Barre de BOUCLIER (bleu) par-dessus les PV — s'épuise avant les PV.
+        shield = int(mob.get("shield", 0) or 0)
+        if shield > 0 and mx > 0:
+            sratio = max(0.0, min(1.0, shield / mx))
+            sx1, sx2, sy1, sy2 = name_x, pr - 16, bar_y1 - 13, bar_y1 - 3
+            draw.rounded_rectangle([sx1, sy1, sx2, sy2], radius=5, fill=(18, 22, 40, 190))
+            fill_w = int((sx2 - sx1) * sratio)
+            if fill_w > 4:
+                draw.rounded_rectangle([sx1, sy1, sx1 + fill_w, sy2], radius=5, fill=(74, 150, 255, 240))
+            draw.text((sx1 + 6, sy1 - 1), f"Bouclier {shield}", font=hp_font, fill=(190, 218, 255, 255))
 
     # ---- Bandeau JOUEURS (bas) ----
     _panel(result, BOTTOM_PANEL)
