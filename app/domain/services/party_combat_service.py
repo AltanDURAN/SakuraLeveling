@@ -56,9 +56,11 @@ class PartyCombatService:
                 "mana": player.get("current_mana", player.get("mana_max", 0)),
                 "mana_max": player.get("mana_max", 0),
                 "gauge": 0,
-                "shield": 0,       # bouclier (compétences défensives/support)
-                "stunned": False,  # étourdi (gobelin géant / banshee)
-                "slow": 0,         # stacks de ralentissement (momie)
+                "shield": 0,        # bouclier (compétences défensives/support)
+                "stunned": False,   # étourdi (gobelin géant / banshee)
+                "slow": 0,          # stacks de ralentissement (momie)
+                "bleeds": [],       # saignements actifs (ogre) : [{dmg, turns}]
+                "absorbed": False,  # englouti par le slime → hors combat
             }
             for player in party
         ]
@@ -86,12 +88,18 @@ class PartyCombatService:
             return m is not None and m["hp"] > 0
 
         def _party_alive() -> bool:
-            return any(p["hp"] > 0 and p["player_id"] != charmed_id for p in alive_party)
+            return any(p["hp"] > 0 and p["player_id"] != charmed_id and not p["absorbed"]
+                       for p in alive_party)
 
         def _mob_targets() -> list:
-            return [p for p in alive_party if p["hp"] > 0 and p["player_id"] != charmed_id]
+            return [p for p in alive_party
+                    if p["hp"] > 0 and p["player_id"] != charmed_id and not p["absorbed"]]
 
         # ── État des capacités du monstre ──
+        # Stats effectives (max HP + bonus d'absorption du slime).
+        mob_max_hp = mob.max_hp
+        mob_bonus_atk = 0.0
+        mob_bonus_def = 0.0
         mob_shield = mob.max_hp if "shield" in ab else 0
         mob_revived = False
         chaman_pending = False
@@ -101,27 +109,28 @@ class PartyCombatService:
 
         def _enrage_pct() -> int:
             tiers = ab.get("enrage", {}).get("tiers", [])
-            if not tiers or not mob.max_hp:
+            if not tiers or not mob_max_hp:
                 return 0
-            ratio = mob_hp / mob.max_hp * 100
+            ratio = mob_hp / mob_max_hp * 100
             return max((b for t, b in tiers if ratio <= t), default=0)
 
         def _mob_attack_now() -> int:
-            a = float(mob.attack)
+            a = float(mob.attack) + mob_bonus_atk
             if mob_revived:
                 a *= 1 + ab.get("revive", {}).get("atk_pct", 0) / 100
             a *= 1 + _enrage_pct() / 100
             return max(1, int(round(a)))
 
         def _mob_defense_now() -> int:
-            d = float(mob.defense)
+            d = float(mob.defense) + mob_bonus_def
             if mob_revived:
                 d *= 1 + ab.get("revive", {}).get("def_pct", 0) / 100
             d *= 1 + _enrage_pct() / 100
             return int(round(d))
 
         def snap(action, players=None):
-            return self._snapshot(turns, players or [], action, alive_party, mob, mob_hp, mob_shield)
+            return self._snapshot(turns, players or [], action, alive_party, mob, mob_hp,
+                                  mob_shield, mob_max_hp)
 
         # ── État des modifiers boss dynamiques (neutres hors world boss) ──
         boss_adds = boss_adds or {}
@@ -170,12 +179,57 @@ class PartyCombatService:
                 turns += 1
                 turn_logs.append(snap(action))
 
+        # ─── Absorption (slime) ───
+        # Chance d'engloutir tous les joueurs SAUF le plus fort (jamais si un
+        # seul joueur), se renforçant de `stat_pct`% de leurs stats.
+        cfg = ab.get("absorb")
+        if cfg and mob_hp > 0:
+            living = [p for p in alive_party if p["hp"] > 0]
+            if len(living) > 1 and random.random() < cfg.get("chance", 10) / 100:
+                strongest = max(living, key=lambda p: _power.calculate_from_stats(p["stats"]))
+                pct = cfg.get("stat_pct", 50) / 100
+                names, gained_hp = [], 0
+                for p in living:
+                    if p["player_id"] == strongest["player_id"]:
+                        continue
+                    p["absorbed"] = True
+                    mob_bonus_atk += p["stats"].attack * pct
+                    mob_bonus_def += p["stats"].defense * pct
+                    gained_hp += int(p["max_hp"] * pct)
+                    names.append(p["name"])
+                mob_max_hp = mob.max_hp + gained_hp
+                mob_hp = min(mob_max_hp, mob_hp + gained_hp)
+                turns += 1
+                turn_logs.append(snap(
+                    f"🫧 {mob.name} engloutit {', '.join(names)} et absorbe leurs pouvoirs "
+                    f"(+{int(mob_bonus_atk)} atk, +{int(mob_bonus_def)} déf, +{gained_hp} PV) !"))
+
         while mob_hp > 0 and _party_alive():
             round_count += 1
             if max_turns and turns >= max_turns:
                 break
+
+            # Saignement (ogre) : tick de début de round sur les joueurs qui saignent.
+            bled = []
+            for p in alive_party:
+                if p["hp"] <= 0 or p["absorbed"] or not p["bleeds"]:
+                    continue
+                total = sum(s["dmg"] for s in p["bleeds"])
+                if total > 0:
+                    p["hp"] = max(0, p["hp"] - total)
+                    contributions[p["player_id"]].damage_tanked += total
+                    bled.append(f"{p['name']} −{total}" + (" 💀" if p["hp"] <= 0 else ""))
+                for s in p["bleeds"]:
+                    s["turns"] -= 1
+                p["bleeds"] = [s for s in p["bleeds"] if s["turns"] > 0]
+            if bled:
+                turns += 1
+                turn_logs.append(snap("🩸 Saignement : " + " · ".join(bled)))
+                if not _party_alive():
+                    break
+
             for player in alive_party:
-                if player["hp"] > 0:
+                if player["hp"] > 0 and not player["absorbed"]:
                     fill = player["stats"].speed
                     if player["slow"] > 0:
                         fill = max(1, fill // 2)   # ralenti (momie) : jauge à 50%
@@ -349,14 +403,14 @@ class PartyCombatService:
 
                     # Chaman : 1ʳᵉ fois sous 50% PV → soin d'urgence au prochain tour.
                     if (landed and "heal_once_below" in ab and not chaman_done and mob_hp > 0
-                            and mob_hp <= mob.max_hp * ab["heal_once_below"].get("hp_pct", 50) / 100):
+                            and mob_hp <= mob_max_hp * ab["heal_once_below"].get("hp_pct", 50) / 100):
                         chaman_pending = True
                         chaman_done = True
 
                     # Résurrection (ange déchu) : 1ʳᵉ mort → revient à 100% PV, +100% atk/déf.
                     if mob_hp <= 0 and "revive" in ab and not mob_revived:
                         mob_revived = True
-                        mob_hp = mob.max_hp
+                        mob_hp = mob_max_hp
                         turn_logs.append(snap(
                             f"👼 {mob.name} renaît à 100% PV, transcendé "
                             f"(+100% attaque et défense) !"))
@@ -375,7 +429,7 @@ class PartyCombatService:
                 # Chaman : soin d'urgence (remplace l'attaque de ce tour).
                 if chaman_pending:
                     chaman_pending = False
-                    mob_hp = mob.max_hp
+                    mob_hp = mob_max_hp
                     turn_logs.append(snap(f"✨ {mob.name} canalise et se soigne à 100% PV !"))
                     continue
 
@@ -407,7 +461,7 @@ class PartyCombatService:
                         if not dodged and dmg > 0 and "lifesteal" in ab:
                             heal = round(dmg * ab["lifesteal"].get("pct", 0) / 100)
                             if heal > 0:
-                                mob_hp = min(mob.max_hp, mob_hp + heal)
+                                mob_hp = min(mob_max_hp, mob_hp + heal)
                         # Étourdissement (gobelin géant / banshee) — non cumulable
                         stunned_now = False
                         if not dodged and "stun" in ab and not target["stunned"]:
@@ -417,22 +471,53 @@ class PartyCombatService:
                         # Ralentissement (momie, mono-cible) — +1 stack de durée
                         if not dodged and not aoe and "slow" in ab:
                             target["slow"] += 1
+                        # Saignement (ogre) : +1 stack (10% des dégâts / tour, 3 tours, max 3).
+                        if not dodged and dmg > 0 and "bleed" in ab:
+                            bc = ab["bleed"]
+                            if len(target["bleeds"]) < bc.get("max_stacks", 3):
+                                target["bleeds"].append(
+                                    {"dmg": max(1, round(dmg * bc.get("pct", 10) / 100)),
+                                     "turns": bc.get("turns", 3)})
                         # Kill → recharge du bouclier (gobelin supérieur)
                         if target["hp"] <= 0 and ab.get("shield", {}).get("reset_on_kill"):
-                            mob_shield = mob.max_hp
+                            mob_shield = mob_max_hp
                         if dodged:
                             parts.append(f"{target['name']} esquive")
                         else:
                             tag = " CRIT" if mob_crit else ""
                             tag += " 💫" if stunned_now else ""
                             tag += " 🐌" if (not aoe and "slow" in ab) else ""
+                            tag += " 🩸" if "bleed" in ab else ""
                             tag += " 💀" if target["hp"] <= 0 else ""
                             parts.append(f"{target['name']} −{dmg}{tag}")
                     verb = "déchaîne une frappe de zone" if aoe else "frappe"
-                    heal_tag = " 🩸" if "lifesteal" in ab else ""
+                    heal_tag = " (vol de vie)" if "lifesteal" in ab else ""
                     turn_logs.append(snap(f"{mob.name} {verb}{heal_tag} : " + " · ".join(parts)))
                     if not _party_alive():
                         break
+
+                # Réaction en chaîne (gobelin ballon) : chaque salve peut se répliquer.
+                if "chain_replicate" in ab and _party_alive():
+                    chance = ab["chain_replicate"].get("chance", 20) / 100
+                    rep = 0
+                    while _party_alive() and random.random() < chance and rep < 15:
+                        rep += 1
+                        pool = _mob_targets()
+                        if not pool:
+                            break
+                        rtargets = pool if aoe else [random.choice(pool)]
+                        parts = []
+                        for target in rtargets:
+                            dmg, mob_crit, dodged = self._resolve_mob_hit(
+                                mob, target, contributions, title_bonuses_by_player,
+                                incoming_elemental_mult_by_player, mob_family,
+                                extra_multiplier=single_mult, attack_override=atk_now)
+                            parts.append(f"{target['name']} esquive" if dodged
+                                         else f"{target['name']} −{dmg}"
+                                         + (" 💀" if target["hp"] <= 0 else ""))
+                        turns += 1
+                        turn_logs.append(snap(f"💥 Réaction en chaîne (réplique {rep}) : "
+                                              + " · ".join(parts)))
 
                 if not _party_alive():
                     break
@@ -452,7 +537,7 @@ class PartyCombatService:
 
             # Auto-soin du boss — world boss.
             if boss_heal_per_turn > 0 and mob_hp > 0:
-                mob_hp = min(mob.max_hp, mob_hp + boss_heal_per_turn)
+                mob_hp = min(mob_max_hp, mob_hp + boss_heal_per_turn)
 
             if not acted:
                 continue
@@ -574,7 +659,7 @@ class PartyCombatService:
         return dmg, crit, False
 
     def _snapshot(self, turns, player_actions, mob_action, alive_party, mob, mob_hp,
-                  mob_shield: int = 0) -> PartyBattleTurnLog:
+                  mob_shield: int = 0, mob_max_hp: int | None = None) -> PartyBattleTurnLog:
         """Construit un PartyBattleTurnLog (état complet équipe + mob) pour un tour."""
         return PartyBattleTurnLog(
             turn_number=turns,
@@ -606,7 +691,7 @@ class PartyCombatService:
                 "name": mob.name,
                 "image_name": mob.image_name,
                 "current_hp": mob_hp,
-                "max_hp": mob.max_hp,
+                "max_hp": mob_max_hp if mob_max_hp is not None else mob.max_hp,
                 "shield": mob_shield,
                 "attack": mob.attack,
                 "defense": mob.defense,

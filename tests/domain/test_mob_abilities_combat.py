@@ -262,6 +262,53 @@ def test_chaman_heals_once_below_half():
     assert r.victory is True                         # soigné une fois puis vaincu
 
 
+def test_bleed_applies_damage_over_time():
+    svc = PartyCombatService()
+    mob = _mob(hp=100000, attack=50, speed=99)   # frappe souvent → pose des saignements
+    party = [_player(1, hp=100000, attack=1, speed=1)]
+    r = svc.fight_party_vs_mob(party=party, mob=mob,
+                               mob_abilities={"bleed": {"pct": 10, "turns": 3, "max_stacks": 3}},
+                               max_turns=40)
+    assert any("Saignement" in (log.mob_action or "") for log in r.turn_logs)
+    assert _contrib(r, 1).final_hp < 100000       # a perdu des PV (dont saignement)
+
+
+def test_chain_replicate_cascades():
+    svc = PartyCombatService()
+    mob = _mob(hp=100000, attack=1, speed=100)
+    party = [_player(1, hp=100000, attack=1, speed=1)]
+    # chance 100% → réplique jusqu'au plafond (15) en une salve.
+    r = svc.fight_party_vs_mob(party=party, mob=mob,
+                               mob_abilities={"aoe": {}, "chain_replicate": {"chance": 100}},
+                               max_turns=1)
+    reps = sum("Réaction en chaîne" in (log.mob_action or "") for log in r.turn_logs)
+    assert reps == 15
+
+
+def test_absorb_removes_weaker_players_and_buffs():
+    svc = PartyCombatService()
+    mob = _mob(hp=100, attack=10, defense=5, speed=5)
+    party = [
+        _player(1, hp=2000, attack=200, speed=50),   # le plus fort → reste
+        _player(2, hp=100, attack=10, speed=5),      # absorbé
+    ]
+    r = svc.fight_party_vs_mob(party=party, mob=mob,
+                               mob_abilities={"absorb": {"chance": 100, "stat_pct": 50}})
+    assert any("engloutit" in (log.mob_action or "") for log in r.turn_logs)
+    assert _contrib(r, 2).damage_dealt == 0          # P2 englouti → n'a pas combattu
+    assert _contrib(r, 1).damage_dealt > 0           # P1 seul au combat
+
+
+def test_absorb_never_triggers_solo():
+    svc = PartyCombatService()
+    mob = _mob(hp=100, attack=5, speed=5)
+    party = [_player(1, hp=5000, attack=100, speed=50)]
+    r = svc.fight_party_vs_mob(party=party, mob=mob,
+                               mob_abilities={"absorb": {"chance": 100, "stat_pct": 50}})
+    assert not any("engloutit" in (log.mob_action or "") for log in r.turn_logs)
+    assert r.victory is True                          # combat normal, seul
+
+
 def test_all_ability_configs_run_without_error():
     from app.domain.services.mob_ability_service import MOB_ABILITIES
     svc = PartyCombatService()

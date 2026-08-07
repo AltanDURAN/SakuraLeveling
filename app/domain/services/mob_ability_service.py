@@ -28,6 +28,9 @@ MOB_ABILITIES: dict[str, dict] = {
     "liche_maudite":     {"alternating": {"single_multiplier": 3}},
     "momie":             {"slow": {"pct": 50}},
     "gobelin_chaman":    {"heal_once_below": {"hp_pct": 50}},
+    "ogre_demoniaque":   {"bleed": {"pct": 10, "turns": 3, "max_stacks": 3}},
+    "gobelin_ballon":    {"aoe": {}, "chain_replicate": {"chance": 20}},
+    "slime":             {"absorb": {"chance": 10, "stat_pct": 50}},
 }
 
 # Résumé lisible (bestiaire / badges admin).
@@ -46,6 +49,9 @@ MOB_ABILITY_SUMMARY: dict[str, str] = {
     "liche_maudite":     "Sorts alternés : alterne zone et mono-cible ; l'attaque mono-cible fait ×3 dégâts.",
     "momie":             "Malédiction lente : ses coups ralentissent le joueur de 50% (non cumulable en %, cumulable en durée).",
     "gobelin_chaman":    "Incantation : la première fois qu'il passe sous 50% PV, il se soigne à 100% au tour suivant.",
+    "ogre_demoniaque":   "Saignement : ses coups font saigner (10% des dégâts par tour pendant 3 tours, cumulable jusqu'à 3 fois).",
+    "gobelin_ballon":    "Explosion en chaîne : frappe tous les joueurs et a 20% de se répliquer (en cascade, chaque réplique peut relancer).",
+    "slime":             "Absorption : 10% au début d'engloutir tous les joueurs sauf le plus fort, se renforçant de 50% de leurs statistiques.",
 }
 
 
