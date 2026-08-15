@@ -343,10 +343,16 @@ class EventCog(commands.Cog):
                 )
                 return
 
-            # Gagnant : on roule le loot et on l'attribue.
+            # Gagnant : on roule le loot, on le scale selon son niveau, on attribue.
             config = cfg.get_config("chest")
-            entries = ChestLootService().parse_entries(config.get("loot", []))
-            result = ChestLootService().roll(entries)
+            loot_service = ChestLootService()
+            entries = loot_service.parse_entries(config.get("loot", []))
+            result = loot_service.roll(entries)
+            result = loot_service.scale_for_level(
+                result,
+                profile.progression.level,
+                float(config.get("level_scaling_pct", 0)),
+            )
             reward_text = self._grant_chest_reward(session, profile.player.id, result)
             session.commit()
 

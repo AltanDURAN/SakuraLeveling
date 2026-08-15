@@ -147,6 +147,7 @@ async def events_update(
     # Params spécifiques
     if event_type == "chest":
         current["loot"] = _parse_loot(form)
+        current["level_scaling_pct"] = max(0, parse_int(form.get("level_scaling_pct"), 0))
     elif event_type == "little_girl":
         current["trap_probability"] = max(0, min(100, parse_int(form.get("trap_probability"), 50)))
         current["gold_loss_per_level"] = max(0, parse_int(form.get("gold_loss_per_level"), 10))

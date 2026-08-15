@@ -60,6 +60,29 @@ class ChestLootService:
             )
         return out
 
+    def scale_for_level(
+        self, result: ChestLootResult, player_level: int, level_scaling_pct: float
+    ) -> ChestLootResult:
+        """Fait grossir le gain selon le niveau du joueur : multiplicateur
+        `1 + niveau × pct/100`. Un joueur de plus haut niveau gagne plus.
+        pct=0 → aucun scaling."""
+        if result.is_nothing or level_scaling_pct <= 0:
+            return result
+        mult = 1.0 + max(0, player_level) * (level_scaling_pct / 100.0)
+        if mult <= 1.0:
+            return result
+        if result.kind == "gold":
+            return ChestLootResult(
+                kind="gold", gold_amount=max(1, round(result.gold_amount * mult))
+            )
+        if result.kind == "item":
+            return ChestLootResult(
+                kind="item",
+                item_code=result.item_code,
+                quantity=max(result.quantity, round(result.quantity * mult)),
+            )
+        return result
+
     def roll(
         self, entries: list[ChestLootEntry], rng: random.Random | None = None
     ) -> ChestLootResult:

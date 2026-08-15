@@ -59,6 +59,34 @@ def test_chest_item_without_code_resolves_nothing():
     assert svc.roll(entries, random.Random(0)).is_nothing
 
 
+def test_chest_scale_gold_by_level():
+    from app.domain.services.chest_loot_service import ChestLootResult
+    svc = ChestLootService()
+    base = ChestLootResult(kind="gold", gold_amount=100)
+    # niveau 50, 2%/niv → ×2
+    assert svc.scale_for_level(base, 50, 2).gold_amount == 200
+    # niveau 100 → ×3
+    assert svc.scale_for_level(base, 100, 2).gold_amount == 300
+    # pct 0 → inchangé
+    assert svc.scale_for_level(base, 100, 0).gold_amount == 100
+
+
+def test_chest_scale_item_quantity_floored_at_base():
+    from app.domain.services.chest_loot_service import ChestLootResult
+    svc = ChestLootService()
+    base = ChestLootResult(kind="item", item_code="diamant", quantity=1)
+    # niveau 100, 2% → ×3 → 3
+    assert svc.scale_for_level(base, 100, 2).quantity == 3
+    # niveau 1 → ~×1.02 → arrondi 1, jamais sous la base
+    assert svc.scale_for_level(base, 1, 2).quantity == 1
+
+
+def test_chest_scale_nothing_stays_nothing():
+    from app.domain.services.chest_loot_service import ChestLootResult
+    svc = ChestLootService()
+    assert svc.scale_for_level(ChestLootResult(kind="nothing"), 100, 5).is_nothing
+
+
 # ---------- StatusEffectService ----------
 
 def test_status_aggregate_multiplicative():
