@@ -126,6 +126,7 @@ git checkout main
 | `/admin reset_player @target` | `admin_cog` | **Admin uniquement** — réinitialise tout sauf l'identité Discord |
 | `/admin spawn_encounter [mob_code]` | `admin_cog` | **Admin uniquement** — spawn immédiat d'un encounter (random ou mob spécifique) |
 | `/admin end_encounter` | `admin_cog` | **Admin uniquement** — annule l'encounter actif |
+| `/event spawn <type>` | `event_cog` | **Admin uniquement** — spawn immédiat d'un événement non-combat (coffre / petite fille / forge sacrée) |
 | `/admin shop_add`, `/admin shop_set`, `/admin shop_remove`, `/admin shop_set_stock` | `admin_cog` | **Admin uniquement** — gestion du shop (autocomplete sur item_code) |
 | (webapp) `/admin` | webapp | **Admin uniquement** — interface web pour CRUD items/mobs (OAuth Discord, port 8001). Voir section Skill Tree pour détails. |
 | `/shop`, `/buy <item> <qty>` | `shop_cog` | Shop joueur paginé par catégorie — **achat uniquement** (prix fixe). Pas de vente (V2). Les drops de mob ne sont PAS en boutique. |
@@ -149,20 +150,23 @@ git checkout main
 - **Targeting** : les commandes consultatives acceptent `target: discord.Member | None`. Quand `target=None` → auto-create du profil de l'auteur. Quand `target` est spécifié → lookup pur, message d'erreur si profil inexistant. Helper : `PlayerCog._resolve_profile`.
 - Le cog `AdminCog` n'a **pas** de restriction de canal (`interaction_check`) — admin peut agir depuis n'importe où.
 
-## Pattern `interaction_check` par cog
+## Restriction de canal : `BetaChannelOnlyMixin`
 
-Convention : la restriction au canal beta est **par cog** via `interaction_check`. Les cogs joueurs la posent ; les cogs spéciaux s'en passent et gatent au niveau de chaque commande.
+Convention : la restriction aux salons autorisés (`settings.command_channel_ids`) se fait par **héritage du mixin partagé** [`BetaChannelOnlyMixin`](app/bot/cogs/_mixins.py) — PAS en recopiant `interaction_check` dans chaque cog (c'était le cas avant, 11 copies).
 
-| Cog | `interaction_check` ? | Stratégie additionnelle |
+```python
+class MyCog(BetaChannelOnlyMixin, commands.Cog):   # ordre important
+```
+
+| Cog | Restreint ? | Stratégie |
 |---|---|---|
-| `player_cog` | ✅ canal beta | — (toutes les commandes joueur) |
-| `encounter_cog` | n/a (boucle, pas de slash) | — |
-| `leaderboard_cog` | ❌ accessible partout | Lecture publique, pas de restriction |
-| `shop_cog` | ✅ canal beta | — |
-| `skill_cog` | ✅ canal beta | Boutons grisés si viewer ≠ owner |
-| `admin_cog` | ❌ accessible partout | `@admin_only` sur chaque commande |
+| `player_cog`, `shop_cog`, `skill_cog`, `title_cog`, `trade_cog`, `brocante_cog`, `competences_cog`, `panoplie_cog`, `bestiaire_cog`, `chad_cog`, `daily_quest_cog`, `weekly_quest_cog`, `onboarding_cog` | ✅ mixin | Commandes joueur |
+| `leaderboard_cog`, `help_cog` | ❌ | Lecture publique |
+| `admin_cog` | ❌ | `@admin_only` sur chaque commande |
+| `world_boss_cog`, `event_cog` | ❌ | Groupe dédié (`/boss`, `/event`) + `@admin_only` sur les commandes admin |
+| `encounter_cog` | n/a | Boucle de spawn, aucune slash command |
 
-Pour un nouveau cog : si les commandes restent dans le canal beta → poser `interaction_check`. Si admin / lecture publique → s'en passer et utiliser des décorateurs au niveau commande.
+Pour un nouveau cog : commandes joueur → hériter du mixin. Admin → groupe dédié + `@admin_only`. Lecture publique → rien.
 
 ## Helpers partagés
 

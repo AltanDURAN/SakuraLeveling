@@ -1,7 +1,11 @@
+import logging
 from pathlib import Path
+
 import discord
 
 from app.shared.paths import ASSETS_DIR
+
+_logger = logging.getLogger(__name__)
 
 
 def build_encounter_embed(
@@ -18,6 +22,6 @@ def build_encounter_embed(
             file = discord.File(image_path, filename=filename)
             embed.set_image(url=f"attachment://{filename}")
         else:
-            print(f"[WARN] Image not found: {image_path}")
+            _logger.warning("Image d'encounter introuvable : %s", image_path)
 
     return embed, file

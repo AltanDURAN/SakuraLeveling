@@ -69,6 +69,13 @@ async def dashboard(
     zones_count = len(farm_zone_loader.list_zones())
     competences_count = len(element_skill_loader.all_skills())
 
+    # Événements non-combat activés (coffre / petite fille / forge sacrée).
+    from app.infrastructure.events import event_config_loader
+    event_config_loader.clear_cache()
+    events_count = sum(
+        1 for t in event_config_loader.EVENT_TYPES if event_config_loader.is_enabled(t)
+    )
+
     return get_templates().TemplateResponse(
         request, "admin/dashboard.html",
         context={
@@ -87,5 +94,6 @@ async def dashboard(
             "zones_count": zones_count,
             "families_count": families_count,
             "competences_count": competences_count,
+            "events_count": events_count,
         },
     )

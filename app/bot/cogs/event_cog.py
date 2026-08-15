@@ -25,6 +25,7 @@ from discord import app_commands
 from discord.ext import commands, tasks
 
 from app.application.services.player_stats_resolver import resolve_player_stats
+from app.bot.checks.admin_check import admin_only
 from app.domain.services.chest_loot_service import ChestLootService
 from app.domain.services.forge_service import ForgeService
 from app.domain.services.health_regeneration_service import HealthRegenerationService
@@ -191,6 +192,10 @@ class ForgeSelectView(discord.ui.View):
 
 
 class EventCog(commands.Cog):
+    event = app_commands.Group(
+        name="event", description="Événements non-combat (admin)"
+    )
+
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.bot.add_view(ChestView(self))
@@ -776,10 +781,13 @@ class EventCog(commands.Cog):
         except Exception:  # noqa: BLE001
             _logger.exception("sacred forge close edit failed")
 
-    # ---------------- commande admin de test ----------------
+    # ---------------- commandes admin ----------------
+    # Groupe dédié `/event ...` — même pattern que `/boss ...` (world boss) :
+    # un cog de feature expose ses commandes admin via son propre groupe +
+    # le décorateur @admin_only (au lieu d'un check manuel en début de corps).
 
-    @app_commands.command(
-        name="spawn_event",
+    @event.command(
+        name="spawn",
         description="[Admin] Fait spawn immédiatement un événement.",
     )
     @app_commands.describe(event_type="Type d'événement à faire apparaître")
@@ -790,16 +798,10 @@ class EventCog(commands.Cog):
             app_commands.Choice(name="La forge sacrée", value="sacred_forge"),
         ]
     )
-    async def spawn_event_cmd(
+    @admin_only
+    async def event_spawn(
         self, interaction: discord.Interaction, event_type: app_commands.Choice[str]
     ) -> None:
-        from app.bot.checks.admin_check import is_admin_user
-
-        if not is_admin_user(interaction.user.id):
-            await interaction.response.send_message(
-                "Réservé aux admins.", ephemeral=True
-            )
-            return
         await interaction.response.defer(ephemeral=True)
         msg = await self.spawn_event(event_type.value)
         if msg is None:

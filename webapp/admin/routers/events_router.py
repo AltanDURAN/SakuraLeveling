@@ -29,7 +29,8 @@ _TYPE_LABELS = {
     "little_girl": "La petite fille",
     "sacred_forge": "La forge sacrée",
 }
-_IMPLEMENTED = {"chest"}
+# Types réellement câblés côté bot (Lots 1/2/3 livrés → les 3 le sont).
+_IMPLEMENTED = {"chest", "little_girl", "sacred_forge"}
 
 
 def _summary(event_type: str, config: dict) -> str:
