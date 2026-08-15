@@ -43,6 +43,12 @@ from app.infrastructure.db.models.weekly_quest_model import WeeklyQuestAssignmen
 from app.infrastructure.db.models.daily_quest_model import DailyQuestAssignmentModel
 from app.infrastructure.db.models.marketplace_listing_model import MarketplaceListingModel
 from app.infrastructure.db.models.help_subscriber_model import HelpSubscriberModel
+from app.infrastructure.db.models.player_status_effect_model import PlayerStatusEffectModel  # noqa: F401
+from app.infrastructure.db.models.event_model import (  # noqa: F401
+    ActiveEventModel,
+    EventParticipationModel,
+    EventSchedulerStateModel,
+)
 
 
 config = context.config

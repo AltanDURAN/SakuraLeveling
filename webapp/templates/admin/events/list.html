@@ -1,0 +1,60 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Événements — Sakura Admin{% endblock %}
+
+{% block content %}
+<section class="list-page">
+    <header class="list-header">
+        <div>
+            <a href="/admin" class="breadcrumb">← Dashboard</a>
+            <h1>🎲 Événements <span class="count-pill">{{ rows|length }}</span></h1>
+        </div>
+    </header>
+
+    <p style="color: var(--muted); margin: 0 0 1rem;">
+        Événements non-combat qui spawnent aléatoirement dans le salon général.
+        Chaque type a sa cadence (X fois par Y jours) ; au moins 1h sépare deux
+        spawns. ⚠️ Un changement de config nécessite un <strong>redémarrage du
+        bot</strong>.
+    </p>
+
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Événement</th>
+                    <th>État</th>
+                    <th>Cadence / résumé</th>
+                    <th>Image</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in rows %}
+                <tr>
+                    <td>
+                        <strong>{{ r.label }}</strong>
+                        {% if not r.implemented %}
+                            <span class="count-pill" title="Sera activable dans un prochain lot">à venir</span>
+                        {% endif %}
+                        <br><code style="color:var(--muted);">{{ r.type }}</code>
+                    </td>
+                    <td>
+                        {% if r.enabled %}
+                            <span class="count-pill" style="background: var(--success, #2e7d32); color: white;">Activé</span>
+                        {% else %}
+                            <span class="count-pill">Désactivé</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ r.summary }}</td>
+                    <td>{{ r.image or "—" }}</td>
+                    <td style="white-space:nowrap;">
+                        <a href="/admin/events/{{ r.type }}/edit" class="btn btn-small">Éditer</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
