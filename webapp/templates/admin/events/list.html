@@ -8,14 +8,17 @@
         <div>
             <a href="/admin" class="breadcrumb">← Dashboard</a>
             <h1>🎲 Événements <span class="count-pill">{{ rows|length }}</span></h1>
+            <p class="form-section-help" style="margin: 0;">
+                Définitions : <code>app/infrastructure/content/events.json</code>
+                — ⚠️ restart bot requis après modification.
+            </p>
         </div>
     </header>
 
-    <p style="color: var(--muted); margin: 0 0 1rem;">
+    <p class="field-hint" style="margin: 0 0 1rem;">
         Événements non-combat qui spawnent aléatoirement dans le salon général.
-        Chaque type a sa cadence (X fois par Y jours) ; au moins 1h sépare deux
-        spawns. ⚠️ Un changement de config nécessite un <strong>redémarrage du
-        bot</strong>.
+        Chaque type a sa cadence (X fois par Y jours) ; au moins <strong>1 h</strong>
+        sépare deux spawns, tous types confondus.
     </p>
 
     <div class="table-wrapper">

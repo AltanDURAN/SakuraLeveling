@@ -600,6 +600,16 @@ code {
     font-size: 0.78rem;
 }
 
+/* Aide sous un champ ou une section : texte discret, même échelle que les
+   libellés. Standardise les explications qui étaient jusqu'ici écrites en
+   styles inline divergents d'une page à l'autre. */
+.field-hint {
+    color: var(--muted);
+    font-size: 0.8rem;
+    line-height: 1.45;
+    margin: 0.1rem 0 0;
+}
+
 .field-checkbox {
     flex-direction: row;
     align-items: center;

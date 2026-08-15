@@ -4,7 +4,10 @@
 
 {% block content %}
 <section class="form-page">
-    <a href="/admin/players" class="breadcrumb">← Joueurs</a>
+    {# Cohérence avec les 8 pages sœurs (inventaire, équipement, titres…) :
+       on revient à la FICHE du joueur, pas à la liste — l'enregistrement y
+       redirige déjà. #}
+    <a href="/admin/players/{{ profile.player.id }}/view" class="breadcrumb">← Retour à la fiche</a>
     <h1>Éditer <code>{{ profile.player.display_name }}</code> <span style="color: var(--text-faint); font-size: 0.7em;">(Discord {{ profile.player.discord_id }})</span></h1>
     <p class="form-section-help">
         Modifie directement la DB. Le bot Discord verra les changements à la
@@ -45,7 +48,7 @@
         </div>
 
         <div class="form-actions">
-            <a href="/admin/players" class="btn btn-ghost">Annuler</a>
+            <a href="/admin/players/{{ profile.player.id }}/view" class="btn btn-ghost">Annuler</a>
             <button type="submit" class="btn btn-primary">Enregistrer</button>
         </div>
     </form>

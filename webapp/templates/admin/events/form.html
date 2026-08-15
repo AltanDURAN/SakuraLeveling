@@ -4,126 +4,174 @@
 
 {% block content %}
 <section class="form-page">
-    <header class="list-header">
-        <div>
-            <a href="/admin/events" class="breadcrumb">← Événements</a>
-            <h1>🎲 {{ label }}</h1>
-        </div>
-    </header>
+    <a href="/admin/events" class="breadcrumb">← Événements</a>
+    <h1>🎲 {{ label }} <code>{{ event_type }}</code></h1>
+    <div class="form-section-help" style="background: #fff5d5; padding: 0.8rem 1.2rem; border-radius: 8px;">
+        ⚠️ Modifie <code>events.json</code>. Restart du bot requis.
+    </div>
 
-    {% if not implemented %}
-    <p style="color: var(--muted);">
-        ⚠️ Ce type n'est pas encore actif côté bot — la configuration est
-        conservée mais ne déclenchera rien tant que son lot n'est pas livré.
-    </p>
-    {% endif %}
+    <script>window.__lootRows = {{ (config.loot or [])|tojson }};</script>
 
-    <script>
-      window.__lootRows = {{ (config.loot or [])|tojson }};
-    </script>
+    <form method="post" action="/admin/events/{{ event_type }}"
+          enctype="multipart/form-data" class="form-grid">
 
-    <form method="post" action="/admin/events/{{ event_type }}" enctype="multipart/form-data" class="admin-form">
-        <fieldset>
-            <legend>Général</legend>
-            <label class="checkbox-row">
+        <div class="form-section">
+            <h2 class="form-section-title">Général</h2>
+            <label class="field" style="flex-direction:row; align-items:center; gap:8px;">
                 <input type="checkbox" name="enabled" {% if config.enabled %}checked{% endif %}>
-                Activé (spawn automatique)
+                <span class="field-label" style="margin:0;">Activé — l'événement peut spawner automatiquement</span>
             </label>
             <div class="form-row">
-                <label>Cadence — nombre
-                    <input type="number" name="cadence_times" min="0" value="{{ config.cadence.times }}">
+                <label class="field">
+                    <span class="field-label">Cadence — nombre de fois</span>
+                    <input type="number" name="cadence_times" class="input" min="0"
+                           value="{{ config.cadence.times }}">
                 </label>
-                <label>… par (jours)
-                    <input type="number" name="cadence_per_days" min="1" value="{{ config.cadence.per_days }}">
+                <label class="field">
+                    <span class="field-label">… par (jours)</span>
+                    <input type="number" name="cadence_per_days" class="input" min="1"
+                           value="{{ config.cadence.per_days }}">
                 </label>
             </div>
-            <p style="color:var(--muted); font-size:.85rem;">
-                Ex : 1 fois / 1 jour ≈ un spawn par jour. 1 fois / 3 jours = un tous les 3 jours.
+            <p class="field-hint">
+                Ex : 1 fois / 1 jour ≈ un spawn par jour · 1 fois / 3 jours = un tous les 3 jours.
+                Au moins <strong>1 h</strong> sépare toujours deux événements, tous types confondus.
             </p>
-            <label>Image (assets/events/)
-                <input type="file" name="image_file" accept="image/*">
-            </label>
-            <div style="display:flex; align-items:center; gap:.75rem; margin-top:.4rem;">
+        </div>
+
+        <div class="form-section">
+            <h2 class="form-section-title">Image</h2>
+            <div class="form-row" style="align-items:center;">
                 {% if config.image %}
                 <img src="/assets/events/{{ config.image }}" alt="{{ label }}"
-                     style="width:96px; height:96px; object-fit:contain; border-radius:8px; background:rgba(0,0,0,.04);"
+                     style="width:110px; height:110px; object-fit:contain; border-radius:10px; background:rgba(0,0,0,.04);"
                      onerror="this.style.display='none'">
                 {% endif %}
-                <p style="color:var(--muted); font-size:.85rem; margin:0;">
-                    Actuelle : <code>{{ config.image or "aucune" }}</code>
-                </p>
+                <label class="field">
+                    <span class="field-label">Remplacer l'image (assets/events/)</span>
+                    <input type="file" name="image_file" class="input" accept="image/*">
+                    <span class="field-hint">Actuelle : <code>{{ config.image or "aucune" }}</code></span>
+                </label>
             </div>
-        </fieldset>
+        </div>
 
         {% if event_type == "chest" %}
-        <fieldset x-data="{ rows: window.__lootRows.length ? window.__lootRows : [{kind:'gold',gold_amount:100,weight:10}] }">
-            <legend>Table de loot (tirage pondéré unique)</legend>
-            <p style="color:var(--muted); font-size:.85rem;">
-                Le premier qui ouvre gagne UNE récompense, tirée selon les poids.
-                <em>kind</em> = <code>item</code> (code + quantité), <code>gold</code> (montant) ou <code>nothing</code> (coffre vide).
+        <div class="form-section"
+             x-data="{ rows: window.__lootRows.length ? window.__lootRows : [{kind:'gold',gold_amount:100,weight:10}] }">
+            <h2 class="form-section-title">Table de loot</h2>
+            <p class="field-hint">
+                Le premier joueur qui ouvre le coffre gagne <strong>une seule</strong> récompense,
+                tirée au sort selon les poids (un poids 2× plus grand = 2× plus probable).
+                <code>item</code> = code + quantité · <code>gold</code> = montant d'or ·
+                <code>nothing</code> = coffre vide.
             </p>
             <table class="data-table">
-                <thead><tr><th>Type</th><th>Code item</th><th>Quantité</th><th>Or</th><th>Poids</th><th></th></tr></thead>
+                <thead>
+                    <tr><th>Type</th><th>Code item</th><th>Quantité</th><th>Or</th><th>Poids</th><th></th></tr>
+                </thead>
                 <tbody>
                     <template x-for="(row, i) in rows" :key="i">
                         <tr>
                             <td>
-                                <select name="loot_kind" x-model="row.kind">
+                                <select name="loot_kind" class="input" x-model="row.kind">
                                     <option value="gold">gold</option>
                                     <option value="item">item</option>
                                     <option value="nothing">nothing</option>
                                 </select>
                             </td>
-                            <td><input type="text" name="loot_item_code" x-model="row.item_code" :disabled="row.kind!=='item'" placeholder="ex: potion_soin"></td>
-                            <td><input type="number" name="loot_quantity" x-model="row.quantity" :disabled="row.kind!=='item'" min="1" style="width:5rem;"></td>
-                            <td><input type="number" name="loot_gold" x-model="row.gold_amount" :disabled="row.kind!=='gold'" min="1" style="width:6rem;"></td>
-                            <td><input type="number" name="loot_weight" x-model="row.weight" min="1" style="width:5rem;"></td>
-                            <td><button type="button" class="btn btn-small" style="background:var(--danger);color:#fff;" @click="rows.splice(i,1)">✕</button></td>
+                            <td><input type="text" name="loot_item_code" class="input" x-model="row.item_code"
+                                       :disabled="row.kind!=='item'" placeholder="ex : potion_soin"></td>
+                            <td><input type="number" name="loot_quantity" class="input" x-model="row.quantity"
+                                       :disabled="row.kind!=='item'" min="1" style="width:6rem;"></td>
+                            <td><input type="number" name="loot_gold" class="input" x-model="row.gold_amount"
+                                       :disabled="row.kind!=='gold'" min="1" style="width:7rem;"></td>
+                            <td><input type="number" name="loot_weight" class="input" x-model="row.weight"
+                                       min="1" style="width:6rem;"></td>
+                            <td><button type="button" class="btn btn-small"
+                                        style="background:var(--danger); color:#fff;"
+                                        @click="rows.splice(i,1)">✕</button></td>
                         </tr>
                     </template>
                 </tbody>
             </table>
-            <button type="button" class="btn btn-small" @click="rows.push({kind:'gold',gold_amount:100,weight:10})">+ Ligne</button>
-            <div class="form-row" style="margin-top:1rem;">
-                <label>Scaling par niveau (%)
-                    <input type="number" name="level_scaling_pct" min="0" value="{{ config.level_scaling_pct }}"></label>
+            <div>
+                <button type="button" class="btn btn-small"
+                        @click="rows.push({kind:'gold',gold_amount:100,weight:10})">+ Ligne</button>
             </div>
-            <p style="color:var(--muted); font-size:.85rem;">
-                Le gain (or & quantités d'items) est multiplié par <code>1 + niveau × %/100</code>
-                selon le niveau du gagnant. <code>0</code> = pas de scaling ; <code>2</code> → niveau 50 = ×2, niveau 100 = ×3.
-            </p>
-        </fieldset>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Scaling par niveau (%)</span>
+                    <input type="number" name="level_scaling_pct" class="input" min="0"
+                           value="{{ config.level_scaling_pct }}">
+                    <span class="field-hint">
+                        Gain × <code>(1 + niveau × %/100)</code> selon le niveau du gagnant.
+                        <code>0</code> = pas de scaling · <code>2</code> → niveau 50 = ×2, niveau 100 = ×3.
+                    </span>
+                </label>
+            </div>
+        </div>
+
         {% elif event_type == "little_girl" %}
-        <fieldset>
-            <legend>Paramètres — La petite fille</legend>
+        <div class="form-section">
+            <h2 class="form-section-title">Résolution</h2>
             <div class="form-row">
-                <label>Proba piège (%)
-                    <input type="number" name="trap_probability" min="0" max="100" value="{{ config.trap_probability }}"></label>
-                <label>Or perdu / niveau
-                    <input type="number" name="gold_loss_per_level" min="0" value="{{ config.gold_loss_per_level }}"></label>
+                <label class="field">
+                    <span class="field-label">Probabilité que ce soit un piège (%)</span>
+                    <input type="number" name="trap_probability" class="input" min="0" max="100"
+                           value="{{ config.trap_probability }}">
+                </label>
+                <label class="field">
+                    <span class="field-label">Résolution après (minutes)</span>
+                    <input type="number" name="resolve_after_minutes" class="input" min="1"
+                           value="{{ config.resolve_after_minutes }}">
+                </label>
             </div>
+            <p class="field-hint">
+                Aider + vraie petite fille → buff 3 h · Aider + piège → perte d'or et moitié des PV ·
+                Ignorer + vraie → debuff 3 h · Ignorer + piège → chance d'obtenir le titre.
+            </p>
+        </div>
+        <div class="form-section">
+            <h2 class="form-section-title">Conséquences</h2>
             <div class="form-row">
-                <label>Chance titre (%)
-                    <input type="number" name="title_chance" min="0" max="100" value="{{ config.title_chance }}"></label>
-                <label>Résolution après (min)
-                    <input type="number" name="resolve_after_minutes" min="1" value="{{ config.resolve_after_minutes }}"></label>
+                <label class="field">
+                    <span class="field-label">Or perdu par niveau</span>
+                    <input type="number" name="gold_loss_per_level" class="input" min="0"
+                           value="{{ config.gold_loss_per_level }}">
+                    <span class="field-hint">Perte = ce montant × le niveau du joueur.</span>
+                </label>
+                <label class="field">
+                    <span class="field-label">Chance d'obtenir le titre (%)</span>
+                    <input type="number" name="title_chance" class="input" min="0" max="100"
+                           value="{{ config.title_chance }}">
+                    <span class="field-hint">« Ma survie avant tout » — sinon un buff à la place.</span>
+                </label>
             </div>
-        </fieldset>
+        </div>
+
         {% elif event_type == "sacred_forge" %}
-        <fieldset>
-            <legend>Paramètres — La forge sacrée</legend>
+        <div class="form-section">
+            <h2 class="form-section-title">Forge</h2>
             <div class="form-row">
-                <label>Niveau max
-                    <input type="number" name="max_level" min="1" value="{{ config.max_level }}"></label>
-                <label>Fenêtre (min)
-                    <input type="number" name="window_minutes" min="1" value="{{ config.window_minutes }}"></label>
+                <label class="field">
+                    <span class="field-label">Niveau maximum d'un équipement</span>
+                    <input type="number" name="max_level" class="input" min="1"
+                           value="{{ config.max_level }}">
+                    <span class="field-hint">Chaque niveau ajoute une fois les stats de base de la pièce.</span>
+                </label>
+                <label class="field">
+                    <span class="field-label">Fenêtre d'utilisation (minutes)</span>
+                    <input type="number" name="window_minutes" class="input" min="1"
+                           value="{{ config.window_minutes }}">
+                    <span class="field-hint">Chaque joueur ne peut forger qu'une seule pièce.</span>
+                </label>
             </div>
-        </fieldset>
+        </div>
         {% endif %}
 
         <div class="form-actions">
+            <a href="/admin/events" class="btn btn-ghost">Annuler</a>
             <button type="submit" class="btn btn-primary">Enregistrer</button>
-            <a href="/admin/events" class="btn">Annuler</a>
         </div>
     </form>
 </section>
