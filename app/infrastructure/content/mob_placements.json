@@ -474,7 +474,7 @@
     "ange_dechu": {
       "terre": {
         "scale": 0.6,
-        "offset_x": 0.03,
+        "offset_x": 0.01,
         "offset_y": -0.07,
         "shadow": true
       },
