@@ -136,6 +136,8 @@ def _item_card_state(item) -> dict:
         "max_stack": item.max_stack, "sell_price": item.sell_price or 0,
         "buy_price": item.buy_price, "stats": dict(item.stat_bonuses or {}),
         "icon": item.icon or "",
+        "gen_prompt": image_gen.build_item_prompt(
+            item.code, item.name, item.category, item.rarity),
     }
 
 
@@ -305,7 +307,7 @@ async def items_generate_image(code: str, request: Request,
     except Exception:
         payload = {}
     prompt = str(payload.get("prompt", "")).strip() or image_gen.build_item_prompt(
-        item.name, item.category, item.rarity)
+        item.code, item.name, item.category, item.rarity)
     try:
         png = image_gen.generate_image(prompt)
     except image_gen.ImageGenError as exc:
