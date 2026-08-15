@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     # avec les .env existants qui n'ont pas encore l'ID. Si 0/None, fallback
     # vers encounter_channel_id (les bosses sortent dans le même canal).
     boss_channel_id: int = 0
+    # Channel des événements non-combat (coffre, petite fille, forge sacrée).
+    # Défaut = salon général. Override possible via EVENT_CHANNEL_ID dans .env.
+    event_channel_id: int = 1485329709201096796
     # Serveur Discord principal (pour la gestion des rôles via l'admin web).
     # 0 = feature de gestion de rôles désactivée.
     discord_guild_id: int = 0

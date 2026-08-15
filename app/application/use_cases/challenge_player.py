@@ -260,6 +260,10 @@ class ChallengePlayerUseCase:
         skill_bonuses = skill_service.aggregate_bonuses(allocations)
         title_bonuses = resolve_title_bonuses(session, profile.player.id)
         set_bonuses = resolve_set_bonuses(equipped_items)
+        from app.application.services.status_effect_resolver import (
+            resolve_status_effects,
+        )
+        status_bonuses = resolve_status_effects(session, profile.player.id)
         return self.stats_service.calculate_player_stats(
             profile=profile,
             equipped_items=equipped_items,
@@ -267,4 +271,5 @@ class ChallengePlayerUseCase:
             skill_bonuses=skill_bonuses,
             title_bonuses=title_bonuses,
             set_bonuses=set_bonuses,
+            status_bonuses=status_bonuses,
         )

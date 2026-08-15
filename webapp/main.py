@@ -54,6 +54,7 @@ from webapp.admin.routers.zones_router import router as admin_zones_router
 from webapp.admin.routers.scenes_router import router as admin_scenes_router
 from webapp.admin.routers.families_router import router as admin_families_router
 from webapp.admin.routers.skills_element_router import router as admin_competences_router
+from webapp.admin.routers.events_router import router as admin_events_router
 
 
 WEBAPP_DIR = Path(__file__).resolve().parent
@@ -102,6 +103,7 @@ app.include_router(admin_shop_router)
 app.include_router(admin_players_router)
 app.include_router(admin_roles_router)
 app.include_router(admin_actions_router)
+app.include_router(admin_events_router)
 app.include_router(admin_content_router)
 app.include_router(admin_dashboard_router)
 

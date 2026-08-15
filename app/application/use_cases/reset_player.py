@@ -32,6 +32,10 @@ from app.infrastructure.db.models.progression_model import PlayerProgressionMode
 from app.infrastructure.db.models.quest_model import PlayerQuestStateModel
 from app.infrastructure.db.models.resource_model import PlayerResourceModel
 from app.infrastructure.db.models.trade_model import TradeItemModel, TradeModel
+from app.infrastructure.db.models.player_status_effect_model import (
+    PlayerStatusEffectModel,
+)
+from app.infrastructure.db.models.event_model import EventParticipationModel
 
 
 class ResetPlayerUseCase:
@@ -103,6 +107,8 @@ class ResetPlayerUseCase:
             WeeklyQuestAssignmentModel,
             DailyQuestAssignmentModel,
             HelpSubscriberModel,
+            PlayerStatusEffectModel,
+            EventParticipationModel,
         ):
             session.execute(delete(model_cls).where(model_cls.player_id == player_id))
 

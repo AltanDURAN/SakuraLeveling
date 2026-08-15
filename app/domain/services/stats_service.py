@@ -5,6 +5,7 @@ from app.domain.services.set_bonus_service import SetBonuses
 from app.domain.services.title_bonus_service import TitleBonuses
 from app.domain.value_objects.skill_bonuses import SkillBonuses
 from app.domain.value_objects.stats import Stats
+from app.domain.value_objects.status_effect_bonuses import StatusEffectBonuses
 
 
 class StatsService:
@@ -16,6 +17,7 @@ class StatsService:
         skill_bonuses: SkillBonuses | None = None,
         title_bonuses: TitleBonuses | None = None,
         set_bonuses: SetBonuses | None = None,
+        status_bonuses: StatusEffectBonuses | None = None,
     ) -> Stats:
         # V2 : AUCUNE stat gagnée au level-up. Les stats de base sont
         # CONSTANTES (valeurs de départ niveau 1) — toute la croissance vient
@@ -153,5 +155,11 @@ class StatsService:
             mana_max=max(0, stats.mana_max),
             mana_regeneration=max(0, stats.mana_regeneration),
         )
+
+        # 8e étage : effets temporaires (buff/debuff événements). Multiplicateur
+        # global sur toutes les stats positives, appliqué APRÈS le clamp final —
+        # un buff peut donc pousser au-delà des caps, un debuff réduit tout.
+        if status_bonuses is not None:
+            stats = status_bonuses.apply_to_stats(stats)
 
         return stats

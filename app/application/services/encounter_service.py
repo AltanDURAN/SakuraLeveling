@@ -3,6 +3,7 @@ from datetime import datetime, UTC
 from app.application.services.encounter_participant import EncounterParticipant
 from app.application.services.exclusive_title_service import ExclusiveTitleService
 from app.application.services.set_bonus_resolver import resolve_set_bonuses
+from app.application.services.status_effect_resolver import resolve_status_effects
 from app.application.services.title_bonus_resolver import resolve_title_bonuses
 from app.application.services.title_unlock_service import TitleUnlockService
 from app.application.use_cases.daily_quests import DailyQuestProgressService
@@ -121,6 +122,7 @@ class EncounterService:
 
             title_bonuses = resolve_title_bonuses(session, profile.player.id)
             set_bonuses = resolve_set_bonuses(equipped_items)
+            status_bonuses = resolve_status_effects(session, profile.player.id)
 
             stats = StatsService().calculate_player_stats(
                 profile=profile,
@@ -129,6 +131,7 @@ class EncounterService:
                 skill_bonuses=skill_bonuses,
                 title_bonuses=title_bonuses,
                 set_bonuses=set_bonuses,
+                status_bonuses=status_bonuses,
             )
 
         regenerated_current_hp = self.get_regenerated_player_hp(
@@ -205,6 +208,7 @@ class EncounterService:
                 title_bonuses_by_player[participant.player_id] = title_bonuses
 
                 set_bonuses = resolve_set_bonuses(equipped_items)
+                status_bonuses = resolve_status_effects(session, participant.player_id)
 
                 stats = StatsService().calculate_player_stats(
                     profile=profile,
@@ -213,6 +217,7 @@ class EncounterService:
                     skill_bonuses=skill_bonuses,
                     title_bonuses=title_bonuses,
                     set_bonuses=set_bonuses,
+                    status_bonuses=status_bonuses,
                 )
 
                 # Multiplicateurs élémentaires (si le mob a un élément).

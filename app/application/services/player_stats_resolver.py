@@ -15,6 +15,7 @@ from __future__ import annotations
 from sqlalchemy.orm import Session
 
 from app.application.services.set_bonus_resolver import resolve_set_bonuses
+from app.application.services.status_effect_resolver import resolve_status_effects
 from app.application.services.title_bonus_resolver import resolve_title_bonuses
 from app.domain.entities.class_definition import ClassDefinition
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
@@ -54,6 +55,7 @@ def resolve_player_stats(
 
     title_bonuses = resolve_title_bonuses(session, player_id)
     set_bonuses = resolve_set_bonuses(equipped_items)
+    status_bonuses = resolve_status_effects(session, player_id)
 
     svc = stats_service or StatsService()
     return svc.calculate_player_stats(
@@ -63,4 +65,5 @@ def resolve_player_stats(
         skill_bonuses=skill_bonuses,
         set_bonuses=set_bonuses,
         title_bonuses=title_bonuses,
+        status_bonuses=status_bonuses,
     )

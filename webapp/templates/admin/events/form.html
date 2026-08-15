@@ -1,0 +1,113 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ label }} — Événements — Sakura Admin{% endblock %}
+
+{% block content %}
+<section class="form-page">
+    <header class="list-header">
+        <div>
+            <a href="/admin/events" class="breadcrumb">← Événements</a>
+            <h1>🎲 {{ label }}</h1>
+        </div>
+    </header>
+
+    {% if not implemented %}
+    <p style="color: var(--muted);">
+        ⚠️ Ce type n'est pas encore actif côté bot — la configuration est
+        conservée mais ne déclenchera rien tant que son lot n'est pas livré.
+    </p>
+    {% endif %}
+
+    <script>
+      window.__lootRows = {{ (config.loot or [])|tojson }};
+    </script>
+
+    <form method="post" action="/admin/events/{{ event_type }}" enctype="multipart/form-data" class="admin-form">
+        <fieldset>
+            <legend>Général</legend>
+            <label class="checkbox-row">
+                <input type="checkbox" name="enabled" {% if config.enabled %}checked{% endif %}>
+                Activé (spawn automatique)
+            </label>
+            <div class="form-row">
+                <label>Cadence — nombre
+                    <input type="number" name="cadence_times" min="0" value="{{ config.cadence.times }}">
+                </label>
+                <label>… par (jours)
+                    <input type="number" name="cadence_per_days" min="1" value="{{ config.cadence.per_days }}">
+                </label>
+            </div>
+            <p style="color:var(--muted); font-size:.85rem;">
+                Ex : 1 fois / 1 jour ≈ un spawn par jour. 1 fois / 3 jours = un tous les 3 jours.
+            </p>
+            <label>Image (assets/events/)
+                <input type="file" name="image_file" accept="image/*">
+            </label>
+            <p style="color:var(--muted); font-size:.85rem;">Actuelle : <code>{{ config.image or "aucune" }}</code></p>
+        </fieldset>
+
+        {% if event_type == "chest" %}
+        <fieldset x-data="{ rows: window.__lootRows.length ? window.__lootRows : [{kind:'gold',gold_amount:100,weight:10}] }">
+            <legend>Table de loot (tirage pondéré unique)</legend>
+            <p style="color:var(--muted); font-size:.85rem;">
+                Le premier qui ouvre gagne UNE récompense, tirée selon les poids.
+                <em>kind</em> = <code>item</code> (code + quantité), <code>gold</code> (montant) ou <code>nothing</code> (coffre vide).
+            </p>
+            <table class="data-table">
+                <thead><tr><th>Type</th><th>Code item</th><th>Quantité</th><th>Or</th><th>Poids</th><th></th></tr></thead>
+                <tbody>
+                    <template x-for="(row, i) in rows" :key="i">
+                        <tr>
+                            <td>
+                                <select name="loot_kind" x-model="row.kind">
+                                    <option value="gold">gold</option>
+                                    <option value="item">item</option>
+                                    <option value="nothing">nothing</option>
+                                </select>
+                            </td>
+                            <td><input type="text" name="loot_item_code" x-model="row.item_code" :disabled="row.kind!=='item'" placeholder="ex: potion_soin"></td>
+                            <td><input type="number" name="loot_quantity" x-model="row.quantity" :disabled="row.kind!=='item'" min="1" style="width:5rem;"></td>
+                            <td><input type="number" name="loot_gold" x-model="row.gold_amount" :disabled="row.kind!=='gold'" min="1" style="width:6rem;"></td>
+                            <td><input type="number" name="loot_weight" x-model="row.weight" min="1" style="width:5rem;"></td>
+                            <td><button type="button" class="btn btn-small" style="background:var(--danger);color:#fff;" @click="rows.splice(i,1)">✕</button></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+            <button type="button" class="btn btn-small" @click="rows.push({kind:'gold',gold_amount:100,weight:10})">+ Ligne</button>
+        </fieldset>
+        {% elif event_type == "little_girl" %}
+        <fieldset>
+            <legend>Paramètres — La petite fille</legend>
+            <div class="form-row">
+                <label>Proba piège (%)
+                    <input type="number" name="trap_probability" min="0" max="100" value="{{ config.trap_probability }}"></label>
+                <label>Or perdu / niveau
+                    <input type="number" name="gold_loss_per_level" min="0" value="{{ config.gold_loss_per_level }}"></label>
+            </div>
+            <div class="form-row">
+                <label>Chance titre (%)
+                    <input type="number" name="title_chance" min="0" max="100" value="{{ config.title_chance }}"></label>
+                <label>Résolution après (min)
+                    <input type="number" name="resolve_after_minutes" min="1" value="{{ config.resolve_after_minutes }}"></label>
+            </div>
+        </fieldset>
+        {% elif event_type == "sacred_forge" %}
+        <fieldset>
+            <legend>Paramètres — La forge sacrée</legend>
+            <div class="form-row">
+                <label>Niveau max
+                    <input type="number" name="max_level" min="1" value="{{ config.max_level }}"></label>
+                <label>Fenêtre (min)
+                    <input type="number" name="window_minutes" min="1" value="{{ config.window_minutes }}"></label>
+            </div>
+        </fieldset>
+        {% endif %}
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+            <a href="/admin/events" class="btn">Annuler</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

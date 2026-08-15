@@ -34,6 +34,7 @@ _COG_MODULES = [
     "app.bot.cogs.onboarding_cog",
     "app.bot.cogs.trade_cog",
     "app.bot.cogs.world_boss_cog",
+    "app.bot.cogs.event_cog",
     "app.bot.cogs.help_cog",
     "app.bot.cogs.title_cog",
     "app.bot.cogs.weekly_quest_cog",

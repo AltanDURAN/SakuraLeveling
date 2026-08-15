@@ -1,0 +1,37 @@
+{
+  "chest": {
+    "enabled": true,
+    "label": "Coffre au trésor",
+    "cadence": { "times": 1, "per_days": 1 },
+    "image": "chest.png",
+    "loot": [
+      { "kind": "gold", "gold_amount": 100, "weight": 45 },
+      { "kind": "item", "item_code": "potion_soin", "quantity": 3, "weight": 25 },
+      { "kind": "item", "item_code": "diamant", "quantity": 1, "weight": 8 },
+      { "kind": "gold", "gold_amount": 500, "weight": 12 },
+      { "kind": "nothing", "weight": 10 }
+    ]
+  },
+  "little_girl": {
+    "enabled": false,
+    "label": "La petite fille",
+    "cadence": { "times": 1, "per_days": 1 },
+    "image": "little_girl.png",
+    "trap_probability": 50,
+    "gold_loss_per_level": 10,
+    "buff_multiplier": 1.1,
+    "buff_duration_hours": 3,
+    "debuff_multiplier": 0.5,
+    "debuff_duration_hours": 3,
+    "title_chance": 10,
+    "resolve_after_minutes": 5
+  },
+  "sacred_forge": {
+    "enabled": false,
+    "label": "La forge sacrée",
+    "cadence": { "times": 1, "per_days": 3 },
+    "image": "sacred_forge.png",
+    "max_level": 10,
+    "window_minutes": 5
+  }
+}
