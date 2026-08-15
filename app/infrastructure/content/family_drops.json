@@ -77,5 +77,38 @@
         "max": 1
       }
     }
+  },
+  "demoniaque": {
+    "item_code": "c_ur_corrompu",
+    "mobs": {
+      "ange_dechu": {
+        "min": 2,
+        "max": 6
+      },
+      "archidemon": {
+        "min": 3,
+        "max": 6
+      },
+      "cerbere": {
+        "min": 3,
+        "max": 3
+      },
+      "demon_cornu": {
+        "min": 1,
+        "max": 2
+      },
+      "diablotin": {
+        "min": 1,
+        "max": 1
+      },
+      "ogre_demoniaque": {
+        "min": 2,
+        "max": 3
+      },
+      "succube": {
+        "min": 2,
+        "max": 5
+      }
+    }
   }
 }
