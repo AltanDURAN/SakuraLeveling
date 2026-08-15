@@ -73,3 +73,74 @@ def resolve_player_stats(
         status_bonuses=status_bonuses,
         item_levels=item_levels,
     )
+
+
+def resolve_player_stats_bulk(
+    session: Session,
+    profiles: list[PlayerProfile],
+    *,
+    stats_service: StatsService | None = None,
+) -> dict[int, Stats]:
+    """Version EN LOT de `resolve_player_stats` : calcule les Stats de N joueurs
+    avec un nombre CONSTANT de requêtes (~6) au lieu de ~6 × N.
+
+    Motivation (audit §5) : `/classement` bouclait sur tous les joueurs en
+    appelant `resolve_player_stats` — soit ~1 000 requêtes pour 200 joueurs.
+    Le résultat par joueur est identique à l'appel unitaire (garanti par test).
+    """
+    if not profiles:
+        return {}
+
+    from app.infrastructure.db.repositories.player_item_level_repository import (
+        PlayerItemLevelRepository,
+    )
+    from app.infrastructure.db.repositories.class_repository import ClassRepository
+    from app.infrastructure.db.repositories.equipment_repository import (
+        EquipmentRepository,
+    )
+    from app.infrastructure.db.repositories.player_status_effect_repository import (
+        PlayerStatusEffectRepository,
+    )
+    from app.infrastructure.db.repositories.player_title_repository import (
+        PlayerTitleRepository,
+    )
+    from app.domain.services.status_effect_service import StatusEffectService
+    from app.domain.services.title_bonus_service import TitleBonusService
+    from app.infrastructure.titles.title_loader import get_definition as _get_title_def
+
+    ids = [p.player.id for p in profiles]
+
+    # --- 6 requêtes groupées, quel que soit le nombre de joueurs ---
+    allocations_by_player = PlayerSkillAllocationRepository(session).list_by_players(ids)
+    titles_by_player = PlayerTitleRepository(session).list_codes_for_players(ids)
+    status_by_player = PlayerStatusEffectRepository(session).list_active_multipliers_bulk(ids)
+    levels_by_player = PlayerItemLevelRepository(session).get_levels_for_players(ids)
+    equipment_by_player = EquipmentRepository(session).list_by_player_ids(ids)
+    classes_by_player = ClassRepository(session).get_current_classes_for_players(ids)
+
+    skill_service = SkillTreeService(get_skill_tree_definition())
+    title_service = TitleBonusService()
+    status_service = StatusEffectService()
+    svc = stats_service or StatsService()
+
+    out: dict[int, Stats] = {}
+    for profile in profiles:
+        pid = profile.player.id
+        equipped = equipment_by_player.get(pid, [])
+        title_defs = [
+            d for d in (_get_title_def(c) for c in titles_by_player.get(pid, []))
+            if d is not None
+        ]
+        out[pid] = svc.calculate_player_stats(
+            profile=profile,
+            equipped_items=equipped,
+            active_class=classes_by_player.get(pid),
+            skill_bonuses=skill_service.aggregate_bonuses(
+                allocations_by_player.get(pid, {})
+            ),
+            set_bonuses=resolve_set_bonuses(equipped),
+            title_bonuses=title_service.aggregate(title_defs),
+            status_bonuses=status_service.aggregate(status_by_player.get(pid, [])),
+            item_levels=levels_by_player.get(pid, {}),
+        )
+    return out

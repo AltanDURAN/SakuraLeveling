@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from app.application.services.player_stats_resolver import resolve_player_stats
+from app.application.services.player_stats_resolver import resolve_player_stats_bulk
 from app.domain.services.leaderboard_service import (
     Leaderboard,
     LeaderboardEntry,
@@ -127,20 +127,20 @@ class GetLeaderboardUseCase:
         session = self.player_repository.session
 
         profiles = self.player_repository.list_all_profiles()
+
+        # Resolver EN LOT : ~6 requêtes au total au lieu de ~6 par joueur.
+        # Avant, /classement faisait du N+1 (≈1 000 requêtes à 200 joueurs) —
+        # cf. audit §5. Le résultat par joueur est identique à l'appel unitaire.
+        stats_by_player = resolve_player_stats_bulk(
+            session=session,
+            profiles=profiles,
+            stats_service=self.stats_service,
+        )
+
         for profile in profiles:
-            equipped_items = self.equipment_repository.list_by_player_id(profile.player.id)
-            active_class = self.class_repository.get_current_class_for_player(profile.player.id)
-
-            # Passe par le resolver centralisé : applique skill+title+set bonuses.
-            # Sans ça, /top power ignorait l'arbre de compétences (moteur de stats V2).
-            stats = resolve_player_stats(
-                session=session,
-                profile=profile,
-                equipped_items=equipped_items,
-                active_class=active_class,
-                stats_service=self.stats_service,
-            )
-
+            stats = stats_by_player.get(profile.player.id)
+            if stats is None:
+                continue
             value = value_fn(stats)
             results.append((profile.player.id, profile.player.display_name, value))
 

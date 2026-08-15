@@ -27,6 +27,22 @@ class PlayerItemLevelRepository:
         ).where(PlayerItemLevelModel.player_id == player_id)
         return {row[0]: row[1] for row in self.session.execute(stmt).all()}
 
+    def get_levels_for_players(
+        self, player_ids: list[int]
+    ) -> dict[int, dict[int, int]]:
+        """Variante EN LOT : une seule requête pour N joueurs (anti N+1)."""
+        if not player_ids:
+            return {}
+        stmt = select(
+            PlayerItemLevelModel.player_id,
+            PlayerItemLevelModel.item_definition_id,
+            PlayerItemLevelModel.level,
+        ).where(PlayerItemLevelModel.player_id.in_(player_ids))
+        out: dict[int, dict[int, int]] = {pid: {} for pid in player_ids}
+        for pid, item_id, level in self.session.execute(stmt).all():
+            out.setdefault(pid, {})[item_id] = level
+        return out
+
     def increment(
         self, player_id: int, item_definition_id: int, max_level: int
     ) -> int:

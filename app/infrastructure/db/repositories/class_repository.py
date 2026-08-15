@@ -105,6 +105,33 @@ class ClassRepository:
 
         return self._to_class_domain(class_model)
 
+    def get_current_classes_for_players(
+        self, player_ids: list[int]
+    ) -> dict[int, ClassDefinition | None]:
+        """Variante EN LOT : 2 requêtes (états + définitions) pour N joueurs,
+        au lieu de 2 par joueur (anti N+1 du leaderboard)."""
+        if not player_ids:
+            return {}
+        states = self.session.execute(
+            select(PlayerClassStateModel).where(
+                PlayerClassStateModel.player_id.in_(player_ids)
+            )
+        ).scalars().all()
+        class_ids = {s.current_class_id for s in states if s.current_class_id}
+        by_class_id: dict[int, ClassDefinition] = {}
+        if class_ids:
+            for m in self.session.execute(
+                select(ClassDefinitionModel).where(
+                    ClassDefinitionModel.id.in_(class_ids)
+                )
+            ).scalars().all():
+                by_class_id[m.id] = self._to_class_domain(m)
+        out: dict[int, ClassDefinition | None] = {pid: None for pid in player_ids}
+        for s in states:
+            if s.current_class_id:
+                out[s.player_id] = by_class_id.get(s.current_class_id)
+        return out
+
     def _to_class_domain(self, model: ClassDefinitionModel) -> ClassDefinition:
         return ClassDefinition(
             id=model.id,

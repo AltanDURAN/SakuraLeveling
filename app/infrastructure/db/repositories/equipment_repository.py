@@ -23,6 +23,23 @@ class EquipmentRepository:
         models = self.session.execute(stmt).scalars().all()
         return [self._to_domain(model) for model in models]
 
+    def list_by_player_ids(
+        self, player_ids: list[int]
+    ) -> dict[int, list[PlayerEquipmentItem]]:
+        """Variante EN LOT : une seule requête (+ joinedload) pour N joueurs."""
+        if not player_ids:
+            return {}
+        stmt = (
+            select(PlayerEquipmentItemModel)
+            .options(joinedload(PlayerEquipmentItemModel.item_definition))
+            .where(PlayerEquipmentItemModel.player_id.in_(player_ids))
+            .order_by(PlayerEquipmentItemModel.slot.asc())
+        )
+        out: dict[int, list[PlayerEquipmentItem]] = {pid: [] for pid in player_ids}
+        for model in self.session.execute(stmt).scalars().all():
+            out.setdefault(model.player_id, []).append(self._to_domain(model))
+        return out
+
     def equip_item(self, player_id: int, item_definition_id: int, slot: str) -> None:
         stmt = select(PlayerEquipmentItemModel).where(
             PlayerEquipmentItemModel.player_id == player_id,

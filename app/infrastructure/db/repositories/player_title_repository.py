@@ -18,6 +18,18 @@ class PlayerTitleRepository:
         )
         return [row[0] for row in self.session.execute(stmt).all()]
 
+    def list_codes_for_players(self, player_ids: list[int]) -> dict[int, list[str]]:
+        """Variante EN LOT : une seule requête pour N joueurs (anti N+1)."""
+        if not player_ids:
+            return {}
+        stmt = select(PlayerTitleModel.player_id, PlayerTitleModel.title_code).where(
+            PlayerTitleModel.player_id.in_(player_ids)
+        )
+        out: dict[int, list[str]] = {pid: [] for pid in player_ids}
+        for pid, code in self.session.execute(stmt).all():
+            out.setdefault(pid, []).append(code)
+        return out
+
     def has_title(self, player_id: int, title_code: str) -> bool:
         stmt = select(PlayerTitleModel.id).where(
             PlayerTitleModel.player_id == player_id,

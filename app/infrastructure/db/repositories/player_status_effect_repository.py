@@ -48,6 +48,23 @@ class PlayerStatusEffectRepository:
         )
         return [row[0] for row in self.session.execute(stmt).all()]
 
+    def list_active_multipliers_bulk(
+        self, player_ids: list[int]
+    ) -> dict[int, list[float]]:
+        """Variante EN LOT : une seule requête pour N joueurs (anti N+1)."""
+        if not player_ids:
+            return {}
+        stmt = select(
+            PlayerStatusEffectModel.player_id, PlayerStatusEffectModel.multiplier
+        ).where(
+            PlayerStatusEffectModel.player_id.in_(player_ids),
+            PlayerStatusEffectModel.expires_at > _now(),
+        )
+        out: dict[int, list[float]] = {pid: [] for pid in player_ids}
+        for pid, mult in self.session.execute(stmt).all():
+            out.setdefault(pid, []).append(mult)
+        return out
+
     def list_active(self, player_id: int) -> list[PlayerStatusEffectModel]:
         stmt = select(PlayerStatusEffectModel).where(
             PlayerStatusEffectModel.player_id == player_id,

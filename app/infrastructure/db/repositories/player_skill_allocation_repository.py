@@ -21,6 +21,20 @@ class PlayerSkillAllocationRepository:
         rows = self.session.execute(stmt).scalars().all()
         return {row.skill_code: row.level for row in rows}
 
+    def list_by_players(self, player_ids: list[int]) -> dict[int, dict[str, int]]:
+        """Variante EN LOT de `list_by_player` : une seule requête pour N joueurs.
+        Évite le N+1 du leaderboard (cf. audit §5)."""
+        if not player_ids:
+            return {}
+        stmt = select(PlayerSkillAllocationModel).where(
+            PlayerSkillAllocationModel.player_id.in_(player_ids),
+            PlayerSkillAllocationModel.level > 0,
+        )
+        out: dict[int, dict[str, int]] = {pid: {} for pid in player_ids}
+        for row in self.session.execute(stmt).scalars().all():
+            out.setdefault(row.player_id, {})[row.skill_code] = row.level
+        return out
+
     def upsert_level(self, player_id: int, skill_code: str, level: int) -> None:
         stmt = select(PlayerSkillAllocationModel).where(
             PlayerSkillAllocationModel.player_id == player_id,
