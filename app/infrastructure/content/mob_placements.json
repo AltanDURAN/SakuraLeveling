@@ -538,6 +538,14 @@
         "offset_y": 0.0,
         "shadow": true
       }
+    },
+    "demon_cornu": {
+      "feu": {
+        "scale": 0.6,
+        "offset_x": -0.04,
+        "offset_y": 0.0,
+        "shadow": true
+      }
     }
   }
 }
