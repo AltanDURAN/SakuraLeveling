@@ -72,6 +72,14 @@ class Settings(BaseSettings):
     # locaux (reseed-safe) même sans push.
     content_git_push: bool = False
 
+    # Génération d'images d'items. "pollinations" (gratuit sans clé, défaut) ou
+    # "cloudflare" (Workers AI — meilleure qualité + negative prompts, gratuit
+    # avec un compte). Si "cloudflare" mais creds absents → repli pollinations.
+    image_gen_provider: str = "pollinations"
+    image_gen_model: str = ""           # override optionnel du modèle
+    cloudflare_account_id: str = ""
+    cloudflare_api_token: str = ""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

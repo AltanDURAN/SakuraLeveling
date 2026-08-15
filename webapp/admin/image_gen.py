@@ -14,13 +14,24 @@ nécessite un token), il suffit de réimplémenter `generate_image`.
 
 from __future__ import annotations
 
+import base64
 import io
 import urllib.parse
 import urllib.request
 
+import requests
 from PIL import Image
 
+from app.infrastructure.config.settings import settings
+
 _ENDPOINT = "https://image.pollinations.ai/prompt/"
+
+# Negative prompt (fournisseurs qui le gèrent, ex : Cloudflare SDXL) → écarte
+# personnages/visages/texte, la faiblesse n°1 des rendus d'items.
+_NEGATIVE = ("person, people, human, character, face, portrait, hands, fingers, "
+             "body, mannequin, figure, text, letters, words, watermark, logo, "
+             "signature, frame, border, ui, blurry, lowres, low quality, "
+             "deformed, cropped, multiple different objects")
 
 # Indices visuels par type d'item (aident le modèle à cadrer l'objet).
 _CATEGORY_HINT = {
@@ -98,15 +109,21 @@ def build_item_prompt(code: str, name: str, category: str, rarity: str) -> str:
     return ". ".join(p for p in (subject, aura, _STYLE) if p)
 
 
-def generate_image(prompt: str, size: int = 512, seed: int | None = None,
-                   model: str = "flux", timeout: int = 60) -> bytes:
-    """Génère une image depuis le prompt et renvoie des octets PNG (RGBA).
+_CF_DEFAULT_MODEL = "@cf/stabilityai/stable-diffusion-xl-base-1.0"
 
-    Lève ImageGenError si le service est indisponible / la réponse illisible.
-    """
-    prompt = (prompt or "").strip()
-    if not prompt:
-        raise ImageGenError("Description vide.")
+
+def active_provider() -> str:
+    """Fournisseur effectif : 'cloudflare' si demandé ET configuré, sinon
+    'pollinations' (repli gratuit sans clé)."""
+    if (settings.image_gen_provider.strip().lower() == "cloudflare"
+            and settings.cloudflare_account_id.strip()
+            and settings.cloudflare_api_token.strip()):
+        return "cloudflare"
+    return "pollinations"
+
+
+def _generate_pollinations(prompt: str, size: int, seed: int | None,
+                           model: str, timeout: int) -> bytes:
     q = {"width": size, "height": size, "nologo": "true", "model": model}
     if seed is not None:
         q["seed"] = seed
@@ -114,10 +131,52 @@ def generate_image(prompt: str, size: int = 512, seed: int | None = None,
     req = urllib.request.Request(url, headers={"User-Agent": "sakura-admin"})
     try:
         raw = urllib.request.urlopen(req, timeout=timeout).read()
-    except Exception as exc:  # noqa: BLE001 — réseau/HTTP, message générique
+    except Exception as exc:  # noqa: BLE001
         raise ImageGenError(f"Service de génération indisponible ({type(exc).__name__}).") from exc
     if not raw:
         raise ImageGenError("Réponse vide du service de génération.")
+    return raw
+
+
+def _generate_cloudflare(prompt: str, size: int, timeout: int) -> bytes:
+    acc = settings.cloudflare_account_id.strip()
+    tok = settings.cloudflare_api_token.strip()
+    model = settings.image_gen_model.strip() or _CF_DEFAULT_MODEL
+    url = f"https://api.cloudflare.com/client/v4/accounts/{acc}/ai/run/{model}"
+    body: dict = {"prompt": prompt, "width": size, "height": size}
+    # SDXL/Stable Diffusion acceptent le negative prompt (Flux non).
+    if "flux" not in model:
+        body["negative_prompt"] = _NEGATIVE
+        body["num_steps"] = 20
+    try:
+        r = requests.post(url, headers={"Authorization": f"Bearer {tok}"},
+                          json=body, timeout=timeout)
+    except Exception as exc:  # noqa: BLE001
+        raise ImageGenError(f"Cloudflare injoignable ({type(exc).__name__}).") from exc
+    if r.status_code != 200:
+        raise ImageGenError(f"Cloudflare a répondu {r.status_code} : {r.text[:180]}")
+    if "application/json" in r.headers.get("content-type", ""):
+        b64 = ((r.json() or {}).get("result") or {}).get("image")
+        if not b64:
+            raise ImageGenError(f"Réponse Cloudflare inattendue : {r.text[:180]}")
+        return base64.b64decode(b64)
+    return r.content
+
+
+def generate_image(prompt: str, size: int = 1024, seed: int | None = None,
+                   model: str = "flux", timeout: int = 90) -> bytes:
+    """Génère une image depuis le prompt et renvoie des octets PNG (RGBA).
+
+    Fournisseur selon la config (Cloudflare si configuré, sinon Pollinations).
+    Lève ImageGenError en cas d'indisponibilité / réponse illisible.
+    """
+    prompt = (prompt or "").strip()
+    if not prompt:
+        raise ImageGenError("Description vide.")
+    if active_provider() == "cloudflare":
+        raw = _generate_cloudflare(prompt, size, timeout)
+    else:
+        raw = _generate_pollinations(prompt, min(size, 1024), seed, model, timeout)
     try:
         img = Image.open(io.BytesIO(raw)).convert("RGBA")
     except Exception as exc:  # noqa: BLE001
