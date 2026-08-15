@@ -16,7 +16,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 
 from app.infrastructure.events import event_config_loader as cfg
 from app.shared.paths import EVENTS_ASSETS_DIR
-from webapp.admin import git_sync, json_writer, uploads
+from webapp.admin import git_sync, image_gen, json_writer, uploads
 from webapp.admin._shared import get_templates, parse_int
 from webapp.admin.auth import AdminUser, require_admin
 
@@ -83,6 +83,11 @@ async def events_edit_form(
             "label": _TYPE_LABELS.get(event_type, event_type),
             "implemented": event_type in _IMPLEMENTED,
             "config": config,
+            # Description par défaut proposée par le module de génération.
+            "gen_prompt": image_gen.build_prompt_for(
+                "event", code=event_type,
+                name=_TYPE_LABELS.get(event_type, event_type),
+            ),
         },
     )
 

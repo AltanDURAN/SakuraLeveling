@@ -79,3 +79,67 @@
         document.querySelectorAll("table[data-sortable]").forEach(initSortable);
     });
 })();
+
+/* ---------------------------------------------------------------------------
+ * imageField — composant Alpine PARTAGÉ par toutes les surfaces d'upload
+ * d'image de l'admin (items, monstres, décors de zone/spot, événements).
+ * Fournit : aperçu live du fichier déposé, génération via le module d'IA
+ * (POST /admin/image-gen/<kind>/<code>) et téléchargement (lien natif).
+ * Cf. templates/admin/_image_field.html
+ * ------------------------------------------------------------------------- */
+function imageField(cfg) {
+    return {
+        kind: cfg.kind,
+        code: cfg.code || "",
+        current: cfg.current || "",
+        assetDir: cfg.assetDir,
+        defaultPrompt: cfg.defaultPrompt || "",
+        prompt: cfg.defaultPrompt || "",
+        showPrompt: false,
+        generating: false,
+        error: "",
+        get previewUrl() {
+            if (this._objectUrl) return this._objectUrl;
+            if (!this.current) return "";
+            // cache-bust : après régénération, le nom de fichier est identique
+            return "/assets/" + this.assetDir + "/" + this.current + "?v=" + (this._v || 0);
+        },
+        _objectUrl: "",
+        _v: 0,
+        onFile(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            if (this._objectUrl) URL.revokeObjectURL(this._objectUrl);
+            this._objectUrl = URL.createObjectURL(file);
+        },
+        async generate() {
+            if (!this.code || this.generating) return;
+            this.generating = true;
+            this.error = "";
+            try {
+                const res = await fetch(
+                    "/admin/image-gen/" + this.kind + "/" + encodeURIComponent(this.code),
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ prompt: this.prompt }),
+                    },
+                );
+                const data = await res.json();
+                if (!res.ok || !data.ok) {
+                    this.error = data.error || "Génération impossible.";
+                } else {
+                    // le fichier déposé manuellement (s'il y en avait un) n'est
+                    // plus la vérité : on repasse sur l'asset fraîchement écrit
+                    if (this._objectUrl) { URL.revokeObjectURL(this._objectUrl); this._objectUrl = ""; }
+                    this.current = data.filename;
+                    this._v = Date.now();
+                }
+            } catch (e) {
+                this.error = "Erreur réseau pendant la génération.";
+            } finally {
+                this.generating = false;
+            }
+        },
+    };
+}

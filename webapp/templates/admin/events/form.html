@@ -2,6 +2,7 @@
 
 {% block title %}{{ label }} — Événements — Sakura Admin{% endblock %}
 
+{% from "admin/_image_field.html" import image_field %}
 {% block content %}
 <section class="form-page">
     <a href="/admin/events" class="breadcrumb">← Événements</a>
@@ -41,18 +42,10 @@
 
         <div class="form-section">
             <h2 class="form-section-title">Image</h2>
-            <div class="form-row" style="align-items:center;">
-                {% if config.image %}
-                <img src="/assets/events/{{ config.image }}" alt="{{ label }}"
-                     style="width:110px; height:110px; object-fit:contain; border-radius:10px; background:rgba(0,0,0,.04);"
-                     onerror="this.style.display='none'">
-                {% endif %}
-                <label class="field">
-                    <span class="field-label">Remplacer l'image (assets/events/)</span>
-                    <input type="file" name="image_file" class="input" accept="image/*">
-                    <span class="field-hint">Actuelle : <code>{{ config.image or "aucune" }}</code></span>
-                </label>
-            </div>
+            {{ image_field(kind='event', code=event_type, current=config.image,
+                           asset_dir='events', field_name='image_file',
+                           default_prompt=gen_prompt,
+                           label="Remplacer l'image (assets/events/)") }}
         </div>
 
         {% if event_type == "chest" %}

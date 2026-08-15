@@ -1,0 +1,83 @@
+{#
+  Champ IMAGE partagé par toutes les surfaces d'upload de l'admin.
+
+  Fournit systématiquement les 3 mêmes actions :
+    • déposer un fichier (input file, nom personnalisable) ;
+    • ✨ générer l'image depuis une description (module de génération) ;
+    • ⬇ télécharger l'image actuelle.
+
+  Usage :
+    {% from "admin/_image_field.html" import image_field %}
+    {{ image_field(kind='mob', code=mob.code, current=mob.image_name,
+                   asset_dir='mobs', field_name='image_file',
+                   default_prompt=gen_prompt, label="Image du monstre") }}
+
+  `kind` ∈ item | mob | landscape | event (cf. image_gen_router).
+  `code` vide ⇒ génération désactivée (il faut d'abord enregistrer l'entité).
+#}
+{% macro image_field(kind, code, current, asset_dir, field_name='image_file',
+                     default_prompt='', label='Image', accept='.png,.jpg,.jpeg,.webp,.gif') %}
+{# ⚠️ La config passe par un attribut data-* en guillemets SIMPLES puis
+   JSON.parse : `|tojson` dans un `x-data="…"` en guillemets doubles casse
+   l'attribut (les `"` du JSON le referment). `tojson` échappe les quotes
+   simples en ', donc l'attribut simple-quoté est sûr, prompts inclus. #}
+<div class="image-field"
+     data-cfg='{{ {"kind": kind, "code": code or "", "current": current or "",
+                   "assetDir": asset_dir, "defaultPrompt": default_prompt or ""}|tojson }}'
+     x-data="imageField(JSON.parse($el.dataset.cfg))">
+    <div class="image-field-row">
+        <div class="image-field-preview">
+            <img x-show="previewUrl" :src="previewUrl" alt="" onerror="this.style.display='none'">
+            <span x-show="!previewUrl" class="image-field-empty">aucune image</span>
+        </div>
+        <div class="image-field-controls">
+            <label class="field">
+                <span class="field-label">{{ label }}</span>
+                <input type="file" name="{{ field_name }}" class="input"
+                       accept="{{ accept }}" x-on:change="onFile($event)">
+            </label>
+            <div class="image-field-actions">
+                <a class="btn btn-small" x-show="previewUrl" :href="previewUrl"
+                   :download="(code || 'image') + '.png'">⬇ Télécharger</a>
+                <button type="button" class="btn btn-small" x-on:click="showPrompt = !showPrompt"
+                        x-text="showPrompt ? '✕ Fermer la génération' : '✨ Générer une image'"></button>
+            </div>
+            <p class="field-hint" x-show="current" x-cloak>
+                Actuelle : <code x-text="current"></code>
+            </p>
+        </div>
+    </div>
+
+    <div class="image-field-gen" x-show="showPrompt" x-cloak>
+        <label class="field">
+            <span class="field-label">Description de l'image (prompt)</span>
+            <textarea class="input textarea" rows="3" x-model="prompt"></textarea>
+            <span class="field-hint">
+                Laisse tel quel pour la description par défaut du type
+                <code>{{ kind }}</code>, ou réécris-la à ta guise.
+            </span>
+        </label>
+        {% if kind == 'mob' %}
+        <p class="field-hint">
+            ⚠️ Le fond est détouré automatiquement (les monstres sont composités
+            sur un décor), mais le modèle peint souvent une <strong>vignette
+            derrière le personnage</strong> que le détourage ne sait pas séparer
+            proprement. Utilise plutôt la génération comme base à retoucher, ou
+            uploade une image déjà détourée pour un rendu parfait en combat.
+        </p>
+        {% endif %}
+        <div class="image-field-actions">
+            <button type="button" class="btn btn-primary btn-small"
+                    x-on:click="generate()" :disabled="generating || !code"
+                    x-text="generating ? '⏳ Génération…' : '✨ Générer'"></button>
+            <button type="button" class="btn btn-small" x-on:click="prompt = defaultPrompt">
+                Réinitialiser la description
+            </button>
+            <span class="field-hint" x-show="!code" x-cloak>
+                Enregistre d'abord l'entité pour pouvoir générer son image.
+            </span>
+        </div>
+        <p class="field-error" x-show="error" x-cloak x-text="error"></p>
+    </div>
+</div>
+{% endmacro %}

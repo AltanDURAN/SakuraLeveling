@@ -2,6 +2,7 @@
 
 {% block title %}{% if zone %}Éditer une zone{% else %}Nouvelle zone{% endif %} — Sakura Admin{% endblock %}
 
+{% from "admin/_image_field.html" import image_field %}
 {% block content %}
 {% set fd = form_data if form_data is defined else {} %}
 {% set families_str = fd.get('families', (zone.families | join(', ')) if zone else '') %}
@@ -39,23 +40,11 @@
                 </label>
             </div>
             {% set cur_bg = fd.get('background', zone.background if zone else '') %}
-            <div class="form-row" style="align-items: flex-end;">
-                <label class="field">
-                    <span class="field-label">Uploader un décor (PNG/JPG/WebP, ≤ 8 Mo)</span>
-                    <input type="file" name="background_file" class="input"
-                           accept=".png,.jpg,.jpeg,.webp,.gif">
-                    {% if errors.get('background_file') %}<span class="field-error">{{ errors['background_file'] }}</span>{% endif %}
-                    <small style="color: var(--muted);">Enregistré dans assets/landscapes/. Laisse vide pour garder le décor actuel.</small>
-                </label>
-                {% if cur_bg %}
-                <div class="field" style="flex: 0 0 auto;">
-                    <span class="field-label">Aperçu</span>
-                    <img src="/assets/landscapes/{{ cur_bg }}" alt="{{ cur_bg }}"
-                         style="max-height: 80px; max-width: 140px; border-radius: 8px; border: 1px solid var(--border);"
-                         onerror="this.style.display='none'">
-                </div>
-                {% endif %}
-            </div>
+            {{ image_field(kind='landscape', code=(cur_bg.rsplit('.',1)[0] if cur_bg else (fd.get('name','') or (zone.name if zone else ''))|lower|replace(' ','_')),
+                           current=cur_bg, asset_dir='landscapes', field_name='background_file',
+                           default_prompt=gen_prompt|default(''),
+                           label="Uploader un décor (PNG/JPG/WebP, ≤ 8 Mo)") }}
+            {% if errors.get('background_file') %}<span class="field-error">{{ errors['background_file'] }}</span>{% endif %}
         </div>
 
         <div class="form-section">

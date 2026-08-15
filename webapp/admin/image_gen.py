@@ -113,6 +113,84 @@ def build_item_prompt(code: str, name: str, category: str, rarity: str) -> str:
     return f"a hand-drawn inked and flat-colored illustration of {subject}, {_ISOLATE}, {_STYLE}"
 
 
+# --------------------------------------------------------------------------
+# Prompts par TYPE d'asset — chaque famille a sa direction artistique.
+# --------------------------------------------------------------------------
+
+# Monstres : DA dessinée à la main du jeu (encre + gris, corps entier), sur fond
+# uni qui sera rendu TRANSPARENT (les mobs sont composités sur un décor).
+_MOB_STYLE = (
+    "full body character, standing, facing the viewer, centered, "
+    "hand-drawn digital illustration, bold uneven black ink outline, "
+    "flat cel-shaded coloring with one darker shadow tone, loose rough "
+    "hand-drawn linework, gritty mature dark-fantasy monster concept art, "
+    "cut out on a pure flat white background, completely empty white backdrop, "
+    "no painted halo behind the character, no vignette, no circle behind, no "
+    "shadow on the background, no scenery, no background elements, no text, "
+    "no watermark, no border, single creature only"
+)
+
+# Décors : arrière-plans peints, format paysage, SANS personnage ni monstre
+# (ils sont ajoutés par-dessus au rendu de combat).
+_LANDSCAPE_STYLE = (
+    "wide landscape background painting, empty scenery with no characters and "
+    "no creatures, atmospheric dark-fantasy environment, painted digital "
+    "illustration, moody lighting, depth with foreground ground and distant "
+    "background, no text, no watermark, no border, no user interface"
+)
+
+
+def build_mob_prompt(code: str, name: str, family: str = "", element: str = "") -> str:
+    """Prompt par défaut pour l'image d'un MONSTRE."""
+    bits = [name.strip() or code]
+    if family:
+        bits.append(f"a {family.replace('-', ' ')} type monster")
+    if element:
+        bits.append(f"{element} elemental theme")
+    return f"{', '.join(bits)}, {_MOB_STYLE}"
+
+
+def build_landscape_prompt(name: str = "", element: str = "") -> str:
+    """Prompt par défaut pour un DÉCOR de zone / de spot."""
+    subject = name.strip() or "a dark fantasy wilderness"
+    if element:
+        subject += f", {element} elemental atmosphere"
+    return f"{subject}, {_LANDSCAPE_STYLE}"
+
+
+def build_event_prompt(event_type: str, label: str = "") -> str:
+    """Prompt par défaut pour l'illustration d'un ÉVÉNEMENT."""
+    presets = {
+        "chest": "a single closed wooden treasure chest bound with iron and a "
+                 "big golden padlock, one lone loot chest",
+        "sacred_forge": "a single blacksmith anvil engulfed in bright magical "
+                        "golden flames, a glowing sacred forge with sparks",
+        "little_girl": "a single small lost girl in a tattered dress holding a "
+                       "worn doll, looking up, slightly eerie mood",
+    }
+    subject = presets.get(event_type, label.strip() or event_type)
+    return f"a hand-drawn inked and flat-colored illustration of {subject}, {_ISOLATE}, {_STYLE}"
+
+
+def build_prompt_for(kind: str, **kwargs) -> str:
+    """Point d'entrée unique utilisé par le routeur de génération partagé."""
+    if kind == "item":
+        return build_item_prompt(
+            kwargs.get("code", ""), kwargs.get("name", ""),
+            kwargs.get("category", ""), kwargs.get("rarity", ""),
+        )
+    if kind == "mob":
+        return build_mob_prompt(
+            kwargs.get("code", ""), kwargs.get("name", ""),
+            kwargs.get("family", ""), kwargs.get("element", ""),
+        )
+    if kind == "landscape":
+        return build_landscape_prompt(kwargs.get("name", ""), kwargs.get("element", ""))
+    if kind == "event":
+        return build_event_prompt(kwargs.get("code", ""), kwargs.get("name", ""))
+    return kwargs.get("name", "") or kwargs.get("code", "")
+
+
 _CF_DEFAULT_MODEL = "@cf/stabilityai/stable-diffusion-xl-base-1.0"
 
 
@@ -214,7 +292,8 @@ def _generate_cloudflare(prompt: str, size: int, timeout: int) -> bytes:
 
 
 def generate_image(prompt: str, size: int = 1024, seed: int | None = None,
-                   model: str = "flux", timeout: int = 90) -> bytes:
+                   model: str = "flux", timeout: int = 90,
+                   transparent: bool = False) -> bytes:
     """Génère une image depuis le prompt et renvoie des octets PNG (RGBA).
 
     Fournisseur selon la config (Cloudflare si configuré, sinon Pollinations).
@@ -234,10 +313,48 @@ def generate_image(prompt: str, size: int = 1024, seed: int | None = None,
         img = Image.open(io.BytesIO(raw)).convert("RGBA")
     except Exception as exc:  # noqa: BLE001
         raise ImageGenError("Image générée illisible.") from exc
-    img = _whiten_bg(img)
+    img = _transparent_bg(img) if transparent else _whiten_bg(img)
     out = io.BytesIO()
     img.save(out, "PNG")
     return out.getvalue()
+
+
+def _transparent_bg(img: "Image.Image", thresh: int = 48) -> "Image.Image":
+    """Rend le fond TRANSPARENT (au lieu de blanc) : indispensable pour les
+    MONSTRES, qui sont composités par-dessus un décor — un fond blanc
+    donnerait une vignette carrée dans la scène de combat.
+
+    Même principe que `_whiten_bg` : flood-fill depuis les bords (les contours
+    noirs fermés de la DA arrêtent le remplissage), puis les pixels peints en
+    magenta-repère passent en alpha=0. Best-effort : n'échoue jamais."""
+    from PIL import ImageDraw
+    try:
+        rgb = Image.new("RGB", img.size, (255, 255, 255))
+        rgb.paste(img.convert("RGB"), (0, 0))
+        w, h = rgb.size
+        key = (255, 0, 255)  # couleur-repère improbable dans un rendu N&B/coloré
+        seeds = [(1, 1), (w - 2, 1), (1, h - 2), (w - 2, h - 2),
+                 (w // 2, 1), (w // 2, h - 2), (1, h // 2), (w - 2, h // 2)]
+        # Passes PROGRESSIVES : le modèle peint souvent un halo/vignette gris
+        # autour du sujet. Une seule passe à seuil bas s'arrête au bord du halo
+        # et laisse un disque opaque (inutilisable une fois composité sur un
+        # décor). On élargit donc le seuil par paliers ; le contour d'encre noir
+        # du sujet (fort contraste) arrête le remplissage bien avant lui.
+        for t in (thresh, thresh * 2, thresh * 3):
+            for xy in seeds:
+                try:
+                    ImageDraw.floodfill(rgb, xy, key, thresh=min(t, 160))
+                except Exception:  # noqa: BLE001
+                    pass
+        out = rgb.convert("RGBA")
+        px = out.load()
+        for y in range(h):
+            for x in range(w):
+                if px[x, y][:3] == key:
+                    px[x, y] = (0, 0, 0, 0)
+        return out
+    except Exception:  # noqa: BLE001
+        return img
 
 
 def _whiten_bg(img: "Image.Image", thresh: int = 48) -> "Image.Image":

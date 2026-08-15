@@ -1,6 +1,7 @@
 {% extends "admin/base.html" %}
 {% block title %}Monstres — Sakura Admin{% endblock %}
 
+{% from "admin/_image_field.html" import image_field %}
 {% block content %}
 <style>
   .mobs-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(340px,1fr)); gap:1rem; }
@@ -268,16 +269,10 @@ document.addEventListener('alpine:init', () => {
           <div style="display:flex; flex-direction:column; gap:1rem;">
             <div class="form-section">
               <h2 class="form-section-title">Image</h2>
-              <div style="display:flex; gap:1rem; align-items:flex-end;">
-                <div class="mob-portrait" style="width:120px; height:120px;">
-                  <img x-show="preview" :src="preview" style="max-width:116px;max-height:116px;" onerror="this.style.display='none'">
-                </div>
-                <label class="field" style="flex:1;">
-                  <span class="field-label">Uploader (PNG/JPG/WebP/GIF ≤ 8 Mo)</span>
-                  <input type="file" name="image_file" class="input" accept=".png,.jpg,.jpeg,.webp,.gif" x-on:change="onFile($event)">
-                  <small style="color:var(--muted);">Aperçu live. Sauvée sous <code>{{ m.code }}.&lt;ext&gt;</code>.</small>
-                </label>
-              </div>
+              {{ image_field(kind='mob', code=m.code, current=m.image_name,
+                             asset_dir='mobs', field_name='image_file',
+                             default_prompt=card.gen_prompt,
+                             label="Uploader (PNG/JPG/WebP/GIF ≤ 8 Mo)") }}
               <input type="hidden" name="image_name" :value="imageName">
             </div>
             <div class="form-section">

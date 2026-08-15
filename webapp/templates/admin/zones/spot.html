@@ -1,5 +1,6 @@
 {% extends "admin/base.html" %}
 {% block title %}Décor {{ label }} — {{ zone.name }} — Sakura Admin{% endblock %}
+{% from "admin/_image_field.html" import image_field %}
 {% block content %}
 {% set tp = top_panel %}{% set bp = bottom_panel %}
 <section class="form-page"
@@ -63,8 +64,12 @@
           <select name="background" class="input" x-model="bg">
             {% for b in backgrounds %}<option value="{{ b }}">{{ b }}</option>{% endfor %}
           </select></label>
-        <label class="field"><span class="field-label">…ou uploader (≤ 8 Mo)</span>
-          <input type="file" name="background_file" class="input" accept=".png,.jpg,.jpeg,.webp,.gif"></label>
+        {{ image_field(kind='landscape',
+                       code=((zone.name ~ '_' ~ element)|lower|replace(' ', '_')),
+                       current='', asset_dir='landscapes',
+                       field_name='background_file',
+                       default_prompt=gen_prompt|default(''),
+                       label="…ou uploader / générer un décor (≤ 8 Mo)") }}
         <label class="field"><span class="field-label">Zoom — <span x-text="Math.round(100/cropW)+'%'"></span></span>
           <input type="range" min="0.05" max="1" step="0.01" x-model.number="cropW" x-on:input="clamp()"></label>
       </div>

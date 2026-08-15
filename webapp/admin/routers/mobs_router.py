@@ -24,7 +24,7 @@ from app.shared.enums import (
     ITEM_RARITY_LABELS,
 )
 from app.shared.paths import MOBS_ASSETS_DIR
-from webapp.admin import content_sync, git_sync, json_writer, uploads
+from webapp.admin import image_gen, content_sync, git_sync, json_writer, uploads
 from webapp.admin.auth import AdminUser, require_admin
 from webapp.admin._shared import get_templates
 
@@ -272,6 +272,11 @@ async def mobs_list(
             "mob": m, "zone": zone, "state": state, "loot_rows": loot_rows,
             "power_score": pss.format_score(score), "rank": pss.compute_rank(score),
             "search": search, "special": get_mob_ability_summary(m.code),
+            # Description par défaut proposée par le module de génération d'image.
+            "gen_prompt": image_gen.build_prompt_for(
+                "mob", code=m.code, name=m.name or "",
+                family=m.family or "", element=m.element or "",
+            ),
         })
 
     items_catalog = sorted(
