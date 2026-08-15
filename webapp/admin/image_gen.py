@@ -65,7 +65,7 @@ ITEM_IMAGE_PROMPTS: dict[str, str] = {
     # Consommable
     "potion_soin": "a single small round glass potion vial sealed with a cork, filled with glowing bright red healing liquid, tiny bubbles inside the glass",
     # Ressources — matériaux bruts d'un univers dark fantasy
-    "bois": "several short cut brown wooden logs lying together in a small heap, plain logs, visible wood grain and tree bark, simple crafting material",
+    "bois": "three short round firewood logs bound together with a rope, cylindrical brown wood with sawn ends showing tree growth rings, plain timber bundle",
     "silex": "a single sharp shard of dark grey-black flint stone, glassy knapped fractured edges, one primitive fire-starter rock",
     "morceau_de_tissu": "a single folded square of coarse beige linen cloth, plain woven fabric swatch with frayed edges",
     "gel_e": "a single glossy droplet of translucent bright green slime jelly, gooey wobbly gelatinous blob",
