@@ -486,8 +486,8 @@
       },
       "feu": {
         "scale": 0.6,
-        "offset_x": 0.0,
-        "offset_y": -0.06,
+        "offset_x": 0.02,
+        "offset_y": -0.07,
         "shadow": true
       }
     }
