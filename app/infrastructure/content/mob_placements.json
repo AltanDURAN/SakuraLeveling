@@ -497,6 +497,12 @@
         "offset_x": 0.0,
         "offset_y": 0.03,
         "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.65,
+        "offset_x": 0.0,
+        "offset_y": 0.03,
+        "shadow": true
       }
     }
   }
