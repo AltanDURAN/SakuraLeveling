@@ -40,43 +40,45 @@ _CATEGORY_HINT = {
     "consumable": "a consumable potion",
     "potion": "a potion in a glass flask",
 }
-# Indices visuels par rareté (couleur / aura).
-_RARITY_HINT = {
-    "common": "simple, plain, worn",
-    "uncommon": "fine quality, faint green glow",
-    "rare": "ornate, glowing blue aura",
-    "epic": "elaborate, magical purple glow",
-    "legendary": "legendary, radiant golden glow, epic masterwork",
+# Style commun à TOUTES les icônes → cadrage/fond/lumière identiques = set cohérent.
+_STYLE = ("single inanimate object, floating centered, smooth dark charcoal grey "
+          "radial gradient background, soft rim lighting from top-left, subtle drop "
+          "shadow beneath, clean fantasy RPG inventory item icon, semi-realistic "
+          "painterly render, sharp focus, symmetrical, no person, no face, no "
+          "character, no creature, no hands, no pedestal, no base, no ring, no "
+          "scene, no text, no watermark, no border")
+
+# Aura par rareté → lecture couleur cohérente sans écraser la matière de l'objet.
+_RARITY_AURA = {
+    "common": "plain mundane object, no magical glow",
+    "uncommon": "a faint soft green magical aura around it",
+    "rare": "a soft glowing blue magical aura around it",
+    "epic": "a vivid purple magical aura and faint glowing runes around it",
+    "legendary": "a radiant golden divine aura, intense warm glow around it",
 }
 
-# Style commun à TOUTES les icônes → un set visuellement cohérent.
-_STYLE = ("centered fantasy RPG inventory item icon, single inanimate object, "
-          "dark slate gradient background, dramatic rim lighting, painterly "
-          "digital art, vibrant, crisp high detail, no person, no character, "
-          "no human, no hands, no text, no watermark, no border")
-
-# Prompts ÉCRITS À LA MAIN par item (clé = code). Le sujet est décrit finement ;
-# le style commun est ajouté automatiquement. Pour un nouvel item non listé, on
-# retombe sur une description générique (build_item_prompt), qu'on peut ensuite
-# affiner ici. Ajouter un item = une ligne.
+# Prompts ÉCRITS À LA MAIN par item (clé = code). Sujet décrit sans ambiguïté et
+# SANS mot qui attire un personnage/visage (le modèle gratuit ignore les
+# négations) : on privilégie « single », « isolated », « object », « flat »…
+# Style + aura de rareté ajoutés automatiquement. Item non listé → fallback.
 ITEM_IMAGE_PROMPTS: dict[str, str] = {
     # Consommable
-    "potion_soin": "a small round glass flask filled with glowing crimson-red healing potion, cork stopper, warm red inner glow, tiny bubbles",
-    # Ressources
-    "bois": "a small bundle of chopped wooden logs tied with rope, brown bark and rings, rustic",
-    "silex": "a chunk of grey knapped flint stone with sharp fractured edges, faint spark, raw mineral",
-    "morceau_de_tissu": "a neatly folded piece of coarse beige linen cloth, woven textile with frayed edges",
-    "gel_e": "a glossy translucent blob of bright lime-green slime jelly, gooey and dripping, jiggly gelatinous",
-    "dent_de_gobelin": "a single sharp yellowed goblin fang tooth, jagged, dirty, chipped, a small hunting trophy",
-    "fragment_d_me": "a floating translucent pale-blue soul shard, ghostly ethereal wisps, faint spectral glow",
-    "c_ur_corrompu": "a corrupted demonic heart, pulsing black-and-crimson flesh laced with sickly purple veins, dripping shadowy ooze, ominous",
-    "petite_bombe": "a small round black iron bomb with a short lit sparking fuse, cartoonish, danger",
-    "diamant": "a large brilliant-cut clear diamond gemstone, sharp sparkling facets, prismatic blue-white light refraction",
-    "essence_de_vie": "a swirling glowing orb of luminous emerald-green life essence, vital energy wisps, ethereal soft radiance",
+    "potion_soin": "a single small round glass potion vial sealed with a cork, filled with glowing bright red healing liquid, tiny bubbles inside the glass",
+    # Ressources — matériaux bruts d'un univers dark fantasy
+    "bois": "several short cut brown wooden logs lying together in a small heap, plain logs, visible wood grain and tree bark, simple crafting material",
+    "silex": "a single sharp shard of dark grey-black flint stone, glassy knapped fractured edges, one primitive fire-starter rock",
+    "morceau_de_tissu": "a single folded square of coarse beige linen cloth, plain woven fabric swatch with frayed edges",
+    "gel_e": "a single glossy droplet of translucent bright green slime jelly, gooey wobbly gelatinous blob",
+    "dent_de_gobelin": "one single small curved ivory-yellow fang, an isolated pointed tooth, chipped and dirty, tiny lone tooth object close-up",
+    "fragment_d_me": "a single small floating translucent pale-blue crystalline shard, a glowing sliver of spirit crystal, faint spectral wisps",
+    "c_ur_corrompu": "a single fleshy anatomical heart organ corrupted by dark magic, black and crimson veined flesh dripping purple ooze, an isolated grisly organ",
+    "petite_bombe": "a single round black cast-iron cannonball bomb with a short lit rope fuse and a bright orange spark, classic cartoon game bomb",
+    "diamant": "a single large brilliant-cut clear diamond gemstone, sharp geometric facets, sparkling white crystal",
+    "essence_de_vie": "a single floating radiant orb sphere of swirling green life energy, glowing wisps of vital nature magic, an orb of light",
     # Arme
-    "dagues_jumelles": "a pair of crossed twin goblin daggers, wickedly curved sharp steel blades, crude bone handles wrapped in worn leather, faint blue rare glint",
+    "dagues_jumelles": "two identical curved steel daggers crossed in an X shape, a matched pair of blades with leather-wrapped hilts, weapon icon of blades and handles only",
     # Équipement
-    "cape_silencieuse": "a neatly folded dark hooded cloak laid flat as a folded fabric bundle on the ground, charcoal shadow-woven cloth, subtle violet magical shimmer, product flat-lay of an apparel item",
+    "cape_silencieuse": "top-down flat lay product photo of a neatly folded black cloak garment on a flat surface, folded charcoal fabric only, empty apparel, nobody, mannequin-free clothing product shot",
 }
 
 
@@ -91,9 +93,9 @@ def build_item_prompt(code: str, name: str, category: str, rarity: str) -> str:
     subject = ITEM_IMAGE_PROMPTS.get(code)
     if not subject:
         cat = _CATEGORY_HINT.get(category, "a fantasy object")
-        rar = _RARITY_HINT.get(rarity, "")
-        subject = ", ".join(p for p in (name.strip(), cat, rar) if p)
-    return f"{subject}, {_STYLE}"
+        subject = ", ".join(p for p in (f"a single {name.strip()}", cat) if p)
+    aura = _RARITY_AURA.get(rarity, "")
+    return ". ".join(p for p in (subject, aura, _STYLE) if p)
 
 
 def generate_image(prompt: str, size: int = 512, seed: int | None = None,
