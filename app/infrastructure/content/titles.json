@@ -346,5 +346,30 @@
         "value": 3
       }
     ]
+  },
+  {
+    "code": "ma_survie_avant_tout",
+    "name": "Ma survie avant tout",
+    "icon": "🛡️",
+    "description": "A ignoré une « petite fille » qui s'est révélée être un monstre déguisé — l'instinct de survie récompensé. Esquive +1%, Vitesse +1, Défense +10, PV max +200.",
+    "condition_type": "event",
+    "effects": [
+      {
+        "type": "dodge_flat",
+        "value": 1
+      },
+      {
+        "type": "speed_flat",
+        "value": 1
+      },
+      {
+        "type": "defense_flat",
+        "value": 10
+      },
+      {
+        "type": "hp_max_flat",
+        "value": 200
+      }
+    ]
   }
 ]

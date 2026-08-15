@@ -24,17 +24,33 @@ import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 
+from app.application.services.player_stats_resolver import resolve_player_stats
 from app.domain.services.chest_loot_service import ChestLootService
+from app.domain.services.health_regeneration_service import HealthRegenerationService
+from app.domain.services.little_girl_service import (
+    CHOICE_HELP,
+    CHOICE_IGNORE,
+    LittleGirlConfig,
+    LittleGirlService,
+)
 from app.infrastructure.config.settings import settings
+from app.infrastructure.db.repositories.class_repository import ClassRepository
+from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.event_repository import (
     EventRepository,
     GLOBAL_KEY,
 )
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
+from app.infrastructure.db.repositories.player_health_repository import (
+    PlayerHealthRepository,
+)
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.player_status_effect_repository import (
     PlayerStatusEffectRepository,
+)
+from app.infrastructure.db.repositories.player_title_repository import (
+    PlayerTitleRepository,
 )
 from app.infrastructure.db.session import get_db_session
 from app.infrastructure.events import event_config_loader as cfg
@@ -91,10 +107,48 @@ class ChestView(discord.ui.View):
         await cog.handle_chest_open(interaction)
 
 
+class LittleGirlView(discord.ui.View):
+    def __init__(self, cog: "EventCog | None" = None) -> None:
+        super().__init__(timeout=None)
+        self.cog = cog
+
+    def _resolve_cog(self, interaction: discord.Interaction) -> "EventCog | None":
+        return self.cog or interaction.client.get_cog("EventCog")
+
+    @discord.ui.button(
+        label="Aider la petite fille",
+        style=discord.ButtonStyle.success,
+        emoji="🤝",
+        custom_id="event_girl:help",
+    )
+    async def help_button(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
+        await interaction.response.defer(ephemeral=True)
+        cog = self._resolve_cog(interaction)
+        if cog:
+            await cog.handle_girl_choice(interaction, CHOICE_HELP)
+
+    @discord.ui.button(
+        label="Ignorer",
+        style=discord.ButtonStyle.secondary,
+        emoji="🚶",
+        custom_id="event_girl:ignore",
+    )
+    async def ignore_button(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
+        await interaction.response.defer(ephemeral=True)
+        cog = self._resolve_cog(interaction)
+        if cog:
+            await cog.handle_girl_choice(interaction, CHOICE_IGNORE)
+
+
 class EventCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.bot.add_view(ChestView(self))
+        self.bot.add_view(LittleGirlView(self))
         self.spawn_loop.start()
         self.resolve_loop.start()
 
@@ -126,7 +180,15 @@ class EventCog(commands.Cog):
             with get_db_session() as session:
                 PlayerStatusEffectRepository(session).purge_expired()
                 session.commit()
-            # Lot 2/3 : résolution des events à échéance (petite fille / forge).
+            # Événements à échéance (petite fille = résolution à 5 min).
+            with get_db_session() as session:
+                due_ids = [
+                    (ev.id, ev.event_type)
+                    for ev in EventRepository(session).list_due()
+                ]
+            for event_id, event_type in due_ids:
+                if event_type == "little_girl":
+                    await self._resolve_little_girl(event_id)
         except Exception:  # noqa: BLE001
             _logger.exception("event resolve_loop failed")
 
@@ -164,6 +226,8 @@ class EventCog(commands.Cog):
         """Fait apparaître un événement. Lot 1 : seul `chest` est implémenté."""
         if event_type == "chest":
             return await self._spawn_chest()
+        if event_type == "little_girl":
+            return await self._spawn_little_girl()
         _logger.info("spawn_event: type '%s' non encore implémenté", event_type)
         return None
 
@@ -262,6 +326,215 @@ class EventCog(commands.Cog):
                 InventoryRepository(session).add_item(player_id, item.id, result.quantity)
                 return f"{result.quantity}× {item.name}"
         return "rien du tout… 😞 (le coffre était vide)"
+
+    # ---------------- petite fille ----------------
+
+    async def _spawn_little_girl(self) -> discord.Message | None:
+        channel = _event_channel(self.bot)
+        if channel is None:
+            _logger.warning("event channel introuvable (%s)", settings.event_channel_id)
+            return None
+        config = cfg.get_config("little_girl")
+        minutes = max(1, int(config.get("resolve_after_minutes", 5)))
+        expires_at = _now() + timedelta(minutes=minutes)
+        with get_db_session() as session:
+            repo = EventRepository(session)
+            ev = repo.create("little_girl", channel.id, expires_at=expires_at)
+            repo.touch_spawn("little_girl")
+            session.commit()
+            event_id = ev.id
+
+        embed = discord.Embed(
+            title="👧 Une petite fille apparaît…",
+            description=(
+                "Une petite fille en pleurs surgit au détour du chemin et implore "
+                "de l'aide. Mais dans ces terres maudites, tout n'est pas ce qu'il "
+                "paraît… **Aider** ou **ignorer** ?\n\n"
+                f"⏳ Le sort de chacun sera scellé dans **{minutes} minutes**. "
+                "Tout le monde peut participer."
+            ),
+            color=discord.Color.purple(),
+        )
+        file = _image_file(config.get("image", ""))
+        if file is not None:
+            embed.set_image(url=f"attachment://{file.filename}")
+        kwargs = {"embed": embed, "view": LittleGirlView(self)}
+        if file is not None:
+            kwargs["file"] = file
+        message = await channel.send(**kwargs)
+        with get_db_session() as session:
+            EventRepository(session).set_message_id(event_id, message.id)
+            session.commit()
+        return message
+
+    async def handle_girl_choice(
+        self, interaction: discord.Interaction, choice: str
+    ) -> None:
+        message = interaction.message
+        with get_db_session() as session:
+            repo = EventRepository(session)
+            profile = PlayerRepository(session).get_by_discord_id(interaction.user.id)
+            if profile is None:
+                await interaction.followup.send(
+                    "Crée d'abord ton profil avec `/profil`.", ephemeral=True
+                )
+                return
+            ev = repo.get_active_by_type("little_girl")
+            if ev is None or (message and ev.message_id != message.id):
+                await interaction.followup.send(
+                    "⏳ Trop tard — le sort de la petite fille est déjà scellé.",
+                    ephemeral=True,
+                )
+                return
+            repo.upsert_participation(ev.id, profile.player.id, choice=choice)
+            session.commit()
+        label = "🤝 aider" if choice == CHOICE_HELP else "🚶 ignorer"
+        await interaction.followup.send(
+            f"Ton choix est enregistré : **{label}**. Tu peux encore le changer "
+            "tant que le temps n'est pas écoulé. Le résultat tombera à la fin.",
+            ephemeral=True,
+        )
+
+    async def _resolve_little_girl(self, event_id: int) -> None:
+        girl_service = LittleGirlService()
+        config = cfg.get_config("little_girl")
+        gcfg = LittleGirlConfig(
+            trap_probability=int(config.get("trap_probability", 50)),
+            gold_loss_per_level=int(config.get("gold_loss_per_level", 10)),
+            buff_multiplier=float(config.get("buff_multiplier", 1.1)),
+            buff_duration_hours=int(config.get("buff_duration_hours", 3)),
+            debuff_multiplier=float(config.get("debuff_multiplier", 0.5)),
+            debuff_duration_hours=int(config.get("debuff_duration_hours", 3)),
+            title_chance=int(config.get("title_chance", 10)),
+        )
+        lines: list[str] = []
+        channel_id = None
+        message_id = None
+        with get_db_session() as session:
+            repo = EventRepository(session)
+            ev = repo.get_by_id(event_id)
+            if ev is None or ev.status != "active":
+                return
+            channel_id, message_id = ev.channel_id, ev.message_id
+            # Marque résolu tout de suite (idempotence si le loop repasse).
+            repo.set_status(event_id, "resolved")
+            session.commit()
+
+            is_trap = girl_service.roll_is_trap(gcfg)
+            participations = repo.list_participations(event_id)
+            title_repo = PlayerTitleRepository(session)
+            for part in participations:
+                profile = PlayerRepository(session).get_profile_by_player_id(
+                    part.player_id
+                )
+                if profile is None:
+                    continue
+                has_title = title_repo.has_title(part.player_id, "ma_survie_avant_tout")
+                consequence = girl_service.resolve(
+                    choice=part.choice,
+                    is_trap=is_trap,
+                    player_level=profile.progression.level,
+                    config=gcfg,
+                    has_title=has_title,
+                )
+                self._apply_girl_consequence(session, profile, consequence)
+                tag = self._girl_outcome_tag(consequence, part.choice)
+                lines.append(f"<@{profile.player.discord_id}> · {tag}")
+            session.commit()
+
+        await self._edit_girl_result(channel_id, message_id, is_trap, lines)
+
+    def _girl_outcome_tag(self, consequence, choice: str) -> str:
+        if consequence.grant_title:
+            return "🛡️ **titre Ma survie avant tout !**"
+        if consequence.buff_multiplier > 0:
+            return f"😇 buff +{round((consequence.buff_multiplier - 1) * 100)}% ({consequence.buff_hours}h)"
+        if consequence.debuff_multiplier > 0:
+            return f"💔 debuff ÷{round(1 / consequence.debuff_multiplier) if consequence.debuff_multiplier else 2} ({consequence.debuff_hours}h)"
+        if consequence.gold_loss > 0 or consequence.halve_hp:
+            return f"😈 −{format_int(consequence.gold_loss)} or & moitié PV"
+        return "🚶 rien"
+
+    def _apply_girl_consequence(self, session, profile, consequence) -> None:
+        player_id = profile.player.id
+        if consequence.buff_multiplier > 0:
+            PlayerStatusEffectRepository(session).add(
+                player_id, "little_girl_buff", consequence.buff_multiplier,
+                consequence.buff_hours * 3600,
+            )
+        if consequence.debuff_multiplier > 0:
+            PlayerStatusEffectRepository(session).add(
+                player_id, "little_girl_debuff", consequence.debuff_multiplier,
+                consequence.debuff_hours * 3600,
+            )
+        if consequence.gold_loss > 0:
+            PlayerRepository(session).add_gold(player_id, -consequence.gold_loss)
+        if consequence.halve_hp:
+            self._halve_current_hp(session, profile)
+        if consequence.grant_title:
+            PlayerTitleRepository(session).unlock(player_id, consequence.grant_title)
+
+    def _halve_current_hp(self, session, profile) -> None:
+        """Divise par 2 les PV COURANTS (régénérés d'abord pour être juste)."""
+        equipped = EquipmentRepository(session).list_by_player_id(profile.player.id)
+        active_class = ClassRepository(session).get_current_class_for_player(
+            profile.player.id
+        )
+        stats = resolve_player_stats(session, profile, equipped, active_class)
+        health_repo = PlayerHealthRepository(session)
+        state = health_repo.get_or_create(profile.player.id, default_current_hp=stats.max_hp)
+        from datetime import datetime, UTC
+
+        current = HealthRegenerationService().apply_out_of_combat_regeneration(
+            current_hp=state.current_hp,
+            max_hp=stats.max_hp,
+            hp_regeneration=stats.hp_regeneration,
+            last_updated_at=state.updated_at,
+            now=datetime.now(UTC),
+        )
+        health_repo.update_current_hp(profile.player.id, max(1, current // 2))
+
+    async def _edit_girl_result(
+        self, channel_id, message_id, is_trap: bool, lines: list[str]
+    ) -> None:
+        if not channel_id or not message_id:
+            return
+        try:
+            channel = self.bot.get_channel(channel_id)
+            if channel is None:
+                return
+            message = await channel.fetch_message(message_id)
+            if is_trap:
+                title = "😈 C'était un piège !"
+                desc = (
+                    "La « petite fille » était un **monstre déguisé** venu piéger "
+                    "les âmes charitables. Ceux qui l'ont aidée l'ont payé cher ; "
+                    "ceux qui l'ont ignorée ont eu le nez creux."
+                )
+                color = discord.Color.dark_red()
+            else:
+                title = "😇 C'était une vraie petite fille."
+                desc = (
+                    "Une enfant réellement perdue. Ceux qui l'ont aidée sont "
+                    "bénis ; ceux qui l'ont ignorée le regrettent amèrement."
+                )
+                color = discord.Color.green()
+            embed = discord.Embed(title=title, description=desc, color=color)
+            if lines:
+                embed.add_field(
+                    name="Sort des participants",
+                    value="\n".join(lines[:20]),
+                    inline=False,
+                )
+            else:
+                embed.add_field(
+                    name="Sort des participants",
+                    value="Personne n'a participé…",
+                    inline=False,
+                )
+            await message.edit(embed=embed, view=None, attachments=message.attachments)
+        except Exception:  # noqa: BLE001
+            _logger.exception("little girl result edit failed")
 
     # ---------------- commande admin de test ----------------
 
