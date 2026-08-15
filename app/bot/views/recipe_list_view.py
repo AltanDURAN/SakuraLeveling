@@ -7,6 +7,8 @@ filtre par boutons. Pagination interne ◀ ▶ si > 6 recettes par catégorie.
 
 from __future__ import annotations
 
+import asyncio
+
 import discord
 
 from app.bot.rendering.item_card_grid import (
@@ -302,7 +304,9 @@ class RecipeListView(discord.ui.View):
         return embed, file
 
     async def _send_update(self, interaction: discord.Interaction) -> None:
-        embed, file = self.render_current()
+        # Rendu Pillow off-thread pour ne pas bloquer l'event loop (~1-2 s
+        # sinon TOUT le bot fige pendant la génération de la page).
+        embed, file = await asyncio.to_thread(self.render_current)
         await interaction.response.edit_message(
             embed=embed, attachments=[file], view=self,
         )

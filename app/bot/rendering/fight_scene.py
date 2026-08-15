@@ -17,6 +17,8 @@ d'élément + nom + power + barre de vie), bandeau bas (joueurs : avatar +
 mini-barre de vie + nom). Barres mob et joueurs : même règle couleur.
 """
 
+import logging
+
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 from app.bot.rendering.element_visuals import make_element_badge, tint_by_element
@@ -28,6 +30,8 @@ from app.bot.rendering.image_utils import (
     load_background,
 )
 from app.shared.paths import LANDSCAPES_ASSETS_DIR, MOBS_ASSETS_DIR
+
+_logger = logging.getLogger(__name__)
 
 # --- Cadre fixe 4:5 ---
 FRAME_W, FRAME_H = 1080, 1350
@@ -164,7 +168,7 @@ def _load_mob_image(image_name: str | None) -> Image.Image:
         try:
             return Image.open(MOBS_ASSETS_DIR / image_name).convert("RGBA")
         except Exception as e:
-            print(f"Erreur chargement image mob {image_name} : {e}")
+            _logger.warning("Chargement image mob %s échoué : %s", image_name, e)
     return Image.new("RGBA", (600, 600), (120, 120, 120, 255))
 
 
@@ -312,4 +316,4 @@ def compose_players_banner(
         spot=spot, placement=placement,
     )
     image.save(output_path)
-    print(f"Image créée : {output_path}")
+    _logger.debug("Scène de combat générée : %s", output_path)
