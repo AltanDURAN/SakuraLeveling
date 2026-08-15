@@ -27,11 +27,17 @@ from app.infrastructure.config.settings import settings
 _ENDPOINT = "https://image.pollinations.ai/prompt/"
 
 # Negative prompt (fournisseurs qui le gèrent, ex : Cloudflare SDXL) → écarte
-# personnages/visages/texte, la faiblesse n°1 des rendus d'items.
-_NEGATIVE = ("person, people, human, character, face, portrait, hands, fingers, "
-             "body, mannequin, figure, text, letters, words, watermark, logo, "
-             "signature, frame, border, ui, blurry, lowres, low quality, "
-             "deformed, cropped, multiple different objects")
+# personnages/décor/texte/couleur, pour rester sur un croquis d'objet isolé N&B
+# cohérent avec la DA dessinée à la main des monstres.
+_NEGATIVE = ("color, colored, vibrant, photo, photograph, 3d render, cgi, glossy, "
+             "shiny, smooth gradient, person, people, human, character, face, "
+             "portrait, hands, fingers, body, skull, head, creature, monster, "
+             "animal, beast, horns, jaw, tree, trees, forest, woods, tree trunks, "
+             "bamboo, plant, building, castle, landscape, scenery, ground, floor, "
+             "book, page, spine, sketchbook border, dark border, black border, "
+             "vignette, box, square outline, character sheet, multiple views, "
+             "text, letters, words, watermark, signature, logo, frame, ui, "
+             "multiple objects, two objects, blurry, lowres, deformed, cropped")
 
 # Indices visuels par type d'item (aident le modèle à cadrer l'objet).
 _CATEGORY_HINT = {
@@ -51,45 +57,36 @@ _CATEGORY_HINT = {
     "consumable": "a consumable potion",
     "potion": "a potion in a glass flask",
 }
-# Style commun à TOUTES les icônes → cadrage/fond/lumière identiques = set cohérent.
-_STYLE = ("single inanimate object, floating centered, smooth dark charcoal grey "
-          "radial gradient background, soft rim lighting from top-left, subtle drop "
-          "shadow beneath, clean fantasy RPG inventory item icon, semi-realistic "
-          "painterly render, sharp focus, symmetrical, no person, no face, no "
-          "character, no creature, no hands, no pedestal, no base, no ring, no "
-          "scene, no text, no watermark, no border")
+# DA commune = croquis encre/crayon niveaux de gris hachuré, fond blanc, cohérent
+# avec les MONSTRES dessinés à la main du jeu (trait N&B + hachures + fond blanc).
+# Isolation forte (un seul objet) puis medium en tête du prompt (verrouille le
+# style croquis même sur objets lisses) : géré dans build_item_prompt.
+_ISOLATE = ("ONE single small isolated object only, centered on a plain empty white "
+            "background, RPG inventory item icon, still-life object study, nothing "
+            "else in the frame, no scenery")
+_STYLE = ("hand-drawn black ink and graphite pencil sketch, monochrome grayscale, "
+          "bold confident black ink outlines, dense cross-hatching and pencil "
+          "shading, hand-inked linework, dark fantasy RPG item drawing, high "
+          "contrast, detailed but sketchy")
 
-# Aura par rareté → lecture couleur cohérente sans écraser la matière de l'objet.
-_RARITY_AURA = {
-    "common": "plain mundane object, no magical glow",
-    "uncommon": "a faint soft green magical aura around it",
-    "rare": "a soft glowing blue magical aura around it",
-    "epic": "a vivid purple magical aura and faint glowing runes around it",
-    "legendary": "a radiant golden divine aura, intense warm glow around it",
-}
-
-# Prompts ÉCRITS À LA MAIN par item (clé = code). Sujet décrit sans ambiguïté et
-# SANS mot qui attire un personnage/visage (le modèle gratuit ignore les
-# négations) : on privilégie « single », « isolated », « object », « flat »…
-# Style + aura de rareté ajoutés automatiquement. Item non listé → fallback.
+# Prompts ÉCRITS À LA MAIN par item (clé = code). Sujets concrets et SINGULIERS,
+# SANS mot « monstre / animal / goblin » (SDXL dessinerait la créature entière) :
+# l'origine monstre est portée par l'objet lui-même (dent, cœur démoniaque,
+# fragment spectral, gelée de slime). Item non listé → fallback générique.
 ITEM_IMAGE_PROMPTS: dict[str, str] = {
-    # Consommable
-    "potion_soin": "a single small round glass potion vial sealed with a cork, filled with glowing bright red healing liquid, tiny bubbles inside the glass",
-    # Ressources — matériaux bruts d'un univers dark fantasy
-    "bois": "three short round firewood logs bound together with a rope, cylindrical brown wood with sawn ends showing tree growth rings, plain timber bundle",
-    "silex": "a single sharp shard of dark grey-black flint stone, glassy knapped fractured edges, one primitive fire-starter rock",
-    "morceau_de_tissu": "a single folded square of coarse beige linen cloth, plain woven fabric swatch with frayed edges",
-    "gel_e": "a single glossy droplet of translucent bright green slime jelly, gooey wobbly gelatinous blob",
-    "dent_de_gobelin": "one single small curved ivory-yellow fang, an isolated pointed tooth, chipped and dirty, tiny lone tooth object close-up",
-    "fragment_d_me": "a single small floating translucent pale-blue crystalline shard, a glowing sliver of spirit crystal, faint spectral wisps",
-    "c_ur_corrompu": "a single fleshy anatomical heart organ corrupted by dark magic, black and crimson veined flesh dripping purple ooze, an isolated grisly organ",
-    "petite_bombe": "a single round black cast-iron cannonball bomb with a short lit rope fuse and a bright orange spark, classic cartoon game bomb",
-    "diamant": "a single large brilliant-cut clear diamond gemstone, sharp geometric facets, sparkling white crystal",
-    "essence_de_vie": "a single floating radiant orb sphere of swirling green life energy, glowing wisps of vital nature magic, an orb of light",
-    # Arme
-    "dagues_jumelles": "two identical curved steel daggers crossed in an X shape, a matched pair of blades with leather-wrapped hilts, weapon icon of blades and handles only",
-    # Équipement
-    "cape_silencieuse": "top-down flat lay product photo of a neatly folded black cloak garment on a flat surface, folded charcoal fabric only, empty apparel, nobody, mannequin-free clothing product shot",
+    "potion_soin": "a single lone glass potion flask, exactly one round bottle sealed with a cork, glowing liquid and tiny bubbles inside, only one bottle and nothing else",
+    "bois": "a small stack of a few chopped stove wood billets bound with twine, one lone tied wood bundle, centered on blank white, nothing else",
+    "silex": "a single lone shard of knapped flint stone, exactly one angular grey rock flake with sharp chipped edges, only one stone and nothing else",
+    "morceau_de_tissu": "a single neatly folded square of coarse frayed cloth lying flat, one lone folded fabric scrap with loose threads on its edges, no clothesline, empty white background",
+    "gel_e": "a single glistening blob of gelatinous slime jelly, a wobbly rounded translucent goo droplet dripping at the bottom",
+    "dent_de_gobelin": "one single triangular ivory tooth, a flat pointed tooth with a serrated cutting edge and a worn cream-white root",
+    "fragment_d_me": "a single jagged translucent crystal shard with a faint anguished ghostly face dimly trapped inside and thin curling wisps of spirit smoke rising off it",
+    "c_ur_corrompu": "a corrupted heart, a single anatomical heart organ with dark bulging veins and tiny thorny spikes, dripping ooze",
+    "petite_bombe": "a single round black cast-iron bomb sphere with a short curled rope fuse and a small lit spark at the tip",
+    "diamant": "a single brilliant-cut faceted diamond gemstone, sharp geometric facets, a sparkling precious crystal",
+    "essence_de_vie": "a single round glass sphere orb holding swirling wisps of glowing living energy and tiny floating leaves inside",
+    "dagues_jumelles": "a pair of two identical curved matched daggers crossed into a single X shape, twin blades with cord-wrapped hilts",
+    "cape_silencieuse": "a single empty hooded cloak garment laid out flat seen from above, one folded cape with a visible deep hood, empty apparel, no person, empty white background",
 }
 
 
@@ -98,15 +95,15 @@ class ImageGenError(RuntimeError):
 
 
 def build_item_prompt(code: str, name: str, category: str, rarity: str) -> str:
-    """Description pour générer l'image d'un item : prompt CURATÉ si l'item est
-    connu (clé = code), sinon description générique dérivée du nom/type/rareté.
-    Le style commun est toujours ajouté."""
+    """Description pour générer l'image d'un item : sujet CURATÉ si l'item est
+    connu (clé = code), sinon sujet générique dérivé du nom/type. Le medium
+    (croquis encre) est placé EN TÊTE pour verrouiller la DA même sur objets
+    lisses, suivi de l'isolation forte et du style commun."""
     subject = ITEM_IMAGE_PROMPTS.get(code)
     if not subject:
         cat = _CATEGORY_HINT.get(category, "a fantasy object")
         subject = ", ".join(p for p in (f"a single {name.strip()}", cat) if p)
-    aura = _RARITY_AURA.get(rarity, "")
-    return ". ".join(p for p in (subject, aura, _STYLE) if p)
+    return f"a rough black ink and pencil sketch drawing of {subject}, {_ISOLATE}, {_STYLE}"
 
 
 _CF_DEFAULT_MODEL = "@cf/stabilityai/stable-diffusion-xl-base-1.0"
