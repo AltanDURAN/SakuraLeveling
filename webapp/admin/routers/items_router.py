@@ -315,8 +315,10 @@ async def items_generate_image(code: str, request: Request,
     _clear_item_assets(code)
     (ITEMS_ASSETS_DIR / f"{code}.png").write_bytes(png)
     git_sync.push_content([f"assets/items/{code}.png"], f"admin: image générée pour {code}")
-    _logger.info("Admin %s a généré l'image de l'item %s", user.discord_id, code)
-    return JSONResponse({"ok": True, "code": code, "prompt": prompt})
+    _logger.info("Admin %s a généré l'image de l'item %s (via %s)",
+                 user.discord_id, code, image_gen.active_provider())
+    return JSONResponse({"ok": True, "code": code, "prompt": prompt,
+                         "provider": image_gen.active_provider()})
 
 
 @router.get("/{code}/edit")
