@@ -47,7 +47,16 @@
                         {% endif %}
                     </td>
                     <td>{{ r.summary }}</td>
-                    <td>{{ r.image or "—" }}</td>
+                    <td>
+                        {% if r.image %}
+                        <span style="display:inline-flex; align-items:center; gap:.5rem;">
+                            <img src="/assets/events/{{ r.image }}" alt="{{ r.label }}"
+                                 style="width:44px; height:44px; object-fit:contain; border-radius:6px; background:rgba(0,0,0,.04);"
+                                 onerror="this.style.display='none'">
+                            <code style="color:var(--muted); font-size:.8rem;">{{ r.image }}</code>
+                        </span>
+                        {% else %}—{% endif %}
+                    </td>
                     <td style="white-space:nowrap;">
                         <a href="/admin/events/{{ r.type }}/edit" class="btn btn-small">Éditer</a>
                     </td>

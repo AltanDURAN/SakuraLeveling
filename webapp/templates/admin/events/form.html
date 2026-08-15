@@ -43,7 +43,16 @@
             <label>Image (assets/events/)
                 <input type="file" name="image_file" accept="image/*">
             </label>
-            <p style="color:var(--muted); font-size:.85rem;">Actuelle : <code>{{ config.image or "aucune" }}</code></p>
+            <div style="display:flex; align-items:center; gap:.75rem; margin-top:.4rem;">
+                {% if config.image %}
+                <img src="/assets/events/{{ config.image }}" alt="{{ label }}"
+                     style="width:96px; height:96px; object-fit:contain; border-radius:8px; background:rgba(0,0,0,.04);"
+                     onerror="this.style.display='none'">
+                {% endif %}
+                <p style="color:var(--muted); font-size:.85rem; margin:0;">
+                    Actuelle : <code>{{ config.image or "aucune" }}</code>
+                </p>
+            </div>
         </fieldset>
 
         {% if event_type == "chest" %}
