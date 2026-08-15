@@ -558,6 +558,14 @@
         "offset_y": 0.0,
         "shadow": true
       }
+    },
+    "succube": {
+      "feu": {
+        "scale": 0.57,
+        "offset_x": 0.0,
+        "offset_y": -0.06,
+        "shadow": true
+      }
     }
   }
 }
