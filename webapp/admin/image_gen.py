@@ -49,21 +49,51 @@ _RARITY_HINT = {
     "legendary": "legendary, radiant golden glow, epic masterwork",
 }
 
-_STYLE = ("fantasy RPG game item icon, single object centered, plain soft neutral "
-          "background, soft studio lighting, digital painting, highly detailed, "
-          "crisp, no text, no watermark, no border")
+# Style commun à TOUTES les icônes → un set visuellement cohérent.
+_STYLE = ("centered fantasy RPG inventory item icon, single inanimate object, "
+          "dark slate gradient background, dramatic rim lighting, painterly "
+          "digital art, vibrant, crisp high detail, no person, no character, "
+          "no human, no hands, no text, no watermark, no border")
+
+# Prompts ÉCRITS À LA MAIN par item (clé = code). Le sujet est décrit finement ;
+# le style commun est ajouté automatiquement. Pour un nouvel item non listé, on
+# retombe sur une description générique (build_item_prompt), qu'on peut ensuite
+# affiner ici. Ajouter un item = une ligne.
+ITEM_IMAGE_PROMPTS: dict[str, str] = {
+    # Consommable
+    "potion_soin": "a small round glass flask filled with glowing crimson-red healing potion, cork stopper, warm red inner glow, tiny bubbles",
+    # Ressources
+    "bois": "a small bundle of chopped wooden logs tied with rope, brown bark and rings, rustic",
+    "silex": "a chunk of grey knapped flint stone with sharp fractured edges, faint spark, raw mineral",
+    "morceau_de_tissu": "a neatly folded piece of coarse beige linen cloth, woven textile with frayed edges",
+    "gel_e": "a glossy translucent blob of bright lime-green slime jelly, gooey and dripping, jiggly gelatinous",
+    "dent_de_gobelin": "a single sharp yellowed goblin fang tooth, jagged, dirty, chipped, a small hunting trophy",
+    "fragment_d_me": "a floating translucent pale-blue soul shard, ghostly ethereal wisps, faint spectral glow",
+    "c_ur_corrompu": "a corrupted demonic heart, pulsing black-and-crimson flesh laced with sickly purple veins, dripping shadowy ooze, ominous",
+    "petite_bombe": "a small round black iron bomb with a short lit sparking fuse, cartoonish, danger",
+    "diamant": "a large brilliant-cut clear diamond gemstone, sharp sparkling facets, prismatic blue-white light refraction",
+    "essence_de_vie": "a swirling glowing orb of luminous emerald-green life essence, vital energy wisps, ethereal soft radiance",
+    # Arme
+    "dagues_jumelles": "a pair of crossed twin goblin daggers, wickedly curved sharp steel blades, crude bone handles wrapped in worn leather, faint blue rare glint",
+    # Équipement
+    "cape_silencieuse": "a neatly folded dark hooded cloak laid flat as a folded fabric bundle on the ground, charcoal shadow-woven cloth, subtle violet magical shimmer, product flat-lay of an apparel item",
+}
 
 
 class ImageGenError(RuntimeError):
     pass
 
 
-def build_item_prompt(name: str, category: str, rarity: str) -> str:
-    """Description auto (éditable côté admin) pour générer l'image de l'item."""
-    cat = _CATEGORY_HINT.get(category, "a fantasy object")
-    rar = _RARITY_HINT.get(rarity, "")
-    parts = [p for p in (name.strip(), cat, rar, _STYLE) if p]
-    return ", ".join(parts)
+def build_item_prompt(code: str, name: str, category: str, rarity: str) -> str:
+    """Description pour générer l'image d'un item : prompt CURATÉ si l'item est
+    connu (clé = code), sinon description générique dérivée du nom/type/rareté.
+    Le style commun est toujours ajouté."""
+    subject = ITEM_IMAGE_PROMPTS.get(code)
+    if not subject:
+        cat = _CATEGORY_HINT.get(category, "a fantasy object")
+        rar = _RARITY_HINT.get(rarity, "")
+        subject = ", ".join(p for p in (name.strip(), cat, rar) if p)
+    return f"{subject}, {_STYLE}"
 
 
 def generate_image(prompt: str, size: int = 512, seed: int | None = None,
