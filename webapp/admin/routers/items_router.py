@@ -26,7 +26,7 @@ from app.shared.enums import (
     ItemRarity,
 )
 from app.shared.paths import ITEMS_ASSETS_DIR
-from webapp.admin import content_sync, git_sync, uploads
+from webapp.admin import content_sync, git_sync, image_gen, uploads
 from webapp.admin.auth import AdminUser, require_admin
 from webapp.admin._shared import get_templates
 
@@ -58,13 +58,18 @@ async def _save_item_image(form, code: str) -> tuple[str | None, str | None]:
         return None, "Image illisible (formats acceptés : PNG/JPG/WebP/GIF)."
     if len(data) > 8 * 1024 * 1024:
         return None, "Image trop lourde (max 8 Mo)."
+    _clear_item_assets(code)
+    img.save(ITEMS_ASSETS_DIR / f"{code}.png", "PNG")
+    return f"assets/items/{code}.png", None
+
+
+def _clear_item_assets(code: str) -> None:
+    """Supprime toute image existante <code>.<ext> (avant d'en écrire une neuve)."""
     ITEMS_ASSETS_DIR.mkdir(parents=True, exist_ok=True)
     for ext in (".png", ".jpg", ".jpeg", ".webp", ".gif"):
         p = ITEMS_ASSETS_DIR / f"{code}{ext}"
         if p.exists():
             p.unlink()
-    img.save(ITEMS_ASSETS_DIR / f"{code}.png", "PNG")
-    return f"assets/items/{code}.png", None
 
 
 # Stats supportées par le système (cf StatsService)
@@ -283,6 +288,33 @@ async def items_quick_create(request: Request, user: AdminUser = Depends(require
                           f"admin: item {code} créé (quick)")
     _logger.info("Admin %s a créé l'item %s (quick, depuis un drop)", user.discord_id, code)
     return JSONResponse({"code": code, "name": name, "category": category, "rarity": rarity})
+
+
+@router.post("/{code}/generate-image")
+async def items_generate_image(code: str, request: Request,
+                               user: AdminUser = Depends(require_admin)):
+    """Génère l'image de l'item via un service gratuit et la pose en
+    assets/items/<code>.png. Corps JSON optionnel : {prompt}. Sans prompt, une
+    description est dérivée du nom/type/rareté."""
+    with get_db_session() as session:
+        item = ItemRepository(session).get_by_code(code)
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Item `{code}` introuvable.")
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+    prompt = str(payload.get("prompt", "")).strip() or image_gen.build_item_prompt(
+        item.name, item.category, item.rarity)
+    try:
+        png = image_gen.generate_image(prompt)
+    except image_gen.ImageGenError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=502)
+    _clear_item_assets(code)
+    (ITEMS_ASSETS_DIR / f"{code}.png").write_bytes(png)
+    git_sync.push_content([f"assets/items/{code}.png"], f"admin: image générée pour {code}")
+    _logger.info("Admin %s a généré l'image de l'item %s", user.discord_id, code)
+    return JSONResponse({"ok": True, "code": code, "prompt": prompt})
 
 
 @router.get("/{code}/edit")
