@@ -38,6 +38,10 @@ class TitleBonuses:
     # Intouchable pour dodge). Ils s'additionnent au champion_all_stats.
     crit_damage_flat: int = 0
     dodge_flat: int = 0
+    # Bonus flat additifs (titre « Ma survie avant tout » : def/vitesse/pv_max).
+    hp_max_flat: int = 0
+    defense_flat: int = 0
+    speed_flat: int = 0
     # Bonus drop rate vs un mob_code particulier (Chasseur Légendaire).
     # Multiplicatif sur le drop_rate de base (préserve la rareté des items
     # rares). Plusieurs titres ciblant le même mob s'additionnent.
@@ -77,8 +81,12 @@ class TitleBonuses:
         champion_pct = self.champion_all_stats_pct
         crit_dmg_extra = self.crit_damage_flat
         dodge_extra = self.dodge_flat
+        hp_extra = self.hp_max_flat
+        def_extra = self.defense_flat
+        speed_extra = self.speed_flat
 
-        if champion_pct <= 0 and crit_dmg_extra <= 0 and dodge_extra <= 0:
+        if (champion_pct <= 0 and crit_dmg_extra <= 0 and dodge_extra <= 0
+                and hp_extra <= 0 and def_extra <= 0 and speed_extra <= 0):
             return stats
 
         if champion_pct > 0:
@@ -93,14 +101,14 @@ class TitleBonuses:
             defense = stats.defense
 
         return Stats(
-            max_hp=max_hp,
+            max_hp=max_hp + hp_extra,
             attack=attack,
-            defense=defense,
+            defense=defense + def_extra,
             crit_chance=stats.crit_chance + champion_pct,
             crit_damage=stats.crit_damage + champion_pct + crit_dmg_extra,
             dodge=stats.dodge + champion_pct + dodge_extra,
             hp_regeneration=stats.hp_regeneration + champion_pct,
-            speed=stats.speed + champion_pct,
+            speed=stats.speed + champion_pct + speed_extra,
             mana_max=stats.mana_max,
             mana_regeneration=stats.mana_regeneration,
         )
@@ -131,6 +139,12 @@ class TitleBonusService:
                     bonuses.crit_damage_flat += value
                 elif etype == "dodge_flat" and value > 0:
                     bonuses.dodge_flat += value
+                elif etype == "hp_max_flat" and value > 0:
+                    bonuses.hp_max_flat += value
+                elif etype == "defense_flat" and value > 0:
+                    bonuses.defense_flat += value
+                elif etype == "speed_flat" and value > 0:
+                    bonuses.speed_flat += value
                 elif etype == "drop_rate_bonus_vs_mob" and target and value > 0:
                     bonuses.drop_rate_bonus_vs_mob[target] = (
                         bonuses.drop_rate_bonus_vs_mob.get(target, 0) + value
