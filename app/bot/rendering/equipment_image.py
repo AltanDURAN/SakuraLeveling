@@ -225,6 +225,7 @@ def _draw_slot_card(
     slot: str,
     equipment: PlayerEquipmentItem | None,
     two_handed_locked: bool = False,
+    item_levels: dict[int, int] | None = None,
 ) -> None:
     """Card individuelle pour un slot équipement."""
     accent = _SLOT_ACCENT.get(slot)
@@ -240,6 +241,29 @@ def _draw_slot_card(
         base, (x + 18, y + 14), header_label, header_font,
         fill=_TEXT_PRIMARY,
     )
+
+    # Badge « forge » : niveau de forge sacrée de la pièce (coin haut-droite).
+    if equipment is not None and item_levels:
+        lvl = item_levels.get(equipment.item_definition.id, 0)
+        if lvl > 0:
+            badge_font = _try_font(21, bold=True)
+            badge_text = f"🔨 Nv {lvl}"
+            bw = measure_text_with_emojis(badge_text, badge_font, badge_font.size)
+            pad_x = 10
+            # Sous le header, aligné à droite au niveau de l'image → évite de
+            # chevaucher les labels de slot longs (« Main droite »).
+            bx1 = x + w - 14 - int(bw) - 2 * pad_x
+            by1 = y + 52
+            bx2 = x + w - 14
+            by2 = by1 + 34
+            pill = ImageDraw.Draw(base)
+            pill.rounded_rectangle(
+                [(bx1, by1), (bx2, by2)], radius=12,
+                fill=(40, 24, 10, 220), outline=_GOLD, width=2,
+            )
+            draw_text_with_emojis(
+                base, (bx1 + pad_x, by1 + 5), badge_text, badge_font, fill=_GOLD,
+            )
 
     # Image de l'item (ou placeholder)
     img_size = min(180, w - 30, h - 130)
@@ -398,6 +422,7 @@ def compose_equipment_grid_page(
     *,
     page: int,  # 1 ou 2
     seed: int = 0,
+    item_levels: dict[int, int] | None = None,
 ) -> None:
     """Génère un PNG pour la page 1 (Principal) ou 2 (Secondaire)."""
     bg = _gradient_bg(WIDTH, GRID_HEIGHT)
@@ -442,6 +467,7 @@ def compose_equipment_grid_page(
         _draw_slot_card(
             bg, (x, y), (card_w, card_h),
             slot, equipment, two_handed_locked=locked,
+            item_levels=item_levels,
         )
 
     _draw_page_footer(bg, page_label)

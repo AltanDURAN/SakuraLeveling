@@ -10,7 +10,8 @@
       { "kind": "item", "item_code": "diamant", "quantity": 1, "weight": 8 },
       { "kind": "gold", "gold_amount": 500, "weight": 12 },
       { "kind": "nothing", "weight": 10 }
-    ]
+    ],
+    "level_scaling_pct": 2
   },
   "little_girl": {
     "enabled": true,

@@ -75,6 +75,14 @@
                 </tbody>
             </table>
             <button type="button" class="btn btn-small" @click="rows.push({kind:'gold',gold_amount:100,weight:10})">+ Ligne</button>
+            <div class="form-row" style="margin-top:1rem;">
+                <label>Scaling par niveau (%)
+                    <input type="number" name="level_scaling_pct" min="0" value="{{ config.level_scaling_pct }}"></label>
+            </div>
+            <p style="color:var(--muted); font-size:.85rem;">
+                Le gain (or & quantités d'items) est multiplié par <code>1 + niveau × %/100</code>
+                selon le niveau du gagnant. <code>0</code> = pas de scaling ; <code>2</code> → niveau 50 = ×2, niveau 100 = ×3.
+            </p>
         </fieldset>
         {% elif event_type == "little_girl" %}
         <fieldset>

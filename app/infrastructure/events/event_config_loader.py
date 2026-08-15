@@ -26,6 +26,9 @@ _DEFAULTS: dict[str, dict] = {
         "cadence": {"times": 1, "per_days": 1},
         "image": "chest.png",
         "loot": [],
+        # Scaling du gain selon le niveau du gagnant : mult = 1 + niveau × pct/100.
+        # 0 = pas de scaling. Ex : 2 → niveau 50 = ×2, niveau 100 = ×3.
+        "level_scaling_pct": 2,
     },
     "little_girl": {
         "enabled": False,

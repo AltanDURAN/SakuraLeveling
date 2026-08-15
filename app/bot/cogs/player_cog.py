@@ -410,6 +410,12 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             equipment_repository = EquipmentRepository(session)
             equipment_items = equipment_repository.list_by_player_id(profile.player.id)
             set_bonuses = resolve_set_bonuses(equipment_items)
+            from app.infrastructure.db.repositories.player_item_level_repository import (
+                PlayerItemLevelRepository,
+            )
+            item_levels = PlayerItemLevelRepository(session).get_levels_for_player(
+                profile.player.id
+            )
 
         try:
             view = EquipmentImageView(
@@ -417,6 +423,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 player_name=target_member.display_name,
                 equipped_items=equipment_items,
                 set_bonuses=set_bonuses,
+                item_levels=item_levels,
                 timeout=600.0,
             )
             embed, file = await asyncio.to_thread(view.render_current_page)
