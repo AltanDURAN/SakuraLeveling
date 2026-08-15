@@ -19,7 +19,7 @@
         {
           "element": "plante",
           "time": "always",
-          "background": "clairiere_sinistre.png",
+          "background": "clairiere_sinistre_plante.png",
           "crop": {
             "x": 0.11,
             "y": 0.12,
@@ -30,29 +30,29 @@
         {
           "element": "eau",
           "time": "always",
-          "background": "clairiere_sinistre.png",
+          "background": "clairiere_sinistre_eau.png",
           "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
+            "x": 0.0,
+            "y": 0.0,
+            "w": 1.0
           },
-          "ground_y": 0.86
+          "ground_y": 0.88
         },
         {
           "element": "terre",
           "time": "always",
-          "background": "clairiere_sinistre.png",
+          "background": "clairiere_sinistre_terre.png",
           "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
+            "x": 0.0,
+            "y": 0.0,
+            "w": 1.0
           },
-          "ground_y": 0.86
+          "ground_y": 0.78
         },
         {
           "element": "tenebre",
           "time": "night",
-          "background": "clairiere_sinistre.png",
+          "background": "clairiere_sinistre_tenebre.png",
           "crop": {
             "x": 0.11,
             "y": 0.12,
@@ -63,7 +63,7 @@
         {
           "element": "lumiere",
           "time": "day",
-          "background": "clairiere_sinistre.png",
+          "background": "clairiere_sinistre_lumiere.png",
           "crop": {
             "x": 0.11,
             "y": 0.12,
@@ -74,58 +74,58 @@
       ]
     },
     {
-      "name": "Cimetière abandonné",
+      "name": "Cimetière abandonné lumière",
       "channel_id": 1525863083321462914,
       "families": [
         "mort-vivant"
       ],
-      "background": "cimetiere_abandonne.png",
+      "background": "cimetiere_abandonne_lumiere.png",
       "essences_min": 1,
       "essences_max": 2,
       "spots": [
         {
-          "element": "glace",
-          "time": "always",
-          "background": "cimetiere_abandonne.png",
+          "element": "lumiere",
+          "time": "day",
+          "background": "cimetiere_abandonne_lumiere.png",
           "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
+            "x": 0.0,
+            "y": 0.0,
+            "w": 1.0
           },
-          "ground_y": 0.86
-        },
-        {
-          "element": "vent",
-          "time": "always",
-          "background": "cimetiere_abandonne.png",
-          "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
-          },
-          "ground_y": 0.86
+          "ground_y": 0.875
         },
         {
           "element": "tenebre",
           "time": "night",
-          "background": "cimetiere_abandonne.png",
+          "background": "cimetiere_abandonne_tenebre.png",
           "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
+            "x": 0.0,
+            "y": 0.0,
+            "w": 1.0
           },
-          "ground_y": 0.86
+          "ground_y": 0.875
         },
         {
-          "element": "lumiere",
-          "time": "day",
-          "background": "cimetiere_abandonne.png",
+          "element": "glace",
+          "time": "always",
+          "background": "cimetiere_abandonne_glace.png",
           "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
+            "x": 0.0,
+            "y": 0.0,
+            "w": 1.0
           },
-          "ground_y": 0.86
+          "ground_y": 0.875
+        },
+        {
+          "element": "vent",
+          "time": "always",
+          "background": "cimetiere_abandonne_vent.png",
+          "crop": {
+            "x": 0.0,
+            "y": 0.0,
+            "w": 1.0
+          },
+          "ground_y": 0.875
         }
       ]
     },
@@ -142,35 +142,35 @@
         {
           "element": "feu",
           "time": "always",
-          "background": "berceau_cataclysmique.png",
+          "background": "berceau_cataclysmique_feu.png",
           "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
+            "x": 0.0,
+            "y": 0.0,
+            "w": 1.0
           },
-          "ground_y": 0.86
+          "ground_y": 0.875
         },
         {
           "element": "tenebre",
           "time": "always",
-          "background": "berceau_cataclysmique.png",
+          "background": "berceau_cataclysmique_tenebre.png",
           "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
+            "x": 0.0,
+            "y": 0.0,
+            "w": 1.0
           },
-          "ground_y": 0.86
+          "ground_y": 0.875
         },
         {
           "element": "terre",
           "time": "always",
-          "background": "berceau_cataclysmique.png",
+          "background": "berceau_cataclysmique_terre.png",
           "crop": {
-            "x": 0.11,
-            "y": 0.12,
-            "w": 0.78
+            "x": 0.0,
+            "y": 0.0,
+            "w": 1.0
           },
-          "ground_y": 0.86
+          "ground_y": 0.875
         }
       ]
     }

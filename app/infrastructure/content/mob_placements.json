@@ -3,53 +3,579 @@
   "placements": {
     "gobelin": {
       "plante": {
-        "scale": 0.3,
-        "offset_x": -0.07,
-        "offset_y": -0.19,
+        "scale": 0.4,
+        "offset_x": 0.02,
+        "offset_y": -0.03,
         "shadow": true
       },
       "eau": {
-        "scale": 0.3,
-        "offset_x": -0.07,
-        "offset_y": -0.19,
+        "scale": 0.37,
+        "offset_x": 0.01,
+        "offset_y": -0.06,
         "shadow": true
       },
       "terre": {
-        "scale": 0.3,
-        "offset_x": -0.07,
-        "offset_y": -0.19,
+        "scale": 0.35,
+        "offset_x": 0.04,
+        "offset_y": -0.03,
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.3,
-        "offset_x": -0.07,
-        "offset_y": -0.19,
+        "scale": 0.35,
+        "offset_x": 0.02,
+        "offset_y": -0.06,
         "shadow": true
       },
       "lumiere": {
-        "scale": 0.3,
-        "offset_x": -0.07,
-        "offset_y": -0.19,
+        "scale": 0.35,
+        "offset_x": -0.02,
+        "offset_y": -0.06,
         "shadow": true
       }
     },
     "banshee": {
       "glace": {
-        "scale": 0.6,
+        "scale": 0.5,
+        "offset_x": -0.06,
+        "offset_y": -0.05,
+        "shadow": true
+      },
+      "vent": {
+        "scale": 0.5,
+        "offset_x": -0.06,
+        "offset_y": -0.05,
+        "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.5,
+        "offset_x": -0.06,
+        "offset_y": -0.05,
+        "shadow": true
+      },
+      "lumiere": {
+        "scale": 0.5,
+        "offset_x": -0.06,
+        "offset_y": -0.05,
+        "shadow": true
+      }
+    },
+    "gobelin_assassin": {
+      "plante": {
+        "scale": 0.4,
+        "offset_x": -0.05,
+        "offset_y": -0.02,
+        "shadow": true
+      },
+      "eau": {
+        "scale": 0.36,
+        "offset_x": -0.04,
+        "offset_y": -0.08,
+        "shadow": true
+      },
+      "terre": {
+        "scale": 0.34,
+        "offset_x": -0.04,
+        "offset_y": -0.04,
+        "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.34,
+        "offset_x": -0.13,
+        "offset_y": -0.14,
+        "shadow": true
+      },
+      "lumiere": {
+        "scale": 0.35,
+        "offset_x": -0.11,
+        "offset_y": -0.06,
+        "shadow": true
+      }
+    },
+    "gobelin_ballon": {
+      "plante": {
+        "scale": 0.48,
+        "offset_x": -0.02,
+        "offset_y": -0.26,
+        "shadow": true
+      },
+      "eau": {
+        "scale": 0.48,
+        "offset_x": -0.02,
+        "offset_y": -0.28,
+        "shadow": true
+      },
+      "terre": {
+        "scale": 0.48,
+        "offset_x": -0.02,
+        "offset_y": -0.18,
+        "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.48,
+        "offset_x": -0.02,
+        "offset_y": -0.26,
+        "shadow": true
+      },
+      "lumiere": {
+        "scale": 0.48,
+        "offset_x": -0.02,
+        "offset_y": -0.26,
+        "shadow": true
+      }
+    },
+    "gobelin_chaman": {
+      "plante": {
+        "scale": 0.48,
+        "offset_x": 0.01,
+        "offset_y": -0.01,
+        "shadow": true
+      },
+      "eau": {
+        "scale": 0.4,
         "offset_x": 0.0,
+        "offset_y": -0.09,
+        "shadow": true
+      },
+      "terre": {
+        "scale": 0.43,
+        "offset_x": 0.03,
+        "offset_y": -0.01,
+        "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.36,
+        "offset_x": -0.08,
+        "offset_y": -0.13,
+        "shadow": true
+      },
+      "lumiere": {
+        "scale": 0.43,
+        "offset_x": -0.06,
+        "offset_y": -0.05,
+        "shadow": true
+      }
+    },
+    "gobelin_combattant": {
+      "plante": {
+        "scale": 0.47,
+        "offset_x": -0.02,
+        "offset_y": 0.07,
+        "shadow": true
+      },
+      "eau": {
+        "scale": 0.47,
+        "offset_x": -0.02,
+        "offset_y": 0.05,
+        "shadow": true
+      },
+      "terre": {
+        "scale": 0.47,
+        "offset_x": -0.02,
+        "offset_y": 0.15,
+        "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.47,
+        "offset_x": -0.02,
+        "offset_y": 0.07,
+        "shadow": true
+      },
+      "lumiere": {
+        "scale": 0.47,
+        "offset_x": -0.02,
+        "offset_y": 0.07,
+        "shadow": true
+      }
+    },
+    "gobelin_geant": {
+      "plante": {
+        "scale": 0.58,
+        "offset_x": -0.05,
+        "offset_y": 0.01,
+        "shadow": true
+      },
+      "eau": {
+        "scale": 0.51,
+        "offset_x": -0.05,
+        "offset_y": -0.07,
+        "shadow": true
+      },
+      "terre": {
+        "scale": 0.58,
+        "offset_x": -0.04,
+        "offset_y": 0.03,
+        "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.45,
+        "offset_x": -0.1,
+        "offset_y": -0.14,
+        "shadow": true
+      },
+      "lumiere": {
+        "scale": 0.54,
+        "offset_x": -0.1,
+        "offset_y": -0.06,
+        "shadow": true
+      }
+    },
+    "gobelin_runique": {
+      "plante": {
+        "scale": 0.5,
+        "offset_x": -0.02,
+        "offset_y": 0.02,
+        "shadow": true
+      },
+      "eau": {
+        "scale": 0.5,
+        "offset_x": -0.02,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "terre": {
+        "scale": 0.5,
+        "offset_x": -0.02,
+        "offset_y": 0.1,
+        "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.5,
+        "offset_x": -0.02,
+        "offset_y": 0.02,
+        "shadow": true
+      },
+      "lumiere": {
+        "scale": 0.5,
+        "offset_x": -0.02,
+        "offset_y": 0.02,
+        "shadow": true
+      }
+    },
+    "gobelin_superieur": {
+      "plante": {
+        "scale": 0.48,
+        "offset_x": 0.05,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "eau": {
+        "scale": 0.45,
+        "offset_x": 0.06,
+        "offset_y": -0.06,
+        "shadow": true
+      },
+      "terre": {
+        "scale": 0.48,
+        "offset_x": 0.05,
+        "offset_y": -0.01,
+        "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.42,
+        "offset_x": -0.08,
+        "offset_y": -0.1,
+        "shadow": true
+      },
+      "lumiere": {
+        "scale": 0.46,
+        "offset_x": -0.03,
+        "offset_y": -0.04,
+        "shadow": true
+      }
+    },
+    "fantome": {
+      "lumiere": {
+        "scale": 0.44,
+        "offset_x": -0.07,
+        "offset_y": -0.1,
+        "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.44,
+        "offset_x": -0.07,
+        "offset_y": -0.1,
+        "shadow": true
+      },
+      "glace": {
+        "scale": 0.44,
+        "offset_x": -0.07,
+        "offset_y": -0.1,
+        "shadow": true
+      },
+      "vent": {
+        "scale": 0.44,
+        "offset_x": -0.07,
+        "offset_y": -0.1,
+        "shadow": true
+      }
+    },
+    "gargouille": {
+      "lumiere": {
+        "scale": 0.4,
+        "offset_x": -0.06,
+        "offset_y": -0.3,
+        "shadow": false
+      },
+      "tenebre": {
+        "scale": 0.4,
+        "offset_x": -0.06,
+        "offset_y": -0.3,
+        "shadow": false
+      },
+      "glace": {
+        "scale": 0.4,
+        "offset_x": -0.06,
+        "offset_y": -0.3,
+        "shadow": false
+      },
+      "vent": {
+        "scale": 0.4,
+        "offset_x": -0.06,
+        "offset_y": -0.3,
+        "shadow": false
+      }
+    },
+    "liche_maudite": {
+      "lumiere": {
+        "scale": 0.51,
+        "offset_x": -0.02,
+        "offset_y": 0.01,
+        "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.51,
+        "offset_x": -0.02,
+        "offset_y": 0.01,
+        "shadow": true
+      },
+      "glace": {
+        "scale": 0.51,
+        "offset_x": -0.02,
+        "offset_y": 0.01,
+        "shadow": true
+      },
+      "vent": {
+        "scale": 0.51,
+        "offset_x": -0.02,
+        "offset_y": 0.01,
+        "shadow": true
+      }
+    },
+    "momie": {
+      "lumiere": {
+        "scale": 0.43,
+        "offset_x": -0.07,
+        "offset_y": -0.05,
+        "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.43,
+        "offset_x": -0.07,
+        "offset_y": -0.05,
+        "shadow": true
+      },
+      "glace": {
+        "scale": 0.43,
+        "offset_x": -0.07,
+        "offset_y": -0.05,
+        "shadow": true
+      },
+      "vent": {
+        "scale": 0.43,
+        "offset_x": -0.07,
+        "offset_y": -0.05,
+        "shadow": true
+      }
+    },
+    "squelette": {
+      "lumiere": {
+        "scale": 0.45,
+        "offset_x": -0.07,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.45,
+        "offset_x": -0.07,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "glace": {
+        "scale": 0.45,
+        "offset_x": -0.07,
         "offset_y": 0.0,
         "shadow": true
       },
       "vent": {
+        "scale": 0.45,
+        "offset_x": -0.07,
+        "offset_y": 0.0,
+        "shadow": true
+      }
+    },
+    "zombie": {
+      "lumiere": {
+        "scale": 0.44,
+        "offset_x": -0.03,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.44,
+        "offset_x": -0.03,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "glace": {
+        "scale": 0.44,
+        "offset_x": -0.03,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "vent": {
+        "scale": 0.44,
+        "offset_x": -0.03,
+        "offset_y": 0.0,
+        "shadow": true
+      }
+    },
+    "slime": {
+      "plante": {
+        "scale": 0.22,
+        "offset_x": -0.02,
+        "offset_y": 0.02,
+        "shadow": true
+      },
+      "eau": {
+        "scale": 0.21,
+        "offset_x": -0.02,
+        "offset_y": -0.07,
+        "shadow": true
+      },
+      "terre": {
+        "scale": 0.22,
+        "offset_x": -0.02,
+        "offset_y": -0.01,
+        "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.2,
+        "offset_x": -0.15,
+        "offset_y": -0.11,
+        "shadow": true
+      },
+      "lumiere": {
+        "scale": 0.2,
+        "offset_x": -0.1,
+        "offset_y": -0.04,
+        "shadow": true
+      }
+    },
+    "ange_dechu": {
+      "terre": {
         "scale": 0.6,
+        "offset_x": 0.01,
+        "offset_y": -0.07,
+        "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.6,
+        "offset_x": 0.01,
+        "offset_y": -0.07,
+        "shadow": true
+      },
+      "feu": {
+        "scale": 0.6,
+        "offset_x": 0.01,
+        "offset_y": -0.07,
+        "shadow": true
+      }
+    },
+    "archidemon": {
+      "terre": {
+        "scale": 0.65,
+        "offset_x": 0.0,
+        "offset_y": 0.03,
+        "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.65,
+        "offset_x": 0.0,
+        "offset_y": 0.03,
+        "shadow": true
+      },
+      "feu": {
+        "scale": 0.65,
+        "offset_x": 0.0,
+        "offset_y": 0.03,
+        "shadow": true
+      }
+    },
+    "cerbere": {
+      "terre": {
+        "scale": 0.6,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      }
+    },
+    "diablotin": {
+      "feu": {
+        "scale": 0.56,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.6,
+        "scale": 0.56,
         "offset_x": 0.0,
         "offset_y": 0.0,
+        "shadow": true
+      },
+      "terre": {
+        "scale": 0.56,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      }
+    },
+    "demon_cornu": {
+      "feu": {
+        "scale": 0.6,
+        "offset_x": -0.04,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.6,
+        "offset_x": -0.04,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "terre": {
+        "scale": 0.6,
+        "offset_x": -0.04,
+        "offset_y": 0.0,
+        "shadow": true
+      }
+    },
+    "succube": {
+      "feu": {
+        "scale": 0.56,
+        "offset_x": 0.0,
+        "offset_y": -0.06,
+        "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.56,
+        "offset_x": 0.0,
+        "offset_y": -0.06,
+        "shadow": true
+      },
+      "terre": {
+        "scale": 0.56,
+        "offset_x": 0.0,
+        "offset_y": -0.06,
         "shadow": true
       }
     }

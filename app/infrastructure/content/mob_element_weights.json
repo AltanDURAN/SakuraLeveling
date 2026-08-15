@@ -2,9 +2,101 @@
   "_comment": "Poids de spawn élémentaires par monstre (édités sur la fiche du monstre) : weights[mob][element] = poids (>0). Un monstre sans poids hérite d'un tirage uniforme sur les éléments de sa zone.",
   "weights": {
     "banshee": {
-      "glace": 1,
-      "vent": 1,
-      "tenebre": 1
+      "lumiere": 5,
+      "tenebre": 10,
+      "glace": 20,
+      "vent": 20
+    },
+    "gobelin": {
+      "plante": 33,
+      "eau": 33,
+      "terre": 33,
+      "tenebre": 5,
+      "lumiere": 5
+    },
+    "gobelin_assassin": {
+      "plante": 10,
+      "eau": 10,
+      "terre": 10,
+      "tenebre": 30
+    },
+    "gobelin_geant": {
+      "plante": 20,
+      "eau": 10,
+      "terre": 20,
+      "tenebre": 5,
+      "lumiere": 5
+    },
+    "slime": {
+      "plante": 10,
+      "eau": 10,
+      "terre": 10
+    },
+    "gobelin_ballon": {
+      "plante": 20,
+      "terre": 20,
+      "tenebre": 5,
+      "lumiere": 5
+    },
+    "ange_dechu": {
+      "feu": 30,
+      "tenebre": 20,
+      "terre": 10
+    },
+    "archidemon": {
+      "feu": 20,
+      "tenebre": 30,
+      "terre": 10
+    },
+    "cerbere": {
+      "feu": 30,
+      "tenebre": 5,
+      "terre": 20
+    },
+    "diablotin": {
+      "feu": 20,
+      "tenebre": 5,
+      "terre": 20
+    },
+    "demon_cornu": {
+      "feu": 15,
+      "tenebre": 5,
+      "terre": 25
+    },
+    "ogre_demoniaque": {
+      "feu": 20,
+      "tenebre": 10,
+      "terre": 25
+    },
+    "succube": {
+      "feu": 20,
+      "tenebre": 30,
+      "terre": 10
+    },
+    "gobelin_runique": {
+      "plante": 10,
+      "eau": 10,
+      "terre": 15,
+      "tenebre": 5,
+      "lumiere": 5
+    },
+    "gobelin_superieur": {
+      "plante": 10,
+      "eau": 10,
+      "terre": 10,
+      "tenebre": 15,
+      "lumiere": 15
+    },
+    "fantome": {
+      "lumiere": 10,
+      "tenebre": 10,
+      "glace": 20,
+      "vent": 20
+    },
+    "zombie": {
+      "tenebre": 15,
+      "glace": 10,
+      "vent": 10
     }
   }
 }

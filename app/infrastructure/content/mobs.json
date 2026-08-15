@@ -4,42 +4,68 @@
     "name": "Slime",
     "family": "slime",
     "description": "Une créature gélatineuse faible.",
-    "max_hp": 158,
-    "current_hp": 158,
-    "attack": 13,
-    "defense": 6,
-    "crit_chance": 0,
-    "crit_damage": 100,
-    "dodge": 0,
+    "max_hp": 100,
+    "current_hp": 100,
+    "attack": 5,
+    "defense": 5,
+    "crit_chance": 5,
+    "crit_damage": 150,
+    "dodge": 5,
     "hp_regeneration": 0,
     "speed": 5,
-    "xp_reward": 19,
-    "gold_reward": 9,
-    "spawn_weight": 60,
-    "loot_table": [],
+    "xp_reward": 23,
+    "gold_reward": 15,
+    "spawn_weight": 40,
+    "loot_table": [
+      {
+        "drop_rate": 0.1,
+        "item_code": "potion_soin",
+        "max_quantity": 1,
+        "min_quantity": 1
+      },
+      {
+        "drop_rate": 0.04,
+        "item_code": "essence_de_vie",
+        "max_quantity": 1,
+        "min_quantity": 1
+      }
+    ],
     "image_name": "slime.png",
-    "element": "eau"
+    "element": ""
   },
   {
     "code": "gobelin",
     "name": "Gobelin",
     "family": "gobelin",
     "description": "Une créature faible.",
-    "max_hp": 238,
-    "current_hp": 238,
-    "attack": 18,
-    "defense": 10,
-    "crit_chance": 0,
-    "crit_damage": 100,
-    "dodge": 0,
+    "max_hp": 250,
+    "current_hp": 250,
+    "attack": 14,
+    "defense": 8,
+    "crit_chance": 10,
+    "crit_damage": 150,
+    "dodge": 5,
     "hp_regeneration": 0,
-    "speed": 5,
-    "xp_reward": 50,
-    "gold_reward": 24,
+    "speed": 6,
+    "xp_reward": 14,
+    "gold_reward": 9,
     "spawn_weight": 40,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "drop_rate": 0.2,
+        "item_code": "silex",
+        "max_quantity": 1,
+        "min_quantity": 1
+      },
+      {
+        "drop_rate": 0.04,
+        "item_code": "diamant",
+        "max_quantity": 1,
+        "min_quantity": 1
+      }
+    ],
     "image_name": "gobelin.png",
-    "element": "terre"
+    "element": ""
   },
   {
     "code": "gobelin_combattant",
@@ -88,42 +114,68 @@
     "name": "Gobelin Ballon",
     "family": "gobelin",
     "description": "Un groupe de créatures inventives.",
-    "max_hp": 557,
-    "current_hp": 557,
-    "attack": 36,
-    "defense": 23,
-    "crit_chance": 0,
-    "crit_damage": 100,
-    "dodge": 0,
+    "max_hp": 480,
+    "current_hp": 480,
+    "attack": 28,
+    "defense": 10,
+    "crit_chance": 16,
+    "crit_damage": 150,
+    "dodge": 5,
     "hp_regeneration": 0,
-    "speed": 5,
-    "xp_reward": 175,
-    "gold_reward": 84,
+    "speed": 12,
+    "xp_reward": 75,
+    "gold_reward": 50,
     "spawn_weight": 20,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "drop_rate": 0.15,
+        "item_code": "morceau_de_tissu",
+        "max_quantity": 3,
+        "min_quantity": 2
+      },
+      {
+        "drop_rate": 0.05,
+        "item_code": "petite_bombe",
+        "max_quantity": 2,
+        "min_quantity": 1
+      }
+    ],
     "image_name": "gobelin_ballon.png",
-    "element": "vent"
+    "element": ""
   },
   {
     "code": "gobelin_geant",
     "name": "Gobelin Géant",
     "family": "gobelin",
     "description": "Une créature imposante.",
-    "max_hp": 955,
-    "current_hp": 955,
-    "attack": 25,
-    "defense": 40,
-    "crit_chance": 0,
-    "crit_damage": 100,
+    "max_hp": 1000,
+    "current_hp": 1000,
+    "attack": 60,
+    "defense": 25,
+    "crit_chance": 10,
+    "crit_damage": 150,
     "dodge": 0,
     "hp_regeneration": 0,
-    "speed": 5,
-    "xp_reward": 206,
-    "gold_reward": 99,
+    "speed": 2,
+    "xp_reward": 110,
+    "gold_reward": 75,
     "spawn_weight": 20,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "drop_rate": 0.1,
+        "item_code": "diamant",
+        "max_quantity": 1,
+        "min_quantity": 1
+      },
+      {
+        "drop_rate": 0.2,
+        "item_code": "bois",
+        "max_quantity": 3,
+        "min_quantity": 1
+      }
+    ],
     "image_name": "gobelin_geant.png",
-    "element": "terre"
+    "element": ""
   },
   {
     "code": "gobelin_runique",
@@ -144,7 +196,7 @@
     "spawn_weight": 20,
     "loot_table": [],
     "image_name": "gobelin_runique.png",
-    "element": "lumiere"
+    "element": ""
   },
   {
     "code": "gobelin_superieur",
@@ -165,28 +217,47 @@
     "spawn_weight": 10,
     "loot_table": [],
     "image_name": "gobelin_superieur.png",
-    "element": "feu"
+    "element": ""
   },
   {
     "code": "gobelin_assassin",
     "name": "Gobelin Assassin",
     "family": "gobelin",
     "description": "Une créature discrète.",
-    "max_hp": 564,
-    "current_hp": 564,
-    "attack": 53,
-    "defense": 31,
-    "crit_chance": 20,
-    "crit_damage": 150,
-    "dodge": 0,
+    "max_hp": 600,
+    "current_hp": 600,
+    "attack": 40,
+    "defense": 20,
+    "crit_chance": 25,
+    "crit_damage": 225,
+    "dodge": 20,
     "hp_regeneration": 0,
-    "speed": 9,
-    "xp_reward": 325,
-    "gold_reward": 156,
+    "speed": 20,
+    "xp_reward": 150,
+    "gold_reward": 100,
     "spawn_weight": 10,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "drop_rate": 0.05,
+        "item_code": "dagues_jumelles",
+        "max_quantity": 1,
+        "min_quantity": 1
+      },
+      {
+        "drop_rate": 0.2,
+        "item_code": "morceau_de_tissu",
+        "max_quantity": 2,
+        "min_quantity": 1
+      },
+      {
+        "drop_rate": 0.01,
+        "item_code": "cape_silencieuse",
+        "max_quantity": 1,
+        "min_quantity": 1
+      }
+    ],
     "image_name": "gobelin_assassin.png",
-    "element": "tenebre"
+    "element": ""
   },
   {
     "code": "diablotin",
@@ -360,7 +431,6 @@
     "code": "zombie",
     "name": "Zombie",
     "family": "mort-vivant",
-    "element": "plante",
     "description": "Une carcasse putride et lente, mais coriace.",
     "max_hp": 1209,
     "current_hp": 1209,
@@ -375,13 +445,13 @@
     "gold_reward": 131,
     "spawn_weight": 20,
     "loot_table": [],
-    "image_name": "zombie.png"
+    "image_name": "zombie.png",
+    "element": ""
   },
   {
     "code": "fantome",
     "name": "Fantôme",
     "family": "mort-vivant",
-    "element": "tenebre",
     "description": "Une âme errante insaisissable qui glisse entre les coups.",
     "max_hp": 668,
     "current_hp": 668,
@@ -396,7 +466,8 @@
     "gold_reward": 189,
     "spawn_weight": 15,
     "loot_table": [],
-    "image_name": "fantome.png"
+    "image_name": "fantome.png",
+    "element": ""
   },
   {
     "code": "momie",
@@ -465,7 +536,6 @@
     "code": "banshee",
     "name": "Banshee",
     "family": "mort-vivant",
-    "element": "glace",
     "description": "Un spectre hurlant dont le cri glaçant transperce l'âme.",
     "max_hp": 1188,
     "current_hp": 1188,
@@ -480,6 +550,7 @@
     "gold_reward": 352,
     "spawn_weight": 2,
     "loot_table": [],
-    "image_name": "banshee.png"
+    "image_name": "banshee.png",
+    "element": ""
   }
 ]

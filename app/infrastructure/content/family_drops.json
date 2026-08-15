@@ -1,1 +1,114 @@
-{}
+{
+  "gobelin": {
+    "item_code": "dent_de_gobelin",
+    "mobs": {
+      "gobelin": {
+        "min": 1,
+        "max": 1
+      },
+      "gobelin_assassin": {
+        "min": 2,
+        "max": 3
+      },
+      "gobelin_ballon": {
+        "min": 2,
+        "max": 3
+      },
+      "gobelin_chaman": {
+        "min": 1,
+        "max": 2
+      },
+      "gobelin_combattant": {
+        "min": 1,
+        "max": 2
+      },
+      "gobelin_geant": {
+        "min": 1,
+        "max": 3
+      },
+      "gobelin_runique": {
+        "min": 1,
+        "max": 3
+      },
+      "gobelin_superieur": {
+        "min": 2,
+        "max": 4
+      }
+    }
+  },
+  "mort-vivant": {
+    "item_code": "fragment_d_me",
+    "mobs": {
+      "banshee": {
+        "min": 2,
+        "max": 4
+      },
+      "fantome": {
+        "min": 1,
+        "max": 2
+      },
+      "gargouille": {
+        "min": 1,
+        "max": 3
+      },
+      "liche_maudite": {
+        "min": 2,
+        "max": 4
+      },
+      "momie": {
+        "min": 1,
+        "max": 2
+      },
+      "squelette": {
+        "min": 1,
+        "max": 1
+      },
+      "zombie": {
+        "min": 1,
+        "max": 1
+      }
+    }
+  },
+  "slime": {
+    "item_code": "gel_e",
+    "mobs": {
+      "slime": {
+        "min": 1,
+        "max": 1
+      }
+    }
+  },
+  "demoniaque": {
+    "item_code": "c_ur_corrompu",
+    "mobs": {
+      "ange_dechu": {
+        "min": 2,
+        "max": 6
+      },
+      "archidemon": {
+        "min": 3,
+        "max": 6
+      },
+      "cerbere": {
+        "min": 3,
+        "max": 3
+      },
+      "demon_cornu": {
+        "min": 1,
+        "max": 2
+      },
+      "diablotin": {
+        "min": 1,
+        "max": 1
+      },
+      "ogre_demoniaque": {
+        "min": 2,
+        "max": 3
+      },
+      "succube": {
+        "min": 2,
+        "max": 5
+      }
+    }
+  }
+}
