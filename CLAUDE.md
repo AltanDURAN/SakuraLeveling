@@ -89,6 +89,7 @@ Ordre de lecture conseillé avant patch : `pyproject.toml` → `alembic.ini` →
 
 - **V2.1 — corrections d'audit (juin 2026)** :
   - **`/gather` RETIRÉ** (métiers à retravailler ; `GatherResourceUseCase` conservé non câblé).
+  - **Système de quêtes « legacy » NON CÂBLÉ** (audit août 2026) : `quests.json` (22 entrées) est encore seedé dans `quest_definitions` / `player_quest_states` via `seed_content`, mais **aucun use case ni cog ne le lit**. Les quêtes vivantes sont `daily_quests.json` (`/quetes`) et `weekly_quests.json` (`/quetes_hebdo`), qui ont leurs propres tables et use cases. Conservé comme socle pour une future refonte des quêtes (même statut que `/gather`) — ne pas s'y brancher sans décision explicite. `QuestService` (0 référence) et `ClaimWeeklyQuestUseCase` (remplacé par `ClaimAllWeeklyUseCase`) ont été supprimés.
   - **Pas de combat solo dédié** : `FightMobUseCase` **n'existe pas** — tout le PvE passe par les **encounters de groupe** (jouables seul). L'incrément kills/drops/titres vit dans `EncounterService`.
   - **Chaîne Alembic réparée** (rejeu de zéro OK). **SQLite WAL + busy_timeout** activés (`session.py`).
   - **Daily streak** `streak×100` sans cap = **VOULU** (rétention). 
@@ -140,7 +141,7 @@ git checkout main
 | `/create_set <nom>`, `/delete_set <nom>`, `/equip_set <nom>` | `player_cog` | Loadouts personnels : sauvegarde l'équipement actuel sous un nom libre, supprime, ou rappelle un set. Tables `player_equipment_sets` + `player_equipment_set_items`. Refuse à l'equip si une pièce du set n'est plus possédée. |
 | `/unequip <slot\|all>` | `player_cog` | `slot=all` retire tout l'équipement d'un coup. |
 | `/weekly_quest` (claim par bouton) | `weekly_quest_cog` | 3 quêtes hebdo random tirées le lundi UTC. (`/daily_quest` : quêtes quotidiennes.) |
-| `/brocante list/my/sell/buy/cancel` | `brocante_cog` | Marketplace P2P avec commission shop (5%) |
+| `/brocante annonces/mes_annonces/vendre/acheter/annuler` | `brocante_cog` | Marketplace P2P avec commission shop (5%) |
 | `/boss spawn <boss_code>`, `/boss list`, `/boss stop` | `world_boss_cog` | Spawn manuel admin / catalogue + auto-spawn hebdo. `stop` arrête le boss actif sans distribuer de récompenses (cleanup/debug). |
 
 ## Système d'administration

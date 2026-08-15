@@ -1,11 +1,11 @@
 """Cog de la brocante (marketplace P2P) — `/brocante *`.
 
 Sous-commandes :
-    • /brocante list                                 → catalogue actif
-    • /brocante my                                   → vos annonces actives
-    • /brocante sell <item> <qty> <price> [days]     → créer une annonce
-    • /brocante buy <listing_id>                     → acheter
-    • /brocante cancel <listing_id>                  → annuler une annonce
+    • /brocante annonces                               → catalogue actif
+    • /brocante mes_annonces                                 → vos annonces actives
+    • /brocante vendre <item> <qty> <price> [days]     → créer une annonce
+    • /brocante acheter <listing_id>                     → acheter
+    • /brocante annuler <listing_id>                  → annuler une annonce
 
 Loop horaire de cleanup des annonces expirées (auto-restitution des items
 au vendeur). Toutes les opérations sensibles passent par les use cases
@@ -86,7 +86,7 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
     # ---------- list (catalogue actif) ----------
 
     @brocante.command(
-        name="list",
+        name="annonces",
         description="Voir le catalogue d'annonces actives",
     )
     @app_commands.describe(
@@ -135,7 +135,7 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
             embed.description = "\n".join(lines)[:4000]
         embed.set_footer(
             text=f"Commission shop : {MARKETPLACE_COMMISSION_PCT}% · "
-            f"durée max : {MAX_LISTING_DAYS}j · /brocante buy <id> pour acheter"
+            f"durée max : {MAX_LISTING_DAYS}j · /brocante acheter <id> pour acheter"
         )
         await interaction.followup.send(embed=embed)
 
@@ -155,7 +155,7 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
     # ---------- my listings ----------
 
     @brocante.command(
-        name="my", description="Voir vos annonces actives"
+        name="mes_annonces", description="Voir vos annonces actives"
     )
     async def my_listings(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
@@ -194,7 +194,7 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
     # ---------- sell ----------
 
     @brocante.command(
-        name="sell",
+        name="vendre",
         description="Mettre un item en vente sur la brocante",
     )
     @app_commands.describe(
@@ -256,7 +256,7 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
     # ---------- buy ----------
 
     @brocante.command(
-        name="buy",
+        name="acheter",
         description="Acheter une annonce active",
     )
     @app_commands.describe(listing_id="ID de l'annonce à acheter")
@@ -283,7 +283,7 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
     # ---------- cancel ----------
 
     @brocante.command(
-        name="cancel",
+        name="annuler",
         description="Annuler une de vos annonces et récupérer les items",
     )
     @app_commands.describe(listing_id="ID de l'annonce à annuler")

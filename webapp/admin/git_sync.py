@@ -46,6 +46,19 @@ def push_content(paths: list[str], message: str) -> bool:
             _logger.warning("git push contenu échoué : %s", push.stderr.strip())
             return False
         _logger.info("Contenu poussé sur beta : %s", message)
+
+        # Remonte AUSSI le contenu sur `main`, sinon main dérive : l'admin ne
+        # poussait que sur beta et main avait accumulé 370 commits de retard,
+        # sans les assets créés depuis le site (cf. audit §2 — un reseed depuis
+        # main aurait détruit le contenu). Fast-forward quand beta ⊇ main ;
+        # si main a divergé (code non mergé), le push est rejeté → on log et on
+        # continue, l'édition admin reste valide.
+        push_main = _git("push", "origin", "HEAD:main")
+        if push_main.returncode != 0:
+            _logger.info(
+                "contenu non remonté sur main (divergence attendue si du code "
+                "est en cours sur main) : %s", push_main.stderr.strip()[:200],
+            )
         return True
     except Exception:
         _logger.warning("git_sync.push_content exception", exc_info=True)

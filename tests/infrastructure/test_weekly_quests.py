@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.application.use_cases.weekly_quests import (
-    ClaimWeeklyQuestUseCase,
+    ClaimAllWeeklyUseCase,
     GetWeeklyQuestsUseCase,
     WeeklyQuestProgressService,
     get_current_week_start,
@@ -175,7 +175,17 @@ def test_progress_kill_other_family_does_not_count(session):
     assert a.progress == 0  # gobelin ne compte pas pour kill_slime_*
 
 
-def test_claim_distributes_rewards(session):
+def _claim_all(session, repo):
+    """Use case RÉELLEMENT branché sur `/quetes_hebdo` (bouton Récupérer)."""
+    return ClaimAllWeeklyUseCase(
+        player_repository=PlayerRepository(session),
+        quest_repository=repo,
+        item_repository=ItemRepository(session),
+        inventory_repository=InventoryRepository(session),
+    )
+
+
+def test_claim_all_distributes_rewards_and_is_idempotent(session):
     _seed_potions(session)
     p1 = PlayerRepository(session).get_or_create_by_discord_id(
         discord_id=1, username="a", display_name="A",
@@ -187,30 +197,20 @@ def test_claim_distributes_rewards(session):
     # Force la complétion
     WeeklyQuestProgressService(repo).on_kill(p1, family="slime", count=30)
 
-    claim = ClaimWeeklyQuestUseCase(
-        player_repository=PlayerRepository(session),
-        quest_repository=repo,
-        item_repository=ItemRepository(session),
-        inventory_repository=InventoryRepository(session),
-    )
-    result = claim.execute(
-        discord_id=1, username="a", display_name="A",
-        quest_code="kill_slime_30",
-    )
+    claim = _claim_all(session, repo)
+    result = claim.execute(discord_id=1, username="a", display_name="A")
     assert result.success is True
-    assert result.gold == 500
-    assert result.xp == 200
+    assert len(result.rewards) == 1
+    assert result.rewards[0].gold == 500
+    assert result.rewards[0].xp == 200
 
-    # Idempotent : 2e claim refusé
-    second = claim.execute(
-        discord_id=1, username="a", display_name="A",
-        quest_code="kill_slime_30",
-    )
+    # Idempotent : plus rien à réclamer au 2e appel.
+    second = claim.execute(discord_id=1, username="a", display_name="A")
     assert second.success is False
-    assert "déjà" in second.message.lower()
+    assert "aucune récompense" in second.message.lower()
 
 
-def test_claim_refused_if_not_completed(session):
+def test_claim_all_refused_if_not_completed(session):
     _seed_potions(session)
     p1 = PlayerRepository(session).get_or_create_by_discord_id(
         discord_id=1, username="a", display_name="A",
@@ -219,17 +219,31 @@ def test_claim_refused_if_not_completed(session):
     week_start = get_current_week_start()
     repo = WeeklyQuestRepository(session)
     repo.assign(p1, week_start, ["kill_slime_30"])
-    # Pas de progression
+    # Pas de progression → rien de réclamable.
 
-    claim = ClaimWeeklyQuestUseCase(
-        player_repository=PlayerRepository(session),
-        quest_repository=repo,
-        item_repository=ItemRepository(session),
-        inventory_repository=InventoryRepository(session),
-    )
-    result = claim.execute(
+    result = _claim_all(session, repo).execute(
         discord_id=1, username="a", display_name="A",
-        quest_code="kill_slime_30",
     )
     assert result.success is False
-    assert "pas encore terminée" in result.message.lower()
+    assert "aucune récompense" in result.message.lower()
+
+
+def test_claim_all_claims_several_quests_at_once(session):
+    """Le cas d'usage propre au bouton : plusieurs quêtes complétées d'un coup."""
+    _seed_potions(session)
+    p1 = PlayerRepository(session).get_or_create_by_discord_id(
+        discord_id=1, username="a", display_name="A",
+    ).player.id
+
+    week_start = get_current_week_start()
+    repo = WeeklyQuestRepository(session)
+    repo.assign(p1, week_start, ["kill_slime_30", "kill_gobelin_30"])
+    progress = WeeklyQuestProgressService(repo)
+    progress.on_kill(p1, family="slime", count=30)
+    progress.on_kill(p1, family="gobelin", count=30)
+
+    result = _claim_all(session, repo).execute(
+        discord_id=1, username="a", display_name="A",
+    )
+    assert result.success is True
+    assert len(result.rewards) == 2
