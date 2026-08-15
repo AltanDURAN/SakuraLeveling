@@ -5,6 +5,9 @@ from app.application.services.exclusive_title_service import ExclusiveTitleServi
 from app.application.services.set_bonus_resolver import resolve_set_bonuses
 from app.application.services.status_effect_resolver import resolve_status_effects
 from app.application.services.title_bonus_resolver import resolve_title_bonuses
+from app.infrastructure.db.repositories.player_item_level_repository import (
+    PlayerItemLevelRepository,
+)
 from app.application.services.title_unlock_service import TitleUnlockService
 from app.application.use_cases.daily_quests import DailyQuestProgressService
 from app.application.use_cases.weekly_quests import WeeklyQuestProgressService
@@ -123,6 +126,9 @@ class EncounterService:
             title_bonuses = resolve_title_bonuses(session, profile.player.id)
             set_bonuses = resolve_set_bonuses(equipped_items)
             status_bonuses = resolve_status_effects(session, profile.player.id)
+            item_levels = PlayerItemLevelRepository(session).get_levels_for_player(
+                profile.player.id
+            )
 
             stats = StatsService().calculate_player_stats(
                 profile=profile,
@@ -132,6 +138,7 @@ class EncounterService:
                 title_bonuses=title_bonuses,
                 set_bonuses=set_bonuses,
                 status_bonuses=status_bonuses,
+                item_levels=item_levels,
             )
 
         regenerated_current_hp = self.get_regenerated_player_hp(
@@ -209,6 +216,9 @@ class EncounterService:
 
                 set_bonuses = resolve_set_bonuses(equipped_items)
                 status_bonuses = resolve_status_effects(session, participant.player_id)
+                item_levels = PlayerItemLevelRepository(session).get_levels_for_player(
+                    participant.player_id
+                )
 
                 stats = StatsService().calculate_player_stats(
                     profile=profile,
@@ -218,6 +228,7 @@ class EncounterService:
                     title_bonuses=title_bonuses,
                     set_bonuses=set_bonuses,
                     status_bonuses=status_bonuses,
+                    item_levels=item_levels,
                 )
 
                 # Multiplicateurs élémentaires (si le mob a un élément).

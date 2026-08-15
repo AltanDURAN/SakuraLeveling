@@ -18,6 +18,7 @@ class StatsService:
         title_bonuses: TitleBonuses | None = None,
         set_bonuses: SetBonuses | None = None,
         status_bonuses: StatusEffectBonuses | None = None,
+        item_levels: dict[int, int] | None = None,
     ) -> Stats:
         # V2 : AUCUNE stat gagnée au level-up. Les stats de base sont
         # CONSTANTES (valeurs de départ niveau 1) — toute la croissance vient
@@ -60,16 +61,23 @@ class StatsService:
 
         for equipment_item in equipped_items:
             bonuses = equipment_item.item_definition.stat_bonuses or {}
-            max_hp += int(bonuses.get("max_hp", 0))
-            attack += int(bonuses.get("attack", 0))
-            defense += int(bonuses.get("defense", 0))
-            speed += int(bonuses.get("speed", 0))
-            crit_chance += float(bonuses.get("crit_chance", 0))
-            crit_damage += float(bonuses.get("crit_damage", 0))
-            dodge += float(bonuses.get("dodge", 0))
-            hp_regeneration += int(bonuses.get("hp_regeneration", 0))
-            mana_max += int(bonuses.get("mana_max", 0))
-            mana_regeneration += int(bonuses.get("mana_regeneration", 0))
+            # Forge sacrée : chaque niveau ajoute les stats de BASE de l'item une
+            # fois de plus → contribution = stats_base × (1 + niveau). Niveau 0
+            # (non forgé) = stats de base une fois, comportement inchangé.
+            lvl = 0
+            if item_levels:
+                lvl = item_levels.get(equipment_item.item_definition.id, 0)
+            mult = 1 + max(0, lvl)
+            max_hp += int(bonuses.get("max_hp", 0)) * mult
+            attack += int(bonuses.get("attack", 0)) * mult
+            defense += int(bonuses.get("defense", 0)) * mult
+            speed += int(bonuses.get("speed", 0)) * mult
+            crit_chance += float(bonuses.get("crit_chance", 0)) * mult
+            crit_damage += float(bonuses.get("crit_damage", 0)) * mult
+            dodge += float(bonuses.get("dodge", 0)) * mult
+            hp_regeneration += int(bonuses.get("hp_regeneration", 0)) * mult
+            mana_max += int(bonuses.get("mana_max", 0)) * mult
+            mana_regeneration += int(bonuses.get("mana_regeneration", 0)) * mult
 
         # 4e étage : bonus de l'arbre de compétences (flat additif puis %).
         # Appliqué après équipement/classe et AVANT les caps finaux pour que
