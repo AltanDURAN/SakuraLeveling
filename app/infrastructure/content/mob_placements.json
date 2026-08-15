@@ -510,6 +510,14 @@
         "offset_y": 0.03,
         "shadow": true
       }
+    },
+    "cerbere": {
+      "terre": {
+        "scale": 0.6,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      }
     }
   }
 }
