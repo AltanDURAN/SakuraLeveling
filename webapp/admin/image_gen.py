@@ -27,17 +27,22 @@ from app.infrastructure.config.settings import settings
 _ENDPOINT = "https://image.pollinations.ai/prompt/"
 
 # Negative prompt (fournisseurs qui le gèrent, ex : Cloudflare SDXL) → écarte
-# personnages/décor/texte/couleur, pour rester sur un croquis d'objet isolé N&B
-# cohérent avec la DA dessinée à la main des monstres.
-_NEGATIVE = ("color, colored, vibrant, photo, photograph, 3d render, cgi, glossy, "
-             "shiny, smooth gradient, person, people, human, character, face, "
-             "portrait, hands, fingers, body, skull, head, creature, monster, "
-             "animal, beast, horns, jaw, tree, trees, forest, woods, tree trunks, "
-             "bamboo, plant, building, castle, landscape, scenery, ground, floor, "
-             "book, page, spine, sketchbook border, dark border, black border, "
-             "vignette, box, square outline, character sheet, multiple views, "
-             "text, letters, words, watermark, signature, logo, frame, ui, "
-             "multiple objects, two objects, blurry, lowres, deformed, cropped")
+# le kawaï/mascotte, les personnages/décor, le photoréalisme, le multi-objets :
+# on vise un objet isolé dessiné main, cel-shading coloré, fond blanc.
+_NEGATIVE = ("cute, kawaii, chibi, adorable, mascot, smiling, happy face, eyes, "
+             "cartoon character, googly eyes, sticker, "
+             "photo, photograph, photorealistic, realistic, hyperdetailed, intricate "
+             "details, 3d render, cgi, noisy, grainy, cross-hatching, pencil sketch, "
+             "person, people, human, face, portrait, hands, fingers, body, "
+             "skull head, creature, live animal, beast, "
+             "tree, trees, forest, woods, tree trunks, bamboo, plant, building, "
+             "castle, landscape, scenery, ground, floor, book, page, spine, "
+             "colored background, gradient background, textured background, "
+             "background circle, round backdrop, colored disc behind, halo, "
+             "dark border, black border, vignette, box, square outline, "
+             "character sheet, multiple views, text, letters, words, watermark, "
+             "signature, logo, frame, ui, multiple objects, two objects, blurry, "
+             "lowres, deformed, cropped")
 
 # Indices visuels par type d'item (aident le modèle à cadrer l'objet).
 _CATEGORY_HINT = {
@@ -57,36 +62,38 @@ _CATEGORY_HINT = {
     "consumable": "a consumable potion",
     "potion": "a potion in a glass flask",
 }
-# DA commune = croquis encre/crayon niveaux de gris hachuré, fond blanc, cohérent
-# avec les MONSTRES dessinés à la main du jeu (trait N&B + hachures + fond blanc).
-# Isolation forte (un seul objet) puis medium en tête du prompt (verrouille le
-# style croquis même sur objets lisses) : géré dans build_item_prompt.
-_ISOLATE = ("ONE single small isolated object only, centered on a plain empty white "
-            "background, RPG inventory item icon, still-life object study, nothing "
-            "else in the frame, no scenery")
-_STYLE = ("hand-drawn black ink and graphite pencil sketch, monochrome grayscale, "
-          "bold confident black ink outlines, dense cross-hatching and pencil "
-          "shading, hand-inked linework, dark fantasy RPG item drawing, high "
-          "contrast, detailed but sketchy")
+# DA = dessin à la main de l'auteur : contour noir épais un peu tremblé, couleur
+# en APLATS cel-shading (base + 1 ombre + reflets blancs), fond blanc, ton
+# dark-fantasy edgy — JAMAIS kawaï, pas de visage. Medium en tête du prompt
+# (verrouille le style) : géré dans build_item_prompt.
+_ISOLATE = ("ONE single isolated object only, centered on a pure solid flat white "
+            "background, plain white backdrop, RPG inventory item icon, no "
+            "background scene, no colored background, nothing else in the frame")
+_STYLE = ("hand-drawn digital illustration, bold uneven black ink outline, flat "
+          "cel-shaded coloring, one darker shadow tone and a few simple white "
+          "highlight streaks, limited flat color palette, loose slightly rough "
+          "hand-drawn linework, gritty mature dark-fantasy video game item concept "
+          "art, clean and simple, moderate detail, painted digitally over an ink "
+          "sketch")
 
-# Prompts ÉCRITS À LA MAIN par item (clé = code). Sujets concrets et SINGULIERS,
-# SANS mot « monstre / animal / goblin » (SDXL dessinerait la créature entière) :
-# l'origine monstre est portée par l'objet lui-même (dent, cœur démoniaque,
+# Prompts ÉCRITS À LA MAIN par item (clé = code). Sujets concrets, SINGULIERS et
+# COLORÉS, SANS mot « monstre / animal / goblin » (SDXL dessinerait la créature) :
+# l'origine monstre est portée par l'objet (dent ensanglantée, cœur démoniaque,
 # fragment spectral, gelée de slime). Item non listé → fallback générique.
 ITEM_IMAGE_PROMPTS: dict[str, str] = {
-    "potion_soin": "a single lone glass potion flask, exactly one round bottle sealed with a cork, glowing liquid and tiny bubbles inside, only one bottle and nothing else",
-    "bois": "a small stack of a few chopped stove wood billets bound with twine, one lone tied wood bundle, centered on blank white, nothing else",
-    "silex": "a single lone shard of knapped flint stone, exactly one angular grey rock flake with sharp chipped edges, only one stone and nothing else",
-    "morceau_de_tissu": "a single neatly folded square of coarse frayed cloth lying flat, one lone folded fabric scrap with loose threads on its edges, no clothesline, empty white background",
-    "gel_e": "a single glistening blob of gelatinous slime jelly, a wobbly rounded translucent goo droplet dripping at the bottom",
-    "dent_de_gobelin": "one single triangular ivory tooth, a flat pointed tooth with a serrated cutting edge and a worn cream-white root",
-    "fragment_d_me": "a single jagged translucent crystal shard with a faint anguished ghostly face dimly trapped inside and thin curling wisps of spirit smoke rising off it",
-    "c_ur_corrompu": "a corrupted heart, a single anatomical heart organ with dark bulging veins and tiny thorny spikes, dripping ooze",
-    "petite_bombe": "a single round black cast-iron bomb sphere with a short curled rope fuse and a small lit spark at the tip",
-    "diamant": "a single brilliant-cut faceted diamond gemstone, sharp geometric facets, a sparkling precious crystal",
-    "essence_de_vie": "a single round glass sphere orb holding swirling wisps of glowing living energy and tiny floating leaves inside",
-    "dagues_jumelles": "a pair of two identical curved matched daggers crossed into a single X shape, twin blades with cord-wrapped hilts",
-    "cape_silencieuse": "a single empty hooded cloak garment laid out flat seen from above, one folded cape with a visible deep hood, empty apparel, no person, empty white background",
+    "potion_soin": "one single large potion bottle filling most of the frame, a round glass flask with a cork and glowing red healing liquid inside, close-up of just one bottle, only one",
+    "bois": "a small stack of a few chopped firewood logs, warm brown cut wood with visible grain and bark, nothing else, no forest",
+    "silex": "a single sharp shard of grey knapped flint stone, one angular chipped fractured rock, only one stone, nothing else",
+    "morceau_de_tissu": "a single neatly folded stack of coarse beige linen cloth with frayed edges, one folded fabric scrap, nothing else",
+    "gel_e": "a single blob of wobbly bright green slime jelly, a rounded translucent goo droplet dripping at the bottom",
+    "dent_de_gobelin": "one single plain tooth, a simple smooth cream-white pointed tooth with a short root and a small red blood stain at its base, one lone isolated tooth, no jaw, no skull, no creature",
+    "fragment_d_me": "a single jagged translucent pale-blue crystal shard glowing with a faint ghostly spirit inside and thin wisps of blue soul smoke, one shard",
+    "c_ur_corrompu": "a single corrupted heart, one dark crimson and purple anatomical heart with black veins and small thorny spikes, dripping dark ooze, only one",
+    "petite_bombe": "one single round black bomb sphere with one short lit twisted rope fuse and a small spark at the tip, only one bomb, dark charcoal body, nothing else",
+    "diamant": "a single brilliant-cut faceted gemstone glowing pale blue and white, sharp geometric facets, one sparkling precious crystal",
+    "essence_de_vie": "a single round glass orb sphere holding swirling glowing green life energy and a few tiny floating leaves inside, one orb",
+    "dagues_jumelles": "a pair of two identical curved steel daggers crossed into an X, blue-grey blades with dark cord-wrapped grips",
+    "cape_silencieuse": "a single empty dark blue hooded cloak laid out and spread open, no person inside, one empty cloak garment, just one, nothing else",
 }
 
 
@@ -103,7 +110,7 @@ def build_item_prompt(code: str, name: str, category: str, rarity: str) -> str:
     if not subject:
         cat = _CATEGORY_HINT.get(category, "a fantasy object")
         subject = ", ".join(p for p in (f"a single {name.strip()}", cat) if p)
-    return f"a rough black ink and pencil sketch drawing of {subject}, {_ISOLATE}, {_STYLE}"
+    return f"a hand-drawn inked and flat-colored illustration of {subject}, {_ISOLATE}, {_STYLE}"
 
 
 _CF_DEFAULT_MODEL = "@cf/stabilityai/stable-diffusion-xl-base-1.0"
@@ -227,6 +234,24 @@ def generate_image(prompt: str, size: int = 1024, seed: int | None = None,
         img = Image.open(io.BytesIO(raw)).convert("RGBA")
     except Exception as exc:  # noqa: BLE001
         raise ImageGenError("Image générée illisible.") from exc
+    img = _whiten_bg(img)
     out = io.BytesIO()
     img.save(out, "PNG")
     return out.getvalue()
+
+
+def _whiten_bg(img: "Image.Image", thresh: int = 48) -> "Image.Image":
+    """Nettoie le fond en BLANC pur par flood-fill depuis les coins + milieux de
+    bords. Fiable car la DA a des contours noirs FERMÉS qui stoppent le
+    remplissage au bord de l'objet. Best-effort : n'échoue jamais."""
+    from PIL import ImageDraw
+    try:
+        rgb = Image.new("RGB", img.size, (255, 255, 255))
+        rgb.paste(img.convert("RGB"), (0, 0))
+        w, h = rgb.size
+        for xy in [(1, 1), (w - 2, 1), (1, h - 2), (w - 2, h - 2),
+                   (w // 2, 1), (w // 2, h - 2), (1, h // 2), (w - 2, h // 2)]:
+            ImageDraw.floodfill(rgb, xy, (255, 255, 255), thresh=thresh)
+        return rgb.convert("RGBA")
+    except Exception:  # noqa: BLE001
+        return img
