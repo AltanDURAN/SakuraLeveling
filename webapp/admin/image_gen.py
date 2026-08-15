@@ -112,14 +112,60 @@ def build_item_prompt(code: str, name: str, category: str, rarity: str) -> str:
 _CF_DEFAULT_MODEL = "@cf/stabilityai/stable-diffusion-xl-base-1.0"
 
 
+_GOOGLE_DEFAULT_MODEL = "imagen-3.0-generate-002"
+
+
 def active_provider() -> str:
-    """Fournisseur effectif : 'cloudflare' si demandé ET configuré, sinon
-    'pollinations' (repli gratuit sans clé)."""
-    if (settings.image_gen_provider.strip().lower() == "cloudflare"
-            and settings.cloudflare_account_id.strip()
+    """Fournisseur effectif selon la config (repli 'pollinations' gratuit si le
+    fournisseur demandé n'est pas configuré)."""
+    prov = settings.image_gen_provider.strip().lower()
+    if (prov == "cloudflare" and settings.cloudflare_account_id.strip()
             and settings.cloudflare_api_token.strip()):
         return "cloudflare"
+    if prov == "google" and settings.google_api_key.strip():
+        return "google"
     return "pollinations"
+
+
+def _generate_google(prompt: str, timeout: int) -> bytes:
+    """Google (Gemini API). Gère Imagen (`imagen-*` via :predict) ET les modèles
+    image Gemini (`gemini-*` via :generateContent)."""
+    key = settings.google_api_key.strip()
+    model = settings.image_gen_model.strip() or _GOOGLE_DEFAULT_MODEL
+    base = "https://generativelanguage.googleapis.com/v1beta/models/"
+    try:
+        if model.startswith("imagen"):
+            url = f"{base}{model}:predict?key={key}"
+            body = {"instances": [{"prompt": prompt}],
+                    "parameters": {"sampleCount": 1, "aspectRatio": "1:1"}}
+            r = requests.post(url, json=body, timeout=timeout)
+            if r.status_code != 200:
+                raise ImageGenError(f"Google a répondu {r.status_code} : {r.text[:200]}")
+            preds = (r.json() or {}).get("predictions") or []
+            b64 = preds[0].get("bytesBase64Encoded") if preds else None
+        else:
+            url = f"{base}{model}:generateContent?key={key}"
+            body = {"contents": [{"parts": [{"text": prompt}]}],
+                    "generationConfig": {"responseModalities": ["IMAGE"]}}
+            r = requests.post(url, json=body, timeout=timeout)
+            if r.status_code != 200:
+                raise ImageGenError(f"Google a répondu {r.status_code} : {r.text[:200]}")
+            b64 = None
+            for cand in (r.json() or {}).get("candidates") or []:
+                for part in (cand.get("content") or {}).get("parts") or []:
+                    inline = part.get("inlineData") or part.get("inline_data")
+                    if inline and inline.get("data"):
+                        b64 = inline["data"]
+                        break
+                if b64:
+                    break
+    except ImageGenError:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        raise ImageGenError(f"Google injoignable ({type(exc).__name__}).") from exc
+    if not b64:
+        raise ImageGenError("Aucune image dans la réponse Google.")
+    return base64.b64decode(b64)
 
 
 def _generate_pollinations(prompt: str, size: int, seed: int | None,
@@ -173,8 +219,11 @@ def generate_image(prompt: str, size: int = 1024, seed: int | None = None,
     prompt = (prompt or "").strip()
     if not prompt:
         raise ImageGenError("Description vide.")
-    if active_provider() == "cloudflare":
+    prov = active_provider()
+    if prov == "cloudflare":
         raw = _generate_cloudflare(prompt, size, timeout)
+    elif prov == "google":
+        raw = _generate_google(prompt, timeout)
     else:
         raw = _generate_pollinations(prompt, min(size, 1024), seed, model, timeout)
     try:

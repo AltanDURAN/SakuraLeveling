@@ -75,10 +75,11 @@ class Settings(BaseSettings):
     # Génération d'images d'items. "pollinations" (gratuit sans clé, défaut) ou
     # "cloudflare" (Workers AI — meilleure qualité + negative prompts, gratuit
     # avec un compte). Si "cloudflare" mais creds absents → repli pollinations.
-    image_gen_provider: str = "pollinations"
+    image_gen_provider: str = "pollinations"   # pollinations | cloudflare | google
     image_gen_model: str = ""           # override optionnel du modèle
     cloudflare_account_id: str = ""
     cloudflare_api_token: str = ""
+    google_api_key: str = ""            # Google AI Studio (Gemini/Imagen)
 
     model_config = SettingsConfigDict(
         env_file=".env",
