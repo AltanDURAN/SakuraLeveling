@@ -57,6 +57,11 @@ def resolve_player_stats(
     set_bonuses = resolve_set_bonuses(equipped_items)
     status_bonuses = resolve_status_effects(session, player_id)
 
+    from app.infrastructure.db.repositories.player_item_level_repository import (
+        PlayerItemLevelRepository,
+    )
+    item_levels = PlayerItemLevelRepository(session).get_levels_for_player(player_id)
+
     svc = stats_service or StatsService()
     return svc.calculate_player_stats(
         profile=profile,
@@ -66,4 +71,5 @@ def resolve_player_stats(
         set_bonuses=set_bonuses,
         title_bonuses=title_bonuses,
         status_bonuses=status_bonuses,
+        item_levels=item_levels,
     )

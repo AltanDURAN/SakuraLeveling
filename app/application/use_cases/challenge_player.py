@@ -263,7 +263,13 @@ class ChallengePlayerUseCase:
         from app.application.services.status_effect_resolver import (
             resolve_status_effects,
         )
+        from app.infrastructure.db.repositories.player_item_level_repository import (
+            PlayerItemLevelRepository,
+        )
         status_bonuses = resolve_status_effects(session, profile.player.id)
+        item_levels = PlayerItemLevelRepository(session).get_levels_for_player(
+            profile.player.id
+        )
         return self.stats_service.calculate_player_stats(
             profile=profile,
             equipped_items=equipped_items,
@@ -272,4 +278,5 @@ class ChallengePlayerUseCase:
             title_bonuses=title_bonuses,
             set_bonuses=set_bonuses,
             status_bonuses=status_bonuses,
+            item_levels=item_levels,
         )

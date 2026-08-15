@@ -158,9 +158,15 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             from app.application.services.status_effect_resolver import (
                 resolve_status_effects,
             )
+            from app.infrastructure.db.repositories.player_item_level_repository import (
+                PlayerItemLevelRepository,
+            )
             title_bonuses = resolve_title_bonuses(session, profile.player.id)
             set_bonuses = resolve_set_bonuses(equipped_items)
             status_bonuses = resolve_status_effects(session, profile.player.id)
+            item_levels = PlayerItemLevelRepository(session).get_levels_for_player(
+                profile.player.id
+            )
             stats = StatsService().calculate_player_stats(
                 profile=profile,
                 equipped_items=equipped_items,
@@ -169,6 +175,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 title_bonuses=title_bonuses,
                 set_bonuses=set_bonuses,
                 status_bonuses=status_bonuses,
+                item_levels=item_levels,
             )
 
             power_score_service = PowerScoreService()

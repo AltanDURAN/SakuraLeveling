@@ -26,6 +26,7 @@ from discord.ext import commands, tasks
 
 from app.application.services.player_stats_resolver import resolve_player_stats
 from app.domain.services.chest_loot_service import ChestLootService
+from app.domain.services.forge_service import ForgeService
 from app.domain.services.health_regeneration_service import HealthRegenerationService
 from app.domain.services.little_girl_service import (
     CHOICE_HELP,
@@ -44,6 +45,9 @@ from app.infrastructure.db.repositories.inventory_repository import InventoryRep
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_health_repository import (
     PlayerHealthRepository,
+)
+from app.infrastructure.db.repositories.player_item_level_repository import (
+    PlayerItemLevelRepository,
 )
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.player_status_effect_repository import (
@@ -144,11 +148,54 @@ class LittleGirlView(discord.ui.View):
             await cog.handle_girl_choice(interaction, CHOICE_IGNORE)
 
 
+class ForgeView(discord.ui.View):
+    def __init__(self, cog: "EventCog | None" = None) -> None:
+        super().__init__(timeout=None)
+        self.cog = cog
+
+    def _resolve_cog(self, interaction: discord.Interaction) -> "EventCog | None":
+        return self.cog or interaction.client.get_cog("EventCog")
+
+    @discord.ui.button(
+        label="Forger un équipement",
+        style=discord.ButtonStyle.primary,
+        emoji="🔨",
+        custom_id="event_forge:open",
+    )
+    async def forge_button(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
+        await interaction.response.defer(ephemeral=True)
+        cog = self._resolve_cog(interaction)
+        if cog:
+            await cog.handle_forge_open(interaction)
+
+
+class ForgeSelect(discord.ui.Select):
+    def __init__(self, cog: "EventCog", event_id: int, options: list[discord.SelectOption]):
+        super().__init__(placeholder="Choisis l'équipement à forger…", options=options)
+        self.cog = cog
+        self.event_id = event_id
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer(ephemeral=True)
+        await self.cog.handle_forge_pick(interaction, self.event_id, int(self.values[0]))
+
+
+class ForgeSelectView(discord.ui.View):
+    """Vue éphémère (non persistante) : sélection de l'équipement à forger."""
+
+    def __init__(self, cog: "EventCog", event_id: int, options: list[discord.SelectOption]):
+        super().__init__(timeout=120)
+        self.add_item(ForgeSelect(cog, event_id, options))
+
+
 class EventCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.bot.add_view(ChestView(self))
         self.bot.add_view(LittleGirlView(self))
+        self.bot.add_view(ForgeView(self))
         self.spawn_loop.start()
         self.resolve_loop.start()
 
@@ -189,6 +236,8 @@ class EventCog(commands.Cog):
             for event_id, event_type in due_ids:
                 if event_type == "little_girl":
                     await self._resolve_little_girl(event_id)
+                elif event_type == "sacred_forge":
+                    await self._close_sacred_forge(event_id)
         except Exception:  # noqa: BLE001
             _logger.exception("event resolve_loop failed")
 
@@ -228,6 +277,8 @@ class EventCog(commands.Cog):
             return await self._spawn_chest()
         if event_type == "little_girl":
             return await self._spawn_little_girl()
+        if event_type == "sacred_forge":
+            return await self._spawn_sacred_forge()
         _logger.info("spawn_event: type '%s' non encore implémenté", event_type)
         return None
 
@@ -535,6 +586,189 @@ class EventCog(commands.Cog):
             await message.edit(embed=embed, view=None, attachments=message.attachments)
         except Exception:  # noqa: BLE001
             _logger.exception("little girl result edit failed")
+
+    # ---------------- forge sacrée ----------------
+
+    async def _spawn_sacred_forge(self) -> discord.Message | None:
+        channel = _event_channel(self.bot)
+        if channel is None:
+            _logger.warning("event channel introuvable (%s)", settings.event_channel_id)
+            return None
+        config = cfg.get_config("sacred_forge")
+        minutes = max(1, int(config.get("window_minutes", 5)))
+        max_level = int(config.get("max_level", 10))
+        expires_at = _now() + timedelta(minutes=minutes)
+        with get_db_session() as session:
+            repo = EventRepository(session)
+            ev = repo.create("sacred_forge", channel.id, expires_at=expires_at)
+            repo.touch_spawn("sacred_forge")
+            session.commit()
+            event_id = ev.id
+
+        embed = discord.Embed(
+            title="🔨 La forge sacrée s'embrase !",
+            description=(
+                "Une forge légendaire apparaît, brûlant d'une flamme divine. "
+                "Pendant **{m} minutes**, chacun peut y **renforcer un seul de ses "
+                "équipements** (une seule fois). Chaque niveau ajoute les stats de "
+                "base de la pièce — jusqu'au **niveau {lv}**.\n\nClique **Forger** "
+                "et choisis ta pièce !"
+            ).format(m=minutes, lv=max_level),
+            color=discord.Color.orange(),
+        )
+        file = _image_file(config.get("image", ""))
+        if file is not None:
+            embed.set_image(url=f"attachment://{file.filename}")
+        kwargs = {"embed": embed, "view": ForgeView(self)}
+        if file is not None:
+            kwargs["file"] = file
+        message = await channel.send(**kwargs)
+        with get_db_session() as session:
+            EventRepository(session).set_message_id(event_id, message.id)
+            session.commit()
+        return message
+
+    async def handle_forge_open(self, interaction: discord.Interaction) -> None:
+        message = interaction.message
+        with get_db_session() as session:
+            repo = EventRepository(session)
+            profile = PlayerRepository(session).get_by_discord_id(interaction.user.id)
+            if profile is None:
+                await interaction.followup.send(
+                    "Crée d'abord ton profil avec `/profil`.", ephemeral=True
+                )
+                return
+            ev = repo.get_active_by_type("sacred_forge")
+            if ev is None or (message and ev.message_id != message.id):
+                await interaction.followup.send(
+                    "🔥 La forge s'est éteinte — trop tard !", ephemeral=True
+                )
+                return
+            if repo.get_participation(ev.id, profile.player.id) is not None:
+                await interaction.followup.send(
+                    "Tu as déjà utilisé la forge pour cet événement. Une seule "
+                    "pièce par forge !", ephemeral=True
+                )
+                return
+            equipped = EquipmentRepository(session).list_by_player_id(profile.player.id)
+            levels = PlayerItemLevelRepository(session).get_levels_for_player(
+                profile.player.id
+            )
+            max_level = int(cfg.get_config("sacred_forge").get("max_level", 10))
+            options: list[discord.SelectOption] = []
+            seen: set[int] = set()
+            for eq in equipped:
+                idef = eq.item_definition
+                if idef.id in seen:
+                    continue
+                seen.add(idef.id)
+                lvl = levels.get(idef.id, 0)
+                if lvl >= max_level:
+                    label = f"{idef.name} (niv MAX)"
+                else:
+                    label = f"{idef.name} (niv {lvl} → {lvl + 1})"
+                options.append(
+                    discord.SelectOption(label=label[:100], value=str(idef.id))
+                )
+            if not options:
+                await interaction.followup.send(
+                    "Tu n'as aucun équipement à forger.", ephemeral=True
+                )
+                return
+            event_id = ev.id
+        await interaction.followup.send(
+            "Choisis l'équipement à renforcer :",
+            view=ForgeSelectView(self, event_id, options[:25]),
+            ephemeral=True,
+        )
+
+    async def handle_forge_pick(
+        self, interaction: discord.Interaction, event_id: int, item_definition_id: int
+    ) -> None:
+        with get_db_session() as session:
+            repo = EventRepository(session)
+            profile = PlayerRepository(session).get_by_discord_id(interaction.user.id)
+            if profile is None:
+                await interaction.followup.send("Profil introuvable.", ephemeral=True)
+                return
+            ev = repo.get_by_id(event_id)
+            if ev is None or ev.status != "active":
+                await interaction.followup.send(
+                    "🔥 La forge s'est éteinte entre-temps !", ephemeral=True
+                )
+                return
+            if repo.get_participation(event_id, profile.player.id) is not None:
+                await interaction.followup.send(
+                    "Tu as déjà forgé une pièce pour cet événement.", ephemeral=True
+                )
+                return
+            # Vérifie que la pièce est bien équipée par le joueur.
+            equipped = EquipmentRepository(session).list_by_player_id(profile.player.id)
+            item = next(
+                (e.item_definition for e in equipped
+                 if e.item_definition.id == item_definition_id),
+                None,
+            )
+            if item is None:
+                await interaction.followup.send(
+                    "Cet équipement n'est plus équipé.", ephemeral=True
+                )
+                return
+            max_level = int(cfg.get_config("sacred_forge").get("max_level", 10))
+            level_repo = PlayerItemLevelRepository(session)
+            new_level = level_repo.increment(
+                profile.player.id, item_definition_id, max_level
+            )
+            if new_level == -1:
+                await interaction.followup.send(
+                    f"**{item.name}** est déjà au niveau maximum ({max_level}).",
+                    ephemeral=True,
+                )
+                return
+            # Enregistre la participation (une seule forge par joueur/event).
+            repo.upsert_participation(
+                event_id, profile.player.id, choice=str(item_definition_id)
+            )
+            session.commit()
+            gains = ForgeService().gain_per_level(item.stat_bonuses)
+        gain_txt = ", ".join(f"+{v} {k}" for k, v in gains.items()) or "ses stats de base"
+        await interaction.followup.send(
+            f"🔨 **{item.name}** forgé au **niveau {new_level}** ! "
+            f"(gain de {gain_txt}). Vérifie avec `/equipement`.",
+            ephemeral=True,
+        )
+
+    async def _close_sacred_forge(self, event_id: int) -> None:
+        channel_id = None
+        message_id = None
+        forged_count = 0
+        with get_db_session() as session:
+            repo = EventRepository(session)
+            ev = repo.get_by_id(event_id)
+            if ev is None or ev.status != "active":
+                return
+            channel_id, message_id = ev.channel_id, ev.message_id
+            forged_count = len(repo.list_participations(event_id))
+            repo.set_status(event_id, "resolved")
+            session.commit()
+        if not channel_id or not message_id:
+            return
+        try:
+            channel = self.bot.get_channel(channel_id)
+            if channel is None:
+                return
+            message = await channel.fetch_message(message_id)
+            embed = discord.Embed(
+                title="🔥 La forge sacrée s'est éteinte.",
+                description=(
+                    f"La flamme divine s'éteint. **{forged_count}** aventurier(s) "
+                    "ont renforcé un équipement."
+                ),
+                color=discord.Color.dark_orange(),
+            )
+            await message.edit(embed=embed, view=None, attachments=message.attachments)
+        except Exception:  # noqa: BLE001
+            _logger.exception("sacred forge close edit failed")
 
     # ---------------- commande admin de test ----------------
 
