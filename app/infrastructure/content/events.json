@@ -13,7 +13,7 @@
     ]
   },
   "little_girl": {
-    "enabled": false,
+    "enabled": true,
     "label": "La petite fille",
     "cadence": { "times": 1, "per_days": 1 },
     "image": "little_girl.png",
@@ -27,7 +27,7 @@
     "resolve_after_minutes": 5
   },
   "sacred_forge": {
-    "enabled": false,
+    "enabled": true,
     "label": "La forge sacrée",
     "cadence": { "times": 1, "per_days": 3 },
     "image": "sacred_forge.png",
