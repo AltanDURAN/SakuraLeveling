@@ -129,6 +129,7 @@ git checkout main
 | `/admin end_encounter` | `admin_cog` | **Admin uniquement** — annule l'encounter actif |
 | `/event spawn <type>` | `event_cog` | **Admin uniquement** — spawn immédiat d'un événement non-combat (coffre / petite fille / forge sacrée) |
 | `/admin shop_add`, `/admin shop_set`, `/admin shop_remove`, `/admin shop_set_stock` | `admin_cog` | **Admin uniquement** — gestion du shop (autocomplete sur item_code) |
+| (webapp) `/admin/actions` | webapp | **Admin uniquement** — ACTIONS RAPIDES : or/XP/niveau/points/items/panoplies, PV courants, cooldowns, buffs temporaires, reset joueur (écriture DB directe) **+ actions du bot** (spawn monstre/boss/événement, arrêt ou résolution du combat) via la file `admin_commands` que `AdminBridgeCog` exécute côté bot en ≤5 s, avec journal de statut. |
 | (webapp) `/admin` | webapp | **Admin uniquement** — interface web pour CRUD items/mobs (OAuth Discord, port 8001). Voir section Skill Tree pour détails. |
 | `/shop`, `/buy <item> <qty>` | `shop_cog` | Shop joueur paginé par catégorie — **achat uniquement** (prix fixe). Pas de vente (V2). Les drops de mob ne sont PAS en boutique. |
 | `/skill [target]` | `skill_cog` | Arbre de compétences avec image, boutons Investir/Vue web/Reset (cooldown 7j) |

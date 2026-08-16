@@ -372,6 +372,44 @@ class WorldBossCog(commands.Cog):
             ephemeral=True,
         )
 
+    # ---------- API publique pour le pont admin web ----------
+
+    async def admin_spawn_boss(self, boss_code: str) -> tuple[bool, str]:
+        """Spawn d'un boss demandé depuis l'admin WEB (via AdminBridgeCog).
+        Même chemin que `/boss spawn`, sans interaction Discord."""
+        if not boss_code:
+            return False, "Code de boss manquant."
+        with get_db_session() as session:
+            result = SpawnWorldBossUseCase(
+                world_boss_repository=WorldBossRepository(session),
+            ).execute(boss_code=boss_code)
+        if not result.success or result.boss is None:
+            return False, result.message
+        message = await self._post_boss_message(result.boss)
+        if message is None:
+            return False, "Channel boss introuvable (vérifier BOSS_CHANNEL_ID)."
+        return True, f"{result.message} — posté dans le canal boss."
+
+    async def admin_stop_boss(self) -> tuple[bool, str]:
+        """Arrêt du boss actif depuis l'admin WEB : marque defeated et supprime
+        le message, sans distribuer de récompenses (comme `/boss stop`)."""
+        with get_db_session() as session:
+            repo = WorldBossRepository(session)
+            boss = repo.get_active()
+            if boss is None or not boss.is_alive:
+                return False, "Aucun world boss actif à arrêter."
+            repo.mark_defeated(boss.id)
+            boss_name, message_id = boss.name, boss.channel_message_id
+        if message_id is not None:
+            channel = _get_boss_channel(self.bot)
+            if channel is not None:
+                try:
+                    msg = await channel.fetch_message(message_id)
+                    await msg.delete()
+                except (discord.NotFound, discord.Forbidden):
+                    pass
+        return True, f"World boss {boss_name} arrêté (aucune récompense distribuée)."
+
     # ---------- helpers ----------
 
     async def _post_boss_message(self, boss) -> discord.Message | None:

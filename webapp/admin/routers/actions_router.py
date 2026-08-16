@@ -1,6 +1,14 @@
-"""Routes admin : page d'actions rapides (give_gold, give_xp, set_level,
-give_item, give_skill_points). Forme à formulaire qui exécute directement
-sur la DB sans passer par Discord.
+"""Routes admin : page d'ACTIONS RAPIDES — toute l'administration depuis le site.
+
+Deux familles d'actions :
+
+1. **Directes** (or, XP, niveau, points de compétence, items, panoplies, PV,
+   cooldowns, buffs, reset) : la webapp écrit directement en base, l'effet est
+   immédiat.
+2. **Déléguées au bot** (spawn de monstre / boss / événement, arrêt d'un
+   combat) : la webapp ne peut pas parler à Discord — elle dépose une commande
+   dans `admin_commands`, que `AdminBridgeCog` exécute côté bot en quelques
+   secondes. Le journal en bas de page affiche le statut et le résultat.
 """
 
 from __future__ import annotations
@@ -12,11 +20,21 @@ from urllib.parse import quote_plus
 from fastapi import APIRouter, Depends, Request, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from app.infrastructure.db.repositories.admin_command_repository import (
+    AdminCommandRepository,
+)
+from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.inventory_repository import (
     InventoryRepository,
 )
+from app.infrastructure.db.repositories.player_health_repository import (
+    PlayerHealthRepository,
+)
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
+from app.infrastructure.db.repositories.player_status_effect_repository import (
+    PlayerStatusEffectRepository,
+)
 from app.infrastructure.db.session import get_db_session
 from app.infrastructure.sets.set_loader import list_definitions as list_set_definitions
 from webapp.admin.auth import AdminUser, require_admin
@@ -53,9 +71,39 @@ async def actions_page(
     message: str | None = None,
     error: str | None = None,
 ):
+    from app.infrastructure.db.repositories.mob_repository import MobRepository
+    from app.infrastructure.world_boss.boss_definition_loader import (
+        list_definitions as list_boss_definitions,
+    )
+    from app.infrastructure.events import event_config_loader
+
     with get_db_session() as session:
         profiles = PlayerRepository(session).list_all_profiles()
         items = ItemRepository(session).list_all()
+        mobs = [
+            {"code": m.code, "name": m.name, "family": m.family or ""}
+            for m in MobRepository(session).list_all()
+        ]
+        # Journal des commandes envoyées au bot (statut + résultat).
+        bot_commands = [
+            {
+                "action": c.action,
+                "label": _BOT_ACTION_LABELS.get(c.action, c.action),
+                "payload": c.payload_json,
+                "status": c.status,
+                "result": c.result,
+                "created_at": c.created_at,
+            }
+            for c in AdminCommandRepository(session).list_recent(12)
+        ]
+
+    bosses = [{"code": b.code, "name": b.name} for b in list_boss_definitions()]
+    event_config_loader.clear_cache()
+    events = [
+        {"code": code, "label": cfg.get("label", code),
+         "enabled": bool(cfg.get("enabled"))}
+        for code, cfg in event_config_loader.all_configs().items()
+    ]
 
     # Familles de panoplie = familles distinctes parmi les items ÉQUIPABLES.
     # Compte les pièces par famille + nom/icône depuis sets.json si dispo.
@@ -86,6 +134,17 @@ async def actions_page(
             ],
             "items": [{"code": it.code, "name": it.name} for it in items],
             "families": families,
+            "mobs": sorted(mobs, key=lambda m: (m["family"], m["name"])),
+            "bosses": bosses,
+            "events": events,
+            "bot_commands": bot_commands,
+            "cooldown_keys": [
+                ("", "Tous les cooldowns"),
+                ("daily", "/daily — récompense quotidienne"),
+                ("duel_challenge", "Duel 1v1 (anti-spam 60 s)"),
+                ("skill_tree_reset", "Reset de l'arbre (7 j)"),
+                ("world_boss_fight", "Combat de world boss (1/jour)"),
+            ],
             "flash_message": message,
             "flash_error": error,
         },
@@ -243,3 +302,182 @@ async def panoplie_action(
                  user.discord_id, action, family, count, target)
     msg = quote_plus(f"Panoplie {family} {verb} ({count} pièces)")
     return RedirectResponse(f"/admin/actions?message={msg}", status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# Actions DIRECTES supplémentaires (PV, cooldowns, buffs, reset)
+# ---------------------------------------------------------------------------
+
+def _redirect(message: str = "", error: str = "") -> RedirectResponse:
+    key, value = ("error", error) if error else ("message", message)
+    return RedirectResponse(f"/admin/actions?{key}={quote_plus(value)}", status_code=303)
+
+
+def _resolved(session, form) -> tuple[int | None, str]:
+    target = form.get("target", "")
+    return _resolve_player_id(session, target), target
+
+
+@router.post("/set_hp")
+async def set_hp(request: Request, user: AdminUser = Depends(require_admin)):
+    """Fixe les PV COURANTS d'un joueur (ou les met au max avec « heal »).
+
+    Rappel d'invariant : les PV courants ne vivent PAS sur `Player` mais dans
+    `player_health_states`."""
+    form = await request.form()
+    mode = (form.get("mode", "set") or "set").strip()
+    with get_db_session() as session:
+        pid, target = _resolved(session, form)
+        if pid is None:
+            return _redirect(error=f"Joueur `{target}` introuvable")
+
+        health_repo = PlayerHealthRepository(session)
+        if mode == "heal":
+            # Max HP = stats complètes (équipement, arbre, titres, buffs, forge).
+            from app.application.services.player_stats_resolver import (
+                resolve_player_stats,
+            )
+            from app.infrastructure.db.repositories.class_repository import (
+                ClassRepository,
+            )
+            from app.infrastructure.db.repositories.equipment_repository import (
+                EquipmentRepository,
+            )
+            profile = PlayerRepository(session).get_profile_by_player_id(pid)
+            stats = resolve_player_stats(
+                session=session, profile=profile,
+                equipped_items=EquipmentRepository(session).list_by_player_id(pid),
+                active_class=ClassRepository(session).get_current_class_for_player(pid),
+            )
+            health_repo.get_or_create(pid, default_current_hp=stats.max_hp)
+            health_repo.update_current_hp(pid, stats.max_hp)
+            _logger.info("Admin %s a soigné %s à fond (%d PV)", user.discord_id, target, stats.max_hp)
+            return _redirect(f"{target} soigné au maximum ({stats.max_hp} PV)")
+
+        try:
+            hp = max(0, int(form.get("hp", "0")))
+        except ValueError:
+            return _redirect(error="PV invalides")
+        health_repo.get_or_create(pid, default_current_hp=hp)
+        health_repo.update_current_hp(pid, hp)
+        _logger.info("Admin %s a fixé les PV de %s à %d", user.discord_id, target, hp)
+        return _redirect(f"PV de {target} fixés à {hp}")
+
+
+@router.post("/reset_cooldowns")
+async def reset_cooldowns(request: Request, user: AdminUser = Depends(require_admin)):
+    """Remet à zéro les cooldowns de commandes d'un joueur (/daily, duel,
+    reset d'arbre, combat de boss…). `action_key` vide = tous."""
+    form = await request.form()
+    action_key = (form.get("action_key", "") or "").strip()
+    with get_db_session() as session:
+        pid, target = _resolved(session, form)
+        if pid is None:
+            return _redirect(error=f"Joueur `{target}` introuvable")
+        from sqlalchemy import delete
+        from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel
+        stmt = delete(PlayerCooldownModel).where(PlayerCooldownModel.player_id == pid)
+        if action_key:
+            stmt = stmt.where(PlayerCooldownModel.action_key == action_key)
+        removed = session.execute(stmt).rowcount or 0
+        session.commit()
+    label = f"« {action_key} »" if action_key else "tous"
+    _logger.info("Admin %s a reset les cooldowns (%s) de %s", user.discord_id, label, target)
+    return _redirect(f"{removed} cooldown(s) {label} remis à zéro pour {target}")
+
+
+@router.post("/status_effect")
+async def status_effect(request: Request, user: AdminUser = Depends(require_admin)):
+    """Applique un buff/debuff temporaire (multiplicateur sur TOUTES les stats
+    positives), ou purge les effets actifs du joueur."""
+    form = await request.form()
+    mode = (form.get("mode", "add") or "add").strip()
+    with get_db_session() as session:
+        pid, target = _resolved(session, form)
+        if pid is None:
+            return _redirect(error=f"Joueur `{target}` introuvable")
+        repo = PlayerStatusEffectRepository(session)
+        if mode == "clear":
+            repo.clear_for_player(pid)
+            session.commit()
+            _logger.info("Admin %s a purgé les effets de %s", user.discord_id, target)
+            return _redirect(f"Effets temporaires de {target} purgés")
+        try:
+            pct = int(form.get("percent", "10"))
+            hours = max(1, int(form.get("hours", "3")))
+        except ValueError:
+            return _redirect(error="Pourcentage ou durée invalide")
+        multiplier = max(0.05, 1 + pct / 100)
+        repo.add(pid, "admin_web", multiplier, hours * 3600)
+        session.commit()
+    sign = "+" if pct >= 0 else ""
+    _logger.info("Admin %s a appliqué %s%d%% %dh à %s", user.discord_id, sign, pct, hours, target)
+    return _redirect(f"Effet {sign}{pct}% pendant {hours}h appliqué à {target}")
+
+
+@router.post("/reset_player")
+async def reset_player(request: Request, user: AdminUser = Depends(require_admin)):
+    """Réinitialise TOUT un joueur (sauf son identité Discord). Irréversible."""
+    form = await request.form()
+    if (form.get("confirm", "") or "").strip().upper() != "RESET":
+        return _redirect(error="Tape RESET pour confirmer la réinitialisation")
+    with get_db_session() as session:
+        pid, target = _resolved(session, form)
+        if pid is None:
+            return _redirect(error=f"Joueur `{target}` introuvable")
+        from app.application.use_cases.reset_player import ResetPlayerUseCase
+        ResetPlayerUseCase().execute(session, pid)
+        session.commit()
+    _logger.warning("Admin %s a RESET le joueur %s", user.discord_id, target)
+    return _redirect(f"Joueur {target} entièrement réinitialisé")
+
+
+# ---------------------------------------------------------------------------
+# Actions déléguées au BOT (file `admin_commands`)
+# ---------------------------------------------------------------------------
+
+_BOT_ACTION_LABELS = {
+    "spawn_encounter": "Spawn d'un monstre",
+    "stop_encounter": "Arrêt du combat en cours",
+    "resolve_encounter": "Résolution immédiate du combat",
+    "spawn_boss": "Spawn d'un world boss",
+    "stop_boss": "Arrêt du world boss",
+    "spawn_event": "Spawn d'un événement",
+}
+
+
+@router.post("/bot/{action}")
+async def bot_action(action: str, request: Request, user: AdminUser = Depends(require_admin)):
+    """Dépose une commande pour le bot. Il la ramasse en ≤ 5 s et écrit le
+    résultat, visible dans le journal en bas de page."""
+    from app.infrastructure.db.repositories.admin_command_repository import (
+        KNOWN_ACTIONS,
+    )
+    if action not in KNOWN_ACTIONS:
+        return _redirect(error=f"Action bot inconnue : {action}")
+
+    form = await request.form()
+    payload: dict = {}
+    if action == "spawn_encounter":
+        if (form.get("mob_code") or "").strip():
+            payload["mob_code"] = form.get("mob_code").strip()
+        if (form.get("element") or "").strip():
+            payload["element"] = form.get("element").strip()
+    elif action == "spawn_boss":
+        code = (form.get("boss_code") or "").strip()
+        if not code:
+            return _redirect(error="Choisis un boss à faire spawner")
+        payload["boss_code"] = code
+    elif action == "spawn_event":
+        event_type = (form.get("event_type") or "").strip()
+        if not event_type:
+            return _redirect(error="Choisis un type d'événement")
+        payload["event_type"] = event_type
+
+    with get_db_session() as session:
+        AdminCommandRepository(session).enqueue(action, payload, user.discord_id)
+        session.commit()
+    _logger.info("Admin %s a demandé au bot : %s %s", user.discord_id, action, payload)
+    return _redirect(
+        f"{_BOT_ACTION_LABELS.get(action, action)} demandé — le bot l'exécute dans quelques secondes"
+    )

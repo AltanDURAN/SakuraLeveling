@@ -5,10 +5,14 @@
 {% block content %}
 <section class="form-page">
     <a href="/admin" class="breadcrumb">← Dashboard</a>
-    <h1>⚡ Actions admin</h1>
+    <h1>⚡ Actions rapides</h1>
     <p class="form-section-help">
-        Actions rapides qui touchent directement la DB. Le bot Discord n'est
-        pas mis au courant en temps réel — un /profile rafraîchira l'info.
+        Toute l'administration depuis le site, en deux familles :
+        les actions <strong>sur les joueurs</strong> (or, XP, niveau, points,
+        items, panoplies, PV, cooldowns, effets, reset) écrivent directement en
+        base — effet immédiat, visible par le joueur à sa prochaine commande ;
+        les actions <strong>du bot</strong> (spawns, arrêt de combat) lui sont
+        transmises et exécutées en quelques secondes.
     </p>
 
     {% if flash_message %}
@@ -148,6 +152,189 @@
             </div>
         </form>
     </div>
+
+    <h2 style="margin: 2rem 0 0.4rem;">🩺 État du joueur</h2>
+    <p class="form-section-help">
+        PV courants, cooldowns de commandes et effets temporaires. Effet immédiat
+        en base — le joueur le voit à sa prochaine commande.
+    </p>
+    <div class="entity-grid" style="grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));">
+
+        <form method="post" action="/admin/actions/set_hp" class="form-section">
+            <h2 class="form-section-title">❤️ PV courants</h2>
+            <div class="form-row">{{ target_field }}
+                <label class="field">
+                    <span class="field-label">Mode</span>
+                    <select name="mode" class="input">
+                        <option value="set">Fixer à…</option>
+                        <option value="heal">Soigner au maximum</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span class="field-label">PV (mode « fixer »)</span>
+                    <input type="number" name="hp" class="input" value="100" min="0">
+                </label>
+            </div>
+            <p class="field-hint">
+                Les PV courants vivent dans <code>player_health_states</code>, pas sur le joueur.
+                « Soigner au maximum » recalcule le PV max complet (équipement, arbre, titres, buffs, forge).
+            </p>
+            <div class="form-actions"><button type="submit" class="btn btn-primary">Appliquer</button></div>
+        </form>
+
+        <form method="post" action="/admin/actions/reset_cooldowns" class="form-section">
+            <h2 class="form-section-title">⏱️ Cooldowns</h2>
+            <div class="form-row">{{ target_field }}
+                <label class="field">
+                    <span class="field-label">Cooldown à remettre à zéro</span>
+                    <select name="action_key" class="input">
+                        {% for key, label in cooldown_keys %}
+                        <option value="{{ key }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            </div>
+            <div class="form-actions"><button type="submit" class="btn btn-primary">Remettre à zéro</button></div>
+        </form>
+
+        <form method="post" action="/admin/actions/status_effect" class="form-section">
+            <h2 class="form-section-title">🧪 Buff / debuff temporaire</h2>
+            <div class="form-row">{{ target_field }}
+                <label class="field">
+                    <span class="field-label">Mode</span>
+                    <select name="mode" class="input">
+                        <option value="add">Appliquer un effet</option>
+                        <option value="clear">Purger les effets actifs</option>
+                    </select>
+                </label>
+            </div>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Variation des stats (%)</span>
+                    <input type="number" name="percent" class="input" value="10">
+                    <span class="field-hint">Positif = buff (+10 → ×1,1) · négatif = debuff (−50 → ×0,5).</span>
+                </label>
+                <label class="field">
+                    <span class="field-label">Durée (heures)</span>
+                    <input type="number" name="hours" class="input" value="3" min="1">
+                </label>
+            </div>
+            <div class="form-actions"><button type="submit" class="btn btn-primary">Appliquer</button></div>
+        </form>
+
+        <form method="post" action="/admin/actions/reset_player" class="form-section"
+              style="border-color: var(--danger);"
+              onsubmit="return confirm('⚠️ Réinitialiser ENTIÈREMENT ce joueur ?\n\nOr, XP, niveau, inventaire, équipement, titres, arbre, quêtes, ladder : tout est perdu. Seule son identité Discord est conservée. Irréversible.');">
+            <h2 class="form-section-title" style="color: var(--danger);">💥 Réinitialiser un joueur</h2>
+            <div class="form-row">{{ target_field }}
+                <label class="field">
+                    <span class="field-label">Confirmation — tape <code>RESET</code></span>
+                    <input type="text" name="confirm" class="input" placeholder="RESET" autocomplete="off">
+                </label>
+            </div>
+            <p class="field-hint">
+                Remet tout à zéro sauf l'identité Discord. Purge aussi effets temporaires,
+                niveaux de forge et participations aux événements.
+            </p>
+            <div class="form-actions">
+                <button type="submit" class="btn" style="background: var(--danger); color:#fff;">Réinitialiser</button>
+            </div>
+        </form>
+    </div>
+
+    <h2 style="margin: 2rem 0 0.4rem;">🎮 Actions du bot (Discord)</h2>
+    <p class="form-section-help">
+        La webapp ne peut pas parler à Discord elle-même : ces actions sont déposées
+        dans une file que le bot ramasse en <strong>≤ 5 secondes</strong>. Le journal
+        en bas indique le résultat.
+    </p>
+    <div class="entity-grid" style="grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));">
+
+        <form method="post" action="/admin/actions/bot/spawn_encounter" class="form-section">
+            <h2 class="form-section-title">👾 Faire spawner un monstre</h2>
+            <label class="field">
+                <span class="field-label">Monstre — laisse vide pour un tirage aléatoire</span>
+                <select name="mob_code" class="input">
+                    <option value="">🎲 Aléatoire (selon la zone)</option>
+                    {% for m in mobs %}
+                    <option value="{{ m.code }}">{{ m.name }}{% if m.family %} · {{ m.family }}{% endif %}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <div class="form-actions"><button type="submit" class="btn btn-primary">Faire spawner</button></div>
+        </form>
+
+        <form method="post" action="/admin/actions/bot/stop_encounter" class="form-section">
+            <h2 class="form-section-title">🛑 Combat en cours</h2>
+            <p class="field-hint">
+                <strong>Arrêter</strong> annule l'encounter actif sans récompense.
+                <strong>Résoudre</strong> lance immédiatement le combat sans attendre la fin du recrutement.
+            </p>
+            <div class="form-actions">
+                <button type="submit" class="btn" style="background: var(--danger); color:#fff;">Arrêter le combat</button>
+                <button type="submit" class="btn" formaction="/admin/actions/bot/resolve_encounter">Résoudre maintenant</button>
+            </div>
+        </form>
+
+        <form method="post" action="/admin/actions/bot/spawn_boss" class="form-section">
+            <h2 class="form-section-title">🐲 World boss</h2>
+            <label class="field">
+                <span class="field-label">Boss à faire apparaître</span>
+                <select name="boss_code" class="input">
+                    {% for b in bosses %}<option value="{{ b.code }}">{{ b.name }} ({{ b.code }})</option>{% endfor %}
+                </select>
+            </label>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Faire spawner</button>
+                <button type="submit" class="btn" formaction="/admin/actions/bot/stop_boss"
+                        style="background: var(--danger); color:#fff;">Arrêter le boss actif</button>
+            </div>
+        </form>
+
+        <form method="post" action="/admin/actions/bot/spawn_event" class="form-section">
+            <h2 class="form-section-title">🎲 Événement</h2>
+            <label class="field">
+                <span class="field-label">Type d'événement</span>
+                <select name="event_type" class="input">
+                    {% for e in events %}
+                    <option value="{{ e.code }}">{{ e.label }}{% if not e.enabled %} (désactivé — spawn forcé quand même){% endif %}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <p class="field-hint">Le spawn manuel fonctionne même si l'événement est désactivé dans sa config.</p>
+            <div class="form-actions"><button type="submit" class="btn btn-primary">Faire spawner</button></div>
+        </form>
+    </div>
+
+    <h2 style="margin: 2rem 0 0.4rem;">📜 Journal des commandes envoyées au bot</h2>
+    {% if bot_commands %}
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead><tr><th>Quand</th><th>Action</th><th>Détail</th><th>Statut</th><th>Résultat</th></tr></thead>
+            <tbody>
+                {% for c in bot_commands %}
+                <tr>
+                    <td style="white-space:nowrap;">{{ c.created_at.strftime('%d/%m %H:%M:%S') }}</td>
+                    <td>{{ c.label }}</td>
+                    <td><code style="font-size:.78rem;">{{ c.payload if c.payload != '{}' else '—' }}</code></td>
+                    <td>
+                        {% if c.status == 'done' %}<span class="count-pill" style="background:#2e7d32;color:#fff;">✅ exécutée</span>
+                        {% elif c.status == 'failed' %}<span class="count-pill" style="background:var(--danger);color:#fff;">❌ échec</span>
+                        {% else %}<span class="count-pill">⏳ en attente</span>{% endif %}
+                    </td>
+                    <td style="font-size:.85rem;">{{ c.result or '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <p class="field-hint">
+        Une commande qui reste « en attente » plus d'une minute signale un bot arrêté.
+        Recharge la page pour rafraîchir les statuts.
+    </p>
+    {% else %}
+    <div class="empty-state"><p>Aucune commande envoyée au bot pour l'instant.</p></div>
+    {% endif %}
 
     <datalist id="items-list">
         {% for it in items %}

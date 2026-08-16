@@ -50,6 +50,7 @@ from app.infrastructure.db.models.event_model import (  # noqa: F401
     EventSchedulerStateModel,
 )
 from app.infrastructure.db.models.player_item_level_model import PlayerItemLevelModel  # noqa: F401
+from app.infrastructure.db.models.admin_command_model import AdminCommandModel  # noqa: F401
 
 
 config = context.config
