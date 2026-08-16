@@ -263,7 +263,7 @@ def compose_raid_banner(output_path: str, data: RaidBannerData) -> str:
     _panel(bg, (rx1, 316, rx2, HEIGHT - 128), radius=20)
     draw_text_with_emojis(bg, (rx1 + 28, 334), "🏆 MEILLEURS COMBATTANTS",
                           f_label, fill=C_GOLD)
-    top = data.contributors[:5]
+    top = data.contributors[:4]
     best = max((c.damage for c in top), default=1) or 1
     row_y = 378
     for i, c in enumerate(top):
@@ -287,11 +287,37 @@ def compose_raid_banner(output_path: str, data: RaidBannerData) -> str:
         if bw > 6:
             draw.rounded_rectangle([(bar_x1, row_y + 8), (bar_x1 + bw, row_y + 24)],
                                    radius=8, fill=(*phase_color[:3], 255))
-        row_y += 52
+        row_y += 46
     if not top:
         draw_text_with_shadow(draw, (rx1 + 28, 382),
                               "Aucun assaut pour l'instant — soyez les premiers.",
                               f_small, C_MUTED, C_SHADOW)
+
+    # HONNEURS D'ÉQUIPE : le raid ne se gagne pas qu'aux dégâts. Mettre le
+    # meilleur tank et le meilleur soutien à l'honneur valorise explicitement
+    # les rôles de soutien et pousse à composer une vraie équipe.
+    if data.contributors:
+        best_tank = max(data.contributors, key=lambda c: c.tanked)
+        best_heal = max(data.contributors, key=lambda c: c.healed)
+        # Position calculée depuis la FIN réelle de la liste (elle est de
+        # taille variable) — un offset fixe chevauchait les dernières lignes.
+        hy = row_y + 10
+        sep = Image.new("RGBA", bg.size, (0, 0, 0, 0))
+        ImageDraw.Draw(sep).line([(rx1 + 28, hy - 14), (rx2 - 28, hy - 14)],
+                                 fill=(255, 255, 255, 30), width=1)
+        bg.alpha_composite(sep)
+        honors = []
+        if best_tank.tanked > 0:
+            honors.append(f"🛡️ Rempart : {best_tank.display_name} "
+                          f"({_compact(best_tank.tanked)} encaissés)")
+        if best_heal.healed > 0:
+            honors.append(f"💚 Soutien : {best_heal.display_name} "
+                          f"({_compact(best_heal.healed)} soignés)")
+        if not honors:
+            honors.append("🛡️ Rempart et 💚 Soutien : à conquérir cette semaine")
+        for i, line in enumerate(honors[:2]):
+            draw_text_with_emojis(bg, (rx1 + 28, hy + i * 32), line, f_small,
+                                  fill=C_MUTED, emoji_size=f_small.size)
 
     # ---------------- bandeau bas ----------------
     _panel(bg, (28, HEIGHT - 112, WIDTH - 28, HEIGHT - 24), radius=20)
