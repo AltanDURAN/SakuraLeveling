@@ -143,6 +143,7 @@ git checkout main
 | `/unequip <slot\|all>` | `player_cog` | `slot=all` retire tout l'équipement d'un coup. |
 | `/weekly_quest` (claim par bouton) | `weekly_quest_cog` | 3 quêtes hebdo random tirées le lundi UTC. (`/daily_quest` : quêtes quotidiennes.) |
 | `/brocante annonces/mes_annonces/vendre/acheter/annuler` | `brocante_cog` | Marketplace P2P avec commission shop (5%) |
+| `/boss moi`, `/boss historique` | `world_boss_cog` | **RAID HEBDOMADAIRE** — `/boss moi` : rang, part de l'effort, palier de contribution, dégâts/encaissé/soins, progrès vs semaine précédente. `/boss historique` : 8 derniers raids (dégâts cumulés, MVP, issue, record). |
 | `/boss spawn <boss_code>`, `/boss list`, `/boss stop` | `world_boss_cog` | Spawn manuel admin / catalogue + auto-spawn hebdo. `stop` arrête le boss actif sans distribuer de récompenses (cleanup/debug). |
 
 ## Système d'administration
