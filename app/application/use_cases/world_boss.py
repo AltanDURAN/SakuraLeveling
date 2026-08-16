@@ -187,28 +187,37 @@ class AutoSpawnDecision:
 
 
 class SpawnRandomWorldBossUseCase:
-    """Auto-spawn aléatoire pondéré par `spawn_weight` des définitions.
+    """Spawn du RAID HEBDOMADAIRE : un rendez-vous, pas une loterie.
 
-    Conditions de spawn (toutes doivent être vraies) :
-        1. Aucun boss actif actuellement
-        2. Soit aucun boss n'a jamais été spawn, soit le dernier mort
-           a été défait il y a ≥ BOSS_RESPAWN_COOLDOWN_DAYS jours
-        3. Tirage aléatoire : par défaut `spawn_probability` = 0.05 (5%
-           de chance par appel — ajustable). Avec un loop horaire, ça
-           donne en moyenne ~1 spawn / jour après la fenêtre 7j → on
-           reste cohérent avec "1 par semaine" en moyenne (le user peut
-           ajuster).
+    Le world boss est l'événement de la semaine — il doit donc tomber à un
+    moment PRÉVISIBLE autour duquel la communauté se rassemble, et non au
+    hasard d'un tirage horaire (l'ancien comportement : 5 % par heure, ce qui
+    rendait l'apparition imprévisible et empêchait de « préparer » le raid).
 
-    Le caller est responsable d'appeler ce use case périodiquement.
+    Conditions de spawn :
+        1. aucun boss actif ;
+        2. on est le JOUR DE SPAWN (lundi par défaut), à partir de l'heure
+           d'ouverture ;
+        3. aucun boss n'a déjà été lancé pendant CETTE semaine ISO.
+
+    Le boss reste ensuite en vie toute la semaine : chaque jour à 21 h, les
+    inscrits l'attaquent ensemble et lui arrachent des PV définitivement (il ne
+    régénère jamais). `weekly=False` restaure l'ancien tirage aléatoire.
     """
 
     def __init__(
         self,
         world_boss_repository: WorldBossRepository,
         spawn_probability: float = 0.05,
+        weekly: bool = True,
+        spawn_weekday: int = 0,   # 0 = lundi
+        spawn_hour: int = 12,     # heure d'ouverture du raid (UTC)
     ) -> None:
         self.world_boss_repository = world_boss_repository
         self.spawn_probability = spawn_probability
+        self.weekly = weekly
+        self.spawn_weekday = spawn_weekday
+        self.spawn_hour = spawn_hour
 
     def execute(
         self,
@@ -222,17 +231,30 @@ class SpawnRandomWorldBossUseCase:
         if self.world_boss_repository.get_active() is not None:
             return AutoSpawnDecision(False, "boss_actif")
 
-        last_defeated = self.world_boss_repository.get_latest_defeated()
-        if last_defeated is not None:
-            elapsed = now - _normalize_utc(last_defeated.defeated_at)
-            if elapsed < timedelta(days=BOSS_RESPAWN_COOLDOWN_DAYS):
-                return AutoSpawnDecision(
-                    False, f"cooldown_respawn ({elapsed.days}j sur 7j)"
-                )
-
-        # Tirage aléatoire (sauf si force=True pour les tests)
-        if not force and rng.random() > self.spawn_probability:
-            return AutoSpawnDecision(False, "tirage_negatif")
+        if self.weekly:
+            # `force` saute le RENDEZ-VOUS (pour tester / lancer à la main)…
+            if not force and (
+                now.weekday() != self.spawn_weekday or now.hour < self.spawn_hour
+            ):
+                return AutoSpawnDecision(False, "hors_fenetre_hebdo")
+            # …mais JAMAIS la garde anti-double-raid : un seul raid par semaine
+            # ISO, sinon un boss tué le lundi en relancerait un aussitôt.
+            last = self.world_boss_repository.get_latest_defeated()
+            if last is not None:
+                spawned = _normalize_utc(last.spawned_at)
+                if spawned.isocalendar()[:2] == now.isocalendar()[:2]:
+                    return AutoSpawnDecision(False, "raid_deja_lance_cette_semaine")
+        else:
+            # Mode historique : cooldown 7j (opposable même en force) + tirage.
+            last_defeated = self.world_boss_repository.get_latest_defeated()
+            if last_defeated is not None:
+                elapsed = now - _normalize_utc(last_defeated.defeated_at)
+                if elapsed < timedelta(days=BOSS_RESPAWN_COOLDOWN_DAYS):
+                    return AutoSpawnDecision(
+                        False, f"cooldown_respawn ({elapsed.days}j sur 7j)"
+                    )
+            if not force and rng.random() > self.spawn_probability:
+                return AutoSpawnDecision(False, "tirage_negatif")
 
         definition = pick_random_definition(rng=rng)
         if definition is None:

@@ -8,7 +8,7 @@ Couvre :
 """
 
 import random
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import create_engine
@@ -200,7 +200,8 @@ def test_auto_spawn_refused_when_boss_active(session):
 
 
 def test_auto_spawn_refused_during_respawn_cooldown(session):
-    """Si un boss vient d'être tué, refuse le respawn pendant 7j."""
+    """Mode HISTORIQUE (weekly=False) : si un boss vient d'être tué, refuse le
+    respawn pendant 7j — y compris en force."""
     from datetime import timedelta
 
     repo = WorldBossRepository(session)
@@ -208,7 +209,7 @@ def test_auto_spawn_refused_during_respawn_cooldown(session):
     boss = repo.get_active()
     repo.mark_defeated(boss.id)
 
-    auto = SpawnRandomWorldBossUseCase(world_boss_repository=repo)
+    auto = SpawnRandomWorldBossUseCase(world_boss_repository=repo, weekly=False)
 
     # Maintenant : moins de 7j → refusé même en force
     decision = auto.execute(now=datetime.now(UTC), force=True)
@@ -329,3 +330,63 @@ def test_complete_distributes_rewards_to_top_and_base(session):
 
 
 # ---------- Helpers ----------
+
+
+# --------------------------------------------------------------------------
+# Raid HEBDOMADAIRE : le boss est un rendez-vous, pas une loterie.
+# --------------------------------------------------------------------------
+
+def test_weekly_spawn_only_on_spawn_day(session):
+    """Hors du jour de raid, aucun spawn — même si la voie est libre."""
+    repo = WorldBossRepository(session)
+    auto = SpawnRandomWorldBossUseCase(world_boss_repository=repo)  # weekly par défaut
+
+    mardi = datetime(2026, 8, 18, 15, tzinfo=UTC)   # mardi
+    assert mardi.weekday() == 1
+    decision = auto.execute(now=mardi)
+    assert decision.spawned is False
+    assert decision.reason == "hors_fenetre_hebdo"
+
+
+def test_weekly_spawn_refused_before_opening_hour(session):
+    repo = WorldBossRepository(session)
+    auto = SpawnRandomWorldBossUseCase(world_boss_repository=repo, spawn_hour=12)
+    lundi_matin = datetime(2026, 8, 17, 9, tzinfo=UTC)
+    assert lundi_matin.weekday() == 0
+    assert auto.execute(now=lundi_matin).spawned is False
+
+
+def test_weekly_spawn_happens_on_monday(session):
+    """Le lundi à l'heure d'ouverture, le raid de la semaine se lance —
+    sans aucun tirage aléatoire : c'est un rendez-vous."""
+    repo = WorldBossRepository(session)
+    auto = SpawnRandomWorldBossUseCase(world_boss_repository=repo, spawn_hour=12)
+    lundi = datetime(2026, 8, 17, 12, tzinfo=UTC)
+    decision = auto.execute(now=lundi)
+    assert decision.spawned is True
+    assert decision.boss is not None
+
+
+def test_weekly_no_second_raid_in_same_week(session):
+    """Un boss tué le lundi ne doit PAS en faire réapparaître un aussitôt :
+    un seul raid par semaine ISO (garde opposable même en force)."""
+    repo = WorldBossRepository(session)
+    SpawnWorldBossUseCase(repo).execute(boss_code="slime_titan")
+    boss = repo.get_active()
+    repo.mark_defeated(boss.id)
+
+    auto = SpawnRandomWorldBossUseCase(world_boss_repository=repo)
+    decision = auto.execute(now=datetime.now(UTC), force=True)
+    assert decision.spawned is False
+    assert decision.reason == "raid_deja_lance_cette_semaine"
+
+
+def test_weekly_next_week_raid_is_allowed(session):
+    repo = WorldBossRepository(session)
+    SpawnWorldBossUseCase(repo).execute(boss_code="slime_titan")
+    boss = repo.get_active()
+    repo.mark_defeated(boss.id)
+
+    auto = SpawnRandomWorldBossUseCase(world_boss_repository=repo)
+    semaine_suivante = datetime.now(UTC) + timedelta(days=8)
+    assert auto.execute(now=semaine_suivante, force=True).spawned is True

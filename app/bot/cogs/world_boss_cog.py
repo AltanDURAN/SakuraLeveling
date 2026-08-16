@@ -62,6 +62,8 @@ from app.infrastructure.db.repositories.player_skill_allocation_repository impor
 from app.infrastructure.db.repositories.world_boss_repository import WorldBossRepository
 from app.infrastructure.db.session import get_db_session
 from app.infrastructure.world_boss.boss_definition_loader import list_definitions
+from app.shared.formatters import format_int
+from discord.utils import escape_markdown
 
 
 def _get_boss_channel(bot: commands.Bot):
@@ -372,6 +374,67 @@ class WorldBossCog(commands.Cog):
             ephemeral=True,
         )
 
+    @boss.command(
+        name="historique",
+        description="Les raids des semaines passées : progrès, MVP, dégâts",
+    )
+    async def boss_history(self, interaction: discord.Interaction) -> None:
+        """Progression de semaine en semaine : c'est ici qu'on voit si la
+        communauté frappe plus fort qu'avant."""
+        await interaction.response.defer()
+        with get_db_session() as session:
+            repo = WorldBossRepository(session)
+            history = repo.list_history(limit=8)
+            player_repo = PlayerRepository(session)
+            names: dict[int, str] = {}
+            for row in history:
+                pid = row["mvp_player_id"]
+                if pid and pid not in names:
+                    profile = player_repo.get_profile_by_player_id(pid)
+                    names[pid] = profile.player.display_name if profile else f"#{pid}"
+
+        if not history:
+            await interaction.followup.send(
+                "📜 Aucun raid dans les annales — le premier boss de la semaine "
+                "vous attend."
+            )
+            return
+
+        embed = discord.Embed(
+            title="📜 Annales des raids",
+            description=(
+                "Les dernières semaines de guerre. Comparez les dégâts cumulés "
+                "et le nombre de combattants : c'est la mesure de vos progrès."
+            ),
+            color=discord.Color.dark_gold(),
+        )
+
+        best_damage = max((r["total_damage"] for r in history), default=0)
+        for row in history:
+            issue = "🏆 terrassé" if row["killed"] else (
+                "⏳ en cours" if row["defeated_at"] is None else "💨 survivant"
+            )
+            mvp = names.get(row["mvp_player_id"], "—")
+            pct = (
+                100 * (row["max_hp"] - max(0, row["current_hp"])) / row["max_hp"]
+                if row["max_hp"] else 0
+            )
+            record = " 🔥 **record**" if (
+                row["total_damage"] == best_damage and best_damage > 0
+            ) else ""
+            embed.add_field(
+                name=f"Semaine {row['week']} — {row['name']} · {issue}{record}",
+                value=(
+                    f"💥 **{format_int(row['total_damage'])}** dégâts "
+                    f"({pct:.0f} % de ses PV)\n"
+                    f"👥 {row['warriors']} combattants · ⚔️ {row['assaults']} assauts\n"
+                    f"🥇 MVP : **{escape_markdown(mvp)}** "
+                    f"({format_int(row['mvp_damage'])})"
+                ),
+                inline=False,
+            )
+        await interaction.followup.send(embed=embed)
+
     # ---------- API publique pour le pont admin web ----------
 
     async def admin_spawn_boss(self, boss_code: str) -> tuple[bool, str]:
@@ -421,11 +484,33 @@ class WorldBossCog(commands.Cog):
         embed = build_boss_dashboard_embed(
             boss, num_participants=0, team_bonus_pct=0,
         )
-        message = await channel.send(
-            content=f"⚡ Un nouveau **world boss** apparaît : **{boss.name}** !",
-            embed=embed,
-            view=view,
+        # Bannière de raid dès l'apparition : l'événement doit s'annoncer.
+        attachment = None
+        try:
+            from app.bot.rendering.world_boss_banner import compose_raid_banner
+            from app.bot.runtime.raid_banner_builder import build_raid_banner_data
+            from app.shared.paths import GENERATED_ENCOUNTERS_DIR
+            with get_db_session() as session:
+                banner_data = build_raid_banner_data(session, boss)
+            out = GENERATED_ENCOUNTERS_DIR / f"world_boss_{boss.id}.png"
+            out.parent.mkdir(parents=True, exist_ok=True)
+            await asyncio.to_thread(compose_raid_banner, str(out), banner_data)
+            attachment = discord.File(str(out), filename=out.name)
+            embed.set_image(url=f"attachment://{out.name}")
+        except Exception:  # noqa: BLE001
+            logging.getLogger(__name__).exception("raid banner (spawn) failed")
+
+        content = (
+            f"@here ⚔️ **LE RAID DE LA SEMAINE COMMENCE** — **{boss.name}** "
+            f"se dresse devant vous.\n"
+            f"Rejoignez l'assaut : chaque jour à **21h**, tous les inscrits "
+            f"frappent ensemble. Le colosse ne régénère **jamais** ses PV — "
+            f"tout ce que vous lui arrachez cette semaine est définitif."
         )
+        send_kwargs = {"content": content, "embed": embed, "view": view}
+        if attachment is not None:
+            send_kwargs["file"] = attachment
+        message = await channel.send(**send_kwargs)
         with get_db_session() as session:
             WorldBossRepository(session).set_message_id(boss.id, message.id)
         return message
@@ -445,18 +530,10 @@ class WorldBossCog(commands.Cog):
                     for p in repo.list_participations_with_metrics(boss_id)
                     if p.fights_count > 0
                 )
-                # Charge display names des participants pour la banner
-                player_payload: list[dict] = []
-                for part in participants:
-                    profile = PlayerRepository(session).get_profile_by_player_id(
-                        part.player_id,
-                    )
-                    name = profile.player.display_name if profile else f"#{part.player_id}"
-                    player_payload.append({
-                        "name": name, "avatar_url": "",
-                        "current_hp": 1,
-                        "max_hp": 1,
-                    })
+                from app.bot.runtime.raid_banner_builder import (
+                    build_raid_banner_data,
+                )
+                banner_data = build_raid_banner_data(session, boss)
 
             scaling = WorldBossScalingService()
             bonus_pct = int(
@@ -471,43 +548,17 @@ class WorldBossCog(commands.Cog):
             except discord.NotFound:
                 return
 
-            # Rendu PNG comme un spawn d'encounter naturel
-            from app.bot.rendering.fight_scene import compose_players_banner
-            from app.shared.paths import (
-                LANDSCAPES_ASSETS_DIR, GENERATED_ENCOUNTERS_DIR,
-                MOBS_ASSETS_DIR,
-            )
-            mob_image_name = boss.image_name
-            if not mob_image_name or not (MOBS_ASSETS_DIR / mob_image_name).exists():
-                mob_image_name = "boss_default.png"
+            # Bannière de RAID : le visuel dédié à l'événement hebdomadaire
+            # (barre de PV géante + phase + classement de contribution + jour
+            # de la semaine). Remplace l'ancien rendu d'encounter générique,
+            # qui donnait au boss l'allure d'un combat ordinaire.
+            from app.bot.rendering.world_boss_banner import compose_raid_banner
+            from app.shared.paths import GENERATED_ENCOUNTERS_DIR
             out = GENERATED_ENCOUNTERS_DIR / f"world_boss_{boss.id}.png"
             out.parent.mkdir(parents=True, exist_ok=True)
             try:
-                # Rendu sync + download avatars → off-thread (cf. audit B5).
-                await asyncio.to_thread(
-                    compose_players_banner,
-                    players=player_payload,
-                    mob={
-                        "code": boss.code,
-                        "name": boss.name,
-                        "image_name": mob_image_name,
-                        "current_hp": boss.current_hp,
-                        "max_hp": boss.max_hp,
-                        "attack": boss.attack,
-                        "defense": boss.defense,
-                        "speed": boss.speed,
-                        "crit_chance": boss.crit_chance,
-                        "crit_damage": boss.crit_damage,
-                        "dodge": boss.dodge,
-                        "hp_regeneration": 0,
-                        "element": getattr(boss, "element", "") or "",
-                    },
-                    output_path=str(out),
-                    background_path=str(
-                        LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png"
-                    ),
-                    players_power_score="",
-                )
+                # Rendu Pillow → hors de l'event loop (cf. audit B5).
+                await asyncio.to_thread(compose_raid_banner, str(out), banner_data)
                 attachment = discord.File(str(out), filename=out.name)
             except Exception:
                 attachment = None
@@ -547,17 +598,51 @@ class WorldBossCog(commands.Cog):
                     cooldown_service=CooldownService(),
                     modifier_service=BossModifierService(),
                 )
+                # PV avant l'assaut : sert à détecter le franchissement d'un
+                # palier de phase (la dramaturgie de la semaine).
+                boss_before = WorldBossRepository(session).get_by_id(boss_id)
+                hp_before = boss_before.current_hp if boss_before else 0
+                max_hp = boss_before.max_hp if boss_before else 0
                 result = use_case.execute(boss_id)
 
             channel = _get_boss_channel(self.bot)
             if channel is not None:
                 await channel.send(result.message)
+                milestone = self._phase_milestone(hp_before, result.boss_remaining_hp, max_hp)
+                if milestone and not result.boss_defeated:
+                    await channel.send(milestone)
             await self.refresh_boss_message(boss_id)
             if result.boss_defeated:
                 await self.complete_boss(boss_id)
         except Exception:
             import logging
             logging.getLogger(__name__).exception("launch_party_fight failed")
+
+    @staticmethod
+    def _phase_milestone(hp_before: int, hp_after: int, max_hp: int) -> str | None:
+        """Annonce quand le raid fait basculer le boss dans une nouvelle phase.
+
+        Ces paliers sont le rythme dramatique de la semaine : ils récompensent
+        l'effort collectif par un événement visible de tous, et rappellent au
+        serveur que le combat progresse."""
+        if max_hp <= 0 or hp_after >= hp_before:
+            return None
+        from app.bot.rendering.world_boss_banner import PHASES
+
+        before = hp_before / max_hp
+        after = hp_after / max_hp
+        announces = {
+            0.75: ("⚔️ **Première entaille sérieuse.** Le colosse saigne — "
+                   "il entre en **COLÈRE**. Ses coups redoublent."),
+            0.50: ("🔥 **La moitié est tombée.** Le monstre bascule en "
+                   "**FUREUR** : plus rien ne le retient."),
+            0.25: ("💀 **Dernier quart.** Le titan entre en **AGONIE** — "
+                   "un ultime effort et il s'effondre. Tous à l'assaut !"),
+        }
+        for threshold, _, _ in PHASES[:-1]:
+            if before > threshold >= after:
+                return announces.get(threshold)
+        return None
 
     async def complete_boss(self, boss_id: int) -> None:
         with get_db_session() as session:

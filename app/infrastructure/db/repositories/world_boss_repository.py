@@ -298,6 +298,47 @@ class WorldBossRepository:
             for m in self.session.execute(stmt).scalars().all()
         ]
 
+    def list_history(self, limit: int = 8) -> list[dict]:
+        """Historique des raids passés, du plus récent au plus ancien.
+
+        Pour chaque raid : le boss, l'issue (terrassé ou survivant), les dégâts
+        cumulés infligés par la communauté, le nombre de combattants, le MVP et
+        la durée. C'est la matière du « progrès de semaine en semaine ».
+        """
+        stmt = (
+            select(WorldBossModel)
+            .order_by(WorldBossModel.spawned_at.desc())
+            .limit(limit)
+        )
+        out: list[dict] = []
+        for model in self.session.execute(stmt).scalars().all():
+            parts = self.session.execute(
+                select(WorldBossParticipationModel).where(
+                    WorldBossParticipationModel.boss_id == model.id,
+                    WorldBossParticipationModel.fights_count > 0,
+                )
+            ).scalars().all()
+            total_damage = sum(p.damage_dealt for p in parts)
+            mvp = max(parts, key=lambda p: p.damage_dealt, default=None)
+            out.append({
+                "id": model.id,
+                "code": model.code,
+                "name": model.name,
+                "week": model.spawned_at.isocalendar().week if model.spawned_at else 0,
+                "spawned_at": model.spawned_at,
+                "defeated_at": model.defeated_at,
+                "killed": model.status != WorldBossStatus.ACTIVE.value
+                and model.current_hp <= 0,
+                "max_hp": model.max_hp,
+                "current_hp": model.current_hp,
+                "total_damage": total_damage,
+                "warriors": len(parts),
+                "assaults": sum(p.fights_count for p in parts),
+                "mvp_player_id": mvp.player_id if mvp else None,
+                "mvp_damage": mvp.damage_dealt if mvp else 0,
+            })
+        return out
+
     # ---------- conversions ----------
 
     def _to_domain(self, model: WorldBossModel) -> WorldBoss:
