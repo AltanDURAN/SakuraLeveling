@@ -375,6 +375,141 @@ class WorldBossCog(commands.Cog):
         )
 
     @boss.command(
+        name="moi",
+        description="Votre contribution au raid : rang, dégâts, palier, progrès",
+    )
+    async def boss_me(self, interaction: discord.Interaction) -> None:
+        """Vue JOUEUR : où j'en suis dans le raid de la semaine, et est-ce que
+        je progresse par rapport à la semaine dernière."""
+        await interaction.response.defer(ephemeral=True)
+        from app.domain.services.contribution_tier_service import (
+            next_tier, share_to_next, tier_for_share,
+        )
+
+        with get_db_session() as session:
+            repo = WorldBossRepository(session)
+            profile = PlayerRepository(session).get_by_discord_id(interaction.user.id)
+            if profile is None:
+                await interaction.followup.send(
+                    "Crée d'abord ton profil avec `/profil`.", ephemeral=True)
+                return
+            pid = profile.player.id
+            boss = repo.get_active()
+            history = repo.list_history(limit=6)
+
+            if boss is None:
+                await interaction.followup.send(
+                    "😴 Aucun raid en cours. Le prochain colosse se dresse "
+                    "**lundi** — `/boss historique` pour revoir les précédents.",
+                    ephemeral=True)
+                return
+
+            metrics = repo.list_participations_with_metrics(boss.id)
+            mine = next((m for m in metrics if m.player_id == pid), None)
+
+            # Part de contribution : même formule que la distribution des
+            # récompenses (dégâts + encaissé + soins, normalisés).
+            tot_d = sum(m.damage_dealt for m in metrics) or 1
+            tot_t = sum(m.damage_tanked for m in metrics) or 1
+            tot_h = sum(m.hp_healed for m in metrics) or 1
+
+            def _score(m):
+                return (m.damage_dealt / tot_d + m.damage_tanked / tot_t
+                        + m.hp_healed / tot_h)
+
+            scores = {m.player_id: _score(m) for m in metrics}
+            total = sum(scores.values()) or 1.0
+            ranking = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)
+
+            # Dégâts du raid PRÉCÉDENT, pour mesurer le progrès d'une semaine
+            # à l'autre (c'est la question que se pose le joueur : est-ce que
+            # je tape plus fort qu'avant ?).
+            previous_damage = 0
+            previous_week = ""
+            for row in history:
+                if row["id"] == boss.id:
+                    continue
+                prev_part = repo.get_participation(row["id"], pid)
+                if prev_part is not None and prev_part.fights_count > 0:
+                    previous_damage = prev_part.damage_dealt
+                    previous_week = f"semaine {row['week']}"
+                break
+
+        if mine is None or mine.fights_count == 0:
+            await interaction.followup.send(
+                f"⚔️ **{boss.name}** vous attend — vous n'avez pas encore frappé "
+                "cette semaine.\nRejoignez le raid : chaque jour à **21h**, "
+                "l'équipe lance l'assaut.",
+                ephemeral=True)
+            return
+
+        share = scores[pid] / total
+        rank = next(i for i, (p, _) in enumerate(ranking, 1) if p == pid)
+        tier = tier_for_share(share)
+        nxt = next_tier(share)
+
+        embed = discord.Embed(
+            title=f"⚔️ Votre raid — {boss.name}",
+            description=f"Semaine en cours · **{len(metrics)}** combattants engagés",
+            color=discord.Color.dark_red(),
+        )
+        embed.add_field(
+            name="🏅 Votre rang",
+            value=f"**#{rank}** sur {len(ranking)}\n{tier.format()}",
+            inline=True,
+        )
+        embed.add_field(
+            name="📊 Votre part",
+            value=f"**{share * 100:.1f} %** de l'effort du raid",
+            inline=True,
+        )
+        embed.add_field(
+            name="⚔️ Vos assauts",
+            value=f"**{mine.fights_count}** cette semaine",
+            inline=True,
+        )
+        embed.add_field(
+            name="💥 Dégâts infligés", value=f"**{format_int(mine.damage_dealt)}**",
+            inline=True,
+        )
+        embed.add_field(
+            name="🛡️ Dégâts encaissés", value=f"**{format_int(mine.damage_tanked)}**",
+            inline=True,
+        )
+        embed.add_field(
+            name="💚 Soins prodigués", value=f"**{format_int(mine.hp_healed)}**",
+            inline=True,
+        )
+        if nxt is not None:
+            manque = share_to_next(share) * 100
+            embed.add_field(
+                name="🎯 Palier suivant",
+                value=(f"{nxt.icon} **{nxt.label}** — il vous manque "
+                       f"**{manque:.1f} %** de contribution "
+                       f"(×{nxt.gold_multiplier} sur l'or final)"),
+                inline=False,
+            )
+        else:
+            embed.add_field(
+                name="🎯 Palier",
+                value="Vous êtes au **sommet** — palier maximal atteint. 💎",
+                inline=False,
+            )
+        if previous_damage > 0:
+            delta = mine.damage_dealt - previous_damage
+            pct = delta / previous_damage * 100
+            arrow = "📈" if delta > 0 else ("📉" if delta < 0 else "➡️")
+            embed.add_field(
+                name=f"{arrow} Progrès vs {previous_week or 'la semaine passée'}",
+                value=(f"**{format_int(previous_damage)}** → "
+                       f"**{format_int(mine.damage_dealt)}** "
+                       f"({'+' if delta >= 0 else ''}{pct:.0f} %)"),
+                inline=False,
+            )
+        embed.set_footer(text="Les récompenses sont versées à la mort du boss.")
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @boss.command(
         name="historique",
         description="Les raids des semaines passées : progrès, MVP, dégâts",
     )
@@ -476,15 +611,66 @@ class WorldBossCog(commands.Cog):
     # ---------- helpers ----------
 
     async def _post_boss_message(self, boss) -> discord.Message | None:
+        """Annonce du raid en DEUX messages, pour éviter la surcharge :
+
+        1. un message de RASSEMBLEMENT : ping, lore court et règles du raid
+           (comment ça marche, quand on frappe, ce qu'on gagne) ;
+        2. le message-IMAGE : la bannière porte tout l'état du raid (PV, phase,
+           stats du boss, élément et faiblesses, classement, semaine). C'est ce
+           second message qui porte les boutons et qui est rafraîchi — il n'a
+           donc AUCUN embed, pour ne rien dupliquer de l'image.
+        """
         channel = _get_boss_channel(self.bot)
         if channel is None:
             return None
 
-        view = WorldBossView(self)
-        embed = build_boss_dashboard_embed(
-            boss, num_participants=0, team_bonus_pct=0,
+        # ---------- 1. message de rassemblement ----------
+        rules = discord.Embed(
+            title=f"⚔️ Le raid de la semaine commence — {boss.name}",
+            description=(
+                "Un colosse se dresse. Il restera là **toute la semaine** : "
+                "chaque PV que vous lui arrachez est **définitif**, il ne "
+                "régénère jamais."
+            ),
+            color=discord.Color.dark_red(),
         )
-        # Bannière de raid dès l'apparition : l'événement doit s'annoncer.
+        rules.add_field(
+            name="🤝 Comment participer",
+            value=(
+                "**Rejoindre** pour vous inscrire, puis **Voter pour lancer** "
+                "quand vous êtes prêt. Le combat part dès que tous les inscrits "
+                "ont voté — et de toute façon **automatiquement à 21h** chaque "
+                "jour."
+            ),
+            inline=False,
+        )
+        rules.add_field(
+            name="⏳ Rythme",
+            value=(
+                "**1 assaut par jour et par joueur.** Plus vous êtes nombreux, "
+                "plus l'équipe est forte : **+5 % de stats par combattant "
+                "supplémentaire** (jusqu'à +50 %)."
+            ),
+            inline=False,
+        )
+        rules.add_field(
+            name="🎁 Récompenses",
+            value=(
+                "À sa mort, tout le monde est payé **selon sa contribution** "
+                "(dégâts infligés, dégâts encaissés, soins prodigués). "
+                "Le podium et les meilleurs rôles reçoivent bien plus.\n"
+                "`/boss` pour votre contribution · `/boss historique` pour les "
+                "semaines passées."
+            ),
+            inline=False,
+        )
+        try:
+            await channel.send(content="@here", embed=rules)
+        except Exception:  # noqa: BLE001
+            logging.getLogger(__name__).exception("message de rassemblement échoué")
+
+        # ---------- 2. message-image (porte les boutons + rafraîchi) ----------
+        view = WorldBossView(self)
         attachment = None
         try:
             from app.bot.rendering.world_boss_banner import compose_raid_banner
@@ -496,20 +682,14 @@ class WorldBossCog(commands.Cog):
             out.parent.mkdir(parents=True, exist_ok=True)
             await asyncio.to_thread(compose_raid_banner, str(out), banner_data)
             attachment = discord.File(str(out), filename=out.name)
-            embed.set_image(url=f"attachment://{out.name}")
         except Exception:  # noqa: BLE001
             logging.getLogger(__name__).exception("raid banner (spawn) failed")
 
-        content = (
-            f"@here ⚔️ **LE RAID DE LA SEMAINE COMMENCE** — **{boss.name}** "
-            f"se dresse devant vous.\n"
-            f"Rejoignez l'assaut : chaque jour à **21h**, tous les inscrits "
-            f"frappent ensemble. Le colosse ne régénère **jamais** ses PV — "
-            f"tout ce que vous lui arrachez cette semaine est définitif."
-        )
-        send_kwargs = {"content": content, "embed": embed, "view": view}
+        send_kwargs: dict = {"view": view}
         if attachment is not None:
             send_kwargs["file"] = attachment
+        else:
+            send_kwargs["content"] = f"**{boss.name}** — bannière indisponible."
         message = await channel.send(**send_kwargs)
         with get_db_session() as session:
             WorldBossRepository(session).set_message_id(boss.id, message.id)
@@ -563,19 +743,14 @@ class WorldBossCog(commands.Cog):
             except Exception:
                 attachment = None
 
-            embed = build_boss_dashboard_embed(
-                boss, num, bonus_pct, num_fought=fought,
-                votes=votes,
-            )
-            if attachment is not None:
-                embed.set_image(url=f"attachment://{out.name}")
+            # Aucun embed : toute l'information vit dans la bannière (pas de
+            # doublon). Les boutons disparaissent quand le boss est mort.
             view = WorldBossView(self) if boss.is_alive else None
             if attachment is not None:
-                await message.edit(
-                    embed=embed, view=view, attachments=[attachment],
-                )
+                await message.edit(content=None, embed=None, view=view,
+                                   attachments=[attachment])
             else:
-                await message.edit(embed=embed, view=view, attachments=[])
+                await message.edit(view=view)
         except Exception:
             import logging
             logging.getLogger(__name__).exception(
@@ -658,8 +833,64 @@ class WorldBossCog(commands.Cog):
         channel = _get_boss_channel(self.bot)
         if channel is None or boss is None:
             return
-        embed = build_boss_defeated_embed(boss, result.rewards)
-        await channel.send(embed=embed)
+
+        # Bannière de VICTOIRE : le tableau d'honneur complet de la semaine
+        # (paliers, dégâts, encaissé, soins, or) — l'aboutissement du raid.
+        attachment = None
+        try:
+            from app.bot.rendering.world_boss_banner import (
+                VictoryBannerData, VictoryRow, compose_victory_banner,
+            )
+            from app.bot.runtime.raid_banner_builder import raid_day_index, week_label
+            from app.shared.paths import GENERATED_ENCOUNTERS_DIR
+
+            with get_db_session() as session:
+                repo = WorldBossRepository(session)
+                metrics = {
+                    m.player_id: m
+                    for m in repo.list_participations_with_metrics(boss_id)
+                }
+                history = repo.list_history(limit=20)
+            total_damage = sum(m.damage_dealt for m in metrics.values())
+            past = [h["total_damage"] for h in history if h["id"] != boss_id]
+            rows = [
+                VictoryRow(
+                    display_name=r.display_name,
+                    damage=r.damage,
+                    tanked=metrics[r.player_id].damage_tanked if r.player_id in metrics else 0,
+                    healed=metrics[r.player_id].hp_healed if r.player_id in metrics else 0,
+                    tier_label=r.tier_label,
+                    share=r.share,
+                    gold=r.gold,
+                )
+                for r in result.rewards
+            ]
+            data = VictoryBannerData(
+                boss_name=boss.name,
+                image_name=boss.image_name or "",
+                max_hp=boss.max_hp,
+                week_label=week_label(boss.spawned_at),
+                days_taken=raid_day_index(boss.spawned_at),
+                warriors=len(metrics),
+                assaults=sum(m.fights_count for m in metrics.values()),
+                rows=rows,
+                is_record=bool(past) and total_damage > max(past),
+            )
+            out = GENERATED_ENCOUNTERS_DIR / f"world_boss_victory_{boss_id}.png"
+            out.parent.mkdir(parents=True, exist_ok=True)
+            await asyncio.to_thread(compose_victory_banner, str(out), data)
+            attachment = discord.File(str(out), filename=out.name)
+        except Exception:  # noqa: BLE001
+            logging.getLogger(__name__).exception("victory banner failed")
+
+        content = (
+            f"🏆 **{boss.name} est tombé !** Le raid de la semaine est terminé — "
+            "récompenses distribuées selon la contribution de chacun."
+        )
+        if attachment is not None:
+            await channel.send(content=content, file=attachment)
+        else:
+            await channel.send(embed=build_boss_defeated_embed(boss, result.rewards))
 
 
 async def setup(bot: commands.Bot) -> None:

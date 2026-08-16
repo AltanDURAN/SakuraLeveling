@@ -15,6 +15,7 @@ from app.infrastructure.db.repositories.player_repository import PlayerRepositor
 from app.infrastructure.db.repositories.world_boss_repository import (
     WorldBossRepository,
 )
+from app.domain.services import element_service
 from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
 
 _PARIS = ZoneInfo("Europe/Paris")
@@ -85,4 +86,21 @@ def build_raid_banner_data(session, boss: WorldBoss) -> RaidBannerData:
         next_assault=next_assault_label(),
         contributors=contributors,
         defeated=not boss.is_alive,
+        attack=boss.attack,
+        defense=boss.defense,
+        speed=boss.speed,
+        crit_chance=int(boss.crit_chance),
+        weaknesses=_weakness_label(boss.element),
+    )
+
+
+def _weakness_label(element: str) -> str:
+    """Éléments qui battent le boss — information tactique qui pousse à
+    composer une équipe plutôt qu'à foncer seul."""
+    if not element:
+        return ""
+    weak = element_service.weaknesses_of(element)
+    return " · ".join(
+        f"{ELEMENT_EMOJIS.get(e.value, '')} {ELEMENT_LABELS.get(e.value, e.value)}"
+        for e in weak
     )

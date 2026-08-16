@@ -25,6 +25,7 @@ from app.domain.entities.mob_definition import MobDefinition
 from app.domain.entities.world_boss import WorldBoss, WorldBossParticipation
 from app.domain.services.boss_modifier_service import BossModifierService
 from app.domain.services.cooldown_service import CooldownService
+from app.domain.services.contribution_tier_service import tier_for_share
 from app.domain.services.progression_service import ProgressionService
 from app.domain.services.skill_tree_service import SkillTreeService
 from app.domain.services.stats_service import StatsService
@@ -756,6 +757,11 @@ class BossRewardEntry:
     gold: int
     xp: int
     items: list[tuple[str, int]] = field(default_factory=list)
+    # Palier de contribution atteint + part de l'effort total (affichage).
+    tier_code: str = "bronze"
+    tier_label: str = "🥉 Combattant"
+    share: float = 0.0
+    damage: int = 0
 
 
 @dataclass
@@ -859,11 +865,18 @@ class CompleteWorldBossUseCase:
             if profile is None:
                 continue
 
-            # Base (présence) + part proportionnelle du pool d'or.
+            # Base (présence) + part proportionnelle du pool d'or, le tout
+            # amplifié par le PALIER DE CONTRIBUTION atteint (Combattant →
+            # Vétéran → Champion → Légende). Le palier donne un objectif clair
+            # là où le simple prorata restait abstrait.
             share = scores[p.player_id] / total_score
-            total_gold = self.BASE_REWARD_GOLD + int(gold_pool * share)
+            tier = tier_for_share(share)
+            total_gold = int(
+                (self.BASE_REWARD_GOLD + int(gold_pool * share)) * tier.gold_multiplier
+            )
             total_xp = xp_each  # XP ÉGALE pour tous
             items: list[tuple[str, int]] = [self.BASE_REWARD_ITEM]
+            items.extend(tier.bonus_items)
             roles_won: list[str] = []
 
             # Bonus top-3 global (cumulable avec les bonus de catégorie).
@@ -930,6 +943,10 @@ class CompleteWorldBossUseCase:
                     gold=total_gold,
                     xp=total_xp,
                     items=items,
+                    tier_code=tier.code,
+                    tier_label=tier.format(),
+                    share=share,
+                    damage=p.damage_dealt,
                 )
             )
 
