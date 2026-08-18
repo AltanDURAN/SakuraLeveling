@@ -58,6 +58,9 @@ from app.infrastructure.db.repositories.player_repository import PlayerRepositor
 from app.infrastructure.db.repositories.player_skill_allocation_repository import (
     PlayerSkillAllocationRepository,
 )
+from app.infrastructure.world_boss.boss_definition_loader import (
+    get_definition as get_boss_definition,
+)
 from app.infrastructure.db.repositories.world_boss_repository import WorldBossRepository
 
 
@@ -125,10 +128,17 @@ def test_spawn_uses_definition_stats(session):
     )
     result = use_case.execute(boss_code="slime_titan")
 
-    # slime_titan dans boss_definitions.json : max_hp=50000, attack=50, speed=8
-    assert result.boss.max_hp == 50000
-    assert result.boss.attack == 50
-    assert result.boss.speed == 8
+    # Les stats viennent du JSON — on ne fige PAS de valeurs d'équilibrage ici,
+    # sinon le test casse à chaque recalibrage (cf. restat_bosses.py). On vérifie
+    # que le spawn RECOPIE fidèlement la définition.
+    definition = get_boss_definition("slime_titan")
+    assert result.boss.max_hp == definition.max_hp
+    assert result.boss.attack == definition.attack
+    assert result.boss.speed == definition.speed
+    # Invariant d'équilibrage : la DEF du boss doit rester SOUS l'ATK des joueurs
+    # du palier visé, sinon les dégâts tombent au plancher de 1 et le raid
+    # devient mathématiquement infaisable (cf. commit de recalibrage).
+    assert definition.defense < definition.attack
     # boss ne regen jamais
     assert result.boss.hp_regeneration == 0
 
