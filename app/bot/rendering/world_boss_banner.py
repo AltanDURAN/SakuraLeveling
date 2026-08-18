@@ -19,7 +19,10 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter
 
-from app.bot.rendering.emoji_text import draw_text_with_emojis
+from app.bot.rendering.emoji_text import (
+    draw_text_with_emojis,
+    measure_text_with_emojis,
+)
 from app.bot.rendering.pillow_utils import (
     draw_text_with_shadow,
     gradient_background,
@@ -27,7 +30,7 @@ from app.bot.rendering.pillow_utils import (
 )
 from app.shared.paths import MOBS_ASSETS_DIR
 
-WIDTH, HEIGHT = 1280, 760
+WIDTH, HEIGHT = 1280, 720
 
 # --- Palette : cohérente avec la bannière de profil, mais plus sombre/tendue --
 C_BG_TOP = (14, 10, 20, 255)
@@ -97,6 +100,11 @@ def phase_for(ratio: float) -> tuple[str, tuple[int, int, int, int]]:
     return PHASES[-1][1], PHASES[-1][2]
 
 
+def _plural(n: int, word: str) -> str:
+    """Accord en nombre : « 1 combattant » / « 12 combattants »."""
+    return f"{n} {word}" if n <= 1 else f"{n} {word}s"
+
+
 def _compact(n: int) -> str:
     n = int(n)
     if n < 1_000:
@@ -106,6 +114,32 @@ def _compact(n: int) -> str:
         return f"{s}K"
     s = f"{n / 1_000_000:.2f}".rstrip("0").rstrip(".")
     return f"{s}M"
+
+
+def _fit_font(draw, text: str, max_width: int, start: int, minimum: int = 26):
+    """Réduit la fonte jusqu'à ce que `text` tienne dans `max_width`.
+
+    Les noms de boss vont de « Slime » à « Seigneur de Guerre Gobelin » : sans
+    ajustement, les longs débordaient sur le compte à rebours."""
+    size = start
+    while size > minimum:
+        font = try_font(size, bold=True)
+        if draw.textlength(text, font=font) <= max_width:
+            return font
+        size -= 2
+    return try_font(minimum, bold=True)
+
+
+def _truncate_to_width(text: str, font, max_width: int) -> str:
+    """Tronque au caractère près selon la largeur RÉELLE rendue (une limite en
+    nombre de caractères ne marche pas : « Alexandrine » est bien plus large
+    que « Illiillii »)."""
+    if measure_text_with_emojis(text, font, font.size) <= max_width:
+        return text
+    cut = text
+    while cut and measure_text_with_emojis(cut + "…", font, font.size) > max_width:
+        cut = cut[:-1]
+    return (cut + "…") if cut else "…"
 
 
 def _panel(base: Image.Image, box: tuple[int, int, int, int], radius: int = 18,
@@ -173,160 +207,186 @@ def _draw_hp_bar(base: Image.Image, box: tuple[int, int, int, int],
 
 
 def compose_raid_banner(output_path: str, data: RaidBannerData) -> str:
+    """Bannière hebdo. Priorités de mise en page, dans cet ordre :
+
+    1. QUAND se connecter (le compte à rebours de l'assaut) — l'info la plus
+       actionnable, donc en gros dans l'en-tête ;
+    2. OÙ EN EST le raid (PV, phase, % abattu) ;
+    3. QUI porte l'effort (classement + honneurs) ;
+    4. le colosse lui-même (art + stats), qui sert de contexte.
+
+    L'art est volontairement réduit : à la taille où Discord affiche l'image
+    (~550 px de large), la place doit aller aux données.
+    """
     bg = gradient_background(WIDTH, HEIGHT, C_BG_TOP, C_BG_BOTTOM)
     draw = ImageDraw.Draw(bg)
 
     ratio = _ratio(data)
     phase_label, phase_color = phase_for(ratio)
-    # Victoire : la bannière bascule en or — c'est l'aboutissement de la
-    # semaine, il doit se voir immédiatement dans le fil du salon.
     if data.defeated:
         phase_color = C_GOLD
 
     f_kicker = try_font(24, bold=True)
-    f_title = try_font(60, bold=True)
+    f_title = try_font(58, bold=True)
+    f_cta = try_font(40, bold=True)
     f_phase = try_font(30, bold=True)
-    f_hp = try_font(34, bold=True)
-    f_label = try_font(24, bold=True)
-    f_row = try_font(26, bold=True)
-    f_small = try_font(22)
+    f_hp = try_font(36, bold=True)
+    f_label = try_font(25, bold=True)
+    f_row = try_font(27, bold=True)
+    f_small = try_font(24)
 
-    # ---------------- bandeau haut ----------------
-    _panel(bg, (28, 24, WIDTH - 28, 132), radius=20)
+    # ---------------- en-tête : identité + APPEL À L'ACTION ----------------
+    _panel(bg, (24, 20, WIDTH - 24, 168), radius=20)
     kicker = "RAID DE LA SEMAINE"
     if data.week_label:
         kicker += f"  ·  {data.week_label}"
-    draw_text_with_shadow(draw, (56, 42), kicker, f_kicker, C_GOLD, C_SHADOW)
-    title = data.boss_name.upper()
-    draw_text_with_shadow(draw, (54, 68), title, f_title, C_TEXT, C_SHADOW)
+    kicker += f"  ·  JOUR {data.day_index}/{data.day_total}"
+    draw_text_with_shadow(draw, (52, 36), kicker, f_kicker, C_GOLD, C_SHADOW)
+    # Le compte à rebours occupe la droite : on calcule la place restante et on
+    # ajuste la fonte du nom en conséquence.
+    cta_reserved = 430 if (data.next_assault or data.defeated) else 60
+    title_font = _fit_font(draw, data.boss_name.upper(),
+                           WIDTH - 50 - cta_reserved, start=58, minimum=30)
+    draw_text_with_shadow(draw, (50, 62), data.boss_name.upper(), title_font,
+                          C_TEXT, C_SHADOW)
 
-    day_txt = f"JOUR {data.day_index}/{data.day_total}"
-    dw = int(draw.textlength(day_txt, font=f_label))
-    draw_text_with_shadow(draw, (WIDTH - 56 - dw, 46), day_txt, f_label, C_TEXT, C_SHADOW)
+    # Élément + faiblesses : tactique, donc lisible (plus de gris minuscule).
     if data.element_label:
         el = f"{data.element_emoji} {data.element_label}".strip()
-        elw = int(draw.textlength(el, font=f_small)) + 30
-        draw_text_with_emojis(bg, (WIDTH - 56 - max(dw, elw), 78), el, f_small,
-                              fill=C_TEXT, emoji_size=f_small.size)
-    if data.weaknesses:
-        wk = f"faible à {data.weaknesses}"
-        wkw = int(draw.textlength(wk, font=f_small)) + 40
-        draw_text_with_emojis(bg, (WIDTH - 56 - wkw, 104), wk, f_small,
-                              fill=C_MUTED, emoji_size=f_small.size - 2)
+        if data.weaknesses:
+            el += f"   —   faible à {data.weaknesses}"
+        draw_text_with_emojis(bg, (52, 128), el, f_small, fill=C_MUTED,
+                              emoji_size=f_small.size)
 
-    # ---------------- art du boss ----------------
-    art_box = (28, 148, 500, HEIGHT - 128)
-    art = _load_boss_art(data.image_name, art_box[2] - art_box[0] - 16,
-                         art_box[3] - art_box[1] - 16)
+    # Compte à rebours : ce que le joueur doit retenir → gros, doré, à droite.
+    if data.next_assault and not data.defeated:
+        cta_main, _, cta_sub = data.next_assault.partition("(")
+        cta_sub = cta_sub.rstrip(")")
+        big = cta_sub.upper() if cta_sub else cta_main.strip().upper()
+        small_txt = cta_main.strip() if cta_sub else "prochain assaut"
+        bw = int(draw.textlength(big, font=f_cta))
+        draw_text_with_emojis(bg, (WIDTH - 52 - bw - 44, 44), "⏳", f_cta,
+                              fill=C_GOLD, emoji_size=f_cta.size)
+        draw_text_with_shadow(draw, (WIDTH - 52 - bw, 46), big, f_cta,
+                              C_GOLD, C_SHADOW)
+        sw = int(draw.textlength(small_txt, font=f_small))
+        draw_text_with_shadow(draw, (WIDTH - 52 - sw, 96), small_txt, f_small,
+                              C_MUTED, C_SHADOW)
+    elif data.defeated:
+        txt = "COLOSSE TERRASSÉ"
+        bw = int(draw.textlength(txt, font=f_cta))
+        draw_text_with_shadow(draw, (WIDTH - 52 - bw, 60), txt, f_cta,
+                              C_GOLD, C_SHADOW)
+
+    # ---------------- colonne gauche : le colosse (contexte) ----------------
+    art_x1, art_y1, art_x2, art_y2 = 24, 184, 392, HEIGHT - 104
+    art = _load_boss_art(data.image_name, art_x2 - art_x1 - 8, art_y2 - art_y1 - 60)
     if art is not None and data.defeated:
-        # Colosse abattu : on le vide de ses couleurs et on l'assombrit.
         grey = art.convert("LA").convert("RGBA")
         grey.putalpha(art.getchannel("A"))
         art = Image.blend(art, grey, 0.85)
-        dark = Image.new("RGBA", art.size, (0, 0, 0, 90))
-        dark.putalpha(Image.eval(art.getchannel("A"), lambda a: min(a, 90)))
-        art = Image.alpha_composite(art, dark)
     if art is not None:
-        ax = art_box[0] + (art_box[2] - art_box[0] - art.width) // 2
-        ay = art_box[1] + (art_box[3] - art_box[1] - art.height) // 2
-        # Halo derrière le boss, teinté par la phase : donne de la présence et
-        # signale l'état du raid même en vignette (vert → jaune → orange → rouge).
+        ax = art_x1 + (art_x2 - art_x1 - art.width) // 2
+        ay = art_y1 + (art_y2 - 60 - art_y1 - art.height) // 2
         halo = Image.new("RGBA", bg.size, (0, 0, 0, 0))
         hd = ImageDraw.Draw(halo)
         cx, cy = ax + art.width // 2, ay + art.height // 2
-        rad = int(max(art.width, art.height) * 0.62)
+        rad = int(max(art.width, art.height) * 0.60)
         for i in range(6):
-            a = int(46 * (1 - i / 6))
             rr = rad - i * 12
             hd.ellipse([(cx - rr, cy - rr), (cx + rr, cy + rr)],
-                       fill=(*phase_color[:3], a))
+                       fill=(*phase_color[:3], int(46 * (1 - i / 6))))
         bg.alpha_composite(halo.filter(ImageFilter.GaussianBlur(38)))
-        # Ombre portée au sol pour ancrer la créature.
         sh = Image.new("RGBA", bg.size, (0, 0, 0, 0))
-        sw = int(art.width * 0.55)
+        sw2 = int(art.width * 0.5)
         ImageDraw.Draw(sh).ellipse(
-            [(cx - sw, ay + art.height - 18), (cx + sw, ay + art.height + 26)],
+            [(cx - sw2, ay + art.height - 14), (cx + sw2, ay + art.height + 22)],
             fill=(0, 0, 0, 130))
-        bg.alpha_composite(sh.filter(ImageFilter.GaussianBlur(18)))
+        bg.alpha_composite(sh.filter(ImageFilter.GaussianBlur(16)))
         bg.alpha_composite(art, (ax, ay))
 
-    # ---------------- colonne droite ----------------
-    rx1, rx2 = 520, WIDTH - 28
+    # Stats du colosse, sous l'art (deux lignes lisibles plutôt qu'une longue).
+    _panel(bg, (art_x1, art_y2 - 74, art_x2, art_y2), radius=14)
+    # Une seule ligne : le calcul de largeur de textlength() ignore les emojis,
+    # donc un alignement à droite se chevauchait avec la colonne de gauche.
+    f_stats = try_font(22, bold=True)
+    # Deux lignes : une seule ligne de 4 stats débordait de cette colonne étroite.
+    draw_text_with_emojis(
+        bg, (art_x1 + 20, art_y2 - 64),
+        f"⚔️ ATK {_compact(data.attack)}      🛡️ DEF {_compact(data.defense)}",
+        f_stats, fill=C_TEXT, emoji_size=f_stats.size)
+    draw_text_with_emojis(
+        bg, (art_x1 + 20, art_y2 - 34),
+        f"💨 VIT {data.speed}      🎯 CRIT {data.crit_chance}%",
+        f_stats, fill=C_TEXT, emoji_size=f_stats.size)
 
-    # PV
-    _panel(bg, (rx1, 148, rx2, 336), radius=20)
+    # ---------------- colonne droite : l'état du raid ----------------
+    rx1, rx2 = 412, WIDTH - 24
+
+    _panel(bg, (rx1, 184, rx2, 322), radius=20)
     hp_txt = f"{data.current_hp:,} / {data.max_hp:,}".replace(",", " ")
-    draw_text_with_shadow(draw, (rx1 + 28, 168), hp_txt, f_hp, C_TEXT, C_SHADOW)
+    draw_text_with_shadow(draw, (rx1 + 26, 202), hp_txt, f_hp, C_TEXT, C_SHADOW)
     pct = f"{ratio * 100:.1f}%"
     pw = int(draw.textlength(pct, font=f_hp))
-    draw_text_with_shadow(draw, (rx2 - 28 - pw, 168), pct, f_hp, phase_color, C_SHADOW)
-    _draw_hp_bar(bg, (rx1 + 28, 214, rx2 - 28, 254), ratio, phase_color)
+    draw_text_with_shadow(draw, (rx2 - 26 - pw, 202), pct, f_hp, phase_color, C_SHADOW)
+    _draw_hp_bar(bg, (rx1 + 26, 248, rx2 - 26, 286), ratio, phase_color)
     phase_no = len(PHASES) - sum(1 for th, _, _ in PHASES if ratio > th) + 1
-    phase_txt = f"PHASE {phase_no} — {phase_label}"
-    if data.defeated:
-        phase_txt = "⚑ BOSS TERRASSÉ"
-    draw_text_with_shadow(draw, (rx1 + 28, 262), phase_txt, f_phase, phase_color, C_SHADOW)
-    # Effort collectif : la part du colosse déjà abattue cette semaine. C'est LA
-    # métrique qui donne le sentiment d'avancer ensemble.
-    done_pct = (1 - ratio) * 100
-    done_txt = f"{done_pct:.1f}% abattu par le raid"
+    phase_txt = "⚑ BOSS TERRASSÉ" if data.defeated else f"PHASE {phase_no} — {phase_label}"
+    draw_text_with_emojis(bg, (rx1 + 26, 292), phase_txt, f_phase,
+                          fill=phase_color, emoji_size=f_phase.size)
+    done_txt = f"{(1 - ratio) * 100:.1f}% abattu par le raid"
     dtw = int(draw.textlength(done_txt, font=f_small))
-    draw_text_with_shadow(draw, (rx2 - 28 - dtw, 268), done_txt, f_small, C_MUTED, C_SHADOW)
+    draw_text_with_shadow(draw, (rx2 - 26 - dtw, 298), done_txt, f_small,
+                          C_MUTED, C_SHADOW)
 
-    # Stats de combat : ce qu'il faut savoir pour préparer l'assaut. Affichées
-    # ICI et nulle part ailleurs (plus de doublon avec l'embed).
-    stat_line = (f"⚔️ ATK {_compact(data.attack)}   "
-                 f"🛡️ DEF {_compact(data.defense)}   "
-                 f"💨 VIT {data.speed}   "
-                 f"🎯 CRIT {data.crit_chance}%")
-    draw_text_with_emojis(bg, (rx1 + 28, 300), stat_line, f_small,
+    # Classement : jusqu'à 6 combattants (on en voyait 4 sur 12).
+    _panel(bg, (rx1, 338, rx2, HEIGHT - 104), radius=20)
+    draw_text_with_emojis(bg, (rx1 + 26, 354), "🏆 MEILLEURS COMBATTANTS",
+                          f_label, fill=C_GOLD, emoji_size=f_label.size)
+    # Bonus d'équipe : rappelle que le nombre fait la force.
+    bonus = min(50, max(0, (data.warriors - 1) * 5))
+    team_txt = f"👥 {data.warriors}   ·   +{bonus}% équipe"
+    tw = int(draw.textlength(team_txt, font=f_small)) + 40
+    draw_text_with_emojis(bg, (rx2 - 26 - tw, 356), team_txt, f_small,
                           fill=C_TEXT, emoji_size=f_small.size)
 
-    # Classement de contribution
-    _panel(bg, (rx1, 352, rx2, HEIGHT - 128), radius=20)
-    draw_text_with_emojis(bg, (rx1 + 28, 370), "🏆 MEILLEURS COMBATTANTS",
-                          f_label, fill=C_GOLD)
-    top = data.contributors[:4]
+    top = data.contributors[:5]
     best = max((c.damage for c in top), default=1) or 1
-    row_y = 408
+    row_y = 392
     for i, c in enumerate(top):
         medal = _MEDALS[i] if i < 3 else f"{i + 1}."
-        name = c.display_name if len(c.display_name) <= 14 else c.display_name[:13] + "…"
-        draw_text_with_emojis(bg, (rx1 + 28, row_y), f"{medal} {name}", f_row,
-                              fill=C_TEXT, emoji_size=f_row.size)
         dmg = _compact(c.damage)
         dw2 = int(draw.textlength(dmg, font=f_row))
-        draw_text_with_shadow(draw, (rx1 + 300 - dw2, row_y), dmg, f_row, C_GOLD, C_SHADOW)
-        bar_x1, bar_x2 = rx1 + 320, rx2 - 28
-        bw = int((bar_x2 - bar_x1) * (c.damage / best))
-        # ⚠️ Pillow : dessiner en semi-transparent DIRECTEMENT sur l'image la
-        # rend opaque une fois aplatie (le canal alpha est écrasé, pas fondu).
-        # La piste doit donc passer par un calque composité.
+        # Colonne du nom = de la marge gauche jusqu'au début du nombre.
+        name_max = (rx1 + 390 - dw2) - (rx1 + 26) - 16
+        label = _truncate_to_width(f"{medal} {c.display_name}", f_row, name_max)
+        draw_text_with_emojis(bg, (rx1 + 26, row_y), label, f_row,
+                              fill=C_TEXT, emoji_size=f_row.size)
+        draw_text_with_shadow(draw, (rx1 + 390 - dw2, row_y), dmg, f_row,
+                              C_GOLD, C_SHADOW)
+        bar_x1, bar_x2 = rx1 + 410, rx2 - 26
+        bw3 = int((bar_x2 - bar_x1) * (c.damage / best))
         track = Image.new("RGBA", bg.size, (0, 0, 0, 0))
         ImageDraw.Draw(track).rounded_rectangle(
             [(bar_x1, row_y + 8), (bar_x2, row_y + 24)], radius=8,
             fill=(255, 255, 255, 18), outline=(255, 255, 255, 30), width=1)
         bg.alpha_composite(track)
-        if bw > 6:
-            draw.rounded_rectangle([(bar_x1, row_y + 8), (bar_x1 + bw, row_y + 24)],
+        if bw3 > 6:
+            draw.rounded_rectangle([(bar_x1, row_y + 8), (bar_x1 + bw3, row_y + 24)],
                                    radius=8, fill=(*phase_color[:3], 255))
-        row_y += 44
+        row_y += 38
     if not top:
-        draw_text_with_shadow(draw, (rx1 + 28, 418),
-                              "Aucun assaut pour l'instant — soyez les premiers.",
+        draw_text_with_shadow(draw, (rx1 + 26, 398),
+                              "Aucun assaut — soyez les premiers à frapper.",
                               f_small, C_MUTED, C_SHADOW)
 
-    # HONNEURS D'ÉQUIPE : le raid ne se gagne pas qu'aux dégâts. Mettre le
-    # meilleur tank et le meilleur soutien à l'honneur valorise explicitement
-    # les rôles de soutien et pousse à composer une vraie équipe.
+    # Honneurs d'équipe : le raid ne se gagne pas qu'aux dégâts.
     if data.contributors:
         best_tank = max(data.contributors, key=lambda c: c.tanked)
         best_heal = max(data.contributors, key=lambda c: c.healed)
-        # Position calculée depuis la FIN réelle de la liste (elle est de
-        # taille variable) — un offset fixe chevauchait les dernières lignes.
-        hy = row_y + 10
+        hy = row_y + 8
         sep = Image.new("RGBA", bg.size, (0, 0, 0, 0))
-        ImageDraw.Draw(sep).line([(rx1 + 28, hy - 14), (rx2 - 28, hy - 14)],
+        ImageDraw.Draw(sep).line([(rx1 + 26, hy - 10), (rx2 - 26, hy - 10)],
                                  fill=(255, 255, 255, 30), width=1)
         bg.alpha_composite(sep)
         parts = []
@@ -334,22 +394,18 @@ def compose_raid_banner(output_path: str, data: RaidBannerData) -> str:
             parts.append(f"🛡️ {best_tank.display_name} {_compact(best_tank.tanked)}")
         if best_heal.healed > 0:
             parts.append(f"💚 {best_heal.display_name} {_compact(best_heal.healed)}")
-        honor_line = "   ·   ".join(parts) if parts else (
-            "🛡️ Rempart et 💚 Soutien : à conquérir")
-        draw_text_with_emojis(bg, (rx1 + 28, hy), honor_line, f_small,
-                              fill=C_MUTED, emoji_size=f_small.size)
+        honor = "   ·   ".join(parts) or "🛡️ Rempart et 💚 Soutien : à conquérir"
+        draw_text_with_emojis(bg, (rx1 + 26, hy), honor, f_small, fill=C_MUTED,
+                              emoji_size=f_small.size)
 
-    # ---------------- bandeau bas ----------------
-    _panel(bg, (28, HEIGHT - 112, WIDTH - 28, HEIGHT - 24), radius=20)
+    # ---------------- pied : l'effort cumulé de la semaine ----------------
+    _panel(bg, (24, HEIGHT - 88, WIDTH - 24, HEIGHT - 20), radius=18)
     total_damage = sum(c.damage for c in data.contributors)
-    stats = (f"👥 {data.warriors} combattants   ·   "
-             f"💥 {_compact(total_damage)} dégâts   ·   "
-             f"⚔️ {data.assaults} assauts")
-    draw_text_with_emojis(bg, (56, HEIGHT - 96), stats, f_row, fill=C_TEXT)
-    if data.next_assault:
-        draw_text_with_emojis(bg, (56, HEIGHT - 58),
-                              f"⏳ Prochaine offensive : {data.next_assault}",
-                              f_small, fill=C_MUTED)
+    footer = (f"💥 {_compact(total_damage)} dégâts cumulés   ·   "
+              f"⚔️ {_plural(data.assaults, 'assaut')}   ·   "
+              f"👥 {_plural(data.warriors, 'combattant')}")
+    draw_text_with_emojis(bg, (52, HEIGHT - 74), footer, f_row, fill=C_TEXT,
+                          emoji_size=f_row.size)
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     bg.convert("RGB").save(output_path, "PNG", optimize=True)
