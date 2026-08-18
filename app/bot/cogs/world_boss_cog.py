@@ -129,12 +129,60 @@ class WorldBossView(discord.ui.View):
                 username=interaction.user.name,
                 display_name=interaction.user.display_name,
             )
-        await interaction.followup.send(result.message, ephemeral=True)
+        # Détail des inscrits : savoir QUI est déjà là (et donc si ça vaut le
+        # coup d'attendre du monde) est le premier réflexe après s'être inscrit.
+        roster = await self._build_roster_embed()
+        await interaction.followup.send(
+            result.message, embed=roster, ephemeral=True,
+        )
         if result.success:
             cog = self._resolve_cog(interaction)
             boss_id = await self._resolve_active_boss_id()
             if cog and boss_id:
                 await cog.refresh_boss_message(boss_id)
+
+    async def _build_roster_embed(self) -> discord.Embed | None:
+        """Liste des inscrits au prochain assaut, avec leur état (a voté / a
+        déjà frappé cette semaine) et le bonus d'équipe atteint."""
+        with get_db_session() as session:
+            repo = WorldBossRepository(session)
+            boss = repo.get_active()
+            if boss is None:
+                return None
+            joined = repo.list_joined_participants(boss.id)
+            metrics = {
+                m.player_id: m
+                for m in repo.list_participations_with_metrics(boss.id)
+            }
+            player_repo = PlayerRepository(session)
+            lines: list[str] = []
+            for part in joined:
+                profile = player_repo.get_profile_by_player_id(part.player_id)
+                name = profile.player.display_name if profile else f"#{part.player_id}"
+                marks = []
+                if getattr(part, "voted_to_start", False):
+                    marks.append("🗳️ prêt")
+                fought = metrics.get(part.player_id)
+                if fought is not None and fought.fights_count > 0:
+                    marks.append(f"⚔️ {format_int(fought.damage_dealt)} dégâts")
+                suffix = f" — {' · '.join(marks)}" if marks else ""
+                lines.append(f"• **{escape_markdown(name)}**{suffix}")
+
+        count = len(lines)
+        bonus = min(50, max(0, (count - 1) * 5))
+        embed = discord.Embed(
+            title=f"🛡️ Inscrits pour l'assaut de 21h — {count}",
+            description=(
+                "\n".join(lines) if lines
+                else "Personne pour l'instant. Sois le premier à t'engager !"
+            ),
+            color=discord.Color.gold(),
+        )
+        embed.set_footer(
+            text=(f"Bonus d'équipe actuel : +{bonus}% de stats "
+                  f"(+5 % par combattant, max +50 %)")
+        )
+        return embed
 
     @discord.ui.button(
         label="Quitter",

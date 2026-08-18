@@ -91,6 +91,8 @@ def build_raid_banner_data(session, boss: WorldBoss) -> RaidBannerData:
         speed=boss.speed,
         crit_chance=int(boss.crit_chance),
         weaknesses=_weakness_label(boss.element),
+        element_code=boss.element or "",
+        registered=repo.count_joined(boss.id),
     )
 
 

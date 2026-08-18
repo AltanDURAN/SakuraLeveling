@@ -28,9 +28,10 @@ from app.bot.rendering.pillow_utils import (
     gradient_background,
     try_font,
 )
+from app.bot.rendering.element_visuals import tint_by_element
 from app.shared.paths import MOBS_ASSETS_DIR
 
-WIDTH, HEIGHT = 1280, 720
+WIDTH, HEIGHT = 1280, 760
 
 # --- Palette : cohérente avec la bannière de profil, mais plus sombre/tendue --
 C_BG_TOP = (14, 10, 20, 255)
@@ -84,6 +85,10 @@ class RaidBannerData:
     speed: int = 0
     crit_chance: int = 0
     weaknesses: str = ""          # ex. "🔥 Feu · 🌿 Plante"
+    element_code: str = ""        # code brut ("feu", "eau"…) pour la teinte
+    # Inscrits au PROCHAIN assaut : ceux qui ont cliqué « Rejoindre » et
+    # attendent 21h. Distinct de `warriors`, qui compte ceux ayant DÉJÀ frappé.
+    registered: int = 0
 
 
 def _ratio(data: RaidBannerData) -> float:
@@ -281,6 +286,10 @@ def compose_raid_banner(output_path: str, data: RaidBannerData) -> str:
     # ---------------- colonne gauche : le colosse (contexte) ----------------
     art_x1, art_y1, art_x2, art_y2 = 24, 184, 392, HEIGHT - 104
     art = _load_boss_art(data.image_name, art_x2 - art_x1 - 8, art_y2 - art_y1 - 60)
+    # Teinte élémentaire — même traitement que les spawns de monstres, pour que
+    # le boss appartienne visuellement au même monde.
+    if art is not None and data.element_code and not data.defeated:
+        art = tint_by_element(art, data.element_code)
     if art is not None and data.defeated:
         grey = art.convert("LA").convert("RGBA")
         grey.putalpha(art.getchannel("A"))
@@ -339,20 +348,31 @@ def compose_raid_banner(output_path: str, data: RaidBannerData) -> str:
     draw_text_with_shadow(draw, (rx2 - 26 - dtw, 298), done_txt, f_small,
                           C_MUTED, C_SHADOW)
 
-    # Classement : jusqu'à 6 combattants (on en voyait 4 sur 12).
-    _panel(bg, (rx1, 338, rx2, HEIGHT - 104), radius=20)
-    draw_text_with_emojis(bg, (rx1 + 26, 354), "🏆 MEILLEURS COMBATTANTS",
-                          f_label, fill=C_GOLD, emoji_size=f_label.size)
-    # Bonus d'équipe : rappelle que le nombre fait la force.
-    bonus = min(50, max(0, (data.warriors - 1) * 5))
-    team_txt = f"👥 {data.warriors}   ·   +{bonus}% équipe"
-    tw = int(draw.textlength(team_txt, font=f_small)) + 40
-    draw_text_with_emojis(bg, (rx2 - 26 - tw, 356), team_txt, f_small,
-                          fill=C_TEXT, emoji_size=f_small.size)
+    # Bandeau des INSCRITS au prochain assaut : avant 21h, c'est l'information
+    # qui compte (combien serons-nous ?) et le bonus d'équipe qu'elle promet.
+    if not data.defeated:
+        _panel(bg, (rx1, 338, rx2, 392), radius=16,
+               fill=(255, 214, 110, 26), border=(255, 214, 110, 90))
+        bonus = min(50, max(0, (data.registered - 1) * 5))
+        if data.registered > 0:
+            insc = (f"🛡️ {_plural(data.registered, 'inscrit')} "
+                    f"pour le prochain assaut   ·   +{bonus}% de stats en équipe")
+        else:
+            insc = "🛡️ Personne d'inscrit — cliquez sur Rejoindre pour l'assaut de 21h"
+        draw_text_with_emojis(bg, (rx1 + 26, 352), insc, f_small, fill=C_GOLD,
+                              emoji_size=f_small.size)
+        rank_top = 404
+    else:
+        rank_top = 338
 
-    top = data.contributors[:5]
+    # Classement des combattants (ceux qui ont DÉJÀ frappé cette semaine).
+    _panel(bg, (rx1, rank_top, rx2, HEIGHT - 104), radius=20)
+    draw_text_with_emojis(bg, (rx1 + 26, rank_top + 16), "🏆 MEILLEURS COMBATTANTS",
+                          f_label, fill=C_GOLD, emoji_size=f_label.size)
+
+    top = data.contributors[:4] if not data.defeated else data.contributors[:5]
     best = max((c.damage for c in top), default=1) or 1
-    row_y = 392
+    row_y = rank_top + 54
     for i, c in enumerate(top):
         medal = _MEDALS[i] if i < 3 else f"{i + 1}."
         dmg = _compact(c.damage)
@@ -376,8 +396,8 @@ def compose_raid_banner(output_path: str, data: RaidBannerData) -> str:
                                    radius=8, fill=(*phase_color[:3], 255))
         row_y += 38
     if not top:
-        draw_text_with_shadow(draw, (rx1 + 26, 398),
-                              "Aucun assaut — soyez les premiers à frapper.",
+        draw_text_with_shadow(draw, (rx1 + 26, rank_top + 60),
+                              "Aucun assaut cette semaine — soyez les premiers.",
                               f_small, C_MUTED, C_SHADOW)
 
     # Honneurs d'équipe : le raid ne se gagne pas qu'aux dégâts.
