@@ -285,8 +285,8 @@
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
+    "sell_price": 50,
+    "buy_price": 80,
     "icon": null,
     "stat_bonuses": {
       "max_hp": -5,
