@@ -437,5 +437,26 @@
     "equipment_slot": "plastron",
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "v_tement_vagabon",
+    "name": "Vétement vagabon",
+    "description": "(D1) (D3)",
+    "category": "chest",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 5,
+      "speed": 1,
+      "crit_chance": 15,
+      "dodge": 2
+    },
+    "equipment_slot": "plastron",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
