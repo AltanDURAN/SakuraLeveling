@@ -336,5 +336,24 @@
     "equipment_slot": "casque",
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "casque",
+    "name": "Casque",
+    "description": "(D2)",
+    "category": "helmet",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 5,
+      "defense": 2
+    },
+    "equipment_slot": "casque",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
