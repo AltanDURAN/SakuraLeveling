@@ -216,5 +216,24 @@
     "equipment_slot": null,
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "p_simple",
+    "name": "épé simple",
+    "description": "(D4)",
+    "category": "weapon",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 50,
+    "buy_price": 75,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 5,
+      "speed": -1
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
