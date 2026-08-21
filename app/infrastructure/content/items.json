@@ -416,5 +416,26 @@
     "equipment_slot": "plastron",
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "robe",
+    "name": "robe",
+    "description": "(D3)(D6)\r\n+30 mana",
+    "category": "chest",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 80,
+    "buy_price": 120,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 7,
+      "speed": -1,
+      "crit_chance": 5,
+      "crit_damage": 10
+    },
+    "equipment_slot": "plastron",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
