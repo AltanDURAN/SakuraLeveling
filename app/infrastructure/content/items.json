@@ -395,5 +395,26 @@
     "equipment_slot": "plastron",
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "armure_de_garde",
+    "name": "armure de garde",
+    "description": "(D2)",
+    "category": "chest",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 80,
+    "buy_price": 120,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 20,
+      "defense": 2,
+      "speed": -1,
+      "crit_damage": -20
+    },
+    "equipment_slot": "plastron",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
