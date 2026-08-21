@@ -235,5 +235,26 @@
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "dague_simple",
+    "name": "Dague simple",
+    "description": "(D3)",
+    "category": "weapon",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 50,
+    "buy_price": 80,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": -5,
+      "defense": -2,
+      "crit_chance": 15,
+      "crit_damage": 5
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
