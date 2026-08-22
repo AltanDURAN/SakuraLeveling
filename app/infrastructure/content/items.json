@@ -229,6 +229,7 @@
     "buy_price": 75,
     "icon": null,
     "stat_bonuses": {
+      "max_hp": 4,
       "attack": 5,
       "speed": -1
     },
