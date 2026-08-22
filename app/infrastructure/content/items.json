@@ -499,5 +499,28 @@
     "equipment_slot": "plastron",
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "tenu_de_mercen_re",
+    "name": "tenu de mercenère",
+    "description": "(D3)(D8)\r\ncraft: tissu ,fourures ,griff de goblin\r\nniv 5-8",
+    "category": "chest",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 200,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 5,
+      "attack": 2,
+      "speed": 1,
+      "crit_chance": 15,
+      "crit_damage": 25,
+      "dodge": 5
+    },
+    "equipment_slot": "plastron",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
