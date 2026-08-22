@@ -686,5 +686,25 @@
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "arc",
+    "name": "arc",
+    "description": "(D8)\r\n(snipeur) ta première ataque inflige +5dégat\r\ncraft: bois tissu ,grifes de goblin, dent de goblin\r\nniv 5-8",
+    "category": "weapon",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 170,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 3,
+      "attack": 6,
+      "dodge": 5
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
