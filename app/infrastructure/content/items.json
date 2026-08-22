@@ -458,5 +458,26 @@
     "equipment_slot": "plastron",
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "tenu_d_aventurier_niv_goblin",
+    "name": "Tenu d'aventurier niv goblin",
+    "description": "(D4)(D5)  \r\ncraft : tissu ,fourure et dent de goblin\r\néquipement de niv 3-5",
+    "category": "chest",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 200,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 15,
+      "attack": 5,
+      "defense": 2,
+      "speed": -1
+    },
+    "equipment_slot": "plastron",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
