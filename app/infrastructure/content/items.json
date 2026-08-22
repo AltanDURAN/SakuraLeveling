@@ -522,5 +522,26 @@
     "equipment_slot": "plastron",
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "tenu_d_aprentie",
+    "name": "tenu d'aprentie",
+    "description": "(D6)(D5)\r\ncraft :fourure ,tissu et (un drop du goblin chaman \r\nNiv 5-8\r\n+100pt de mana",
+    "category": "chest",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 10,
+      "attack": 4,
+      "defense": 1,
+      "crit_damage": 5
+    },
+    "equipment_slot": "plastron",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
