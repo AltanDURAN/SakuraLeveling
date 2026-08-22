@@ -746,5 +746,26 @@
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "boucli_piquant",
+    "name": "bouclié piquant",
+    "description": "(D2),(D4)\r\nquand un énémie l'ataque il perd 2pv\r\ncraft: bois ,fer ,dent de goblin ,griffe de goblin\r\nniv 5-10",
+    "category": "weapon",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 200,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 5,
+      "attack": 5,
+      "defense": 2,
+      "hp_regeneration": 5
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
