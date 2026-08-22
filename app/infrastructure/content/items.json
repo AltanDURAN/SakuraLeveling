@@ -479,5 +479,25 @@
     "equipment_slot": "plastron",
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "armure_a_suspention_visceuse",
+    "name": "armure a suspention visceuse",
+    "description": "(D2)\r\ncraft: fer beaucoup ,gelé de slime beaucoup\r\nniv 3-5",
+    "category": "chest",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 200,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 25,
+      "defense": 3,
+      "hp_regeneration": 5
+    },
+    "equipment_slot": "plastron",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
