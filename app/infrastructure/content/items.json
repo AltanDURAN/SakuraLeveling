@@ -563,5 +563,26 @@
     "equipment_slot": "casque",
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "masque_de_camouflage",
+    "name": "masque de camouflage",
+    "description": "(D3)\r\ncraft ,tissu ,gelé de slime ,fourure\r\nniv 3-5",
+    "category": "helmet",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 150,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 2,
+      "speed": -1,
+      "crit_chance": 15,
+      "crit_damage": 15
+    },
+    "equipment_slot": "casque",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
