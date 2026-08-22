@@ -645,5 +645,25 @@
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "baton_de_sorcier",
+    "name": "Baton de sorcier",
+    "description": "(D6)\r\ncraft : boi ,drop du chaman\r\nniv3-5\r\n+50mana",
+    "category": "weapon",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 150,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 5,
+      "attack": 6,
+      "speed": -1
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
