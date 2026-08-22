@@ -706,5 +706,25 @@
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "sabre",
+    "name": "sabre",
+    "description": "(D4)\r\ncraft fer ,gelé de slime ,griffe de goblin\r\nniv 5-8",
+    "category": "weapon",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 170,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 10,
+      "attack": 10,
+      "speed": -1
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
