@@ -543,5 +543,25 @@
     "equipment_slot": "plastron",
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "chapeau_de_sorcier",
+    "name": "chapeau de sorcier",
+    "description": "(D6)\r\ncraft :tissu + drop du chaman goblin\r\nniv 3-5\r\n+50man",
+    "category": "helmet",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 150,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 5,
+      "attack": 2,
+      "crit_damage": 10
+    },
+    "equipment_slot": "casque",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
