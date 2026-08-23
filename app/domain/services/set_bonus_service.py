@@ -51,6 +51,8 @@ class SetBonuses:
     attack_flat: int = 0
     speed_flat: int = 0
     max_hp_flat: int = 0
+    mana_max_flat: int = 0
+    mana_regeneration_flat: int = 0
     # Détail par panoplie pour affichage dans /equipement page 3
     active_sets: list[ActiveSetBonus] = field(default_factory=list)
 
@@ -61,6 +63,7 @@ class SetBonusService:
     _SUPPORTED_TYPES = (
         "defense_flat", "dodge_flat", "crit_chance_flat", "crit_damage_flat",
         "hp_regeneration_flat", "attack_flat", "speed_flat", "max_hp_flat",
+        "mana_max_flat", "mana_regeneration_flat",
     )
 
     def __init__(self, sets_definitions: dict[str, dict]) -> None:

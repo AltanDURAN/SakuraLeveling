@@ -795,6 +795,8 @@ SET_BONUS_TYPES = {
     "attack_flat": "Attaque (plat)",
     "speed_flat": "Vitesse (plat)",
     "max_hp_flat": "PV max (plat)",
+    "mana_max_flat": "Mana max (plat)",
+    "mana_regeneration_flat": "Régénération mana (plat)",
 }
 _TIER_COUNTS = (2, 4, 8, 12)
 
@@ -883,7 +885,8 @@ SKILL_EFFECT_TYPES = [
     "atk_flat", "def_flat", "hp_max_flat",
     "atk_percent", "def_percent", "hp_max_percent",
     "crit_chance_flat", "crit_damage_flat", "dodge_flat", "speed_flat",
-    "hp_regeneration_flat", "xp_drop_percent", "gold_drop_percent",
+    "hp_regeneration_flat", "mana_max_flat", "mana_regeneration_flat",
+    "xp_drop_percent", "gold_drop_percent",
     "drop_rate_multiplier",
 ]
 

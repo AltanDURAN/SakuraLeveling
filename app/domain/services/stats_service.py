@@ -144,8 +144,12 @@ class StatsService:
                 dodge=stats.dodge + set_bonuses.dodge_flat,
                 hp_regeneration=stats.hp_regeneration
                 + set_bonuses.hp_regeneration_flat,
-                mana_max=stats.mana_max,
-                mana_regeneration=stats.mana_regeneration,
+                # ⚠️ Invariant : toute reconstruction de Stats DOIT reporter le
+                # mana. Les panoplies peuvent désormais en donner (avant, on se
+                # contentait de le recopier tel quel).
+                mana_max=stats.mana_max + set_bonuses.mana_max_flat,
+                mana_regeneration=stats.mana_regeneration
+                + set_bonuses.mana_regeneration_flat,
             )
 
         # 7e étage : clamp final. Les items lourds peuvent avoir des stats

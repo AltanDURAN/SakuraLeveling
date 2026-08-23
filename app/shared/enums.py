@@ -178,10 +178,12 @@ STAT_LABELS: dict[str, str] = {
     "max_hp": "PV", "attack": "Attaque", "defense": "Défense", "speed": "Vitesse",
     "crit_chance": "Crit %", "crit_damage": "Crit dmg", "dodge": "Esquive %",
     "hp_regeneration": "Régén PV",
+    "mana_max": "Mana max", "mana_regeneration": "Régén mana",
 }
 STAT_EMOJIS: dict[str, str] = {
     "max_hp": "❤️", "attack": "⚔️", "defense": "🛡️", "speed": "💨",
     "crit_chance": "💥", "crit_damage": "✴️", "dodge": "🎯", "hp_regeneration": "💚",
+    "mana_max": "🔷", "mana_regeneration": "🌀",
 }
 
 
