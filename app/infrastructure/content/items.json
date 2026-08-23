@@ -340,8 +340,8 @@
   },
   {
     "code": "casque",
-    "name": "Casque",
-    "description": "(D2)",
+    "name": "Casque (D2)",
+    "description": "",
     "category": "helmet",
     "rarity": "common",
     "stackable": true,
