@@ -1844,8 +1844,8 @@
   },
   {
     "code": "katana",
-    "name": "katana",
-    "description": "(D7)",
+    "name": "katana (D7)",
+    "description": "",
     "category": "weapon",
     "rarity": "rare",
     "stackable": true,
