@@ -1922,5 +1922,26 @@
     "equipment_slot": "plastron",
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "casque_infligeur",
+    "name": "casque infligeur",
+    "description": "",
+    "category": "helmet",
+    "rarity": "rare",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 1000,
+    "buy_price": 1200,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 15,
+      "defense": 3,
+      "crit_chance": 20,
+      "mana_max": 25
+    },
+    "equipment_slot": "casque",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
