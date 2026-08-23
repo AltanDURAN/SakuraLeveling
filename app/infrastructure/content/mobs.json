@@ -18,16 +18,22 @@
     "spawn_weight": 40,
     "loot_table": [
       {
-        "drop_rate": 0.1,
         "item_code": "potion_soin",
-        "max_quantity": 1,
-        "min_quantity": 1
+        "drop_rate": 0.1,
+        "min_quantity": 1,
+        "max_quantity": 1
       },
       {
-        "drop_rate": 0.04,
+        "item_code": "noyau_de_slime",
+        "drop_rate": 0.08,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
         "item_code": "essence_de_vie",
-        "max_quantity": 1,
-        "min_quantity": 1
+        "drop_rate": 0.04,
+        "min_quantity": 1,
+        "max_quantity": 1
       }
     ],
     "image_name": "slime.png",
@@ -52,16 +58,22 @@
     "spawn_weight": 40,
     "loot_table": [
       {
-        "drop_rate": 0.2,
         "item_code": "silex",
-        "max_quantity": 1,
-        "min_quantity": 1
+        "drop_rate": 0.2,
+        "min_quantity": 1,
+        "max_quantity": 1
       },
       {
-        "drop_rate": 0.04,
+        "item_code": "morceau_de_tissu",
+        "drop_rate": 0.18,
+        "min_quantity": 1,
+        "max_quantity": 2
+      },
+      {
         "item_code": "diamant",
-        "max_quantity": 1,
-        "min_quantity": 1
+        "drop_rate": 0.04,
+        "min_quantity": 1,
+        "max_quantity": 1
       }
     ],
     "image_name": "gobelin.png",
@@ -84,7 +96,26 @@
     "xp_reward": 81,
     "gold_reward": 39,
     "spawn_weight": 30,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "cuir_brut",
+        "drop_rate": 0.22,
+        "min_quantity": 1,
+        "max_quantity": 2
+      },
+      {
+        "item_code": "brassard_de_cuir",
+        "drop_rate": 0.05,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "silex",
+        "drop_rate": 0.15,
+        "min_quantity": 1,
+        "max_quantity": 2
+      }
+    ],
     "image_name": "gobelin_combattant.png",
     "element": "terre"
   },
@@ -105,7 +136,26 @@
     "xp_reward": 144,
     "gold_reward": 69,
     "spawn_weight": 30,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "gourde_de_chaman",
+        "drop_rate": 0.2,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "fetiche_d_os",
+        "drop_rate": 0.05,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "baton_a_crane",
+        "drop_rate": 0.02,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
     "image_name": "gobelin_chaman.png",
     "element": "tenebre"
   },
@@ -128,16 +178,22 @@
     "spawn_weight": 20,
     "loot_table": [
       {
-        "drop_rate": 0.15,
-        "item_code": "morceau_de_tissu",
-        "max_quantity": 3,
-        "min_quantity": 2
+        "item_code": "toile_de_dirigeable",
+        "drop_rate": 0.22,
+        "min_quantity": 1,
+        "max_quantity": 2
       },
       {
-        "drop_rate": 0.05,
+        "item_code": "grappin_rouille",
+        "drop_rate": 0.1,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
         "item_code": "petite_bombe",
-        "max_quantity": 2,
-        "min_quantity": 1
+        "drop_rate": 0.06,
+        "min_quantity": 1,
+        "max_quantity": 2
       }
     ],
     "image_name": "gobelin_ballon.png",
@@ -162,16 +218,22 @@
     "spawn_weight": 20,
     "loot_table": [
       {
-        "drop_rate": 0.1,
-        "item_code": "diamant",
-        "max_quantity": 1,
-        "min_quantity": 1
+        "item_code": "os_massif",
+        "drop_rate": 0.22,
+        "min_quantity": 1,
+        "max_quantity": 2
       },
       {
-        "drop_rate": 0.2,
-        "item_code": "bois",
-        "max_quantity": 3,
-        "min_quantity": 1
+        "item_code": "ceinturon_epais",
+        "drop_rate": 0.05,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "gourdin_de_tronc",
+        "drop_rate": 0.02,
+        "min_quantity": 1,
+        "max_quantity": 1
       }
     ],
     "image_name": "gobelin_geant.png",
@@ -194,7 +256,26 @@
     "xp_reward": 238,
     "gold_reward": 114,
     "spawn_weight": 20,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "encre_rituelle",
+        "drop_rate": 0.2,
+        "min_quantity": 1,
+        "max_quantity": 2
+      },
+      {
+        "item_code": "pierre_runique",
+        "drop_rate": 0.1,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "collier_de_perles",
+        "drop_rate": 0.04,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
     "image_name": "gobelin_runique.png",
     "element": ""
   },
@@ -215,7 +296,26 @@
     "xp_reward": 300,
     "gold_reward": 144,
     "spawn_weight": 10,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "plaque_a_pointes",
+        "drop_rate": 0.05,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "casque_a_cornes",
+        "drop_rate": 0.04,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "masse_cloutee",
+        "drop_rate": 0.015,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
     "image_name": "gobelin_superieur.png",
     "element": ""
   },
@@ -238,22 +338,22 @@
     "spawn_weight": 10,
     "loot_table": [
       {
-        "drop_rate": 0.05,
-        "item_code": "dagues_jumelles",
-        "max_quantity": 1,
-        "min_quantity": 1
-      },
-      {
-        "drop_rate": 0.2,
         "item_code": "morceau_de_tissu",
-        "max_quantity": 2,
-        "min_quantity": 1
+        "drop_rate": 0.2,
+        "min_quantity": 1,
+        "max_quantity": 2
       },
       {
-        "drop_rate": 0.01,
+        "item_code": "dagues_jumelles",
+        "drop_rate": 0.05,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
         "item_code": "cape_silencieuse",
-        "max_quantity": 1,
-        "min_quantity": 1
+        "drop_rate": 0.01,
+        "min_quantity": 1,
+        "max_quantity": 1
       }
     ],
     "image_name": "gobelin_assassin.png",
@@ -276,7 +376,26 @@
     "xp_reward": 350,
     "gold_reward": 168,
     "spawn_weight": 40,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "corne_naissante",
+        "drop_rate": 0.22,
+        "min_quantity": 1,
+        "max_quantity": 2
+      },
+      {
+        "item_code": "braise_infernale",
+        "drop_rate": 0.1,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "trident_ebreche",
+        "drop_rate": 0.05,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
     "image_name": "diablotin.png",
     "element": ""
   },
@@ -297,7 +416,26 @@
     "xp_reward": 400,
     "gold_reward": 192,
     "spawn_weight": 30,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "corne_de_demon",
+        "drop_rate": 0.2,
+        "min_quantity": 1,
+        "max_quantity": 2
+      },
+      {
+        "item_code": "ceinturon_cloute",
+        "drop_rate": 0.05,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "lame_infernale",
+        "drop_rate": 0.025,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
     "image_name": "demon_cornu.png",
     "element": ""
   },
@@ -318,7 +456,26 @@
     "xp_reward": 450,
     "gold_reward": 216,
     "spawn_weight": 20,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "croc_d_ogre",
+        "drop_rate": 0.2,
+        "min_quantity": 1,
+        "max_quantity": 2
+      },
+      {
+        "item_code": "plaque_rouillee",
+        "drop_rate": 0.05,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "espadon_dentele",
+        "drop_rate": 0.015,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
     "image_name": "ogre_demoniaque.png",
     "element": ""
   },
@@ -339,7 +496,26 @@
     "xp_reward": 500,
     "gold_reward": 240,
     "spawn_weight": 15,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "croc_triple",
+        "drop_rate": 0.12,
+        "min_quantity": 1,
+        "max_quantity": 2
+      },
+      {
+        "item_code": "collier_a_pointes",
+        "drop_rate": 0.05,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "chaine_de_l_abime",
+        "drop_rate": 0.03,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
     "image_name": "cerbere.png",
     "element": ""
   },
@@ -360,7 +536,26 @@
     "xp_reward": 550,
     "gold_reward": 264,
     "spawn_weight": 12,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "philtre_de_charme",
+        "drop_rate": 0.1,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "aile_de_cuir",
+        "drop_rate": 0.05,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "corset_de_soie_noire",
+        "drop_rate": 0.02,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
     "image_name": "succube.png",
     "element": ""
   },
@@ -381,7 +576,26 @@
     "xp_reward": 600,
     "gold_reward": 288,
     "spawn_weight": 8,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "plume_noircie",
+        "drop_rate": 0.15,
+        "min_quantity": 1,
+        "max_quantity": 2
+      },
+      {
+        "item_code": "flamme_sacree",
+        "drop_rate": 0.05,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "couronne_dechue",
+        "drop_rate": 0.01,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
     "image_name": "ange_dechu.png",
     "element": ""
   },
@@ -402,7 +616,26 @@
     "xp_reward": 675,
     "gold_reward": 324,
     "spawn_weight": 4,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "corne_d_archidemon",
+        "drop_rate": 0.12,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "sceau_de_corruption",
+        "drop_rate": 0.02,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "lame_des_enfers",
+        "drop_rate": 0.01,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
     "image_name": "archidemon.png",
     "element": ""
   },
@@ -424,7 +657,26 @@
     "xp_reward": 237,
     "gold_reward": 114,
     "spawn_weight": 25,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "os_poli",
+        "drop_rate": 0.22,
+        "min_quantity": 1,
+        "max_quantity": 2
+      },
+      {
+        "item_code": "poussiere_d_ossements",
+        "drop_rate": 0.18,
+        "min_quantity": 1,
+        "max_quantity": 2
+      },
+      {
+        "item_code": "dague_rouillee",
+        "drop_rate": 0.05,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
     "image_name": "squelette.png"
   },
   {
@@ -444,7 +696,26 @@
     "xp_reward": 273,
     "gold_reward": 131,
     "spawn_weight": 20,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "chair_putride",
+        "drop_rate": 0.22,
+        "min_quantity": 1,
+        "max_quantity": 2
+      },
+      {
+        "item_code": "lambeau_de_vetement",
+        "drop_rate": 0.18,
+        "min_quantity": 1,
+        "max_quantity": 2
+      },
+      {
+        "item_code": "dent_gatee",
+        "drop_rate": 0.12,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
     "image_name": "zombie.png",
     "element": ""
   },
@@ -465,7 +736,26 @@
     "xp_reward": 393,
     "gold_reward": 189,
     "spawn_weight": 15,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "voile_ectoplasmique",
+        "drop_rate": 0.04,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "chaine_spectrale",
+        "drop_rate": 0.04,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "boulet_hante",
+        "drop_rate": 0.02,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
     "image_name": "fantome.png",
     "element": ""
   },
@@ -487,7 +777,26 @@
     "xp_reward": 399,
     "gold_reward": 191,
     "spawn_weight": 10,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "bandelette_maudite",
+        "drop_rate": 0.22,
+        "min_quantity": 1,
+        "max_quantity": 2
+      },
+      {
+        "item_code": "resine_d_embaumement",
+        "drop_rate": 0.1,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "griffe_noircie",
+        "drop_rate": 0.05,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
     "image_name": "momie.png"
   },
   {
@@ -508,7 +817,26 @@
     "xp_reward": 456,
     "gold_reward": 219,
     "spawn_weight": 7,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "eclat_de_pierre",
+        "drop_rate": 0.22,
+        "min_quantity": 1,
+        "max_quantity": 2
+      },
+      {
+        "item_code": "aile_de_pierre",
+        "drop_rate": 0.04,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "coeur_de_granit",
+        "drop_rate": 0.03,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
     "image_name": "gargouille.png"
   },
   {
@@ -529,7 +857,26 @@
     "xp_reward": 541,
     "gold_reward": 260,
     "spawn_weight": 4,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "grimoire_en_lambeaux",
+        "drop_rate": 0.05,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "orbe_maudit",
+        "drop_rate": 0.02,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "couronne_ternie",
+        "drop_rate": 0.015,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
     "image_name": "liche_maudite.png"
   },
   {
@@ -549,7 +896,26 @@
     "xp_reward": 733,
     "gold_reward": 352,
     "spawn_weight": 2,
-    "loot_table": [],
+    "loot_table": [
+      {
+        "item_code": "echo_de_cri",
+        "drop_rate": 0.18,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "larme_spectrale",
+        "drop_rate": 0.05,
+        "min_quantity": 1,
+        "max_quantity": 1
+      },
+      {
+        "item_code": "couronne_d_epines",
+        "drop_rate": 0.02,
+        "min_quantity": 1,
+        "max_quantity": 1
+      }
+    ],
     "image_name": "banshee.png",
     "element": ""
   }
