@@ -1880,5 +1880,26 @@
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "armure_de_m_tal_sup_rieur_d4",
+    "name": "armure de métal supérieur (D4)",
+    "description": "",
+    "category": "chest",
+    "rarity": "rare",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 1300,
+    "buy_price": 1600,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp": 70,
+      "attack": 5,
+      "defense": 15,
+      "hp_regeneration": 10
+    },
+    "equipment_slot": "plastron",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
