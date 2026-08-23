@@ -67,7 +67,8 @@ window.SAKURA_STATEMOJI = {{ stat_emojis|tojson }};
 window.SAKURA_STATS = {{ supported_stats|tojson }};
 window.SAKURA_CATSLOT = {{ category_slot|tojson }};
 window.SAKURA_STATCOLOR = { max_hp:'#e5484d', attack:'#f0883e', defense:'#4a9eff', speed:'#2dd4bf',
-  crit_chance:'#e3b341', crit_damage:'#d16bff', dodge:'#14b8a6', hp_regeneration:'#22c55e' };
+  crit_chance:'#e3b341', crit_damage:'#d16bff', dodge:'#14b8a6', hp_regeneration:'#22c55e',
+  mana_max:'#3b82f6', mana_regeneration:'#60a5fa' };
 function slotForCat(c){ return window.SAKURA_CATSLOT[c] || ''; }
 function statColor(s){ return window.SAKURA_STATCOLOR[s] || '#8a8a95'; }
 function itImg(code){ return '/assets/items/'+code+'.png'; }

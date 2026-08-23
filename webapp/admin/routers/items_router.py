@@ -76,6 +76,9 @@ def _clear_item_assets(code: str) -> None:
 SUPPORTED_STATS = [
     "max_hp", "attack", "defense", "speed",
     "crit_chance", "crit_damage", "dodge", "hp_regeneration",
+    # Mana : déjà lu par StatsService sur l'équipement — il ne manquait que
+    # l'exposition côté admin pour pouvoir en mettre sur un objet.
+    "mana_max", "mana_regeneration",
 ]
 
 
