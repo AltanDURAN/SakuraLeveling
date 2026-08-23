@@ -1841,5 +1841,25 @@
     "equipment_slot": "bague",
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "katana",
+    "name": "katana",
+    "description": "(D7)",
+    "category": "weapon",
+    "rarity": "rare",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 1000,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 50,
+      "crit_chance": 10,
+      "crit_damage": 10
+    },
+    "equipment_slot": "main_droite",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
