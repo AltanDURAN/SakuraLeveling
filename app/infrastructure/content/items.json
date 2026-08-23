@@ -1943,5 +1943,26 @@
     "equipment_slot": "casque",
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "lunette_de_pr_cision_d8_snipeur_20_de_degat_a_la_premi_re_attaque",
+    "name": "lunette de précision (D8) snipeur+20% de degat a la première attaque",
+    "description": "",
+    "category": "helmet",
+    "rarity": "rare",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 1000,
+    "buy_price": 1200,
+    "icon": null,
+    "stat_bonuses": {
+      "attack": 10,
+      "crit_chance": 10,
+      "crit_damage": 10,
+      "dodge": 5
+    },
+    "equipment_slot": "casque",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]
