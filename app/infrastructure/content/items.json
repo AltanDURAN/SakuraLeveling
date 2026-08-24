@@ -559,7 +559,8 @@
     "stat_bonuses": {
       "max_hp": 5,
       "attack": 2,
-      "crit_damage": 10
+      "crit_damage": 10,
+      "mana_max": 50
     },
     "equipment_slot": "casque",
     "requires_two_hands": false,
