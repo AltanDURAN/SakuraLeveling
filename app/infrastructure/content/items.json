@@ -421,7 +421,7 @@
   {
     "code": "robe",
     "name": "robe",
-    "description": "(D3)(D6)\r\n+30 mana",
+    "description": "(D3)(D6)",
     "category": "chest",
     "rarity": "common",
     "stackable": true,
@@ -433,7 +433,8 @@
       "max_hp": 7,
       "speed": -1,
       "crit_chance": 5,
-      "crit_damage": 10
+      "crit_damage": 10,
+      "mana_max": 30
     },
     "equipment_slot": "plastron",
     "requires_two_hands": false,
