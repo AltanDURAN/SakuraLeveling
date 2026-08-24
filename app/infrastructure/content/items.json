@@ -649,7 +649,7 @@
   {
     "code": "baton_de_sorcier",
     "name": "Baton de sorcier",
-    "description": "(D6)\r\ncraft : boi ,drop du chaman\r\nniv3-5\r\n+50mana",
+    "description": "(D6)\r\ncraft : boi ,drop du chaman\r\nniv3-5",
     "category": "weapon",
     "rarity": "common",
     "stackable": true,
@@ -660,7 +660,8 @@
     "stat_bonuses": {
       "max_hp": 5,
       "attack": 6,
-      "speed": -1
+      "speed": -1,
+      "mana_max": 50
     },
     "equipment_slot": "main_droite",
     "requires_two_hands": false,
