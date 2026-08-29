@@ -48,6 +48,15 @@ def migrate_items_json(write: bool) -> Counter:
 
 def migrate_database(write: bool) -> dict:
     """Convertit les items en base et rend l'équipement porté à l'inventaire."""
+    # Enregistre TOUS les modèles avant d'ouvrir une session : sans ça,
+    # SQLAlchemy ne résout pas les clés étrangères (NoReferencedTableError)
+    # quand le script tourne seul, hors du bot ou de la webapp.
+    import importlib
+    import pkgutil
+
+    import app.infrastructure.db.models as _models_pkg
+    for _m in pkgutil.iter_modules(_models_pkg.__path__):
+        importlib.import_module(f"{_models_pkg.__name__}.{_m.name}")
     from sqlalchemy import delete, select
 
     from app.infrastructure.db.models.equipment_model import PlayerEquipmentItemModel
