@@ -118,7 +118,7 @@
     "code": "dagues_jumelles",
     "name": "Dagues jumelles",
     "description": "Une paire de dagues gobelines bien affutées.",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "rare",
     "stackable": false,
     "max_stack": null,
@@ -129,7 +129,7 @@
       "attack": 10,
       "crit_damage": 20
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": true,
     "family": ""
   },
@@ -137,7 +137,7 @@
     "code": "cape_silencieuse",
     "name": "Cape silencieuse",
     "description": "Annule la première attaque subie.",
-    "category": "cape",
+    "category": "accessoire",
     "rarity": "epic",
     "stackable": false,
     "max_stack": null,
@@ -149,7 +149,7 @@
       "crit_chance": 5,
       "crit_damage": 10
     },
-    "equipment_slot": "cape",
+    "equipment_slot": "accessoire",
     "requires_two_hands": false,
     "family": ""
   },
@@ -221,7 +221,7 @@
     "code": "p_simple",
     "name": "épé simple",
     "description": "(D4)",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -233,7 +233,7 @@
       "attack": 5,
       "speed": -1
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -241,7 +241,7 @@
     "code": "dague_simple",
     "name": "Dague simple",
     "description": "(D3)",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -254,7 +254,7 @@
       "crit_chance": 15,
       "crit_damage": 5
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -262,7 +262,7 @@
     "code": "bouclier_simple",
     "name": "Bouclier simple",
     "description": "(D2)",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -274,7 +274,7 @@
       "attack": -4,
       "defense": 2
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -282,7 +282,7 @@
     "code": "baton_simple",
     "name": "Baton simple",
     "description": "(D1)",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -294,7 +294,7 @@
       "attack": 3,
       "speed": 1
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -302,7 +302,7 @@
     "code": "chapeau",
     "name": "chapeau",
     "description": "(D4",
-    "category": "helmet",
+    "category": "tete",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -314,7 +314,7 @@
       "attack": 2,
       "crit_damage": -20
     },
-    "equipment_slot": "casque",
+    "equipment_slot": "tete",
     "requires_two_hands": false,
     "family": ""
   },
@@ -322,7 +322,7 @@
     "code": "capuche",
     "name": "capuche",
     "description": "(D4) (D6)\r\n+20 de mana aussi",
-    "category": "helmet",
+    "category": "tete",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -334,15 +334,15 @@
       "speed": -1,
       "crit_chance": 5
     },
-    "equipment_slot": "casque",
+    "equipment_slot": "tete",
     "requires_two_hands": false,
     "family": ""
   },
   {
     "code": "casque",
-    "name": "Casque (D2)",
-    "description": "",
-    "category": "helmet",
+    "name": "Casque",
+    "description": "(D2)",
+    "category": "tete",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -353,7 +353,7 @@
       "max_hp": 5,
       "defense": 2
     },
-    "equipment_slot": "casque",
+    "equipment_slot": "tete",
     "requires_two_hands": false,
     "family": ""
   },
@@ -361,7 +361,7 @@
     "code": "bandana",
     "name": "bandana",
     "description": "(D1)",
-    "category": "helmet",
+    "category": "tete",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -372,7 +372,7 @@
       "attack": 1,
       "speed": 1
     },
-    "equipment_slot": "casque",
+    "equipment_slot": "tete",
     "requires_two_hands": false,
     "family": ""
   },
@@ -380,7 +380,7 @@
     "code": "tenu_d_aventurier",
     "name": "tenu d'aventurier",
     "description": "(D4)",
-    "category": "chest",
+    "category": "corps",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -393,7 +393,7 @@
       "defense": 2,
       "speed": -1
     },
-    "equipment_slot": "plastron",
+    "equipment_slot": "corps",
     "requires_two_hands": false,
     "family": ""
   },
@@ -401,7 +401,7 @@
     "code": "armure_de_garde",
     "name": "armure de garde",
     "description": "(D2)",
-    "category": "chest",
+    "category": "corps",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -414,15 +414,15 @@
       "speed": -1,
       "crit_damage": -20
     },
-    "equipment_slot": "plastron",
+    "equipment_slot": "corps",
     "requires_two_hands": false,
     "family": ""
   },
   {
     "code": "robe",
     "name": "robe",
-    "description": "(D3)(D6)",
-    "category": "chest",
+    "description": "(D3)(D6)\r\n+30 mana",
+    "category": "corps",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -433,10 +433,9 @@
       "max_hp": 7,
       "speed": -1,
       "crit_chance": 5,
-      "crit_damage": 10,
-      "mana_max": 30
+      "crit_damage": 10
     },
-    "equipment_slot": "plastron",
+    "equipment_slot": "corps",
     "requires_two_hands": false,
     "family": ""
   },
@@ -444,7 +443,7 @@
     "code": "v_tement_vagabon",
     "name": "Vétement vagabon",
     "description": "(D1) (D3)",
-    "category": "chest",
+    "category": "corps",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -457,7 +456,7 @@
       "crit_chance": 15,
       "dodge": 2
     },
-    "equipment_slot": "plastron",
+    "equipment_slot": "corps",
     "requires_two_hands": false,
     "family": ""
   },
@@ -465,7 +464,7 @@
     "code": "tenu_d_aventurier_niv_goblin",
     "name": "Tenu d'aventurier niv goblin",
     "description": "(D4)(D5)  \r\ncraft : tissu ,fourure et dent de goblin\r\néquipement de niv 3-5",
-    "category": "chest",
+    "category": "corps",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -478,7 +477,7 @@
       "defense": 2,
       "speed": -1
     },
-    "equipment_slot": "plastron",
+    "equipment_slot": "corps",
     "requires_two_hands": false,
     "family": ""
   },
@@ -486,7 +485,7 @@
     "code": "armure_a_suspention_visceuse",
     "name": "armure a suspention visceuse",
     "description": "(D2)\r\ncraft: fer beaucoup ,gelé de slime beaucoup\r\nniv 3-5",
-    "category": "chest",
+    "category": "corps",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -498,7 +497,7 @@
       "defense": 3,
       "hp_regeneration": 5
     },
-    "equipment_slot": "plastron",
+    "equipment_slot": "corps",
     "requires_two_hands": false,
     "family": ""
   },
@@ -506,7 +505,7 @@
     "code": "tenu_de_mercen_re",
     "name": "tenu de mercenère",
     "description": "(D3)(D8)\r\ncraft: tissu ,fourures ,griff de goblin\r\nniv 5-8",
-    "category": "chest",
+    "category": "corps",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -521,7 +520,7 @@
       "crit_damage": 25,
       "dodge": 5
     },
-    "equipment_slot": "plastron",
+    "equipment_slot": "corps",
     "requires_two_hands": false,
     "family": ""
   },
@@ -529,7 +528,7 @@
     "code": "tenu_d_aprentie",
     "name": "tenu d'aprentie",
     "description": "(D6)(D5)\r\ncraft :fourure ,tissu et (un drop du goblin chaman \r\nNiv 5-8\r\n+100pt de mana",
-    "category": "chest",
+    "category": "corps",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -542,7 +541,7 @@
       "defense": 1,
       "crit_damage": 5
     },
-    "equipment_slot": "plastron",
+    "equipment_slot": "corps",
     "requires_two_hands": false,
     "family": ""
   },
@@ -550,7 +549,7 @@
     "code": "chapeau_de_sorcier",
     "name": "chapeau de sorcier",
     "description": "(D6)\r\ncraft :tissu + drop du chaman goblin\r\nniv 3-5\r\n+50man",
-    "category": "helmet",
+    "category": "tete",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -560,10 +559,9 @@
     "stat_bonuses": {
       "max_hp": 5,
       "attack": 2,
-      "crit_damage": 10,
-      "mana_max": 50
+      "crit_damage": 10
     },
-    "equipment_slot": "casque",
+    "equipment_slot": "tete",
     "requires_two_hands": false,
     "family": ""
   },
@@ -571,7 +569,7 @@
     "code": "masque_de_camouflage",
     "name": "masque de camouflage",
     "description": "(D3)\r\ncraft ,tissu ,gelé de slime ,fourure\r\nniv 3-5",
-    "category": "helmet",
+    "category": "tete",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -584,7 +582,7 @@
       "crit_chance": 15,
       "crit_damage": 15
     },
-    "equipment_slot": "casque",
+    "equipment_slot": "tete",
     "requires_two_hands": false,
     "family": ""
   },
@@ -592,7 +590,7 @@
     "code": "home_blind",
     "name": "Home blindé",
     "description": "(D2)\r\ncraft : fer, fourure ,gelé de slime\r\nniv 5-8",
-    "category": "helmet",
+    "category": "tete",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -604,7 +602,7 @@
       "defense": 3,
       "hp_regeneration": 5
     },
-    "equipment_slot": "casque",
+    "equipment_slot": "tete",
     "requires_two_hands": false,
     "family": ""
   },
@@ -612,7 +610,7 @@
     "code": "casque_piquant",
     "name": "Casque piquant",
     "description": "(D4)(D5)\r\ncraft: grife de goblin ,fer\r\nNiv 5-8",
-    "category": "helmet",
+    "category": "tete",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -624,7 +622,7 @@
       "attack": 5,
       "defense": 1
     },
-    "equipment_slot": "casque",
+    "equipment_slot": "tete",
     "requires_two_hands": false,
     "family": ""
   },
@@ -632,7 +630,7 @@
     "code": "masse",
     "name": "masse",
     "description": "(D5)\r\ncraft :fer, grif de goblin, dent de goblin\r\nniv 3-5",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -644,15 +642,15 @@
       "defense": 1,
       "speed": -2
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
   {
     "code": "baton_de_sorcier",
     "name": "Baton de sorcier",
-    "description": "(D6)\r\ncraft : boi ,drop du chaman\r\nniv3-5",
-    "category": "weapon",
+    "description": "(D6)\r\ncraft : boi ,drop du chaman\r\nniv3-5\r\n+50mana",
+    "category": "arme",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -662,10 +660,9 @@
     "stat_bonuses": {
       "max_hp": 5,
       "attack": 6,
-      "speed": -1,
-      "mana_max": 50
+      "speed": -1
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -673,7 +670,7 @@
     "code": "p_d_scrime",
     "name": "épé d'éscrime",
     "description": "(D1)\r\ncraft bois ,fer, gelé de slime\r\nniv 5-8",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -686,7 +683,7 @@
       "speed": 3,
       "dodge": 10
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -694,7 +691,7 @@
     "code": "arc",
     "name": "arc",
     "description": "(D8)\r\n(snipeur) ta première ataque inflige +5dégat\r\ncraft: bois tissu ,grifes de goblin, dent de goblin\r\nniv 5-8",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -706,7 +703,7 @@
       "attack": 6,
       "dodge": 5
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -714,7 +711,7 @@
     "code": "sabre",
     "name": "sabre",
     "description": "(D4)\r\ncraft fer ,gelé de slime ,griffe de goblin\r\nniv 5-8",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -726,7 +723,7 @@
       "attack": 10,
       "speed": -1
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -734,7 +731,7 @@
     "code": "hache",
     "name": "hache",
     "description": "(D4)\r\ncraft: fer ,bois ,gelé de slime ,griff de goblin\r\nniv 5-8",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -746,7 +743,7 @@
       "attack": 7,
       "hp_regeneration": 15
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -754,7 +751,7 @@
     "code": "boucli_piquant",
     "name": "bouclié piquant",
     "description": "(D2),(D4)\r\nquand un énémie l'ataque il perd 2pv\r\ncraft: bois ,fer ,dent de goblin ,griffe de goblin\r\nniv 5-10",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -767,7 +764,7 @@
       "defense": 2,
       "hp_regeneration": 5
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -775,7 +772,7 @@
     "code": "faux",
     "name": "Faux",
     "description": "(D3)\r\ncraft :fer ,boi ,griffe de goblin \r\nniv 5-10",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "common",
     "stackable": true,
     "max_stack": null,
@@ -788,7 +785,7 @@
       "crit_chance": 35,
       "crit_damage": 25
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -812,7 +809,7 @@
     "code": "brassard_de_cuir",
     "name": "Brassard de cuir",
     "description": "",
-    "category": "bracelet",
+    "category": "accessoire",
     "rarity": "uncommon",
     "stackable": false,
     "max_stack": null,
@@ -823,7 +820,7 @@
       "defense": 3,
       "speed": 1
     },
-    "equipment_slot": "bracelet",
+    "equipment_slot": "accessoire",
     "requires_two_hands": false,
     "family": ""
   },
@@ -831,7 +828,7 @@
     "code": "baton_a_crane",
     "name": "Bâton à crâne",
     "description": "",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "rare",
     "stackable": false,
     "max_stack": null,
@@ -842,7 +839,7 @@
       "attack": 9,
       "mana_max": 20
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -850,7 +847,7 @@
     "code": "fetiche_d_os",
     "name": "Fétiche d'os",
     "description": "",
-    "category": "necklace",
+    "category": "accessoire",
     "rarity": "uncommon",
     "stackable": false,
     "max_stack": null,
@@ -861,7 +858,7 @@
       "crit_chance": 3,
       "mana_max": 10
     },
-    "equipment_slot": "collier",
+    "equipment_slot": "accessoire",
     "requires_two_hands": false,
     "family": ""
   },
@@ -885,7 +882,7 @@
     "code": "gourdin_de_tronc",
     "name": "Gourdin de tronc",
     "description": "",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "rare",
     "stackable": false,
     "max_stack": null,
@@ -896,7 +893,7 @@
       "attack": 14,
       "speed": -2
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -904,7 +901,7 @@
     "code": "ceinturon_epais",
     "name": "Ceinturon épais",
     "description": "",
-    "category": "belt",
+    "category": "accessoire",
     "rarity": "uncommon",
     "stackable": false,
     "max_stack": null,
@@ -915,7 +912,7 @@
       "max_hp": 25,
       "defense": 2
     },
-    "equipment_slot": "ceinture",
+    "equipment_slot": "accessoire",
     "requires_two_hands": false,
     "family": ""
   },
@@ -955,7 +952,7 @@
     "code": "collier_de_perles",
     "name": "Collier de perles",
     "description": "",
-    "category": "necklace",
+    "category": "accessoire",
     "rarity": "uncommon",
     "stackable": false,
     "max_stack": null,
@@ -966,7 +963,7 @@
       "mana_max": 25,
       "mana_regeneration": 2
     },
-    "equipment_slot": "collier",
+    "equipment_slot": "accessoire",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1022,7 +1019,7 @@
     "code": "masse_cloutee",
     "name": "Masse cloutée",
     "description": "",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "epic",
     "stackable": false,
     "max_stack": null,
@@ -1034,7 +1031,7 @@
       "crit_damage": 15,
       "speed": -3
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1042,7 +1039,7 @@
     "code": "plaque_a_pointes",
     "name": "Plaque à pointes",
     "description": "",
-    "category": "chest",
+    "category": "corps",
     "rarity": "rare",
     "stackable": false,
     "max_stack": null,
@@ -1053,7 +1050,7 @@
       "defense": 12,
       "max_hp": 40
     },
-    "equipment_slot": "plastron",
+    "equipment_slot": "corps",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1061,7 +1058,7 @@
     "code": "casque_a_cornes",
     "name": "Casque à cornes",
     "description": "",
-    "category": "helmet",
+    "category": "tete",
     "rarity": "rare",
     "stackable": false,
     "max_stack": null,
@@ -1073,7 +1070,7 @@
       "max_hp": 25,
       "crit_damage": 5
     },
-    "equipment_slot": "casque",
+    "equipment_slot": "tete",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1097,7 +1094,7 @@
     "code": "dague_rouillee",
     "name": "Dague rouillée",
     "description": "",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "uncommon",
     "stackable": false,
     "max_stack": null,
@@ -1108,7 +1105,7 @@
       "attack": 6,
       "crit_chance": 2
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1180,7 +1177,7 @@
     "code": "chaine_spectrale",
     "name": "Chaîne spectrale",
     "description": "",
-    "category": "belt",
+    "category": "accessoire",
     "rarity": "rare",
     "stackable": false,
     "max_stack": null,
@@ -1192,7 +1189,7 @@
       "max_hp": 35,
       "dodge": 2
     },
-    "equipment_slot": "ceinture",
+    "equipment_slot": "accessoire",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1200,7 +1197,7 @@
     "code": "voile_ectoplasmique",
     "name": "Voile ectoplasmique",
     "description": "",
-    "category": "cape",
+    "category": "accessoire",
     "rarity": "rare",
     "stackable": false,
     "max_stack": null,
@@ -1211,7 +1208,7 @@
       "dodge": 6,
       "speed": 3
     },
-    "equipment_slot": "cape",
+    "equipment_slot": "accessoire",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1219,7 +1216,7 @@
     "code": "boulet_hante",
     "name": "Boulet hanté",
     "description": "",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "rare",
     "stackable": false,
     "max_stack": null,
@@ -1231,7 +1228,7 @@
       "speed": -4,
       "max_hp": 20
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1271,7 +1268,7 @@
     "code": "griffe_noircie",
     "name": "Griffe noircie",
     "description": "",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "uncommon",
     "stackable": false,
     "max_stack": null,
@@ -1282,7 +1279,7 @@
       "attack": 7,
       "crit_chance": 4
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1306,7 +1303,7 @@
     "code": "aile_de_pierre",
     "name": "Aile de pierre",
     "description": "",
-    "category": "cape",
+    "category": "accessoire",
     "rarity": "rare",
     "stackable": false,
     "max_stack": null,
@@ -1318,7 +1315,7 @@
       "max_hp": 30,
       "speed": -1
     },
-    "equipment_slot": "cape",
+    "equipment_slot": "accessoire",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1342,7 +1339,7 @@
     "code": "couronne_ternie",
     "name": "Couronne ternie",
     "description": "",
-    "category": "helmet",
+    "category": "tete",
     "rarity": "epic",
     "stackable": false,
     "max_stack": null,
@@ -1354,7 +1351,7 @@
       "mana_max": 40,
       "crit_damage": 12
     },
-    "equipment_slot": "casque",
+    "equipment_slot": "tete",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1362,7 +1359,7 @@
     "code": "orbe_maudit",
     "name": "Orbe maudit",
     "description": "",
-    "category": "shield",
+    "category": "bouclier",
     "rarity": "epic",
     "stackable": false,
     "max_stack": null,
@@ -1374,7 +1371,7 @@
       "mana_regeneration": 3,
       "crit_damage": 15
     },
-    "equipment_slot": "main_gauche",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1382,7 +1379,7 @@
     "code": "grimoire_en_lambeaux",
     "name": "Grimoire en lambeaux",
     "description": "",
-    "category": "shield",
+    "category": "bouclier",
     "rarity": "rare",
     "stackable": false,
     "max_stack": null,
@@ -1393,7 +1390,7 @@
       "mana_max": 30,
       "mana_regeneration": 2
     },
-    "equipment_slot": "main_gauche",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1401,7 +1398,7 @@
     "code": "couronne_d_epines",
     "name": "Couronne d'épines",
     "description": "",
-    "category": "helmet",
+    "category": "tete",
     "rarity": "epic",
     "stackable": false,
     "max_stack": null,
@@ -1413,7 +1410,7 @@
       "crit_damage": 18,
       "max_hp": -10
     },
-    "equipment_slot": "casque",
+    "equipment_slot": "tete",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1469,7 +1466,7 @@
     "code": "trident_ebreche",
     "name": "Trident ébréché",
     "description": "",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "uncommon",
     "stackable": false,
     "max_stack": null,
@@ -1480,7 +1477,7 @@
       "attack": 8,
       "speed": 1
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1536,7 +1533,7 @@
     "code": "lame_infernale",
     "name": "Lame infernale",
     "description": "",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "rare",
     "stackable": false,
     "max_stack": null,
@@ -1547,7 +1544,7 @@
       "attack": 15,
       "crit_damage": 12
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1555,7 +1552,7 @@
     "code": "ceinturon_cloute",
     "name": "Ceinturon clouté",
     "description": "",
-    "category": "belt",
+    "category": "accessoire",
     "rarity": "rare",
     "stackable": false,
     "max_stack": null,
@@ -1567,7 +1564,7 @@
       "max_hp": 30,
       "crit_chance": 2
     },
-    "equipment_slot": "ceinture",
+    "equipment_slot": "accessoire",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1575,7 +1572,7 @@
     "code": "espadon_dentele",
     "name": "Espadon denté",
     "description": "",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "epic",
     "stackable": false,
     "max_stack": null,
@@ -1587,7 +1584,7 @@
       "crit_damage": 20,
       "defense": -4
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1595,7 +1592,7 @@
     "code": "plaque_rouillee",
     "name": "Plaque rouillée",
     "description": "",
-    "category": "chest",
+    "category": "corps",
     "rarity": "rare",
     "stackable": false,
     "max_stack": null,
@@ -1607,7 +1604,7 @@
       "max_hp": 45,
       "speed": -2
     },
-    "equipment_slot": "plastron",
+    "equipment_slot": "corps",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1631,7 +1628,7 @@
     "code": "collier_a_pointes",
     "name": "Collier à pointes",
     "description": "",
-    "category": "necklace",
+    "category": "accessoire",
     "rarity": "rare",
     "stackable": false,
     "max_stack": null,
@@ -1642,7 +1639,7 @@
       "attack": 6,
       "defense": 5
     },
-    "equipment_slot": "collier",
+    "equipment_slot": "accessoire",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1650,7 +1647,7 @@
     "code": "chaine_de_l_abime",
     "name": "Chaîne de l'abîme",
     "description": "",
-    "category": "belt",
+    "category": "accessoire",
     "rarity": "rare",
     "stackable": false,
     "max_stack": null,
@@ -1661,7 +1658,7 @@
       "max_hp": 50,
       "defense": 6
     },
-    "equipment_slot": "ceinture",
+    "equipment_slot": "accessoire",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1685,7 +1682,7 @@
     "code": "aile_de_cuir",
     "name": "Aile de cuir",
     "description": "",
-    "category": "cape",
+    "category": "accessoire",
     "rarity": "rare",
     "stackable": false,
     "max_stack": null,
@@ -1696,7 +1693,7 @@
       "speed": 5,
       "dodge": 4
     },
-    "equipment_slot": "cape",
+    "equipment_slot": "accessoire",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1720,7 +1717,7 @@
     "code": "corset_de_soie_noire",
     "name": "Corset de soie noire",
     "description": "",
-    "category": "chest",
+    "category": "corps",
     "rarity": "epic",
     "stackable": false,
     "max_stack": null,
@@ -1732,7 +1729,7 @@
       "speed": 4,
       "crit_chance": 5
     },
-    "equipment_slot": "plastron",
+    "equipment_slot": "corps",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1756,7 +1753,7 @@
     "code": "couronne_dechue",
     "name": "Couronne déchue",
     "description": "",
-    "category": "helmet",
+    "category": "tete",
     "rarity": "legendary",
     "stackable": false,
     "max_stack": null,
@@ -1769,7 +1766,7 @@
       "mana_max": 40,
       "crit_damage": 15
     },
-    "equipment_slot": "casque",
+    "equipment_slot": "tete",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1809,7 +1806,7 @@
     "code": "lame_des_enfers",
     "name": "Lame des enfers",
     "description": "",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "legendary",
     "stackable": false,
     "max_stack": null,
@@ -1821,7 +1818,7 @@
       "crit_chance": 6,
       "crit_damage": 25
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1829,7 +1826,7 @@
     "code": "sceau_de_corruption",
     "name": "Sceau de corruption",
     "description": "",
-    "category": "ring",
+    "category": "accessoire",
     "rarity": "legendary",
     "stackable": false,
     "max_stack": null,
@@ -1841,7 +1838,7 @@
       "max_hp": 60,
       "crit_damage": 20
     },
-    "equipment_slot": "bague",
+    "equipment_slot": "accessoire",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1849,7 +1846,7 @@
     "code": "katana",
     "name": "katana (D7)",
     "description": "",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "rare",
     "stackable": true,
     "max_stack": null,
@@ -1861,7 +1858,7 @@
       "crit_chance": 10,
       "crit_damage": 10
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1869,7 +1866,7 @@
     "code": "grife_nergis_e_d6_energis_e_10_du_mana_en_attaque",
     "name": "grife énergisée (D6) energisée (+10% du mana en attaque)",
     "description": "",
-    "category": "weapon",
+    "category": "arme",
     "rarity": "rare",
     "stackable": true,
     "max_stack": null,
@@ -1880,7 +1877,7 @@
       "attack": 20,
       "mana_max": 100
     },
-    "equipment_slot": "main_droite",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1888,7 +1885,7 @@
     "code": "armure_de_m_tal_sup_rieur_d4",
     "name": "armure de métal supérieur (D2)",
     "description": "",
-    "category": "chest",
+    "category": "corps",
     "rarity": "rare",
     "stackable": true,
     "max_stack": null,
@@ -1901,7 +1898,7 @@
       "defense": 15,
       "hp_regeneration": 10
     },
-    "equipment_slot": "plastron",
+    "equipment_slot": "corps",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1909,7 +1906,7 @@
     "code": "exo_squelette_exp_rimental_d5_d4",
     "name": "exo squelette expérimental (D5)(D4)",
     "description": "",
-    "category": "chest",
+    "category": "corps",
     "rarity": "rare",
     "stackable": true,
     "max_stack": null,
@@ -1922,7 +1919,7 @@
       "defense": 5,
       "speed": -1
     },
-    "equipment_slot": "plastron",
+    "equipment_slot": "corps",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1930,7 +1927,7 @@
     "code": "casque_infligeur",
     "name": "casque infligeur",
     "description": "",
-    "category": "helmet",
+    "category": "tete",
     "rarity": "rare",
     "stackable": true,
     "max_stack": null,
@@ -1943,7 +1940,7 @@
       "crit_chance": 20,
       "mana_max": 25
     },
-    "equipment_slot": "casque",
+    "equipment_slot": "tete",
     "requires_two_hands": false,
     "family": ""
   },
@@ -1951,7 +1948,7 @@
     "code": "lunette_de_pr_cision_d8_snipeur_20_de_degat_a_la_premi_re_attaque",
     "name": "lunette de précision (D8) snipeur+20% de degat a la première attaque",
     "description": "",
-    "category": "helmet",
+    "category": "tete",
     "rarity": "rare",
     "stackable": true,
     "max_stack": null,
@@ -1964,7 +1961,7 @@
       "crit_damage": 10,
       "dodge": 5
     },
-    "equipment_slot": "casque",
+    "equipment_slot": "tete",
     "requires_two_hands": false,
     "family": ""
   }

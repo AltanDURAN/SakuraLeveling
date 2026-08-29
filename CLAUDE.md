@@ -177,36 +177,36 @@ Pour un nouveau cog : commandes joueur → hériter du mixin. Admin → groupe d
 
 ## Système d'équipement et de craft
 
-- **12 slots** définis dans `EquipmentSlot` (`app/shared/enums.py`) :
-  - **Principaux** : `casque`, `plastron`, `jambieres`, `bottes`, `main_droite`, `main_gauche` (constante `PRIMARY_SLOTS`)
-  - **Secondaires** : `collier`, `bracelet`, `bague`, `ceinture`, `cape`, `boucle_oreille` (constante `SECONDARY_SLOTS`)
+- **7 emplacements** définis dans `EquipmentSlot` (`app/shared/enums.py`) — système SIMPLIFIÉ (août 2026, remplace les 12 slots d'avant) :
+  - `tete` ×1 · `corps` ×1 · `accessoire_1/2/3` (constante `ACCESSORY_SLOTS`) · `arme_1`, `arme_2` (constante `WEAPON_SLOTS`)
+  - **Plus de main droite / main gauche** : armes ET boucliers partagent les deux emplacements d'arme.
+- **Deux notions distinctes, à ne pas confondre** :
+  - `EquipmentSlot` = l'emplacement PHYSIQUE où une pièce est portée (`accessoire_2`, `arme_1`…) — c'est ce qui est stocké dans `player_equipment.slot` ;
+  - `ItemSlotType` = ce qu'un ITEM déclare (`tete`, `corps`, `accessoire`, `arme`) — stocké dans `item_definitions.equipment_slot`. Le mapping vit dans `SLOTS_FOR_ITEM_TYPE`.
 - **Item fields** (sur `ItemDefinition`) :
-  - `equipment_slot: str | None` — slot canonique où l'item s'équipe ; `None` = item non équipable (ressource).
-  - `requires_two_hands: bool` — vrai pour les armes 2-mains qui occupent main_droite ET main_gauche.
-  - `family: str` — famille de panoplie ("iron", "slime", "gobelin", "leather", "linen"). Vide = item hors panoplie. Sert au calcul des bonus de set.
-- **Convention armes 1-main** : `equipment_slot="main_droite"` ; le `EquipItemUseCase` accepte aussi `main_gauche` pour l'ambidextrie. Refuse de placer la même instance dans les deux mains (besoin de 2 exemplaires distincts).
-- **Convention armes 2-mains** : stockées en `main_droite` en DB, mais `OFF_HAND` est verrouillée tant qu'une 2-mains est portée. Équiper en `main_gauche` déséquipe la 2-mains.
-- **Anti-power-creep** : on ne gagne pas de stats au craft, uniquement à l'équipement (libre de changer). Bonus de stats des items volontairement modestes.
+  - `equipment_slot: str | None` — le TYPE d'emplacement, jamais un emplacement numéroté ; `None` = non équipable (ressource, consommable).
+  - `requires_two_hands: bool` — la pièce occupe `arme_1` ET verrouille `arme_2`.
+  - `family: str` — famille de panoplie. Vide = hors panoplie.
+- **Règle des mains** : une pièce 1 main occupe UN emplacement, on peut donc en porter deux (deux armes, deux boucliers, ou un de chaque). Une pièce 2 mains les occupe toutes les deux. Porter deux fois le même item exige **deux exemplaires** en inventaire.
+- **Placement automatique** : le joueur ne choisit pas d'emplacement. `EquipItemUseCase` pose la pièce dans le premier emplacement LIBRE de son type, et à défaut remplace le premier.
+- **Catégories d'items** (`ItemCategory`, simplifiées de 13 → 7) : `resource`, `consumable`, `arme`, `bouclier`, `tete`, `corps`, `accessoire`. Tables `LEGACY_CATEGORY_MAP` / `LEGACY_SLOT_MAP` conservées pour la migration du contenu ancien.
+- **Anti-power-creep** : on ne gagne pas de stats au craft, uniquement à l'équipement. Bonus de stats volontairement modestes.
 - **Commandes** :
-  - `/craft_list` : recettes d'équipement / accessoires (hors armes)
-  - `/forge_list` : recettes d'armes / boucliers
-  - `/craft <recipe>` : fabrique un équipement (refuse les armes)
-  - `/forge <recipe>` : forge une arme (refuse les autres)
-  - `/equip <item> [slot]` : `slot` optionnel, défaut = slot canonique de l'item
-  - `/equipement [target]` : 3 pages **rendues en image PNG** (Pillow) — Principaux (3×2 grid de cards), Secondaires (idem), Résumé (stats totales apportées par l'équipement + bonus de panoplies actifs avec progression). Cf. [`equipment_image.py`](app/bot/rendering/equipment_image.py). Slot vide → marqueur "VIDE", item sans image dans `assets/items/<code>.png` → placeholder avec emoji du slot, slot off_hand verrouillé par 2-mains → "🔒 ARME À 2 MAINS".
+  - `/recettes` : recettes d'équipement / accessoires (hors armes) · `/recettes_forge` : armes et boucliers
+  - `/fabriquer <recipe>` / `/forger <recipe>`
+  - `/equiper <item>` : plus de paramètre de slot — le placement est automatique
+  - `/equipement [target]` : **2 pages** en image PNG (Pillow) — les 7 emplacements en grille 4×2, puis le résumé des stats + panoplies actives. Cf. [`equipment_image.py`](app/bot/rendering/equipment_image.py). Emplacement vide → "VIDE", `arme_2` verrouillée par une 2-mains → "🔒 ARME À 2 MAINS".
 
 ## Système de panoplies (set bonuses)
 
-- **Définitions** : [`sets.json`](app/infrastructure/content/sets.json) — 5 familles avec 4 paliers (2/4/8/12 pièces). Chaque famille = un thème (iron=def, leather=dodge, slime=régen, gobelin=crit chance, linen=crit dmg). Bonus du palier le plus haut REMPLACE celui des paliers inférieurs (pas cumulatif).
-- **Catalogue par famille** (16 items distincts pour 12 slots actifs au max) : 4 armures + 6 accessoires + 2 armes légères 1H + 1 arme lourde 2H + 2 boucliers légers 1H + 1 bouclier lourd 2H. Chaque arme/bouclier peut s'équiper en `main_droite` OU `main_gauche` (pas de restriction par catégorie). Une 2-mains occupe main_droite + verrouille main_gauche.
-- **Items lourds** : recette = 3× le coût d'un item léger correspondant. Stats positives ≈ 3× les stats léger + malus négatif équivalent aux stats du contre-type léger (arme lourde a une perte def, bouclier lourd a une perte atk). Stats finales clampées à 0 minimum dans `StatsService.calculate_player_stats` (7e étage).
-- **Migration `277fe14515ad_add_family_to_item_definitions`** : ajoute la colonne `family` sur `item_definitions`. Il faut donc passer `alembic upgrade head` après le déploiement.
-- **Service** : [`SetBonusService.aggregate(equipped_items)`](app/domain/services/set_bonus_service.py) compte les pièces par famille avec ces règles :
-  - Slots non-main : 1 item équipé = 1 point
-  - Slots main_droite/main_gauche : on compte les `item_definition_id` UNIQUES → 2 mêmes armes = 1 point, 2 différentes = 2 points
-  - Une 2-mains (arme ou bouclier) vaut 2 points : 1 pour l'item + 1 pour le slot virtuellement verrouillé
-  Sélectionne le palier max atteint, retourne un `SetBonuses` (flat additif sur défense, dodge, crit_chance, crit_damage, hp_regeneration, attack, speed, max_hp). Garde un `active_sets: list[ActiveSetBonus]` pour l'affichage `/equipement` page 3.
-- **Equip groupé** : [`EquipPanoplieUseCase`](app/application/use_cases/equip_panoplie.py) — `/equip_panoplie <nom> [option]` valide 12/12 pondéré (2-mains = 2), construit un plan slot→item (priorité aux pièces déjà équipées de la bonne famille), déséquipe le hors-famille, équipe la cible. Param `option` (defaut, double_armes, double_boucliers, arme_lourde, bouclier_lourd) sélectionne la config des mains. Si une 2-mains est dans le plan, `main_gauche` reste vide.
+- **Définitions** : [`sets.json`](app/infrastructure/content/sets.json) — chaque famille a **2 paliers : 2 et 4 pièces** (constante `PANOPLIE_TIERS`). Le bonus du palier le plus haut REMPLACE celui du palier inférieur (pas cumulatif).
+- ⚠️ **Seuls 4 emplacements comptent** dans une panoplie : `tete`, `corps`, `arme_1`, `arme_2` (constante `PANOPLIE_SLOTS`). **Les accessoires en sont volontairement exclus** — c'est ce qui fixe le maximum à 4 pièces.
+- **Service** : [`SetBonusService.aggregate(equipped_items)`](app/domain/services/set_bonus_service.py) compte les pièces par famille :
+  - tête / corps : 1 pièce équipée = 1 point ;
+  - emplacements d'arme : on compte les `item_definition_id` UNIQUES → deux fois la même arme = 1 point, deux armes différentes = 2 points ;
+  - une 2-mains vaut 2 points (elle occupe les deux emplacements).
+  Sélectionne le palier max atteint et retourne un `SetBonuses` (flat additif sur defense, dodge, crit_chance, crit_damage, hp_regeneration, attack, speed, max_hp, mana_max, mana_regeneration). Garde `active_sets` pour l'affichage.
+- **Equip groupé** : [`EquipPanoplieUseCase`](app/application/use_cases/equip_panoplie.py) — `/equiper_panoplie <nom>`. **Plus d'option de configuration des mains** : le use case privilégie deux pièces 1 main (4/4), sinon une 2-mains, en conservant les pièces de la bonne famille déjà portées.
 - **Helper** : [`resolve_set_bonuses(equipped_items)`](app/application/services/set_bonus_resolver.py) — wrap simple à appeler partout où on calcule des stats.
 - **Wired dans `StatsService`** : 6e étage (après skill bonuses, après title bonuses, après les caps). Permet aux bonus de set de pousser légèrement au-delà des caps standards. Wired aussi dans tous les call sites : `/profile`, encounter (register + resolve), fight_mob (solo), challenge_player (duel), use_consumable, world_boss, get_player_stats, get_leaderboard, admin_cog (force_hp / heal_full), player_cog (preview /equip).
 - **Pour ajouter une nouvelle panoplie** : ajouter une entrée dans `sets.json` + tagger les items concernés avec leur `family` dans `items.json`. Pas de code à toucher.

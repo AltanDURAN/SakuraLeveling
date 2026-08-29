@@ -18,11 +18,13 @@ class ItemDefinition:
     stat_bonuses: dict | None
     created_at: datetime
     updated_at: datetime
-    # Slot principal où l'item peut être équipé (None = non équipable).
-    # Pour les armes 1-main, ce slot est le défaut mais on peut équiper en
-    # OFF_HAND aussi (ambidextrie gérée dans EquipItemUseCase).
+    # TYPE d'emplacement de l'item — `tete`, `corps`, `accessoire` ou `arme`
+    # (cf. `ItemSlotType`), et non un emplacement précis : c'est
+    # `EquipItemUseCase` qui choisit `accessoire_2` ou `arme_1` à la pose.
+    # None = objet non équipable (ressource, consommable).
     equipment_slot: str | None = None
-    # Vrai pour les armes à 2 mains qui occupent MAIN_HAND + OFF_HAND.
+    # Vrai pour les armes/boucliers à 2 mains : ils occupent `arme_1` ET
+    # verrouillent `arme_2`.
     requires_two_hands: bool = False
     # Famille / panoplie de l'item (ex : "iron", "slime", "gobelin"). Vide
     # pour les items hors panoplie. Sert à calculer les bonus de set

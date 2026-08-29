@@ -28,6 +28,7 @@ from app.infrastructure.db.repositories.element_essence_repository import (
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
+from app.shared.enums import SLOTS_FOR_ITEM_TYPE
 from app.infrastructure.db.repositories.player_career_stats_repository import (
     PlayerCareerStatsRepository,
 )
@@ -444,10 +445,18 @@ async def eq_equip(player_id: int, request: Request, user: AdminUser = Depends(r
     code = str(form.get("item_code", "")).strip()
     with get_db_session() as session:
         item = ItemRepository(session).get_by_code(code)
-        # Slot = slot canonique de l'item (connu). Les armes 1-main vont en
-        # main_droite par défaut.
+        # L'item déclare un TYPE d'emplacement ("arme", "accessoire"…), pas un
+        # emplacement précis : on résout vers le premier emplacement LIBRE de
+        # ce type (sinon on écrirait "arme" dans la colonne slot).
         if item and item.equipment_slot:
-            EquipmentRepository(session).equip_item(player_id, item.id, item.equipment_slot)
+            repo = EquipmentRepository(session)
+            allowed = SLOTS_FOR_ITEM_TYPE.get(item.equipment_slot, [])
+            target = next(
+                (s.value for s in allowed if repo.get_slot(player_id, s.value) is None),
+                allowed[0].value if allowed else None,
+            )
+            if target:
+                repo.equip_item(player_id, item.id, target)
     return _redir(player_id, "equipment")
 
 

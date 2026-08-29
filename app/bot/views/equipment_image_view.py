@@ -1,8 +1,7 @@
-"""Vue paginée 3 pages pour /equipement, basée sur des images Pillow.
+"""Vue paginée 2 pages pour /equipement, basée sur des images Pillow.
 
-Page 1 : grille des 6 slots principaux (casque, plastron, …).
-Page 2 : grille des 6 slots secondaires (collier, bracelet, …).
-Page 3 : résumé des stats accumulées + bonus de panoplies actifs.
+Page 1 : grille des 7 emplacements (tête, corps, armes ×2, accessoires ×3).
+Page 2 : résumé des stats accumulées + bonus de panoplies actifs.
 
 Chaque page est rendue à la volée à la demande, écrite sur disque dans
 `assets/generated_equipment/`, puis attachée au message Discord.
@@ -34,7 +33,7 @@ def _render_page(
     filename = f"equipment_{player_id}_p{page_index + 1}.png"
     out = GENERATED_EQUIPMENT_DIR / filename
 
-    if page_index in (0, 1):
+    if page_index == 0:
         compose_equipment_grid_page(
             str(out),
             player_name=player_name,
@@ -55,7 +54,7 @@ def _render_page(
 
 
 class EquipmentImageView(discord.ui.View):
-    PAGE_LABELS = ["Principaux", "Secondaires", "Résumé"]
+    PAGE_LABELS = ["Équipement", "Résumé"]
 
     def __init__(
         self,
@@ -80,7 +79,7 @@ class EquipmentImageView(discord.ui.View):
         self.previous_button.disabled = self.page_index == 0
         self.next_button.disabled = self.page_index >= len(self.PAGE_LABELS) - 1
         self.indicator.label = (
-            f"{self.PAGE_LABELS[self.page_index]} ({self.page_index + 1}/3)"
+            f"{self.PAGE_LABELS[self.page_index]} ({self.page_index + 1}/{len(self.PAGE_LABELS)})"
         )
 
     def render_current_page(self) -> tuple[discord.Embed, discord.File]:

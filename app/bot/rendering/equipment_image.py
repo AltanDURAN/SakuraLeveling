@@ -1,11 +1,9 @@
 """Rendu Pillow de la commande /equipement.
 
-Trois pages :
-    - Page 1 : équipement principal (6 slots : casque, plastron, jambières,
-      bottes, main droite, main gauche)
-    - Page 2 : équipement secondaire (collier, bracelet, bague, ceinture,
-      cape, boucle d'oreille)
-    - Page 3 : résumé des stats accumulées + bonus de panoplies actifs
+Deux pages (système simplifié à 7 emplacements) :
+    - Page 1 : les 7 emplacements — tête, corps, arme/bouclier ×2,
+      accessoire ×3 — en grille 4×2
+    - Page 2 : résumé des stats accumulées + bonus de panoplies actifs
 
 Chaque slot affiche une grosse vignette de l'item (depuis assets/items/<code>.png)
 ou un placeholder stylisé si l'image n'existe pas. Le rendu reste lisible
@@ -36,17 +34,16 @@ from app.shared.emoji_mappings import (
     format_stat_bonuses_short,
 )
 from app.shared.enums import (
-    PRIMARY_SLOTS,
-    SECONDARY_SLOTS,
+    SLOT_ORDER,
     SLOT_ICONS,
-    SLOT_LABELS,
+    SLOT_LABELS_SHORT,
 )
 from app.shared.paths import ITEMS_ASSETS_DIR
 
 
 WIDTH = 1024
-GRID_HEIGHT = 820    # pages 1 & 2 (3×2 grid avec fontes généreuses)
-SUMMARY_HEIGHT = 960  # page 3 (stats + set bonuses)
+GRID_HEIGHT = 820    # page 1 (grille 4×2 des 7 emplacements)
+SUMMARY_HEIGHT = 960  # page 2 (stats + bonus de panoplies)
 
 
 _BG_TOP = (12, 14, 28, 255)
@@ -62,26 +59,21 @@ _PINK_PETAL = (255, 175, 200, 65)
 
 # Couleur d'accent par slot — petit indice visuel
 _SLOT_ACCENT = {
-    "casque":          (235, 200, 100, 255),
-    "plastron":        (200, 130, 90, 255),
-    "jambieres":       (130, 110, 90, 255),
-    "bottes":          (160, 100, 70, 255),
-    "main_droite":     (235, 100, 100, 255),
-    "main_gauche":     (90, 160, 230, 255),
-    "collier":         (220, 180, 240, 255),
-    "bracelet":        (200, 220, 255, 255),
-    "bague":           (255, 215, 100, 255),
-    "ceinture":        (180, 160, 130, 255),
-    "cape":            (160, 100, 200, 255),
-    "boucle_oreille":  (255, 200, 220, 255),
+    "tete":         (235, 200, 100, 255),
+    "corps":        (200, 130, 90, 255),
+    "arme_1":       (235, 100, 100, 255),
+    "arme_2":       (90, 160, 230, 255),
+    "accessoire_1": (255, 215, 100, 255),
+    "accessoire_2": (220, 180, 240, 255),
+    "accessoire_3": (180, 160, 130, 255),
 }
 
 # Slot data centralisée dans `app/shared/enums.py`
-_SLOT_LABEL = SLOT_LABELS
+_SLOT_LABEL = SLOT_LABELS_SHORT
 _SLOT_EMOJI = SLOT_ICONS
 
-_PRIMARY_SLOTS = [s.value for s in PRIMARY_SLOTS]
-_SECONDARY_SLOTS = [s.value for s in SECONDARY_SLOTS]
+# Les 7 emplacements tiennent sur UNE grille (4 colonnes × 2 rangées).
+_ALL_SLOTS = list(SLOT_ORDER)
 
 
 def _try_font(size: int, bold: bool = False):
@@ -175,7 +167,7 @@ def _draw_placeholder(
 ) -> None:
     """Dessine un placeholder stylisé quand l'image de l'item est absente
     (ou que le slot est vide). Utilise `item_emoji` si fourni (ex : 🛡️
-    pour un bouclier dans main_droite), sinon l'emoji canonique du slot.
+    pour un bouclier), sinon l'emoji canonique de l'emplacement.
     """
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     od = ImageDraw.Draw(img)
@@ -242,36 +234,13 @@ def _draw_slot_card(
         fill=_TEXT_PRIMARY,
     )
 
-    # Badge « forge » : niveau de forge sacrée de la pièce (coin haut-droite).
-    if equipment is not None and item_levels:
-        lvl = item_levels.get(equipment.item_definition.id, 0)
-        if lvl > 0:
-            badge_font = _try_font(21, bold=True)
-            badge_text = f"🔨 Nv {lvl}"
-            bw = measure_text_with_emojis(badge_text, badge_font, badge_font.size)
-            pad_x = 10
-            # Sous le header, aligné à droite au niveau de l'image → évite de
-            # chevaucher les labels de slot longs (« Main droite »).
-            bx1 = x + w - 14 - int(bw) - 2 * pad_x
-            by1 = y + 52
-            bx2 = x + w - 14
-            by2 = by1 + 34
-            pill = ImageDraw.Draw(base)
-            pill.rounded_rectangle(
-                [(bx1, by1), (bx2, by2)], radius=12,
-                fill=(40, 24, 10, 220), outline=_GOLD, width=2,
-            )
-            draw_text_with_emojis(
-                base, (bx1 + pad_x, by1 + 5), badge_text, badge_font, fill=_GOLD,
-            )
-
     # Image de l'item (ou placeholder)
     img_size = min(180, w - 30, h - 130)
     img_x = x + (w - img_size) // 2
     img_y = y + 56
 
     if two_handed_locked:
-        # Slot main_gauche verrouillé par une arme 2-mains : placeholder
+        # Emplacement arme_2 verrouillé par une pièce à 2 mains : placeholder
         # spécifique avec emoji 🔒.
         ph = Image.new("RGBA", (img_size, img_size), (0, 0, 0, 0))
         pd = ImageDraw.Draw(ph)
@@ -312,7 +281,7 @@ def _draw_slot_card(
         # Placeholder (image absente) : on affiche l'emoji adapté à
         # l'item équipé — 🗡️ pour une arme 1H, ⚔️ pour une 2H, 🛡️
         # pour un bouclier — pour ne pas montrer une épée alors qu'un
-        # bouclier est équipé en main_droite. Le header de la card
+        # bouclier est équipé. Le header de la card
         # conserve l'emoji fixe du slot (🗡️ MD / 🛡️ MG).
         item_emoji = None
         if equipment is not None:
@@ -324,6 +293,28 @@ def _draw_slot_card(
             item_emoji=item_emoji,
         )
 
+    # Badge « forge » : niveau de forge sacrée. Dessiné APRÈS l'image — sinon
+    # la vignette de l'item le recouvrait entièrement.
+    if equipment is not None and item_levels:
+        lvl = item_levels.get(equipment.item_definition.id, 0)
+        if lvl > 0:
+            badge_font = _try_font(19, bold=True)
+            badge_text = f"🔨{lvl}"
+            bw = int(measure_text_with_emojis(badge_text, badge_font, badge_font.size))
+            pad_x = 8
+            bx2 = min(x + w - 12, img_x + img_size + 6)
+            bx1 = bx2 - bw - 2 * pad_x
+            by1 = img_y - 4
+            by2 = by1 + 30
+            ImageDraw.Draw(base).rounded_rectangle(
+                [(bx1, by1), (bx2, by2)], radius=10,
+                fill=(40, 24, 10, 235), outline=_GOLD, width=2,
+            )
+            draw_text_with_emojis(
+                base, (bx1 + pad_x, by1 + 4), badge_text, badge_font,
+                fill=_GOLD, emoji_size=badge_font.size,
+            )
+
     # Nom de l'item + bonus de stats sous l'image
     if equipment is not None:
         item = equipment.item_definition
@@ -333,7 +324,14 @@ def _draw_slot_card(
 
         name_y = img_y + img_size + 12
         # Tronque légèrement plus court pour fitter avec la fonte 24
-        name = item.name if len(item.name) <= 20 else item.name[:19] + "…"
+        # Troncature à la largeur RÉELLE : compter les caractères ne dit rien
+        # de la place occupée (les cartes font 230 px en grille 4 colonnes).
+        name = item.name
+        max_name_w = w - 32
+        if draw.textlength(name, font=name_font) > max_name_w:
+            while name and draw.textlength(name + "…", font=name_font) > max_name_w:
+                name = name[:-1]
+            name = (name + "…") if name else "…"
         _draw_text_with_shadow(
             draw, (x + 16, name_y), name, name_font,
         )
@@ -428,14 +426,9 @@ def compose_equipment_grid_page(
     bg = _gradient_bg(WIDTH, GRID_HEIGHT)
     _add_petals_decoration(bg, seed)
 
-    if page == 1:
-        slots = _PRIMARY_SLOTS
-        page_title = "📦 Équipement principal"
-        page_label = "Page 1 / 3 — Principaux"
-    else:
-        slots = _SECONDARY_SLOTS
-        page_title = "💍 Équipement secondaire"
-        page_label = "Page 2 / 3 — Secondaires"
+    slots = _ALL_SLOTS
+    page_title = "🛡️ Équipement"
+    page_label = "Page 1 / 2 — Équipement"
 
     _draw_page_header(bg, player_name, page_title)
 
@@ -443,7 +436,7 @@ def compose_equipment_grid_page(
     equipped_by_slot: dict[str, PlayerEquipmentItem] = {
         e.slot: e for e in equipped_items
     }
-    main_hand_item = equipped_by_slot.get("main_droite")
+    main_hand_item = equipped_by_slot.get("arme_1")
     two_handed_active = bool(
         main_hand_item and main_hand_item.item_definition.requires_two_hands
     )
@@ -451,7 +444,7 @@ def compose_equipment_grid_page(
     margin = 30
     spacing = 14
     grid_top = 120
-    cols = 3
+    cols = 4
     card_w = (WIDTH - 2 * margin - (cols - 1) * spacing) // cols
     card_h = (GRID_HEIGHT - grid_top - 40 - spacing) // 2
 
@@ -462,8 +455,8 @@ def compose_equipment_grid_page(
         y = grid_top + row * (card_h + spacing)
 
         equipment = equipped_by_slot.get(slot)
-        # Verrouillage main_gauche si 2-mains équipée à droite
-        locked = (slot == "main_gauche" and two_handed_active and equipment is None)
+        # `arme_2` verrouillée quand `arme_1` porte une pièce à 2 mains
+        locked = (slot == "arme_2" and two_handed_active and equipment is None)
         _draw_slot_card(
             bg, (x, y), (card_w, card_h),
             slot, equipment, two_handed_locked=locked,

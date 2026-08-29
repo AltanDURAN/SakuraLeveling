@@ -159,7 +159,7 @@ class EquipSavedSetUseCase:
     """Applique un set sauvegardé. Comportement aligné sur EquipPanoplie :
     - conserve les pièces déjà équipées (même item_def + même slot)
     - déséquipe les slots tenus par autre chose, équipe la cible
-    - si une 2-mains est sélectionnée pour main_droite, main_gauche est vidé
+    - si une 2-mains est sélectionnée pour arme_1, arme_2 est vidé
     - refuse si un item du set n'est plus possédé (inventaire ∪ équipé)
     """
 
@@ -230,11 +230,10 @@ class EquipSavedSetUseCase:
         # Plan : map slot → item_def_id à équiper
         plan = {it.slot: it.item_definition.id for it in saved_set.items}
 
-        # 2-mains : si une pièce 2-mains est dans main_droite, on doit
-        # vider main_gauche. On le détecte via l'item_definition de la
-        # cible main_droite.
-        md = EquipmentSlot.MAIN_HAND.value
-        mg = EquipmentSlot.OFF_HAND.value
+        # 2-mains : si une pièce 2-mains occupe arme_1, arme_2 doit rester
+        # vide (elle est verrouillée par l'arme).
+        md = EquipmentSlot.ARME_1.value
+        mg = EquipmentSlot.ARME_2.value
         target_md = next(
             (it for it in saved_set.items if it.slot == md), None,
         )
@@ -242,7 +241,7 @@ class EquipSavedSetUseCase:
             target_md and target_md.item_definition.requires_two_hands
         )
         if is_target_md_two_handed:
-            # Si jamais le set a aussi un main_gauche, on l'ignore (bug?)
+            # Si le set a aussi une arme_2, on l'ignore (verrouillée).
             plan.pop(mg, None)
 
         already_ok: dict[str, int] = {e.slot: e.item_definition.id for e in equipped}
@@ -262,7 +261,7 @@ class EquipSavedSetUseCase:
             )
             changes.append((slot, target_id))
 
-        # Si target_md est 2-mains : vide main_gauche au cas où il y avait
+        # Si la cible arme_1 est 2-mains : vide arme_2 au cas où il y avait
         # une pièce hors-set qui traînait
         if is_target_md_two_handed:
             self.equipment_repository.unequip_slot(player_id, mg)

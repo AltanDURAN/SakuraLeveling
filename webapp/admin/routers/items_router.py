@@ -15,6 +15,7 @@ from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.session import get_db_session
 from app.shared.enums import (
     EQUIPMENT_SLOT_LABELS,
+    ItemSlotType,
     ITEM_CATEGORY_DEFAULT_SLOT,
     ITEM_CATEGORY_EMOJIS,
     ITEM_CATEGORY_LABELS,
@@ -106,7 +107,10 @@ def _labels_ctx() -> dict:
     return {
         "categories": [c.value for c in ItemCategory],
         "rarities": [r.value for r in ItemRarity],
-        "slots": [s.value for s in EquipmentSlot],
+        # Un item déclare un TYPE d'emplacement (tete, corps, accessoire,
+        # arme), jamais un emplacement physique numéroté : c'est le use case
+        # d'équipement qui choisit `accessoire_2` ou `arme_1` à la pose.
+        "slots": [s.value for s in ItemSlotType],
         "supported_stats": SUPPORTED_STATS,
         "category_labels": ITEM_CATEGORY_LABELS,
         "category_emojis": ITEM_CATEGORY_EMOJIS,
