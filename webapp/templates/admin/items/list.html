@@ -186,7 +186,7 @@ document.addEventListener('alpine:init', () => {
         <div class="field">
           <span class="field-label">Emplacement <span class="hint" title="Déduit automatiquement du type choisi dans Identité.">ⓘ</span></span>
           <div style="padding:.55rem .75rem; border:1px solid var(--border); border-radius:10px; background:var(--bg-soft);">
-            <template x-if="isEquipable()"><span>🎽 S'équipe en <strong x-text="slotLabel(slotOf())"></strong></span></template>
+            <template x-if="isEquipable() && slotLabel(slotOf()) !== catLabel(category)"><span>🎽 S'équipe en <strong x-text="slotLabel(slotOf())"></strong></span></template>
             <template x-if="!isEquipable()"><span style="color:var(--muted);">Objet non équipable (ressource / consommable)</span></template>
           </div>
         </div>
@@ -302,7 +302,7 @@ document.addEventListener('alpine:init', () => {
           <div style="display:flex; flex-wrap:wrap; gap:.3rem; margin:.35rem 0;">
             <span class="chip"><span x-text="catEmoji(category)"></span> <span x-text="catLabel(category)"></span></span>
             <span class="chip"><span class="rdot" :style="{background: rarColor(rarity)}"></span> <span x-text="rarLabel(rarity)"></span></span>
-            <template x-if="isEquipable()"><span class="chip" x-text="'🎽 '+slotLabel(slotOf())"></span></template>
+            <template x-if="isEquipable() && slotLabel(slotOf()) !== catLabel(category)"><span class="chip" x-text="'🎽 '+slotLabel(slotOf())"></span></template>
             <template x-if="twoHands && isWeaponLike()"><span class="chip">✋ 2 mains</span></template>
             <template x-if="family"><span class="chip" x-text="'🧩 '+family"></span></template>
           </div>

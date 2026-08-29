@@ -526,33 +526,17 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
 
             current_equipment = equipment_repository.list_by_player_id(profile.player.id)
 
-            # Auto-pick du slot pour les armes 1-main : on choisit le slot
-            # libre (main_droite prioritaire) sans demander à l'utilisateur.
-            # Pour les autres items : slot canonique de la définition.
+            # L'item déclare un TYPE d'emplacement : on vise le premier
+            # emplacement LIBRE de ce type (sinon le premier, qui sera
+            # remplacé). Même règle que le use case d'équipement.
             item_def = matched.item_definition
-            from app.shared.enums import EquipmentSlot as _ES
-            _hand_slots = {_ES.MAIN_HAND.value, _ES.OFF_HAND.value}
-            is_hand_weapon = (
-                item_def.equipment_slot in _hand_slots
-                and not item_def.requires_two_hands
+            from app.shared.enums import SLOTS_FOR_ITEM_TYPE
+            allowed = SLOTS_FOR_ITEM_TYPE.get(item_def.equipment_slot or "", [])
+            occupied = {e.slot for e in current_equipment}
+            target_slot = next(
+                (s.value for s in allowed if s.value not in occupied),
+                allowed[0].value if allowed else item_def.equipment_slot,
             )
-            if is_hand_weapon:
-                md_occupied = next(
-                    (e for e in current_equipment if e.slot == _ES.MAIN_HAND.value),
-                    None,
-                )
-                mg_occupied = next(
-                    (e for e in current_equipment if e.slot == _ES.OFF_HAND.value),
-                    None,
-                )
-                if md_occupied is None:
-                    target_slot = _ES.MAIN_HAND.value
-                elif mg_occupied is None:
-                    target_slot = _ES.OFF_HAND.value
-                else:
-                    target_slot = _ES.MAIN_HAND.value
-            else:
-                target_slot = item_def.equipment_slot
 
             current_in_slot = next(
                 (e for e in current_equipment if e.slot == target_slot), None
@@ -729,7 +713,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
 
         msg = f"✅ **{item_name}** déséquipé de `{slot}`."
         if was_two_hands:
-            msg += "\n_(Arme à 2 mains : `main_gauche` est de nouveau libre.)_"
+            msg += "\n_(Pièce à 2 mains : vos deux emplacements d'arme sont de nouveau libres.)_"
         await interaction.response.send_message(msg)
 
     @unequip.autocomplete("slot")
@@ -767,22 +751,11 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         name="equiper_panoplie",
         description="Équipe en un clic toutes les pièces d'une panoplie (12/12)",
     )
-    @app_commands.describe(
-        nom="Nom de la panoplie (autocomplete)",
-        option="Configuration des mains (par défaut : arme légère + bouclier)",
-    )
-    @app_commands.choices(option=[
-        app_commands.Choice(name="defaut (1 arme légère + 1 bouclier léger)", value="defaut"),
-        app_commands.Choice(name="double_armes (2 armes légères)", value="double_armes"),
-        app_commands.Choice(name="double_boucliers (2 boucliers légers)", value="double_boucliers"),
-        app_commands.Choice(name="arme_lourde (arme 2 mains)", value="arme_lourde"),
-        app_commands.Choice(name="bouclier_lourd (bouclier 2 mains)", value="bouclier_lourd"),
-    ])
+    @app_commands.describe(nom="Nom de la panoplie (autocomplete)")
     async def equip_panoplie(
         self,
         interaction: discord.Interaction,
         nom: str,
-        option: str | None = None,
     ) -> None:
         from app.application.use_cases.equip_panoplie import (
             EquipPanoplieUseCase,
@@ -800,7 +773,6 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 username=interaction.user.name,
                 display_name=interaction.user.display_name,
                 family=nom,
-                option=option,
             )
 
         await interaction.followup.send(

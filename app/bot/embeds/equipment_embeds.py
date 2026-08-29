@@ -5,8 +5,7 @@ import discord
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
 from app.shared.enums import (
     EquipmentSlot,
-    PRIMARY_SLOTS,
-    SECONDARY_SLOTS,
+    SLOT_ORDER,
     SLOT_ICONS,
     SLOT_LABELS,
 )
@@ -74,9 +73,9 @@ def _build_page(
         slot_value = slot.value
         equipped = equipped_by_slot.get(slot_value)
 
-        # OFF_HAND est verrouillée si MAIN_HAND a une arme 2-mains
+        # `arme_2` est verrouillée quand `arme_1` porte une pièce à 2 mains.
         two_handed_locked = (
-            slot_value == EquipmentSlot.OFF_HAND.value and main_hand_two_handed
+            slot_value == EquipmentSlot.ARME_2.value and main_hand_two_handed
         )
         lines.append(_format_slot_line(slot_value, equipped, two_handed_locked))
 
@@ -85,43 +84,25 @@ def _build_page(
     return embed
 
 
-def build_primary_equipment_embed(
+def build_equipment_embed(
     target_name: str,
     equipped_items: list[PlayerEquipmentItem],
 ) -> discord.Embed:
+    """Une SEULE page : avec 7 emplacements, la pagination n'a plus lieu d'être."""
     by_slot = {item.slot: item for item in equipped_items}
-    main_hand = by_slot.get(EquipmentSlot.MAIN_HAND.value)
-    main_hand_two_handed = (
-        main_hand is not None and main_hand.item_definition.requires_two_hands
+    arme_1 = by_slot.get(EquipmentSlot.ARME_1.value)
+    two_handed = (
+        arme_1 is not None and arme_1.item_definition.requires_two_hands
     )
     return _build_page(
-        title="Principaux",
+        title="Équipement",
         target_name=target_name,
-        slots=PRIMARY_SLOTS,
+        slots=[EquipmentSlot(s) for s in SLOT_ORDER],
         equipped_by_slot=by_slot,
-        main_hand_two_handed=main_hand_two_handed,
+        main_hand_two_handed=two_handed,
         page_number=1,
-        total_pages=2,
+        total_pages=1,
     )
 
 
-def build_secondary_equipment_embed(
-    target_name: str,
-    equipped_items: list[PlayerEquipmentItem],
-) -> discord.Embed:
-    by_slot = {item.slot: item for item in equipped_items}
-    return _build_page(
-        title="Secondaires",
-        target_name=target_name,
-        slots=SECONDARY_SLOTS,
-        equipped_by_slot=by_slot,
-        main_hand_two_handed=False,
-        page_number=2,
-        total_pages=2,
-    )
-
-
-PAGES = [
-    ("⚔️ Principaux", build_primary_equipment_embed),
-    ("💎 Secondaires", build_secondary_equipment_embed),
-]
+PAGES = [("🛡️ Équipement", build_equipment_embed)]

@@ -24,6 +24,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
+from app.shared.enums import PANOPLIE_SLOTS, WEAPON_SLOTS
 
 
 @dataclass
@@ -72,41 +73,43 @@ class SetBonusService:
     def aggregate(
         self, equipped_items: list[PlayerEquipmentItem],
     ) -> SetBonuses:
-        # Compte le nombre de pièces par famille. Règles :
-        # - Pour les slots NON-main : 1 item équipé = 1 point
-        # - Pour les slots main_droite/main_gauche : on compte les
-        #   `item_definition_id` UNIQUES (équiper 2 fois la même arme
-        #   ne vaut donc qu'1 point), 2 items différents valent 2.
-        # - Une arme/bouclier 2-mains occupe main_droite + verrouille
-        #   main_gauche → vaut 2 points (l'item lui-même + le slot
-        #   verrouillé).
-        non_main_counts: dict[str, int] = {}
-        main_unique_ids: dict[str, set[int]] = {}
-        main_2h_extras: dict[str, int] = {}
+        # Compte les pièces de panoplie par famille.
+        #
+        # ⚠️ SEULS les emplacements de PANOPLIE comptent (tête, corps et les
+        # deux mains) : les accessoires sont volontairement hors panoplie, d'où
+        # des paliers à 2 et 4 pièces.
+        #
+        # Règles pour les mains : on compte les `item_definition_id` UNIQUES
+        # (porter deux fois la même arme ne vaut qu'1 point) ; une 2-mains
+        # occupe les deux emplacements et vaut donc 2 points.
+        weapon_slot_values = {s.value for s in WEAPON_SLOTS}
+        panoplie_slot_values = {s.value for s in PANOPLIE_SLOTS}
+
+        armor_counts: dict[str, int] = {}
+        weapon_unique_ids: dict[str, set[int]] = {}
+        weapon_2h_extras: dict[str, int] = {}
 
         for item in equipped_items:
             family = (item.item_definition.family or "").strip()
-            if not family:
+            if not family or item.slot not in panoplie_slot_values:
                 continue
-            if item.slot in ("main_droite", "main_gauche"):
-                main_unique_ids.setdefault(family, set()).add(
+            if item.slot in weapon_slot_values:
+                weapon_unique_ids.setdefault(family, set()).add(
                     item.item_definition.id,
                 )
                 if item.item_definition.requires_two_hands:
-                    main_2h_extras[family] = (
-                        main_2h_extras.get(family, 0) + 1
-                    )
+                    weapon_2h_extras[family] = weapon_2h_extras.get(family, 0) + 1
             else:
-                non_main_counts[family] = non_main_counts.get(family, 0) + 1
+                armor_counts[family] = armor_counts.get(family, 0) + 1
 
         counts: dict[str, int] = {}
         for family in (
-            set(non_main_counts) | set(main_unique_ids) | set(main_2h_extras)
+            set(armor_counts) | set(weapon_unique_ids) | set(weapon_2h_extras)
         ):
             counts[family] = (
-                non_main_counts.get(family, 0)
-                + len(main_unique_ids.get(family, set()))
-                + main_2h_extras.get(family, 0)
+                armor_counts.get(family, 0)
+                + len(weapon_unique_ids.get(family, set()))
+                + weapon_2h_extras.get(family, 0)
             )
 
         bonuses = SetBonuses()

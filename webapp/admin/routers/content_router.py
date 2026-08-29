@@ -798,7 +798,8 @@ SET_BONUS_TYPES = {
     "mana_max_flat": "Mana max (plat)",
     "mana_regeneration_flat": "Régénération mana (plat)",
 }
-_TIER_COUNTS = (2, 4, 8, 12)
+# Panoplies : 4 emplacements comptent (tête, corps, 2 mains) → 2 paliers.
+_TIER_COUNTS = (2, 4)
 
 
 def _build_set_tiers(fd: dict) -> list[dict]:

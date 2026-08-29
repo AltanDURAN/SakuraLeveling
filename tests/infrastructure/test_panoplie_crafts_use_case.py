@@ -179,8 +179,8 @@ def test_unknown_family_returns_error(_, session):
 def test_plan_for_forge_filters_to_forge_categories(_, session):
     pid = _create_player(session)
     # 1 item forge (helmet) + 1 craft (necklace), tous iron
-    helmet_id = _create_item(session, "iron_helmet", "helmet", "casque", "iron")
-    necklace_id = _create_item(session, "iron_collier", "necklace", "collier", "iron")
+    helmet_id = _create_item(session, "iron_helmet", "tete", "tete", "iron")
+    necklace_id = _create_item(session, "iron_collier", "accessoire", "accessoire", "iron")
     # Ingrédients
     _create_item(session, "iron_ingot", "resource")
     _create_recipe(session, "iron_helmet_recipe", "iron_helmet", [("iron_ingot", 4)])
@@ -201,8 +201,8 @@ def test_plan_for_forge_filters_to_forge_categories(_, session):
 )
 def test_already_owned_items_skipped(_, session):
     pid = _create_player(session)
-    helmet_id = _create_item(session, "iron_helmet", "helmet", "casque", "iron")
-    chest_id = _create_item(session, "iron_chest", "chest", "plastron", "iron")
+    helmet_id = _create_item(session, "iron_helmet", "tete", "tete", "iron")
+    chest_id = _create_item(session, "iron_chest", "corps", "corps", "iron")
     _create_item(session, "iron_ingot", "resource")
     _create_recipe(session, "iron_helmet_recipe", "iron_helmet", [("iron_ingot", 4)])
     _create_recipe(session, "iron_chest_recipe", "iron_chest", [("iron_ingot", 6)])
@@ -224,8 +224,8 @@ def test_already_owned_items_skipped(_, session):
 )
 def test_insufficient_resources_listed(_, session):
     pid = _create_player(session)
-    _create_item(session, "iron_helmet", "helmet", "casque", "iron")
-    _create_item(session, "iron_chest", "chest", "plastron", "iron")
+    _create_item(session, "iron_helmet", "tete", "tete", "iron")
+    _create_item(session, "iron_chest", "corps", "corps", "iron")
     iron_ingot_id = _create_item(session, "iron_ingot", "resource")
     _create_recipe(session, "iron_helmet_recipe", "iron_helmet", [("iron_ingot", 4)])
     _create_recipe(session, "iron_chest_recipe", "iron_chest", [("iron_ingot", 6)])
@@ -246,7 +246,7 @@ def test_insufficient_resources_listed(_, session):
 )
 def test_execute_consumes_ingredients_and_produces_items(_, session):
     pid = _create_player(session)
-    _create_item(session, "iron_helmet", "helmet", "casque", "iron")
+    _create_item(session, "iron_helmet", "tete", "tete", "iron")
     iron_ingot_id = _create_item(session, "iron_ingot", "resource")
     _create_recipe(session, "iron_helmet_recipe", "iron_helmet", [("iron_ingot", 4)])
     _give(session, pid, iron_ingot_id, 4)
@@ -277,7 +277,7 @@ def test_execute_consumes_ingredients_and_produces_items(_, session):
 )
 def test_empty_plan_when_all_owned(_, session):
     pid = _create_player(session)
-    helmet_id = _create_item(session, "iron_helmet", "helmet", "casque", "iron")
+    helmet_id = _create_item(session, "iron_helmet", "tete", "tete", "iron")
     _create_item(session, "iron_ingot", "resource")
     _create_recipe(session, "iron_helmet_recipe", "iron_helmet", [("iron_ingot", 4)])
     _give(session, pid, helmet_id, 1)
