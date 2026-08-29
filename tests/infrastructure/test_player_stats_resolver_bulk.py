@@ -74,7 +74,7 @@ def _make_item(session, code: str, bonuses: dict) -> ItemDefinitionModel:
     item = ItemDefinitionModel(
         code=code, name=code, description="", category="weapon", rarity="common",
         stackable=False, max_stack=None, sell_price=0, buy_price=None, icon=None,
-        stat_bonuses_json=bonuses, equipment_slot="main_droite",
+        stat_bonuses_json=bonuses, equipment_slot="arme",
         requires_two_hands=False, created_at=now, updated_at=now,
     )
     session.add(item)
@@ -94,7 +94,7 @@ def _seed_players(session, n: int) -> list:
         )
         pid = prof.player.id
         if i % 2 == 0:  # la moitié équipe l'épée
-            EquipmentRepository(session).equip_item(pid, sword.id, "main_droite")
+            EquipmentRepository(session).equip_item(pid, sword.id, "arme_1")
         if i % 3 == 0:  # un tiers a une épée forgée
             PlayerItemLevelRepository(session).increment(pid, sword.id, 10)
         if i % 4 == 0:  # un quart a un buff actif

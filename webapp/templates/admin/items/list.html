@@ -118,7 +118,9 @@ function itemCard(el){
     statVal(s){ const v=this.stats[s]; return v===undefined?'':v; },
     slotOf(){ return slotForCat(this.category); },
     isEquipable(){ return !!slotForCat(this.category); },
-    isWeaponLike(){ return this.category==='weapon' || this.category==='shield'; },
+    // Arme OU bouclier : tout ce qui occupe un emplacement de main (donc
+    // éligible au 2-mains). Dérivé du mapping serveur, pas codé en dur.
+    isWeaponLike(){ return slotForCat(this.category)==='arme'; },
   }
 }
 document.addEventListener('alpine:init', () => {

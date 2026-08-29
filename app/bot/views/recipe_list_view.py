@@ -25,36 +25,22 @@ from app.shared.paths import GENERATED_LISTS_DIR
 
 # Libellés conviviaux par catégorie (déplacés depuis craft_embeds.py).
 CATEGORY_LABELS: dict[str, tuple[str, str]] = {
-    "weapon":     ("Armes",              "⚔️"),
-    "shield":     ("Boucliers",          "🛡️"),
-    "helmet":     ("Casques",            "⛑️"),
-    "chest":      ("Plastrons",          "👕"),
-    "legs":       ("Jambières",          "👖"),
-    "boots":      ("Bottes",             "🥾"),
-    "necklace":   ("Colliers",           "📿"),
-    "bracelet":   ("Bracelets",          "⛓️"),
-    "ring":       ("Bagues",             "💍"),
-    "belt":       ("Ceintures",          "🎗️"),
-    "cape":       ("Capes",              "🧣"),
-    "earring":    ("Boucles d'oreilles", "👂"),
-    "consumable": ("Consommables",       "🧪"),
-    "resource":   ("Ressources",         "🌾"),
+    "arme":       ("Armes",         "⚔️"),
+    "bouclier":   ("Boucliers",     "🛡️"),
+    "tete":       ("Tête",          "⛑️"),
+    "corps":      ("Corps",         "👕"),
+    "accessoire": ("Accessoires",   "💍"),
+    "consumable": ("Consommables",  "🧪"),
+    "resource":   ("Ressources",    "🌾"),
 }
 
 
 _CATEGORY_ACCENT: dict[str, tuple[int, int, int, int]] = {
-    "weapon":   (235, 100, 100, 255),
-    "shield":   (90, 160, 230, 255),
-    "helmet":   (235, 200, 100, 255),
-    "chest":    (200, 130, 90, 255),
-    "legs":     (130, 110, 90, 255),
-    "boots":    (160, 100, 70, 255),
-    "necklace": (220, 180, 240, 255),
-    "bracelet": (200, 220, 255, 255),
-    "ring":     (255, 215, 100, 255),
-    "belt":     (180, 160, 130, 255),
-    "cape":     (160, 100, 200, 255),
-    "earring":  (255, 200, 220, 255),
+    "arme":       (235, 100, 100, 255),
+    "bouclier":   (90, 160, 230, 255),
+    "tete":       (235, 200, 100, 255),
+    "corps":      (200, 130, 90, 255),
+    "accessoire": (220, 180, 240, 255),
 }
 
 

@@ -70,7 +70,7 @@ def _item(session, code, **kw):
         code=code, name=code.title(), description="", category="weapon",
         rarity="common", stackable=False, max_stack=None, sell_price=1,
         buy_price=None, icon=None, stat_bonuses_json=None,
-        equipment_slot="main_droite", requires_two_hands=False,
+        equipment_slot="arme", requires_two_hands=False,
         created_at=now, updated_at=now, **kw,
     )
     session.add(it); session.flush()
@@ -95,7 +95,7 @@ def test_delete_item_removes_all_references(session):
     session.add(PlayerInventoryItemModel(player_id=p.id, item_definition_id=target.id,
                                          quantity=3, created_at=now, updated_at=now))
     session.add(PlayerEquipmentItemModel(player_id=p.id, item_definition_id=target.id,
-                                         slot="main_droite", created_at=now, updated_at=now))
+                                         slot="arme_1", created_at=now, updated_at=now))
     session.add(ShopItemModel(item_definition_id=target.id, buy_price=10,
                               max_sell_price=5, min_sell_price=1, stock_threshold=100,
                               current_stock=0, enabled=True, created_at=now, updated_at=now))

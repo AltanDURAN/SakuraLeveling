@@ -151,10 +151,10 @@ def _make_unequip_all(session):
 
 def test_create_set_persists_currently_equipped(session):
     pid = _create_player(session)
-    h = _create_item(session, "iron_helmet", "helmet", "casque")
-    p = _create_item(session, "iron_chest", "chest", "plastron")
-    _equip_pre(session, pid, h, "casque")
-    _equip_pre(session, pid, p, "plastron")
+    h = _create_item(session, "iron_helmet", "tete", "tete")
+    p = _create_item(session, "iron_chest", "corps", "corps")
+    _equip_pre(session, pid, h, "tete")
+    _equip_pre(session, pid, p, "corps")
 
     result = _make_create(session).execute(
         discord_id=1, username="a", display_name="A", name="tank",
@@ -165,7 +165,7 @@ def test_create_set_persists_currently_equipped(session):
     saved = EquipmentSetRepository(session).get_by_name(pid, "tank")
     assert saved is not None
     slots = sorted(it.slot for it in saved.items)
-    assert slots == ["casque", "plastron"]
+    assert sorted(slots) == ["corps", "tete"]
 
 
 def test_create_set_refuses_empty_equipment(session):
@@ -179,8 +179,8 @@ def test_create_set_refuses_empty_equipment(session):
 
 def test_create_set_refuses_duplicate_name(session):
     pid = _create_player(session)
-    h = _create_item(session, "iron_helmet", "helmet", "casque")
-    _equip_pre(session, pid, h, "casque")
+    h = _create_item(session, "iron_helmet", "tete", "tete")
+    _equip_pre(session, pid, h, "tete")
     _make_create(session).execute(
         discord_id=1, username="a", display_name="A", name="dps",
     )
@@ -193,8 +193,8 @@ def test_create_set_refuses_duplicate_name(session):
 
 def test_delete_set_removes_persisted(session):
     pid = _create_player(session)
-    h = _create_item(session, "iron_helmet", "helmet", "casque")
-    _equip_pre(session, pid, h, "casque")
+    h = _create_item(session, "iron_helmet", "tete", "tete")
+    _equip_pre(session, pid, h, "tete")
     _make_create(session).execute(
         discord_id=1, username="a", display_name="A", name="todel",
     )
@@ -217,23 +217,23 @@ def test_delete_unknown_set_returns_failure(session):
 
 def test_equip_set_swaps_correctly(session):
     pid = _create_player(session)
-    h = _create_item(session, "iron_helmet", "helmet", "casque")
-    p = _create_item(session, "iron_chest", "chest", "plastron")
-    other = _create_item(session, "leather_cap", "helmet", "casque")
-    _equip_pre(session, pid, other, "casque")  # casque déjà tenu par autre
+    h = _create_item(session, "iron_helmet", "tete", "tete")
+    p = _create_item(session, "iron_chest", "corps", "corps")
+    other = _create_item(session, "leather_cap", "tete", "tete")
+    _equip_pre(session, pid, other, "tete")  # emplacement tête déjà tenu par autre
     _give(session, pid, h, 1)  # iron_helmet en inventaire
     _give(session, pid, p, 1)  # iron_chest en inventaire
 
     # Crée un set "iron" en pré-équipant temporairement
-    _equip_pre(session, pid, p, "plastron")  # plastron OK
-    EquipmentRepository(session).unequip_slot(pid, "casque")
-    _equip_pre(session, pid, h, "casque")
+    _equip_pre(session, pid, p, "corps")  # corps OK
+    EquipmentRepository(session).unequip_slot(pid, "tete")
+    _equip_pre(session, pid, h, "tete")
     _make_create(session).execute(
         discord_id=1, username="a", display_name="A", name="iron",
     )
     # Remet l'autre casque pour vérifier le swap
-    EquipmentRepository(session).unequip_slot(pid, "casque")
-    _equip_pre(session, pid, other, "casque")
+    EquipmentRepository(session).unequip_slot(pid, "tete")
+    _equip_pre(session, pid, other, "tete")
 
     # Equipe le set sauvegardé
     result = _make_equip(session).execute(
@@ -242,20 +242,20 @@ def test_equip_set_swaps_correctly(session):
     assert result.success is True
     eq = EquipmentRepository(session).list_by_player_id(pid)
     by_slot = {e.slot: e.item_definition.code for e in eq}
-    assert by_slot["casque"] == "iron_helmet"
-    assert by_slot["plastron"] == "iron_chest"
+    assert by_slot["tete"] == "iron_helmet"
+    assert by_slot["corps"] == "iron_chest"
 
 
 def test_equip_set_fails_if_item_missing(session):
     pid = _create_player(session)
-    h = _create_item(session, "iron_helmet", "helmet", "casque")
-    _equip_pre(session, pid, h, "casque")
+    h = _create_item(session, "iron_helmet", "tete", "tete")
+    _equip_pre(session, pid, h, "tete")
     _make_create(session).execute(
         discord_id=1, username="a", display_name="A", name="halfset",
     )
 
     # Le joueur perd l'item (vendu / tradé). On le retire.
-    EquipmentRepository(session).unequip_slot(pid, "casque")
+    EquipmentRepository(session).unequip_slot(pid, "tete")
     # Il n'a plus iron_helmet en inventaire ni équipé.
 
     result = _make_equip(session).execute(
@@ -268,16 +268,16 @@ def test_equip_set_fails_if_item_missing(session):
 
 def test_unequip_all_clears_every_slot(session):
     pid = _create_player(session)
-    h = _create_item(session, "iron_helmet", "helmet", "casque")
-    p = _create_item(session, "iron_chest", "chest", "plastron")
-    _equip_pre(session, pid, h, "casque")
-    _equip_pre(session, pid, p, "plastron")
+    h = _create_item(session, "iron_helmet", "tete", "tete")
+    p = _create_item(session, "iron_chest", "corps", "corps")
+    _equip_pre(session, pid, h, "tete")
+    _equip_pre(session, pid, p, "corps")
 
     result = _make_unequip_all(session).execute(
         discord_id=1, username="a", display_name="A",
     )
     assert result.success is True
-    assert sorted(result.slots_cleared) == ["casque", "plastron"]
+    assert sorted(result.slots_cleared) == ["corps", "tete"]
     assert EquipmentRepository(session).list_by_player_id(pid) == []
 
 

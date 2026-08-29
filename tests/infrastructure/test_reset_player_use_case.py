@@ -96,7 +96,7 @@ def _seed_full_profile(session, player_id: int, other_player_id: int) -> None:
         created_at=now, updated_at=now,
     ))
     session.add(PlayerEquipmentItemModel(
-        player_id=player_id, item_definition_id=item.id, slot="casque",
+        player_id=player_id, item_definition_id=item.id, slot="tete",
         created_at=now, updated_at=now,
     ))
     session.add(PlayerCooldownModel(

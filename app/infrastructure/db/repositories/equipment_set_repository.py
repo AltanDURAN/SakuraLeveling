@@ -12,6 +12,7 @@ from app.infrastructure.db.models.equipment_set_model import (
     PlayerEquipmentSetItemModel,
     PlayerEquipmentSetModel,
 )
+from app.domain.entities.item_definition import ItemDefinition
 from app.infrastructure.db.repositories._mappers import map_item_definition
 
 

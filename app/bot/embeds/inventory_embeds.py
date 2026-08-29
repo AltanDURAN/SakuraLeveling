@@ -10,6 +10,7 @@ Pas de page 'Tout' : on force le tri par catégorie pour la lisibilité.
 import discord
 
 from app.domain.entities.player_inventory_item import PlayerInventoryItem
+from app.shared.enums import EQUIPABLE_CATEGORIES
 
 
 # Pages affichées dans /inventory. Plus d'équipables ici — uniquement
@@ -20,13 +21,8 @@ PAGES: list[tuple[str, str, str]] = [
     ("resource", "Ressources & drops", "🌾"),
 ]
 
-# Catégories considérées comme des items équipables (filtrées hors de
-# l'inventaire — affichées dans /equipement_list).
-EQUIPABLE_CATEGORIES = {
-    "weapon", "shield",
-    "helmet", "chest", "legs", "boots",
-    "necklace", "bracelet", "ring", "belt", "cape", "earring",
-}
+# Catégories équipables : filtrées hors de l'inventaire (elles s'affichent
+# dans /equipement_liste). Liste canonique dans enums pour éviter la dérive.
 
 # Mapping category → page_key pour les items NON équipables uniquement.
 _CATEGORY_TO_PAGE: dict[str, str] = {

@@ -8,12 +8,13 @@ Le `tiers` est une liste ordonnée : on prend le PLUS HAUT palier dont
 `min_pieces` est ≤ au nombre d'items équipés. Pas d'addition de paliers
 ("progressif" = un palier remplace le précédent, pas qu'il s'ajoute).
 
-Exemple — panoplie "iron" avec tiers à 2/4/8/12 et bonus +1/+2/+5/+8 def :
-    - 1 item équipé  → aucun bonus
-    - 3 items        → +1 def (palier 2)
-    - 7 items        → +2 def (palier 4)
-    - 10 items       → +5 def (palier 8)
-    - 12 items       → +8 def (palier 12)
+Exemple — panoplie "iron" avec tiers à 2/4 et bonus +2/+5 def (seuls la
+tête, le corps et les deux mains comptent — les accessoires sont hors
+panoplie) :
+    - 1 pièce équipée → aucun bonus
+    - 2 pièces        → +2 def (palier 2)
+    - 3 pièces        → +2 def (toujours palier 2)
+    - 4 pièces        → +5 def (palier 4, maximum)
 
 Quand le joueur déséquipe et tombe sous un palier, le bonus s'estompe
 automatiquement au calcul suivant — rien à persister, c'est dérivé.

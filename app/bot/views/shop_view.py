@@ -17,10 +17,10 @@ from app.domain.entities.shop_item import ShopItem
 
 # Pages : (label bouton, emoji, catégories incluses).
 _PAGES: list[tuple[str, str, frozenset[str]]] = [
-    ("Armes", "⚔️", frozenset({"weapon"})),
-    ("Boucliers", "🛡️", frozenset({"shield"})),
-    ("Armure", "🪖", frozenset({"helmet", "chest", "legs", "boots"})),
-    ("Accessoires", "💍", frozenset({"necklace", "bracelet", "ring", "belt", "cape", "earring"})),
+    ("Armes", "⚔️", frozenset({"arme"})),
+    ("Boucliers", "🛡️", frozenset({"bouclier"})),
+    ("Armure", "🪖", frozenset({"tete", "corps"})),
+    ("Accessoires", "💍", frozenset({"accessoire"})),
     ("Consommables", "🧪", frozenset({"consumable"})),
     ("Ressources", "📦", frozenset({"resource"})),
 ]

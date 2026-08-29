@@ -159,7 +159,7 @@ def test_craft_succeeds_when_all_ingredients_present(session):
     pid = _create_player(session)
     iron_id = _create_item(session, "iron")
     leather_id = _create_item(session, "leather")
-    helmet_id = _create_item(session, "helmet", category="helmet", equipment_slot="casque")
+    helmet_id = _create_item(session, "helmet", category="tete", equipment_slot="tete")
     _give_item(session, pid, iron_id, quantity=5)
     _give_item(session, pid, leather_id, quantity=2)
     _create_recipe(

@@ -23,16 +23,17 @@ import sys
 from pathlib import Path
 
 from openpyxl import load_workbook
+from app.shared.enums import ITEM_CATEGORY_LABELS
 
 ROOT = Path(__file__).resolve().parent.parent
 CONTENT_DIR = ROOT / "app" / "infrastructure" / "content"
 DEFAULT_XLSX = ROOT / "docs" / "sakura_content.xlsx"
 
+# Dérivé des enums (miroir exact de l'export) : sans ça, un aller-retour xlsx
+# réécrirait les ANCIENNES catégories dans items.json.
 EQUIPMENT_TYPES = {
-    "weapon": "Arme", "shield": "Bouclier", "helmet": "Casque",
-    "chest": "Plastron", "legs": "Jambières", "boots": "Bottes",
-    "necklace": "Collier", "bracelet": "Bracelet", "ring": "Bague",
-    "belt": "Ceinture", "cape": "Cape", "earring": "Boucle d'oreille",
+    cat: ITEM_CATEGORY_LABELS.get(cat, cat)
+    for cat in ("arme", "bouclier", "tete", "corps", "accessoire")
 }
 _TYPE_TO_CAT = {v: k for k, v in EQUIPMENT_TYPES.items()}
 
@@ -41,6 +42,7 @@ _STAT_COLS = {
     "Atk": "attack", "Def": "defense", "PV": "max_hp", "Crit %": "crit_chance",
     "Crit dmg": "crit_damage", "Esquive": "dodge", "Vitesse": "speed",
     "Regen": "hp_regeneration",
+    "Mana max": "mana_max", "Regen mana": "mana_regeneration",
 }
 
 

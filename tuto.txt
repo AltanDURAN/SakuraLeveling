@@ -93,54 +93,59 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
 
 /equipement_list [target]
     Liste tous les équipements possédés (portés ou en réserve), répartis
-    en 12 catégories (1 page = 1 type de slot). Chaque ligne indique
+    en 5 catégories (armes, boucliers, tête, corps, accessoires — une page
+    par catégorie). Chaque ligne indique
     l'item, sa quantité, et un marqueur "✅ équipé" si l'item est
     actuellement porté. Pratique pour faire le tri / vendre / brocanter
     ses doublons sans polluer /inventory.
 
 /equipement [target]
     Affiche l'équipement porté sous forme d'IMAGE PNG générée à la volée
-    par Pillow. Trois pages naviguables avec ⬅️ ➡️ :
-        Page 1 — Principaux : casque, plastron, jambières, bottes,
-                              main droite, main gauche (3×2)
-        Page 2 — Secondaires : collier, bracelet, bague, ceinture, cape,
-                               boucle d'oreille (3×2)
-        Page 3 — Résumé : stats totales apportées par l'équipement +
-                          bonus de panoplies actifs avec progression
-                          vers le prochain palier
+    par Pillow. Deux pages naviguables avec ⬅️ ➡️ :
+        Page 1 — Équipement : les 7 emplacements du jeu
+                              tête, corps, arme 1, arme 2,
+                              accessoire 1, accessoire 2, accessoire 3
+        Page 2 — Résumé : stats totales apportées par l'équipement
+                          (mana inclus) + bonus de panoplies actifs
 
-    Chaque slot affiche :
+    LES 7 EMPLACEMENTS :
+        🪖 Tête        ×1
+        👕 Corps       ×1   (remplace plastron + jambières + bottes)
+        💍 Accessoire  ×3   (collier, bague, ceinture, cape… au choix :
+                             il n'y a plus de slot dédié par bijou)
+        ⚔️ Arme        ×2   (armes ET boucliers partagent ces 2 mains)
+
+    Chaque emplacement affiche :
         • L'image de l'item (depuis assets/items/<code>.png) si elle
           existe, sinon un placeholder stylisé avec l'icône du slot.
         • Le nom de l'item et ses bonus de stats.
-    Slots vides → marqueur "VIDE" lisible. Si une arme à 2 mains est
-    équipée, la main gauche affiche "🔒 ARME À 2 MAINS".
+    Emplacement vide → marqueur "VIDE" lisible.
 
-    Note : les armes à 1 main n'ont pas de "main préférée" — équiper
-    sans préciser de slot remplit la première main libre (droite, sinon
-    gauche). Les armes à 2 mains occupent toujours les deux mains.
+    Note : tu ne choisis JAMAIS l'emplacement toi-même. Un item déclare
+    son TYPE (tête / corps / accessoire / arme) et se pose dans le premier
+    emplacement LIBRE de ce type ; si tout est plein, il remplace le
+    premier. Une pièce à 2 mains occupe l'emplacement arme 1 et laisse
+    arme 2 inutilisable ; équiper une pièce à 1 main la remplace.
 
     Système de panoplie (set bonus) :
-        Chaque pièce d'équipement appartient à une famille (iron, slime,
-        gobelin, leather, linen) qui forme une PANOPLIE de 12 items
-        (1 par slot). Plus tu équipes d'items de la même panoplie, plus
-        le bonus est élevé. Paliers à 2 / 4 / 8 / 12 pièces. Stat
-        thématique et progression par famille :
+        Chaque pièce d'équipement peut appartenir à une famille, qui forme
+        une PANOPLIE. Seuls QUATRE emplacements comptent pour une panoplie :
+        tête, corps, arme 1 et arme 2 — les accessoires en sont exclus.
 
-            🛡️ Fer        → +1 / +2 / +5 / +8 défense
-            🟫 Cuir        → +4 / +8 / +20 / +32 PV max
-            🟢 Slime       → +1 / +2 / +5 / +8 régénération PV / min
-            👹 Gobeline   → +1 / +2 / +4 / +8 dégâts critiques
-            🧵 Lin         → +1 / +2 / +3 / +5 esquive
+        Paliers à 2 et 4 pièces. Le bonus du palier le plus haut REMPLACE
+        celui du palier inférieur (pas cumulatif), et s'estompe
+        automatiquement dès que tu descends sous le palier.
 
-        Le bonus du palier le plus haut REMPLACE celui du palier inférieur
-        (pas cumulatif). Le bonus s'estompe automatiquement quand tu
-        descends sous le palier (déséquipe ou change de panoplie).
+        Règles de comptage :
+        - une pièce à 2 mains compte pour 2 ;
+        - deux armes IDENTIQUES comptent pour 1, deux armes différentes
+          de la même famille comptent pour 2.
 
 /panoplie <nom>
     Affiche le détail d'une panoplie : description, paliers de bonus
-    (2/4/8/12 pièces avec l'effet de chaque palier), et la liste des
-    pièces qui composent la panoplie regroupées par slot. Autocomplete
+    (2 et 4 pièces avec l'effet de chaque palier), et la liste des
+    pièces qui composent la panoplie regroupées par type d'emplacement.
+    Autocomplete
     sur les familles disponibles.
     Exemple : /panoplie iron → détail complet de la panoplie Acier.
 
@@ -157,29 +162,21 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
 /unequip <slot|all>
     Retire l'équipement du slot spécifié sans le remplacer (laisse le slot
     vide). Autocomplete sur les slots actuellement occupés (affiche aussi
-    le nom de l'item porté pour chaque entrée). Si le slot contenait une
-    arme à 2 mains, `main_gauche` redevient libre automatiquement.
+    le nom de l'item porté pour chaque entrée, avec un libellé lisible du
+    type « Accessoire 2 »). Si l'emplacement contenait une pièce à 2 mains,
+    les deux mains redeviennent libres automatiquement.
     Cas spécial `slot=all` : déséquipe TOUTES les pièces d'un coup.
 
-/equip_panoplie <nom> [option]
-    Équipe en un clic toutes les pièces d'une panoplie (12/12 actifs).
-    Chaque panoplie a 16 items distincts : 10 hors-main + 2 armes
-    légères + 1 arme lourde + 2 boucliers légers + 1 bouclier lourd.
-    Comme on a 12 slots, on choisit la config des mains via `option` :
-        defaut           → 1 arme légère + 1 bouclier léger (par défaut)
-        double_armes     → 2 armes légères différentes
-        double_boucliers → 2 boucliers légers différents
-        arme_lourde      → 1 arme 2-mains (verrouille main_gauche)
-        bouclier_lourd   → 1 bouclier 2-mains (idem)
-    Règles bonus de panoplie :
-    - 2-mains compte pour 2 points
-    - 2 mêmes mains identiques = 1 point ; 2 mains différentes = 2 points
+/equip_panoplie <nom>
+    Équipe en un clic les pièces d'une panoplie sur les 4 emplacements
+    qui comptent : tête, corps, arme 1, arme 2. Il n'y a plus d'option à
+    choisir — la commande prend la meilleure configuration possible avec
+    ce que tu possèdes (deux pièces à 1 main si tu les as, sinon une
+    pièce à 2 mains).
     Comportement :
-    - Pièces de la bonne famille déjà équipées au bon slot → conservées.
-    - Slots tenus par hors-famille → déséquipés et remplacés.
-    Conditions :
-    - Au moins 12/12 pondéré possédé (inventaire ∪ équipé).
-    - Items requis par l'option (ex : arme_lourde exige une 2-mains).
+    - Pièces de la bonne famille déjà équipées → conservées.
+    - Emplacements tenus par du hors-famille → déséquipés et remplacés.
+    - Les accessoires ne sont pas touchés (hors panoplie).
 
 /create_set <nom>
     Sauvegarde l'équipement actuellement équipé sous un nom libre
@@ -310,12 +307,12 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     ingrédients requis. Code utilisable avec /craft.
 
 /forge_list
-    Liste les recettes d'armes et boucliers (catégories weapon / shield).
+    Liste les recettes d'armes et boucliers (catégories arme / bouclier).
     Code utilisable avec /forge.
 
 /craft <recipe_code>
-    Fabrique un objet d'équipement / accessoire (casque, plastron, jambières,
-    bottes, collier, ceinture, etc.). Refuse si la recette produit une arme :
+    Fabrique un objet d'équipement / accessoire (pièce de tête, de corps,
+    ou accessoire). Refuse si la recette produit une arme :
     utilisez /forge dans ce cas. Autocomplete sur les recettes valides.
     Exemple : /craft leather_cap_recipe
 
@@ -325,8 +322,8 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     Exemple : /forge iron_greatsword_recipe
 
 /craft_panoplie <nom>
-    Craft en lot toutes les pièces /craft d'une panoplie (collier, bracelet,
-    bague, ceinture, cape, boucle d'oreille) que vous ne possédez pas déjà.
+    Craft en lot les pièces /craft d'une panoplie que vous ne possédez pas
+    déjà.
     Affiche d'abord un récap : pièces produites + ingrédients consommés.
     - Si ressources OK : bouton "Crafter" (vert) + "Annuler" (gris)
     - Si insuffisant : liste des ingrédients manquants avec quantités
@@ -334,40 +331,45 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
 
 /forge_panoplie <nom>
     Idem que /craft_panoplie mais pour les pièces /forge (armes, boucliers,
-    casques, plastrons, jambières, bottes). Bouton "Forger" en confirmation.
+    pièces de tête et de corps). Bouton "Forger" en confirmation.
 
 --------------------------------------------------------------------------------
 1.3 — ÉQUIPEMENT
 --------------------------------------------------------------------------------
 
-Slots d'équipement (12 au total) :
-    Principaux  : casque, plastron, jambieres, bottes, main_droite, main_gauche
-    Secondaires : collier, bracelet, bague, ceinture, cape, boucle_oreille
+Emplacements d'équipement (7 au total) :
+    tete          ×1
+    corps         ×1
+    arme_1        ×2 avec arme_2 — armes ET boucliers y vont indifféremment
+    accessoire_1  ×3 avec accessoire_2 et accessoire_3
+
+    Un item ne déclare PAS un emplacement précis mais un TYPE : tête, corps,
+    accessoire ou arme. Le jeu place la pièce tout seul.
 
 Règles d'équipement :
-    • Un seul objet par slot
-    • Les armes 1-main peuvent être équipées en main_droite OU main_gauche
-      (ambidextrie). Pour porter la même arme dans les deux mains, il faut
-      en posséder deux exemplaires distincts.
-    • Les armes 2-mains (épée longue, etc.) occupent les deux slots de main
-      en même temps : équiper une 2-mains déséquipe automatiquement ce qui
-      était dans main_droite ET main_gauche.
-    • Équiper en main_gauche alors qu'une 2-mains est portée la déséquipe.
+    • Un seul objet par emplacement.
+    • Équiper sans rien préciser remplit le premier emplacement LIBRE du
+      type ; si tous sont pleins, la première pièce est remplacée.
+    • Armes et boucliers partagent les deux mains : tu peux porter deux
+      armes, deux boucliers, ou un de chaque. Pour porter deux fois le MÊME
+      objet, il faut en posséder deux exemplaires.
+    • Une pièce à 2 mains occupe arme_1 et rend arme_2 inutilisable ;
+      l'équiper libère les deux mains. Équiper une pièce à 1 main
+      par-dessus une 2-mains la remplace.
     • On ne gagne PAS de stats en craftant un équipement, on en gagne
       uniquement en l'équipant. Changer d'équipement est gratuit et permet
       le théorycrafting.
 
 /equip <item_code> [slot]
-    Équipe un objet de votre inventaire. Le `slot` est optionnel : si non
-    fourni, l'objet va dans son slot par défaut. Pour les armes 1-main,
-    spécifiez `main_droite` ou `main_gauche` selon le côté souhaité.
-    Autocomplete : ne propose que les objets équipables présents dans
-    votre inventaire. Si un objet est déjà équipé dans le slot, il est
-    automatiquement déséquipé.
+    Équipe un objet de votre inventaire. Le `slot` est optionnel et
+    rarement utile : sans lui, l'objet va dans le premier emplacement
+    libre de son type. Autocomplete : ne propose que les objets équipables
+    présents dans votre inventaire. Si l'emplacement visé est déjà occupé,
+    un aperçu du gain/perte de stats vous est proposé avant confirmation.
     Exemples :
-        /equip iron_helmet                   → casque (slot par défaut)
-        /equip wood_sword main_gauche        → arme 1-main en main gauche
-        /equip iron_greatsword               → 2-mains, libère les deux mains
+        /equip bandana              → emplacement tete
+        /equip arc                  → arme_1 (ou arme_2 si arme_1 est pris)
+        /equip dagues_jumelles      → 2-mains : occupe arme_1, libère arme_2
 
 --------------------------------------------------------------------------------
 1.4 — COMBAT

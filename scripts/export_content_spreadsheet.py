@@ -35,6 +35,7 @@ from app.domain.services.power_score_service import (
     _RANK_THRESHOLDS,
     _SCALE,
 )
+from app.shared.enums import ITEM_CATEGORY_LABELS
 
 ROOT = Path(__file__).resolve().parent.parent
 CONTENT_DIR = ROOT / "app" / "infrastructure" / "content"
@@ -52,11 +53,10 @@ CALIB = "⚙️ Calibrage"          # nom de la feuille de constantes
 CALIB_REF = f"'{CALIB}'!"        # préfixe pour les formules
 
 # Catégories d'équipement → libellé FR lisible (pour la colonne Type / filtre).
+# Dérivé des enums : le xlsx suit automatiquement le référentiel du jeu.
 EQUIPMENT_TYPES = {
-    "weapon": "Arme", "shield": "Bouclier", "helmet": "Casque",
-    "chest": "Plastron", "legs": "Jambières", "boots": "Bottes",
-    "necklace": "Collier", "bracelet": "Bracelet", "ring": "Bague",
-    "belt": "Ceinture", "cape": "Cape", "earring": "Boucle d'oreille",
+    cat: ITEM_CATEGORY_LABELS.get(cat, cat)
+    for cat in ("arme", "bouclier", "tete", "corps", "accessoire")
 }
 
 
@@ -227,6 +227,7 @@ def write_equipment_sheet(wb: Workbook) -> None:
     headers = [
         "Code", "Nom", "Type", "Slot", "Panoplie", "Rareté", "2-mains",
         "Atk", "Def", "PV", "Crit %", "Crit dmg", "Esquive", "Vitesse", "Regen",
+        "Mana max", "Regen mana",
         "Power", "Prix achat", "Description",
     ]
     ws.append(headers)
@@ -243,6 +244,7 @@ def write_equipment_sheet(wb: Workbook) -> None:
             b.get("attack", 0), b.get("defense", 0), b.get("max_hp", 0),
             b.get("crit_chance", 0), b.get("crit_damage", 0),
             b.get("dodge", 0), b.get("speed", 0), b.get("hp_regeneration", 0),
+            b.get("mana_max", 0), b.get("mana_regeneration", 0),
             None,  # Power : formule injectée ci-dessous
             it.get("buy_price") or 0,
             it.get("description", ""),

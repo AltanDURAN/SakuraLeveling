@@ -120,6 +120,13 @@ CATEGORY_ICONS: dict[str, str] = {
 FORGE_CATEGORIES: set[str] = {"arme", "bouclier", "tete", "corps"}
 
 
+# Catégories d'items qui s'ÉQUIPENT (à opposer à resource / consumable). Source
+# unique de vérité : /inventaire les exclut, /equipement_liste les affiche.
+EQUIPABLE_CATEGORIES: frozenset[str] = frozenset(
+    {"arme", "bouclier", "tete", "corps", "accessoire"}
+)
+
+
 class ItemCategory(StrEnum):
     """Catégories simplifiées : une par type d'emplacement, plus les
     non-équipables. Armes et boucliers restent distincts (la forge et le
@@ -221,10 +228,13 @@ STAT_LABELS: dict[str, str] = {
     "hp_regeneration": "Régén PV",
     "mana_max": "Mana max", "mana_regeneration": "Régén mana",
 }
+# SOURCE UNIQUE des emojis de stats (bot ET admin). Les symboles historiques
+# du bot font foi — 🌀 = esquive partout, donc le mana prend 🔷 / 💧.
 STAT_EMOJIS: dict[str, str] = {
     "max_hp": "❤️", "attack": "⚔️", "defense": "🛡️", "speed": "💨",
-    "crit_chance": "💥", "crit_damage": "✴️", "dodge": "🎯", "hp_regeneration": "💚",
-    "mana_max": "🔷", "mana_regeneration": "🌀",
+    "crit_chance": "🎯", "crit_damage": "💥", "dodge": "🌀",
+    "hp_regeneration": "✨",
+    "mana_max": "🔷", "mana_regeneration": "💧",
 }
 
 
