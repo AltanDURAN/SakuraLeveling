@@ -17,7 +17,10 @@ from app.application.use_cases.craft_item import CraftItemUseCase
 from app.application.use_cases.use_consumable import UseConsumableUseCase
 from app.application.use_cases.get_available_classes import GetAvailableClassesUseCase
 from app.application.use_cases.get_player_equipment import GetPlayerEquipmentUseCase
-from app.application.use_cases.equip_item import EquipItemUseCase
+from app.application.use_cases.equip_item import (
+    EquipItemUseCase,
+    plan_equip,
+)
 from app.bot.embeds.duel_embeds import (
     build_duel_intro_embed,
     build_duel_result_embed,
@@ -63,7 +66,7 @@ from app.infrastructure.skill_tree.skill_tree_loader import (
 from app.domain.services.skill_tree_service import SkillTreeService
 from app.infrastructure.db.repositories.profession_repository import ProfessionRepository
 from app.infrastructure.db.session import get_db_session
-from app.shared.enums import EquipmentSlot
+from app.shared.enums import SLOT_LABELS
 from app.domain.services.health_regeneration_service import HealthRegenerationService
 from app.infrastructure.db.repositories.player_health_repository import PlayerHealthRepository
 from app.domain.services.power_score_service import PowerScoreService
@@ -504,7 +507,6 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             inventory_repository = InventoryRepository(session)
             equipment_repository = EquipmentRepository(session)
             class_repository = ClassRepository(session)
-            skill_alloc_repo = PlayerSkillAllocationRepository(session)
 
             inventory_items = inventory_repository.list_by_player_id(profile.player.id)
             matched = next(
@@ -526,17 +528,19 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
 
             current_equipment = equipment_repository.list_by_player_id(profile.player.id)
 
-            # L'item déclare un TYPE d'emplacement : on vise le premier
-            # emplacement LIBRE de ce type (sinon le premier, qui sera
-            # remplacé). Même règle que le use case d'équipement.
+            # Même décision que le use case, via la fonction pure partagée :
+            # emplacement cible + emplacements que l'opération va libérer
+            # (une 2-mains en libère DEUX, ce que le preview ignorait avant).
             item_def = matched.item_definition
-            from app.shared.enums import SLOTS_FOR_ITEM_TYPE
-            allowed = SLOTS_FOR_ITEM_TYPE.get(item_def.equipment_slot or "", [])
-            occupied = {e.slot for e in current_equipment}
-            target_slot = next(
-                (s.value for s in allowed if s.value not in occupied),
-                allowed[0].value if allowed else item_def.equipment_slot,
-            )
+            occupied = {e.slot: e.item_definition for e in current_equipment}
+            plan = plan_equip(item_def, occupied)
+            if plan is None:
+                await interaction.followup.send(
+                    f"❌ **{item_def.name}** n'a pas d'emplacement valide.",
+                    ephemeral=True,
+                )
+                return
+            target_slot = plan.target_slot
 
             current_in_slot = next(
                 (e for e in current_equipment if e.slot == target_slot), None
@@ -571,10 +575,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
 
             # Sinon : un autre item est déjà dans le slot → calcule diff
             active_class = class_repository.get_current_class_for_player(profile.player.id)
-            allocations = skill_alloc_repo.list_by_player(profile.player.id)
-            skill_bonuses = SkillTreeService(get_skill_tree_definition()).aggregate_bonuses(
-                allocations
-            )
+            # (les bonus d'arbre sont résolus par resolve_player_stats)
 
             # Chaîne complète (skill + classe + sets + TITRES) pour un preview
             # de diff correct — l'inline oubliait les bonus de titre.
@@ -591,8 +592,9 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 created_at=current_in_slot.created_at,
                 updated_at=current_in_slot.updated_at,
             )
+            dropped = {target_slot, *plan.freed_slots}
             simulated = [
-                e for e in current_equipment if e.slot != target_slot
+                e for e in current_equipment if e.slot not in dropped
             ] + [simulated_new]
             new_stats = resolve_player_stats(
                 session, profile, simulated, active_class
@@ -702,7 +704,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             current = equipment_repository.get_slot(profile.player.id, slot)
             if current is None:
                 await interaction.response.send_message(
-                    f"❌ Aucun équipement dans `{slot}`.",
+                    f"❌ Aucun équipement dans **{SLOT_LABELS.get(slot, slot)}**.",
                     ephemeral=True,
                 )
                 return
@@ -711,7 +713,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             was_two_hands = bool(current.item_definition.requires_two_hands)
             equipment_repository.unequip_slot(profile.player.id, slot)
 
-        msg = f"✅ **{item_name}** déséquipé de `{slot}`."
+        msg = f"✅ **{item_name}** déséquipé de **{SLOT_LABELS.get(slot, slot)}**."
         if was_two_hands:
             msg += "\n_(Pièce à 2 mains : vos deux emplacements d'arme sont de nouveau libres.)_"
         await interaction.response.send_message(msg)
@@ -739,7 +741,8 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             choices.append(app_commands.Choice(name=all_label[:100], value="all"))
 
         for entry in equipped:
-            label = f"{entry.slot} — {entry.item_definition.name}"[:100]
+            slot_label = SLOT_LABELS.get(entry.slot, entry.slot)
+            label = f"{slot_label} — {entry.item_definition.name}"[:100]
             if current_lower and current_lower not in entry.slot.lower():
                 continue
             choices.append(app_commands.Choice(name=label, value=entry.slot))
@@ -749,7 +752,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
 
     @app_commands.command(
         name="equiper_panoplie",
-        description="Équipe en un clic toutes les pièces d'une panoplie (12/12)",
+        description="Équipe en un clic les pièces d'une panoplie (tête, corps, 2 mains)",
     )
     @app_commands.describe(nom="Nom de la panoplie (autocomplete)")
     async def equip_panoplie(

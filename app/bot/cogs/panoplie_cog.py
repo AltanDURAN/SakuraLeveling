@@ -2,9 +2,9 @@
 
 Affiche :
   - en-tête : icône + nom + description
-  - section Paliers : 2 / 4 / 8 / 12 pièces avec leur bonus respectif
+  - section Paliers : 2 / 4 pièces avec leur bonus respectif
   - section Pièces de la panoplie : tous les items qui appartiennent à
-    cette famille, regroupés par slot
+    cette famille, regroupés par type d'emplacement
 
 L'autocomplete propose toutes les familles définies dans `sets.json`,
 filtrées par la sous-chaîne tapée.

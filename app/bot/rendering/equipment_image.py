@@ -37,6 +37,7 @@ from app.shared.enums import (
     SLOT_ORDER,
     SLOT_ICONS,
     SLOT_LABELS_SHORT,
+    STAT_EMOJIS,
 )
 from app.shared.paths import ITEMS_ASSETS_DIR
 
@@ -476,7 +477,7 @@ def compose_equipment_summary_page(
     *,
     seed: int = 0,
 ) -> None:
-    """Page 3 : résumé des stats apportées par l'équipement + bonus de
+    """Page 2 : résumé des stats apportées par l'équipement + bonus de
     panoplie actifs."""
     bg = _gradient_bg(WIDTH, SUMMARY_HEIGHT)
     _add_petals_decoration(bg, seed)
@@ -489,6 +490,10 @@ def compose_equipment_summary_page(
         "max_hp": 0, "attack": 0, "defense": 0, "speed": 0,
         "crit_chance": 0, "crit_damage": 0, "dodge": 0,
         "hp_regeneration": 0,
+        # Le mana est une stat d'équipement à part entière : il doit être
+        # totalisé ici comme les autres, sinon la page 1 l'affiche pièce par
+        # pièce mais le résumé l'oublie.
+        "mana_max": 0, "mana_regeneration": 0,
     }
     for eq in equipped_items:
         b = eq.item_definition.stat_bonuses or {}
@@ -504,6 +509,8 @@ def compose_equipment_summary_page(
     totals["crit_damage"] += set_bonuses.crit_damage_flat
     totals["dodge"] += set_bonuses.dodge_flat
     totals["hp_regeneration"] += set_bonuses.hp_regeneration_flat
+    totals["mana_max"] += set_bonuses.mana_max_flat
+    totals["mana_regeneration"] += set_bonuses.mana_regeneration_flat
 
     # Section "Stats apportées par l'équipement"
     section_font = _try_font(26, bold=True)
@@ -530,15 +537,24 @@ def compose_equipment_summary_page(
     label_font = _try_font(24, bold=True)
     value_font = _try_font(38, bold=True)
 
+    # Libellés COURTS + emojis tirés du référentiel partagé : la page 1 rend
+    # les stats pièce par pièce avec STAT_EMOJIS, la page 2 doit utiliser les
+    # MÊMES symboles (sinon 🌀 = esquive ici et régén mana là-bas).
+    _SUMMARY_STATS: list[tuple[str, str, bool]] = [
+        ("max_hp", "PV", False), ("attack", "Atk", False),
+        ("defense", "Def", False), ("speed", "Vit", False),
+        ("crit_chance", "Crit %", True), ("crit_damage", "Crit dmg", True),
+        ("dodge", "Esquive", True), ("hp_regeneration", "Régen", False),
+        ("mana_max", "Mana", False), ("mana_regeneration", "Régen mana", False),
+    ]
     stat_cards = [
-        ("❤️", "PV", _signed(totals["max_hp"]), "hp"),
-        ("⚔️", "Atk", _signed(totals["attack"]), "atk"),
-        ("🛡️", "Def", _signed(totals["defense"]), "def"),
-        ("💨", "Vit", _signed(totals["speed"]), "speed"),
-        ("🎯", "Crit %", _signed(totals["crit_chance"]) + "%", "crit"),
-        ("💥", "Crit dmg", _signed(totals["crit_damage"]) + "%", "cdmg"),
-        ("🌀", "Esquive", _signed(totals["dodge"]) + "%", "dodge"),
-        ("✨", "Régen", _signed(totals["hp_regeneration"]), "regen"),
+        (
+            STAT_EMOJIS.get(key, "•"),
+            label,
+            _signed(totals[key]) + ("%" if pct else ""),
+            key,
+        )
+        for key, label, pct in _SUMMARY_STATS
     ]
     for idx, (emoji, label, value, _) in enumerate(stat_cards):
         row = idx // cols
@@ -565,7 +581,8 @@ def compose_equipment_summary_page(
         )
 
     # ----- Section "Bonus de panoplie" -----
-    sets_section_y = grid_y + 2 * (card_h + spacing) + 22
+    grid_rows = (len(stat_cards) + cols - 1) // cols
+    sets_section_y = grid_y + grid_rows * (card_h + spacing) + 22
     draw_text_with_emojis(
         bg, (30, sets_section_y), "🌸  BONUS DE PANOPLIE",
         section_font, fill=_TEXT_SECONDARY, shadow=_SHADOW,
@@ -584,7 +601,7 @@ def compose_equipment_summary_page(
     if not set_bonuses.active_sets:
         _draw_text_with_shadow(
             draw, (30, sets_y),
-            "_Aucun équipement avec famille n'est porté._",
+            "Aucune pièce de panoplie portée.",
             _try_font(20),
             fill=_TEXT_MUTED,
         )
@@ -622,7 +639,7 @@ def compose_equipment_summary_page(
                     bonus_text, bf, fill=_GOLD,
                 )
 
-    _draw_page_footer(bg, "Page 3 / 3 — Résumé")
+    _draw_page_footer(bg, "Page 2 / 2 — Résumé")
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     bg.convert("RGB").save(output_path, "PNG", optimize=True)
 

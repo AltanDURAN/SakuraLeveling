@@ -19,6 +19,50 @@ class EquipResult:
     unequipped_items: list[str] = field(default_factory=list)
 
 
+@dataclass(frozen=True)
+class EquipPlan:
+    """Où une pièce atterrit, et quels emplacements l'opération libère.
+
+    Fonction PURE : le use case l'applique en base, le preview de `/equiper`
+    s'en sert pour simuler le diff de stats. Avant, chacun refaisait le calcul
+    dans son coin — et le preview ignorait la règle des 2-mains, donc il
+    surestimait les stats quand les deux mains étaient occupées.
+    """
+
+    target_slot: str
+    freed_slots: tuple[str, ...] = ()
+
+
+def plan_equip(item_def, occupied: dict) -> EquipPlan | None:
+    """Décide l'emplacement cible. `occupied` : slot → ItemDefinition portée.
+
+    Renvoie None si l'item n'a pas de type d'emplacement exploitable.
+    """
+    allowed = SLOTS_FOR_ITEM_TYPE.get(item_def.equipment_slot or "")
+    if not allowed:
+        return None
+
+    # 2 mains : toujours arme_1, et les DEUX mains sont libérées.
+    if item_def.requires_two_hands:
+        return EquipPlan(
+            EquipmentSlot.ARME_1.value,
+            tuple(s.value for s in WEAPON_SLOTS if s.value in occupied),
+        )
+
+    # 1 main posée alors qu'une 2-mains est portée : elle prend sa place.
+    if item_def.equipment_slot == ItemSlotType.ARME.value:
+        held = occupied.get(EquipmentSlot.ARME_1.value)
+        if held is not None and held.requires_two_hands:
+            return EquipPlan(EquipmentSlot.ARME_1.value)
+
+    # Sinon : premier emplacement LIBRE du type, à défaut le premier.
+    target = next(
+        (s.value for s in allowed if s.value not in occupied),
+        allowed[0].value,
+    )
+    return EquipPlan(target)
+
+
 class EquipItemUseCase:
     """Équipe un item — système SIMPLIFIÉ à 7 emplacements.
 
@@ -43,12 +87,12 @@ class EquipItemUseCase:
         self.inventory_repository = inventory_repository
         self.equipment_repository = equipment_repository
 
-    def _pick_slot(self, player_id: int, allowed: list[EquipmentSlot]) -> str:
-        """Premier emplacement libre du type ; sinon le premier (remplacement)."""
-        for slot in allowed:
-            if self.equipment_repository.get_slot(player_id, slot.value) is None:
-                return slot.value
-        return allowed[0].value
+    def _occupied(self, player_id: int) -> dict:
+        """slot → ItemDefinition portée (entrée de `plan_equip`)."""
+        return {
+            e.slot: e.item_definition
+            for e in self.equipment_repository.list_by_player_id(player_id)
+        }
 
     def execute(
         self,
@@ -107,7 +151,8 @@ class EquipItemUseCase:
                 )
             target_slot = slot
         else:
-            target_slot = self._pick_slot(player_id, allowed)
+            plan = plan_equip(item_def, self._occupied(player_id))
+            target_slot = plan.target_slot if plan else allowed[0].value
 
         unequipped: list[str] = []
 

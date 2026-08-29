@@ -22,7 +22,6 @@ from app.shared.enums import (
     ITEM_RARITY_LABELS,
     STAT_EMOJIS,
     STAT_LABELS,
-    EquipmentSlot,
     ItemCategory,
     ItemRarity,
 )

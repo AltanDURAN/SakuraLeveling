@@ -203,7 +203,7 @@ def test_use_refused_if_not_consumable(session):
         buy_price=None,
         icon=None,
         stat_bonuses_json={"attack": 5},
-        equipment_slot="main_droite",
+        equipment_slot="arme",
         requires_two_hands=False,
         created_at=now,
         updated_at=now,

@@ -14,26 +14,15 @@ Deux dictionnaires :
 from __future__ import annotations
 
 
-STAT_EMOJIS: dict[str, str] = {
-    "max_hp":          "❤️",
-    "attack":          "⚔️",
-    "defense":         "🛡️",
-    "speed":           "💨",
-    "crit_chance":     "🎯",
-    "crit_damage":     "💥",
-    "dodge":           "🌀",
-    "hp_regeneration": "✨",
-}
+# Ré-export de la table canonique (app.shared.enums). Avant, ce module en
+# gardait une COPIE : les deux ont divergé quand le mana est arrivé (🌀 valait
+# esquive ici et régén mana là-bas). Une seule table désormais.
+from app.shared.enums import STAT_EMOJIS  # noqa: F401  (ré-export public)
 
+# Bonus de panoplie : même symbole que la stat correspondante. Dérivé de la
+# table canonique — les panoplies peuvent donner du mana depuis V2.1.
 BONUS_EMOJIS: dict[str, str] = {
-    "max_hp_flat":         "❤️",
-    "attack_flat":         "⚔️",
-    "defense_flat":        "🛡️",
-    "speed_flat":          "💨",
-    "crit_chance_flat":    "🎯",
-    "crit_damage_flat":    "💥",
-    "dodge_flat":          "🌀",
-    "hp_regeneration_flat": "✨",
+    f"{key}_flat": emoji for key, emoji in STAT_EMOJIS.items()
 }
 
 
