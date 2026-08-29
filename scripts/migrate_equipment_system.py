@@ -80,15 +80,17 @@ def migrate_database(write: bool) -> dict:
                 report["items_convertis"] += 1
 
         worn = session.execute(select(PlayerEquipmentItemModel)).scalars().all()
-        players = set()
-        inventory = InventoryRepository(session)
-        for row in worn:
-            players.add(row.player_id)
-            inventory.add_item(row.player_id, row.item_definition_id, 1)
-            report["pieces_rendues"] += 1
-        report["joueurs_touches"] = len(players)
+        report["pieces_rendues"] = len(worn)
+        report["joueurs_touches"] = len({row.player_id for row in worn})
 
+        # ⚠️ Le dry-run ne doit RIEN écrire. `InventoryRepository.add_item`
+        # committe lui-même : l'appeler puis rollback() rendait donc les pièces
+        # POUR DE VRAI, et un dry-run suivi d'un --write les rendait DEUX FOIS
+        # (bug constaté en production, corrigé à la main sur 6 lignes).
         if write:
+            inventory = InventoryRepository(session)
+            for row in worn:
+                inventory.add_item(row.player_id, row.item_definition_id, 1)
             session.execute(delete(PlayerEquipmentItemModel))
             session.commit()
         else:
