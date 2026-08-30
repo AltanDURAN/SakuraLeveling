@@ -1,0 +1,99 @@
+{
+  "_comment": "PNJ artisans. `categories` = catégories d'items que le PNJ traite (doit couvrir toutes les catégories équipables, sans recouvrement). `pricing` : or = base + coef x puissance^exposant ; duree_s = base + coef x puissance, plafonnée. Les paliers de maîtrise montent avec le nombre de commandes terminées ; `max_item_power: 0` = illimité. Mettre `duration_pct: 0` sur tous les paliers rend le travail instantané.",
+
+  "pricing": {
+    "gold_base": 25,
+    "gold_coef": 2.5,
+    "gold_exponent": 1.15,
+    "duration_base_s": 60,
+    "duration_coef_s": 4.0,
+    "duration_max_s": 3600,
+    "cancel_refund_pct": 50
+  },
+
+  "artisans": [
+    {
+      "code": "forgeron",
+      "name": "Borak",
+      "title": "Forgeron",
+      "verb": "forger",
+      "work_noun": "forge",
+      "image": "forgeron.png",
+      "accent": [214, 106, 42],
+      "categories": ["arme", "bouclier", "tete", "corps"],
+      "greeting": "Pose ton minerai sur l'enclume. Je m'occupe du reste.",
+      "tiers": [
+        {
+          "level": 1, "code": "apprenti", "name": "Apprenti",
+          "orders_required": 0, "max_item_power": 40,
+          "gold_discount_pct": 0, "duration_pct": 100,
+          "quote": "Je débute, alors ne me demande pas la lune. Du simple, du solide."
+        },
+        {
+          "level": 2, "code": "compagnon", "name": "Compagnon",
+          "orders_required": 10, "max_item_power": 120,
+          "gold_discount_pct": 5, "duration_pct": 90,
+          "quote": "On commence à se comprendre, toi et moi. Je peux taper plus lourd."
+        },
+        {
+          "level": 3, "code": "maitre", "name": "Maître",
+          "orders_required": 30, "max_item_power": 350,
+          "gold_discount_pct": 10, "duration_pct": 80,
+          "quote": "Amène-moi de la vraie matière. Je sais ce que j'en ferai."
+        },
+        {
+          "level": 4, "code": "legendaire", "name": "Légendaire",
+          "orders_required": 75, "max_item_power": 0,
+          "gold_discount_pct": 15, "duration_pct": 65,
+          "quote": "Il n'y a plus rien que cette forge ne puisse avaler. Choisis."
+        }
+      ]
+    },
+    {
+      "code": "artisan",
+      "name": "Elna",
+      "title": "Artisane",
+      "verb": "confectionner",
+      "work_noun": "confection",
+      "image": "artisan.png",
+      "accent": [72, 166, 158],
+      "categories": ["accessoire"],
+      "greeting": "Montre-moi ce que tu as rapporté. Je verrai ce que j'en tire.",
+      "tiers": [
+        {
+          "level": 1, "code": "apprenti", "name": "Apprentie",
+          "orders_required": 0, "max_item_power": 40,
+          "gold_discount_pct": 0, "duration_pct": 100,
+          "quote": "Mes mains apprennent encore. Restons sur des pièces sobres."
+        },
+        {
+          "level": 2, "code": "compagnon", "name": "Compagne",
+          "orders_required": 10, "max_item_power": 120,
+          "gold_discount_pct": 5, "duration_pct": 90,
+          "quote": "Je commence à savoir ce qui te va. Laisse-moi essayer mieux."
+        },
+        {
+          "level": 3, "code": "maitre", "name": "Maîtresse",
+          "orders_required": 30, "max_item_power": 350,
+          "gold_discount_pct": 10, "duration_pct": 80,
+          "quote": "Le fil, la pierre, le métal fin — plus rien ne me résiste vraiment."
+        },
+        {
+          "level": 4, "code": "legendaire", "name": "Légendaire",
+          "orders_required": 75, "max_item_power": 0,
+          "gold_discount_pct": 15, "duration_pct": 65,
+          "quote": "Dis-moi ce que tu veux devenir. Je te fabriquerai la pièce qui va avec."
+        }
+      ]
+    }
+  ],
+
+  "marchand": {
+    "code": "marchand",
+    "name": "Sorn",
+    "title": "Marchand",
+    "image": "marchand.png",
+    "accent": [150, 106, 200],
+    "greeting": "Approche. J'ai fait un long voyage pour t'apporter tout ça."
+  }
+}

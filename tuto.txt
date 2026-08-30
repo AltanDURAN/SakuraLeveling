@@ -301,37 +301,45 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     Vous gagnez de l'XP de métier et un objet selon votre niveau.
     Exemple : /gather mining
 
-/craft_list
-    Liste les recettes d'équipement et accessoires (hors armes / boucliers).
-    Pour chaque recette : nom du résultat, slot d'équipement, bonus de stats,
-    ingrédients requis. Code utilisable avec /craft.
+/forgeron
+    Fait venir BORAK, LE FORGERON. Il forge tout ce qui se porte au combat :
+    armes, boucliers, pièces de tête et pièces de corps.
 
-/forge_list
-    Liste les recettes d'armes et boucliers (catégories arme / bouclier).
-    Code utilisable avec /forge.
+    Tu ne tapes aucun code. Tu choisis une CATÉGORIE dans un menu, puis un
+    OBJET ; sa fiche s'affiche avec ses stats, les ingrédients qu'il te faut
+    (✅ possédé / ❌ manquant), le prix de son travail et le temps qu'il y
+    passera. Le bouton « Forger » ne s'active que si tout est réuni.
 
-/craft <recipe_code>
-    Fabrique un objet d'équipement / accessoire (pièce de tête, de corps,
-    ou accessoire). Refuse si la recette produit une arme :
-    utilisez /forge dans ce cas. Autocomplete sur les recettes valides.
-    Exemple : /craft leather_cap_recipe
+    CE QUE ÇA COÛTE
+        • les INGRÉDIENTS de la recette (pris dans ton inventaire) ;
+        • un PRIX EN OR pour son travail, qui monte avec la puissance de la
+          pièce — une arme de haut rang coûte disproportionnellement cher.
+        Les deux sont débités au moment où il commence.
 
-/forge <recipe_code>
-    Forge une arme ou un bouclier. Refuse si la recette produit autre chose :
-    utilisez /craft dans ce cas. Autocomplete sur les armes/boucliers.
-    Exemple : /forge iron_greatsword_recipe
+    LE TEMPS DE FORGE
+        Plus la pièce est puissante, plus il met de temps. Tu peux fermer la
+        fenêtre : le bot te préviendra dans le salon quand ce sera prêt.
+        Reviens ensuite faire /forgeron et clique sur « Récupérer ».
+        Tu ne peux avoir QU'UNE SEULE forge en cours à la fois.
 
-/craft_panoplie <nom>
-    Craft en lot les pièces /craft d'une panoplie que vous ne possédez pas
-    déjà.
-    Affiche d'abord un récap : pièces produites + ingrédients consommés.
-    - Si ressources OK : bouton "Crafter" (vert) + "Annuler" (gris)
-    - Si insuffisant : liste des ingrédients manquants avec quantités
-    Aucun ingrédient n'est consommé tant que vous n'avez pas confirmé.
+    ANNULER
+        Possible à tout moment. Tu récupères tous tes ingrédients, mais Borak
+        garde la moitié de l'or : il avait déjà entamé la matière.
 
-/forge_panoplie <nom>
-    Idem que /craft_panoplie mais pour les pièces /forge (armes, boucliers,
-    pièces de tête et de corps). Bouton "Forger" en confirmation.
+    SA MAÎTRISE (Apprenti → Compagnon → Maître → Légendaire)
+        Chaque travail que tu lui commandes ET que tu récupères le fait
+        progresser AVEC TOI. Sa maîtrise détermine :
+        • le PLAFOND DE PUISSANCE des pièces qu'il accepte de faire (une pièce
+          trop forte affiche 🔒 et le palier qu'il lui faudrait) ;
+        • une remise sur son prix ;
+        • un délai raccourci.
+        Un travail annulé ne compte pas.
+
+/artisan
+    Fait venir ELNA, L'ARTISANE. Même fonctionnement exactement que le
+    forgeron, mais pour les ACCESSOIRES. Elle a sa propre maîtrise et sa
+    propre file : tu peux avoir une forge ET une confection en cours en même
+    temps.
 
 --------------------------------------------------------------------------------
 1.3 — ÉQUIPEMENT
@@ -492,22 +500,19 @@ Kill counter : tous les survivants reçoivent +1 (les morts n'ont pas le kill).
 1.7 — BOUTIQUE
 --------------------------------------------------------------------------------
 
-/shop
-    Affiche les articles disponibles à la boutique, paginé par catégorie.
-    ACHAT UNIQUEMENT — on ne peut plus rien vendre au shop.
-    Seuls les onglets ayant au moins un article apparaissent. Boutons
-    possibles : Armes, Boucliers, Armure, Accessoires, Consommables,
-    Ressources. Chaque entrée affiche icône, rareté, description et prix
-    d'achat, avec un raccourci /buy.
+/marchand
+    Fait venir SORN, LE MARCHAND. Il déballe son étal : tu choisis un RAYON
+    dans un menu, puis un ARTICLE, tu règles la quantité avec les boutons
+    ×1 / ×5 / ×10, et tu achètes. Aucun code à taper.
+
+    La fiche affiche la description de l'article, son prix à l'unité, combien
+    tu en possèdes déjà et le prix total. Le bouton « Acheter » reste grisé
+    tant que ta bourse ne suit pas.
+
+    ACHAT UNIQUEMENT — on ne peut rien lui revendre.
     Note : les DROPS DE MOB (dent de gobelin, gelée de slime…) ne sont PAS
-    en boutique — ils servent uniquement au craft, pas à être achetés/vendus.
+    chez lui — ils servent uniquement à faire travailler les artisans.
 
-/buy <item_code> [quantity=1]
-    Achète une quantité d'un objet à la boutique. Prix fixe (admin-défini).
-    Stock toujours disponible côté shop. Échec si gold insuffisant.
-    Exemple : /buy potion_soin_i 5
-
-(La commande /sell n'existe plus : la revente au shop a été retirée.)
 
 --------------------------------------------------------------------------------
 1.8 — ÉCHANGES ENTRE JOUEURS

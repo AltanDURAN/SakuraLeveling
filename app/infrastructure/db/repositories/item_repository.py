@@ -20,6 +20,10 @@ class ItemRepository:
 
         return self._to_domain(model)
 
+    def get_by_id(self, item_definition_id: int) -> ItemDefinition | None:
+        model = self.session.get(ItemDefinitionModel, item_definition_id)
+        return self._to_domain(model) if model is not None else None
+
     def list_all(self) -> list[ItemDefinition]:
         stmt = select(ItemDefinitionModel).order_by(ItemDefinitionModel.code)
         return [self._to_domain(model) for model in self.session.execute(stmt).scalars().all()]

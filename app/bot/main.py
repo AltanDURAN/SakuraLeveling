@@ -44,6 +44,7 @@ _COG_MODULES = [
     "app.bot.cogs.chad_cog",
     "app.bot.cogs.bestiaire_cog",
     "app.bot.cogs.panoplie_cog",
+    "app.bot.cogs.artisan_cog",
 ]
 
 

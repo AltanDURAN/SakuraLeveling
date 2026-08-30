@@ -13,7 +13,6 @@ from app.application.use_cases.change_player_class import ChangePlayerClassUseCa
 from app.application.use_cases.transfer_gold import TransferGoldUseCase
 from app.application.use_cases.claim_daily_reward import ClaimDailyRewardUseCase
 from app.application.use_cases.challenge_player import ChallengePlayerUseCase
-from app.application.use_cases.craft_item import CraftItemUseCase
 from app.application.use_cases.use_consumable import UseConsumableUseCase
 from app.application.use_cases.get_available_classes import GetAvailableClassesUseCase
 from app.application.use_cases.get_player_equipment import GetPlayerEquipmentUseCase
@@ -33,19 +32,15 @@ from app.bot.embeds.daily_embeds import (
 )
 from app.bot.views.equipment_view import EquipmentView
 from app.bot.views.inventory_view import InventoryView
-from app.shared.enums import FORGE_CATEGORIES
-from app.bot.views.recipe_list_view import RecipeListView
 from app.bot.embeds.inventory_embeds import build_inventory_embed
 from app.bot.embeds.player_embeds import build_player_profile_embed
 from app.domain.services.class_service import ClassService
 from app.domain.services.cooldown_service import CooldownService
-from app.domain.services.craft_service import CraftService
 from app.domain.services.duel_combat_service import DuelCombatService
 from app.domain.services.stats_service import StatsService
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
-from app.infrastructure.db.repositories.craft_repository import CraftRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
@@ -1105,333 +1100,13 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
 
         await interaction.response.send_message(message, ephemeral=not success)
 
-    @app_commands.command(
-        name="recettes",
-        description="Liste les recettes d'accessoires (collier, bague, ceinture, cape…)",
-    )
-    async def craft_list(self, interaction: discord.Interaction) -> None:
-        await self._send_recipe_list(
-            interaction,
-            include_categories=None,
-            exclude_categories=FORGE_CATEGORIES,
-            title="🛠️ Recettes — Atelier",
-            color=discord.Color.orange(),
-        )
+    # ------------------------------------------------------------------
+    # Le craft et la forge ont quitté ce cog : ils passent désormais par
+    # les PNJ (`/forgeron`, `/artisan`) — cf. artisan_cog. Fabriquer coûte
+    # maintenant de l'or et prend du temps, ce qu'une commande directe ne
+    # savait pas exprimer.
+    # ------------------------------------------------------------------
 
-    @app_commands.command(
-        name="recettes_forge",
-        description="Liste les recettes d'armes, boucliers et armures (à forger)",
-    )
-    async def forge_list(self, interaction: discord.Interaction) -> None:
-        await self._send_recipe_list(
-            interaction,
-            include_categories=FORGE_CATEGORIES,
-            exclude_categories=None,
-            title="🔥 Recettes — Forge",
-            color=discord.Color.red(),
-        )
-
-    @app_commands.command(
-        name="fabriquer_panoplie",
-        description="Craft toutes les pièces /craft d'une panoplie (preview + confirmation)",
-    )
-    @app_commands.describe(nom="Nom de la panoplie (autocomplete)")
-    async def craft_panoplie(
-        self, interaction: discord.Interaction, nom: str,
-    ) -> None:
-        await self._send_panoplie_craft_preview(
-            interaction, family=nom, station="craft",
-        )
-
-    @app_commands.command(
-        name="forger_panoplie",
-        description="Forge toutes les pièces /forge d'une panoplie (preview + confirmation)",
-    )
-    @app_commands.describe(nom="Nom de la panoplie (autocomplete)")
-    async def forge_panoplie(
-        self, interaction: discord.Interaction, nom: str,
-    ) -> None:
-        await self._send_panoplie_craft_preview(
-            interaction, family=nom, station="forge",
-        )
-
-    @craft_panoplie.autocomplete("nom")
-    @forge_panoplie.autocomplete("nom")
-    async def _panoplie_name_autocomplete(
-        self,
-        interaction: discord.Interaction,
-        current: str,
-    ) -> list[app_commands.Choice[str]]:
-        from app.infrastructure.sets.set_loader import (
-            list_definitions as list_set_definitions,
-        )
-
-        sets_def = list_set_definitions()
-        current_lower = current.lower()
-        choices: list[app_commands.Choice[str]] = []
-        for code, set_def in sets_def.items():
-            name = set_def.get("name", code)
-            icon = set_def.get("icon", "✨")
-            if (
-                current_lower in code.lower()
-                or current_lower in name.lower()
-            ):
-                choices.append(
-                    app_commands.Choice(name=f"{icon} {name}", value=code),
-                )
-            if len(choices) >= 25:
-                break
-        return choices
-
-    async def _send_panoplie_craft_preview(
-        self,
-        interaction: discord.Interaction,
-        family: str,
-        station: str,
-    ) -> None:
-        from app.application.use_cases.panoplie_crafts import (
-            BuildPanoplieCraftPlanUseCase,
-        )
-        from app.bot.views.panoplie_craft_view import (
-            PanoplieCraftConfirmView,
-            build_plan_embed,
-        )
-
-        await interaction.response.defer()
-        with get_db_session() as session:
-            use_case = BuildPanoplieCraftPlanUseCase(
-                player_repository=PlayerRepository(session),
-                inventory_repository=InventoryRepository(session),
-                equipment_repository=EquipmentRepository(session),
-                item_repository=ItemRepository(session),
-                craft_repository=CraftRepository(session),
-            )
-            plan, error = use_case.execute(
-                discord_id=interaction.user.id,
-                username=interaction.user.name,
-                display_name=interaction.user.display_name,
-                family=family,
-                station=station,
-            )
-
-        if error is not None:
-            await interaction.followup.send(error, ephemeral=True)
-            return
-
-        embed = build_plan_embed(plan)
-        # Plan vide → pas besoin de View
-        if plan.is_empty:
-            await interaction.followup.send(embed=embed)
-            return
-
-        view = PanoplieCraftConfirmView(
-            plan=plan,
-            viewer_id=interaction.user.id,
-            username=interaction.user.name,
-            display_name=interaction.user.display_name,
-        )
-        await interaction.followup.send(embed=embed, view=view)
-
-    async def _send_recipe_list(
-        self,
-        interaction: discord.Interaction,
-        include_categories: set[str] | None,
-        exclude_categories: set[str] | None,
-        title: str,
-        color: discord.Color,
-    ) -> None:
-        await interaction.response.defer()
-        with get_db_session() as session:
-            craft_repository = CraftRepository(session)
-            item_repository = ItemRepository(session)
-            recipes = craft_repository.list_all()
-            all_items = item_repository.list_all()
-
-        item_lookup = {item.code: item for item in all_items}
-
-        def _matches(recipe) -> bool:
-            result = item_lookup.get(recipe.result_item_code)
-            if result is None:
-                return False
-            if include_categories is not None and result.category not in include_categories:
-                return False
-            if exclude_categories is not None and result.category in exclude_categories:
-                return False
-            return True
-
-        filtered = [r for r in recipes if _matches(r)]
-        view = RecipeListView(
-            recipes=filtered,
-            item_lookup=item_lookup,
-            title_prefix=title,
-            color=color,
-            viewer_id=interaction.user.id,
-        )
-        embed, file = await asyncio.to_thread(view.render_current)
-        await interaction.followup.send(embed=embed, file=file, view=view)
-
-    @app_commands.command(name="fabriquer", description="Fabriquer un objet (équipement / accessoire)")
-    @app_commands.describe(recipe_code="Code de la recette (autocomplete)")
-    async def craft(self, interaction: discord.Interaction, recipe_code: str) -> None:
-        await self._execute_craft(
-            interaction, recipe_code, expect_weapon=False
-        )
-
-    @app_commands.command(name="forger", description="Forger une arme ou un bouclier")
-    @app_commands.describe(recipe_code="Code de la recette (autocomplete sur armes/boucliers)")
-    async def forge(self, interaction: discord.Interaction, recipe_code: str) -> None:
-        await self._execute_craft(
-            interaction, recipe_code, expect_weapon=True
-        )
-
-    async def _execute_craft(
-        self,
-        interaction: discord.Interaction,
-        recipe_code: str,
-        expect_weapon: bool,
-    ) -> None:
-        with get_db_session() as session:
-            player_repository = PlayerRepository(session)
-            craft_repository = CraftRepository(session)
-            inventory_repository = InventoryRepository(session)
-            item_repository = ItemRepository(session)
-
-            recipe = craft_repository.get_by_code(recipe_code)
-            if recipe is None:
-                await interaction.response.send_message(
-                    f"❌ Recette `{recipe_code}` introuvable.",
-                    ephemeral=True,
-                )
-                return
-
-            result_item = item_repository.get_by_code(recipe.result_item_code)
-            if result_item is None:
-                await interaction.response.send_message(
-                    "❌ Objet de résultat introuvable (config invalide).",
-                    ephemeral=True,
-                )
-                return
-
-            is_forgeable = result_item.category in FORGE_CATEGORIES
-            if expect_weapon and not is_forgeable:
-                await interaction.response.send_message(
-                    f"❌ **{result_item.name}** ne se forge pas : utilisez `/craft` à la place.",
-                    ephemeral=True,
-                )
-                return
-            if not expect_weapon and is_forgeable:
-                await interaction.response.send_message(
-                    f"❌ **{result_item.name}** se forge : utilisez `/forge` à la place.",
-                    ephemeral=True,
-                )
-                return
-
-            use_case = CraftItemUseCase(
-                player_repository=player_repository,
-                craft_repository=craft_repository,
-                inventory_repository=inventory_repository,
-                item_repository=item_repository,
-                craft_service=CraftService(),
-            )
-
-            craft_outcome = use_case.execute_detailed(
-                discord_id=interaction.user.id,
-                username=interaction.user.name,
-                display_name=interaction.user.display_name,
-                recipe_code=recipe_code,
-            )
-
-        if not craft_outcome.success:
-            # Si on a la liste des ingrédients manquants, on affiche le détail
-            if craft_outcome.missing_ingredients:
-                lines = []
-                # Affiche TOUS les ingrédients (avec leur statut), pas juste les
-                # manquants, pour que le joueur voie aussi ce qu'il a déjà.
-                # missing_ingredients ne contient que les manquants → on
-                # complète avec ceux fulfilled. Plus simple : on re-check via
-                # le service ici.
-                from app.domain.services.craft_service import CraftService as _CS
-                with get_db_session() as session2:
-                    inv2 = InventoryRepository(session2).list_by_player_id(
-                        PlayerRepository(session2).get_by_discord_id(
-                            interaction.user.id
-                        ).player.id
-                    )
-                    recipe2 = CraftRepository(session2).get_by_code(recipe_code)
-                check2 = _CS().check_requirements(recipe2, inv2)
-                for ing in check2.ingredients:
-                    if ing.fulfilled:
-                        lines.append(f"✅ {ing.item_name} : **{ing.owned}/{ing.required}**")
-                    else:
-                        lines.append(
-                            f"❌ {ing.item_name} : **{ing.owned}/{ing.required}** "
-                            f"(manque {ing.missing})"
-                        )
-                msg = (
-                    f"{craft_outcome.message}\n\n**Ingrédients :**\n"
-                    + "\n".join(lines)
-                )
-                await interaction.response.send_message(msg, ephemeral=True)
-            else:
-                await interaction.response.send_message(
-                    craft_outcome.message, ephemeral=True
-                )
-            return
-
-        verb = "Forgé" if expect_weapon else "Fabriqué"
-        await interaction.response.send_message(
-            f"✅ {verb} : **{result_item.name}** est ajouté à votre inventaire."
-        )
-
-    @craft.autocomplete("recipe_code")
-    async def craft_recipe_autocomplete(
-        self,
-        interaction: discord.Interaction,
-        current: str,
-    ) -> list[app_commands.Choice[str]]:
-        return await self._recipe_autocomplete(
-            current, weapons_only=False
-        )
-
-    @forge.autocomplete("recipe_code")
-    async def forge_recipe_autocomplete(
-        self,
-        interaction: discord.Interaction,
-        current: str,
-    ) -> list[app_commands.Choice[str]]:
-        return await self._recipe_autocomplete(
-            current, weapons_only=True
-        )
-
-    async def _recipe_autocomplete(
-        self,
-        current: str,
-        weapons_only: bool,
-    ) -> list[app_commands.Choice[str]]:
-        with get_db_session() as session:
-            recipes = CraftRepository(session).list_all()
-            items = {item.code: item for item in ItemRepository(session).list_all()}
-
-        current_lower = current.lower()
-        choices: list[app_commands.Choice[str]] = []
-        for recipe in recipes:
-            result = items.get(recipe.result_item_code)
-            if result is None:
-                continue
-            is_forgeable = result.category in FORGE_CATEGORIES
-            if weapons_only and not is_forgeable:
-                continue
-            if not weapons_only and is_forgeable:
-                continue
-            label = f"{result.name} ({recipe.code})"[:100]
-            if (
-                current_lower in recipe.code.lower()
-                or current_lower in result.name.lower()
-            ):
-                choices.append(app_commands.Choice(name=label, value=recipe.code))
-            if len(choices) >= 25:
-                break
-        return choices
 
     @app_commands.command(
         name="payer",

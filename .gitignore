@@ -22,3 +22,4 @@ players_banner.png
 # Fichiers temporaires des écritures atomiques de contenu (admin web)
 app/infrastructure/content/*.bak
 app/infrastructure/content/*.tmp
+assets/generated_npcs/
