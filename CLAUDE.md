@@ -131,7 +131,8 @@ git checkout main
 | `/admin shop_add`, `/admin shop_set`, `/admin shop_remove`, `/admin shop_set_stock` | `admin_cog` | **Admin uniquement** — gestion du shop (autocomplete sur item_code) |
 | (webapp) `/admin/actions` | webapp | **Admin uniquement** — ACTIONS RAPIDES : or/XP/niveau/points/items/panoplies, PV courants, cooldowns, buffs temporaires, reset joueur (écriture DB directe) **+ actions du bot** (spawn monstre/boss/événement, arrêt ou résolution du combat) via la file `admin_commands` que `AdminBridgeCog` exécute côté bot en ≤5 s, avec journal de statut. |
 | (webapp) `/admin` | webapp | **Admin uniquement** — interface web pour CRUD items/mobs (OAuth Discord, port 8001). Voir section Skill Tree pour détails. |
-| `/shop`, `/buy <item> <qty>` | `shop_cog` | Shop joueur paginé par catégorie — **achat uniquement** (prix fixe). Pas de vente (V2). Les drops de mob ne sont PAS en boutique. |
+| `/marchand` | `shop_cog` | Le marchand : rayons et articles en menus, achat au bouton. Pas de vente (V2). Les drops de mob ne sont PAS en boutique. |
+| `/forgeron`, `/artisan` | `artisan_cog` | Les deux artisans : choisir une catégorie puis un objet, payer en ressources + or, attendre, récupérer. |
 | `/skill [target]` | `skill_cog` | Arbre de compétences avec image, boutons Investir/Vue web/Reset (cooldown 7j) |
 | `/use <item_code>` | `player_cog` | Utiliser un consommable (potions de soin I/II/III en V1) |
 | `/help [command]` | `help_cog` | Liste dynamique des commandes (autocomplete) ou détail d'une commande |
@@ -193,8 +194,7 @@ Pour un nouveau cog : commandes joueur → hériter du mixin. Admin → groupe d
 - **Catégories d'items** (`ItemCategory`, simplifiées de 13 → 7) : `resource`, `consumable`, `arme`, `bouclier`, `tete`, `corps`, `accessoire`. Tables `LEGACY_CATEGORY_MAP` / `LEGACY_SLOT_MAP` conservées pour la migration du contenu ancien.
 - **Anti-power-creep** : on ne gagne pas de stats au craft, uniquement à l'équipement. Bonus de stats volontairement modestes.
 - **Commandes** :
-  - `/recettes` : recettes d'équipement / accessoires (hors armes) · `/recettes_forge` : armes et boucliers
-  - `/fabriquer <recipe>` / `/forger <recipe>`
+  - `/forgeron` (armes, boucliers, tête, corps) · `/artisan` (accessoires) — cf. section PNJ
   - `/equiper <item>` : plus de paramètre de slot — le placement est automatique
   - `/equipement [target]` : **2 pages** en image PNG (Pillow) — les 7 emplacements en grille 4×2, puis le résumé des stats + panoplies actives. Cf. [`equipment_image.py`](app/bot/rendering/equipment_image.py). Emplacement vide → "VIDE", `arme_2` verrouillée par une 2-mains → "🔒 ARME À 2 MAINS".
 
@@ -221,12 +221,27 @@ Pour un nouveau cog : commandes joueur → hériter du mixin. Admin → groupe d
 - **Un trade pending par paire** : si Alice→Bob a un trade pending, ni Alice→Bob ni Bob→Alice ne peuvent en proposer un nouveau. Annuler ou attendre l'expiration (le cleanup loop libère automatiquement après 5 min).
 - **UI** : `/trade @target` → brouillon ephemeral itératif ([`TradeDraftView`](app/bot/views/trade_draft_view.py)) avec 7 boutons. Pas de saisie manuelle de codes : Select Menus listant l'inventaire de l'initiateur ou de la cible (top 25 par quantité), puis modal de quantité. Boutons gold ouvrent une modal mono-champ. Sur Submit → trade créé + message public avec embed + `TradeResponseView` (Accept/Refuse/Cancel) dans [`trade_view.py`](app/bot/views/trade_view.py).
 
-## Système de shop
+## Système de PNJ : forgeron, artisane, marchand
 
-- **V2 — achat uniquement, pas de vente.** Le joueur ne peut QUE acheter. La revente joueur→shop a été retirée (`/sell` supprimé, `SellToShopView`/embed retirés). Les **drops de mob** (slime_gel, gobelin_tooth, cf `family_drops.json`) ne sont **PAS** en boutique — ils ne servent qu'au craft. Les ressources de gather (bois, lin, cuir, pierre, fer) et les potions restent achetables.
-- **Modèle** : table `shop_items` (item_definition_id unique, buy_price, enabled ; les champs `max_sell_price`/`min_sell_price`/`stock_threshold`/`current_stock` subsistent mais ne servent plus côté joueur — encore lus par l'admin webapp/cog).
-- **Achat** (joueur → shop) : prix fixe `buy_price`, stock illimité. **Use case** : `BuyFromShopUseCase`.
-- **UI** : [`shop_view.py`](app/bot/views/shop_view.py) — onglets par catégorie, items avec icône + pastille de rareté + description + prix + hint `/buy`. Achat-only. `SellToShopUseCase`/`ShopPricingService.current_sell_price` subsistent (utilisés par l'admin) mais plus par le joueur.
+Refonte d'août 2026 — `/fabriquer`, `/forger`, `/recettes`, `/recettes_forge`, `/boutique` et `/acheter` ont été REMPLACÉS par trois personnages. On ne tape plus de code d'objet : on parle à quelqu'un.
+
+| Commande | PNJ | Rôle |
+|---|---|---|
+| `/forgeron` | **Borak** | Forge `arme`, `bouclier`, `tete`, `corps` |
+| `/artisan` | **Elna** | Confectionne les `accessoire` |
+| `/marchand` | **Sorn** | Vend les articles du shop (achat uniquement) |
+
+- **Répartition des recettes** : déduite de la CATÉGORIE de l'objet produit, via `categories` dans [`artisans.json`](app/infrastructure/content/artisans.json). Les catégories des deux artisans doivent couvrir `EQUIPABLE_CATEGORIES` sans recouvrement — sinon une recette devient inaccessible ou apparaît en double.
+- **Prix et délai dérivent de la PUISSANCE de la pièce** — jamais saisis à la main. `ItemPowerService.marginal_power(stat_bonuses)` mesure ce que l'objet apporte à un joueur de base (les items portent des deltas, et le power score n'est pas linéaire : on compare donc « avec » et « sans »). Puis `ArtisanService` : `or = base + coef × puissance^exposant` (superlinéaire — le haut de gamme coûte disproportionnellement cher, c'est le **premier vrai puits d'or du jeu**) et `durée = base + coef × puissance`, plafonnée.
+- **Maîtrise relationnelle** : `player_artisan_mastery(player_id, artisan_code, orders_completed)`. 4 paliers (Apprenti → Légendaire) qui débloquent un **plafond de puissance**, une remise en or et un délai réduit. Deux joueurs voient donc le même PNJ à des paliers différents. Un travail ANNULÉ ne fait pas monter la maîtrise.
+- **Une commande active par (joueur, artisan)** — tenu par un **index unique PARTIEL** en base (`uq_player_active_work_order`, `WHERE status IN ('in_progress','ready')`), pas seulement par une vérification applicative : deux clics simultanés ne peuvent pas créer deux commandes. Forge et confection tournent en parallèle.
+- **Le paiement est immédiat, la livraison non** : ingrédients + or débités au lancement ; l'objet n'entre en inventaire qu'à la RÉCUPÉRATION. Annuler rend les ingrédients et `cancel_refund_pct` % de l'or (50 par défaut).
+- **Désactiver l'attente** : mettre `duration_pct: 0` sur les paliers → travail instantané, la commande naît déjà `ready`. Aucun code à toucher.
+- **Boucle de complétion** : `ArtisanCog.ready_loop` (1 min) passe les travaux échus en `ready` et prévient dans le salon d'origine. Idempotente (`notified`), survit au redémarrage.
+- **Rendu** : [`npc_panel.py`](app/bot/rendering/npc_panel.py) — portrait + fiche, deux modes (`kind="purchase"` pour le marchand, travail sinon). Portraits sous `assets/npcs/` (générés Cloudflare, DA du jeu).
+- **Achat** : `BuyFromShopUseCase` inchangé, seule la façade a changé. Toujours pas de vente joueur→shop (décision V2).
+- ⚠️ **`/fabriquer_panoplie` et `/forger_panoplie` ont été RETIRÉS** : fabriquer une panoplie entière d'un coup contredit la règle « un travail à la fois ». `PanoplieCraftsUseCase` est conservé mais **non câblé** (même statut que `GatherResourceUseCase`).
+- Modification d'`artisans.json` ⇒ **restart du bot** (cache module-level du loader).
 
 ## Système d'arbre de compétences
 

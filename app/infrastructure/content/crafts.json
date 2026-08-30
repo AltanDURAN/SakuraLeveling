@@ -1,1 +1,562 @@
-[]
+[
+  {
+    "code": "baton_simple_recipe",
+    "name": "Baton simple",
+    "result_item_code": "baton_simple",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "bois",
+        "quantity": 3
+      },
+      {
+        "item_code": "silex",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "p_simple_recipe",
+    "name": "épé simple",
+    "result_item_code": "p_simple",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "silex",
+        "quantity": 2
+      },
+      {
+        "item_code": "bois",
+        "quantity": 2
+      },
+      {
+        "item_code": "cuir_brut",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "dague_rouillee_recipe",
+    "name": "Dague rouillée",
+    "result_item_code": "dague_rouillee",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "silex",
+        "quantity": 3
+      },
+      {
+        "item_code": "os_poli",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "bandana_recipe",
+    "name": "bandana",
+    "result_item_code": "bandana",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "morceau_de_tissu",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "code": "capuche_recipe",
+    "name": "capuche",
+    "result_item_code": "capuche",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "morceau_de_tissu",
+        "quantity": 3
+      }
+    ]
+  },
+  {
+    "code": "casque_recipe",
+    "name": "Casque",
+    "result_item_code": "casque",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "eclat_de_pierre",
+        "quantity": 3
+      },
+      {
+        "item_code": "cuir_brut",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "code": "armure_de_garde_recipe",
+    "name": "armure de garde",
+    "result_item_code": "armure_de_garde",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "cuir_brut",
+        "quantity": 4
+      },
+      {
+        "item_code": "morceau_de_tissu",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "code": "tenu_d_aventurier_recipe",
+    "name": "tenu d'aventurier",
+    "result_item_code": "tenu_d_aventurier",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "cuir_brut",
+        "quantity": 5
+      },
+      {
+        "item_code": "morceau_de_tissu",
+        "quantity": 3
+      },
+      {
+        "item_code": "os_poli",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "arc_recipe",
+    "name": "arc",
+    "result_item_code": "arc",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "bois",
+        "quantity": 4
+      },
+      {
+        "item_code": "corne_naissante",
+        "quantity": 2
+      },
+      {
+        "item_code": "morceau_de_tissu",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "code": "hache_recipe",
+    "name": "hache",
+    "result_item_code": "hache",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "eclat_de_pierre",
+        "quantity": 4
+      },
+      {
+        "item_code": "bois",
+        "quantity": 3
+      },
+      {
+        "item_code": "dent_de_gobelin",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "code": "baton_a_crane_recipe",
+    "name": "Bâton à crâne",
+    "result_item_code": "baton_a_crane",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "os_massif",
+        "quantity": 2
+      },
+      {
+        "item_code": "poussiere_d_ossements",
+        "quantity": 3
+      },
+      {
+        "item_code": "bois",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "code": "sabre_recipe",
+    "name": "sabre",
+    "result_item_code": "sabre",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "coeur_de_granit",
+        "quantity": 2
+      },
+      {
+        "item_code": "silex",
+        "quantity": 4
+      },
+      {
+        "item_code": "cuir_brut",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "code": "casque_a_cornes_recipe",
+    "name": "Casque à cornes",
+    "result_item_code": "casque_a_cornes",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "corne_naissante",
+        "quantity": 3
+      },
+      {
+        "item_code": "eclat_de_pierre",
+        "quantity": 3
+      }
+    ]
+  },
+  {
+    "code": "faux_recipe",
+    "name": "Faux",
+    "result_item_code": "faux",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "os_massif",
+        "quantity": 3
+      },
+      {
+        "item_code": "larme_spectrale",
+        "quantity": 2
+      },
+      {
+        "item_code": "coeur_de_granit",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "plaque_rouillee_recipe",
+    "name": "Plaque rouillée",
+    "result_item_code": "plaque_rouillee",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "coeur_de_granit",
+        "quantity": 3
+      },
+      {
+        "item_code": "eclat_de_pierre",
+        "quantity": 5
+      },
+      {
+        "item_code": "resine_d_embaumement",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "code": "lame_infernale_recipe",
+    "name": "Lame infernale",
+    "result_item_code": "lame_infernale",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "braise_infernale",
+        "quantity": 3
+      },
+      {
+        "item_code": "corne_de_demon",
+        "quantity": 2
+      },
+      {
+        "item_code": "coeur_de_granit",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "code": "masse_cloutee_recipe",
+    "name": "Masse cloutée",
+    "result_item_code": "masse_cloutee",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "coeur_de_granit",
+        "quantity": 4
+      },
+      {
+        "item_code": "croc_d_ogre",
+        "quantity": 3
+      },
+      {
+        "item_code": "os_massif",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "code": "lame_des_enfers_recipe",
+    "name": "Lame des enfers",
+    "result_item_code": "lame_des_enfers",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "braise_infernale",
+        "quantity": 5
+      },
+      {
+        "item_code": "corne_de_demon",
+        "quantity": 3
+      },
+      {
+        "item_code": "c_ur_corrompu",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "code": "couronne_dechue_recipe",
+    "name": "Couronne déchue",
+    "result_item_code": "couronne_dechue",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "diamant",
+        "quantity": 1
+      },
+      {
+        "item_code": "pierre_runique",
+        "quantity": 3
+      },
+      {
+        "item_code": "larme_spectrale",
+        "quantity": 4
+      }
+    ]
+  },
+  {
+    "code": "katana_recipe",
+    "name": "katana (D7)",
+    "result_item_code": "katana",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "diamant",
+        "quantity": 2
+      },
+      {
+        "item_code": "coeur_de_granit",
+        "quantity": 5
+      },
+      {
+        "item_code": "flamme_sacree",
+        "quantity": 1
+      },
+      {
+        "item_code": "croc_triple",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "code": "collier_de_perles_recipe",
+    "name": "Collier de perles",
+    "result_item_code": "collier_de_perles",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "gel_e",
+        "quantity": 3
+      },
+      {
+        "item_code": "morceau_de_tissu",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "fetiche_d_os_recipe",
+    "name": "Fétiche d'os",
+    "result_item_code": "fetiche_d_os",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "os_poli",
+        "quantity": 3
+      },
+      {
+        "item_code": "lambeau_de_vetement",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "cape_silencieuse_recipe",
+    "name": "Cape silencieuse",
+    "result_item_code": "cape_silencieuse",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "morceau_de_tissu",
+        "quantity": 4
+      },
+      {
+        "item_code": "plume_noircie",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "aile_de_cuir_recipe",
+    "name": "Aile de cuir",
+    "result_item_code": "aile_de_cuir",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "cuir_brut",
+        "quantity": 3
+      },
+      {
+        "item_code": "dent_de_gobelin",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "code": "ceinturon_epais_recipe",
+    "name": "Ceinturon épais",
+    "result_item_code": "ceinturon_epais",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "cuir_brut",
+        "quantity": 4
+      },
+      {
+        "item_code": "os_poli",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "code": "brassard_de_cuir_recipe",
+    "name": "Brassard de cuir",
+    "result_item_code": "brassard_de_cuir",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "cuir_brut",
+        "quantity": 3
+      },
+      {
+        "item_code": "morceau_de_tissu",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "code": "chaine_spectrale_recipe",
+    "name": "Chaîne spectrale",
+    "result_item_code": "chaine_spectrale",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "larme_spectrale",
+        "quantity": 3
+      },
+      {
+        "item_code": "echo_de_cri",
+        "quantity": 2
+      },
+      {
+        "item_code": "os_poli",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "code": "ceinturon_cloute_recipe",
+    "name": "Ceinturon clouté",
+    "result_item_code": "ceinturon_cloute",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "cuir_brut",
+        "quantity": 5
+      },
+      {
+        "item_code": "eclat_de_pierre",
+        "quantity": 3
+      },
+      {
+        "item_code": "dent_gatee",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "code": "aile_de_pierre_recipe",
+    "name": "Aile de pierre",
+    "result_item_code": "aile_de_pierre",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "eclat_de_pierre",
+        "quantity": 5
+      },
+      {
+        "item_code": "coeur_de_granit",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "code": "collier_a_pointes_recipe",
+    "name": "Collier à pointes",
+    "result_item_code": "collier_a_pointes",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "croc_d_ogre",
+        "quantity": 3
+      },
+      {
+        "item_code": "corne_naissante",
+        "quantity": 2
+      },
+      {
+        "item_code": "cuir_brut",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "code": "sceau_de_corruption_recipe",
+    "name": "Sceau de corruption",
+    "result_item_code": "sceau_de_corruption",
+    "result_quantity": 1,
+    "ingredients": [
+      {
+        "item_code": "c_ur_corrompu",
+        "quantity": 2
+      },
+      {
+        "item_code": "encre_rituelle",
+        "quantity": 2
+      },
+      {
+        "item_code": "pierre_runique",
+        "quantity": 2
+      }
+    ]
+  }
+]
