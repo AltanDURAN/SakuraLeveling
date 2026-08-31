@@ -65,13 +65,41 @@ def get_definition(code: str) -> BossDefinition | None:
     return None
 
 
-def pick_random_definition(rng: random.Random | None = None) -> BossDefinition | None:
-    """Sélection pondérée par `spawn_weight`. Retourne None si aucun boss
-    défini. Utilisé par l'auto-spawn loop."""
+# Part de l'attaque de l'équipe qui doit RESTER après la défense du boss.
+# En dessous, les coups sont symboliques et le raid s'enlise.
+MIN_DAMAGE_RATIO = 0.25
+
+
+def pick_random_definition(
+    rng: random.Random | None = None,
+    party_attack: int = 0,
+) -> BossDefinition | None:
+    """Sélection pondérée par `spawn_weight`, BORNÉE par la puissance du serveur.
+
+    Le combat est soustractif : si la DÉFENSE du boss atteint l'ATTAQUE des
+    joueurs, chaque coup tombe au plancher de 1 dégât et le raid de la semaine
+    est perdu d'avance. Tirer un boss au hasard parmi les 5 exposait donc à
+    gâcher une semaine entière.
+
+    On ne retient que les boss dont la défense laisse passer des dégâts réels
+    (au moins `MIN_DAMAGE_RATIO` de l'attaque de l'équipe), puis on garde le
+    tirage pondéré habituel parmi eux. `party_attack = 0` ⇒ pas de filtre
+    (spawn manuel, tests).
+    """
     rng = rng or random
     defs = list_definitions()
     if not defs:
         return None
+
+    if party_attack > 0:
+        beatable = [
+            d for d in defs
+            if (party_attack - d.defense) >= party_attack * MIN_DAMAGE_RATIO
+        ]
+        # Personne ne peut rien battre : on prend le plus tendre plutôt que
+        # de ne rien lancer — un raid difficile vaut mieux qu'aucun raid.
+        defs = beatable or [min(defs, key=lambda d: d.defense)]
+
     weights = [d.spawn_weight for d in defs]
     return rng.choices(defs, weights=weights, k=1)[0]
 

@@ -1964,5 +1964,110 @@
     "equipment_slot": "tete",
     "requires_two_hands": false,
     "family": ""
+  },
+  {
+    "code": "titan_gel_core",
+    "name": "Cœur de Gel du Titan",
+    "description": "Un noyau de gelée qui bat encore, arraché au Titan Visqueux.",
+    "category": "accessoire",
+    "rarity": "epic",
+    "stackable": false,
+    "max_stack": 1,
+    "sell_price": 0,
+    "buy_price": 0,
+    "icon": "",
+    "stat_bonuses": {
+      "max_hp": 180,
+      "defense": 14,
+      "hp_regeneration": 8,
+      "mana_max": 60
+    },
+    "equipment_slot": "accessoire",
+    "requires_two_hands": false,
+    "family": ""
+  },
+  {
+    "code": "warlord_blade",
+    "name": "Lame du Seigneur de Guerre",
+    "description": "L'acier ébréché d'un chef gobelin qui n'a jamais reculé.",
+    "category": "arme",
+    "rarity": "epic",
+    "stackable": false,
+    "max_stack": 1,
+    "sell_price": 0,
+    "buy_price": 0,
+    "icon": "",
+    "stat_bonuses": {
+      "attack": 46,
+      "crit_chance": 8,
+      "speed": 4
+    },
+    "equipment_slot": "arme",
+    "requires_two_hands": false,
+    "family": ""
+  },
+  {
+    "code": "colossus_plate",
+    "name": "Plastron du Colosse",
+    "description": "Une plaque de granit vivant, taillée dans le Colosse lui-même.",
+    "category": "corps",
+    "rarity": "epic",
+    "stackable": false,
+    "max_stack": 1,
+    "sell_price": 0,
+    "buy_price": 0,
+    "icon": "",
+    "stat_bonuses": {
+      "max_hp": 260,
+      "defense": 34,
+      "speed": -2
+    },
+    "equipment_slot": "corps",
+    "requires_two_hands": false,
+    "family": ""
+  },
+  {
+    "code": "wraith_cloak",
+    "name": "Cape du Spectre",
+    "description": "Elle ne projette aucune ombre. Ceux qui la portent non plus.",
+    "category": "accessoire",
+    "rarity": "legendary",
+    "stackable": false,
+    "max_stack": 1,
+    "sell_price": 0,
+    "buy_price": 0,
+    "icon": "",
+    "stat_bonuses": {
+      "dodge": 12,
+      "speed": 7,
+      "crit_damage": 45,
+      "max_hp": 150,
+      "defense": 18,
+      "mana_regeneration": 6
+    },
+    "equipment_slot": "accessoire",
+    "requires_two_hands": false,
+    "family": ""
+  },
+  {
+    "code": "dragon_heart",
+    "name": "Cœur du Dragon Ancestral",
+    "description": "Il bat encore. On l'entend quand le combat se tait.",
+    "category": "arme",
+    "rarity": "legendary",
+    "stackable": false,
+    "max_stack": 1,
+    "sell_price": 0,
+    "buy_price": 0,
+    "icon": "",
+    "stat_bonuses": {
+      "attack": 78,
+      "crit_chance": 12,
+      "crit_damage": 45,
+      "max_hp": 120
+    },
+    "equipment_slot": "arme",
+    "requires_two_hands": false,
+    "family": ""
   }
 ]

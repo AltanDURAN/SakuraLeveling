@@ -71,6 +71,51 @@ def _get_boss_channel(bot: commands.Bot):
     return bot.get_channel(channel_id)
 
 
+
+_logger = logging.getLogger("sakura.world_boss")
+
+
+def _server_top_attack(session) -> int:
+    """Attaque du joueur le plus fort du serveur.
+
+    Sert à borner le tirage du boss hebdomadaire : au-dessus d'une certaine
+    défense, les coups tombent au plancher de 1 dégât et le raid est perdu
+    d'avance. Best effort — en cas de souci, 0 = aucun filtre (comportement
+    d'avant).
+    """
+    try:
+        import sqlalchemy as sa
+
+        from app.application.services.player_stats_resolver import (
+            resolve_player_stats,
+        )
+        from app.infrastructure.db.repositories.class_repository import (
+            ClassRepository,
+        )
+        from app.infrastructure.db.repositories.equipment_repository import (
+            EquipmentRepository,
+        )
+
+        ids = [r[0] for r in session.execute(sa.text("SELECT id FROM players")).all()]
+        best = 0
+        players = PlayerRepository(session)
+        for player_id in ids:
+            profile = players.get_profile_by_player_id(player_id)
+            if profile is None:
+                continue
+            stats = resolve_player_stats(
+                session,
+                profile,
+                EquipmentRepository(session).list_by_player_id(player_id),
+                ClassRepository(session).get_current_class_for_player(player_id),
+            )
+            best = max(best, stats.attack)
+        return best
+    except Exception:  # noqa: BLE001
+        _logger.warning("Puissance serveur illisible — tirage non borné", exc_info=True)
+        return 0
+
+
 class WorldBossView(discord.ui.View):
     """View persistante attachée au message du boss (3 boutons).
 
@@ -287,6 +332,7 @@ class WorldBossCog(commands.Cog):
             with get_db_session() as session:
                 use_case = SpawnRandomWorldBossUseCase(
                     world_boss_repository=WorldBossRepository(session),
+                    party_attack=_server_top_attack(session),
                 )
                 decision = use_case.execute()
             if decision.spawned and decision.boss is not None:

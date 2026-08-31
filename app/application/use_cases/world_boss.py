@@ -213,12 +213,14 @@ class SpawnRandomWorldBossUseCase:
         weekly: bool = True,
         spawn_weekday: int = 0,   # 0 = lundi
         spawn_hour: int = 12,     # heure d'ouverture du raid (UTC)
+        party_attack: int = 0,    # attaque du meilleur joueur (0 = pas de filtre)
     ) -> None:
         self.world_boss_repository = world_boss_repository
         self.spawn_probability = spawn_probability
         self.weekly = weekly
         self.spawn_weekday = spawn_weekday
         self.spawn_hour = spawn_hour
+        self.party_attack = party_attack
 
     def execute(
         self,
@@ -257,7 +259,9 @@ class SpawnRandomWorldBossUseCase:
             if not force and rng.random() > self.spawn_probability:
                 return AutoSpawnDecision(False, "tirage_negatif")
 
-        definition = pick_random_definition(rng=rng)
+        # Borné par la puissance réelle du serveur : tirer un boss dont la
+        # défense dépasse l'attaque des joueurs gâcherait la semaine.
+        definition = pick_random_definition(rng=rng, party_attack=self.party_attack)
         if definition is None:
             return AutoSpawnDecision(False, "aucune_definition")
 

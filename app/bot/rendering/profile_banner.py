@@ -54,6 +54,9 @@ WIDTH = 1024
 # +144 (une rangée de cards) depuis l'ajout de la ligne Mana/Régén M dans la
 # grille de combat (10 cards = 3 rangées au lieu de 2).
 HEIGHT = 1224
+# Bloc « affinités élémentaires », ajouté à la hauteur SEULEMENT quand des
+# affinités sont fournies (sinon la bannière garderait une zone vide).
+AFFINITY_BLOCK_H = 178
 
 
 # Palette principale ---------------------------------------------------
@@ -615,8 +618,11 @@ def compose_profile_banner(
     daily_streak: int = 0,
     skill_points: int = 0,
     active_title: str | None = None,
+    #: élément → affinité 0..100. None ⇒ section masquée.
+    affinities: dict[str, int] | None = None,
 ) -> None:
-    bg = _gradient_background(WIDTH, HEIGHT)
+    height = HEIGHT + (AFFINITY_BLOCK_H if affinities else 0)
+    bg = _gradient_background(WIDTH, height)
 
     # Pétales de sakura en filigrane — décor "anime" subtil avant tout
     # ce qui sera dessiné par-dessus. Seed dérivé du nom pour que chaque
@@ -901,6 +907,63 @@ def compose_profile_banner(
             emoji, label, value, label_font, value_font,
             accent_key=accent_key,
         )
+
+    # ----- AFFINITÉS ÉLÉMENTAIRES -----
+    # La statistique la plus LENTE à monter du jeu (elle se farme en essences) :
+    # elle mérite d'être visible à chaque /profil, pas seulement via /affinites.
+    if affinities:
+        from app.bot.rendering.element_visuals import ELEMENT_COLORS
+        from app.shared.enums import ALL_ELEMENTS, ELEMENT_EMOJIS, ELEMENT_LABELS
+
+        career_rows = -(-len(career_cards) // grid_cols)
+        aff_section_y = career_grid_y + career_rows * (card_h + spacing) + 20
+        _draw_section_header(
+            bg, (margin, aff_section_y), "✨  AFFINITÉS ÉLÉMENTAIRES",
+            section_font, WIDTH - 2 * margin,
+        )
+        aff_y = aff_section_y + 50
+        elements = [e.value if hasattr(e, "value") else str(e) for e in ALL_ELEMENTS]
+        cols = 4
+        cell_w = (WIDTH - 2 * margin - (cols - 1) * spacing) // cols
+        cell_h = 52
+        aff_label_font = _try_font(19, bold=True)
+        aff_value_font = _try_font(19, bold=True)
+
+        for idx, element in enumerate(elements[:8]):
+            value = max(0, min(100, int(affinities.get(element, 0))))
+            row, col = divmod(idx, cols)
+            x = margin + col * (cell_w + spacing)
+            y = aff_y + row * (cell_h + spacing)
+            color = ELEMENT_COLORS.get(element, (150, 150, 160))
+
+            _draw_panel(bg, (x, y), (cell_w, cell_h), radius=10)
+            head = f"{ELEMENT_EMOJIS.get(element, '•')} {ELEMENT_LABELS.get(element, element)}"
+            draw_text_with_emojis(
+                bg, (x + 12, y + 6), head, aff_label_font,
+                fill=(238, 234, 246, 255), emoji_size=18,
+            )
+            value_text = f"{value}"
+            tw = ImageDraw.Draw(bg).textlength(value_text, font=aff_value_font)
+            _draw_text_with_shadow(
+                ImageDraw.Draw(bg), (x + cell_w - 12 - tw, y + 6),
+                value_text, aff_value_font,
+                fill=(*color, 255), shadow=(0, 0, 0, 160),
+            )
+            # Barre de progression vers 100 : montre le chemin restant.
+            bar_x, bar_y, bar_w = x + 12, y + 34, cell_w - 24
+            layer = Image.new("RGBA", bg.size, (0, 0, 0, 0))
+            d = ImageDraw.Draw(layer)
+            d.rounded_rectangle(
+                [(bar_x, bar_y), (bar_x + bar_w, bar_y + 7)],
+                radius=3, fill=(58, 52, 76, 220),
+            )
+            filled = int(bar_w * value / 100)
+            if filled > 2:
+                d.rounded_rectangle(
+                    [(bar_x, bar_y), (bar_x + filled, bar_y + 7)],
+                    radius=3, fill=(*color, 255),
+                )
+            bg.alpha_composite(layer)
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     bg.convert("RGB").save(output_path, "PNG", optimize=True)

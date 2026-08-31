@@ -1,8 +1,8 @@
 """Gestion des rôles Discord de RANG (accès aux zones de farm par palier).
 
 Chaque joueur porte UN rôle de rang courant (F → SSS). Tout le monde démarre
-au Rang F (attribué automatiquement) ; la progression se gagne via des épreuves
-(à venir) ou manuellement via `/admin set_rank`. L'accès aux salons de zone est
+au Rang F (attribué automatiquement) ; la progression se gagne en battant le GARDIEN de l'épreuve du rang
+suivant (`/epreuve`) ou manuellement via `/admin set_rank`. L'accès aux salons de zone est
 géré côté Discord (permissions du salon par rôle) — le bot ne fait qu'attribuer
 le bon rôle.
 
@@ -57,6 +57,18 @@ async def ensure_start_rank_role(member: discord.Member) -> None:
         await member.add_roles(role, reason="Début d'aventure — Rang F")
     except discord.DiscordException as exc:
         _logger.warning("Rang F : échec attribution à %s : %s", member.id, exc)
+
+
+def current_rank(member: discord.Member) -> str:
+    """Rang porté par le membre. Le plus HAUT s'il en porte plusieurs (un
+    reliquat de manipulation manuelle ne doit pas rétrograder le joueur)."""
+    roles = settings.rank_roles
+    by_id = {role_id: rank for rank, role_id in roles.items()}
+    held = [by_id[r.id] for r in member.roles if r.id in by_id]
+    if not held:
+        return START_RANK
+    return max(held, key=lambda rank: RANK_ORDER.index(rank)
+               if rank in RANK_ORDER else -1)
 
 
 async def set_rank_role(member: discord.Member, rank: str) -> bool:

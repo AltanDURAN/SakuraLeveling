@@ -301,6 +301,24 @@ Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
     Vous gagnez de l'XP de métier et un objet selon votre niveau.
     Exemple : /gather mining
 
+/epreuve
+    Fait apparaître le GARDIEN du rang au-dessus du tien. Le bats, et tu es
+    promu — ton rôle Discord change et de nouvelles zones de farm s'ouvrent.
+
+    Il y a deux conditions, dans cet ordre :
+      1. ta PUISSANCE doit atteindre le seuil du rang visé (l'écran te dit
+         combien il t'en manque) ;
+      2. tu dois BATTRE le gardien en combat singulier.
+    Le seuil dit que tu as la force, le combat dit que tu sais t'en servir.
+
+    Les gardiens sont calibrés pour être gagnés environ deux fois sur trois
+    par un joueur qui vient tout juste d'atteindre le seuil : c'est fait pour
+    être serré. Monte tes stats avant de tenter si tu veux de la marge.
+
+    En cas d'échec tu ne perds aucun PV réel, mais tu dois attendre 6 h avant
+    de retenter. La progression est séquentielle : même très puissant, tu
+    passes les rangs un par un.
+
 /forgeron
     Fait venir BORAK, LE FORGERON. Il forge tout ce qui se porte au combat :
     armes, boucliers, pièces de tête et pièces de corps.

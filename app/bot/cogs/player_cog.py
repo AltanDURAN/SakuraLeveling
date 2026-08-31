@@ -42,6 +42,9 @@ from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
+from app.infrastructure.db.repositories.element_affinity_repository import (
+    ElementAffinityRepository,
+)
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_duel_rank_repository import (
@@ -297,6 +300,12 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                     "dodges_total": getattr(career_stats, "dodges_total", 0),
                 }
 
+            # Affinités élémentaires : la stat la plus lente du jeu, affichée
+            # sur la bannière pour ne pas obliger à passer par /affinites.
+            affinities_payload = ElementAffinityRepository(
+                session,
+            ).get_affinities(profile.player.id)
+
             # Rendu Pillow sync + download avatar Discord : off-thread pour ne
             # pas bloquer l'event loop (cf. audit B5).
             await asyncio.to_thread(
@@ -332,6 +341,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                     "mana_regeneration": stats.mana_regeneration,
                 },
                 career=career_payload,
+                affinities=affinities_payload,
             )
 
             # /profil = bannière PNG seule (l'embed n'est qu'un conteneur pour

@@ -132,6 +132,7 @@ git checkout main
 | (webapp) `/admin/actions` | webapp | **Admin uniquement** — ACTIONS RAPIDES : or/XP/niveau/points/items/panoplies, PV courants, cooldowns, buffs temporaires, reset joueur (écriture DB directe) **+ actions du bot** (spawn monstre/boss/événement, arrêt ou résolution du combat) via la file `admin_commands` que `AdminBridgeCog` exécute côté bot en ≤5 s, avec journal de statut. |
 | (webapp) `/admin` | webapp | **Admin uniquement** — interface web pour CRUD items/mobs (OAuth Discord, port 8001). Voir section Skill Tree pour détails. |
 | `/marchand` | `shop_cog` | Le marchand : rayons et articles en menus, achat au bouton. Pas de vente (V2). Les drops de mob ne sont PAS en boutique. |
+| `/epreuve` | `rank_trial_cog` | Épreuve du rang suivant : seuil de power score, puis combat solo contre le gardien. Victoire ⇒ promotion du rôle Discord ; échec ⇒ cooldown. |
 | `/forgeron`, `/artisan` | `artisan_cog` | Les deux artisans : choisir une catégorie puis un objet, payer en ressources + or, attendre, récupérer. |
 | `/skill [target]` | `skill_cog` | Arbre de compétences avec image, boutons Investir/Vue web/Reset (cooldown 7j) |
 | `/use <item_code>` | `player_cog` | Utiliser un consommable (potions de soin I/II/III en V1) |
@@ -221,6 +222,14 @@ Pour un nouveau cog : commandes joueur → hériter du mixin. Admin → groupe d
 - **Un trade pending par paire** : si Alice→Bob a un trade pending, ni Alice→Bob ni Bob→Alice ne peuvent en proposer un nouveau. Annuler ou attendre l'expiration (le cleanup loop libère automatiquement après 5 min).
 - **UI** : `/trade @target` → brouillon ephemeral itératif ([`TradeDraftView`](app/bot/views/trade_draft_view.py)) avec 7 boutons. Pas de saisie manuelle de codes : Select Menus listant l'inventaire de l'initiateur ou de la cible (top 25 par quantité), puis modal de quantité. Boutons gold ouvrent une modal mono-champ. Sur Submit → trade créé + message public avec embed + `TradeResponseView` (Accept/Refuse/Cancel) dans [`trade_view.py`](app/bot/views/trade_view.py).
 
+## Système de rang : épreuves
+
+- **Deux verrous, dans cet ordre** : un SEUIL de power score ouvre l'épreuve du rang suivant (« tu as la puissance »), puis il faut BATTRE le gardien en combat solo (« tu sais t'en servir »). Le rang porté est un **rôle Discord** (il ouvre les salons de zone) ; `current_rank(member)` le lit, `set_rank_role` le pose.
+- **Contenu** : [`rank_trials.json`](app/infrastructure/content/rank_trials.json) — 8 épreuves (E → SSS). Les gardiens sont **calibrés par simulation** avec le vrai moteur de combat ([`scripts/calibrate_rank_trials.py`](scripts/calibrate_rank_trials.py)) pour ~65 % de victoire chez un joueur qui vient d'atteindre le seuil. Ne pas éditer les stats à la main : relancer le script.
+- ⚠️ La **défense du gardien vaut 35 % de l'attaque du joueur de référence** — même invariant que pour les mobs et les boss : au-delà, les coups tombent au plancher de 1 dégât et l'épreuve devient infaisable.
+- **Progression séquentielle** : un joueur rang F très puissant n'obtient pas D d'un coup, il doit passer E d'abord.
+- **Échec** ⇒ cooldown (`retry_cooldown_hours`, 6 h par défaut, action_key `rank_trial`). Les PV réels ne sont jamais touchés : l'épreuve est un duel rituel, pas une sortie de farm.
+
 ## Système de PNJ : forgeron, artisane, marchand
 
 Refonte d'août 2026 — `/fabriquer`, `/forger`, `/recettes`, `/recettes_forge`, `/boutique` et `/acheter` ont été REMPLACÉS par trois personnages. On ne tape plus de code d'objet : on parle à quelqu'un.
@@ -280,6 +289,7 @@ Refonte d'août 2026 — `/fabriquer`, `/forger`, `/recettes`, `/recettes_forge`
 - **Définitions JSON** : [`app/infrastructure/content/boss_definitions.json`](app/infrastructure/content/boss_definitions.json) — 5 bosses progressifs (intro → endgame) avec stats, modifiers, lore. Loader à cache module-level [`boss_definition_loader.py`](app/infrastructure/world_boss/boss_definition_loader.py) (pattern identique à `skill_tree_loader`).
 - **Modèle DB** : tables `world_bosses` (1 seul "active" à la fois — instance courante du boss) et `world_boss_participations` (UNIQUE sur boss_id+player_id, cumule damage_dealt/tanked/hp_healed/fights_count). Les définitions vivent dans le JSON, les **instances** vivent en DB.
 - **Spawn manuel** : `/boss spawn <boss_code>` (admin) lit la `BossDefinition` depuis le JSON et crée l'instance avec ses stats raw. Refuse s'il y a déjà un boss actif.
+- ⚠️ **Le tirage du boss est BORNÉ par la puissance du serveur** (`pick_random_definition(party_attack=…)`, `MIN_DAMAGE_RATIO`) : un boss dont la défense approche l'attaque des joueurs rendrait le raid de la semaine ingagnable. Le filtre écarte ces boss ; si aucun n'est jouable, on prend le plus tendre plutôt que de ne rien lancer.
 - **Auto-spawn** : `WorldBossCog.auto_spawn_loop` (`tasks.loop(hours=1)`) appelle `SpawnRandomWorldBossUseCase`. Conditions de spawn : pas de boss actif + (jamais spawné OU dernière défaite > 7j) + tirage random 5%/heure. Sélection pondérée par `spawn_weight`.
 - **Channel dédié** : `settings.boss_channel_id` (fallback `encounter_channel_id` si non défini, pour ne pas casser les .env existants).
 - **View** : 3 boutons sur le message du boss (Rejoindre / Quitter / Lancer le combat). Le message est édité après chaque action via `WorldBossCog.refresh_boss_message`.
