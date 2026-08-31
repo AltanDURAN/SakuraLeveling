@@ -1,0 +1,174 @@
+{
+  "_comment": "Épreuves de rang. `required_power` ouvre l'épreuve ; le gardien est calibré par simulation (scripts/calibrate_rank_trials.py) pour un taux de victoire d'environ 65 % chez un joueur qui vient d'atteindre le seuil. `retry_cooldown_hours` = attente après un échec.",
+  "retry_cooldown_hours": 6,
+  "trials": [
+    {
+      "rank": "E",
+      "required_power": 1125,
+      "guardian": {
+        "name": "Sentinelle Ébréchée",
+        "lore": "Une armure vide qui refuse de tomber.",
+        "max_hp": 666,
+        "attack": 30,
+        "defense": 19,
+        "speed": 8,
+        "crit_chance": 10,
+        "crit_damage": 150,
+        "dodge": 5
+      },
+      "_mesure": {
+        "joueur_ref_atk": 55,
+        "joueur_ref_def": 22,
+        "joueur_ref_pv": 236,
+        "taux_victoire": 0.667
+      }
+    },
+    {
+      "rank": "D",
+      "required_power": 2450,
+      "guardian": {
+        "name": "Veilleur de Cendres",
+        "lore": "Il garde la porte depuis que la cendre est chaude.",
+        "max_hp": 851,
+        "attack": 45,
+        "defense": 28,
+        "speed": 8,
+        "crit_chance": 10,
+        "crit_damage": 150,
+        "dodge": 5
+      },
+      "_mesure": {
+        "joueur_ref_atk": 82,
+        "joueur_ref_def": 32,
+        "joueur_ref_pv": 316,
+        "taux_victoire": 0.69
+      }
+    },
+    {
+      "rank": "C",
+      "required_power": 4300,
+      "guardian": {
+        "name": "Colosse d'Ossements",
+        "lore": "Chaque os qu'il porte fut un candidat.",
+        "max_hp": 1190,
+        "attack": 59,
+        "defense": 37,
+        "speed": 8,
+        "crit_chance": 10,
+        "crit_damage": 150,
+        "dodge": 5
+      },
+      "_mesure": {
+        "joueur_ref_atk": 108,
+        "joueur_ref_def": 41,
+        "joueur_ref_pv": 394,
+        "taux_victoire": 0.705
+      }
+    },
+    {
+      "rank": "B",
+      "required_power": 6600,
+      "guardian": {
+        "name": "Héraut du Silence",
+        "lore": "Il ne parle pas. Il n'a jamais eu besoin.",
+        "max_hp": 1680,
+        "attack": 72,
+        "defense": 46,
+        "speed": 8,
+        "crit_chance": 10,
+        "crit_damage": 150,
+        "dodge": 5
+      },
+      "_mesure": {
+        "joueur_ref_atk": 132,
+        "joueur_ref_def": 50,
+        "joueur_ref_pv": 467,
+        "taux_victoire": 0.66
+      }
+    },
+    {
+      "rank": "A",
+      "required_power": 9500,
+      "guardian": {
+        "name": "Juge de Fer",
+        "lore": "Il pèse ta force et rend son verdict en coups.",
+        "max_hp": 2035,
+        "attack": 86,
+        "defense": 54,
+        "speed": 8,
+        "crit_chance": 10,
+        "crit_damage": 150,
+        "dodge": 5
+      },
+      "_mesure": {
+        "joueur_ref_atk": 157,
+        "joueur_ref_def": 60,
+        "joueur_ref_pv": 541,
+        "taux_victoire": 0.662
+      }
+    },
+    {
+      "rank": "S",
+      "required_power": 12600,
+      "guardian": {
+        "name": "Archonte Déchu",
+        "lore": "Il a tenu ce rang. Il te fera mériter le tien.",
+        "max_hp": 2546,
+        "attack": 98,
+        "defense": 62,
+        "speed": 8,
+        "crit_chance": 10,
+        "crit_damage": 150,
+        "dodge": 5
+      },
+      "_mesure": {
+        "joueur_ref_atk": 179,
+        "joueur_ref_def": 68,
+        "joueur_ref_pv": 607,
+        "taux_victoire": 0.657
+      }
+    },
+    {
+      "rank": "SS",
+      "required_power": 36000,
+      "guardian": {
+        "name": "Effigie du Vide",
+        "lore": "Ce qui reste quand un rang a été arraché.",
+        "max_hp": 5232,
+        "attack": 158,
+        "defense": 100,
+        "speed": 8,
+        "crit_chance": 10,
+        "crit_damage": 150,
+        "dodge": 5
+      },
+      "_mesure": {
+        "joueur_ref_atk": 288,
+        "joueur_ref_def": 109,
+        "joueur_ref_pv": 936,
+        "taux_victoire": 0.662
+      }
+    },
+    {
+      "rank": "SSS",
+      "required_power": 292000,
+      "guardian": {
+        "name": "Le Dernier Gardien",
+        "lore": "Au-delà, il n'y a plus personne pour t'arrêter.",
+        "max_hp": 24624,
+        "attack": 372,
+        "defense": 237,
+        "speed": 8,
+        "crit_chance": 10,
+        "crit_damage": 150,
+        "dodge": 5
+      },
+      "_mesure": {
+        "joueur_ref_atk": 678,
+        "joueur_ref_def": 255,
+        "joueur_ref_pv": 2106,
+        "taux_victoire": 0.657
+      }
+    }
+  ]
+}

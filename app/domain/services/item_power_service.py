@@ -10,6 +10,12 @@ joueur de base. C'est la seule lecture qui reste cohérente avec le combat —
 
 Sert à fixer le prix du travail des artisans et le palier de maîtrise requis :
 plus une pièce est puissante, plus elle coûte cher et prend du temps.
+
+⚠️ Limite connue : la mesure se fait contre un joueur de BASE, qui a peu
+d'attaque et de PV. Les stats qui MULTIPLIENT (esquive, dégâts critiques) y
+sont donc sous-évaluées par rapport à ce qu'elles valent sur un personnage
+équipé. Une pièce qui ne donnerait QUE de l'esquive et du crit ressortira
+bon marché chez l'artisan — à surveiller si tu crées ce genre d'objet.
 """
 
 from __future__ import annotations
