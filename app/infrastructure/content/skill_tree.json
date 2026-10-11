@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "root": "racine_combat",
   "roots": [
     "racine_combat",
     "racine_utilite"
@@ -182,7 +181,7 @@
       "effects": [],
       "position": {
         "x": 0,
-        "y": 285
+        "y": 190
       }
     },
     "classe_vampire": {
@@ -354,5 +353,6 @@
       "to": "axe_confort",
       "type": "majeur"
     }
-  ]
+  ],
+  "root": "racine_combat"
 }
