@@ -28,7 +28,6 @@ from app.domain.entities.mob_definition import MobDefinition
 from app.domain.services.party_combat_service import PartyCombatService
 from app.domain.services.power_score_service import PowerScoreService
 from app.domain.services.rank_trial_service import RankTrialService, TrialEligibility
-from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
@@ -76,10 +75,7 @@ class RankTrialCog(BetaChannelOnlyMixin, commands.Cog):
             )
             player_id = profile.player.id
             worn = EquipmentRepository(session).list_by_player_id(player_id)
-            active_class = ClassRepository(session).get_current_class_for_player(
-                player_id,
-            )
-            stats = resolve_player_stats(session, profile, worn, active_class)
+            stats = resolve_player_stats(session, profile, worn)
             power = PowerScoreService().calculate_from_stats(stats)
 
             cooldown = CooldownRepository(session).get_by_player_and_action(

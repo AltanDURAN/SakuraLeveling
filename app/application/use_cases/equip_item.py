@@ -127,6 +127,22 @@ class EquipItemUseCase:
                 message=f"❌ **{item_def.name}** n'est pas équipable.",
             )
 
+        # Niveau requis : les bonus étant des POURCENTAGES du socle, une pièce
+        # de haut niveau ne rendrait de toute façon pas un débutant
+        # surpuissant. Ce verrou protège le PARCOURS : sans lui, un nouveau
+        # joueur à qui on offre une pièce ultime n'aurait plus jamais besoin
+        # d'en chercher — elle grandirait toute seule avec lui.
+        player_level = profile.progression.level
+        if not item_def.can_be_equipped_by(player_level):
+            return EquipResult(
+                success=False,
+                message=(
+                    f"🔒 **{item_def.name}** demande le niveau "
+                    f"**{item_def.level_requirement}** — tu es niveau "
+                    f"{player_level}. Reviens quand tu seras prêt."
+                ),
+            )
+
         item_type = item_def.equipment_slot or ""
         allowed = SLOTS_FOR_ITEM_TYPE.get(item_type)
         if not allowed:

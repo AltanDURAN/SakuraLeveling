@@ -17,7 +17,6 @@ from sqlalchemy.orm import Session
 from app.application.services.set_bonus_resolver import resolve_set_bonuses
 from app.application.services.status_effect_resolver import resolve_status_effects
 from app.application.services.title_bonus_resolver import resolve_title_bonuses
-from app.domain.entities.class_definition import ClassDefinition
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
 from app.domain.entities.player_profile import PlayerProfile
 from app.domain.services.skill_tree_service import SkillTreeService
@@ -35,7 +34,6 @@ def resolve_player_stats(
     session: Session,
     profile: PlayerProfile,
     equipped_items: list[PlayerEquipmentItem],
-    active_class: ClassDefinition | None,
     *,
     stats_service: StatsService | None = None,
 ) -> Stats:
@@ -66,7 +64,6 @@ def resolve_player_stats(
     return svc.calculate_player_stats(
         profile=profile,
         equipped_items=equipped_items,
-        active_class=active_class,
         skill_bonuses=skill_bonuses,
         set_bonuses=set_bonuses,
         title_bonuses=title_bonuses,
@@ -94,7 +91,6 @@ def resolve_player_stats_bulk(
     from app.infrastructure.db.repositories.player_item_level_repository import (
         PlayerItemLevelRepository,
     )
-    from app.infrastructure.db.repositories.class_repository import ClassRepository
     from app.infrastructure.db.repositories.equipment_repository import (
         EquipmentRepository,
     )
@@ -116,7 +112,6 @@ def resolve_player_stats_bulk(
     status_by_player = PlayerStatusEffectRepository(session).list_active_multipliers_bulk(ids)
     levels_by_player = PlayerItemLevelRepository(session).get_levels_for_players(ids)
     equipment_by_player = EquipmentRepository(session).list_by_player_ids(ids)
-    classes_by_player = ClassRepository(session).get_current_classes_for_players(ids)
 
     skill_service = SkillTreeService(get_skill_tree_definition())
     title_service = TitleBonusService()
@@ -134,7 +129,6 @@ def resolve_player_stats_bulk(
         out[pid] = svc.calculate_player_stats(
             profile=profile,
             equipped_items=equipped,
-            active_class=classes_by_player.get(pid),
             skill_bonuses=skill_service.aggregate_bonuses(
                 allocations_by_player.get(pid, {})
             ),

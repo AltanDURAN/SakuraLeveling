@@ -31,7 +31,6 @@ from app.domain.services.skill_tree_service import SkillTreeService
 from app.domain.services.stats_service import StatsService
 from app.domain.services.world_boss_scaling_service import WorldBossScalingService
 from app.domain.value_objects.battle_result import BattleResult
-from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
@@ -465,7 +464,6 @@ class LaunchPartyFightWorldBossUseCase:
         world_boss_repository: WorldBossRepository,
         player_repository: PlayerRepository,
         equipment_repository: EquipmentRepository,
-        class_repository: ClassRepository,
         skill_allocation_repository: PlayerSkillAllocationRepository,
         cooldown_repository: CooldownRepository,
         stats_service: StatsService,
@@ -476,7 +474,6 @@ class LaunchPartyFightWorldBossUseCase:
         self.world_boss_repository = world_boss_repository
         self.player_repository = player_repository
         self.equipment_repository = equipment_repository
-        self.class_repository = class_repository
         self.skill_allocation_repository = skill_allocation_repository
         self.cooldown_repository = cooldown_repository
         self.stats_service = stats_service
@@ -487,8 +484,9 @@ class LaunchPartyFightWorldBossUseCase:
     def execute(self, boss_id: int) -> PartyFightBossResult:
         from app.domain.services.party_combat_service import PartyCombatService
         from app.domain.services import element_service
-        from app.domain.services.skill_effect_service import offensive_element
-        from app.infrastructure.elements import element_skill_loader
+        from app.domain.services.elemental_infusion_service import (
+            ElementalInfusionService,
+        )
         from app.infrastructure.db.repositories.element_affinity_repository import (
             ElementAffinityRepository,
         )
@@ -551,14 +549,12 @@ class LaunchPartyFightWorldBossUseCase:
             if profile is None:
                 continue
             equipped = self.equipment_repository.list_by_player_id(v.player_id)
-            active_class = self.class_repository.get_current_class_for_player(v.player_id)
             # Chaîne de stats centralisée (skill + classe + sets + TITRES) —
             # corrige l'oubli des bonus de titre dans le combat de boss.
             base_stats = resolve_player_stats(
                 self.world_boss_repository.session,
                 profile,
                 equipped,
-                active_class,
                 stats_service=self.stats_service,
             )
             boosted = self.scaling_service.apply_team_bonus(base_stats, num_joined)
@@ -572,26 +568,15 @@ class LaunchPartyFightWorldBossUseCase:
                 )
             # Compétences équipées (slots libres, peuvent être vides) → passées
             # telles quelles au combat, qui les résout par tour.
-            equipped_skills = [
-                element_skill_loader.get_skill(code)
-                for code in (profile.player.skill_slot_1, profile.player.skill_slot_2)
-                if code
-            ]
-            if equipped_skills:
-                skill_loadouts[v.player_id] = equipped_skills
 
             # Multiplicateurs élémentaires du voteur (si le boss a un élément).
             if boss_aff is not None:
                 aff = affinity_repo.get_affinities(v.player_id)
-                # élément d'attaque = compétence offensive équipée, sinon repli
-                # sur l'affinité la plus haute (le joueur frappe quand même).
-                player_elem = offensive_element(equipped_skills) or (
-                    max(aff, key=aff.get) if aff else ""
-                )
-                if player_elem:
-                    elemental_out[v.player_id] = element_service.damage_multiplier(
-                        player_elem, aff, boss_aff,
-                    )
+                # L'ÉLÉMENT EST CHOISI TOUT SEUL, selon la faiblesse du boss
+                # et la maîtrise du joueur (cf. ElementalInfusionService).
+                infusion = ElementalInfusionService().best_for(aff, boss_aff)
+                if infusion.element:
+                    elemental_out[v.player_id] = infusion.multiplier
                 elemental_in[v.player_id] = element_service.damage_multiplier(
                     boss.element, boss_aff, aff,
                 )
@@ -922,12 +907,16 @@ class CompleteWorldBossUseCase:
             self.player_repository.add_gold(p.player_id, total_gold)
             # XP avec calcul de level-up correct (sinon l'XP est juste
             # ajoutée mais le joueur ne gagne pas de niveau ni de skill points)
-            new_level, new_xp, new_skill_points = self.progression_service.apply_level_up(
+            progression = self.progression_service.apply_level_up(
                 current_level=profile.progression.level,
                 current_xp=profile.progression.xp,
                 gained_xp=total_xp,
                 current_skill_points=profile.progression.skill_points,
+                current_stat_points=profile.progression.stat_points,
             )
+            new_level = progression.level
+            new_xp = progression.xp
+            new_skill_points = progression.skill_points
             self.player_repository.apply_progression(
                 player_id=p.player_id,
                 new_level=new_level,

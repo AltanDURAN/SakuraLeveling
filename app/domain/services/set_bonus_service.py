@@ -53,6 +53,12 @@ class SetBonuses:
     attack_flat: int = 0
     speed_flat: int = 0
     max_hp_flat: int = 0
+    # SAISON 1 : comme l'équipement, une panoplie agit en POURCENTAGE du socle
+    # pour les trois stats de base. Les `*_flat` structurels ci-dessus ne sont
+    # plus lus par StatsService — ils subsistent pour le contenu ancien.
+    attack_percent: float = 0.0
+    defense_percent: float = 0.0
+    max_hp_percent: float = 0.0
     mana_max_flat: int = 0
     mana_regeneration_flat: int = 0
     # Détail par panoplie pour affichage dans /equipement page 3

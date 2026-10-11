@@ -36,7 +36,6 @@ from app.domain.services.little_girl_service import (
     LittleGirlService,
 )
 from app.infrastructure.config.settings import settings
-from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.event_repository import (
     EventRepository,
@@ -539,10 +538,7 @@ class EventCog(commands.Cog):
     def _halve_current_hp(self, session, profile) -> None:
         """Divise par 2 les PV COURANTS (régénérés d'abord pour être juste)."""
         equipped = EquipmentRepository(session).list_by_player_id(profile.player.id)
-        active_class = ClassRepository(session).get_current_class_for_player(
-            profile.player.id
-        )
-        stats = resolve_player_stats(session, profile, equipped, active_class)
+        stats = resolve_player_stats(session, profile, equipped)
         health_repo = PlayerHealthRepository(session)
         state = health_repo.get_or_create(profile.player.id, default_current_hp=stats.max_hp)
         from datetime import datetime, UTC

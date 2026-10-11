@@ -24,7 +24,6 @@ from app.domain.services.duel_combat_service import DuelCombatService
 from app.domain.services.skill_tree_service import SkillTreeService
 from app.domain.services.stats_service import StatsService
 from app.domain.value_objects.duel_result import DuelResult
-from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.player_duel_rank_repository import (
@@ -63,7 +62,6 @@ class ChallengePlayerUseCase:
         self,
         player_repository: PlayerRepository,
         equipment_repository: EquipmentRepository,
-        class_repository: ClassRepository,
         skill_allocation_repository: PlayerSkillAllocationRepository,
         duel_rank_repository: PlayerDuelRankRepository,
         cooldown_repository: CooldownRepository,
@@ -73,7 +71,6 @@ class ChallengePlayerUseCase:
     ) -> None:
         self.player_repository = player_repository
         self.equipment_repository = equipment_repository
-        self.class_repository = class_repository
         self.skill_allocation_repository = skill_allocation_repository
         self.duel_rank_repository = duel_rank_repository
         self.cooldown_repository = cooldown_repository
@@ -233,29 +230,23 @@ class ChallengePlayerUseCase:
         équipée, sinon affinité la plus haute) confronté aux affinités des deux.
         1.0 si l'attaquant n'a aucun élément."""
         from app.domain.services import element_service
-        from app.domain.services.skill_effect_service import offensive_element
-        from app.infrastructure.elements import element_skill_loader
         from app.infrastructure.db.repositories.element_affinity_repository import (
             ElementAffinityRepository,
         )
         aff_repo = ElementAffinityRepository(session)
         a_aff = aff_repo.get_affinities(attacker_profile.player.id)
         d_aff = aff_repo.get_affinities(defender_profile.player.id)
-        skills = [
-            element_skill_loader.get_skill(c)
-            for c in (attacker_profile.player.skill_slot_1, attacker_profile.player.skill_slot_2)
-            if c
-        ]
-        elem = offensive_element(skills) or (max(a_aff, key=a_aff.get) if a_aff else "")
+        from app.domain.services.elemental_infusion_service import (
+            ElementalInfusionService,
+        )
+
+        elem = ElementalInfusionService().best_for(a_aff, d_aff).element
         if not elem:
             return 1.0
         return element_service.damage_multiplier(elem, a_aff, d_aff)
 
     def _compute_stats(self, profile, skill_service: SkillTreeService, session):
         equipped_items = self.equipment_repository.list_by_player_id(profile.player.id)
-        active_class = self.class_repository.get_current_class_for_player(
-            profile.player.id
-        )
         allocations = self.skill_allocation_repository.list_by_player(profile.player.id)
         skill_bonuses = skill_service.aggregate_bonuses(allocations)
         title_bonuses = resolve_title_bonuses(session, profile.player.id)
@@ -273,7 +264,6 @@ class ChallengePlayerUseCase:
         return self.stats_service.calculate_player_stats(
             profile=profile,
             equipped_items=equipped_items,
-            active_class=active_class,
             skill_bonuses=skill_bonuses,
             title_bonuses=title_bonuses,
             set_bonuses=set_bonuses,

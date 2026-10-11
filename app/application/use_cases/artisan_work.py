@@ -144,7 +144,11 @@ class ArtisanWorkUseCase:
                 known = self.items.get_by_code(status.item_code)
                 if known is not None:
                     status.item_name = known.name
-        power = self.power.marginal_power(item.stat_bonuses)
+        # La puissance d'une pièce en POURCENTAGE dépend de qui la porte :
+        # on l'évalue au niveau auquel elle est destinée.
+        power = self.power.marginal_power(
+            item.stat_bonuses, getattr(item, "level_requirement", 1),
+        )
         completed = self.orders.orders_completed(player_id, definition.code)
         profile = self.players.get_profile_by_player_id(player_id)
 

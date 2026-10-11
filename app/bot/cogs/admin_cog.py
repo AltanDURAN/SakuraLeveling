@@ -13,7 +13,6 @@ from app.shared.formatters import format_int as _format_int
 from app.domain.services.progression_service import ProgressionService
 from app.domain.services.shop_pricing_service import ShopPricingService
 from app.domain.services.stats_service import StatsService
-from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
@@ -94,14 +93,18 @@ class AdminCog(commands.Cog):
                 elif action == "give":
                     # Avec level-up calculé proprement
                     progression_service = ProgressionService()
-                    new_level, new_xp, new_sp = progression_service.apply_level_up(
+                    result = progression_service.apply_level_up(
                         current_level=profile.progression.level,
                         current_xp=current,
                         gained_xp=amount,
                         current_skill_points=profile.progression.skill_points,
+                        current_stat_points=profile.progression.stat_points,
                     )
-                    repo.apply_progression(profile.player.id, new_level, new_xp, new_sp)
-                    new = new_xp
+                    repo.apply_progression(
+                        profile.player.id, result.level, result.xp,
+                        result.skill_points, result.stat_points,
+                    )
+                    new = result.xp
                 else:
                     new = max(0, current - amount)
                     repo.apply_progression(
@@ -125,12 +128,9 @@ class AdminCog(commands.Cog):
 
             elif resource == "current_hp":
                 equipped = EquipmentRepository(session).list_by_player_id(profile.player.id)
-                active_class = ClassRepository(session).get_current_class_for_player(
-                    profile.player.id
-                )
-                # Chaîne complète (skill + classe + sets + titres) pour un
+                # Chaîne complète (arbre + sets + titres) pour un
                 # max_hp correct (l'inline ne comptait que les sets).
-                stats = resolve_player_stats(session, profile, equipped, active_class)
+                stats = resolve_player_stats(session, profile, equipped)
                 health_repo = PlayerHealthRepository(session)
                 state = health_repo.get_or_create(
                     profile.player.id, default_current_hp=stats.max_hp,
@@ -149,10 +149,7 @@ class AdminCog(commands.Cog):
                     PlayerManaRepository,
                 )
                 equipped = EquipmentRepository(session).list_by_player_id(profile.player.id)
-                active_class = ClassRepository(session).get_current_class_for_player(
-                    profile.player.id
-                )
-                stats = resolve_player_stats(session, profile, equipped, active_class)
+                stats = resolve_player_stats(session, profile, equipped)
                 mana_repo = PlayerManaRepository(session)
                 state = mana_repo.get_or_create(
                     profile.player.id, default_current_mana=stats.mana_max,
@@ -410,11 +407,8 @@ class AdminCog(commands.Cog):
                 )
                 return
             equipped = EquipmentRepository(session).list_by_player_id(profile.player.id)
-            active_class = ClassRepository(session).get_current_class_for_player(
-                profile.player.id
-            )
-            # Chaîne complète (skill + classe + sets + titres) pour heal_full.
-            stats = resolve_player_stats(session, profile, equipped, active_class)
+            # Chaîne complète (arbre + sets + titres) pour heal_full.
+            stats = resolve_player_stats(session, profile, equipped)
             health_repo = PlayerHealthRepository(session)
             health_repo.get_or_create(profile.player.id, default_current_hp=stats.max_hp)
             health_repo.update_current_hp(profile.player.id, stats.max_hp)
@@ -428,41 +422,6 @@ class AdminCog(commands.Cog):
         )
 
     # -------------------------- Classe active --------------------------
-
-    @admin.command(
-        name="set_class",
-        description="Force la classe active d'un joueur (ignore les prérequis de niveau)",
-    )
-    @app_commands.describe(target="Joueur ciblé", class_code="Code de la classe (autocomplete)")
-    @admin_only
-    async def set_class(
-        self,
-        interaction: discord.Interaction,
-        target: discord.Member,
-        class_code: str,
-    ) -> None:
-        await interaction.response.defer(ephemeral=True)
-        with get_db_session() as session:
-            profile = PlayerRepository(session).get_by_discord_id(target.id)
-            if profile is None:
-                await interaction.followup.send(
-                    f"❌ {target.display_name} n'a pas encore de profil.", ephemeral=True
-                )
-                return
-            class_repo = ClassRepository(session)
-            class_def = class_repo.get_by_code(class_code)
-            if class_def is None:
-                await interaction.followup.send(
-                    f"❌ Classe `{class_code}` introuvable.", ephemeral=True
-                )
-                return
-            class_repo.set_player_class(profile.player.id, class_def.id)
-        await interaction.followup.send(
-            f"✅ Classe de {target.mention} définie à **{class_def.name}**.",
-            ephemeral=True,
-        )
-
-    # -------------------------- Rang (rôle Discord d'accès aux zones) --------------------------
 
     @admin.command(
         name="set_rank",
@@ -1089,27 +1048,6 @@ class AdminCog(commands.Cog):
                 choices.append(
                     app_commands.Choice(
                         name=f"{mob.name} ({mob.code})", value=mob.code
-                    )
-                )
-            if len(choices) >= 25:
-                break
-        return choices
-
-    @set_class.autocomplete("class_code")
-    async def class_code_autocomplete(
-        self,
-        interaction: discord.Interaction,
-        current: str,
-    ) -> list[app_commands.Choice[str]]:
-        with get_db_session() as session:
-            classes = ClassRepository(session).list_all()
-        current_lower = current.lower()
-        choices: list[app_commands.Choice[str]] = []
-        for cls in classes:
-            if current_lower in cls.code.lower() or current_lower in cls.name.lower():
-                choices.append(
-                    app_commands.Choice(
-                        name=f"{cls.name} ({cls.code})", value=cls.code
                     )
                 )
             if len(choices) >= 25:

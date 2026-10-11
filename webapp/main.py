@@ -44,6 +44,9 @@ from app.infrastructure.skill_tree.skill_tree_loader import (
 from webapp.admin.routers.actions_router import router as admin_actions_router
 from webapp.admin.routers.auth_router import router as admin_auth_router
 from webapp.admin.routers.content_router import router as admin_content_router
+from webapp.admin.routers.skill_builder_router import (
+    router as admin_skill_builder_router,
+)
 from webapp.admin.routers.dashboard_router import router as admin_dashboard_router
 from webapp.admin.routers.items_router import router as admin_items_router
 from webapp.admin.routers.mobs_router import router as admin_mobs_router
@@ -53,7 +56,6 @@ from webapp.admin.routers.shop_router import router as admin_shop_router
 from webapp.admin.routers.zones_router import router as admin_zones_router
 from webapp.admin.routers.scenes_router import router as admin_scenes_router
 from webapp.admin.routers.families_router import router as admin_families_router
-from webapp.admin.routers.skills_element_router import router as admin_competences_router
 from webapp.admin.routers.events_router import router as admin_events_router
 from webapp.admin.routers.image_gen_router import router as admin_image_gen_router
 
@@ -99,13 +101,13 @@ app.include_router(admin_mobs_router)
 app.include_router(admin_zones_router)
 app.include_router(admin_scenes_router)
 app.include_router(admin_families_router)
-app.include_router(admin_competences_router)
 app.include_router(admin_shop_router)
 app.include_router(admin_players_router)
 app.include_router(admin_roles_router)
 app.include_router(admin_actions_router)
 app.include_router(admin_events_router)
 app.include_router(admin_image_gen_router)
+app.include_router(admin_skill_builder_router)
 app.include_router(admin_content_router)
 app.include_router(admin_dashboard_router)
 

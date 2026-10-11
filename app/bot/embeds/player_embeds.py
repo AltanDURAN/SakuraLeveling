@@ -2,7 +2,6 @@ import discord
 
 from app.shared.formatters import format_int as _format_int
 from app.shared.enums import ALL_ELEMENTS, ELEMENT_EMOJIS, ELEMENT_LABELS
-from app.domain.entities.class_definition import ClassDefinition
 from app.domain.entities.player_career_stats import PlayerCareerStats
 from app.domain.entities.player_profile import PlayerProfile
 from app.domain.services.element_affinity_progression_service import (
@@ -74,7 +73,6 @@ def build_player_profile_image_embed(
 def build_player_profile_embed(
     profile: PlayerProfile,
     stats: Stats,
-    active_class: ClassDefinition | None = None,
     current_hp: int = 0,
     power_score: str = "0",
     rank_label: str = "F-",
@@ -140,12 +138,6 @@ def build_player_profile_embed(
         value=f"{profile.resources.daily_streak}",
         inline=True,
     )
-
-    # Bloc classe
-    if active_class is None:
-        embed.add_field(name="🧬 Classe", value="Aucune", inline=False)
-    else:
-        embed.add_field(name="🧬 Classe", value=active_class.name, inline=False)
 
     # Bloc carrière (cumulés sur la durée de vie du profil)
     if career_stats is not None:

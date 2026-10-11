@@ -28,6 +28,7 @@ from pathlib import Path
 from app.domain.entities.mob_definition import MobDefinition
 from app.domain.services.party_combat_service import PartyCombatService
 from app.domain.services.power_score_service import PowerScoreService
+from app.domain.services.reference_player import reference_stats
 from app.domain.value_objects.stats import Stats
 
 CONTENT = (
@@ -37,15 +38,13 @@ CONTENT = (
 
 # Rang visé → seuil de power score qui ouvre l'épreuve (entrée du palier,
 # c'est-à-dire la variante « - » dans PowerScoreService).
-RANK_GATES: dict[str, int] = {
-    "E": 1_125,
-    "D": 2_450,
-    "C": 4_300,
-    "B": 6_600,
-    "A": 9_500,
-    "S": 12_600,
-    "SS": 36_000,
-    "SSS": 292_000,
+#: Rang visé → NIVEAU auquel on l'obtient. Les 9 rangs (F → SSS) s'étalent sur
+#: la saison : F au départ, SSS au niveau maximum. Le seuil de power score est
+#: calculé depuis le joueur de référence de ce niveau — comme ça, le rang suit
+#: la progression réelle au lieu d'une table figée.
+RANK_LEVELS: dict[str, int] = {
+    "E": 12, "D": 25, "C": 38, "B": 50,
+    "A": 63, "S": 75, "SS": 88, "SSS": 100,
 }
 
 GUARDIANS: dict[str, tuple[str, str]] = {
@@ -66,33 +65,9 @@ SIMULATIONS = 400
 MAX_TURNS = 60
 
 
-def _reference_stats(k: float) -> Stats:
-    """Profil de joueur équilibré paramétré par un scalaire de puissance."""
-    return Stats(
-        max_hp=int(100 + 12 * k),
-        attack=int(10 + 4 * k),
-        defense=int(5 + 1.5 * k),
-        speed=int(5 + k / 10),
-        crit_chance=min(75.0, 5 + k / 4),
-        crit_damage=150.0,
-        dodge=min(30.0, k / 5),
-        hp_regeneration=0,
-        mana_max=100,
-        mana_regeneration=0,
-    )
-
-
-def _player_for_score(target: int) -> Stats:
-    """Dichotomie : le joueur qui atteint tout juste ce power score."""
-    power = PowerScoreService()
-    lo, hi = 0.0, 5000.0
-    for _ in range(60):
-        mid = (lo + hi) / 2
-        if power.calculate_from_stats(_reference_stats(mid)) < target:
-            lo = mid
-        else:
-            hi = mid
-    return _reference_stats(hi)
+def _player_at(level: int) -> Stats:
+    """Joueur de référence du palier — définition partagée du domaine."""
+    return reference_stats(level)
 
 
 def _guardian(name: str, hp: int, attack: int, defense: int) -> MobDefinition:
@@ -128,8 +103,8 @@ def _win_rate(player: Stats, hp: int, attack: int, defense: int) -> float:
     return wins / SIMULATIONS
 
 
-def calibrate(rank: str, gate: int) -> dict:
-    player = _player_for_score(gate)
+def calibrate(rank: str, gate: int, level: int) -> dict:
+    player = _player_at(level)
     defense = max(1, int(player.attack * DEF_RATIO))
     attack = max(player.defense + 5, int(player.attack * ATK_RATIO))
 
@@ -166,8 +141,9 @@ def main() -> None:
     trials = []
     print(f"{'rang':<5} {'seuil':>8} {'PV gardien':>11} {'ATK':>5} {'DEF':>5} "
           f"{'ATK joueur':>11} {'victoire':>9}")
-    for rank, gate in RANK_GATES.items():
-        entry = calibrate(rank, gate)
+    for rank, level in RANK_LEVELS.items():
+        gate = PowerScoreService().calculate_from_stats(reference_stats(level))
+        entry = calibrate(rank, gate, level)
         m = entry["_mesure"]
         g = entry["guardian"]
         print(f"{rank:<5} {gate:>8} {g['max_hp']:>11} {g['attack']:>5} "

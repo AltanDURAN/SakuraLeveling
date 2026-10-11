@@ -44,6 +44,7 @@ class ItemRepository:
         equipment_slot: str | None = None,
         requires_two_hands: bool = False,
         family: str = "",
+        level_requirement: int = 1,
     ) -> ItemDefinition:
         model = ItemDefinitionModel(
             code=code,
@@ -60,6 +61,7 @@ class ItemRepository:
             equipment_slot=equipment_slot,
             requires_two_hands=requires_two_hands,
             family=family,
+            level_requirement=max(1, level_requirement),
         )
 
         self.session.add(model)
@@ -87,6 +89,7 @@ class ItemRepository:
         equipment_slot: str | None = None,
         requires_two_hands: bool = False,
         family: str = "",
+        level_requirement: int = 1,
     ):
         stmt = select(ItemDefinitionModel).where(ItemDefinitionModel.code == code)
         model = self.session.execute(stmt).scalar_one_or_none()
@@ -107,6 +110,7 @@ class ItemRepository:
         model.equipment_slot = equipment_slot
         model.requires_two_hands = requires_two_hands
         model.family = family
+        model.level_requirement = max(1, level_requirement)
         model.updated_at = datetime.now(UTC)
 
         self.session.commit()

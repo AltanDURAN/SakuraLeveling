@@ -337,9 +337,6 @@ async def set_hp(request: Request, user: AdminUser = Depends(require_admin)):
             from app.application.services.player_stats_resolver import (
                 resolve_player_stats,
             )
-            from app.infrastructure.db.repositories.class_repository import (
-                ClassRepository,
-            )
             from app.infrastructure.db.repositories.equipment_repository import (
                 EquipmentRepository,
             )
@@ -347,7 +344,6 @@ async def set_hp(request: Request, user: AdminUser = Depends(require_admin)):
             stats = resolve_player_stats(
                 session=session, profile=profile,
                 equipped_items=EquipmentRepository(session).list_by_player_id(pid),
-                active_class=ClassRepository(session).get_current_class_for_player(pid),
             )
             health_repo.get_or_create(pid, default_current_hp=stats.max_hp)
             health_repo.update_current_hp(pid, stats.max_hp)

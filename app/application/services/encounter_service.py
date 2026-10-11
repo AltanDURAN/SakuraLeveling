@@ -28,7 +28,6 @@ from app.domain.services.element_affinity_progression_service import (
 from app.domain.value_objects.battle_summary import BattleSummary
 from app.domain.value_objects.player_reward import EssenceGain, PlayerReward
 from app.domain.value_objects.skill_bonuses import SkillBonuses
-from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
@@ -109,7 +108,6 @@ class EncounterService:
         with get_db_session() as session:
             player_repository = PlayerRepository(session)
             equipment_repository = EquipmentRepository(session)
-            class_repository = ClassRepository(session)
             skill_allocation_repository = PlayerSkillAllocationRepository(session)
 
             profile = player_repository.get_by_discord_id(user_id)
@@ -117,7 +115,6 @@ class EncounterService:
                 return False, "Votre profil joueur n'existe pas encore. Utilisez /profile d'abord."
 
             equipped_items = equipment_repository.list_by_player_id(profile.player.id)
-            active_class = class_repository.get_current_class_for_player(profile.player.id)
             allocations = skill_allocation_repository.list_by_player(profile.player.id)
             skill_bonuses = SkillTreeService(get_skill_tree_definition()).aggregate_bonuses(
                 allocations
@@ -133,7 +130,6 @@ class EncounterService:
             stats = StatsService().calculate_player_stats(
                 profile=profile,
                 equipped_items=equipped_items,
-                active_class=active_class,
                 skill_bonuses=skill_bonuses,
                 title_bonuses=title_bonuses,
                 set_bonuses=set_bonuses,
@@ -168,7 +164,6 @@ class EncounterService:
         with get_db_session() as session:
             player_repository = PlayerRepository(session)
             equipment_repository = EquipmentRepository(session)
-            class_repository = ClassRepository(session)
             mob_repository = MobRepository(session)
             skill_allocation_repository = PlayerSkillAllocationRepository(session)
             skill_tree_service = SkillTreeService(get_skill_tree_definition())
@@ -184,8 +179,9 @@ class EncounterService:
             # deux sens selon les affinités du joueur et son élément d'attaque
             # (compétence offensive équipée, sinon affinité la plus haute).
             from app.domain.services import element_service
-            from app.domain.services.skill_effect_service import offensive_element
-            from app.infrastructure.elements import element_skill_loader
+            from app.domain.services.elemental_infusion_service import (
+                ElementalInfusionService,
+            )
             mob_element = (encounter.mob_state.element or "").strip()
             mob_aff = element_service.single_element_affinities(mob_element) if mob_element else None
             affinity_repo = ElementAffinityRepository(session)
@@ -201,7 +197,6 @@ class EncounterService:
                     continue
 
                 equipped_items = equipment_repository.list_by_player_id(participant.player_id)
-                active_class = class_repository.get_current_class_for_player(participant.player_id)
                 allocations = skill_allocation_repository.list_by_player(participant.player_id)
                 skill_bonuses = skill_tree_service.aggregate_bonuses(allocations)
 
@@ -223,7 +218,6 @@ class EncounterService:
                 stats = StatsService().calculate_player_stats(
                     profile=profile,
                     equipped_items=equipped_items,
-                    active_class=active_class,
                     skill_bonuses=skill_bonuses,
                     title_bonuses=title_bonuses,
                     set_bonuses=set_bonuses,
@@ -234,18 +228,13 @@ class EncounterService:
                 # Multiplicateurs élémentaires (si le mob a un élément).
                 if mob_aff is not None:
                     aff = affinity_repo.get_affinities(participant.player_id)
-                    equipped_skills = [
-                        element_skill_loader.get_skill(code)
-                        for code in (profile.player.skill_slot_1, profile.player.skill_slot_2)
-                        if code
-                    ]
-                    player_elem = offensive_element(equipped_skills) or (
-                        max(aff, key=aff.get) if aff else ""
-                    )
-                    if player_elem:
-                        elemental_out[participant.player_id] = element_service.damage_multiplier(
-                            player_elem, aff, mob_aff,
-                        )
+                    # L'ÉLÉMENT EST CHOISI TOUT SEUL : on prend celui qui
+                    # frappe le plus fort cette cible, compte tenu de sa
+                    # faiblesse ET de la maîtrise du joueur. Plus de
+                    # compétence élémentaire à équiper.
+                    infusion = ElementalInfusionService().best_for(aff, mob_aff)
+                    if infusion.element:
+                        elemental_out[participant.player_id] = infusion.multiplier
                     elemental_in[participant.player_id] = element_service.damage_multiplier(
                         mob_element, mob_aff, aff,
                     )
@@ -643,12 +632,16 @@ class EncounterService:
         profile_after = player_repository.get_profile_by_player_id(player_id)
         if profile_after is None:
             return
-        new_level, new_xp, new_skill_points = ProgressionService().apply_level_up(
+        progression = ProgressionService().apply_level_up(
             current_level=profile_after.progression.level,
             current_xp=profile_after.progression.xp,
             gained_xp=xp,
             current_skill_points=profile_after.progression.skill_points,
+            current_stat_points=profile_after.progression.stat_points,
         )
+        new_level = progression.level
+        new_xp = progression.xp
+        new_skill_points = progression.skill_points
         player_repository.apply_progression(
             player_id=player_id,
             new_level=new_level,

@@ -14,8 +14,6 @@ from app.infrastructure.db.models.item_model import ItemDefinitionModel
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel
 from app.infrastructure.db.models.equipment_model import PlayerEquipmentItemModel
 from app.infrastructure.db.models.mob_model import MobDefinitionModel
-from app.infrastructure.db.models.class_model import ClassDefinitionModel
-from app.infrastructure.db.models.player_class_state_model import PlayerClassStateModel
 from app.infrastructure.db.models.craft_model import CraftRecipeModel, CraftRecipeIngredientModel
 from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel
 from app.infrastructure.db.models.quest_model import QuestDefinitionModel, PlayerQuestStateModel

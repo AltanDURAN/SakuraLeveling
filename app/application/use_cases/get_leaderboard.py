@@ -8,7 +8,6 @@ from app.domain.services.leaderboard_service import (
 )
 from app.domain.services.power_score_service import PowerScoreService
 from app.domain.services.stats_service import StatsService
-from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.repositories.player_duel_rank_repository import (
@@ -43,7 +42,6 @@ class GetLeaderboardUseCase:
         self,
         player_repository: PlayerRepository,
         equipment_repository: EquipmentRepository,
-        class_repository: ClassRepository,
         kill_repository: PlayerKillRepository,
         mob_repository: MobRepository,
         stats_service: StatsService,
@@ -53,7 +51,6 @@ class GetLeaderboardUseCase:
     ) -> None:
         self.player_repository = player_repository
         self.equipment_repository = equipment_repository
-        self.class_repository = class_repository
         self.kill_repository = kill_repository
         self.mob_repository = mob_repository
         self.stats_service = stats_service

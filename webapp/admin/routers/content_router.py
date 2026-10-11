@@ -172,46 +172,6 @@ def _render(request: Request, user: AdminUser, **ctx) -> HTMLResponse:
 
 
 # ============ Classes ============
-@router.get("/classes", response_class=HTMLResponse)
-async def classes_list(
-    request: Request,
-    user: AdminUser = Depends(require_admin),
-    q: str | None = None,
-):
-    data = _load_json("classes.json") or []
-    rows = [
-        {
-            "code": c.get("code", ""),
-            "name": c.get("name", ""),
-            "description": c.get("description", "")[:80],
-            "bonuses": ", ".join(f"{k}+{v}" for k, v in (c.get("stat_bonuses") or {}).items()),
-            "unlock": ", ".join(
-                f"{r.get('profession_code', r.get('type', '?'))} lvl {r.get('level', '?')}"
-                for r in (c.get("unlock_requirements") or [])
-            ) or "—",
-            "__edit_url__": f"/admin/classes/{c.get('code', '')}/edit",
-            "__delete_url__": f"/admin/classes/{c.get('code', '')}/delete",
-        }
-        for c in data
-    ]
-    filtered = _filter_rows(rows, q)
-    return _render(
-        request, user,
-        title="Classes", icon="🧬",
-        new_url="/admin/classes/new", new_label="Nouvelle classe",
-        source_label="Définitions : app/infrastructure/content/classes.json — ⚠️ restart bot requis après ajout",
-        filter_q=q or "",
-        columns=[
-            {"label": "Code", "key": "code"},
-            {"label": "Nom", "key": "name"},
-            {"label": "Description", "key": "description"},
-            {"label": "Bonus de stats", "key": "bonuses"},
-            {"label": "Déblocage", "key": "unlock"},
-        ],
-        rows=filtered,
-    )
-
-
 # ============ Crafts (DB) ============
 @router.get("/crafts", response_class=HTMLResponse)
 async def crafts_list(
@@ -585,45 +545,6 @@ async def world_bosses_list(
 # ============ Create forms ============
 
 # --- Classes ---
-@router.get("/classes/new", response_class=HTMLResponse)
-async def classes_new_form(request: Request, user: AdminUser = Depends(require_admin)):
-    return get_templates().TemplateResponse(
-        request, "admin/classes/form.html",
-        context={"user": user, "errors": {}, "form_data": {}},
-    )
-
-
-@router.post("/classes")
-async def classes_create(request: Request, user: AdminUser = Depends(require_admin)):
-    fd = {k: str(v) for k, v in (await request.form()).items()}
-    errors = {}
-    code = fd.get("code", "").strip()
-    name = fd.get("name", "").strip()
-    if not code:
-        errors["code"] = "Code requis."
-    if not name:
-        errors["name"] = "Nom requis."
-    existing = _writer_load("classes.json", default=[]) or []
-    if any(c.get("code") == code for c in existing):
-        errors["code"] = f"Code `{code}` existe déjà."
-    if errors:
-        return get_templates().TemplateResponse(
-            request, "admin/classes/form.html",
-            context={"user": user, "errors": errors, "form_data": fd},
-            status_code=400,
-        )
-    entry = {
-        "code": code,
-        "name": name,
-        "description": fd.get("description", "").strip(),
-        "stat_bonuses": _parse_kv_pairs(fd.get("stat_bonuses", "")),
-    }
-    entry["unlock_requirements"] = _parse_unlock_requirements(fd.get("unlock", ""))
-    append_to_list("classes.json", entry)
-    return RedirectResponse(f"/admin/classes?q={code}", status_code=303)
-
-
-# --- Titres ---
 @router.get("/titles/new", response_class=HTMLResponse)
 async def titles_new_form(request: Request, user: AdminUser = Depends(require_admin)):
     return get_templates().TemplateResponse(
@@ -1185,50 +1106,6 @@ def _fmt_unlock_class(reqs: list | None) -> str:
 
 
 # --- Classes ---
-@router.get("/classes/{code}/edit", response_class=HTMLResponse)
-async def classes_edit_form(
-    code: str, request: Request, user: AdminUser = Depends(require_admin),
-):
-    from webapp.admin.json_writer import find_in_list_by_key
-    entry = find_in_list_by_key("classes.json", code)
-    if entry is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Classe `{code}` introuvable.")
-    fd = {
-        "code": entry.get("code", ""),
-        "name": entry.get("name", ""),
-        "description": entry.get("description", ""),
-        "stat_bonuses": _fmt_kv_pairs(entry.get("stat_bonuses")),
-        "unlock": _fmt_unlock_class(entry.get("unlock_requirements")),
-    }
-    return get_templates().TemplateResponse(
-        request, "admin/classes/form.html",
-        context={"user": user, "errors": {}, "form_data": fd, "edit_code": code},
-    )
-
-
-@router.post("/classes/{code}")
-async def classes_update(
-    code: str, request: Request, user: AdminUser = Depends(require_admin),
-):
-    from webapp.admin.json_writer import find_in_list_by_key, update_in_list_by_key
-    existing = find_in_list_by_key("classes.json", code)
-    if existing is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Classe `{code}` introuvable.")
-    fd = {k: str(v) for k, v in (await request.form()).items()}
-    entry = {
-        "code": code,  # immuable
-        "name": fd.get("name", "").strip(),
-        "description": fd.get("description", "").strip(),
-        "stat_bonuses": _parse_kv_pairs(fd.get("stat_bonuses", "")),
-    }
-    # Toujours écrire la clé (même vide) → vider le champ retire les prérequis
-    # explicitement, sans dépendre de la stratégie de merge. Cf. audit (cohérence).
-    entry["unlock_requirements"] = _parse_unlock_requirements(fd.get("unlock", ""))
-    update_in_list_by_key("classes.json", code, entry)
-    return RedirectResponse(f"/admin/classes?q={code}", status_code=303)
-
-
-# --- Titres ---
 @router.get("/titles/{code}/edit", response_class=HTMLResponse)
 async def titles_edit_form(
     code: str, request: Request, user: AdminUser = Depends(require_admin),
@@ -1675,11 +1552,6 @@ def _delete_from_list(filename: str, code: str, label: str, redirect: str):
     git_sync.push_content([f"app/infrastructure/content/{filename}"],
                           f"admin: {label} {code} supprimé(e)")
     return RedirectResponse(redirect, status_code=303)
-
-
-@router.post("/classes/{code}/delete")
-async def classes_delete(code: str, user: AdminUser = Depends(require_admin)):
-    return _delete_from_list("classes.json", code, "Classe", "/admin/classes")
 
 
 @router.post("/titles/{code}/delete")

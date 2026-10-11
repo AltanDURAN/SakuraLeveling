@@ -11,7 +11,7 @@ Feuilles :
     🎽 Équipements — TOUS les équipements en une feuille filtrable + power live
     👹 Mobs        — power score + rang calculés en direct (formules)
     🧪 Consommables, 📦 Ressources, 🛠️ Recettes, 🏪 Shop,
-    🧬 Classes, 🌳 Skill Tree, 🏷️ Titres, 🌸 Panoplies, 🐉 World Bosses
+    🌳 Skill Tree, 🏷️ Titres, 🌸 Panoplies, 🐉 World Bosses
 
 XLSX = importable direct dans Google Sheets (Fichier > Importer).
     .venv/bin/python scripts/export_content_spreadsheet.py
@@ -370,30 +370,6 @@ def write_shop_sheet(wb: Workbook) -> None:
     _finalize(ws, freeze="B2")
 
 
-def write_classes_sheet(wb: Workbook) -> None:
-    classes = _load("classes.json")
-    ws = wb.create_sheet("🧬 Classes")
-    ws.append(["Code", "Nom", "Atk", "Def", "PV", "Crit %", "Crit dmg",
-               "Esquive", "Vitesse", "Regen", "Déblocage", "Description"])
-    for c in classes:
-        b = c.get("stat_bonuses") or {}
-        reqs = []
-        for r in c.get("unlock_requirements", []):
-            t = r.get("type", "?")
-            if t == "profession_level":
-                reqs.append(f"métier {r.get('profession_code')} niv. {r.get('level')}")
-            elif t == "item":
-                reqs.append(f"item {r.get('item_code')}")
-            else:
-                reqs.append(json.dumps(r, ensure_ascii=False))
-        ws.append([c["code"], c["name"],
-                   b.get("attack", 0), b.get("defense", 0), b.get("max_hp", 0),
-                   b.get("crit_chance", 0), b.get("crit_damage", 0),
-                   b.get("dodge", 0), b.get("speed", 0), b.get("hp_regeneration", 0),
-                   "\n".join(reqs) or "aucune", c.get("description", "")])
-    _finalize(ws, freeze="B2")
-
-
 def write_skill_tree_sheet(wb: Workbook) -> None:
     try:
         tree = _load("skill_tree.json")
@@ -502,7 +478,6 @@ def write_summary_sheet(wb: Workbook) -> None:
         ("🧪 Consommables / 📦 Ressources", "Potions et ressources de craft."),
         ("🛠️ Recettes", "Recettes /craft et /forge."),
         ("🏪 Shop", "Prix d'achat / vente du shop."),
-        ("🧬 Classes", "Classes joueur + bonus + déblocage."),
         ("🌳 Skill Tree", "Tous les nœuds de l'arbre."),
         ("🏷️ Titres", "Titres, conditions et effets."),
         ("🌸 Panoplies", "Familles de set + paliers de bonus."),
@@ -551,7 +526,6 @@ def main() -> None:
     write_resources_sheet(wb)
     write_crafts_sheet(wb)
     write_shop_sheet(wb)
-    write_classes_sheet(wb)
     write_skill_tree_sheet(wb)
     write_titles_sheet(wb)
     write_sets_sheet(wb)

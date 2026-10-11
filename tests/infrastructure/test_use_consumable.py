@@ -18,8 +18,6 @@ from app.infrastructure.db.models.item_model import ItemDefinitionModel
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel  # noqa: F401
 from app.infrastructure.db.models.equipment_model import PlayerEquipmentItemModel  # noqa: F401
 from app.infrastructure.db.models.mob_model import MobDefinitionModel  # noqa: F401
-from app.infrastructure.db.models.class_model import ClassDefinitionModel  # noqa: F401
-from app.infrastructure.db.models.player_class_state_model import PlayerClassStateModel  # noqa: F401
 from app.infrastructure.db.models.craft_model import CraftRecipeModel, CraftRecipeIngredientModel  # noqa: F401
 from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel  # noqa: F401
 from app.infrastructure.db.models.quest_model import QuestDefinitionModel, PlayerQuestStateModel  # noqa: F401
@@ -32,7 +30,6 @@ from app.infrastructure.db.models.player_skill_allocation_model import PlayerSki
 from app.infrastructure.db.models.trade_model import TradeItemModel, TradeModel  # noqa: F401
 from app.infrastructure.db.models.player_duel_rank_model import PlayerDuelRankModel  # noqa: F401
 
-from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
@@ -88,7 +85,6 @@ def _build_use_case(session):
         item_repository=ItemRepository(session),
         inventory_repository=InventoryRepository(session),
         equipment_repository=EquipmentRepository(session),
-        class_repository=ClassRepository(session),
         skill_allocation_repository=PlayerSkillAllocationRepository(session),
         health_repository=PlayerHealthRepository(session),
         stats_service=StatsService(),
@@ -108,7 +104,7 @@ def test_potion_50_percent_heals_correctly(session):
     # Pose current_hp à 0 (profil au max_hp ~15-20 selon level 1)
     health_repo = PlayerHealthRepository(session)
     stats = StatsService().calculate_player_stats(
-        profile=profile, equipped_items=[], active_class=None,
+        profile=profile, equipped_items=[],
     )
     health_repo.get_or_create(profile.player.id, default_current_hp=stats.max_hp)
     health_repo.update_current_hp(profile.player.id, 0)
@@ -135,7 +131,7 @@ def test_potion_caps_at_max_hp(session):
     InventoryRepository(session).add_item(profile.player.id, item_id, 1)
 
     stats = StatsService().calculate_player_stats(
-        profile=profile, equipped_items=[], active_class=None,
+        profile=profile, equipped_items=[],
     )
     health_repo = PlayerHealthRepository(session)
     health_repo.get_or_create(profile.player.id, default_current_hp=stats.max_hp)
