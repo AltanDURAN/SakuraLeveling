@@ -17,8 +17,6 @@ from app.infrastructure.db.models.item_model import ItemDefinitionModel  # noqa:
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel
 from app.infrastructure.db.models.equipment_model import PlayerEquipmentItemModel
 from app.infrastructure.db.models.mob_model import MobDefinitionModel  # noqa: F401
-from app.infrastructure.db.models.class_model import ClassDefinitionModel  # noqa: F401
-from app.infrastructure.db.models.player_class_state_model import PlayerClassStateModel
 from app.infrastructure.db.models.craft_model import CraftRecipeModel, CraftRecipeIngredientModel  # noqa: F401
 from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel
 from app.infrastructure.db.models.quest_model import QuestDefinitionModel, PlayerQuestStateModel  # noqa: F401
@@ -239,7 +237,6 @@ def test_reset_player_purges_all_player_tables(session):
     for model_cls in (
         PlayerInventoryItemModel,
         PlayerEquipmentItemModel,
-        PlayerClassStateModel,
         PlayerQuestStateModel,
         PlayerCooldownModel,
         PlayerHealthStateModel,

@@ -25,8 +25,6 @@ from app.infrastructure.db.models.item_model import ItemDefinitionModel
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel  # noqa: F401
 from app.infrastructure.db.models.equipment_model import PlayerEquipmentItemModel  # noqa: F401
 from app.infrastructure.db.models.mob_model import MobDefinitionModel  # noqa: F401
-from app.infrastructure.db.models.class_model import ClassDefinitionModel  # noqa: F401
-from app.infrastructure.db.models.player_class_state_model import PlayerClassStateModel  # noqa: F401
 from app.infrastructure.db.models.craft_model import CraftRecipeModel, CraftRecipeIngredientModel  # noqa: F401
 from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel  # noqa: F401
 from app.infrastructure.db.models.quest_model import QuestDefinitionModel, PlayerQuestStateModel  # noqa: F401
@@ -42,7 +40,6 @@ from app.infrastructure.db.models.player_title_model import PlayerTitleModel  # 
 from app.infrastructure.db.models.player_status_effect_model import PlayerStatusEffectModel  # noqa: F401
 from app.infrastructure.db.models.player_item_level_model import PlayerItemLevelModel  # noqa: F401
 
-from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.player_item_level_repository import (
     PlayerItemLevelRepository,
@@ -118,7 +115,6 @@ def test_bulk_matches_unit_resolver(session):
             session=session,
             profile=prof,
             equipped_items=EquipmentRepository(session).list_by_player_id(pid),
-            active_class=ClassRepository(session).get_current_class_for_player(pid),
         )
         assert bulk[pid] == expected, f"divergence pour le joueur {pid}"
 

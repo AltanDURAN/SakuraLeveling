@@ -11,7 +11,6 @@ from app.infrastructure.db.models.equipment_set_model import (
 )
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel
 from app.infrastructure.db.models.player_career_stats_model import PlayerCareerStatsModel
-from app.infrastructure.db.models.player_class_state_model import PlayerClassStateModel
 from app.infrastructure.db.models.player_duel_rank_model import PlayerDuelRankModel
 from app.infrastructure.db.models.element_affinity_model import PlayerElementAffinityModel
 from app.infrastructure.db.models.element_essence_model import PlayerElementEssenceModel
@@ -91,7 +90,6 @@ class ResetPlayerUseCase:
             PlayerInventoryItemModel,
             PlayerEquipmentItemModel,
             PlayerEquipmentSetModel,
-            PlayerClassStateModel,
             PlayerQuestStateModel,
             PlayerCooldownModel,
             PlayerHealthStateModel,

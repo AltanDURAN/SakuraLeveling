@@ -18,8 +18,6 @@ from app.infrastructure.db.models.item_model import ItemDefinitionModel
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel  # noqa: F401
 from app.infrastructure.db.models.equipment_model import PlayerEquipmentItemModel  # noqa: F401
 from app.infrastructure.db.models.mob_model import MobDefinitionModel  # noqa: F401
-from app.infrastructure.db.models.class_model import ClassDefinitionModel  # noqa: F401
-from app.infrastructure.db.models.player_class_state_model import PlayerClassStateModel  # noqa: F401
 from app.infrastructure.db.models.craft_model import CraftRecipeModel, CraftRecipeIngredientModel  # noqa: F401
 from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel  # noqa: F401
 from app.infrastructure.db.models.quest_model import QuestDefinitionModel, PlayerQuestStateModel  # noqa: F401
@@ -32,7 +30,6 @@ from app.infrastructure.db.models.player_skill_allocation_model import PlayerSki
 from app.infrastructure.db.models.trade_model import TradeItemModel, TradeModel  # noqa: F401
 from app.infrastructure.db.models.player_duel_rank_model import PlayerDuelRankModel  # noqa: F401
 
-from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
@@ -88,7 +85,6 @@ def _build_use_case(session):
         item_repository=ItemRepository(session),
         inventory_repository=InventoryRepository(session),
         equipment_repository=EquipmentRepository(session),
-        class_repository=ClassRepository(session),
         skill_allocation_repository=PlayerSkillAllocationRepository(session),
         health_repository=PlayerHealthRepository(session),
         stats_service=StatsService(),

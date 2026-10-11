@@ -24,7 +24,6 @@ from app.domain.services.duel_combat_service import DuelCombatService
 from app.domain.services.skill_tree_service import SkillTreeService
 from app.domain.services.stats_service import StatsService
 from app.domain.value_objects.duel_result import DuelResult
-from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.player_duel_rank_repository import (
@@ -63,7 +62,6 @@ class ChallengePlayerUseCase:
         self,
         player_repository: PlayerRepository,
         equipment_repository: EquipmentRepository,
-        class_repository: ClassRepository,
         skill_allocation_repository: PlayerSkillAllocationRepository,
         duel_rank_repository: PlayerDuelRankRepository,
         cooldown_repository: CooldownRepository,
@@ -73,7 +71,6 @@ class ChallengePlayerUseCase:
     ) -> None:
         self.player_repository = player_repository
         self.equipment_repository = equipment_repository
-        self.class_repository = class_repository
         self.skill_allocation_repository = skill_allocation_repository
         self.duel_rank_repository = duel_rank_repository
         self.cooldown_repository = cooldown_repository
@@ -253,9 +250,6 @@ class ChallengePlayerUseCase:
 
     def _compute_stats(self, profile, skill_service: SkillTreeService, session):
         equipped_items = self.equipment_repository.list_by_player_id(profile.player.id)
-        active_class = self.class_repository.get_current_class_for_player(
-            profile.player.id
-        )
         allocations = self.skill_allocation_repository.list_by_player(profile.player.id)
         skill_bonuses = skill_service.aggregate_bonuses(allocations)
         title_bonuses = resolve_title_bonuses(session, profile.player.id)

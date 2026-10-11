@@ -24,8 +24,6 @@ from app.infrastructure.db.models.equipment_set_model import (  # noqa: F401
     PlayerEquipmentSetItemModel,
 )
 from app.infrastructure.db.models.mob_model import MobDefinitionModel  # noqa: F401
-from app.infrastructure.db.models.class_model import ClassDefinitionModel  # noqa: F401
-from app.infrastructure.db.models.player_class_state_model import PlayerClassStateModel  # noqa: F401
 from app.infrastructure.db.models.craft_model import (  # noqa: F401
     CraftRecipeModel, CraftRecipeIngredientModel,
 )

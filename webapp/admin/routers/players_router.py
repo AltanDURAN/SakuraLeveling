@@ -16,7 +16,6 @@ from app.application.services.player_stats_resolver import resolve_player_stats
 from app.application.use_cases.reset_player import ResetPlayerUseCase
 from app.domain.services.power_score_service import PowerScoreService
 from app.domain.services.progression_service import ProgressionService
-from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.player_health_repository import PlayerHealthRepository
 from app.infrastructure.db.repositories.player_mana_repository import PlayerManaRepository
 from app.infrastructure.db.repositories.element_affinity_repository import (
@@ -81,7 +80,7 @@ def _emblem_for_rank(rank) -> tuple[str, str, str]:
     return _RANK_TIER.get(base, _RANK_TIER_DEFAULT)
 
 
-def _player_summary(profile, active_class) -> dict:
+def _player_summary(profile) -> dict:
     return {
         "id": profile.player.id,
         "discord_id": profile.player.discord_id,
@@ -92,7 +91,6 @@ def _player_summary(profile, active_class) -> dict:
         "skill_points": profile.progression.skill_points,
         "gold": profile.resources.gold,
         "daily_streak": profile.resources.daily_streak,
-        "class": active_class.name if active_class else "—",
         # created_at = arrivée sur le serveur (création du profil, à l'accueil ou
         # à la 1re commande) ; last_seen_at = dernière commande effectuée.
         "joined": _fmt_dt(profile.player.created_at),
@@ -153,12 +151,11 @@ async def _base_ctx(session, user, player_id, section: str) -> tuple[dict, objec
     profile = PlayerRepository(session).get_profile_by_player_id(player_id)
     if profile is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Player #{player_id} introuvable.")
-    active_class = ClassRepository(session).get_current_class_for_player(player_id)
     equipped = EquipmentRepository(session).list_by_player_id(player_id)
 
     stats = power = rank = None
     try:
-        stats = resolve_player_stats(session, profile, equipped, active_class)
+        stats = resolve_player_stats(session, profile, equipped)
         pss = PowerScoreService()
         score = pss.calculate_from_stats(stats)
         power = pss.format_score(score)
@@ -170,7 +167,7 @@ async def _base_ctx(session, user, player_id, section: str) -> tuple[dict, objec
     ctx = {
         "user": user,
         "section": section,
-        "p": _player_summary(profile, active_class),
+        "p": _player_summary(profile),
         "nav": _nav(session, player_id),
         "avatar_url": await discord_api.avatar_url_for(profile.player.discord_id),
         "stats": stats,
@@ -385,10 +382,9 @@ async def players_update(player_id: int, request: Request, user: AdminUser = Dep
         repo.set_daily_streak(player_id, new_streak)
 
         # PV / mana courants (bornés au max calculé).
-        active_class = ClassRepository(session).get_current_class_for_player(player_id)
         equipped = EquipmentRepository(session).list_by_player_id(player_id)
         try:
-            stats = resolve_player_stats(session, repo.get_profile_by_player_id(player_id), equipped, active_class)
+            stats = resolve_player_stats(session, repo.get_profile_by_player_id(player_id), equipped)
             max_hp, max_mana = stats.max_hp, stats.mana_max
         except Exception:
             max_hp, max_mana = 1, 0

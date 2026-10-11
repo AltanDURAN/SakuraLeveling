@@ -7,7 +7,6 @@ from app.bot.embeds.leaderboard_embeds import build_leaderboard_embed
 from app.domain.services.leaderboard_service import LeaderboardService
 from app.domain.services.power_score_service import PowerScoreService
 from app.domain.services.stats_service import StatsService
-from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.repositories.player_duel_rank_repository import (
@@ -48,7 +47,6 @@ class LeaderboardCog(commands.Cog):
             use_case = GetLeaderboardUseCase(
                 player_repository=PlayerRepository(session),
                 equipment_repository=EquipmentRepository(session),
-                class_repository=ClassRepository(session),
                 kill_repository=PlayerKillRepository(session),
                 mob_repository=MobRepository(session),
                 stats_service=StatsService(),

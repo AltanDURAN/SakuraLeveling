@@ -9,12 +9,10 @@ from app.application.services.set_bonus_resolver import resolve_set_bonuses
 from app.application.services.player_stats_resolver import resolve_player_stats
 from app.domain.entities.player_profile import PlayerProfile
 from app.shared.formatters import format_int as _format_int
-from app.application.use_cases.change_player_class import ChangePlayerClassUseCase
 from app.application.use_cases.transfer_gold import TransferGoldUseCase
 from app.application.use_cases.claim_daily_reward import ClaimDailyRewardUseCase
 from app.application.use_cases.challenge_player import ChallengePlayerUseCase
 from app.application.use_cases.use_consumable import UseConsumableUseCase
-from app.application.use_cases.get_available_classes import GetAvailableClassesUseCase
 from app.application.use_cases.get_player_equipment import GetPlayerEquipmentUseCase
 from app.application.use_cases.equip_item import (
     EquipItemUseCase,
@@ -25,7 +23,6 @@ from app.bot.embeds.duel_embeds import (
     build_duel_result_embed,
     build_duel_turn_embed,
 )
-from app.bot.embeds.class_embeds import build_player_class_embed
 from app.bot.embeds.daily_embeds import (
     build_daily_cooldown_embed,
     build_daily_success_embed,
@@ -34,12 +31,10 @@ from app.bot.views.equipment_view import EquipmentView
 from app.bot.views.inventory_view import InventoryView
 from app.bot.embeds.inventory_embeds import build_inventory_embed
 from app.bot.embeds.player_embeds import build_player_profile_embed
-from app.domain.services.class_service import ClassService
 from app.domain.services.cooldown_service import CooldownService
 from app.domain.services.duel_combat_service import DuelCombatService
 from app.domain.services.stats_service import StatsService
 from app.infrastructure.config.settings import settings
-from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.element_affinity_repository import (
@@ -62,7 +57,6 @@ from app.infrastructure.skill_tree.skill_tree_loader import (
     get_definition as get_skill_tree_definition,
 )
 from app.domain.services.skill_tree_service import SkillTreeService
-from app.infrastructure.db.repositories.profession_repository import ProfessionRepository
 from app.infrastructure.db.session import get_db_session
 from app.shared.enums import SLOT_LABELS
 from app.domain.services.health_regeneration_service import HealthRegenerationService
@@ -138,14 +132,12 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 return
 
             equipment_repository = EquipmentRepository(session)
-            class_repository = ClassRepository(session)
             player_health_repository = PlayerHealthRepository(session)
             kill_repository = PlayerKillRepository(session)
             career_stats_repository = PlayerCareerStatsRepository(session)
             skill_allocation_repository = PlayerSkillAllocationRepository(session)
 
             equipped_items = equipment_repository.list_by_player_id(profile.player.id)
-            active_class = class_repository.get_current_class_for_player(profile.player.id)
             allocations = skill_allocation_repository.list_by_player(profile.player.id)
             skill_bonuses = SkillTreeService(get_skill_tree_definition()).aggregate_bonuses(
                 allocations
@@ -171,7 +163,6 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             stats = StatsService().calculate_player_stats(
                 profile=profile,
                 equipped_items=equipped_items,
-                active_class=active_class,
                 skill_bonuses=skill_bonuses,
                 title_bonuses=title_bonuses,
                 set_bonuses=set_bonuses,
@@ -252,9 +243,6 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 if title_def is not None:
                     active_title_name = f"{title_def.icon} {title_def.name}"
 
-            from app.infrastructure.db.repositories.element_affinity_repository import (
-                ElementAffinityRepository,
-            )
             affinities = ElementAffinityRepository(session).get_affinities(
                 profile.player.id
             )
@@ -281,7 +269,9 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             avatar_url = (
                 target_member.display_avatar.url if target_member else None
             )
-            class_name = active_class.name if active_class else None
+            # La classe revient par l'arbre de compétences (nœuds « classe »)
+            # — plus aucune classe de départ en saison 1.
+            class_name = None
             xp_required = ProgressionService().xp_required_for_next_level(
                 profile.progression.level
             )
@@ -363,7 +353,6 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         embed = build_player_profile_embed(
             profile=profile,
             stats=stats,
-            active_class=active_class,
             current_hp=regenerated_current_hp,
             power_score=formatted_power_score,
             rank_label=rank_label,
@@ -511,7 +500,6 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             )
             inventory_repository = InventoryRepository(session)
             equipment_repository = EquipmentRepository(session)
-            class_repository = ClassRepository(session)
 
             inventory_items = inventory_repository.list_by_player_id(profile.player.id)
             matched = next(
@@ -579,13 +567,12 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 return
 
             # Sinon : un autre item est déjà dans le slot → calcule diff
-            active_class = class_repository.get_current_class_for_player(profile.player.id)
             # (les bonus d'arbre sont résolus par resolve_player_stats)
 
             # Chaîne complète (skill + classe + sets + TITRES) pour un preview
             # de diff correct — l'inline oubliait les bonus de titre.
             current_stats = resolve_player_stats(
-                session, profile, current_equipment, active_class
+                session, profile, current_equipment
             )
             # Simule la nouvelle config : retirer l'occupant du slot, ajouter
             # le nouvel item. Pas de persistence — juste un objet domain.
@@ -602,7 +589,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 e for e in current_equipment if e.slot not in dropped
             ] + [simulated_new]
             new_stats = resolve_player_stats(
-                session, profile, simulated, active_class
+                session, profile, simulated
             )
 
             current_in_slot_name = current_in_slot.item_definition.name
@@ -967,7 +954,6 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             use_case = ChallengePlayerUseCase(
                 player_repository=PlayerRepository(session),
                 equipment_repository=EquipmentRepository(session),
-                class_repository=ClassRepository(session),
                 skill_allocation_repository=PlayerSkillAllocationRepository(session),
                 duel_rank_repository=PlayerDuelRankRepository(session),
                 cooldown_repository=CooldownRepository(session),
@@ -1026,26 +1012,6 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         )
         await message.edit(embed=final_embed)
 
-    @app_commands.command(name="classe", description="Afficher la classe active d'un joueur")
-    @app_commands.describe(target="Joueur dont afficher la classe (par défaut : vous)")
-    async def player_class(
-        self,
-        interaction: discord.Interaction,
-        target: discord.Member | None = None,
-    ) -> None:
-        with get_db_session() as session:
-            profile, target_member = self._resolve_profile(interaction, target, session)
-            if profile is None:
-                await self._send_no_profile_error(interaction, target_member)
-                return
-
-            class_repository = ClassRepository(session)
-            class_repository.get_or_create_player_class_state(profile.player.id)
-            active_class = class_repository.get_current_class_for_player(profile.player.id)
-
-        embed = build_player_class_embed(target_member.display_name, active_class)
-        await interaction.response.send_message(embed=embed)
-
     @app_commands.command(
         name="affinites",
         description="Voir vos affinités élémentaires et votre progression d'essences",
@@ -1083,32 +1049,6 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             is_self=is_self,
         )
         await interaction.response.send_message(embed=embed)
-
-    @app_commands.command(name="choisir_classe", description="Définir votre classe active")
-    @app_commands.describe(class_code="Code technique de la classe")
-    async def class_set(self, interaction: discord.Interaction, class_code: str) -> None:
-        with get_db_session() as session:
-            player_repository = PlayerRepository(session)
-            class_repository = ClassRepository(session)
-            profession_repository = ProfessionRepository(session)
-            inventory_repository = InventoryRepository(session)
-
-            use_case = ChangePlayerClassUseCase(
-                player_repository=player_repository,
-                class_repository=class_repository,
-                profession_repository=profession_repository,
-                inventory_repository=inventory_repository,
-                class_service=ClassService(),
-            )
-
-            success, message = use_case.execute(
-                discord_id=interaction.user.id,
-                username=interaction.user.name,
-                display_name=interaction.user.display_name,
-                class_code=class_code,
-            )
-
-        await interaction.response.send_message(message, ephemeral=not success)
 
     # ------------------------------------------------------------------
     # Le craft et la forge ont quitté ce cog : ils passent désormais par
@@ -1172,7 +1112,6 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 item_repository=ItemRepository(session),
                 inventory_repository=InventoryRepository(session),
                 equipment_repository=EquipmentRepository(session),
-                class_repository=ClassRepository(session),
                 skill_allocation_repository=PlayerSkillAllocationRepository(session),
                 health_repository=PlayerHealthRepository(session),
                 stats_service=StatsService(),
@@ -1376,73 +1315,6 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
 
     # NOTE : /gather retiré (juin 2026). Le système de métiers sera retravaillé
     # sérieusement plus tard (GatherResourceUseCase conservé mais non câblé).
-
-    @app_commands.command(name="classes", description="Afficher les classes disponibles et leur état")
-    async def classes(self, interaction: discord.Interaction) -> None:
-        with get_db_session() as session:
-            player_repository = PlayerRepository(session)
-            class_repository = ClassRepository(session)
-            profession_repository = ProfessionRepository(session)
-            inventory_repository = InventoryRepository(session)
-
-            use_case = GetAvailableClassesUseCase(
-                player_repository=player_repository,
-                class_repository=class_repository,
-                profession_repository=profession_repository,
-                inventory_repository=inventory_repository,
-                class_service=ClassService(),
-            )
-
-            class_entries = use_case.execute(
-                discord_id=interaction.user.id,
-                username=interaction.user.name,
-                display_name=interaction.user.display_name,
-            )
-
-        embed = discord.Embed(
-            title=f"🧬 Classes de {interaction.user.display_name}",
-            color=discord.Color.dark_gold(),
-        )
-
-        if not class_entries:
-            embed.description = "Aucune classe disponible."
-        else:
-            lines = []
-            for entry in class_entries:
-                class_definition = entry["class_definition"]
-                unlocked = entry["unlocked"]
-                status = "✅ Débloquée" if unlocked else "🔒 Verrouillée"
-
-                requirements = class_definition.unlock_requirements or []
-                if requirements:
-                    requirement_lines = []
-                    for requirement in requirements:
-                        requirement_type = requirement.get("type")
-
-                        if requirement_type == "profession_level":
-                            requirement_lines.append(
-                                f"Métier {requirement['profession_code']} niveau {requirement['level']}"
-                            )
-                        elif requirement_type == "has_item":
-                            requirement_lines.append(
-                                f"{requirement['item_code']} x{requirement['quantity']}"
-                            )
-
-                    requirement_text = " | ".join(requirement_lines)
-                else:
-                    requirement_text = "Aucune condition"
-
-                lines.append(
-                    f"**{class_definition.code}** — {class_definition.name}\n"
-                    f"{class_definition.description}\n"
-                    f"{status}\n"
-                    f"Conditions : {requirement_text}"
-                )
-
-            embed.description = "\n\n".join(lines)
-
-        await interaction.response.send_message(embed=embed)
-
 
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(PlayerCog(bot))

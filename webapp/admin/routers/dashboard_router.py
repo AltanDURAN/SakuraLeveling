@@ -82,7 +82,6 @@ async def dashboard(
             "user": user,
             "items_count": items_count,
             "mobs_count": mobs_count,
-            "classes_count": _count_json_top_level("classes.json"),
             "crafts_count": crafts_count,
             "skill_nodes_count": skill_nodes_count,
             "panoplies_count": _count_json_top_level("sets.json"),

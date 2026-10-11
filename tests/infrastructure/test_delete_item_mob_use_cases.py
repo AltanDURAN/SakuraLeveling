@@ -25,8 +25,6 @@ from app.infrastructure.db.models.player_mob_kill_model import PlayerMobKillMode
 # Import de tous les modèles pour que les relationships SQLAlchemy se résolvent.
 from app.infrastructure.db.models.progression_model import PlayerProgressionModel  # noqa: F401
 from app.infrastructure.db.models.resource_model import PlayerResourceModel  # noqa: F401
-from app.infrastructure.db.models.class_model import ClassDefinitionModel  # noqa: F401
-from app.infrastructure.db.models.player_class_state_model import PlayerClassStateModel  # noqa: F401
 from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel  # noqa: F401
 from app.infrastructure.db.models.player_health_state_model import PlayerHealthStateModel  # noqa: F401
 from app.infrastructure.db.models.player_career_stats_model import PlayerCareerStatsModel  # noqa: F401

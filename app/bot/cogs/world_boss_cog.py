@@ -50,7 +50,6 @@ from app.domain.services.cooldown_service import CooldownService
 from app.domain.services.stats_service import StatsService
 from app.domain.services.world_boss_scaling_service import WorldBossScalingService
 from app.infrastructure.config.settings import settings
-from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
@@ -859,7 +858,6 @@ class WorldBossCog(commands.Cog):
                     world_boss_repository=WorldBossRepository(session),
                     player_repository=PlayerRepository(session),
                     equipment_repository=EquipmentRepository(session),
-                    class_repository=ClassRepository(session),
                     skill_allocation_repository=PlayerSkillAllocationRepository(session),
                     cooldown_repository=CooldownRepository(session),
                     stats_service=StatsService(),

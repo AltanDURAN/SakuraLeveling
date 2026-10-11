@@ -28,7 +28,6 @@ from app.domain.services.element_affinity_progression_service import (
 from app.domain.value_objects.battle_summary import BattleSummary
 from app.domain.value_objects.player_reward import EssenceGain, PlayerReward
 from app.domain.value_objects.skill_bonuses import SkillBonuses
-from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
@@ -109,7 +108,6 @@ class EncounterService:
         with get_db_session() as session:
             player_repository = PlayerRepository(session)
             equipment_repository = EquipmentRepository(session)
-            class_repository = ClassRepository(session)
             skill_allocation_repository = PlayerSkillAllocationRepository(session)
 
             profile = player_repository.get_by_discord_id(user_id)
@@ -117,7 +115,6 @@ class EncounterService:
                 return False, "Votre profil joueur n'existe pas encore. Utilisez /profile d'abord."
 
             equipped_items = equipment_repository.list_by_player_id(profile.player.id)
-            active_class = class_repository.get_current_class_for_player(profile.player.id)
             allocations = skill_allocation_repository.list_by_player(profile.player.id)
             skill_bonuses = SkillTreeService(get_skill_tree_definition()).aggregate_bonuses(
                 allocations
@@ -133,7 +130,6 @@ class EncounterService:
             stats = StatsService().calculate_player_stats(
                 profile=profile,
                 equipped_items=equipped_items,
-                active_class=active_class,
                 skill_bonuses=skill_bonuses,
                 title_bonuses=title_bonuses,
                 set_bonuses=set_bonuses,
@@ -168,7 +164,6 @@ class EncounterService:
         with get_db_session() as session:
             player_repository = PlayerRepository(session)
             equipment_repository = EquipmentRepository(session)
-            class_repository = ClassRepository(session)
             mob_repository = MobRepository(session)
             skill_allocation_repository = PlayerSkillAllocationRepository(session)
             skill_tree_service = SkillTreeService(get_skill_tree_definition())
@@ -201,7 +196,6 @@ class EncounterService:
                     continue
 
                 equipped_items = equipment_repository.list_by_player_id(participant.player_id)
-                active_class = class_repository.get_current_class_for_player(participant.player_id)
                 allocations = skill_allocation_repository.list_by_player(participant.player_id)
                 skill_bonuses = skill_tree_service.aggregate_bonuses(allocations)
 
@@ -223,7 +217,6 @@ class EncounterService:
                 stats = StatsService().calculate_player_stats(
                     profile=profile,
                     equipped_items=equipped_items,
-                    active_class=active_class,
                     skill_bonuses=skill_bonuses,
                     title_bonuses=title_bonuses,
                     set_bonuses=set_bonuses,

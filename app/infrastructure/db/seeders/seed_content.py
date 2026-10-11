@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 from app.infrastructure.db.models.profession_model import ProfessionDefinitionModel
-from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.craft_repository import CraftRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
@@ -94,35 +93,6 @@ def seed_mobs() -> None:
                 mob_repository.update_by_code(**payload)
 
     print("Mobs seedés.")
-
-
-def seed_classes() -> None:
-    classes = load_json("classes.json")
-
-    with get_db_session() as session:
-        class_repository = ClassRepository(session)
-
-        for class_data in classes:
-            existing = class_repository.get_by_code(class_data["code"])
-
-            if existing is None:
-                class_repository.create(
-                    code=class_data["code"],
-                    name=class_data["name"],
-                    description=class_data["description"],
-                    stat_bonuses=class_data["stat_bonuses"],
-                    unlock_requirements=class_data.get("unlock_requirements"),
-                )
-            else:
-                class_repository.update_by_code(
-                    code=class_data["code"],
-                    name=class_data["name"],
-                    description=class_data["description"],
-                    stat_bonuses=class_data["stat_bonuses"],
-                    unlock_requirements=class_data.get("unlock_requirements"),
-                )
-
-    print("Classes seedées.")
 
 
 def seed_crafts() -> None:
@@ -285,7 +255,6 @@ def seed_shop_items() -> None:
 def main() -> None:
     seed_items()
     seed_mobs()
-    seed_classes()
     seed_crafts()
     seed_quests()
     seed_professions()

@@ -12,7 +12,6 @@ from dataclasses import dataclass
 from app.application.services.player_stats_resolver import resolve_player_stats
 from app.domain.services.stats_service import StatsService
 from app.domain.services.skill_tree_service import SkillTreeService
-from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
@@ -49,7 +48,6 @@ class UseConsumableUseCase:
         item_repository: ItemRepository,
         inventory_repository: InventoryRepository,
         equipment_repository: EquipmentRepository,
-        class_repository: ClassRepository,
         skill_allocation_repository: PlayerSkillAllocationRepository,
         health_repository: PlayerHealthRepository,
         stats_service: StatsService,
@@ -58,7 +56,6 @@ class UseConsumableUseCase:
         self.item_repository = item_repository
         self.inventory_repository = inventory_repository
         self.equipment_repository = equipment_repository
-        self.class_repository = class_repository
         self.skill_allocation_repository = skill_allocation_repository
         self.health_repository = health_repository
         self.stats_service = stats_service
@@ -108,14 +105,10 @@ class UseConsumableUseCase:
         # TITRES) via le helper centralisé (corrige l'oubli des titres : un
         # Champion 1v1 a un max_hp majoré qui doit servir au plafond de soin).
         equipped = self.equipment_repository.list_by_player_id(profile.player.id)
-        active_class = self.class_repository.get_current_class_for_player(
-            profile.player.id
-        )
         stats = resolve_player_stats(
             self.equipment_repository.session,
             profile,
             equipped,
-            active_class,
             stats_service=self.stats_service,
         )
         max_hp = stats.max_hp

@@ -31,7 +31,6 @@ from app.domain.services.skill_tree_service import SkillTreeService
 from app.domain.services.stats_service import StatsService
 from app.domain.services.world_boss_scaling_service import WorldBossScalingService
 from app.domain.value_objects.battle_result import BattleResult
-from app.infrastructure.db.repositories.class_repository import ClassRepository
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
@@ -465,7 +464,6 @@ class LaunchPartyFightWorldBossUseCase:
         world_boss_repository: WorldBossRepository,
         player_repository: PlayerRepository,
         equipment_repository: EquipmentRepository,
-        class_repository: ClassRepository,
         skill_allocation_repository: PlayerSkillAllocationRepository,
         cooldown_repository: CooldownRepository,
         stats_service: StatsService,
@@ -476,7 +474,6 @@ class LaunchPartyFightWorldBossUseCase:
         self.world_boss_repository = world_boss_repository
         self.player_repository = player_repository
         self.equipment_repository = equipment_repository
-        self.class_repository = class_repository
         self.skill_allocation_repository = skill_allocation_repository
         self.cooldown_repository = cooldown_repository
         self.stats_service = stats_service
@@ -551,14 +548,12 @@ class LaunchPartyFightWorldBossUseCase:
             if profile is None:
                 continue
             equipped = self.equipment_repository.list_by_player_id(v.player_id)
-            active_class = self.class_repository.get_current_class_for_player(v.player_id)
             # Chaîne de stats centralisée (skill + classe + sets + TITRES) —
             # corrige l'oubli des bonus de titre dans le combat de boss.
             base_stats = resolve_player_stats(
                 self.world_boss_repository.session,
                 profile,
                 equipped,
-                active_class,
                 stats_service=self.stats_service,
             )
             boosted = self.scaling_service.apply_team_bonus(base_stats, num_joined)
