@@ -643,12 +643,16 @@ class EncounterService:
         profile_after = player_repository.get_profile_by_player_id(player_id)
         if profile_after is None:
             return
-        new_level, new_xp, new_skill_points = ProgressionService().apply_level_up(
+        progression = ProgressionService().apply_level_up(
             current_level=profile_after.progression.level,
             current_xp=profile_after.progression.xp,
             gained_xp=xp,
             current_skill_points=profile_after.progression.skill_points,
+            current_stat_points=profile_after.progression.stat_points,
         )
+        new_level = progression.level
+        new_xp = progression.xp
+        new_skill_points = progression.skill_points
         player_repository.apply_progression(
             player_id=player_id,
             new_level=new_level,

@@ -108,7 +108,7 @@ def test_potion_50_percent_heals_correctly(session):
     # Pose current_hp à 0 (profil au max_hp ~15-20 selon level 1)
     health_repo = PlayerHealthRepository(session)
     stats = StatsService().calculate_player_stats(
-        profile=profile, equipped_items=[], active_class=None,
+        profile=profile, equipped_items=[],
     )
     health_repo.get_or_create(profile.player.id, default_current_hp=stats.max_hp)
     health_repo.update_current_hp(profile.player.id, 0)
@@ -135,7 +135,7 @@ def test_potion_caps_at_max_hp(session):
     InventoryRepository(session).add_item(profile.player.id, item_id, 1)
 
     stats = StatsService().calculate_player_stats(
-        profile=profile, equipped_items=[], active_class=None,
+        profile=profile, equipped_items=[],
     )
     health_repo = PlayerHealthRepository(session)
     health_repo.get_or_create(profile.player.id, default_current_hp=stats.max_hp)

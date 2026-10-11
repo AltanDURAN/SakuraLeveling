@@ -27,6 +27,12 @@ from app.domain.services.stats_service import StatsService
 from app.infrastructure.db.base import Base
 
 # Imports nécessaires pour Base.metadata
+from app.infrastructure.db.models.player_item_level_model import (  # noqa: F401
+    PlayerItemLevelModel,
+)
+from app.infrastructure.db.models.player_status_effect_model import (  # noqa: F401
+    PlayerStatusEffectModel,
+)
 from app.infrastructure.db.models.player_model import PlayerModel
 from app.infrastructure.db.models.progression_model import PlayerProgressionModel
 from app.infrastructure.db.models.resource_model import PlayerResourceModel
@@ -80,12 +86,15 @@ def _create_player(
     level: int = 1,
     attack: int = 10,
     allocations: dict[str, int] | None = None,
+    points_attack: int = 0,
+    points_defense: int = 0,
+    points_max_hp: int = 0,
 ) -> int:
     """Crée un joueur avec progression et ressources.
 
-    V2 : le niveau ne donne AUCUNE stat — la puissance vient de l'arbre.
-    Pour rendre un joueur fort, passer `allocations` (skill_code → level)
-    qui injecte des nœuds plats (atk_flat / hp_max_flat / def_flat).
+    SAISON 1 : la puissance brute vient des POINTS DE STATS investis dans les
+    trois stats de base. L'arbre ne donne plus de stats plates d'ATK/DEF/PV —
+    pour rendre un joueur fort, passer `points_attack` & co.
     """
     now = datetime.now(UTC)
     player = PlayerModel(
@@ -98,6 +107,8 @@ def _create_player(
     session.add_all([
         PlayerProgressionModel(
             player_id=player.id, level=level, xp=0, skill_points=0,
+            points_attack=points_attack, points_defense=points_defense,
+            points_max_hp=points_max_hp,
             created_at=now, updated_at=now,
         ),
         PlayerResourceModel(
@@ -116,10 +127,10 @@ def _create_player(
 
 # Allocations qui rendent un joueur nettement plus fort (nœuds plats réels de
 # l'arbre V2 : +ATK et +PV/DEF). Utilisé pour les duels où "fort vs faible".
-_STRONG_ALLOC = {
-    "aventurier": 1,
-    "voie_atq": 1, "atq_1": 3, "atq_2": 3, "atq_3": 3,  # +ATK plat
-    "voie_def": 1, "def_1": 3, "def_2": 3, "def_3": 3,  # +PV/+DEF plat
+# Un joueur nettement plus fort = un joueur qui a investi beaucoup de POINTS
+# DE STATS. L'arbre ne fournit plus de puissance brute en saison 1.
+_STRONG_POINTS = {
+    "points_attack": 40, "points_defense": 20, "points_max_hp": 20,
 }
 
 
@@ -194,7 +205,7 @@ def test_weaker_challenger_wins_swaps_positions(session):
     """Bob (challenger #2, faible) bat Alice (#1, faible aussi mais...) → swap."""
     random.seed(0)
     _create_player(session, 1, "Alice")  # faible (aucune allocation)
-    _create_player(session, 2, "Bob", allocations=_STRONG_ALLOC)  # bien plus fort
+    _create_player(session, 2, "Bob", **_STRONG_POINTS)  # bien plus fort
 
     repo = PlayerDuelRankRepository(session)
     repo.get_or_create(_get_player_id(session, 1))  # Alice #1
@@ -226,7 +237,7 @@ def test_weaker_challenger_wins_swaps_positions(session):
 def test_weaker_challenger_loses_keeps_positions(session):
     """Bob (challenger #2, faible) défie Alice (#1, très forte) → Alice gagne, ladder inchangé."""
     random.seed(0)
-    _create_player(session, 1, "Alice", allocations=_STRONG_ALLOC)  # forte
+    _create_player(session, 1, "Alice", **_STRONG_POINTS)  # forte
     _create_player(session, 2, "Bob")  # faible
 
     repo = PlayerDuelRankRepository(session)

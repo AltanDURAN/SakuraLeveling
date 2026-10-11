@@ -16,6 +16,13 @@ class PlayerProgressionModel(Base):
     level: Mapped[int] = mapped_column(Integer, default=1)
     xp: Mapped[int] = mapped_column(Integer, default=0)
     skill_points: Mapped[int] = mapped_column(Integer, default=0)
+    #: Points de stats NON dépensés (1 par niveau).
+    stat_points: Mapped[int] = mapped_column(Integer, default=0)
+    #: Répartition déjà effectuée — on stocke les POINTS, pas les stats,
+    #: pour pouvoir retoucher la valeur d'un point sans migration.
+    points_attack: Mapped[int] = mapped_column(Integer, default=0)
+    points_defense: Mapped[int] = mapped_column(Integer, default=0)
+    points_max_hp: Mapped[int] = mapped_column(Integer, default=0)
 
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))

@@ -1,11 +1,65 @@
-from app.domain.entities.class_definition import ClassDefinition
+"""Calcul des stats de combat d'un joueur — SAISON 1.
+
+Refonte d'octobre 2026. L'ancien modèle empilait des bonus PLATS venus de
+partout (arbre, équipement, classe, panoplie) sur un socle constant. Un objet
+de fin de jeu valait donc exactement autant sur un débutant que sur un
+vétéran, et offrir une pièce à un nouveau joueur le rendait surpuissant d'un
+coup.
+
+Le nouveau modèle a un seul socle et deux natures de bonus :
+
+  SOCLE  — les trois stats de base (ATK, DEF, PV max), montées par les POINTS
+           DE STATS que le joueur place à chaque niveau. C'est la seule source
+           de puissance brute du jeu.
+
+  %      — l'équipement, l'arbre, les panoplies et les titres s'expriment en
+           POURCENTAGE de ce socle pour ATK / DEF / PV. Un même objet rapporte
+           donc peu à un débutant et beaucoup à un vétéran : il ne peut plus
+           « cheater » un nouveau joueur.
+
+  PLAT   — les stats secondaires (vitesse, esquive, crit, régénérations, mana)
+           restent en valeurs brutes, parce qu'un « pourcentage de pourcentage
+           de critique » n'aurait aucun sens lisible. Elles viennent surtout de
+           l'arbre de compétences.
+
+⚠️ Les pourcentages de toutes les sources s'ADDITIONNENT avant d'être
+appliqués UNE SEULE FOIS au socle (+20 % équipement et +15 % arbre donnent
++35 %, pas ×1,20×1,15). Multiplier les sources rend l'équilibrage
+ingérable dès qu'on ajoute une quatrième source.
+"""
+
+from __future__ import annotations
+
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
 from app.domain.entities.player_profile import PlayerProfile
 from app.domain.services.set_bonus_service import SetBonuses
 from app.domain.services.title_bonus_service import TitleBonuses
+from app.domain.value_objects.base_stats import BaseStats
 from app.domain.value_objects.skill_bonuses import SkillBonuses
 from app.domain.value_objects.stats import Stats
 from app.domain.value_objects.status_effect_bonuses import StatusEffectBonuses
+
+#: Valeurs de départ des stats SECONDAIRES (celles qui ne sont pas montées par
+#: les points de stats). Elles progressent via l'arbre, en brut.
+BASE_SPEED = 5
+BASE_CRIT_CHANCE = 5.0
+BASE_CRIT_DAMAGE = 150.0
+BASE_DODGE = 0.0
+BASE_HP_REGENERATION = 5
+BASE_MANA_MAX = 100
+BASE_MANA_REGENERATION = 5
+
+#: Clés de pourcentage reconnues dans `stat_bonuses` d'un item.
+PERCENT_KEYS = ("attack_pct", "defense_pct", "max_hp_pct")
+#: Clés plates reconnues (stats secondaires uniquement).
+FLAT_KEYS = (
+    "speed", "crit_chance", "crit_damage", "dodge",
+    "hp_regeneration", "mana_max", "mana_regeneration",
+)
+
+#: Plafond du cumul de pourcentages, par stat. Sans lui, empiler équipement +
+#: arbre + panoplie + titres finirait par multiplier le socle sans limite.
+MAX_PERCENT_BONUS = 3.0  # +300 %
 
 
 class StatsService:
@@ -13,165 +67,126 @@ class StatsService:
         self,
         profile: PlayerProfile,
         equipped_items: list[PlayerEquipmentItem],
-        active_class: ClassDefinition | None = None,
         skill_bonuses: SkillBonuses | None = None,
         title_bonuses: TitleBonuses | None = None,
         set_bonuses: SetBonuses | None = None,
         status_bonuses: StatusEffectBonuses | None = None,
         item_levels: dict[int, int] | None = None,
     ) -> Stats:
-        # V2 : AUCUNE stat gagnée au level-up. Les stats de base sont
-        # CONSTANTES (valeurs de départ niveau 1) — toute la croissance vient
-        # de l'arbre de compétences (1 point/niveau dépensé dans des nœuds
-        # plats infinis), de l'équipement, de la classe et des titres.
-        max_hp = 100
-        attack = 10
-        defense = 5
+        base = self.base_stats_for(profile)
 
-        crit_chance = 5
-        crit_damage = 150
-        dodge = 0
+        pct = {"attack": 0.0, "defense": 0.0, "max_hp": 0.0}
+        flat = {
+            "speed": BASE_SPEED,
+            "crit_chance": BASE_CRIT_CHANCE,
+            "crit_damage": BASE_CRIT_DAMAGE,
+            "dodge": BASE_DODGE,
+            "hp_regeneration": BASE_HP_REGENERATION,
+            "mana_max": BASE_MANA_MAX,
+            "mana_regeneration": BASE_MANA_REGENERATION,
+        }
 
-        base_hp_regeneration = 5
-        hp_regeneration = base_hp_regeneration
+        # ---- Équipement : % sur le socle, plat sur les stats secondaires ----
+        for item in equipped_items:
+            bonuses = item.item_definition.stat_bonuses or {}
+            # Forge sacrée : chaque niveau rajoute une fois les bonus de base
+            # de la pièce. Niveau 0 = comportement normal.
+            level = (item_levels or {}).get(item.item_definition.id, 0)
+            multiplier = 1 + max(0, level)
+            self._accumulate(bonuses, pct, flat, multiplier)
 
-        # Mana : ressource de combat pour les compétences actives. Base
-        # constante V2 (comme les PV), croissance via l'arbre + gear/classe.
-        # mana_regeneration = mana/minute régénéré HORS combat uniquement.
-        base_mana_max = 100
-        mana_max = base_mana_max
-        base_mana_regeneration = 5
-        mana_regeneration = base_mana_regeneration
-
-        base_speed = 5
-        speed = base_speed
-
-        if active_class is not None:
-            bonuses = active_class.stat_bonuses or {}
-            max_hp += int(bonuses.get("max_hp", 0))
-            attack += int(bonuses.get("attack", 0))
-            defense += int(bonuses.get("defense", 0))
-            speed += int(bonuses.get("speed", 0))
-            crit_chance += float(bonuses.get("crit_chance", 0))
-            crit_damage += float(bonuses.get("crit_damage", 0))
-            dodge += float(bonuses.get("dodge", 0))
-            hp_regeneration += int(bonuses.get("hp_regeneration", 0))
-            mana_max += int(bonuses.get("mana_max", 0))
-            mana_regeneration += int(bonuses.get("mana_regeneration", 0))
-
-        for equipment_item in equipped_items:
-            bonuses = equipment_item.item_definition.stat_bonuses or {}
-            # Forge sacrée : chaque niveau ajoute les stats de BASE de l'item une
-            # fois de plus → contribution = stats_base × (1 + niveau). Niveau 0
-            # (non forgé) = stats de base une fois, comportement inchangé.
-            lvl = 0
-            if item_levels:
-                lvl = item_levels.get(equipment_item.item_definition.id, 0)
-            mult = 1 + max(0, lvl)
-            max_hp += int(bonuses.get("max_hp", 0)) * mult
-            attack += int(bonuses.get("attack", 0)) * mult
-            defense += int(bonuses.get("defense", 0)) * mult
-            speed += int(bonuses.get("speed", 0)) * mult
-            crit_chance += float(bonuses.get("crit_chance", 0)) * mult
-            crit_damage += float(bonuses.get("crit_damage", 0)) * mult
-            dodge += float(bonuses.get("dodge", 0)) * mult
-            hp_regeneration += int(bonuses.get("hp_regeneration", 0)) * mult
-            mana_max += int(bonuses.get("mana_max", 0)) * mult
-            mana_regeneration += int(bonuses.get("mana_regeneration", 0)) * mult
-
-        # 4e étage : bonus de l'arbre de compétences (flat additif puis %).
-        # Appliqué après équipement/classe et AVANT les caps finaux pour que
-        # crit_chance / dodge restent bornés.
+        # ---- Arbre de compétences ----
         if skill_bonuses is not None:
-            # Nœuds plats de l'arbre — le moteur de croissance principal en V2.
-            attack += skill_bonuses.atk_flat
-            defense += skill_bonuses.def_flat
-            max_hp += skill_bonuses.hp_max_flat
+            pct["attack"] += skill_bonuses.atk_percent
+            pct["defense"] += skill_bonuses.def_percent
+            pct["max_hp"] += skill_bonuses.hp_max_percent
 
-            crit_chance += skill_bonuses.crit_chance_flat
-            crit_damage += skill_bonuses.crit_damage_flat
-            dodge += skill_bonuses.dodge_flat
-            speed += skill_bonuses.speed_flat
-            hp_regeneration += skill_bonuses.hp_regeneration_flat
-            mana_max += skill_bonuses.mana_max_flat
-            mana_regeneration += skill_bonuses.mana_regeneration_flat
+            flat["speed"] += skill_bonuses.speed_flat
+            flat["crit_chance"] += skill_bonuses.crit_chance_flat
+            flat["crit_damage"] += skill_bonuses.crit_damage_flat
+            flat["dodge"] += skill_bonuses.dodge_flat
+            flat["hp_regeneration"] += skill_bonuses.hp_regeneration_flat
+            flat["mana_max"] += skill_bonuses.mana_max_flat
+            flat["mana_regeneration"] += skill_bonuses.mana_regeneration_flat
 
-            # Multiplicateurs % de l'arbre (déjà plafonnés dans aggregate_bonuses :
-            # atk/def/hp ≤ +200%). S'appliquent sur le total flat (base + équipement
-            # + nœuds plats de l'arbre).
-            max_hp = round(max_hp * (1 + skill_bonuses.hp_max_percent))
-            attack = round(attack * (1 + skill_bonuses.atk_percent))
-            defense = round(defense * (1 + skill_bonuses.def_percent))
+        # ---- Panoplies ----
+        if set_bonuses is not None:
+            pct["attack"] += getattr(set_bonuses, "attack_percent", 0.0)
+            pct["defense"] += getattr(set_bonuses, "defense_percent", 0.0)
+            pct["max_hp"] += getattr(set_bonuses, "max_hp_percent", 0.0)
 
-        crit_chance = min(crit_chance, 75)
-        dodge = min(dodge, 50)
-        crit_damage = max(crit_damage, 100)
-        hp_regeneration = max(0, hp_regeneration)
-        mana_max = max(0, mana_max)
-        mana_regeneration = max(0, mana_regeneration)
-        speed = max(1, speed)
+            flat["speed"] += set_bonuses.speed_flat
+            flat["crit_chance"] += set_bonuses.crit_chance_flat
+            flat["crit_damage"] += set_bonuses.crit_damage_flat
+            flat["dodge"] += set_bonuses.dodge_flat
+            flat["hp_regeneration"] += set_bonuses.hp_regeneration_flat
+            flat["mana_max"] += set_bonuses.mana_max_flat
+            flat["mana_regeneration"] += set_bonuses.mana_regeneration_flat
 
+        # ---- Application du socle ----
         stats = Stats(
-            max_hp=max_hp,
-            attack=attack,
-            defense=defense,
-            speed=speed,
-            crit_chance=crit_chance,
-            crit_damage=crit_damage,
-            dodge=dodge,
-            hp_regeneration=hp_regeneration,
-            mana_max=mana_max,
-            mana_regeneration=mana_regeneration,
+            max_hp=max(1, round(base.max_hp * (1 + self._cap(pct["max_hp"])))),
+            attack=max(1, round(base.attack * (1 + self._cap(pct["attack"])))),
+            defense=max(1, round(base.defense * (1 + self._cap(pct["defense"])))),
+            speed=max(1, int(flat["speed"])),
+            crit_chance=min(75.0, max(0.0, flat["crit_chance"])),
+            crit_damage=max(100.0, flat["crit_damage"]),
+            dodge=min(50.0, max(0.0, flat["dodge"])),
+            hp_regeneration=max(0, int(flat["hp_regeneration"])),
+            mana_max=max(0, int(flat["mana_max"])),
+            mana_regeneration=max(0, int(flat["mana_regeneration"])),
         )
 
-        # 5e étage : bonus de titres exclusifs (Champion 1v1 etc.).
-        # Appliqués APRÈS les caps standards : un Champion 1v1 peut donc
-        # dépasser le cap crit/dodge de 1 pt, c'est l'avantage du titre.
+        # ---- Titres : appliqués APRÈS les plafonds (c'est leur privilège) ----
         if title_bonuses is not None:
             stats = title_bonuses.apply_to_stats(stats)
 
-        # 6e étage : bonus de panoplie (set). Additif flat, appliqué
-        # encore après les titres → peut dépasser légèrement les caps,
-        # c'est l'intérêt de compléter une panoplie complète.
-        if set_bonuses is not None:
-            stats = Stats(
-                max_hp=stats.max_hp + set_bonuses.max_hp_flat,
-                attack=stats.attack + set_bonuses.attack_flat,
-                defense=stats.defense + set_bonuses.defense_flat,
-                speed=stats.speed + set_bonuses.speed_flat,
-                crit_chance=stats.crit_chance + set_bonuses.crit_chance_flat,
-                crit_damage=stats.crit_damage + set_bonuses.crit_damage_flat,
-                dodge=stats.dodge + set_bonuses.dodge_flat,
-                hp_regeneration=stats.hp_regeneration
-                + set_bonuses.hp_regeneration_flat,
-                # ⚠️ Invariant : toute reconstruction de Stats DOIT reporter le
-                # mana. Les panoplies peuvent désormais en donner (avant, on se
-                # contentait de le recopier tel quel).
-                mana_max=stats.mana_max + set_bonuses.mana_max_flat,
-                mana_regeneration=stats.mana_regeneration
-                + set_bonuses.mana_regeneration_flat,
-            )
-
-        # 7e étage : clamp final. Les items lourds peuvent avoir des stats
-        # négatives (ex : grand espadon = -5 def). Plancher : au MINIMUM 1 PV
-        # max, 1 attaque, 1 défense ; aucune stat finale négative.
-        stats = Stats(
-            max_hp=max(1, stats.max_hp),
-            attack=max(1, stats.attack),
-            defense=max(1, stats.defense),
-            speed=max(1, stats.speed),
-            crit_chance=max(0, stats.crit_chance),
-            crit_damage=max(100, stats.crit_damage),
-            dodge=max(0, stats.dodge),
-            hp_regeneration=max(0, stats.hp_regeneration),
-            mana_max=max(0, stats.mana_max),
-            mana_regeneration=max(0, stats.mana_regeneration),
-        )
-
-        # 8e étage : effets temporaires (buff/debuff événements). Multiplicateur
-        # global sur toutes les stats positives, appliqué APRÈS le clamp final —
-        # un buff peut donc pousser au-delà des caps, un debuff réduit tout.
+        # ---- Effets temporaires (buff/debuff d'événement) ----
         if status_bonuses is not None:
             stats = status_bonuses.apply_to_stats(stats)
 
         return stats
+
+    # ------------------------------------------------------------- socle --
+    @staticmethod
+    def base_stats_for(profile: PlayerProfile) -> BaseStats:
+        """Socle issu des points de stats investis par le joueur."""
+        progression = getattr(profile, "progression", None)
+        return BaseStats.from_points(
+            attack_points=getattr(progression, "points_attack", 0) or 0,
+            defense_points=getattr(progression, "points_defense", 0) or 0,
+            hp_points=getattr(progression, "points_max_hp", 0) or 0,
+        )
+
+    # -------------------------------------------------------- accumulation --
+    @staticmethod
+    def _accumulate(
+        bonuses: dict, pct: dict, flat: dict, multiplier: int = 1,
+    ) -> None:
+        """Répartit les bonus d'un item entre pourcentages et valeurs plates.
+
+        Une clé inconnue est ignorée SILENCIEUSEMENT : le contenu est éditable
+        depuis l'admin, une faute de frappe ne doit pas faire planter un combat.
+        """
+        for key in PERCENT_KEYS:
+            raw = bonuses.get(key)
+            if raw is None:
+                continue
+            try:
+                # Le contenu est saisi en points de pourcentage (20 = +20 %).
+                pct[key[:-4]] += float(raw) * multiplier / 100.0
+            except (TypeError, ValueError):
+                continue
+
+        for key in FLAT_KEYS:
+            raw = bonuses.get(key)
+            if raw is None:
+                continue
+            try:
+                flat[key] += float(raw) * multiplier
+            except (TypeError, ValueError):
+                continue
+
+    @staticmethod
+    def _cap(value: float) -> float:
+        return min(MAX_PERCENT_BONUS, max(-0.9, value))

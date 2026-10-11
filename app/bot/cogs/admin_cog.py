@@ -94,14 +94,18 @@ class AdminCog(commands.Cog):
                 elif action == "give":
                     # Avec level-up calculé proprement
                     progression_service = ProgressionService()
-                    new_level, new_xp, new_sp = progression_service.apply_level_up(
+                    result = progression_service.apply_level_up(
                         current_level=profile.progression.level,
                         current_xp=current,
                         gained_xp=amount,
                         current_skill_points=profile.progression.skill_points,
+                        current_stat_points=profile.progression.stat_points,
                     )
-                    repo.apply_progression(profile.player.id, new_level, new_xp, new_sp)
-                    new = new_xp
+                    repo.apply_progression(
+                        profile.player.id, result.level, result.xp,
+                        result.skill_points, result.stat_points,
+                    )
+                    new = result.xp
                 else:
                     new = max(0, current - amount)
                     repo.apply_progression(

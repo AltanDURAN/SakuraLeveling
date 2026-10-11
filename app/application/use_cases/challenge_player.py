@@ -273,7 +273,6 @@ class ChallengePlayerUseCase:
         return self.stats_service.calculate_player_stats(
             profile=profile,
             equipped_items=equipped_items,
-            active_class=active_class,
             skill_bonuses=skill_bonuses,
             title_bonuses=title_bonuses,
             set_bonuses=set_bonuses,

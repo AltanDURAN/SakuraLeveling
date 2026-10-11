@@ -922,12 +922,16 @@ class CompleteWorldBossUseCase:
             self.player_repository.add_gold(p.player_id, total_gold)
             # XP avec calcul de level-up correct (sinon l'XP est juste
             # ajoutée mais le joueur ne gagne pas de niveau ni de skill points)
-            new_level, new_xp, new_skill_points = self.progression_service.apply_level_up(
+            progression = self.progression_service.apply_level_up(
                 current_level=profile.progression.level,
                 current_xp=profile.progression.xp,
                 gained_xp=total_xp,
                 current_skill_points=profile.progression.skill_points,
+                current_stat_points=profile.progression.stat_points,
             )
+            new_level = progression.level
+            new_xp = progression.xp
+            new_skill_points = progression.skill_points
             self.player_repository.apply_progression(
                 player_id=p.player_id,
                 new_level=new_level,

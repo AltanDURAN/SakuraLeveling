@@ -220,17 +220,19 @@ class ClaimAllWeeklyUseCase:
             )
 
         if total_xp > 0:
-            new_level, new_xp, new_sp = self.progression_service.apply_level_up(
+            progression = self.progression_service.apply_level_up(
                 current_level=profile.progression.level,
                 current_xp=profile.progression.xp,
                 gained_xp=total_xp,
                 current_skill_points=profile.progression.skill_points,
+                current_stat_points=profile.progression.stat_points,
             )
             self.player_repository.apply_progression(
-                profile.player.id, new_level, new_xp, new_sp,
+                profile.player.id, progression.level, progression.xp,
+                progression.skill_points, progression.stat_points,
             )
-            leveled = new_level > starting_level
-            new_level_for_msg = new_level if leveled else None
+            leveled = progression.level > starting_level
+            new_level_for_msg = progression.level if leveled else None
         else:
             leveled, new_level_for_msg = False, None
 

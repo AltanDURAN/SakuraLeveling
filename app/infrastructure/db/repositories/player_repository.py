@@ -213,17 +213,47 @@ class PlayerRepository:
         progression.updated_at = datetime.now(UTC)
         self.session.commit()
 
+    def allocate_stat_point(
+        self, player_id: int, target: str, amount: int = 1,
+    ) -> bool:
+        """Investit `amount` points de stats dans `target`.
+
+        Tout ou rien : si le joueur n'a pas assez de points disponibles, rien
+        n'est écrit. Évite qu'un double-clic place deux fois le même point.
+        """
+        from app.domain.value_objects.base_stats import STAT_POINT_GAIN
+
+        if target not in STAT_POINT_GAIN or amount <= 0:
+            return False
+        progression = self.session.get(PlayerProgressionModel, player_id)
+        if progression is None or progression.stat_points < amount:
+            return False
+
+        column = {
+            "attack": "points_attack",
+            "defense": "points_defense",
+            "max_hp": "points_max_hp",
+        }[target]
+        setattr(progression, column, getattr(progression, column) + amount)
+        progression.stat_points -= amount
+        progression.updated_at = datetime.now(UTC)
+        self.session.commit()
+        return True
+
     def apply_progression(
         self,
         player_id: int,
         new_level: int,
         new_xp: int,
         new_skill_points: int,
+        new_stat_points: int | None = None,
     ) -> None:
         progression = self.session.get(PlayerProgressionModel, player_id)
         if progression is None:
             return
 
+        if new_stat_points is not None:
+            progression.stat_points = new_stat_points
         progression.level = new_level
         progression.xp = new_xp
         progression.skill_points = new_skill_points
@@ -271,6 +301,10 @@ class PlayerRepository:
             skill_points=player_model.progression.skill_points,
             created_at=player_model.progression.created_at,
             updated_at=player_model.progression.updated_at,
+            stat_points=player_model.progression.stat_points,
+            points_attack=player_model.progression.points_attack,
+            points_defense=player_model.progression.points_defense,
+            points_max_hp=player_model.progression.points_max_hp,
         )
 
         resources = PlayerResources(

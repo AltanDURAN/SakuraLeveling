@@ -1,50 +1,52 @@
+"""Forge sacrée : chaque niveau rajoute une fois les bonus de base de la pièce.
+
+En saison 1 les bonus d'équipement sont des POURCENTAGES du socle, donc forger
+amplifie le pourcentage — pas une valeur plate. Une pièce +10 % forgée niveau 2
+vaut +30 %.
+"""
+
+import pytest
+
 from app.domain.services.forge_service import ForgeService
 from app.domain.services.stats_service import StatsService
-from tests.domain.test_stats_service import (
-    build_equipment_item,
-    build_player_profile,
-)
+from tests.domain.test_stats_service import build_item, build_profile
 
 
-def _attack_with_level(level: int) -> int:
-    profile = build_player_profile(level=1)
-    item = build_equipment_item("epee", "Épée", {"attack": 10})  # item id=1
-    stats = StatsService().calculate_player_stats(
+def _attack_at_forge_level(level: int) -> int:
+    profile = build_profile(points_attack=20)
+    item = build_item({"attack_pct": 10})
+    return StatsService().calculate_player_stats(
         profile=profile,
         equipped_items=[item],
-        active_class=None,
-        item_levels={1: level} if level else None,
-    )
-    return stats.attack
+        item_levels={item.item_definition.id: level} if level else None,
+    ).attack
 
 
-def test_forge_unforged_is_base_plus_item():
-    # 10 (base joueur) + 10 (item, ×1) = 20
-    assert _attack_with_level(0) == 20
+def _bare_attack() -> int:
+    return StatsService().calculate_player_stats(
+        profile=build_profile(points_attack=20), equipped_items=[],
+    ).attack
 
 
-def test_forge_level_1_adds_item_base_once_more():
-    # item contribue 10 × (1+1) = 20 → 10 + 20 = 30
-    assert _attack_with_level(1) == 30
+@pytest.mark.parametrize("level, multiplier", [(0, 1.10), (1, 1.20), (3, 1.40)])
+def test_chaque_niveau_de_forge_rajoute_le_bonus_de_base(level, multiplier):
+    assert _attack_at_forge_level(level) == round(_bare_attack() * multiplier)
 
 
-def test_forge_level_2():
-    # item 10 × 3 = 30 → 10 + 30 = 40
-    assert _attack_with_level(2) == 40
+def test_forger_augmente_toujours_la_piece():
+    valeurs = [_attack_at_forge_level(n) for n in range(0, 5)]
+    assert valeurs == sorted(valeurs)
+    assert len(set(valeurs)) == len(valeurs)
 
 
-def test_forge_level_10_cap_value():
-    # item 10 × 11 = 110 → 10 + 110 = 120
-    assert _attack_with_level(10) == 120
+def test_le_service_de_forge_sait_dire_quand_une_piece_est_au_max():
+    service = ForgeService()
+    assert service.is_maxed(10, 10) is True
+    assert service.is_maxed(3, 10) is False
 
 
-def test_forge_service_cap():
-    svc = ForgeService()
-    assert svc.is_maxed(10, 10) is True
-    assert svc.is_maxed(9, 10) is False
-
-
-def test_forge_gain_per_level_filters_zero():
-    svc = ForgeService()
-    assert svc.gain_per_level({"attack": 10, "defense": 0}) == {"attack": 10}
-    assert svc.gain_per_level(None) == {}
+def test_le_gain_par_niveau_porte_bien_sur_les_pourcentages():
+    """Une pièce en % doit annoncer son gain en %, pas en valeur plate."""
+    gains = ForgeService().gain_per_level({"attack_pct": 10, "crit_chance": 2})
+    assert gains.get("attack_pct") == 10
+    assert gains.get("crit_chance") == 2

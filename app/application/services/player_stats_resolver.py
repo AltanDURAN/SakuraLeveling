@@ -35,7 +35,7 @@ def resolve_player_stats(
     session: Session,
     profile: PlayerProfile,
     equipped_items: list[PlayerEquipmentItem],
-    active_class: ClassDefinition | None,
+    active_class: ClassDefinition | None = None,
     *,
     stats_service: StatsService | None = None,
 ) -> Stats:
@@ -62,11 +62,14 @@ def resolve_player_stats(
     )
     item_levels = PlayerItemLevelRepository(session).get_levels_for_player(player_id)
 
+    # ⚠️ `active_class` n'est plus utilisé : en saison 1 la classe n'est plus un
+    # choix de départ avec ses bonus propres, elle se gagne dans l'arbre de
+    # compétences (nœuds « classe »). Le paramètre survit le temps que les
+    # appelants soient nettoyés, mais il n'influence PLUS aucune stat.
     svc = stats_service or StatsService()
     return svc.calculate_player_stats(
         profile=profile,
         equipped_items=equipped_items,
-        active_class=active_class,
         skill_bonuses=skill_bonuses,
         set_bonuses=set_bonuses,
         title_bonuses=title_bonuses,
@@ -134,7 +137,6 @@ def resolve_player_stats_bulk(
         out[pid] = svc.calculate_player_stats(
             profile=profile,
             equipped_items=equipped,
-            active_class=classes_by_player.get(pid),
             skill_bonuses=skill_service.aggregate_bonuses(
                 allocations_by_player.get(pid, {})
             ),
