@@ -26,6 +26,14 @@ class SkillNode:
     effects: list[SkillEffect]
     prerequisites: list[str]  # codes des compétences parentes
     position: SkillPosition
+    #: Forme dessinée (cercle, carré, hexagone…) — purement visuelle, définie
+    #: par l'auteur de l'arbre dans le builder.
+    shape: str = "cercle_stat"
+    #: Nature du nœud (stat, passif, actif, classe, utilité…). Sert au rendu
+    #: ET à la lecture : un nœud « classe » accorde une classe, par exemple.
+    node_type: str = "stat"
+    #: Déjà débloqué au début de l'aventure (les racines).
+    start: bool = False
 
     def cost_for_level(self, target_level: int) -> int:
         """Coût pour passer au niveau target_level (1-indexed)."""

@@ -1,0 +1,489 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Builder d'arbre — Sakura Admin{% endblock %}
+
+{% block content %}
+<style>
+.bld { display:grid; grid-template-columns: 210px 1fr 320px; gap:14px; height:calc(100vh - 140px); min-height:620px; }
+.bld-panel { background:var(--card,#fff); border:1px solid var(--line,#e6dcea); border-radius:10px; padding:12px; overflow:auto; }
+.bld-canvas { position:relative; background:#14111f; border:1px solid var(--line,#e6dcea); border-radius:10px; overflow:hidden; }
+.bld h3 { font-size:.74rem; text-transform:uppercase; letter-spacing:.09em; opacity:.6; margin:14px 0 7px; }
+.bld h3:first-child { margin-top:0; }
+.pal { display:flex; flex-wrap:wrap; gap:6px; }
+.pal button, .tool { font:inherit; font-size:.78rem; padding:5px 9px; border-radius:7px; cursor:pointer;
+  border:1px solid var(--line,#ddd); background:var(--card,#fff); color:inherit; text-align:left; }
+.pal button.on, .tool.on { background:#7c5cd6; color:#fff; border-color:#7c5cd6; }
+.tools { display:flex; flex-direction:column; gap:5px; }
+.bld-field { display:block; margin-bottom:9px; }
+.bld-field span { display:block; font-size:.72rem; opacity:.65; margin-bottom:3px; }
+.bld-field input, .bld-field textarea, .bld-field select {
+  width:100%; box-sizing:border-box; padding:5px 7px; font:inherit; font-size:.82rem;
+  border:1px solid var(--line,#ddd); border-radius:6px; background:var(--bg,#fff); color:inherit; }
+.bld-row { display:flex; gap:7px; }
+.eff { border:1px solid var(--line,#e3e3e3); border-radius:7px; padding:7px; margin-bottom:6px; font-size:.78rem; }
+.eff-head { display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:5px; }
+.eff-head b { font-weight:600; }
+.lnk { font-size:.76rem; padding:3px 0; display:flex; justify-content:space-between; gap:6px; border-bottom:1px dotted var(--line,#eee); }
+.cov { font-size:.76rem; }
+.cov div { display:flex; justify-content:space-between; padding:2px 0; }
+.cov .zero { color:#c8553d; font-weight:600; }
+.hint { font-size:.72rem; opacity:.6; line-height:1.4; margin:4px 0 10px; }
+.bar { display:flex; gap:8px; align-items:center; margin-bottom:12px; flex-wrap:wrap; }
+.bar button { font:inherit; padding:7px 14px; border-radius:8px; border:1px solid var(--line,#ddd);
+  background:var(--card,#fff); color:inherit; cursor:pointer; }
+.bar .primary { background:#2e8b57; color:#fff; border-color:#2e8b57; }
+.bar .danger { color:#c8553d; }
+#msg { font-size:.82rem; }
+.node-g { cursor:pointer; }
+.node-g text { pointer-events:none; user-select:none; }
+</style>
+
+<section>
+  <a href="/admin" class="breadcrumb">← Admin</a>
+  <h1>Builder d'arbre de compétences</h1>
+  <p class="hint" style="max-width:none">
+    Choisis une <b>forme</b> et un <b>type</b>, puis clique sur le canevas pour poser une case.
+    Si une case est sélectionnée, la nouvelle se place <b>dans son prolongement</b> et le lien est créé tout seul.
+    Les positions sont aimantées sur une grille polaire (anneaux + angles) pour que l'arbre reste symétrique —
+    maintiens <b>Alt</b> pour placer librement.
+  </p>
+
+  <div class="bar">
+    <button class="primary" onclick="save()">💾 Enregistrer</button>
+    <button onclick="reload()">↩︎ Recharger</button>
+    <button onclick="fitView()">⤢ Recentrer</button>
+    <button class="danger" onclick="deleteSelection()">🗑 Supprimer la sélection</button>
+    <span id="msg"></span>
+  </div>
+
+  <div class="bld">
+    <!-- ------------------------------------------------ palette -->
+    <div class="bld-panel">
+      <h3>Outil</h3>
+      <div class="tools">
+        <button class="tool on" data-tool="place" onclick="setTool('place')">✚ Poser une case</button>
+        <button class="tool" data-tool="select" onclick="setTool('select')">⬚ Sélectionner / déplacer</button>
+        <button class="tool" data-tool="link" onclick="setTool('link')">⇢ Relier deux cases</button>
+      </div>
+
+      <h3>Forme</h3>
+      <div class="pal" id="pal-shape"></div>
+
+      <h3>Type</h3>
+      <div class="pal" id="pal-type"></div>
+
+      <h3>Type de lien</h3>
+      <div class="pal" id="pal-link"></div>
+
+      <h3>Couverture</h3>
+      <p class="hint">Ce que l'arbre distribue en tout, tout monté au max. Un <b>0</b> en rouge = une stat que personne n'aura jamais.</p>
+      <div class="cov" id="coverage"></div>
+    </div>
+
+    <!-- ------------------------------------------------ canevas -->
+    <div class="bld-canvas">
+      <svg id="cv" width="100%" height="100%"></svg>
+    </div>
+
+    <!-- ------------------------------------------------ inspecteur -->
+    <div class="bld-panel" id="inspector">
+      <p class="hint">Aucune case sélectionnée.</p>
+    </div>
+  </div>
+</section>
+
+<script id="tree-data" type="application/json">{{ tree | tojson }}</script>
+<script id="catalogue-data" type="application/json">{{ catalogue | tojson }}</script>
+<script>
+// ---------------------------------------------------------------- état --
+let TREE = JSON.parse(document.getElementById('tree-data').textContent);
+const CATALOGUE = JSON.parse(document.getElementById('catalogue-data').textContent);
+const EFFECTS = CATALOGUE.flatMap(g => g.effects.map(e => ({...e, group: g.group})));
+
+let tool = 'place';
+let shape = Object.keys(TREE.shapes)[0];
+let ntype = Object.keys(TREE.node_types)[0];
+let ltype = Object.keys(TREE.link_types)[0];
+let selected = null;        // code de la case sélectionnée
+let linkFrom = null;        // source en attente pour l'outil lien
+let view = {x: 0, y: 0, k: 1};
+let dragging = null;
+
+// Grille polaire : des anneaux réguliers et des angles réguliers. C'est ce qui
+// donne à l'arbre son aspect géométrique sans contraindre la créativité
+// (Alt désactive l'aimantation).
+const RING = 95;
+const ANGLE_STEP = Math.PI / 12;   // 15°
+
+const svg = document.getElementById('cv');
+
+function snap(x, y) {
+  const r = Math.hypot(x, y);
+  if (r < 1) return {x: 0, y: 0};
+  const ring = Math.max(1, Math.round(r / RING)) * RING;
+  const angle = Math.round(Math.atan2(y, x) / ANGLE_STEP) * ANGLE_STEP;
+  return {x: Math.round(Math.cos(angle) * ring), y: Math.round(Math.sin(angle) * ring)};
+}
+
+/** Prolonge la direction du parent d'un anneau vers l'extérieur. */
+function outward(parent) {
+  const p = TREE.nodes[parent].position;
+  const r = Math.hypot(p.x, p.y);
+  const angle = r < 1 ? -Math.PI / 2 : Math.atan2(p.y, p.x);
+  const ring = (Math.round(r / RING) + 1) * RING;
+  return {x: Math.round(Math.cos(angle) * ring), y: Math.round(Math.sin(angle) * ring)};
+}
+
+function freshCode(base) {
+  let n = 1, code;
+  do { code = `${base}_${n++}`; } while (TREE.nodes[code]);
+  return code;
+}
+
+// ------------------------------------------------------------- palettes --
+function paintPalettes() {
+  const build = (el, entries, current, pick) => {
+    el.innerHTML = '';
+    for (const [code, meta] of Object.entries(entries)) {
+      const b = document.createElement('button');
+      b.textContent = meta.label || code;
+      b.className = code === current ? 'on' : '';
+      b.onclick = () => { pick(code); paintPalettes(); };
+      el.appendChild(b);
+    }
+  };
+  build(document.getElementById('pal-shape'), TREE.shapes, shape, c => shape = c);
+  build(document.getElementById('pal-type'), TREE.node_types, ntype, c => ntype = c);
+  build(document.getElementById('pal-link'), TREE.link_types, ltype, c => ltype = c);
+  document.querySelectorAll('.tool').forEach(b =>
+    b.classList.toggle('on', b.dataset.tool === tool));
+}
+
+function setTool(t) { tool = t; linkFrom = null; paintPalettes(); draw(); }
+
+// ---------------------------------------------------------------- rendu --
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs) {
+  const n = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs || {})) n.setAttribute(k, v);
+  return n;
+}
+
+function shapePath(geometry, size) {
+  // Renvoie un élément SVG centré sur (0,0).
+  if (geometry === 'square') return el('rect', {x: -size, y: -size, width: size * 2, height: size * 2, rx: 4});
+  if (geometry === 'hexagon') {
+    const pts = [...Array(6)].map((_, i) => {
+      const a = Math.PI / 6 + i * Math.PI / 3;
+      return `${(Math.cos(a) * size).toFixed(1)},${(Math.sin(a) * size).toFixed(1)}`;
+    }).join(' ');
+    return el('polygon', {points: pts});
+  }
+  return el('circle', {r: size});
+}
+
+function draw() {
+  svg.innerHTML = '';
+  const root = el('g', {transform: `translate(${view.x},${view.y}) scale(${view.k})`});
+  svg.appendChild(root);
+
+  // Repères : les anneaux de la grille polaire, très discrets.
+  for (let r = RING; r <= RING * 8; r += RING) {
+    root.appendChild(el('circle', {r, fill: 'none', stroke: '#2a2340', 'stroke-width': 1}));
+  }
+
+  // Liens d'abord, pour qu'ils passent SOUS les cases.
+  for (const link of TREE.links) {
+    const a = TREE.nodes[link.from], b = TREE.nodes[link.to];
+    if (!a || !b) continue;
+    const meta = TREE.link_types[link.type] || {};
+    const line = el('line', {
+      x1: a.position.x, y1: a.position.y, x2: b.position.x, y2: b.position.y,
+      stroke: '#5b4f7a', 'stroke-width': meta.width || 3,
+      'stroke-dasharray': meta.style === 'dashed' ? '7 6' : '',
+    });
+    root.appendChild(line);
+  }
+
+  for (const [code, node] of Object.entries(TREE.nodes)) {
+    const sm = TREE.shapes[node.shape] || {geometry: 'circle', size: 20};
+    const tm = TREE.node_types[node.node_type] || {color: '#4a9eff'};
+    const g = el('g', {transform: `translate(${node.position.x},${node.position.y})`, class: 'node-g'});
+
+    const body = shapePath(sm.geometry, sm.size);
+    body.setAttribute('fill', tm.color || '#4a9eff');
+    body.setAttribute('stroke', code === selected ? '#ffffff'
+      : (code === linkFrom ? '#ffd166' : (sm.ring ? '#ffffff88' : '#00000055')));
+    body.setAttribute('stroke-width', code === selected || code === linkFrom ? 3.5 : (sm.ring ? 2.5 : 1));
+    g.appendChild(body);
+
+    if (node.icon) {
+      const t = el('text', {'text-anchor': 'middle', y: 5, 'font-size': sm.size});
+      t.textContent = node.icon;
+      g.appendChild(t);
+    }
+    const label = el('text', {
+      'text-anchor': 'middle', y: sm.size + 15, 'font-size': 12, fill: '#cfc7dd',
+    });
+    label.textContent = node.name || code;
+    g.appendChild(label);
+
+    g.onmousedown = (ev) => onNodeDown(ev, code);
+    root.appendChild(g);
+  }
+  paintCoverage();
+}
+
+// ------------------------------------------------------------ interactions --
+function toWorld(ev) {
+  const r = svg.getBoundingClientRect();
+  return {
+    x: (ev.clientX - r.left - view.x) / view.k,
+    y: (ev.clientY - r.top - view.y) / view.k,
+  };
+}
+
+function onNodeDown(ev, code) {
+  ev.stopPropagation();
+  if (tool === 'link') {
+    if (linkFrom === null) { linkFrom = code; draw(); return; }
+    if (linkFrom !== code) addLink(linkFrom, code);
+    linkFrom = null; draw(); return;
+  }
+  selected = code;
+  if (tool === 'select') dragging = {code, alt: ev.altKey};
+  renderInspector();
+  draw();
+}
+
+svg.addEventListener('mousedown', (ev) => {
+  if (ev.button === 1 || ev.shiftKey) { dragging = {pan: true, sx: ev.clientX, sy: ev.clientY, ox: view.x, oy: view.y}; return; }
+  if (tool !== 'place') { selected = null; renderInspector(); draw(); return; }
+  const w = toWorld(ev);
+  // Depuis une case sélectionnée, on prolonge sa direction : c'est ce qui
+  // garde les branches droites sans avoir à viser.
+  const pos = selected ? outward(selected) : (ev.altKey ? {x: Math.round(w.x), y: Math.round(w.y)} : snap(w.x, w.y));
+  addNode(pos, selected);
+});
+
+window.addEventListener('mousemove', (ev) => {
+  if (!dragging) return;
+  if (dragging.pan) {
+    view.x = dragging.ox + (ev.clientX - dragging.sx);
+    view.y = dragging.oy + (ev.clientY - dragging.sy);
+    draw(); return;
+  }
+  const w = toWorld(ev);
+  const pos = ev.altKey ? {x: Math.round(w.x), y: Math.round(w.y)} : snap(w.x, w.y);
+  TREE.nodes[dragging.code].position = pos;
+  draw();
+});
+window.addEventListener('mouseup', () => { dragging = null; });
+
+svg.addEventListener('wheel', (ev) => {
+  ev.preventDefault();
+  const f = ev.deltaY < 0 ? 1.12 : 1 / 1.12;
+  view.k = Math.min(3, Math.max(0.2, view.k * f));
+  draw();
+}, {passive: false});
+
+// --------------------------------------------------------------- édition --
+function addNode(pos, parent) {
+  const code = freshCode(ntype);
+  TREE.nodes[code] = {
+    name: (TREE.node_types[ntype] || {}).label || 'Nouvelle case',
+    description: '', icon: '', shape, node_type: ntype,
+    start: ntype === 'depart',
+    max_level: 1, costs: [1], effects: [],
+    position: pos,
+  };
+  if (TREE.nodes[code].start && !TREE.roots.includes(code)) TREE.roots.push(code);
+  if (parent) addLink(parent, code);
+  selected = code;
+  renderInspector();
+  draw();
+}
+
+function addLink(from, to) {
+  if (TREE.links.some(l => l.from === from && l.to === to)) return;
+  TREE.links.push({from, to, type: ltype});
+}
+
+function deleteSelection() {
+  if (!selected) { flash('Rien de sélectionné.', true); return; }
+  const code = selected;
+  delete TREE.nodes[code];
+  TREE.links = TREE.links.filter(l => l.from !== code && l.to !== code);
+  TREE.roots = TREE.roots.filter(r => r !== code);
+  selected = null;
+  renderInspector();
+  draw();
+}
+
+// ----------------------------------------------------------- inspecteur --
+function renderInspector() {
+  const box = document.getElementById('inspector');
+  if (!selected || !TREE.nodes[selected]) {
+    box.innerHTML = '<p class="hint">Aucune case sélectionnée.</p>'; return;
+  }
+  const n = TREE.nodes[selected];
+  const opts = (entries, cur) => Object.entries(entries)
+    .map(([c, m]) => `<option value="${c}"${c === cur ? ' selected' : ''}>${m.label || c}</option>`).join('');
+
+  box.innerHTML = `
+    <h3>Case <code>${selected}</code></h3>
+    <label class="bld-field"><span>Nom</span><input id="f-name" value="${esc(n.name)}"></label>
+    <div class="bld-row">
+      <label class="bld-field" style="flex:0 0 68px"><span>Icône</span><input id="f-icon" value="${esc(n.icon)}"></label>
+      <label class="bld-field" style="flex:1"><span>Forme</span><select id="f-shape">${opts(TREE.shapes, n.shape)}</select></label>
+    </div>
+    <label class="bld-field"><span>Type</span><select id="f-type">${opts(TREE.node_types, n.node_type)}</select></label>
+    <label class="bld-field"><span>Description</span><textarea id="f-desc" rows="2">${esc(n.description)}</textarea></label>
+    <label class="bld-field"><input type="checkbox" id="f-start" ${n.start ? 'checked' : ''}> Débloquée au départ</label>
+    <div class="bld-row">
+      <label class="bld-field"><span>Niveaux</span><input id="f-max" type="number" min="1" max="20" value="${n.max_level}"></label>
+      <label class="bld-field"><span>Coût par niveau</span><input id="f-costs" value="${(n.costs || []).join(', ')}"></label>
+    </div>
+
+    <h3>Effets</h3>
+    <p class="hint">Les valeurs sont <b>cumulatives</b> : au niveau 3 on écrit le total atteint, pas le gain du niveau.</p>
+    <div id="eff-list"></div>
+    <select id="eff-add" style="width:100%; padding:5px; margin-top:5px">
+      <option value="">+ ajouter un effet…</option>
+      ${CATALOGUE.map(g => `<optgroup label="${g.group}">` +
+        g.effects.map(e => `<option value="${e.type}">${e.label} (${e.unit})</option>`).join('') +
+        `</optgroup>`).join('')}
+    </select>
+
+    <h3>Liens</h3>
+    <div id="link-list"></div>
+  `;
+
+  const commit = () => {
+    n.name = v('f-name'); n.icon = v('f-icon'); n.description = v('f-desc');
+    n.shape = v('f-shape'); n.node_type = v('f-type');
+    n.start = document.getElementById('f-start').checked;
+    n.max_level = Math.max(1, parseInt(v('f-max') || '1', 10));
+    n.costs = (v('f-costs') || '').split(',').map(s => parseInt(s.trim(), 10) || 0)
+      .slice(0, n.max_level);
+    while (n.costs.length < n.max_level) n.costs.push(n.costs[n.costs.length - 1] ?? 1);
+    // Les effets suivent le nombre de niveaux : sinon la sauvegarde refuse.
+    for (const e of n.effects) {
+      while (e.values.length < n.max_level) e.values.push(e.values[e.values.length - 1] ?? 0);
+      e.values = e.values.slice(0, n.max_level);
+    }
+    if (n.start && !TREE.roots.includes(selected)) TREE.roots.push(selected);
+    if (!n.start) TREE.roots = TREE.roots.filter(r => r !== selected);
+    renderInspector(); draw();
+  };
+  ['f-name','f-icon','f-desc','f-shape','f-type','f-start','f-max','f-costs']
+    .forEach(id => document.getElementById(id).addEventListener('change', commit));
+
+  // --- effets
+  const list = document.getElementById('eff-list');
+  list.innerHTML = '';
+  n.effects.forEach((e, i) => {
+    const meta = EFFECTS.find(x => x.type === e.type) || {label: e.type, unit: ''};
+    const d = document.createElement('div');
+    d.className = 'eff';
+    d.innerHTML = `<div class="eff-head"><b>${meta.label}</b>
+        <button onclick="dropEffect(${i})" style="border:0;background:none;cursor:pointer;color:#c8553d">✕</button></div>
+      <input value="${(e.values || []).join(', ')}" data-i="${i}" class="eff-val" placeholder="valeurs par niveau">
+      <div class="hint" style="margin:3px 0 0">${meta.unit}</div>`;
+    list.appendChild(d);
+  });
+  list.querySelectorAll('.eff-val').forEach(inp => inp.addEventListener('change', () => {
+    const i = parseInt(inp.dataset.i, 10);
+    n.effects[i].values = inp.value.split(',').map(s => parseFloat(s.trim()) || 0);
+    commit();
+  }));
+  document.getElementById('eff-add').addEventListener('change', (ev) => {
+    if (!ev.target.value) return;
+    n.effects.push({type: ev.target.value, values: Array(n.max_level).fill(0)});
+    commit();
+  });
+
+  // --- liens
+  const ll = document.getElementById('link-list');
+  const mine = TREE.links.filter(l => l.from === selected || l.to === selected);
+  ll.innerHTML = mine.length ? '' : '<p class="hint">Aucun lien.</p>';
+  mine.forEach(l => {
+    const d = document.createElement('div');
+    d.className = 'lnk';
+    const dir = l.to === selected ? `← ${l.from}` : `→ ${l.to}`;
+    d.innerHTML = `<span>${dir} <em style="opacity:.6">${(TREE.link_types[l.type]||{}).label||l.type}</em></span>`;
+    const b = document.createElement('button');
+    b.textContent = '✕'; b.style.cssText = 'border:0;background:none;cursor:pointer;color:#c8553d';
+    b.onclick = () => { TREE.links = TREE.links.filter(x => x !== l); renderInspector(); draw(); };
+    d.appendChild(b);
+    ll.appendChild(d);
+  });
+}
+
+function dropEffect(i) { TREE.nodes[selected].effects.splice(i, 1); renderInspector(); draw(); }
+function v(id) { const e = document.getElementById(id); return e ? e.value : ''; }
+function esc(s) { return String(s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+
+// ------------------------------------------------------------ couverture --
+function paintCoverage() {
+  const totals = {};
+  for (const n of Object.values(TREE.nodes))
+    for (const e of n.effects || [])
+      if (e.values && e.values.length)
+        totals[e.type] = (totals[e.type] || 0) + (parseFloat(e.values[e.values.length - 1]) || 0);
+
+  const box = document.getElementById('coverage');
+  box.innerHTML = CATALOGUE.slice(0, 3).map(g =>
+    `<div style="opacity:.55;margin-top:6px"><b>${g.group}</b></div>` +
+    g.effects.map(e => {
+      const t = Math.round((totals[e.type] || 0) * 100) / 100;
+      return `<div><span>${e.label}</span><span class="${t ? '' : 'zero'}">${t} ${e.unit}</span></div>`;
+    }).join('')).join('');
+}
+
+// ---------------------------------------------------------------- vue --
+function fitView() {
+  const ns = Object.values(TREE.nodes);
+  const r = svg.getBoundingClientRect();
+  if (!ns.length) { view = {x: r.width / 2, y: r.height / 2, k: 1}; draw(); return; }
+  const xs = ns.map(n => n.position.x), ys = ns.map(n => n.position.y);
+  const w = Math.max(200, Math.max(...xs) - Math.min(...xs) + 220);
+  const h = Math.max(200, Math.max(...ys) - Math.min(...ys) + 220);
+  view.k = Math.min(2, Math.min(r.width / w, r.height / h));
+  view.x = r.width / 2 - ((Math.max(...xs) + Math.min(...xs)) / 2) * view.k;
+  view.y = r.height / 2 - ((Math.max(...ys) + Math.min(...ys)) / 2) * view.k;
+  draw();
+}
+
+// -------------------------------------------------------------- serveur --
+function flash(text, bad) {
+  const m = document.getElementById('msg');
+  m.textContent = text;
+  m.style.color = bad ? '#c8553d' : '#2e8b57';
+  setTimeout(() => { if (m.textContent === text) m.textContent = ''; }, 6000);
+}
+
+async function save() {
+  flash('Enregistrement…');
+  const res = await fetch('/admin/skill-tree/builder/save', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(TREE),
+  });
+  const data = await res.json().catch(() => ({ok: false, error: 'réponse illisible'}));
+  if (!data.ok) { flash('❌ ' + (data.error || 'échec'), true); return; }
+  flash(`✅ ${data.nodes} cases, ${data.links} liens enregistrés — redémarre le bot pour l'appliquer.`);
+}
+
+async function reload() {
+  const res = await fetch('/admin/skill-tree/builder/data');
+  TREE = await res.json();
+  selected = null; linkFrom = null;
+  renderInspector(); paintPalettes(); fitView();
+  flash('Rechargé depuis le disque.');
+}
+
+paintPalettes();
+renderInspector();
+fitView();
+</script>
+{% endblock %}
