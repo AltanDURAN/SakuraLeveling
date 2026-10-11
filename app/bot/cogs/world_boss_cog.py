@@ -88,9 +88,6 @@ def _server_top_attack(session) -> int:
         from app.application.services.player_stats_resolver import (
             resolve_player_stats,
         )
-        from app.infrastructure.db.repositories.class_repository import (
-            ClassRepository,
-        )
         from app.infrastructure.db.repositories.equipment_repository import (
             EquipmentRepository,
         )
@@ -106,7 +103,6 @@ def _server_top_attack(session) -> int:
                 session,
                 profile,
                 EquipmentRepository(session).list_by_player_id(player_id),
-                ClassRepository(session).get_current_class_for_player(player_id),
             )
             best = max(best, stats.attack)
         return best
