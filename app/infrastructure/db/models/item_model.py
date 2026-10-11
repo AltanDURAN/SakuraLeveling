@@ -24,6 +24,10 @@ class ItemDefinitionModel(Base):
     equipment_slot: Mapped[str | None] = mapped_column(String(50), nullable=True)
     requires_two_hands: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     family: Mapped[str] = mapped_column(String(50), nullable=False, default="")
+    #: Niveau minimum pour équiper (anti-cadeau de pièce ultime).
+    level_requirement: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default="1",
+    )
 
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))

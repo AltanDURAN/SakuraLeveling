@@ -25,25 +25,22 @@ CONTENT = Path(__file__).resolve().parents[1] / "app/infrastructure/content/boss
 
 # boss → niveau de joueur visé (palier de progression)
 TARGET_LEVEL = {
-    "slime_titan": 35,
-    "gobelin_warlord": 50,
-    "stone_colossus": 70,
-    "shadow_wraith": 85,
+    "slime_titan": 20,
+    "gobelin_warlord": 40,
+    "stone_colossus": 60,
+    "shadow_wraith": 80,
     "ancient_dragon": 100,
 }
-PLAYER_ATK_PER_LEVEL = 4      # mesuré sur les joueurs réels (niv 31 → ATK 133)
+
 PARTY_SIZE = 4                # taille d'équipe de référence
 ASSAULTS_TO_KILL = 6          # le raid doit durer ~6 jours
 
 
 def _reference_party(level: int, size: int = PARTY_SIZE) -> list[dict]:
-    """Équipe de référence au niveau visé, avec les stats du VO canonique."""
-    from app.domain.value_objects.stats import Stats
+    """Équipe de référence au niveau visé — définition partagée du joueur type."""
+    from app.domain.services.reference_player import reference_stats
 
-    atk = PLAYER_ATK_PER_LEVEL * level
-    stats = Stats(max_hp=100 + level * 12, attack=atk, defense=level,
-                  speed=5 + level // 10, crit_chance=15, crit_damage=150,
-                  dodge=5, hp_regeneration=0, mana_max=100, mana_regeneration=0)
+    stats = reference_stats(level)
     return [
         {"player_id": i, "user_id": i, "name": f"ref{i}", "avatar_url": "",
          "stats": stats, "current_hp": stats.max_hp, "max_hp": stats.max_hp,
@@ -76,9 +73,19 @@ def _measure_damage_per_assault(level: int, attack: int, defense: int) -> int:
 
 
 def compute(level: int) -> dict:
-    ref_atk = PLAYER_ATK_PER_LEVEL * level
+    from app.domain.services.reference_player import reference_stats
+
+    ref = reference_stats(level)
+    ref_atk = ref.attack
+    # DEF du boss : laisse passer ~65 % de l'attaque du joueur. Au-delà, les
+    # coups tombent au plancher de 1 dégât et le raid devient increvable.
     defense = max(5, round(ref_atk * 0.35))
-    attack = max(10, round(ref_atk * 0.45))
+    # ATK du boss : doit DÉPASSER la défense du joueur, sinon c'est l'impasse
+    # symétrique — le boss ne tue personne et le combat tourne jusqu'au tour
+    # maximum. ⚠️ En saison 1 un build équilibré a ATK ≈ DEF (même coût par
+    # point) : une attaque exprimée en fraction de l'ATK du joueur passerait
+    # donc SOUS sa défense. On la calcule sur la défense et les PV.
+    attack = max(10, round(ref.defense + 0.06 * ref.max_hp))
     measured = _measure_damage_per_assault(level, attack, defense)
     max_hp = max(1000, int(round(measured * ASSAULTS_TO_KILL / 1000.0) * 1000))
     return {"max_hp": max_hp, "attack": attack, "defense": defense,

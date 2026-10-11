@@ -1,94 +1,124 @@
-"""Puissance d'une PIÈCE d'équipement, isolément.
+"""Puissance d'une PIÈCE d'équipement — SAISON 1.
 
-Un item ne porte pas des stats absolues mais des **deltas** (`+12 atk`), et le
-power score du jeu n'est pas linéaire (offensive × PV effectifs). On ne peut
-donc pas lui appliquer directement `PowerScoreService.calculate_from_stats`.
+Les bonus d'équipement sont désormais des POURCENTAGES du socle du joueur. La
+même pièce ne vaut donc pas la même chose selon qui la porte : +20 % d'attaque
+ne veut rien dire dans l'absolu.
 
-On mesure à la place la puissance **marginale** : ce que l'objet apporte à un
-joueur de base. C'est la seule lecture qui reste cohérente avec le combat —
-+10 DEF vaut beaucoup plus que +10 PV, et la formule le sait déjà.
+On la mesure contre un joueur de RÉFÉRENCE pris au niveau requis de la pièce —
+c'est-à-dire le joueur à qui elle est destinée. Une arme de niveau 70 est
+évaluée sur un personnage de niveau 70, pas sur un débutant.
 
-Sert à fixer le prix du travail des artisans et le palier de maîtrise requis :
-plus une pièce est puissante, plus elle coûte cher et prend du temps.
-
-⚠️ Limite connue : la mesure se fait contre un joueur de BASE, qui a peu
-d'attaque et de PV. Les stats qui MULTIPLIENT (esquive, dégâts critiques) y
-sont donc sous-évaluées par rapport à ce qu'elles valent sur un personnage
-équipé. Une pièce qui ne donnerait QUE de l'esquive et du crit ressortira
-bon marché chez l'artisan — à surveiller si tu crées ce genre d'objet.
+Sert à fixer le prix du travail des artisans et le palier de maîtrise requis.
 """
 
 from __future__ import annotations
 
 from app.domain.services.power_score_service import PowerScoreService
+from app.domain.value_objects.base_stats import (
+    ATTACK_PER_POINT,
+    DEFENSE_PER_POINT,
+    MAX_HP_PER_POINT,
+    START_ATTACK,
+    START_DEFENSE,
+    START_MAX_HP,
+)
 from app.domain.value_objects.stats import Stats
 
-# Stats de base V2 d'un joueur (constantes, cf. StatsService — aucune stat
-# n'est gagnée au level-up). Le référentiel de comparaison.
-BASE_STATS = Stats(
-    max_hp=100,
-    attack=10,
-    defense=5,
-    speed=5,
-    crit_chance=5,
-    crit_damage=150,
-    dodge=0,
-    hp_regeneration=5,
-    mana_max=100,
-    mana_regeneration=5,
-)
+#: Valeurs de départ des stats secondaires (miroir de StatsService).
+_BASE_SECONDARY = {
+    "speed": 5, "crit_chance": 5.0, "crit_damage": 150.0, "dodge": 0.0,
+    "hp_regeneration": 5, "mana_max": 100, "mana_regeneration": 5,
+}
 
-_STAT_KEYS = (
-    "max_hp", "attack", "defense", "speed",
-    "crit_chance", "crit_damage", "dodge", "hp_regeneration",
-    "mana_max", "mana_regeneration",
-)
+PERCENT_KEYS = {"attack_pct": "attack", "defense_pct": "defense", "max_hp_pct": "max_hp"}
+
+
+def reference_stats(level: int) -> Stats:
+    """Joueur de référence à ce niveau, construit sur une répartition ÉQUILIBRÉE.
+
+    Un joueur a `niveau - 1` points de stats ; on en met un tiers dans chacune
+    des trois stats de base. C'est l'hypothèse la plus neutre possible pour
+    comparer des objets entre eux.
+    """
+    points = max(0, level - 1) / 3
+    return Stats(
+        max_hp=int(START_MAX_HP + MAX_HP_PER_POINT * points),
+        attack=int(START_ATTACK + ATTACK_PER_POINT * points),
+        defense=int(START_DEFENSE + DEFENSE_PER_POINT * points),
+        speed=_BASE_SECONDARY["speed"],
+        crit_chance=_BASE_SECONDARY["crit_chance"],
+        crit_damage=_BASE_SECONDARY["crit_damage"],
+        dodge=_BASE_SECONDARY["dodge"],
+        hp_regeneration=_BASE_SECONDARY["hp_regeneration"],
+        mana_max=_BASE_SECONDARY["mana_max"],
+        mana_regeneration=_BASE_SECONDARY["mana_regeneration"],
+    )
 
 
 class ItemPowerService:
     def __init__(self, power_service: PowerScoreService | None = None) -> None:
         self._power = power_service or PowerScoreService()
 
-    def marginal_power(self, stat_bonuses: dict | None) -> int:
-        """Puissance apportée par l'objet à un joueur de base.
+    def marginal_power(
+        self, stat_bonuses: dict | None, level_requirement: int = 1,
+    ) -> int:
+        """Ce que la pièce apporte au joueur auquel elle est destinée.
 
-        Toujours ≥ 0 : une pièce à malus net (grand espadon, −5 def) ne peut
-        pas coûter un prix négatif. Un objet sans stat vaut 0.
+        Toujours ≥ 0 : une pièce à malus net ne peut pas coûter un prix négatif.
         """
         if not stat_bonuses:
             return 0
-
-        base_score = self._power.calculate_from_stats(BASE_STATS)
-        with_item = self._power.calculate_from_stats(
-            self._apply(BASE_STATS, stat_bonuses)
+        base = reference_stats(max(1, level_requirement))
+        with_item = self._apply(base, stat_bonuses)
+        return max(
+            0,
+            self._power.calculate_from_stats(with_item)
+            - self._power.calculate_from_stats(base),
         )
-        return max(0, with_item - base_score)
 
     @staticmethod
     def _apply(stats: Stats, bonuses: dict) -> Stats:
-        """Applique les deltas de l'objet. Reporte TOUTES les stats — dont le
+        """Applique les bonus d'une pièce. Reporte TOUTES les stats — dont le
         mana (invariant : aucune reconstruction de Stats ne doit l'oublier)."""
-        values = {key: getattr(stats, key) for key in _STAT_KEYS}
-        for key in _STAT_KEYS:
-            raw = bonuses.get(key, 0)
+        values = {
+            "max_hp": float(stats.max_hp), "attack": float(stats.attack),
+            "defense": float(stats.defense), "speed": float(stats.speed),
+            "crit_chance": stats.crit_chance, "crit_damage": stats.crit_damage,
+            "dodge": stats.dodge,
+            "hp_regeneration": float(stats.hp_regeneration),
+            "mana_max": float(stats.mana_max),
+            "mana_regeneration": float(stats.mana_regeneration),
+        }
+
+        for pct_key, target in PERCENT_KEYS.items():
+            raw = bonuses.get(pct_key)
+            if raw is None:
+                continue
+            try:
+                values[target] *= 1 + float(raw) / 100.0
+            except (TypeError, ValueError):
+                continue
+
+        for key in _BASE_SECONDARY:
+            raw = bonuses.get(key)
+            if raw is None:
+                continue
             try:
                 values[key] += float(raw)
             except (TypeError, ValueError):
                 continue
 
-        # Mêmes planchers que le calcul de stats final.
-        values["max_hp"] = max(1, values["max_hp"])
-        values["attack"] = max(1, values["attack"])
-        values["defense"] = max(1, values["defense"])
-        values["speed"] = max(1, values["speed"])
-        values["crit_chance"] = max(0, values["crit_chance"])
-        values["crit_damage"] = max(100, values["crit_damage"])
-        # L'esquive est bornée à 99 : à 100 la survie deviendrait infinie et
-        # la puissance exploserait.
-        values["dodge"] = min(99, max(0, values["dodge"]))
-        values["hp_regeneration"] = max(0, values["hp_regeneration"])
-        values["mana_max"] = max(0, values["mana_max"])
-        values["mana_regeneration"] = max(0, values["mana_regeneration"])
-
-        return Stats(**{k: int(v) if k not in ("crit_chance", "crit_damage", "dodge")
-                        else v for k, v in values.items()})
+        return Stats(
+            max_hp=max(1, int(values["max_hp"])),
+            attack=max(1, int(values["attack"])),
+            defense=max(1, int(values["defense"])),
+            speed=max(1, int(values["speed"])),
+            crit_chance=max(0.0, values["crit_chance"]),
+            crit_damage=max(100.0, values["crit_damage"]),
+            # Bornée à 99 : à 100 la survie deviendrait infinie et la puissance
+            # exploserait.
+            dodge=min(99.0, max(0.0, values["dodge"])),
+            hp_regeneration=max(0, int(values["hp_regeneration"])),
+            mana_max=max(0, int(values["mana_max"])),
+            mana_regeneration=max(0, int(values["mana_regeneration"])),
+        )

@@ -119,7 +119,7 @@ def world(session):
     PlayerRepository(session).add_gold(pid, 5000)
 
     ore = _item(session, "minerai", category="resource")
-    sword = _item(session, "epee", category="arme", bonuses={"attack": 12})
+    sword = _item(session, "epee", category="arme", bonuses={"attack_pct": 25})
     recipe = _recipe(session, "epee_recipe", sword.id, [(ore.id, 3)])
     InventoryRepository(session).add_item(pid, ore.id, 10)
     session.commit()
@@ -317,7 +317,7 @@ def test_annuler_libere_l_artisan(session, world):
 def test_chaque_artisan_ne_voit_que_ses_categories(session, world):
     """Le forgeron ne propose pas les accessoires, et réciproquement."""
     pid = world["pid"]
-    bague = _item(session, "bague", category="accessoire", bonuses={"defense": 2})
+    bague = _item(session, "bague", category="accessoire", bonuses={"defense_pct": 10})
     _recipe(session, "bague_recipe", bague.id, [(world["ore"].id, 1)])
     session.commit()
 
@@ -337,7 +337,7 @@ def test_chaque_artisan_ne_voit_que_ses_categories(session, world):
 def test_les_deux_artisans_travaillent_en_parallele(session, world):
     """Une forge ET une confection peuvent tourner en même temps."""
     pid = world["pid"]
-    bague = _item(session, "bague", category="accessoire", bonuses={"defense": 2})
+    bague = _item(session, "bague", category="accessoire", bonuses={"defense_pct": 10})
     _recipe(session, "bague_recipe", bague.id, [(world["ore"].id, 1)])
     session.commit()
 

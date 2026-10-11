@@ -46,6 +46,7 @@ _COG_MODULES = [
     "app.bot.cogs.panoplie_cog",
     "app.bot.cogs.artisan_cog",
     "app.bot.cogs.rank_trial_cog",
+    "app.bot.cogs.stats_cog",
 ]
 
 

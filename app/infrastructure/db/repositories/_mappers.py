@@ -29,6 +29,7 @@ def map_item_definition(model: ItemDefinitionModel) -> ItemDefinition:
         equipment_slot=model.equipment_slot,
         requires_two_hands=bool(model.requires_two_hands or False),
         family=getattr(model, "family", "") or "",
+        level_requirement=int(getattr(model, "level_requirement", 1) or 1),
         created_at=model.created_at,
         updated_at=model.updated_at,
     )

@@ -30,6 +30,15 @@ class ItemDefinition:
     # pour les items hors panoplie. Sert à calculer les bonus de set
     # (cf. SetBonusService et `sets.json`).
     family: str = ""
+    # Niveau MINIMUM pour équiper la pièce. Les bonus étant des pourcentages du
+    # socle, un objet de fin de jeu ne rend déjà pas un débutant surpuissant —
+    # ce verrou protège autre chose : le PARCOURS. Sans lui, un nouveau joueur
+    # à qui on offre une pièce ultime n'aurait plus jamais besoin d'en chercher,
+    # elle grandirait toute seule avec lui.
+    level_requirement: int = 1
+
+    def can_be_equipped_by(self, player_level: int) -> bool:
+        return player_level >= max(1, self.level_requirement)
 
     @property
     def is_equipable(self) -> bool:
