@@ -38,7 +38,6 @@ from app.infrastructure.db.repositories.player_kill_repository import PlayerKill
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.player_title_repository import PlayerTitleRepository
 from app.infrastructure.db.session import get_db_session
-from app.infrastructure.elements import element_skill_loader
 from app.infrastructure.titles import title_loader
 from app.shared.enums import ALL_ELEMENTS, ELEMENT_EMOJIS, ELEMENT_LABELS, SLOT_ORDER
 from webapp.admin import discord_api
@@ -296,16 +295,10 @@ async def players_skills(player_id: int, request: Request, edit: int = 0, user: 
     with get_db_session() as session:
         ctx, profile = await _base_ctx(session, user, player_id, "skills")
         ctx["edit"] = bool(edit)
+        # Les compétences équipables ont disparu : elles viennent de l'arbre
+        # (lot 3). L'onglet reste pour ne pas casser la navigation.
         slots = []
-        for i, code in enumerate((profile.player.skill_slot_1, profile.player.skill_slot_2), start=1):
-            sk = element_skill_loader.get_skill(code) if code else None
-            slots.append({
-                "slot": i, "code": code or None,
-                "name": (sk.emoji + " " + code) if sk else None,
-                "element": sk.element if sk else None, "role": sk.role if sk else None,
-            })
-        ctx["skills"] = slots
-        ctx["all_skill_codes"] = sorted(element_skill_loader.all_skills().keys())
+        ctx["all_skill_codes"] = []
     return get_templates().TemplateResponse(request, "admin/players/card.html", context=ctx)
 
 

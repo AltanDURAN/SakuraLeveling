@@ -179,8 +179,9 @@ class EncounterService:
             # deux sens selon les affinités du joueur et son élément d'attaque
             # (compétence offensive équipée, sinon affinité la plus haute).
             from app.domain.services import element_service
-            from app.domain.services.skill_effect_service import offensive_element
-            from app.infrastructure.elements import element_skill_loader
+            from app.domain.services.elemental_infusion_service import (
+                ElementalInfusionService,
+            )
             mob_element = (encounter.mob_state.element or "").strip()
             mob_aff = element_service.single_element_affinities(mob_element) if mob_element else None
             affinity_repo = ElementAffinityRepository(session)
@@ -227,18 +228,13 @@ class EncounterService:
                 # Multiplicateurs élémentaires (si le mob a un élément).
                 if mob_aff is not None:
                     aff = affinity_repo.get_affinities(participant.player_id)
-                    equipped_skills = [
-                        element_skill_loader.get_skill(code)
-                        for code in (profile.player.skill_slot_1, profile.player.skill_slot_2)
-                        if code
-                    ]
-                    player_elem = offensive_element(equipped_skills) or (
-                        max(aff, key=aff.get) if aff else ""
-                    )
-                    if player_elem:
-                        elemental_out[participant.player_id] = element_service.damage_multiplier(
-                            player_elem, aff, mob_aff,
-                        )
+                    # L'ÉLÉMENT EST CHOISI TOUT SEUL : on prend celui qui
+                    # frappe le plus fort cette cible, compte tenu de sa
+                    # faiblesse ET de la maîtrise du joueur. Plus de
+                    # compétence élémentaire à équiper.
+                    infusion = ElementalInfusionService().best_for(aff, mob_aff)
+                    if infusion.element:
+                        elemental_out[participant.player_id] = infusion.multiplier
                     elemental_in[participant.player_id] = element_service.damage_multiplier(
                         mob_element, mob_aff, aff,
                     )

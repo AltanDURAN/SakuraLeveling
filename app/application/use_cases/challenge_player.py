@@ -230,20 +230,17 @@ class ChallengePlayerUseCase:
         équipée, sinon affinité la plus haute) confronté aux affinités des deux.
         1.0 si l'attaquant n'a aucun élément."""
         from app.domain.services import element_service
-        from app.domain.services.skill_effect_service import offensive_element
-        from app.infrastructure.elements import element_skill_loader
         from app.infrastructure.db.repositories.element_affinity_repository import (
             ElementAffinityRepository,
         )
         aff_repo = ElementAffinityRepository(session)
         a_aff = aff_repo.get_affinities(attacker_profile.player.id)
         d_aff = aff_repo.get_affinities(defender_profile.player.id)
-        skills = [
-            element_skill_loader.get_skill(c)
-            for c in (attacker_profile.player.skill_slot_1, attacker_profile.player.skill_slot_2)
-            if c
-        ]
-        elem = offensive_element(skills) or (max(a_aff, key=a_aff.get) if a_aff else "")
+        from app.domain.services.elemental_infusion_service import (
+            ElementalInfusionService,
+        )
+
+        elem = ElementalInfusionService().best_for(a_aff, d_aff).element
         if not elem:
             return 1.0
         return element_service.damage_multiplier(elem, a_aff, d_aff)

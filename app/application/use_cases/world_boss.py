@@ -484,8 +484,9 @@ class LaunchPartyFightWorldBossUseCase:
     def execute(self, boss_id: int) -> PartyFightBossResult:
         from app.domain.services.party_combat_service import PartyCombatService
         from app.domain.services import element_service
-        from app.domain.services.skill_effect_service import offensive_element
-        from app.infrastructure.elements import element_skill_loader
+        from app.domain.services.elemental_infusion_service import (
+            ElementalInfusionService,
+        )
         from app.infrastructure.db.repositories.element_affinity_repository import (
             ElementAffinityRepository,
         )
@@ -567,26 +568,15 @@ class LaunchPartyFightWorldBossUseCase:
                 )
             # Compétences équipées (slots libres, peuvent être vides) → passées
             # telles quelles au combat, qui les résout par tour.
-            equipped_skills = [
-                element_skill_loader.get_skill(code)
-                for code in (profile.player.skill_slot_1, profile.player.skill_slot_2)
-                if code
-            ]
-            if equipped_skills:
-                skill_loadouts[v.player_id] = equipped_skills
 
             # Multiplicateurs élémentaires du voteur (si le boss a un élément).
             if boss_aff is not None:
                 aff = affinity_repo.get_affinities(v.player_id)
-                # élément d'attaque = compétence offensive équipée, sinon repli
-                # sur l'affinité la plus haute (le joueur frappe quand même).
-                player_elem = offensive_element(equipped_skills) or (
-                    max(aff, key=aff.get) if aff else ""
-                )
-                if player_elem:
-                    elemental_out[v.player_id] = element_service.damage_multiplier(
-                        player_elem, aff, boss_aff,
-                    )
+                # L'ÉLÉMENT EST CHOISI TOUT SEUL, selon la faiblesse du boss
+                # et la maîtrise du joueur (cf. ElementalInfusionService).
+                infusion = ElementalInfusionService().best_for(aff, boss_aff)
+                if infusion.element:
+                    elemental_out[v.player_id] = infusion.multiplier
                 elemental_in[v.player_id] = element_service.damage_multiplier(
                     boss.element, boss_aff, aff,
                 )

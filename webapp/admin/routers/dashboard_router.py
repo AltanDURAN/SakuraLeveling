@@ -61,13 +61,11 @@ async def dashboard(
     skill_data = _load_json("skill_tree.json") or {}
     skill_nodes_count = len(skill_data.get("skills", {})) if isinstance(skill_data, dict) else 0
 
-    # Zones (farm_zones.json) + compétences élémentaires (element_skills.json)
+    # Zones de farm (farm_zones.json)
     from app.infrastructure.encounters import farm_zone_loader
-    from app.infrastructure.elements import element_skill_loader
     farm_zone_loader.clear_cache()
-    element_skill_loader.clear_cache()
     zones_count = len(farm_zone_loader.list_zones())
-    competences_count = len(element_skill_loader.all_skills())
+    competences_count = 0  # les compétences passent dans l'arbre (lot 3)
 
     # Événements non-combat activés (coffre / petite fille / forge sacrée).
     from app.infrastructure.events import event_config_loader

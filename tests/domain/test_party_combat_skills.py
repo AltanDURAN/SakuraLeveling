@@ -7,7 +7,42 @@ from datetime import datetime, UTC
 from app.domain.entities.mob_definition import MobDefinition
 from app.domain.services.party_combat_service import PartyCombatService
 from app.domain.value_objects.stats import Stats
-from app.infrastructure.elements import element_skill_loader as L
+
+# Le catalogue de compétences élémentaires a disparu en saison 1 : les
+# compétences viennent désormais de l'ARBRE, et le moteur d'effets reste le
+# même. On les construit donc à la main ici, au lieu de charger un JSON.
+from app.domain.entities.element_skill import (
+    SKILL_KIND_DAMAGE, SKILL_KIND_HEAL_ALLY, SKILL_KIND_SHIELD_SELF,
+    SKILL_KIND_SHIELD_TEAM, ElementSkill, SkillEffect as _Eff,
+)
+
+
+class _Catalogue:
+    """Remplace l'ancien loader dans les tests : mêmes codes, mêmes formes."""
+
+    _SPECS = {
+        "feu_offensive":  ("feu", "offensive", SKILL_KIND_DAMAGE, SKILL_KIND_DAMAGE),
+        "eau_offensive":  ("eau", "offensive", SKILL_KIND_DAMAGE, SKILL_KIND_DAMAGE),
+        "feu_defensive":  ("feu", "defensive", SKILL_KIND_SHIELD_SELF, SKILL_KIND_SHIELD_TEAM),
+        "feu_support":    ("feu", "support", SKILL_KIND_HEAL_ALLY, SKILL_KIND_SHIELD_TEAM),
+    }
+
+    def get_skill(self, code):
+        element, role, basic_kind, special_kind = self._SPECS[code]
+        return ElementSkill(
+            code=code, element=element, role=role, emoji="🔥",
+            basic=_Eff(name=f"{code} basique", kind=basic_kind, value=0.5,
+                       proc_chance=0.0, mana_cost=20),
+            special=_Eff(name=f"{code} spéciale", kind=special_kind, value=1.0,
+                         proc_chance=0.10, mana_cost=40),
+        )
+
+    def all_skills(self):
+        return {c: self.get_skill(c) for c in self._SPECS}
+
+
+L = _Catalogue()
+
 
 
 def _mob(hp: int, attack: int, defense: int) -> MobDefinition:
