@@ -2,7 +2,7 @@
   "version": 2,
   "roots": [
     "racine_combat",
-    "racine_utilite"
+    "racine_explorateur"
   ],
   "shapes": {
     "cercle_depart": {
@@ -89,14 +89,15 @@
       "shape": "cercle_depart",
       "node_type": "depart",
       "start": true,
+      "unlock_rule": "all",
       "max_level": 1,
       "costs": [
         0
       ],
       "effects": [],
       "position": {
-        "x": 0,
-        "y": 0
+        "x": -490,
+        "y": 340
       }
     },
     "voie_attaque": {
@@ -106,14 +107,15 @@
       "shape": "cercle_stat_plus",
       "node_type": "stat",
       "start": false,
+      "unlock_rule": "all",
       "max_level": 1,
       "costs": [
         1
       ],
       "effects": [],
       "position": {
-        "x": 0,
-        "y": -190
+        "x": -490,
+        "y": 150
       }
     },
     "voie_defense": {
@@ -123,14 +125,15 @@
       "shape": "cercle_stat_plus",
       "node_type": "stat",
       "start": false,
+      "unlock_rule": "all",
       "max_level": 1,
       "costs": [
         1
       ],
       "effects": [],
       "position": {
-        "x": 165,
-        "y": 95
+        "x": -335,
+        "y": 435
       }
     },
     "voie_support": {
@@ -140,14 +143,15 @@
       "shape": "cercle_stat_plus",
       "node_type": "stat",
       "start": false,
+      "unlock_rule": "all",
       "max_level": 1,
       "costs": [
         1
       ],
       "effects": [],
       "position": {
-        "x": -165,
-        "y": 95
+        "x": -655,
+        "y": 435
       }
     },
     "classe_combattant": {
@@ -157,14 +161,15 @@
       "shape": "hexagone_classe",
       "node_type": "classe",
       "start": false,
+      "unlock_rule": "all",
       "max_level": 1,
       "costs": [
         1
       ],
       "effects": [],
       "position": {
-        "x": 247,
-        "y": -142
+        "x": -325,
+        "y": 245
       }
     },
     "classe_paladin": {
@@ -174,14 +179,15 @@
       "shape": "hexagone_classe",
       "node_type": "classe",
       "start": false,
+      "unlock_rule": "all",
       "max_level": 1,
       "costs": [
         1
       ],
       "effects": [],
       "position": {
-        "x": 0,
-        "y": 285
+        "x": -490,
+        "y": 530
       }
     },
     "classe_vampire": {
@@ -191,31 +197,33 @@
       "shape": "hexagone_classe",
       "node_type": "classe",
       "start": false,
+      "unlock_rule": "all",
       "max_level": 1,
       "costs": [
         1
       ],
       "effects": [],
       "position": {
-        "x": -247,
-        "y": -142
+        "x": -655,
+        "y": 245
       }
     },
-    "racine_utilite": {
+    "racine_explorateur": {
       "name": "Explorateur",
-      "description": "La voie d'utilité : tout ce qui n'est pas le combat.",
+      "description": "La voie de l'explorateur.",
       "icon": "🧭",
       "shape": "cercle_depart",
       "node_type": "depart",
       "start": true,
+      "unlock_rule": "all",
       "max_level": 1,
       "costs": [
         0
       ],
       "effects": [],
       "position": {
-        "x": 0,
-        "y": 760
+        "x": 550,
+        "y": 230
       }
     },
     "axe_or": {
@@ -223,33 +231,57 @@
       "description": "Début d'axe — à étoffer.",
       "icon": "💰",
       "shape": "cercle_stat_plus",
-      "node_type": "utilite",
+      "node_type": "passif",
       "start": false,
-      "max_level": 1,
+      "unlock_rule": "all",
+      "max_level": 3,
       "costs": [
-        1
+        1,
+        2,
+        3
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "gold_drop_percent",
+          "values": [
+            1,
+            3,
+            5
+          ]
+        }
+      ],
       "position": {
-        "x": -134,
-        "y": 626
+        "x": 684,
+        "y": 364
       }
     },
     "axe_drop": {
       "name": "Axe du Butin",
       "description": "Début d'axe — à étoffer.",
-      "icon": "🎁",
+      "icon": "🍀",
       "shape": "cercle_stat_plus",
-      "node_type": "utilite",
+      "node_type": "passif",
       "start": false,
-      "max_level": 1,
+      "unlock_rule": "all",
+      "max_level": 3,
       "costs": [
-        1
+        1,
+        2,
+        3
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "drop_rate_multiplier",
+          "values": [
+            1,
+            3,
+            5
+          ]
+        }
+      ],
       "position": {
-        "x": 134,
-        "y": 626
+        "x": 550,
+        "y": 515
       }
     },
     "axe_xp": {
@@ -257,33 +289,73 @@
       "description": "Début d'axe — à étoffer.",
       "icon": "⚡",
       "shape": "cercle_stat_plus",
-      "node_type": "utilite",
+      "node_type": "passif",
       "start": false,
-      "max_level": 1,
+      "unlock_rule": "all",
+      "max_level": 3,
       "costs": [
-        1
+        1,
+        2,
+        3
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "xp_drop_percent",
+          "values": [
+            1,
+            3,
+            5
+          ]
+        }
+      ],
       "position": {
-        "x": -134,
-        "y": 894
+        "x": 416,
+        "y": 364
       }
     },
     "axe_confort": {
       "name": "Axe du Confort",
       "description": "Début d'axe — à étoffer.",
-      "icon": "🧰",
+      "icon": "🎁",
       "shape": "cercle_stat_plus",
-      "node_type": "utilite",
+      "node_type": "passif",
       "start": false,
-      "max_level": 1,
+      "unlock_rule": "all",
+      "max_level": 3,
       "costs": [
-        1
+        1,
+        2,
+        3
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "unlock_feature",
+          "values": [
+            "Notification privé lorsque le cooldown d'une commande est prêt",
+            "Notification privé lorsque le cooldown d'une commande est prêt",
+            "Notification privé lorsque le cooldown d'une commande est prêt"
+          ]
+        },
+        {
+          "type": "unlock_feature",
+          "values": [
+            "1 participation journalière supplémentaire pour défier la tour solo",
+            "1 participation journalière supplémentaire pour défier la tour solo",
+            "1 participation journalière supplémentaire pour défier la tour solo"
+          ]
+        },
+        {
+          "type": "unlock_feature",
+          "values": [
+            "Notifié lorsqu'un événement aparait",
+            "Notifié lorsqu'un événement aparait",
+            "Notifié lorsqu'un événement aparait"
+          ]
+        }
+      ],
       "position": {
-        "x": 134,
-        "y": 894
+        "x": 550,
+        "y": 705
       }
     }
   },
@@ -306,51 +378,56 @@
     {
       "from": "voie_attaque",
       "to": "classe_combattant",
-      "type": "simple"
+      "type": "optionnel"
     },
     {
       "from": "voie_defense",
       "to": "classe_combattant",
-      "type": "simple"
+      "type": "optionnel"
     },
     {
       "from": "voie_defense",
       "to": "classe_paladin",
-      "type": "simple"
+      "type": "optionnel"
     },
     {
       "from": "voie_support",
       "to": "classe_paladin",
-      "type": "simple"
+      "type": "optionnel"
     },
     {
       "from": "voie_support",
       "to": "classe_vampire",
-      "type": "simple"
+      "type": "optionnel"
     },
     {
       "from": "voie_attaque",
       "to": "classe_vampire",
-      "type": "simple"
+      "type": "optionnel"
     },
     {
-      "from": "racine_utilite",
-      "to": "axe_or",
-      "type": "majeur"
-    },
-    {
-      "from": "racine_utilite",
-      "to": "axe_drop",
-      "type": "majeur"
-    },
-    {
-      "from": "racine_utilite",
+      "from": "racine_explorateur",
       "to": "axe_xp",
       "type": "majeur"
     },
     {
-      "from": "racine_utilite",
+      "from": "axe_or",
+      "to": "axe_drop",
+      "type": "majeur"
+    },
+    {
+      "from": "axe_drop",
       "to": "axe_confort",
+      "type": "majeur"
+    },
+    {
+      "from": "racine_explorateur",
+      "to": "axe_or",
+      "type": "majeur"
+    },
+    {
+      "from": "axe_xp",
+      "to": "axe_drop",
       "type": "majeur"
     }
   ],
