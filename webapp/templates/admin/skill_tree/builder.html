@@ -153,6 +153,74 @@
 .bt-ptable input, .bt-ptable select { width:100%; box-sizing:border-box; font:inherit; font-size:.78rem; padding:4px 5px;
   border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); }
 .bt-ptable input[type=color] { padding:1px; height:28px; }
+
+/* -------------------------------------------------------- plein écran CSS */
+/* Repli quand le plein écran natif n'existe pas (iPhone). */
+.bt-root.bt-max { position:fixed; inset:0; z-index:200; width:auto; margin:0; padding:8px;
+  background:var(--bg); box-sizing:border-box; overflow:hidden; }
+.bt-root.bt-max .bt-head { display:none; }
+html.bt-noscroll, html.bt-noscroll body { overflow:hidden; }
+.bt-sheetbar { display:none; }
+.bt-btn.primary.pulse { box-shadow:0 0 0 3px color-mix(in srgb, var(--success) 35%, transparent); }
+
+/* ------------------------------------------------------------------ mobile */
+@media (max-width: 900px) {
+  /* L'en-tête collant de l'admin mangerait 1/6 de l'écran : sur cette page
+     il défile avec le reste. */
+  .topbar { position:static; }
+  .bt-root { --bt-w:calc(100vw - 12px); gap:6px; }
+  .bt-head { gap:8px; }
+  .bt-head h1 { font-size:1.05rem; }
+  .bt-head .crumb { display:none; }
+  .bt-bar { gap:4px; padding:5px; }
+  .bt-bar .lbl { display:none; }
+  .bt-sep { display:none; }
+  .bt-btn, .bt-seg button { min-width:40px; min-height:40px; padding:6px 9px; font-size:1rem; }
+  .bt-dirty { font-size:1rem; padding:0 4px; }
+
+  /* Le canevas occupe tout ; les panneaux deviennent une feuille du bas. */
+  .bt-main { display:block; position:relative; }
+  .bt-stage { position:absolute; left:0; right:0; top:0; bottom:46px; }
+  .bt-sheetbar { display:flex; position:absolute; left:0; right:0; bottom:0; height:42px; gap:6px; }
+  .bt-sheetbar button { flex:1; font:inherit; font-size:.9rem; border:1px solid var(--border); border-radius:10px;
+    background:var(--bg-elev); color:var(--text); cursor:pointer; }
+  .bt-sheetbar button.on { background:#7d4fd0; border-color:#7d4fd0; color:#fff; }
+  .bt-sheetbar .bad { display:inline-block; min-width:18px; padding:0 5px; border-radius:9px; background:var(--danger);
+    color:#fff; font-size:.72rem; font-weight:700; }
+  .bt-panel { display:none; position:absolute; left:0; right:0; bottom:46px; height:58%; z-index:8;
+    border-radius:16px 16px 0 0; box-shadow:0 -10px 30px rgba(0,0,0,.35); padding:14px 14px 20px;
+    overscroll-behavior:contain; }
+  .bt-root.sheet-insp #insp, .bt-root.sheet-side #side { display:block; }
+
+  /* Repères flottants : moins d'encombrement sur un petit écran. */
+  .bt-status { display:none; }
+  .bt-legend { flex-wrap:wrap; max-width:calc(100% - 20px); font-size:.68rem; gap:4px 9px; }
+  .bt-zoom button { width:38px; height:38px; }
+  .bt-toast { bottom:62px; max-width:86%; text-align:center; }
+
+  /* Saisie : 16 px minimum, sinon iOS zoome la page à chaque champ. */
+  .bt-f input[type=text], .bt-f input[type=number], .bt-f textarea, .bt-f select, .bt-in,
+  .bt-lv input, .bt-lk select, .bt-ptable input, .bt-ptable select { font-size:16px; }
+  .bt-lv { grid-template-columns:repeat(auto-fill, minmax(58px,1fr)); }
+  .bt-lk { padding:8px 6px; }
+  .bt-x { min-width:34px; min-height:34px; }
+  .bt-chip { padding:9px 8px; }
+  .bt-empty { margin-top:8px; }
+
+  .bt-dlg { width:100vw; max-height:88dvh; border-radius:16px 16px 0 0; align-self:flex-end; }
+  .bt-modal { align-items:flex-end; }
+  /* Palettes : chaque entrée devient une petite carte qui passe à la ligne. */
+  .bt-ptable, .bt-ptable tbody { display:block; }
+  .bt-ptable tr { display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:8px 0; border-bottom:1px solid var(--border); }
+  .bt-ptable td { display:block; padding:0; width:auto !important; flex:0 0 auto; }
+  .bt-ptable td:has(input[data-f=label]) { flex:1 1 150px; }
+  .bt-ptable td:has(select) { flex:1 1 110px; }
+  .bt-ptable td:has(input[type=number]) { flex:0 0 72px; }
+  .bt-ptable td:has(input[type=color]) { flex:0 0 52px; }
+  .bt-icons { grid-template-columns:repeat(auto-fill, minmax(46px,1fr)); }
+  .bt-icons button { height:46px; }
+}
+.bt-stage svg { -webkit-touch-callout:none; -webkit-user-select:none; }
 </style>
 
 <div class="bt-root" id="bt-root">
@@ -163,26 +231,26 @@
 
   <div class="bt-bar" role="toolbar" aria-label="Outils du builder">
     <div class="bt-seg" role="radiogroup" aria-label="Mode">
-      <button data-mode="edit" class="on" role="radio">✏️ Édition</button>
-      <button data-mode="player" role="radio">🎮 Vue joueur</button>
+      <button data-mode="edit" class="on" role="radio" title="Édition">✏️<span class="lbl"> Édition</span></button>
+      <button data-mode="player" role="radio" title="Vue joueur">🎮<span class="lbl"> Vue joueur</span></button>
     </div>
     <span class="bt-sep"></span>
     <span id="tools-edit" style="display:contents">
-      <button class="bt-btn" data-tool="place" title="Poser une case (1)">✚ Poser</button>
-      <button class="bt-btn" data-tool="select" title="Sélectionner / déplacer (2)">⬚ Sélection</button>
-      <button class="bt-btn" data-tool="link" title="Relier deux cases (3)">⇢ Relier</button>
-      <button class="bt-btn danger" data-tool="delete" title="Supprimer au clic ou au rectangle (4)">🗑 Supprimer</button>
+      <button class="bt-btn" data-tool="place" title="Poser une case (1)">✚<span class="lbl"> Poser</span></button>
+      <button class="bt-btn" data-tool="select" title="Sélectionner / déplacer (2)">⬚<span class="lbl"> Sélection</span></button>
+      <button class="bt-btn" data-tool="link" title="Relier deux cases (3)">⇢<span class="lbl"> Relier</span></button>
+      <button class="bt-btn danger" data-tool="delete" title="Supprimer au clic ou au rectangle (4)">🗑<span class="lbl"> Supprimer</span></button>
       <span class="bt-sep"></span>
     </span>
     <button class="bt-btn" id="b-undo" title="Annuler (Ctrl+Z)">↶</button>
     <button class="bt-btn" id="b-redo" title="Rétablir (Ctrl+Y)">↷</button>
     <span class="bt-sep"></span>
-    <button class="bt-btn primary" id="b-save" title="Enregistrer (Ctrl+S)">💾 Enregistrer</button>
+    <button class="bt-btn primary" id="b-save" title="Enregistrer (Ctrl+S)">💾<span class="lbl"> Enregistrer</span></button>
     <button class="bt-btn" id="b-reload" title="Recharger depuis le disque">↻</button>
-    <span class="bt-dirty clean" id="dirty">✓ enregistré</span>
+    <span class="bt-dirty clean" id="dirty" title="État de l'enregistrement">✓<span class="lbl"> enregistré</span></span>
     <span class="bt-spacer"></span>
-    <button class="bt-btn" id="b-palettes" title="Formes, types et liens">🎨 Palettes</button>
-    <button class="bt-btn" id="b-full" title="Plein écran (F)">⛶ Plein écran</button>
+    <button class="bt-btn" id="b-palettes" title="Formes, types et liens">🎨<span class="lbl"> Palettes</span></button>
+    <button class="bt-btn" id="b-full" title="Plein écran (F)">⛶<span class="lbl"> Plein écran</span></button>
   </div>
 
   <div class="bt-main" id="bt-main">
@@ -217,6 +285,11 @@
     </div>
 
     <aside class="bt-panel" id="insp"></aside>
+    <!-- Mobile : les deux panneaux deviennent une feuille qui monte du bas. -->
+    <div class="bt-sheetbar" id="sheetbar" role="tablist">
+      <button data-sheet="insp" role="tab"></button>
+      <button data-sheet="side" role="tab"></button>
+    </div>
   </div>
 
   <div class="bt-modal" id="modal"><div class="bt-dlg" id="dlg"></div></div>
@@ -253,6 +326,7 @@ const S = {
   linkFrom: null, cursor: null, drag: null,
   view: {x: 0, y: 0, k: 1},
   sim: loadSim(),
+  sheet: null,
 };
 S.saved = snapshot();
 S.shape = Object.keys(S.tree.shapes)[0];
@@ -415,6 +489,7 @@ function refund(c) {
   if (broken) { S.sim[c] += 1; return toast(`« ${N(broken).name || broken} » dépend de cette case`, true); }
   if (!S.sim[c]) delete S.sim[c];
   saveSim(); render();
+  toast(`« ${n.name || c} » : ${S.sim[c] || 0}/${n.max_level}`);
 }
 function buildSummary() {
   const num = {}, codes = {};
@@ -532,6 +607,8 @@ function drawScene() {
     if (player && st === 'maxed') nd += shapeMarkup(sh.geometry, size + 6, `fill="#f0c45c" fill-opacity=".45" filter="url(#f-glow)"`);
     if (selected || linking) nd += shapeMarkup(sh.geometry, size + 9, `fill="none" stroke="${linking ? '#ffd166' : '#ffffff'}" stroke-opacity=".35" stroke-width="6"`);
     if (sh.ring) nd += shapeMarkup(sh.geometry, size + 5, `fill="none" stroke="${player ? stroke : color}" stroke-opacity=".7" stroke-width="2"`);
+    // Zone de clic plus large que la case : vise-t-on une case de 20 px au doigt ?
+    nd += `<circle r="${(size + 10).toFixed(0)}" fill="transparent"/>`;
     nd += shapeMarkup(sh.geometry, size, `class="n-body" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"`);
     if (n.icon) {
       // Centrage optique : `central` + un léger décalage, les emojis ayant
@@ -633,7 +710,7 @@ function renderPlayerSide(side) {
     `<div class="grp">${esc((EFFECT[t] || {}).label || t)}</div>` + vs.map(v => `<div><span>${esc(v)}</span></div>`).join('')).join('');
   side.innerHTML = `
     <h3>Simulation joueur</h3>
-    <p class="bt-hint">Points <b>illimités</b>. Clique une case pour investir, <b>clic droit</b> pour retirer un niveau.</p>
+    <p class="bt-hint">Points <b>illimités</b>. Clique une case pour investir, <b>clic droit</b> (ou <b>appui long</b>) pour retirer un niveau.</p>
     <div class="bt-sum">
       <div><span>Points dépensés</span><b>${spentPoints()}</b></div>
       <div><span>Cases acquises</span><b>${owned} / ${total}</b></div>
@@ -655,7 +732,7 @@ function renderInspector() {
     <b>Poser</b> : clique le canevas ou un emplacement proposé.<br>
     <b>Sélection</b> : clic, Maj+clic, ou rectangle.<br>
     <b>Relier</b> : clique la source puis la cible.<br>
-    <b>Supprimer</b> : clic, ou rectangle.<br><br>
+    <b>Supprimer</b> : clic, ou rectangle.<br>${isMobile() ? '<b>Deux doigts</b> : zoomer et se déplacer.<br>' : ''}<br>
     <span style="font-size:.75rem">Ctrl+Z / Ctrl+Y · Suppr · Ctrl+D dupliquer · Échap</span></div>`;
 }
 function opts(entries, cur) {
@@ -749,6 +826,13 @@ function wireNodeInspector(box, code) {
   box.querySelectorAll('[data-row]').forEach(row => {
     row.addEventListener('mouseenter', () => { S.hotLink = +row.dataset.row; drawScene(); });
     row.addEventListener('mouseleave', () => { S.hotLink = null; drawScene(); });
+    // Au doigt, pas de survol : un tap sur la ligne allume / éteint le lien.
+    row.addEventListener('click', e => {
+      if (e.target.closest('select,button,[data-goto]')) return;
+      const i = +row.dataset.row; S.hotLink = S.hotLink === i ? null : i;
+      box.querySelectorAll('[data-row]').forEach(r => r.classList.toggle('hot', +r.dataset.row === S.hotLink));
+      drawScene();
+    });
   });
   box.querySelectorAll('[data-unlink]').forEach(b => b.addEventListener('click', () => {
     S.hotLink = null; mutate(() => { S.tree.links.splice(+b.dataset.unlink, 1); }); toast('Lien supprimé');
@@ -922,15 +1006,52 @@ const hit = ev => {
   return {node: g ? g.dataset.node : null, link: l ? +l.dataset.link : null, ghost: gh ? gh.dataset.ghost : null};
 };
 
-svg.addEventListener('mousedown', ev => {
-  if (ev.button === 2) return;
-  const w = toWorld(ev), h = hit(ev);
+// Pointer events : souris, stylet et doigts passent par le même code.
+//   • 2 doigts : pincer pour zoomer, glisser pour se déplacer (tous modes) ;
+//   • 1 doigt sur le fond : se déplacer (Poser, Relier, vue joueur) ou tracer
+//     un rectangle (Sélection, Supprimer) — un simple TAP pose / annule ;
+//   • vue joueur : tap = investir, appui long (ou clic droit) = retirer.
+const ptrs = new Map();
+let pinch = null, press = null, deadGesture = false, lastPointer = 'mouse';
+const TAP = 7;   // px : au-delà, un appui devient un glissé
+
+function pinchInfo() {
+  const [a, b] = [...ptrs.values()];
+  return {d: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2};
+}
+function cancelPress() { if (press) { clearTimeout(press.timer); press = null; } }
+function commitMove(d) { if (d && d.kind === 'move' && d.moved) { S.undo.push(d.before); S.redo = []; render(); } }
+function panDrag(ev, tap = null) {
+  return {kind: 'pan', sx: ev.clientX, sy: ev.clientY, ox: S.view.x, oy: S.view.y, moved: false, tap};
+}
+
+svg.addEventListener('pointerdown', ev => {
+  lastPointer = ev.pointerType;
+  if (ev.pointerType === 'mouse' && ev.button === 2) return;
+  try { svg.setPointerCapture(ev.pointerId); } catch {}
+  ptrs.set(ev.pointerId, {x: ev.clientX, y: ev.clientY});
   closeTip();
-  // Pan : clic molette, espace, ou glisser le fond en vue joueur.
-  if (ev.button === 1 || S.space || (S.mode === 'player' && !h.node)) {
-    S.drag = {kind: 'pan', sx: ev.clientX, sy: ev.clientY, ox: S.view.x, oy: S.view.y}; ev.preventDefault(); return;
+  if (ptrs.size === 2) {
+    // Deuxième doigt : le geste en cours s'arrête (un déplacement déjà
+    // commencé est conservé), on passe en navigation.
+    cancelPress(); commitMove(S.drag); S.drag = null;
+    const p = pinchInfo();
+    pinch = {...p, k: S.view.k, ox: S.view.x, oy: S.view.y};
+    drawOverlay(); return;
   }
-  if (S.mode === 'player') { if (h.node) invest(h.node); return; }
+  if (ptrs.size > 2) return;
+  deadGesture = false;
+  const w = toWorld(ev), h = hit(ev);
+  S.cursor = w;
+  if (ev.button === 1 || S.space) { S.drag = panDrag(ev); ev.preventDefault(); return; }
+
+  if (S.mode === 'player') {
+    if (!h.node) { S.drag = panDrag(ev); return; }
+    const node = h.node;
+    press = {node, sx: ev.clientX, sy: ev.clientY, done: false,
+             timer: setTimeout(() => { if (!press) return; press.done = true; refund(node); navigator.vibrate?.(25); }, 520)};
+    return;
+  }
 
   if (S.tool === 'delete') {
     if (h.node) return deleteNodes([h.node]);
@@ -938,7 +1059,7 @@ svg.addEventListener('mousedown', ev => {
     S.drag = {kind: 'box', x0: w.x, y0: w.y, x1: w.x, y1: w.y}; return;
   }
   if (S.tool === 'link') {
-    if (!h.node) { S.linkFrom = null; drawScene(); return; }
+    if (!h.node) { S.drag = panDrag(ev, {action: 'unlink'}); return; }
     if (!S.linkFrom) { S.linkFrom = h.node; drawScene(); return; }
     if (addLink(S.linkFrom, h.node)) toast('Lien créé');
     // Maj : on enchaîne depuis la cible pour tracer une branche d'un trait.
@@ -947,8 +1068,7 @@ svg.addEventListener('mousedown', ev => {
   if (S.tool === 'place') {
     if (h.ghost) { const [x, y] = h.ghost.split(',').map(Number); return addNode({x, y}, [...S.sel][0]); }
     if (h.node) { S.sel = new Set([h.node]); S.selLink = null; render(); return; }
-    const pos = ev.altKey ? {x: Math.round(w.x), y: Math.round(w.y)} : snap(w.x, w.y);
-    return addNode(pos, S.sel.size === 1 ? [...S.sel][0] : null);
+    S.drag = panDrag(ev, {action: 'place', w, alt: ev.altKey}); return;
   }
   // Sélection
   if (h.node) {
@@ -957,20 +1077,40 @@ svg.addEventListener('mousedown', ev => {
     S.drag = {kind: 'move', before: snapshot(), w0: w, start: Object.fromEntries([...S.sel].map(c => [c, {...N(c).position}])), moved: false, anchor: h.node};
     render(); return;
   }
-  if (h.link !== null) { S.sel = new Set(); S.selLink = h.link; render(); return; }
+  if (h.link !== null) { S.sel = new Set(); S.selLink = h.link; render(); openSheet('insp'); return; }
   if (!ev.shiftKey) { S.sel = new Set(); S.selLink = null; }
   S.drag = {kind: 'box', x0: w.x, y0: w.y, x1: w.x, y1: w.y, add: ev.shiftKey}; render();
 });
 
-window.addEventListener('mousemove', ev => {
+svg.addEventListener('pointermove', ev => {
+  if (ptrs.has(ev.pointerId)) ptrs.set(ev.pointerId, {x: ev.clientX, y: ev.clientY});
+  if (pinch && ptrs.size >= 2) {
+    const p = pinchInfo(), r = svg.getBoundingClientRect();
+    const k = Math.min(3, Math.max(.15, pinch.k * p.d / pinch.d));
+    // Le point du monde sous le milieu des doigts au départ y reste.
+    const wx = (pinch.mx - r.left - pinch.ox) / pinch.k, wy = (pinch.my - r.top - pinch.oy) / pinch.k;
+    S.view = {k, x: p.mx - r.left - wx * k, y: p.my - r.top - wy * k};
+    applyView(); return;
+  }
+  if (deadGesture) return;
+  if (press) {
+    if (Math.hypot(ev.clientX - press.sx, ev.clientY - press.sy) > TAP) {
+      // L'appui sur une case devient un déplacement de la vue.
+      const sx = press.sx, sy = press.sy; cancelPress();
+      S.drag = {kind: 'pan', sx, sy, ox: S.view.x, oy: S.view.y, moved: true, tap: null};
+    } else return;
+  }
   const d = S.drag;
-  if (d && d.kind === 'pan') { S.view.x = d.ox + ev.clientX - d.sx; S.view.y = d.oy + ev.clientY - d.sy; applyView(); return; }
-  if (!svg.contains(ev.target) && !d) return;
+  if (d && d.kind === 'pan') {
+    if (Math.hypot(ev.clientX - d.sx, ev.clientY - d.sy) > TAP) d.moved = true;
+    if (d.moved) { S.view.x = d.ox + ev.clientX - d.sx; S.view.y = d.oy + ev.clientY - d.sy; applyView(); }
+    return;
+  }
   const w = toWorld(ev);
   S.cursor = w;
   if (d && d.kind === 'move') {
     const dx = w.x - d.w0.x, dy = w.y - d.w0.y;
-    if (Math.hypot(dx, dy) * S.view.k > 3) d.moved = true;
+    if (Math.hypot(dx, dy) * S.view.k > (ev.pointerType === 'mouse' ? 3 : TAP)) d.moved = true;
     if (!d.moved) return;
     // On aimante l'ANCRE ; le reste du groupe suit au même décalage. Les
     // racines déplacées ne servent pas de centre (elles bougent avec nous).
@@ -987,6 +1127,7 @@ window.addEventListener('mousemove', ev => {
     drawScene(); setStatus(); return;
   }
   if (d && d.kind === 'box') { d.x1 = w.x; d.y1 = w.y; drawOverlay(); return; }
+  if (ev.pointerType !== 'mouse') return;   // pas de survol au doigt
   const h = hit(ev);
   if (h.node !== S.hoverNode || h.link !== S.hoverLink) {
     S.hoverNode = h.node; S.hoverLink = h.node ? null : h.link;
@@ -997,11 +1138,33 @@ window.addEventListener('mousemove', ev => {
   setStatus();
 });
 
-window.addEventListener('mouseup', () => {
+function endPointer(ev) {
+  ptrs.delete(ev.pointerId);
+  if (pinch) {
+    // Fin du pincement : le doigt restant ne doit rien déclencher.
+    if (ptrs.size < 2) { pinch = null; deadGesture = ptrs.size > 0; }
+    return;
+  }
+  if (deadGesture) { if (!ptrs.size) deadGesture = false; return; }
+  if (press) {
+    const p = press; cancelPress();
+    if (!p.done && ev.type === 'pointerup') { invest(p.node); S.hoverNode = p.node; renderInspector(); }
+    return;
+  }
   const d = S.drag; S.drag = null;
   if (!d) return;
-  if (d.kind === 'move' && d.moved) {
-    S.undo.push(d.before); S.redo = []; render();
+  if (d.kind === 'pan') {
+    if (d.moved || !d.tap || ev.type !== 'pointerup') return;
+    if (d.tap.action === 'unlink') { S.linkFrom = null; S.sel = new Set(); S.selLink = null; render(); return; }
+    if (d.tap.action === 'place') {
+      const w = d.tap.w, pos = d.tap.alt ? {x: Math.round(w.x), y: Math.round(w.y)} : snap(w.x, w.y);
+      return addNode(pos, S.sel.size === 1 ? [...S.sel][0] : null);
+    }
+    return;
+  }
+  if (d.kind === 'move') {
+    if (d.moved) commitMove(d);
+    else if (S.sel.size === 1) openSheet('insp');
   } else if (d.kind === 'box') {
     const x0 = Math.min(d.x0, d.x1), x1 = Math.max(d.x0, d.x1), y0 = Math.min(d.y0, d.y1), y1 = Math.max(d.y0, d.y1);
     const inside = Object.entries(S.tree.nodes).filter(([, n]) => n.position.x >= x0 && n.position.x <= x1 && n.position.y >= y0 && n.position.y <= y1).map(([c]) => c);
@@ -1010,14 +1173,24 @@ window.addEventListener('mouseup', () => {
     inside.forEach(c => S.sel.add(c));
     render();
   }
-});
+}
+svg.addEventListener('pointerup', endPointer);
+// Au doigt, le navigateur rejoue un « click » APRÈS le geste, à l'endroit du
+// doigt : si la feuille du bas vient de s'ouvrir là, il tomberait sur un champ.
+svg.addEventListener('touchend', e => { if (e.cancelable) e.preventDefault(); }, {passive: false});
+svg.addEventListener('pointercancel', endPointer);
 
 svg.addEventListener('contextmenu', ev => {
   ev.preventDefault();
+  // Au doigt, l'appui long déclenche AUSSI un contextmenu : déjà géré.
+  if (lastPointer !== 'mouse') return;
   const h = hit(ev);
   if (S.mode === 'player' && h.node) refund(h.node);
 });
-svg.addEventListener('mouseleave', () => { S.hoverNode = null; S.hoverLink = null; closeTip(); drawScene(); });
+svg.addEventListener('pointerleave', ev => {
+  if (ev.pointerType !== 'mouse' || S.drag) return;
+  S.hoverNode = null; S.hoverLink = null; closeTip(); drawScene();
+});
 svg.addEventListener('wheel', ev => { ev.preventDefault(); zoomAt(ev.deltaY < 0 ? 1.12 : 1 / 1.12, ev.clientX, ev.clientY); }, {passive: false});
 
 function zoomAt(f, cx, cy) {
@@ -1028,7 +1201,15 @@ function zoomAt(f, cx, cy) {
   applyView();
 }
 function fitView() {
-  const ns = Object.values(S.tree.nodes), r = svg.getBoundingClientRect();
+  let ns = Object.values(S.tree.nodes);
+  const r = svg.getBoundingClientRect();
+  // Petit écran : tout l'arbre deviendrait illisible ; on cadre l'arbre
+  // principal (la racine qui porte le plus de cases), le reste au pincement.
+  if (isMobile() && ns.length > 12) {
+    const groups = new Map();
+    for (const n of ns) { const c = centerFor(n.position.x, n.position.y); groups.set(c, [...(groups.get(c) || []), n]); }
+    ns = [...groups.values()].sort((a, b) => b.length - a.length)[0];
+  }
   if (!ns.length || !r.width) { S.view = {x: r.width / 2, y: r.height / 2, k: 1}; return applyView(); }
   const xs = ns.map(n => n.position.x), ys = ns.map(n => n.position.y);
   // Marges : légende et toasts en haut, barre d'état en bas.
@@ -1054,7 +1235,7 @@ function closeTip() { $('tip').style.display = 'none'; }
 
 // ---------------------------------------------------------------- statut
 const HINTS = {
-  place: 'Clique pour poser · un <b>emplacement proposé</b> prolonge la case sélectionnée · <kbd>Alt</kbd> place librement',
+  place: 'Clique pour poser · un <b>emplacement proposé</b> prolonge la case sélectionnée · glisse le fond pour te déplacer · <kbd>Alt</kbd> place librement',
   select: 'Clic · <kbd>Maj</kbd>+clic ajoute · glisse le fond pour un rectangle · glisse une case pour déplacer',
   link: 'Clique la source puis la cible · <kbd>Maj</kbd> enchaîne depuis la cible · <kbd>Échap</kbd> annule',
   delete: 'Clique une case ou un lien pour l\'effacer · glisse un rectangle pour tout effacer dedans',
@@ -1062,7 +1243,7 @@ const HINTS = {
 function setStatus() {
   const c = S.cursor ? ` · <span style="opacity:.7">${Math.round(S.cursor.x)}, ${Math.round(S.cursor.y)}</span>` : '';
   $('status').innerHTML = (S.mode === 'player'
-    ? 'Clic : investir · <b>clic droit</b> : retirer · glisse le fond pour te déplacer'
+    ? 'Clic : investir · <b>clic droit</b> / appui long : retirer · glisse le fond pour te déplacer'
     : HINTS[S.tool]) + ' · <kbd>Espace</kbd>+glisser : se déplacer' + c;
 }
 
@@ -1071,7 +1252,7 @@ function setStatus() {
 // =====================================================================
 function openModal(html) { $('dlg').innerHTML = html; $('modal').classList.add('open'); }
 function closeModal() { $('modal').classList.remove('open'); }
-$('modal').addEventListener('mousedown', e => { if (e.target === $('modal')) closeModal(); });
+$('modal').addEventListener('pointerdown', e => { if (e.target === $('modal')) closeModal(); });
 
 function openIconPicker(code) {
   const cur = N(code).icon;
@@ -1154,8 +1335,8 @@ function fixPicks() {
 //  Barre d'outils, sauvegarde, plein écran
 // =====================================================================
 function renderToolbar() {
-  document.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === S.tool));
-  document.querySelectorAll('[data-mode]').forEach(b => { b.classList.toggle('on', b.dataset.mode === S.mode); b.setAttribute('aria-checked', b.dataset.mode === S.mode); });
+  document.querySelectorAll('.bt-bar [data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === S.tool));
+  document.querySelectorAll('.bt-bar [data-mode]').forEach(b => { b.classList.toggle('on', b.dataset.mode === S.mode); b.setAttribute('aria-checked', b.dataset.mode === S.mode); });
   $('tools-edit').style.display = S.mode === 'edit' ? 'contents' : 'none';
   $('b-palettes').style.display = S.mode === 'edit' ? '' : 'none';
   $('legend').style.display = S.mode === 'player' ? 'flex' : 'none';
@@ -1163,9 +1344,11 @@ function renderToolbar() {
   $('b-undo').title = `Annuler (Ctrl+Z) — ${S.undo.length} étape(s)`; $('b-redo').title = `Rétablir (Ctrl+Y) — ${S.redo.length} étape(s)`;
   const dirty = snapshot() !== S.saved, el = $('dirty');
   el.className = 'bt-dirty' + (dirty ? '' : ' clean');
-  el.textContent = dirty ? '● non enregistré' : '✓ enregistré';
+  el.innerHTML = dirty ? '●<span class="lbl"> non enregistré</span>' : '✓<span class="lbl"> enregistré</span>';
+  $('b-save').classList.toggle('pulse', dirty);
   stage.dataset.tool = S.tool; stage.dataset.mode = S.mode;
   setStatus();
+  renderSheet();
   layout();   // la barre peut changer de hauteur (retour à la ligne)
 }
 function render({inspector = true} = {}) { drawScene(); renderSide(); if (inspector) renderInspector(); renderToolbar(); }
@@ -1199,29 +1382,74 @@ async function reload() {
   S.sel = new Set(); S.selLink = null; S.linkFrom = null; fixPicks(); render(); fitView(); toast('Rechargé depuis le disque');
 }
 
+const MOBILE = window.matchMedia('(max-width: 900px)');
+const isMobile = () => MOBILE.matches;
+const isFull = () => document.fullscreenElement === $('bt-root') || $('bt-root').classList.contains('bt-max');
+
 function layout() {
   const root = $('bt-root'), main = $('bt-main');
-  const top = main.getBoundingClientRect().top + window.scrollY;
-  const h = document.fullscreenElement === root
-    ? window.innerHeight - main.getBoundingClientRect().top - 12
-    : Math.max(560, window.innerHeight - top - 14);
+  const r = main.getBoundingClientRect();
+  let h;
+  if (isFull()) h = window.innerHeight - r.top - 8;
+  // Mobile : le builder tient pile dans l'écran une fois la page défilée
+  // jusqu'à lui (la barre d'outils en haut, le canevas en dessous).
+  else if (isMobile()) h = window.innerHeight - (r.top - root.getBoundingClientRect().top) - 8;
+  else h = Math.max(560, window.innerHeight - (r.top + window.scrollY) - 14);
+  h = Math.max(320, Math.round(h));
   if (main.style.height !== h + 'px') main.style.height = h + 'px';
+}
+function fullLabel() {
+  $('b-full').innerHTML = isFull() ? '⛶<span class="lbl"> Quitter le plein écran</span>' : '⛶<span class="lbl"> Plein écran</span>';
+}
+/** Plein écran natif si possible ; sinon (iPhone : pas de plein écran
+ *  d'élément) un plein écran « CSS » qui masque le reste de l'admin. */
+function setPseudoFull(on) {
+  $('bt-root').classList.toggle('bt-max', on);
+  document.documentElement.classList.toggle('bt-noscroll', on);
+  fullLabel(); setTimeout(() => { layout(); fitView(); }, 30);
 }
 function toggleFull() {
   const root = $('bt-root');
-  if (document.fullscreenElement) document.exitFullscreen();
-  else root.requestFullscreen?.().catch(() => toast('Plein écran refusé par le navigateur', true));
+  if (document.fullscreenElement) return document.exitFullscreen();
+  if (root.classList.contains('bt-max')) return setPseudoFull(false);
+  if (root.requestFullscreen) root.requestFullscreen().catch(() => setPseudoFull(true));
+  else setPseudoFull(true);
 }
 document.addEventListener('fullscreenchange', () => {
-  $('b-full').textContent = document.fullscreenElement ? '⛶ Quitter le plein écran' : '⛶ Plein écran';
+  fullLabel();
   setTimeout(() => { layout(); fitView(); }, 60);
 });
+
+// ------------------------------------------------- feuille du bas (mobile)
+function openSheet(which) {
+  if (!isMobile()) return;
+  S.sheet = which; renderSheet();
+}
+function renderSheet() {
+  const root = $('bt-root'), player = S.mode === 'player';
+  root.classList.toggle('sheet-insp', S.sheet === 'insp');
+  root.classList.toggle('sheet-side', S.sheet === 'side');
+  const labels = player ? {insp: 'ℹ️ Détail', side: '📊 Build'}
+    : {insp: S.sel.size > 1 ? `🧩 ${S.sel.size} cases` : S.selLink !== null ? '🔗 Lien' : '🧩 Case', side: '🎨 Outils'};
+  const probs = player ? 0 : problems().filter(p => !p.warn).length;
+  $('sheetbar').querySelectorAll('[data-sheet]').forEach(b => {
+    const k = b.dataset.sheet;
+    b.innerHTML = labels[k] + (k === 'side' && probs ? ` <span class="bad">${probs}</span>` : '') + (S.sheet === k ? ' ▾' : ' ▴');
+    b.classList.toggle('on', S.sheet === k);
+    b.setAttribute('aria-selected', S.sheet === k);
+  });
+}
+$('sheetbar').addEventListener('click', e => {
+  const b = e.target.closest('[data-sheet]'); if (!b) return;
+  S.sheet = S.sheet === b.dataset.sheet ? null : b.dataset.sheet; renderSheet();
+});
+MOBILE.addEventListener?.('change', () => { S.sheet = null; layout(); renderSheet(); fitView(); });
 window.addEventListener('resize', layout);
 window.addEventListener('beforeunload', e => { if (snapshot() !== S.saved) { e.preventDefault(); e.returnValue = ''; } });
 
 // ------------------------------------------------------------------- liaisons
-document.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => setTool(b.dataset.tool));
-document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+document.querySelectorAll('.bt-bar [data-tool]').forEach(b => b.onclick = () => setTool(b.dataset.tool));
+document.querySelectorAll('.bt-bar [data-mode]').forEach(b => b.onclick = () => setMode(b.dataset.mode));
 $('b-undo').onclick = undo; $('b-redo').onclick = redo; $('b-save').onclick = save; $('b-reload').onclick = reload;
 $('b-full').onclick = toggleFull; $('b-palettes').onclick = openPalettes;
 $('z-in').onclick = () => zoomAt(1.2); $('z-out').onclick = () => zoomAt(1 / 1.2); $('z-fit').onclick = fitView;
@@ -1260,6 +1488,8 @@ document.addEventListener('keyup', e => { if (e.key === ' ') S.space = false; })
 layout();
 render();
 fitView();
+// Sur téléphone, la page s'ouvre directement sur le builder.
+if (isMobile()) { history.scrollRestoration = 'manual'; $('bt-root').scrollIntoView({block: 'start'}); }
 })();
 </script>
 {% endraw %}
