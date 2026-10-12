@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "root": "racine_combat",
   "roots": [
     "racine_combat",
     "racine_utilite"
@@ -354,5 +353,6 @@
       "to": "axe_confort",
       "type": "majeur"
     }
-  ]
+  ],
+  "root": "racine_combat"
 }
