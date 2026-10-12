@@ -6,79 +6,77 @@
   ],
   "shapes": {
     "cercle_depart": {
-      "label": "Cercle de départ",
+      "label": "Départ",
       "geometry": "circle",
-      "size": 34,
+      "size": 38,
       "ring": true
     },
-    "cercle_stat": {
-      "label": "Cercle de stats",
-      "geometry": "circle",
-      "size": 20
-    },
     "cercle_stat_plus": {
-      "label": "Cercle de stats renforcé",
-      "geometry": "circle",
-      "size": 27,
+      "label": "Stats",
+      "geometry": "diamond",
+      "size": 30,
       "ring": true
     },
     "carre_passif": {
-      "label": "Petit carré — passif",
+      "label": "Compétence Passive",
       "geometry": "square",
-      "size": 20
+      "size": 32,
+      "ring": true
     },
     "carre_actif": {
-      "label": "Carré moyen — actif",
+      "label": "Compétence Active",
       "geometry": "square",
-      "size": 28
+      "size": 34,
+      "ring": true
     },
     "hexagone_classe": {
-      "label": "Hexagone — classe",
+      "label": "Classe",
       "geometry": "hexagon",
-      "size": 32
+      "size": 36,
+      "ring": true
     }
   },
   "node_types": {
     "depart": {
       "label": "Départ",
-      "color": "#d6b24a"
+      "color": "#ffdc3c"
     },
     "stat": {
-      "label": "Stat",
-      "color": "#4a9eff"
+      "label": "Défense",
+      "color": "#4ba0ff"
     },
     "passif": {
-      "label": "Passif",
-      "color": "#6ccd8a"
+      "label": "Support",
+      "color": "#6ecd8c"
     },
     "actif": {
-      "label": "Actif",
-      "color": "#e2679a"
+      "label": "Attaque",
+      "color": "#e66496"
     },
     "classe": {
       "label": "Classe",
-      "color": "#b48ae8"
+      "color": "#b48ce6"
     },
     "utilite": {
       "label": "Utilité",
-      "color": "#e8b45a"
+      "color": "#ffb9c8"
     }
   },
   "link_types": {
     "simple": {
       "label": "Lien simple",
       "style": "solid",
-      "width": 3
+      "width": 4
     },
     "majeur": {
       "label": "Lien majeur",
       "style": "solid",
-      "width": 6
+      "width": 8
     },
     "optionnel": {
       "label": "Lien optionnel",
       "style": "dashed",
-      "width": 2
+      "width": 4
     }
   },
   "nodes": {
