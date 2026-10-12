@@ -55,28 +55,23 @@
     },
     "classe": {
       "label": "Classe",
-      "color": "#b48ce6"
+      "color": "#ae6bff"
     },
     "utilite": {
       "label": "Utilité",
-      "color": "#ffb9c8"
+      "color": "#ffbedc"
     }
   },
   "link_types": {
-    "simple": {
-      "label": "Lien simple",
-      "style": "solid",
-      "width": 4
-    },
     "majeur": {
       "label": "Lien majeur",
       "style": "solid",
-      "width": 8
+      "width": 10
     },
     "optionnel": {
       "label": "Lien optionnel",
       "style": "dashed",
-      "width": 4
+      "width": 10
     }
   },
   "nodes": {
@@ -103,7 +98,7 @@
       "description": "Début de voie — à étoffer.",
       "icon": "⚔️",
       "shape": "cercle_stat_plus",
-      "node_type": "stat",
+      "node_type": "actif",
       "start": false,
       "unlock_rule": "all",
       "max_level": 1,
@@ -130,16 +125,16 @@
       ],
       "effects": [],
       "position": {
-        "x": 75,
+        "x": 85,
         "y": 545
       }
     },
     "voie_support": {
       "name": "Voie du Support",
       "description": "Début de voie — à étoffer.",
-      "icon": "✨",
+      "icon": "❤️",
       "shape": "cercle_stat_plus",
-      "node_type": "stat",
+      "node_type": "passif",
       "start": false,
       "unlock_rule": "all",
       "max_level": 1,
@@ -155,7 +150,7 @@
     "classe_combattant": {
       "name": "Combattant",
       "description": "Classe obtenue en reliant deux voies.",
-      "icon": "🗡️",
+      "icon": "🦾",
       "shape": "hexagone_classe",
       "node_type": "classe",
       "start": false,
@@ -166,14 +161,14 @@
       ],
       "effects": [],
       "position": {
-        "x": 85,
-        "y": 355
+        "x": 249,
+        "y": 260
       }
     },
     "classe_paladin": {
       "name": "Paladin",
       "description": "Classe obtenue en reliant deux voies.",
-      "icon": "🛡️",
+      "icon": "🏰",
       "shape": "hexagone_classe",
       "node_type": "classe",
       "start": false,
@@ -185,7 +180,7 @@
       "effects": [],
       "position": {
         "x": -80,
-        "y": 640
+        "y": 830
       }
     },
     "classe_vampire": {
@@ -202,8 +197,8 @@
       ],
       "effects": [],
       "position": {
-        "x": -245,
-        "y": 355
+        "x": -409,
+        "y": 260
       }
     },
     "racine_explorateur": {
@@ -220,8 +215,8 @@
       ],
       "effects": [],
       "position": {
-        "x": 550,
-        "y": 230
+        "x": 1820,
+        "y": 500
       }
     },
     "axe_or": {
@@ -229,7 +224,7 @@
       "description": "Début d'axe — à étoffer.",
       "icon": "💰",
       "shape": "cercle_stat_plus",
-      "node_type": "passif",
+      "node_type": "utilite",
       "start": false,
       "unlock_rule": "all",
       "max_level": 3,
@@ -249,8 +244,8 @@
         }
       ],
       "position": {
-        "x": 684,
-        "y": 364
+        "x": 1954,
+        "y": 634
       }
     },
     "axe_drop": {
@@ -258,7 +253,7 @@
       "description": "Début d'axe — à étoffer.",
       "icon": "🍀",
       "shape": "cercle_stat_plus",
-      "node_type": "passif",
+      "node_type": "utilite",
       "start": false,
       "unlock_rule": "all",
       "max_level": 3,
@@ -278,8 +273,8 @@
         }
       ],
       "position": {
-        "x": 550,
-        "y": 515
+        "x": 1820,
+        "y": 785
       }
     },
     "axe_xp": {
@@ -287,7 +282,7 @@
       "description": "Début d'axe — à étoffer.",
       "icon": "⚡",
       "shape": "cercle_stat_plus",
-      "node_type": "passif",
+      "node_type": "utilite",
       "start": false,
       "unlock_rule": "all",
       "max_level": 3,
@@ -307,8 +302,8 @@
         }
       ],
       "position": {
-        "x": 416,
-        "y": 364
+        "x": 1686,
+        "y": 634
       }
     },
     "axe_confort": {
@@ -316,7 +311,7 @@
       "description": "Début d'axe — à étoffer.",
       "icon": "🎁",
       "shape": "cercle_stat_plus",
-      "node_type": "passif",
+      "node_type": "utilite",
       "start": false,
       "unlock_rule": "all",
       "max_level": 3,
@@ -352,8 +347,548 @@
         }
       ],
       "position": {
-        "x": 550,
-        "y": 705
+        "x": 1820,
+        "y": 975
+      }
+    },
+    "passif_1": {
+      "name": "Support",
+      "description": "",
+      "icon": "❤️",
+      "shape": "cercle_depart",
+      "node_type": "passif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -409,
+        "y": 640
+      }
+    },
+    "passif_3": {
+      "name": "Support",
+      "description": "",
+      "icon": "💧",
+      "shape": "cercle_depart",
+      "node_type": "passif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -574,
+        "y": 735
+      }
+    },
+    "passif_4": {
+      "name": "Support",
+      "description": "",
+      "icon": "💨",
+      "shape": "cercle_depart",
+      "node_type": "passif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -416,
+        "y": 786
+      }
+    },
+    "passif_5": {
+      "name": "Support",
+      "description": "",
+      "icon": "💨",
+      "shape": "cercle_depart",
+      "node_type": "passif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -539,
+        "y": 573
+      }
+    },
+    "passif_6": {
+      "name": "Support",
+      "description": "",
+      "icon": "❤️",
+      "shape": "cercle_depart",
+      "node_type": "passif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -650,
+        "y": 450
+      }
+    },
+    "passif_7": {
+      "name": "Support",
+      "description": "",
+      "icon": "❤️",
+      "shape": "cercle_depart",
+      "node_type": "passif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -366,
+        "y": 943
+      }
+    },
+    "passif_8": {
+      "name": "Support",
+      "description": "",
+      "icon": "❤️",
+      "shape": "cercle_depart",
+      "node_type": "passif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -222,
+        "y": 697
+      }
+    },
+    "passif_9": {
+      "name": "Support",
+      "description": "",
+      "icon": "❤️",
+      "shape": "cercle_depart",
+      "node_type": "passif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -365,
+        "y": 450
+      }
+    },
+    "stat_1": {
+      "name": "Défense",
+      "description": "",
+      "icon": "🛡️",
+      "shape": "cercle_depart",
+      "node_type": "stat",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 249,
+        "y": 640
+      }
+    },
+    "actif_1": {
+      "name": "Attaque",
+      "description": "",
+      "icon": "⚔️",
+      "shape": "cercle_depart",
+      "node_type": "actif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -80,
+        "y": 70
+      }
+    },
+    "actif_2": {
+      "name": "Attaque",
+      "description": "",
+      "icon": "⚔️",
+      "shape": "cercle_depart",
+      "node_type": "actif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -222,
+        "y": 203
+      }
+    },
+    "actif_3": {
+      "name": "Attaque",
+      "description": "",
+      "icon": "⚔️",
+      "shape": "cercle_depart",
+      "node_type": "actif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 63,
+        "y": 203
+      }
+    },
+    "actif_5": {
+      "name": "Attaque",
+      "description": "",
+      "icon": "🎯",
+      "shape": "cercle_depart",
+      "node_type": "actif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -80,
+        "y": -120
+      }
+    },
+    "actif_6": {
+      "name": "Attaque",
+      "description": "",
+      "icon": "💨",
+      "shape": "cercle_depart",
+      "node_type": "actif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -203,
+        "y": -9
+      }
+    },
+    "actif_7": {
+      "name": "Attaque",
+      "description": "",
+      "icon": "⚔️",
+      "shape": "cercle_depart",
+      "node_type": "actif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -365,
+        "y": -44
+      }
+    },
+    "actif_8": {
+      "name": "Attaque",
+      "description": "",
+      "icon": "💨",
+      "shape": "cercle_depart",
+      "node_type": "actif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 43,
+        "y": -9
+      }
+    },
+    "actif_9": {
+      "name": "Attaque",
+      "description": "",
+      "icon": "⚔️",
+      "shape": "cercle_depart",
+      "node_type": "actif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 205,
+        "y": -44
+      }
+    },
+    "actif_10": {
+      "name": "Attaque",
+      "description": "",
+      "icon": "💥",
+      "shape": "cercle_depart",
+      "node_type": "actif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -416,
+        "y": 114
+      }
+    },
+    "actif_11": {
+      "name": "Attaque",
+      "description": "",
+      "icon": "💥",
+      "shape": "cercle_depart",
+      "node_type": "actif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 256,
+        "y": 114
+      }
+    },
+    "stat_3": {
+      "name": "Défense",
+      "description": "",
+      "icon": "🛡️",
+      "shape": "cercle_depart",
+      "node_type": "stat",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 63,
+        "y": 697
+      }
+    },
+    "stat_4": {
+      "name": "Défense",
+      "description": "",
+      "icon": "🛡️",
+      "shape": "cercle_depart",
+      "node_type": "stat",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 205,
+        "y": 450
+      }
+    },
+    "stat_5": {
+      "name": "Défense",
+      "description": "",
+      "icon": "🌀",
+      "shape": "cercle_depart",
+      "node_type": "stat",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 414,
+        "y": 735
+      }
+    },
+    "stat_7": {
+      "name": "Défense",
+      "description": "",
+      "icon": "💨",
+      "shape": "cercle_depart",
+      "node_type": "stat",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 379,
+        "y": 573
+      }
+    },
+    "stat_8": {
+      "name": "Défense",
+      "description": "",
+      "icon": "🛡️",
+      "shape": "cercle_depart",
+      "node_type": "stat",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 490,
+        "y": 450
+      }
+    },
+    "stat_9": {
+      "name": "Défense",
+      "description": "",
+      "icon": "💨",
+      "shape": "cercle_depart",
+      "node_type": "stat",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 256,
+        "y": 786
+      }
+    },
+    "stat_10": {
+      "name": "Défense",
+      "description": "",
+      "icon": "✨",
+      "shape": "cercle_depart",
+      "node_type": "stat",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 43,
+        "y": 909
+      }
+    },
+    "stat_2": {
+      "name": "Défense",
+      "description": "",
+      "icon": "✨",
+      "shape": "cercle_depart",
+      "node_type": "stat",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 379,
+        "y": 327
+      }
+    },
+    "stat_6": {
+      "name": "Défense",
+      "description": "",
+      "icon": "🛡️",
+      "shape": "cercle_depart",
+      "node_type": "stat",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 205,
+        "y": 944
+      }
+    },
+    "passif_2": {
+      "name": "Support",
+      "description": "",
+      "icon": "🔷",
+      "shape": "cercle_depart",
+      "node_type": "passif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -204,
+        "y": 909
+      }
+    },
+    "passif_10": {
+      "name": "Support",
+      "description": "",
+      "icon": "🔷",
+      "shape": "cercle_depart",
+      "node_type": "passif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -539,
+        "y": 327
       }
     }
   },
@@ -372,36 +907,6 @@
       "from": "racine_combat",
       "to": "voie_support",
       "type": "majeur"
-    },
-    {
-      "from": "voie_attaque",
-      "to": "classe_combattant",
-      "type": "optionnel"
-    },
-    {
-      "from": "voie_defense",
-      "to": "classe_combattant",
-      "type": "optionnel"
-    },
-    {
-      "from": "voie_defense",
-      "to": "classe_paladin",
-      "type": "optionnel"
-    },
-    {
-      "from": "voie_support",
-      "to": "classe_paladin",
-      "type": "optionnel"
-    },
-    {
-      "from": "voie_support",
-      "to": "classe_vampire",
-      "type": "optionnel"
-    },
-    {
-      "from": "voie_attaque",
-      "to": "classe_vampire",
-      "type": "optionnel"
     },
     {
       "from": "racine_explorateur",
@@ -426,6 +931,246 @@
     {
       "from": "axe_xp",
       "to": "axe_drop",
+      "type": "majeur"
+    },
+    {
+      "from": "voie_support",
+      "to": "passif_1",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_3",
+      "to": "passif_4",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_3",
+      "to": "passif_5",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_5",
+      "to": "passif_6",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_4",
+      "to": "passif_7",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_1",
+      "to": "passif_8",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_1",
+      "to": "passif_9",
+      "type": "majeur"
+    },
+    {
+      "from": "voie_defense",
+      "to": "stat_1",
+      "type": "majeur"
+    },
+    {
+      "from": "voie_attaque",
+      "to": "actif_1",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_1",
+      "to": "actif_2",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_1",
+      "to": "actif_3",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_5",
+      "to": "actif_6",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_6",
+      "to": "actif_7",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_5",
+      "to": "actif_8",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_8",
+      "to": "actif_9",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_2",
+      "to": "actif_10",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_3",
+      "to": "actif_11",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_1",
+      "to": "stat_3",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_1",
+      "to": "stat_4",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_5",
+      "to": "stat_7",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_7",
+      "to": "stat_8",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_5",
+      "to": "stat_9",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_1",
+      "to": "stat_5",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_1",
+      "to": "passif_3",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_1",
+      "to": "actif_5",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_11",
+      "to": "actif_9",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_10",
+      "to": "actif_7",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_10",
+      "to": "classe_vampire",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_11",
+      "to": "classe_combattant",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_3",
+      "to": "stat_10",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_4",
+      "to": "stat_2",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_9",
+      "to": "stat_6",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_10",
+      "to": "stat_6",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_2",
+      "to": "stat_8",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_8",
+      "to": "passif_2",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_9",
+      "to": "passif_10",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_10",
+      "to": "passif_6",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_2",
+      "to": "passif_7",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_2",
+      "to": "classe_paladin",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_10",
+      "to": "classe_paladin",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_2",
+      "to": "classe_combattant",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_10",
+      "to": "classe_vampire",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_8",
+      "to": "classe_paladin",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_3",
+      "to": "classe_paladin",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_4",
+      "to": "classe_combattant",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_3",
+      "to": "classe_combattant",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_2",
+      "to": "classe_vampire",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_9",
+      "to": "classe_vampire",
       "type": "majeur"
     }
   ],
