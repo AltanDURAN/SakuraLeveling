@@ -4,486 +4,1263 @@
 
 {% block content %}
 <style>
-.bld { display:grid; grid-template-columns: 210px 1fr 320px; gap:14px; height:calc(100vh - 140px); min-height:620px; }
-.bld-panel { background:var(--card,#fff); border:1px solid var(--line,#e6dcea); border-radius:10px; padding:12px; overflow:auto; }
-.bld-canvas { position:relative; background:#14111f; border:1px solid var(--line,#e6dcea); border-radius:10px; overflow:hidden; }
-.bld h3 { font-size:.74rem; text-transform:uppercase; letter-spacing:.09em; opacity:.6; margin:14px 0 7px; }
-.bld h3:first-child { margin-top:0; }
-.pal { display:flex; flex-wrap:wrap; gap:6px; }
-.pal button, .tool { font:inherit; font-size:.78rem; padding:5px 9px; border-radius:7px; cursor:pointer;
-  border:1px solid var(--line,#ddd); background:var(--card,#fff); color:inherit; text-align:left; }
-.pal button.on, .tool.on { background:#7c5cd6; color:#fff; border-color:#7c5cd6; }
-.tools { display:flex; flex-direction:column; gap:5px; }
-.bld-field { display:block; margin-bottom:9px; }
-.bld-field span { display:block; font-size:.72rem; opacity:.65; margin-bottom:3px; }
-.bld-field input, .bld-field textarea, .bld-field select {
+/* ------------------------------------------------------------------ cadre */
+/* Le builder s'affranchit de la largeur du conteneur admin : un canevas
+   étroit est ce qui gêne le plus pour disposer un arbre. */
+.bt-root { --bt-w:min(1880px, calc(100vw - 48px)); width:var(--bt-w); margin-left:calc((100% - var(--bt-w)) / 2);
+  display:flex; flex-direction:column; gap:10px; }
+.bt-root:fullscreen { width:100vw; margin:0; background:var(--bg); padding:12px; box-sizing:border-box; }
+.bt-root:fullscreen .bt-head { display:none; }
+.bt-head { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
+.bt-head h1 { margin:0; font-size:1.35rem; }
+.bt-head .crumb { font-size:.8rem; color:var(--text-faint); text-decoration:none; }
+
+.bt-bar { display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+  background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius); padding:6px 8px; }
+.bt-sep { width:1px; align-self:stretch; background:var(--border); margin:0 4px; }
+.bt-btn { font:inherit; font-size:.82rem; padding:6px 10px; border-radius:8px; cursor:pointer;
+  border:1px solid var(--border); background:var(--bg-elev); color:var(--text); white-space:nowrap; }
+.bt-btn:hover:not(:disabled) { border-color:var(--border-strong); background:var(--bg-soft); }
+.bt-btn:disabled { opacity:.4; cursor:default; }
+.bt-btn:focus-visible, .bt-chip:focus-visible, .bt-seg button:focus-visible { outline:2px solid var(--violet); outline-offset:1px; }
+.bt-btn.on { background:var(--violet); border-color:var(--violet); color:#fff; }
+.bt-btn.danger.on { background:var(--danger); border-color:var(--danger); }
+.bt-btn.primary { background:var(--success); border-color:var(--success); color:#fff; }
+.bt-btn.primary:hover { filter:brightness(1.05); background:var(--success); }
+.bt-seg { display:inline-flex; border:1px solid var(--border); border-radius:9px; overflow:hidden; }
+.bt-seg button { font:inherit; font-size:.82rem; padding:6px 12px; border:0; cursor:pointer;
+  background:var(--bg-elev); color:var(--text-soft); }
+.bt-seg button.on { background:var(--accent); color:#fff; }
+.bt-dirty { font-size:.78rem; color:var(--warn); font-weight:600; white-space:nowrap; }
+.bt-dirty.clean { color:var(--success); font-weight:500; }
+.bt-spacer { flex:1; }
+
+.bt-main { display:grid; grid-template-columns:230px minmax(0,1fr) 330px; gap:10px; min-height:0; flex:none; }
+.bt-panel { background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius);
+  padding:12px; overflow:auto; min-height:0; }
+.bt-panel h3 { font-size:.7rem; text-transform:uppercase; letter-spacing:.09em; color:var(--text-faint);
+  margin:16px 0 7px; font-weight:600; }
+.bt-panel h3:first-child { margin-top:0; }
+.bt-hint { font-size:.74rem; color:var(--text-faint); line-height:1.45; margin:3px 0 9px; }
+
+/* ------------------------------------------------------------ palettes */
+.bt-pal { display:flex; flex-direction:column; gap:4px; }
+.bt-chip { display:flex; align-items:center; gap:8px; font:inherit; font-size:.8rem; text-align:left;
+  padding:5px 8px; border-radius:8px; border:1px solid transparent; background:transparent;
+  color:var(--text); cursor:pointer; width:100%; }
+.bt-chip:hover { background:var(--bg-soft); }
+.bt-chip.on { border-color:var(--violet); background:var(--violet-soft); }
+.bt-chip svg { flex:0 0 22px; }
+.bt-dot { width:12px; height:12px; border-radius:50%; flex:0 0 12px; box-shadow:0 0 0 2px rgba(0,0,0,.08); }
+
+.bt-cov div, .bt-sum div { display:flex; justify-content:space-between; gap:8px; font-size:.78rem; padding:2px 0; }
+.bt-cov .zero { color:var(--danger); font-weight:600; }
+.bt-cov .grp, .bt-sum .grp { color:var(--text-faint); font-size:.7rem; margin-top:7px; }
+.bt-probs { display:flex; flex-direction:column; gap:3px; }
+.bt-prob { font-size:.76rem; color:var(--danger); cursor:pointer; padding:3px 6px; border-radius:6px; background:transparent; border:0; text-align:left; font:inherit; }
+.bt-prob:hover { background:var(--accent-soft); }
+.bt-prob.warn { color:var(--warn); }
+.bt-ok { font-size:.78rem; color:var(--success); }
+
+/* ------------------------------------------------------------- canevas */
+.bt-stage { position:relative; border-radius:var(--radius); overflow:hidden; background:#110e1a;
+  border:1px solid var(--border); min-height:0; }
+.bt-stage svg { display:block; width:100%; height:100%; touch-action:none; user-select:none; }
+.bt-stage[data-tool="place"] svg { cursor:copy; }
+.bt-stage[data-tool="link"] svg { cursor:alias; }
+.bt-stage[data-tool="delete"] svg { cursor:not-allowed; }
+.bt-stage[data-mode="player"] svg { cursor:pointer; }
+.bt-float { position:absolute; display:flex; gap:4px; align-items:center; }
+.bt-zoom { right:10px; bottom:10px; background:rgba(20,16,32,.85); border:1px solid #2f2745; border-radius:9px; padding:3px; }
+.bt-zoom button { font:inherit; width:30px; height:30px; border-radius:7px; border:0; background:transparent;
+  color:#e8e0f4; font-size:1rem; cursor:pointer; }
+.bt-zoom button:hover { background:#2c2440; }
+.bt-zoom span { color:#b9aed0; font-size:.74rem; min-width:44px; text-align:center; font-variant-numeric:tabular-nums; }
+.bt-status { left:10px; bottom:10px; color:#b9aed0; font-size:.74rem; background:rgba(20,16,32,.85);
+  border:1px solid #2f2745; border-radius:8px; padding:5px 9px; max-width:calc(100% - 210px);
+  display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.bt-status kbd { font:inherit; font-size:.7rem; padding:0 4px; border:1px solid #4a3f64; border-radius:4px; color:#e8e0f4; }
+.bt-legend { left:10px; top:10px; background:rgba(20,16,32,.85); border:1px solid #2f2745; border-radius:8px;
+  padding:6px 9px; color:#d8cfe8; font-size:.74rem; gap:12px; }
+.bt-legend i { display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:5px; vertical-align:-1px; }
+.bt-tip { position:absolute; pointer-events:none; z-index:5; max-width:260px; background:#1d1729; color:#ece4f6;
+  border:1px solid #3d3256; border-radius:9px; padding:8px 10px; font-size:.76rem; line-height:1.45;
+  box-shadow:0 8px 24px rgba(0,0,0,.45); display:none; }
+.bt-tip b { color:#fff; }
+.bt-tip .muted { color:#a99cc0; }
+.bt-tip .bad { color:#ff8a9a; }
+.bt-toast { position:absolute; left:50%; bottom:56px; transform:translateX(-50%); background:#2a2140; color:#fff;
+  padding:7px 14px; border-radius:9px; font-size:.8rem; border:1px solid #4a3f64; opacity:0;
+  transition:opacity .18s; pointer-events:none; z-index:6; }
+.bt-toast.show { opacity:1; }
+.bt-toast.bad { background:#4a1f2c; border-color:#7a3046; }
+
+/* SVG */
+.n-lbl { font-family:var(--font); font-weight:600; fill:#d7cee6; paint-order:stroke; stroke:#110e1a; stroke-width:3px; }
+.n-ico { font-family:"Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji",sans-serif; }
+.n-badge { font-family:var(--font); font-weight:700; fill:#fff; }
+@keyframes bt-pulse { 0%,100% { stroke-opacity:1; } 50% { stroke-opacity:.45; } }
+.st-available .n-body { animation:bt-pulse 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .st-available .n-body { animation:none; } }
+
+/* ------------------------------------------------------------ inspecteur */
+.bt-f { display:block; margin-bottom:9px; }
+.bt-f > span { display:block; font-size:.7rem; color:var(--text-faint); margin-bottom:3px; }
+.bt-f input[type=text], .bt-f input[type=number], .bt-f textarea, .bt-f select, .bt-in {
   width:100%; box-sizing:border-box; padding:5px 7px; font:inherit; font-size:.82rem;
-  border:1px solid var(--line,#ddd); border-radius:6px; background:var(--bg,#fff); color:inherit; }
-.bld-row { display:flex; gap:7px; }
-.eff { border:1px solid var(--line,#e3e3e3); border-radius:7px; padding:7px; margin-bottom:6px; font-size:.78rem; }
-.eff-head { display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:5px; }
-.eff-head b { font-weight:600; }
-.lnk { font-size:.76rem; padding:3px 0; display:flex; justify-content:space-between; gap:6px; border-bottom:1px dotted var(--line,#eee); }
-.cov { font-size:.76rem; }
-.cov div { display:flex; justify-content:space-between; padding:2px 0; }
-.cov .zero { color:#c8553d; font-weight:600; }
-.hint { font-size:.72rem; opacity:.6; line-height:1.4; margin:4px 0 10px; }
-.bar { display:flex; gap:8px; align-items:center; margin-bottom:12px; flex-wrap:wrap; }
-.bar button { font:inherit; padding:7px 14px; border-radius:8px; border:1px solid var(--line,#ddd);
-  background:var(--card,#fff); color:inherit; cursor:pointer; }
-.bar .primary { background:#2e8b57; color:#fff; border-color:#2e8b57; }
-.bar .danger { color:#c8553d; }
-#msg { font-size:.82rem; }
-.node-g { cursor:pointer; }
-.node-g text { pointer-events:none; user-select:none; }
+  border:1px solid var(--border); border-radius:7px; background:var(--bg); color:var(--text); }
+.bt-row { display:flex; gap:7px; align-items:flex-end; }
+.bt-row > * { flex:1; min-width:0; }
+.bt-lv { display:grid; grid-template-columns:repeat(auto-fill, minmax(46px,1fr)); gap:4px; }
+.bt-lv label { display:flex; flex-direction:column; font-size:.66rem; color:var(--text-faint); }
+.bt-lv input { width:100%; box-sizing:border-box; padding:4px 5px; font:inherit; font-size:.8rem; text-align:center;
+  border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); }
+.bt-eff { border:1px solid var(--border); border-radius:9px; padding:8px; margin-bottom:7px; background:var(--bg-soft); }
+.bt-eff-h { display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:6px; font-size:.8rem; }
+.bt-x { border:0; background:transparent; color:var(--danger); cursor:pointer; font-size:.95rem; padding:2px 6px; border-radius:6px; }
+.bt-x:hover { background:var(--accent-soft); }
+.bt-mini { font:inherit; font-size:.72rem; padding:3px 7px; border-radius:6px; border:1px solid var(--border);
+  background:var(--bg-elev); color:var(--text-soft); cursor:pointer; }
+.bt-mini:hover { border-color:var(--border-strong); }
+.bt-lk { display:flex; align-items:center; gap:6px; padding:5px 6px; border-radius:7px; font-size:.78rem; cursor:pointer; }
+.bt-lk:hover, .bt-lk.hot { background:#fff3c4; }
+[data-theme="dark"] .bt-lk:hover, [data-theme="dark"] .bt-lk.hot { background:#4a3d1c; }
+.bt-lk .dir { color:var(--violet); font-weight:700; width:16px; text-align:center; }
+.bt-lk .nm { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.bt-lk select { font:inherit; font-size:.72rem; padding:2px; border:1px solid var(--border); border-radius:5px; background:var(--bg); color:var(--text); }
+.bt-icobtn { display:flex; align-items:center; gap:8px; width:100%; font:inherit; font-size:.8rem; cursor:pointer;
+  padding:4px 7px; border:1px solid var(--border); border-radius:7px; background:var(--bg); color:var(--text-soft); }
+.bt-icobtn .big { font-size:1.35rem; width:30px; text-align:center; }
+.bt-empty { color:var(--text-faint); font-size:.82rem; text-align:center; margin-top:30px; line-height:1.6; }
+
+/* ---------------------------------------------------------------- modale */
+.bt-modal { position:fixed; inset:0; background:rgba(15,10,22,.55); display:none; align-items:center;
+  justify-content:center; z-index:100; }
+.bt-root:fullscreen .bt-modal { position:absolute; }
+.bt-modal.open { display:flex; }
+.bt-dlg { background:var(--bg-elev); color:var(--text); border:1px solid var(--border); border-radius:var(--radius-lg);
+  width:min(640px, 92vw); max-height:84vh; display:flex; flex-direction:column; box-shadow:var(--shadow-lg); }
+.bt-dlg header { display:flex; align-items:center; gap:10px; padding:14px 16px 8px; }
+.bt-dlg header h2 { font-size:1rem; margin:0; flex:1; }
+.bt-dlg .body { padding:4px 16px 16px; overflow:auto; }
+.bt-icons { display:grid; grid-template-columns:repeat(auto-fill, minmax(40px,1fr)); gap:4px; }
+.bt-icons button { font-size:1.4rem; height:40px; border-radius:8px; border:1px solid transparent; background:transparent; cursor:pointer; }
+.bt-icons button:hover { background:var(--bg-soft); border-color:var(--border); }
+.bt-icons button.on { border-color:var(--violet); background:var(--violet-soft); }
+.bt-igrp { font-size:.72rem; color:var(--text-faint); margin:12px 0 5px; text-transform:uppercase; letter-spacing:.07em; }
+.bt-ptable { width:100%; border-collapse:collapse; font-size:.8rem; }
+.bt-ptable td { padding:4px 3px; vertical-align:middle; }
+.bt-ptable input, .bt-ptable select { width:100%; box-sizing:border-box; font:inherit; font-size:.78rem; padding:4px 5px;
+  border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); }
+.bt-ptable input[type=color] { padding:1px; height:28px; }
 </style>
 
-<section>
-  <a href="/admin" class="breadcrumb">← Admin</a>
-  <h1>Builder d'arbre de compétences</h1>
-  <p class="hint" style="max-width:none">
-    Choisis une <b>forme</b> et un <b>type</b>, puis clique sur le canevas pour poser une case.
-    Si une case est sélectionnée, la nouvelle se place <b>dans son prolongement</b> et le lien est créé tout seul.
-    Les positions sont aimantées sur une grille polaire (anneaux + angles) pour que l'arbre reste symétrique —
-    maintiens <b>Alt</b> pour placer librement.
-  </p>
-
-  <div class="bar">
-    <button class="primary" onclick="save()">💾 Enregistrer</button>
-    <button onclick="reload()">↩︎ Recharger</button>
-    <button onclick="fitView()">⤢ Recentrer</button>
-    <button class="danger" onclick="deleteSelection()">🗑 Supprimer la sélection</button>
-    <span id="msg"></span>
+<div class="bt-root" id="bt-root">
+  <div class="bt-head">
+    <a href="/admin" class="crumb">← Admin</a>
+    <h1>Builder d'arbre de compétences</h1>
   </div>
 
-  <div class="bld">
-    <!-- ------------------------------------------------ palette -->
-    <div class="bld-panel">
-      <h3>Outil</h3>
-      <div class="tools">
-        <button class="tool on" data-tool="place" onclick="setTool('place')">✚ Poser une case</button>
-        <button class="tool" data-tool="select" onclick="setTool('select')">⬚ Sélectionner / déplacer</button>
-        <button class="tool" data-tool="link" onclick="setTool('link')">⇢ Relier deux cases</button>
+  <div class="bt-bar" role="toolbar" aria-label="Outils du builder">
+    <div class="bt-seg" role="radiogroup" aria-label="Mode">
+      <button data-mode="edit" class="on" role="radio">✏️ Édition</button>
+      <button data-mode="player" role="radio">🎮 Vue joueur</button>
+    </div>
+    <span class="bt-sep"></span>
+    <span id="tools-edit" style="display:contents">
+      <button class="bt-btn" data-tool="place" title="Poser une case (1)">✚ Poser</button>
+      <button class="bt-btn" data-tool="select" title="Sélectionner / déplacer (2)">⬚ Sélection</button>
+      <button class="bt-btn" data-tool="link" title="Relier deux cases (3)">⇢ Relier</button>
+      <button class="bt-btn danger" data-tool="delete" title="Supprimer au clic ou au rectangle (4)">🗑 Supprimer</button>
+      <span class="bt-sep"></span>
+    </span>
+    <button class="bt-btn" id="b-undo" title="Annuler (Ctrl+Z)">↶</button>
+    <button class="bt-btn" id="b-redo" title="Rétablir (Ctrl+Y)">↷</button>
+    <span class="bt-sep"></span>
+    <button class="bt-btn primary" id="b-save" title="Enregistrer (Ctrl+S)">💾 Enregistrer</button>
+    <button class="bt-btn" id="b-reload" title="Recharger depuis le disque">↻</button>
+    <span class="bt-dirty clean" id="dirty">✓ enregistré</span>
+    <span class="bt-spacer"></span>
+    <button class="bt-btn" id="b-palettes" title="Formes, types et liens">🎨 Palettes</button>
+    <button class="bt-btn" id="b-full" title="Plein écran (F)">⛶ Plein écran</button>
+  </div>
+
+  <div class="bt-main" id="bt-main">
+    <aside class="bt-panel" id="side"></aside>
+
+    <div class="bt-stage" id="stage" data-tool="place" data-mode="edit">
+      <svg id="cv" aria-label="Canevas de l'arbre">
+        <defs>
+          <filter id="f-neb" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="42"/></filter>
+          <filter id="f-glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="5"/></filter>
+          <filter id="f-grey"><feColorMatrix type="saturate" values="0"/></filter>
+        </defs>
+        <g id="world">
+          <g id="g-bg"></g><g id="g-links"></g><g id="g-nodes"></g><g id="g-over"></g>
+        </g>
+      </svg>
+      <div class="bt-float bt-legend" id="legend" style="display:none">
+        <span><i style="background:#4a4458"></i>Verrouillée</span>
+        <span><i style="background:#4aa3ff"></i>Déblocable</span>
+        <span><i style="background:#4fc383"></i>Débloquée</span>
+        <span><i style="background:#f0c45c"></i>Au maximum</span>
       </div>
-
-      <h3>Forme</h3>
-      <div class="pal" id="pal-shape"></div>
-
-      <h3>Type</h3>
-      <div class="pal" id="pal-type"></div>
-
-      <h3>Type de lien</h3>
-      <div class="pal" id="pal-link"></div>
-
-      <h3>Couverture</h3>
-      <p class="hint">Ce que l'arbre distribue en tout, tout monté au max. Un <b>0</b> en rouge = une stat que personne n'aura jamais.</p>
-      <div class="cov" id="coverage"></div>
+      <div class="bt-float bt-status" id="status"></div>
+      <div class="bt-float bt-zoom">
+        <button id="z-out" title="Dézoomer (−)" aria-label="Dézoomer">−</button>
+        <span id="z-val">100 %</span>
+        <button id="z-in" title="Zoomer (+)" aria-label="Zoomer">+</button>
+        <button id="z-fit" title="Recentrer (0)" aria-label="Recentrer">⤢</button>
+      </div>
+      <div class="bt-tip" id="tip"></div>
+      <div class="bt-toast" id="toast"></div>
     </div>
 
-    <!-- ------------------------------------------------ canevas -->
-    <div class="bld-canvas">
-      <svg id="cv" width="100%" height="100%"></svg>
-    </div>
-
-    <!-- ------------------------------------------------ inspecteur -->
-    <div class="bld-panel" id="inspector">
-      <p class="hint">Aucune case sélectionnée.</p>
-    </div>
+    <aside class="bt-panel" id="insp"></aside>
   </div>
-</section>
 
-<script id="tree-data" type="application/json">{{ tree | tojson }}</script>
-<script id="catalogue-data" type="application/json">{{ catalogue | tojson }}</script>
+  <div class="bt-modal" id="modal"><div class="bt-dlg" id="dlg"></div></div>
+</div>
+
+<script id="d-tree" type="application/json">{{ tree_json|safe }}</script>
+<script id="d-cat" type="application/json">{{ catalogue_json|safe }}</script>
+<script id="d-icons" type="application/json">{{ icons_json|safe }}</script>
+{% raw %}
 <script>
-// ---------------------------------------------------------------- état --
-let TREE = JSON.parse(document.getElementById('tree-data').textContent);
-const CATALOGUE = JSON.parse(document.getElementById('catalogue-data').textContent);
+(() => {
+// =====================================================================
+//  Données et constantes
+// =====================================================================
+const read = id => JSON.parse(document.getElementById(id).textContent);
+const CATALOGUE = read('d-cat');
+const ICON_GROUPS = read('d-icons');
 const EFFECTS = CATALOGUE.flatMap(g => g.effects.map(e => ({...e, group: g.group})));
+const EFFECT = Object.fromEntries(EFFECTS.map(e => [e.type, e]));
+const CODE_EFFECTS = new Set(EFFECTS.filter(e => e.unit === 'code').map(e => e.type));
+const GEOMETRIES = {circle: 'Cercle', square: 'Carré', hexagon: 'Hexagone', diamond: 'Losange', octagon: 'Octogone'};
+const LINK_STYLES = {solid: 'Plein', dashed: 'Tirets', dotted: 'Points'};
+const RING = 95, STEP = Math.PI / 12;            // grille polaire : 95 px, 15°
+const SIM_KEY = 'sakura-builder-sim';
+const STATE_COLORS = {locked: '#4a4458', available: '#4aa3ff', progress: '#4fc383', maxed: '#f0c45c'};
 
-let tool = 'place';
-let shape = Object.keys(TREE.shapes)[0];
-let ntype = Object.keys(TREE.node_types)[0];
-let ltype = Object.keys(TREE.link_types)[0];
-let selected = null;        // code de la case sélectionnée
-let linkFrom = null;        // source en attente pour l'outil lien
-let view = {x: 0, y: 0, k: 1};
-let dragging = null;
+const S = {
+  tree: normalize(read('d-tree')),
+  undo: [], redo: [], saved: null,
+  mode: 'edit', tool: 'place',
+  shape: null, ntype: null, ltype: null,
+  sel: new Set(), selLink: null,
+  hoverNode: null, hoverLink: null, hotLink: null,
+  linkFrom: null, cursor: null, drag: null,
+  view: {x: 0, y: 0, k: 1},
+  sim: loadSim(),
+};
+S.saved = snapshot();
+S.shape = Object.keys(S.tree.shapes)[0];
+S.ntype = Object.keys(S.tree.node_types)[0];
+S.ltype = Object.keys(S.tree.link_types)[0];
 
-// Grille polaire : des anneaux réguliers et des angles réguliers. C'est ce qui
-// donne à l'arbre son aspect géométrique sans contraindre la créativité
-// (Alt désactive l'aimantation).
-const RING = 95;
-const ANGLE_STEP = Math.PI / 12;   // 15°
+const $ = id => document.getElementById(id);
+const svg = $('cv'), world = $('world'), stage = $('stage');
 
-const svg = document.getElementById('cv');
+// =====================================================================
+//  Modèle
+// =====================================================================
+function normalize(t) {
+  t.nodes = t.nodes || {}; t.links = t.links || []; t.roots = t.roots || [];
+  t.shapes = t.shapes || {}; t.node_types = t.node_types || {}; t.link_types = t.link_types || {};
+  for (const n of Object.values(t.nodes)) {
+    n.name ??= ''; n.description ??= ''; n.icon ??= '';
+    n.max_level = Math.max(1, parseInt(n.max_level || 1, 10));
+    n.costs = fit(n.costs || [], n.max_level, 1);
+    n.effects = (n.effects || []).map(e => ({type: e.type, values: fit(e.values || [], n.max_level, 0)}));
+    n.position = n.position || {x: 0, y: 0};
+    n.unlock_rule = n.unlock_rule === 'any' ? 'any' : 'all';
+    n.start = !!n.start;
+  }
+  t.links = t.links.filter(l => t.nodes[l.from] && t.nodes[l.to]);
+  t.roots = Object.entries(t.nodes).filter(([, n]) => n.start).map(([c]) => c);
+  return t;
+}
+function fit(arr, len, dflt) {
+  const out = arr.slice(0, len);
+  while (out.length < len) out.push(out.length ? out[out.length - 1] : dflt);
+  return out;
+}
+function snapshot() { return JSON.stringify(S.tree); }
+function N(c) { return S.tree.nodes[c]; }
+function incoming(c) { return S.tree.links.filter(l => l.to === c); }
+function outgoing(c) { return S.tree.links.filter(l => l.from === c); }
 
-function snap(x, y) {
-  const r = Math.hypot(x, y);
-  if (r < 1) return {x: 0, y: 0};
+/** Toute modification passe par ici : historique, état « non enregistré », rendu. */
+function mutate(fn, {inspector = true} = {}) {
+  const before = snapshot();
+  fn();
+  S.tree.roots = Object.entries(S.tree.nodes).filter(([, n]) => n.start).map(([c]) => c);
+  if (snapshot() !== before) {
+    S.undo.push(before);
+    if (S.undo.length > 300) S.undo.shift();
+    S.redo = [];
+  }
+  render({inspector});
+}
+function undo() {
+  if (!S.undo.length) return toast('Rien à annuler');
+  S.redo.push(snapshot());
+  S.tree = normalize(JSON.parse(S.undo.pop()));
+  pruneSelection(); render(); toast('Annulé');
+}
+function redo() {
+  if (!S.redo.length) return toast('Rien à rétablir');
+  S.undo.push(snapshot());
+  S.tree = normalize(JSON.parse(S.redo.pop()));
+  pruneSelection(); render(); toast('Rétabli');
+}
+function pruneSelection() {
+  for (const c of [...S.sel]) if (!N(c)) S.sel.delete(c);
+  if (S.selLink !== null && !S.tree.links[S.selLink]) S.selLink = null;
+  if (S.linkFrom && !N(S.linkFrom)) S.linkFrom = null;
+}
+
+// ---------------------------------------------------------------- géométrie
+function startNodes() { return Object.entries(S.tree.nodes).filter(([, n]) => n.start); }
+/** Centre de la grille polaire : la racine la plus proche (chaque arbre a la sienne). */
+function centerFor(x, y, exclude = null) {
+  let best = {x: 0, y: 0}, bd = Infinity;
+  for (const [c, n] of startNodes()) {
+    if (exclude && exclude.has(c)) continue;
+    const d = Math.hypot(n.position.x - x, n.position.y - y);
+    if (d < bd) { bd = d; best = n.position; }
+  }
+  return best;
+}
+function snap(x, y, exclude = null) {
+  const c = centerFor(x, y, exclude), dx = x - c.x, dy = y - c.y, r = Math.hypot(dx, dy);
+  if (r < RING * 0.5) return {x: Math.round(c.x), y: Math.round(c.y)};
   const ring = Math.max(1, Math.round(r / RING)) * RING;
-  const angle = Math.round(Math.atan2(y, x) / ANGLE_STEP) * ANGLE_STEP;
-  return {x: Math.round(Math.cos(angle) * ring), y: Math.round(Math.sin(angle) * ring)};
+  const a = Math.round(Math.atan2(dy, dx) / STEP) * STEP;
+  return {x: Math.round(c.x + Math.cos(a) * ring), y: Math.round(c.y + Math.sin(a) * ring)};
 }
-
-/** Prolonge la direction du parent d'un anneau vers l'extérieur. */
-function outward(parent) {
-  const p = TREE.nodes[parent].position;
-  const r = Math.hypot(p.x, p.y);
-  const angle = r < 1 ? -Math.PI / 2 : Math.atan2(p.y, p.x);
-  const ring = (Math.round(r / RING) + 1) * RING;
-  return {x: Math.round(Math.cos(angle) * ring), y: Math.round(Math.sin(angle) * ring)};
+function nodeAt(x, y, tol = 14) {
+  for (const [c, n] of Object.entries(S.tree.nodes))
+    if (Math.hypot(n.position.x - x, n.position.y - y) <= tol) return c;
+  return null;
 }
-
-function freshCode(base) {
-  let n = 1, code;
-  do { code = `${base}_${n++}`; } while (TREE.nodes[code]);
-  return code;
-}
-
-// ------------------------------------------------------------- palettes --
-function paintPalettes() {
-  const build = (el, entries, current, pick) => {
-    el.innerHTML = '';
-    for (const [code, meta] of Object.entries(entries)) {
-      const b = document.createElement('button');
-      b.textContent = meta.label || code;
-      b.className = code === current ? 'on' : '';
-      b.onclick = () => { pick(code); paintPalettes(); };
-      el.appendChild(b);
-    }
-  };
-  build(document.getElementById('pal-shape'), TREE.shapes, shape, c => shape = c);
-  build(document.getElementById('pal-type'), TREE.node_types, ntype, c => ntype = c);
-  build(document.getElementById('pal-link'), TREE.link_types, ltype, c => ltype = c);
-  document.querySelectorAll('.tool').forEach(b =>
-    b.classList.toggle('on', b.dataset.tool === tool));
-}
-
-function setTool(t) { tool = t; linkFrom = null; paintPalettes(); draw(); }
-
-// ---------------------------------------------------------------- rendu --
-const NS = 'http://www.w3.org/2000/svg';
-function el(tag, attrs) {
-  const n = document.createElementNS(NS, tag);
-  for (const [k, v] of Object.entries(attrs || {})) n.setAttribute(k, v);
-  return n;
-}
-
-function shapePath(geometry, size) {
-  // Renvoie un élément SVG centré sur (0,0).
-  if (geometry === 'square') return el('rect', {x: -size, y: -size, width: size * 2, height: size * 2, rx: 4});
-  if (geometry === 'hexagon') {
-    const pts = [...Array(6)].map((_, i) => {
-      const a = Math.PI / 6 + i * Math.PI / 3;
-      return `${(Math.cos(a) * size).toFixed(1)},${(Math.sin(a) * size).toFixed(1)}`;
-    }).join(' ');
-    return el('polygon', {points: pts});
+/** Emplacements proposés autour d'une case : la géométrie de l'arbre rendue visible. */
+function ghostSlots(code) {
+  const n = N(code); if (!n) return [];
+  const c = centerFor(n.position.x, n.position.y);
+  const dx = n.position.x - c.x, dy = n.position.y - c.y, r = Math.hypot(dx, dy);
+  const cand = [];
+  if (r < 1) {
+    for (let i = 0; i < 12; i++) cand.push([RING, i * Math.PI / 6]);
+  } else {
+    const ring = Math.round(r / RING) * RING, a = Math.atan2(dy, dx);
+    for (const d of [-2, -1, 0, 1, 2]) cand.push([ring + RING, a + d * STEP]);
+    for (const d of [-1, 1]) cand.push([ring, a + d * STEP]);
   }
-  return el('circle', {r: size});
+  return cand.map(([rr, aa]) => ({x: Math.round(c.x + Math.cos(aa) * rr), y: Math.round(c.y + Math.sin(aa) * rr)}))
+             .filter(p => !nodeAt(p.x, p.y, 22));
 }
-
-function draw() {
-  svg.innerHTML = '';
-  const root = el('g', {transform: `translate(${view.x},${view.y}) scale(${view.k})`});
-  svg.appendChild(root);
-
-  // Repères : les anneaux de la grille polaire, très discrets.
-  for (let r = RING; r <= RING * 8; r += RING) {
-    root.appendChild(el('circle', {r, fill: 'none', stroke: '#2a2340', 'stroke-width': 1}));
+function wouldCycle(from, to) {
+  // Ajouter from→to crée une boucle si `from` est déjà atteignable depuis `to`.
+  const seen = new Set([to]), stack = [to];
+  while (stack.length) {
+    const c = stack.pop();
+    if (c === from) return true;
+    for (const l of outgoing(c)) if (!seen.has(l.to)) { seen.add(l.to); stack.push(l.to); }
   }
+  return false;
+}
 
-  // Liens d'abord, pour qu'ils passent SOUS les cases.
-  for (const link of TREE.links) {
-    const a = TREE.nodes[link.from], b = TREE.nodes[link.to];
-    if (!a || !b) continue;
-    const meta = TREE.link_types[link.type] || {};
-    const line = el('line', {
-      x1: a.position.x, y1: a.position.y, x2: b.position.x, y2: b.position.y,
-      stroke: '#5b4f7a', 'stroke-width': meta.width || 3,
-      'stroke-dasharray': meta.style === 'dashed' ? '7 6' : '',
-    });
-    root.appendChild(line);
+// ------------------------------------------------------------- vue joueur
+function loadSim() {
+  try { return JSON.parse(localStorage.getItem(SIM_KEY) || '{}') || {}; } catch { return {}; }
+}
+function saveSim() { try { localStorage.setItem(SIM_KEY, JSON.stringify(S.sim)); } catch {} }
+const simLevel = c => { const n = N(c); return n.start ? n.max_level : Math.min(S.sim[c] || 0, n.max_level); };
+function prereqOk(c) {
+  const ins = incoming(c).map(l => l.from).filter(N);
+  if (!ins.length) return true;
+  const maxed = ins.map(p => simLevel(p) >= N(p).max_level);
+  return N(c).unlock_rule === 'any' ? maxed.some(Boolean) : maxed.every(Boolean);
+}
+function nodeState(c) {
+  const n = N(c), lv = simLevel(c);
+  if (lv >= n.max_level) return 'maxed';
+  if (lv > 0) return 'progress';
+  return prereqOk(c) ? 'available' : 'locked';
+}
+function spentPoints() {
+  let total = 0;
+  for (const [c, n] of Object.entries(S.tree.nodes)) {
+    if (n.start) continue;
+    const lv = simLevel(c);
+    for (let i = 0; i < lv; i++) total += Number(n.costs[i] || 0);
   }
-
-  for (const [code, node] of Object.entries(TREE.nodes)) {
-    const sm = TREE.shapes[node.shape] || {geometry: 'circle', size: 20};
-    const tm = TREE.node_types[node.node_type] || {color: '#4a9eff'};
-    const g = el('g', {transform: `translate(${node.position.x},${node.position.y})`, class: 'node-g'});
-
-    const body = shapePath(sm.geometry, sm.size);
-    body.setAttribute('fill', tm.color || '#4a9eff');
-    body.setAttribute('stroke', code === selected ? '#ffffff'
-      : (code === linkFrom ? '#ffd166' : (sm.ring ? '#ffffff88' : '#00000055')));
-    body.setAttribute('stroke-width', code === selected || code === linkFrom ? 3.5 : (sm.ring ? 2.5 : 1));
-    g.appendChild(body);
-
-    if (node.icon) {
-      const t = el('text', {'text-anchor': 'middle', y: 5, 'font-size': sm.size});
-      t.textContent = node.icon;
-      g.appendChild(t);
-    }
-    const label = el('text', {
-      'text-anchor': 'middle', y: sm.size + 15, 'font-size': 12, fill: '#cfc7dd',
-    });
-    label.textContent = node.name || code;
-    g.appendChild(label);
-
-    g.onmousedown = (ev) => onNodeDown(ev, code);
-    root.appendChild(g);
-  }
-  paintCoverage();
+  return total;
 }
-
-// ------------------------------------------------------------ interactions --
-function toWorld(ev) {
-  const r = svg.getBoundingClientRect();
-  return {
-    x: (ev.clientX - r.left - view.x) / view.k,
-    y: (ev.clientY - r.top - view.y) / view.k,
-  };
+function invest(c) {
+  const st = nodeState(c);
+  if (st === 'maxed') return toast('Déjà au maximum');
+  if (st === 'locked') return toast('Verrouillée — monte d\'abord les cases reliées au maximum', true);
+  S.sim[c] = (S.sim[c] || 0) + 1; saveSim(); render();
 }
-
-function onNodeDown(ev, code) {
-  ev.stopPropagation();
-  if (tool === 'link') {
-    if (linkFrom === null) { linkFrom = code; draw(); return; }
-    if (linkFrom !== code) addLink(linkFrom, code);
-    linkFrom = null; draw(); return;
-  }
-  selected = code;
-  if (tool === 'select') dragging = {code, alt: ev.altKey};
-  renderInspector();
-  draw();
+function refund(c) {
+  const n = N(c);
+  if (n.start) return toast('Une case de départ est acquise d\'office', true);
+  if (!(S.sim[c] > 0)) return;
+  S.sim[c] -= 1;
+  // Retirer un niveau ne doit casser aucune case déjà investie plus loin.
+  const broken = Object.keys(S.sim).find(k => N(k) && S.sim[k] > 0 && !N(k).start && !prereqOk(k));
+  if (broken) { S.sim[c] += 1; return toast(`« ${N(broken).name || broken} » dépend de cette case`, true); }
+  if (!S.sim[c]) delete S.sim[c];
+  saveSim(); render();
 }
-
-svg.addEventListener('mousedown', (ev) => {
-  if (ev.button === 1 || ev.shiftKey) { dragging = {pan: true, sx: ev.clientX, sy: ev.clientY, ox: view.x, oy: view.y}; return; }
-  if (tool !== 'place') { selected = null; renderInspector(); draw(); return; }
-  const w = toWorld(ev);
-  // Depuis une case sélectionnée, on prolonge sa direction : c'est ce qui
-  // garde les branches droites sans avoir à viser.
-  const pos = selected ? outward(selected) : (ev.altKey ? {x: Math.round(w.x), y: Math.round(w.y)} : snap(w.x, w.y));
-  addNode(pos, selected);
-});
-
-window.addEventListener('mousemove', (ev) => {
-  if (!dragging) return;
-  if (dragging.pan) {
-    view.x = dragging.ox + (ev.clientX - dragging.sx);
-    view.y = dragging.oy + (ev.clientY - dragging.sy);
-    draw(); return;
-  }
-  const w = toWorld(ev);
-  const pos = ev.altKey ? {x: Math.round(w.x), y: Math.round(w.y)} : snap(w.x, w.y);
-  TREE.nodes[dragging.code].position = pos;
-  draw();
-});
-window.addEventListener('mouseup', () => { dragging = null; });
-
-svg.addEventListener('wheel', (ev) => {
-  ev.preventDefault();
-  const f = ev.deltaY < 0 ? 1.12 : 1 / 1.12;
-  view.k = Math.min(3, Math.max(0.2, view.k * f));
-  draw();
-}, {passive: false});
-
-// --------------------------------------------------------------- édition --
-function addNode(pos, parent) {
-  const code = freshCode(ntype);
-  TREE.nodes[code] = {
-    name: (TREE.node_types[ntype] || {}).label || 'Nouvelle case',
-    description: '', icon: '', shape, node_type: ntype,
-    start: ntype === 'depart',
-    max_level: 1, costs: [1], effects: [],
-    position: pos,
-  };
-  if (TREE.nodes[code].start && !TREE.roots.includes(code)) TREE.roots.push(code);
-  if (parent) addLink(parent, code);
-  selected = code;
-  renderInspector();
-  draw();
-}
-
-function addLink(from, to) {
-  if (TREE.links.some(l => l.from === from && l.to === to)) return;
-  TREE.links.push({from, to, type: ltype});
-}
-
-function deleteSelection() {
-  if (!selected) { flash('Rien de sélectionné.', true); return; }
-  const code = selected;
-  delete TREE.nodes[code];
-  TREE.links = TREE.links.filter(l => l.from !== code && l.to !== code);
-  TREE.roots = TREE.roots.filter(r => r !== code);
-  selected = null;
-  renderInspector();
-  draw();
-}
-
-// ----------------------------------------------------------- inspecteur --
-function renderInspector() {
-  const box = document.getElementById('inspector');
-  if (!selected || !TREE.nodes[selected]) {
-    box.innerHTML = '<p class="hint">Aucune case sélectionnée.</p>'; return;
-  }
-  const n = TREE.nodes[selected];
-  const opts = (entries, cur) => Object.entries(entries)
-    .map(([c, m]) => `<option value="${c}"${c === cur ? ' selected' : ''}>${m.label || c}</option>`).join('');
-
-  box.innerHTML = `
-    <h3>Case <code>${selected}</code></h3>
-    <label class="bld-field"><span>Nom</span><input id="f-name" value="${esc(n.name)}"></label>
-    <div class="bld-row">
-      <label class="bld-field" style="flex:0 0 68px"><span>Icône</span><input id="f-icon" value="${esc(n.icon)}"></label>
-      <label class="bld-field" style="flex:1"><span>Forme</span><select id="f-shape">${opts(TREE.shapes, n.shape)}</select></label>
-    </div>
-    <label class="bld-field"><span>Type</span><select id="f-type">${opts(TREE.node_types, n.node_type)}</select></label>
-    <label class="bld-field"><span>Description</span><textarea id="f-desc" rows="2">${esc(n.description)}</textarea></label>
-    <label class="bld-field"><input type="checkbox" id="f-start" ${n.start ? 'checked' : ''}> Débloquée au départ</label>
-    <div class="bld-row">
-      <label class="bld-field"><span>Niveaux</span><input id="f-max" type="number" min="1" max="20" value="${n.max_level}"></label>
-      <label class="bld-field"><span>Coût par niveau</span><input id="f-costs" value="${(n.costs || []).join(', ')}"></label>
-    </div>
-
-    <h3>Effets</h3>
-    <p class="hint">Les valeurs sont <b>cumulatives</b> : au niveau 3 on écrit le total atteint, pas le gain du niveau.</p>
-    <div id="eff-list"></div>
-    <select id="eff-add" style="width:100%; padding:5px; margin-top:5px">
-      <option value="">+ ajouter un effet…</option>
-      ${CATALOGUE.map(g => `<optgroup label="${g.group}">` +
-        g.effects.map(e => `<option value="${e.type}">${e.label} (${e.unit})</option>`).join('') +
-        `</optgroup>`).join('')}
-    </select>
-
-    <h3>Liens</h3>
-    <div id="link-list"></div>
-  `;
-
-  const commit = () => {
-    n.name = v('f-name'); n.icon = v('f-icon'); n.description = v('f-desc');
-    n.shape = v('f-shape'); n.node_type = v('f-type');
-    n.start = document.getElementById('f-start').checked;
-    n.max_level = Math.max(1, parseInt(v('f-max') || '1', 10));
-    n.costs = (v('f-costs') || '').split(',').map(s => parseInt(s.trim(), 10) || 0)
-      .slice(0, n.max_level);
-    while (n.costs.length < n.max_level) n.costs.push(n.costs[n.costs.length - 1] ?? 1);
-    // Les effets suivent le nombre de niveaux : sinon la sauvegarde refuse.
+function buildSummary() {
+  const num = {}, codes = {};
+  for (const [c, n] of Object.entries(S.tree.nodes)) {
+    const lv = simLevel(c); if (!lv) continue;
     for (const e of n.effects) {
-      while (e.values.length < n.max_level) e.values.push(e.values[e.values.length - 1] ?? 0);
-      e.values = e.values.slice(0, n.max_level);
+      const v = e.values[Math.min(lv, e.values.length) - 1];
+      if (CODE_EFFECTS.has(e.type)) { if (v) (codes[e.type] ||= []).push(v); }
+      else num[e.type] = (num[e.type] || 0) + (parseFloat(v) || 0);
     }
-    if (n.start && !TREE.roots.includes(selected)) TREE.roots.push(selected);
-    if (!n.start) TREE.roots = TREE.roots.filter(r => r !== selected);
-    renderInspector(); draw();
-  };
-  ['f-name','f-icon','f-desc','f-shape','f-type','f-start','f-max','f-costs']
-    .forEach(id => document.getElementById(id).addEventListener('change', commit));
-
-  // --- effets
-  const list = document.getElementById('eff-list');
-  list.innerHTML = '';
-  n.effects.forEach((e, i) => {
-    const meta = EFFECTS.find(x => x.type === e.type) || {label: e.type, unit: ''};
-    const d = document.createElement('div');
-    d.className = 'eff';
-    d.innerHTML = `<div class="eff-head"><b>${meta.label}</b>
-        <button onclick="dropEffect(${i})" style="border:0;background:none;cursor:pointer;color:#c8553d">✕</button></div>
-      <input value="${(e.values || []).join(', ')}" data-i="${i}" class="eff-val" placeholder="valeurs par niveau">
-      <div class="hint" style="margin:3px 0 0">${meta.unit}</div>`;
-    list.appendChild(d);
-  });
-  list.querySelectorAll('.eff-val').forEach(inp => inp.addEventListener('change', () => {
-    const i = parseInt(inp.dataset.i, 10);
-    n.effects[i].values = inp.value.split(',').map(s => parseFloat(s.trim()) || 0);
-    commit();
-  }));
-  document.getElementById('eff-add').addEventListener('change', (ev) => {
-    if (!ev.target.value) return;
-    n.effects.push({type: ev.target.value, values: Array(n.max_level).fill(0)});
-    commit();
-  });
-
-  // --- liens
-  const ll = document.getElementById('link-list');
-  const mine = TREE.links.filter(l => l.from === selected || l.to === selected);
-  ll.innerHTML = mine.length ? '' : '<p class="hint">Aucun lien.</p>';
-  mine.forEach(l => {
-    const d = document.createElement('div');
-    d.className = 'lnk';
-    const dir = l.to === selected ? `← ${l.from}` : `→ ${l.to}`;
-    d.innerHTML = `<span>${dir} <em style="opacity:.6">${(TREE.link_types[l.type]||{}).label||l.type}</em></span>`;
-    const b = document.createElement('button');
-    b.textContent = '✕'; b.style.cssText = 'border:0;background:none;cursor:pointer;color:#c8553d';
-    b.onclick = () => { TREE.links = TREE.links.filter(x => x !== l); renderInspector(); draw(); };
-    d.appendChild(b);
-    ll.appendChild(d);
-  });
+  }
+  return {num, codes};
 }
 
-function dropEffect(i) { TREE.nodes[selected].effects.splice(i, 1); renderInspector(); draw(); }
-function v(id) { const e = document.getElementById(id); return e ? e.value : ''; }
-function esc(s) { return String(s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+// =====================================================================
+//  Rendu SVG
+// =====================================================================
+const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+function poly(sides, r, rot) {
+  return [...Array(sides)].map((_, i) => {
+    const a = rot + i * 2 * Math.PI / sides;
+    return `${(Math.cos(a) * r).toFixed(1)},${(Math.sin(a) * r).toFixed(1)}`;
+  }).join(' ');
+}
+function shapeMarkup(geom, size, attrs) {
+  if (geom === 'square') { const s = size * 0.9; return `<rect x="${-s}" y="${-s}" width="${2 * s}" height="${2 * s}" rx="${(s * .22).toFixed(1)}" ${attrs}/>`; }
+  if (geom === 'hexagon') return `<polygon points="${poly(6, size * 1.08, Math.PI / 6)}" ${attrs}/>`;
+  if (geom === 'diamond') return `<polygon points="${poly(4, size * 1.2, -Math.PI / 2)}" ${attrs}/>`;
+  if (geom === 'octagon') return `<polygon points="${poly(8, size * 1.05, Math.PI / 8)}" ${attrs}/>`;
+  return `<circle r="${size}" ${attrs}/>`;
+}
+const shapeOf = n => S.tree.shapes[n.shape] || {geometry: 'circle', size: 20};
+const typeOf = n => S.tree.node_types[n.node_type] || {color: '#4a9eff'};
+const linkType = l => S.tree.link_types[l.type] || {style: 'solid', width: 3};
 
-// ------------------------------------------------------------ couverture --
-function paintCoverage() {
-  const totals = {};
-  for (const n of Object.values(TREE.nodes))
-    for (const e of n.effects || [])
-      if (e.values && e.values.length)
-        totals[e.type] = (totals[e.type] || 0) + (parseFloat(e.values[e.values.length - 1]) || 0);
+/** Dézoomé, noms et badges garderaient leur taille « monde » et deviendraient
+ *  illisibles : on les grossit pour rester lisibles à l'écran, sans excès. */
+function uiScale() { return Math.round(Math.min(1.75, Math.max(1, .82 / S.view.k)) * 20) / 20; }
 
-  const box = document.getElementById('coverage');
-  box.innerHTML = CATALOGUE.slice(0, 3).map(g =>
-    `<div style="opacity:.55;margin-top:6px"><b>${g.group}</b></div>` +
-    g.effects.map(e => {
-      const t = Math.round((totals[e.type] || 0) * 100) / 100;
-      return `<div><span>${e.label}</span><span class="${t ? '' : 'zero'}">${t} ${e.unit}</span></div>`;
+function drawScene() {
+  const nodes = Object.entries(S.tree.nodes);
+  const U = S.drawnU = uiScale();
+  const player = S.mode === 'player';
+
+  // --- Fond : une nébuleuse qui épouse la forme de l'arbre ------------
+  let bg = '';
+  // Anneaux de la grille, autour de chaque racine, jusqu'au bord de SON arbre.
+  for (const [rc, root] of startNodes()) {
+    let reach = 2;
+    for (const [, n] of nodes) {
+      if (centerFor(n.position.x, n.position.y) !== root.position) continue;
+      reach = Math.max(reach, Math.ceil(Math.hypot(n.position.x - root.position.x, n.position.y - root.position.y) / RING) + 1);
+    }
+    for (let i = 1; i <= reach; i++)
+      bg += `<circle cx="${root.position.x}" cy="${root.position.y}" r="${i * RING}" fill="none" stroke="#2a2340" stroke-width="1"/>`;
+    if (!player)
+      for (let i = 0; i < 24; i++) {
+        const a = i * STEP, R = reach * RING;
+        bg += `<line x1="${root.position.x}" y1="${root.position.y}" x2="${(root.position.x + Math.cos(a) * R).toFixed(0)}" y2="${(root.position.y + Math.sin(a) * R).toFixed(0)}" stroke="#1c1730" stroke-width="1"/>`;
+      }
+  }
+  let neb = '';
+  for (const l of S.tree.links) {
+    const a = N(l.from).position, b = N(l.to).position;
+    neb += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${typeOf(N(l.to)).color}" stroke-width="60" stroke-opacity=".10" stroke-linecap="round"/>`;
+  }
+  for (const [c, n] of nodes) {
+    const col = player ? STATE_COLORS[nodeState(c)] : typeOf(n).color;
+    neb += `<circle cx="${n.position.x}" cy="${n.position.y}" r="${n.start ? 150 : 95}" fill="${col}" fill-opacity="${n.start ? .26 : .16}"/>`;
+  }
+  $('g-bg').innerHTML = `<g filter="url(#f-neb)">${neb}</g>${bg}`;
+
+  // --- Liens ---------------------------------------------------------
+  let lk = '';
+  S.tree.links.forEach((l, i) => {
+    const a = N(l.from).position, b = N(l.to).position, lt = linkType(l);
+    const hot = i === S.hoverLink || i === S.hotLink || i === S.selLink;
+    const doomed = S.tool === 'delete' && !player && (i === S.hoverLink || S.hoverNode === l.from || S.hoverNode === l.to);
+    let col = lt.color || '#6c5f92', w = Number(lt.width || 3);
+    if (player) {
+      const sa = nodeState(l.from) === 'maxed', sb = nodeState(l.to);
+      col = sa ? (sb === 'maxed' || sb === 'progress' ? '#f0c45c' : '#4aa3ff') : '#352d4a';
+    }
+    if (hot) col = '#ffd166';
+    if (doomed) col = '#ff5d73';
+    const dash = lt.style === 'dashed' ? 'stroke-dasharray="9 7"' : lt.style === 'dotted' ? 'stroke-dasharray="2 6" stroke-linecap="round"' : '';
+    lk += `<g data-link="${i}">`;
+    if (hot || doomed) lk += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${col}" stroke-width="${w + 8}" stroke-opacity=".35" filter="url(#f-glow)"/>`;
+    lk += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${col}" stroke-width="${hot ? w + 2 : w}" ${dash}/>`;
+    if (!player) {
+      // Flèche de sens au milieu : un lien est un prérequis, il va quelque part.
+      const mx = a.x + (b.x - a.x) * .55, my = a.y + (b.y - a.y) * .55, ang = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+      lk += `<path d="M -6 -5 L 5 0 L -6 5 z" fill="${col}" transform="translate(${mx.toFixed(1)},${my.toFixed(1)}) rotate(${ang.toFixed(1)})"/>`;
+    }
+    lk += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="transparent" stroke-width="16"/></g>`;
+  });
+  $('g-links').innerHTML = lk;
+
+  // --- Cases ---------------------------------------------------------
+  let nd = '';
+  for (const [c, n] of nodes) {
+    const sh = shapeOf(n), size = Number(sh.size || 20), color = typeOf(n).color;
+    const st = player ? nodeState(c) : '';
+    const selected = !player && S.sel.has(c), linking = S.linkFrom === c;
+    const doomed = S.tool === 'delete' && !player && S.hoverNode === c;
+    let fill = color, stroke = '#00000066', sw = 1.2, ico = 1;
+    if (player) {
+      if (st === 'locked') { fill = '#3a3446'; ico = .4; }
+      stroke = STATE_COLORS[st]; sw = st === 'locked' ? 1.5 : 3.5;
+    }
+    if (selected) { stroke = '#ffffff'; sw = 3.5; }
+    if (linking) { stroke = '#ffd166'; sw = 4; }
+    if (doomed) { stroke = '#ff5d73'; sw = 4; }
+    nd += `<g data-node="${esc(c)}" class="${player ? 'st-' + st : ''}" transform="translate(${n.position.x},${n.position.y})">`;
+    if (player && st === 'maxed') nd += shapeMarkup(sh.geometry, size + 6, `fill="#f0c45c" fill-opacity=".45" filter="url(#f-glow)"`);
+    if (selected || linking) nd += shapeMarkup(sh.geometry, size + 9, `fill="none" stroke="${linking ? '#ffd166' : '#ffffff'}" stroke-opacity=".35" stroke-width="6"`);
+    if (sh.ring) nd += shapeMarkup(sh.geometry, size + 5, `fill="none" stroke="${player ? stroke : color}" stroke-opacity=".7" stroke-width="2"`);
+    nd += shapeMarkup(sh.geometry, size, `class="n-body" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"`);
+    if (n.icon) {
+      // Centrage optique : `central` + un léger décalage, les emojis ayant
+      // leur boîte de glyphe plus haute que leur dessin.
+      const fs = (size * 1.05).toFixed(1);
+      nd += `<text class="n-ico" text-anchor="middle" dominant-baseline="central" y="${(size * .06).toFixed(1)}" font-size="${fs}"`
+          + ` opacity="${ico}"${player && st === 'locked' ? ' filter="url(#f-grey)"' : ''}>${esc(n.icon)}</text>`;
+    }
+    const badge = player && !n.start && n.max_level > 1;
+    if (badge) {
+      const lv = simLevel(c), bw = 30 * U, bh = 14 * U;
+      nd += `<rect x="${-bw / 2}" y="${size - bh / 2}" width="${bw}" height="${bh}" rx="${bh / 2}" fill="#110e1a" stroke="${stroke}" stroke-width="1.2"/>`
+          + `<text class="n-badge" text-anchor="middle" dominant-baseline="central" y="${size}" font-size="${(9.5 * U).toFixed(1)}">${lv}/${n.max_level}</text>`;
+    }
+    nd += `<text class="n-lbl" text-anchor="middle" dominant-baseline="hanging" font-size="${(11 * U).toFixed(1)}" y="${(size + (badge ? 7 * U + 3 : 5)).toFixed(1)}"${player && st === 'locked' ? ' opacity=".55"' : ''}>${esc(n.name || c)}</text>`;
+    nd += `</g>`;
+  }
+  $('g-nodes').innerHTML = nd;
+  drawOverlay();
+}
+
+function drawOverlay() {
+  let o = '';
+  const player = S.mode === 'player';
+  // Emplacements proposés autour de la case sélectionnée (outil Poser).
+  if (!player && S.tool === 'place' && S.sel.size === 1) {
+    const c = [...S.sel][0];
+    for (const p of ghostSlots(c))
+      o += `<circle data-ghost="${p.x},${p.y}" cx="${p.x}" cy="${p.y}" r="15" fill="#ffffff" fill-opacity=".06" stroke="#bfb2ff" stroke-opacity=".7" stroke-width="1.5" stroke-dasharray="4 4"/>`;
+  }
+  // Aperçu du lien en cours de tracé.
+  if (!player && S.linkFrom && S.cursor && N(S.linkFrom)) {
+    const a = N(S.linkFrom).position;
+    o += `<line x1="${a.x}" y1="${a.y}" x2="${S.cursor.x}" y2="${S.cursor.y}" stroke="#ffd166" stroke-width="2.5" stroke-dasharray="7 6" pointer-events="none"/>`;
+  }
+  // Rectangle de sélection / suppression.
+  const d = S.drag;
+  if (d && d.kind === 'box') {
+    const x = Math.min(d.x0, d.x1), y = Math.min(d.y0, d.y1), w = Math.abs(d.x1 - d.x0), h = Math.abs(d.y1 - d.y0);
+    const col = S.tool === 'delete' ? '#ff5d73' : '#bfb2ff';
+    o += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${col}" fill-opacity=".08" stroke="${col}" stroke-dasharray="6 5" pointer-events="none"/>`;
+  }
+  $('g-over').innerHTML = o;
+}
+
+function applyView() {
+  world.setAttribute('transform', `translate(${S.view.x.toFixed(1)},${S.view.y.toFixed(1)}) scale(${S.view.k.toFixed(4)})`);
+  $('z-val').textContent = Math.round(S.view.k * 100) + ' %';
+  if (uiScale() !== S.drawnU) drawScene();
+}
+
+// =====================================================================
+//  Panneaux
+// =====================================================================
+function shapeIcon(geom, color = '#9b6dd1', ring = false) {
+  return `<svg width="22" height="22" viewBox="-14 -14 28 28">${ring ? shapeMarkup(geom, 11.5, `fill="none" stroke="${color}" stroke-width="1.2"`) : ''}${shapeMarkup(geom, 9, `fill="${color}"`)}</svg>`;
+}
+function renderSide() {
+  const side = $('side');
+  if (S.mode === 'player') return renderPlayerSide(side);
+  const pal = (entries, cur, kind, chip) => Object.entries(entries).map(([c, m]) =>
+    `<button class="bt-chip${c === cur ? ' on' : ''}" data-pick="${kind}" data-code="${esc(c)}">${chip(c, m)}<span>${esc(m.label || c)}</span></button>`).join('');
+  const probs = problems();
+  side.innerHTML = `
+    <h3>Forme</h3><div class="bt-pal">${pal(S.tree.shapes, S.shape, 'shape', (c, m) => shapeIcon(m.geometry, '#9b6dd1', m.ring))}</div>
+    <h3>Type</h3><div class="bt-pal">${pal(S.tree.node_types, S.ntype, 'ntype', (c, m) => `<span class="bt-dot" style="background:${esc(m.color)}"></span>`)}</div>
+    <h3>Lien</h3><div class="bt-pal">${pal(S.tree.link_types, S.ltype, 'ltype', (c, m) =>
+      `<svg width="22" height="10"><line x1="1" y1="5" x2="21" y2="5" stroke="${esc(m.color || '#6c5f92')}" stroke-width="${Math.min(5, m.width || 3)}" ${m.style === 'dashed' ? 'stroke-dasharray="5 3"' : m.style === 'dotted' ? 'stroke-dasharray="1 3"' : ''}/></svg>`)}</div>
+    <h3>Problèmes</h3>
+    <div class="bt-probs">${probs.length ? probs.map(p => `<button class="bt-prob${p.warn ? ' warn' : ''}" data-focus="${esc(p.code || '')}">${p.warn ? '⚠' : '✕'} ${esc(p.text)}</button>`).join('') : '<div class="bt-ok">✓ Arbre jouable</div>'}</div>
+    <h3>Couverture</h3>
+    <p class="bt-hint">Total distribué, tout monté au max. Un <b style="color:var(--danger)">0</b> = une stat que personne n'aura jamais.</p>
+    <div class="bt-cov">${coverageHtml()}</div>`;
+}
+function coverageHtml() {
+  const tot = {};
+  for (const n of Object.values(S.tree.nodes))
+    for (const e of n.effects) if (!CODE_EFFECTS.has(e.type)) tot[e.type] = (tot[e.type] || 0) + (parseFloat(e.values[e.values.length - 1]) || 0);
+  return CATALOGUE.filter(g => g.effects.some(e => e.unit !== 'code')).map(g =>
+    `<div class="grp">${esc(g.group)}</div>` + g.effects.map(e => {
+      const t = Math.round((tot[e.type] || 0) * 100) / 100;
+      return `<div><span>${esc(e.label)}</span><span class="${t ? '' : 'zero'}">${fmtVal(e, t)}</span></div>`;
     }).join('')).join('');
 }
-
-// ---------------------------------------------------------------- vue --
-function fitView() {
-  const ns = Object.values(TREE.nodes);
-  const r = svg.getBoundingClientRect();
-  if (!ns.length) { view = {x: r.width / 2, y: r.height / 2, k: 1}; draw(); return; }
-  const xs = ns.map(n => n.position.x), ys = ns.map(n => n.position.y);
-  const w = Math.max(200, Math.max(...xs) - Math.min(...xs) + 220);
-  const h = Math.max(200, Math.max(...ys) - Math.min(...ys) + 220);
-  view.k = Math.min(2, Math.min(r.width / w, r.height / h));
-  view.x = r.width / 2 - ((Math.max(...xs) + Math.min(...xs)) / 2) * view.k;
-  view.y = r.height / 2 - ((Math.max(...ys) + Math.min(...ys)) / 2) * view.k;
-  draw();
+function fmtVal(e, v) {
+  if (!e) return String(v);
+  if (e.unit === '%') return `${v > 0 ? '+' : ''}${v} %`;
+  if (e.unit === '×') return `×${v}`;
+  if (e.unit === 'code') return String(v);
+  return `${v > 0 ? '+' : ''}${v}`;
+}
+function renderPlayerSide(side) {
+  const total = Object.keys(S.tree.nodes).length;
+  const owned = Object.keys(S.tree.nodes).filter(c => simLevel(c) > 0).length;
+  const {num, codes} = buildSummary();
+  const lines = EFFECTS.filter(e => !CODE_EFFECTS.has(e.type) && num[e.type])
+    .map(e => `<div><span>${esc(e.label)}</span><b>${fmtVal(e, Math.round(num[e.type] * 100) / 100)}</b></div>`).join('');
+  const codeLines = Object.entries(codes).map(([t, vs]) =>
+    `<div class="grp">${esc((EFFECT[t] || {}).label || t)}</div>` + vs.map(v => `<div><span>${esc(v)}</span></div>`).join('')).join('');
+  side.innerHTML = `
+    <h3>Simulation joueur</h3>
+    <p class="bt-hint">Points <b>illimités</b>. Clique une case pour investir, <b>clic droit</b> pour retirer un niveau.</p>
+    <div class="bt-sum">
+      <div><span>Points dépensés</span><b>${spentPoints()}</b></div>
+      <div><span>Cases acquises</span><b>${owned} / ${total}</b></div>
+    </div>
+    <p style="margin:10px 0 4px"><button class="bt-btn" id="b-simreset" style="width:100%">↺ Réinitialiser la progression</button></p>
+    <h3>Ce que donne ce build</h3>
+    <div class="bt-sum">${lines || '<div><span class="bt-hint" style="margin:0">Aucun effet pour l\'instant.</span></div>'}${codeLines}</div>`;
+  $('b-simreset').onclick = () => { S.sim = {}; saveSim(); render({inspector: false}); toast('Progression remise à zéro'); };
 }
 
-// -------------------------------------------------------------- serveur --
-function flash(text, bad) {
-  const m = document.getElementById('msg');
-  m.textContent = text;
-  m.style.color = bad ? '#c8553d' : '#2e8b57';
-  setTimeout(() => { if (m.textContent === text) m.textContent = ''; }, 6000);
+// ------------------------------------------------------------ inspecteur
+function renderInspector() {
+  const box = $('insp');
+  if (S.mode === 'player') return renderPlayerInspector(box);
+  if (S.selLink !== null && S.tree.links[S.selLink]) return renderLinkInspector(box);
+  if (S.sel.size > 1) return renderMultiInspector(box);
+  if (S.sel.size === 1) return renderNodeInspector(box, [...S.sel][0]);
+  box.innerHTML = `<div class="bt-empty">Aucune sélection.<br>
+    <b>Poser</b> : clique le canevas ou un emplacement proposé.<br>
+    <b>Sélection</b> : clic, Maj+clic, ou rectangle.<br>
+    <b>Relier</b> : clique la source puis la cible.<br>
+    <b>Supprimer</b> : clic, ou rectangle.<br><br>
+    <span style="font-size:.75rem">Ctrl+Z / Ctrl+Y · Suppr · Ctrl+D dupliquer · Échap</span></div>`;
+}
+function opts(entries, cur) {
+  return Object.entries(entries).map(([c, m]) => `<option value="${esc(c)}"${c === cur ? ' selected' : ''}>${esc(m.label || c)}</option>`).join('');
+}
+function renderNodeInspector(box, code) {
+  const n = N(code);
+  const ins = incoming(code), outs = outgoing(code);
+  const linkRow = (l, dir) => {
+    const i = S.tree.links.indexOf(l), other = dir === 'in' ? l.from : l.to;
+    return `<div class="bt-lk${i === S.hotLink ? ' hot' : ''}" data-row="${i}">
+      <span class="dir">${dir === 'in' ? '←' : '→'}</span>
+      <span class="nm" data-goto="${esc(other)}" title="Aller à la case">${esc(N(other)?.name || other)}</span>
+      <select data-ltype="${i}">${opts(S.tree.link_types, l.type)}</select>
+      <button class="bt-x" data-unlink="${i}" title="Supprimer ce lien">✕</button></div>`;
+  };
+  const effects = n.effects.map((e, i) => {
+    const meta = EFFECT[e.type] || {label: e.type, unit: ''};
+    const isCode = CODE_EFFECTS.has(e.type);
+    const inputs = isCode
+      ? `<input class="bt-in" data-effcode="${i}" value="${esc(e.values[0] || '')}" placeholder="code (ex. coup_tranchant)">`
+      : `<div class="bt-lv">${e.values.map((v, j) => `<label>niv. ${j + 1}<input data-eff="${i}" data-lv="${j}" value="${esc(v)}" inputmode="decimal"></label>`).join('')}</div>
+         ${n.max_level > 1 ? `<div style="margin-top:5px"><button class="bt-mini" data-linear="${i}" title="Répartit linéairement jusqu'à la valeur du dernier niveau">↗ Remplir linéairement</button></div>` : ''}`;
+    return `<div class="bt-eff"><div class="bt-eff-h"><b>${esc(meta.label)}</b><span style="color:var(--text-faint);font-size:.72rem">${esc(meta.unit === 'code' ? '' : meta.unit)}</span>
+      <button class="bt-x" data-dropeff="${i}" title="Retirer l'effet">✕</button></div>${inputs}</div>`;
+  }).join('');
+  box.innerHTML = `
+    <h3>Case</h3>
+    <div class="bt-row">
+      <label class="bt-f"><span>Nom</span><input type="text" data-k="name" value="${esc(n.name)}"></label>
+      <label class="bt-f" style="flex:0 0 108px"><span>Code</span><input type="text" data-k="code" value="${esc(code)}"></label>
+    </div>
+    <label class="bt-f"><span>Icône</span><button class="bt-icobtn" id="pick-icon"><span class="big">${esc(n.icon) || '∅'}</span>Choisir une icône…</button></label>
+    <div class="bt-row">
+      <label class="bt-f"><span>Forme</span><select data-k="shape">${opts(S.tree.shapes, n.shape)}</select></label>
+      <label class="bt-f"><span>Type</span><select data-k="node_type">${opts(S.tree.node_types, n.node_type)}</select></label>
+    </div>
+    <label class="bt-f"><span>Description</span><textarea data-k="description" rows="2">${esc(n.description)}</textarea></label>
+    <label class="bt-f" style="display:flex;gap:7px;align-items:center"><input type="checkbox" data-k="start" ${n.start ? 'checked' : ''}> <span style="margin:0;font-size:.8rem;color:var(--text)">Case de départ (acquise d'office)</span></label>
+    ${ins.length > 1 ? `<label class="bt-f"><span>Déblocage</span><select data-k="unlock_rule">
+        <option value="all"${n.unlock_rule === 'all' ? ' selected' : ''}>Toutes les cases reliées au max</option>
+        <option value="any"${n.unlock_rule === 'any' ? ' selected' : ''}>Une seule case reliée suffit</option></select></label>` : ''}
+    <h3>Niveaux et coûts</h3>
+    <div class="bt-row"><label class="bt-f" style="flex:0 0 80px"><span>Niveaux</span><input type="number" min="1" max="20" data-k="max_level" value="${n.max_level}"></label>
+      <div class="bt-f"><span>Coût en points, par niveau</span><div class="bt-lv">${n.costs.map((v, j) => `<label>niv. ${j + 1}<input data-cost="${j}" value="${esc(v)}" inputmode="numeric"></label>`).join('')}</div></div></div>
+    <h3>Effets</h3>
+    <p class="bt-hint" style="margin-top:0">Valeurs <b>cumulées</b> : au niveau 3 on écrit le total atteint, pas le gain du niveau.</p>
+    ${effects}
+    <select class="bt-in" id="add-eff"><option value="">+ Ajouter un effet…</option>
+      ${CATALOGUE.map(g => `<optgroup label="${esc(g.group)}">${g.effects.map(e => `<option value="${e.type}">${esc(e.label)}${e.unit === 'code' ? '' : ' (' + esc(e.unit) + ')'}</option>`).join('')}</optgroup>`).join('')}</select>
+    <h3>Liens (${ins.length + outs.length})</h3>
+    ${ins.length + outs.length ? ins.map(l => linkRow(l, 'in')).join('') + outs.map(l => linkRow(l, 'out')).join('') : '<p class="bt-hint">Aucun lien.</p>'}
+    <h3>Position</h3>
+    <div class="bt-row"><label class="bt-f"><span>X</span><input type="number" data-k="x" value="${n.position.x}"></label>
+      <label class="bt-f"><span>Y</span><input type="number" data-k="y" value="${n.position.y}"></label></div>
+    <div style="display:flex;gap:6px;margin-top:4px">
+      <button class="bt-btn" id="dup-node">⧉ Dupliquer</button>
+      <button class="bt-btn danger" id="del-node" style="color:var(--danger)">🗑 Supprimer la case</button></div>`;
+  wireNodeInspector(box, code);
+}
+function wireNodeInspector(box, code) {
+  const n = () => N(code);
+  box.querySelectorAll('[data-k]').forEach(el => el.addEventListener('change', () => {
+    const k = el.dataset.k, v = el.type === 'checkbox' ? el.checked : el.value;
+    if (k === 'code') return renameNode(code, String(v).trim());
+    mutate(() => {
+      const m = n();
+      if (k === 'max_level') {
+        m.max_level = Math.max(1, Math.min(20, parseInt(v, 10) || 1));
+        m.costs = fit(m.costs, m.max_level, 1);
+        m.effects.forEach(e => { e.values = fit(e.values, m.max_level, 0); });
+      } else if (k === 'x' || k === 'y') m.position[k] = parseInt(v, 10) || 0;
+      else m[k] = v;
+    });
+  }));
+  box.querySelectorAll('[data-cost]').forEach(el => el.addEventListener('change', () =>
+    mutate(() => { n().costs[+el.dataset.cost] = Math.max(0, parseInt(el.value, 10) || 0); })));
+  box.querySelectorAll('[data-eff]').forEach(el => el.addEventListener('change', () =>
+    mutate(() => { n().effects[+el.dataset.eff].values[+el.dataset.lv] = parseFloat(String(el.value).replace(',', '.')) || 0; })));
+  box.querySelectorAll('[data-effcode]').forEach(el => el.addEventListener('change', () =>
+    mutate(() => { const e = n().effects[+el.dataset.effcode]; e.values = e.values.map(() => el.value.trim()); })));
+  box.querySelectorAll('[data-linear]').forEach(el => el.addEventListener('click', () => mutate(() => {
+    const e = n().effects[+el.dataset.linear], last = parseFloat(e.values[e.values.length - 1]) || 0, L = e.values.length;
+    e.values = e.values.map((_, j) => Math.round(last * (j + 1) / L * 100) / 100);
+  })));
+  box.querySelectorAll('[data-dropeff]').forEach(el => el.addEventListener('click', () => mutate(() => { n().effects.splice(+el.dataset.dropeff, 1); })));
+  $('add-eff').addEventListener('change', ev => {
+    const t = ev.target.value; if (!t) return;
+    mutate(() => { n().effects.push({type: t, values: Array(n().max_level).fill(CODE_EFFECTS.has(t) ? '' : 0)}); });
+  });
+  box.querySelectorAll('[data-row]').forEach(row => {
+    row.addEventListener('mouseenter', () => { S.hotLink = +row.dataset.row; drawScene(); });
+    row.addEventListener('mouseleave', () => { S.hotLink = null; drawScene(); });
+  });
+  box.querySelectorAll('[data-unlink]').forEach(b => b.addEventListener('click', () => {
+    S.hotLink = null; mutate(() => { S.tree.links.splice(+b.dataset.unlink, 1); }); toast('Lien supprimé');
+  }));
+  box.querySelectorAll('[data-ltype]').forEach(s => s.addEventListener('change', () =>
+    mutate(() => { S.tree.links[+s.dataset.ltype].type = s.value; })));
+  box.querySelectorAll('[data-goto]').forEach(s => s.addEventListener('click', () => focusNode(s.dataset.goto)));
+  $('pick-icon').onclick = () => openIconPicker(code);
+  $('del-node').onclick = () => deleteNodes([code]);
+  $('dup-node').onclick = () => duplicateSelection();
+}
+function renderLinkInspector(box) {
+  const l = S.tree.links[S.selLink];
+  box.innerHTML = `<h3>Lien</h3>
+    <div class="bt-lk" style="cursor:default"><span class="nm" data-goto="${esc(l.from)}" style="cursor:pointer">${esc(N(l.from).name || l.from)}</span>
+      <span>→</span><span class="nm" data-goto="${esc(l.to)}" style="cursor:pointer">${esc(N(l.to).name || l.to)}</span></div>
+    <p class="bt-hint">« ${esc(N(l.to).name || l.to)} » exige « ${esc(N(l.from).name || l.from)} » au niveau maximum.</p>
+    <label class="bt-f"><span>Type de lien</span><select id="lk-type">${opts(S.tree.link_types, l.type)}</select></label>
+    <div style="display:flex;gap:6px"><button class="bt-btn" id="lk-flip">⇄ Inverser le sens</button>
+      <button class="bt-btn" id="lk-del" style="color:var(--danger)">🗑 Supprimer</button></div>`;
+  box.querySelectorAll('[data-goto]').forEach(s => s.addEventListener('click', () => focusNode(s.dataset.goto)));
+  $('lk-type').onchange = e => mutate(() => { S.tree.links[S.selLink].type = e.target.value; });
+  $('lk-flip').onclick = () => {
+    // On teste SANS le lien actuel : s'il existe un autre chemin from→…→to,
+    // l'inverser fermerait une boucle.
+    const cur = S.tree.links[S.selLink], rest = S.tree.links;
+    S.tree.links = rest.filter((_, i) => i !== S.selLink);
+    const cyc = wouldCycle(cur.to, cur.from);
+    S.tree.links = rest;
+    if (cyc) return toast('Refusé : inverser ce lien créerait une boucle', true);
+    mutate(() => { const k = S.tree.links[S.selLink]; [k.from, k.to] = [k.to, k.from]; });
+  };
+  $('lk-del').onclick = () => { mutate(() => { S.tree.links.splice(S.selLink, 1); S.selLink = null; }); toast('Lien supprimé'); };
+}
+function renderMultiInspector(box) {
+  box.innerHTML = `<h3>${S.sel.size} cases sélectionnées</h3>
+    <label class="bt-f"><span>Changer la forme</span><select id="m-shape"><option value="">—</option>${opts(S.tree.shapes, '')}</select></label>
+    <label class="bt-f"><span>Changer le type</span><select id="m-type"><option value="">—</option>${opts(S.tree.node_types, '')}</select></label>
+    <div style="display:flex;gap:6px;margin-top:6px"><button class="bt-btn" id="m-dup">⧉ Dupliquer</button>
+      <button class="bt-btn" id="m-del" style="color:var(--danger)">🗑 Supprimer</button></div>
+    <p class="bt-hint" style="margin-top:12px">Glisse une des cases sélectionnées pour déplacer tout le groupe.</p>`;
+  $('m-shape').onchange = e => e.target.value && mutate(() => S.sel.forEach(c => { N(c).shape = e.target.value; }));
+  $('m-type').onchange = e => e.target.value && mutate(() => S.sel.forEach(c => { N(c).node_type = e.target.value; }));
+  $('m-del').onclick = () => deleteNodes([...S.sel]);
+  $('m-dup').onclick = () => duplicateSelection();
+}
+function renderPlayerInspector(box) {
+  const c = S.hoverNode && N(S.hoverNode) ? S.hoverNode : null;
+  box.innerHTML = c ? nodeInfoHtml(c, true) : `<div class="bt-empty">Survole une case pour voir son détail.<br><br>
+    <span style="color:${STATE_COLORS.locked}">■</span> verrouillée ·
+    <span style="color:${STATE_COLORS.available}">■</span> déblocable<br>
+    <span style="color:${STATE_COLORS.progress}">■</span> débloquée ·
+    <span style="color:${STATE_COLORS.maxed}">■</span> au maximum</div>`;
+}
+function nodeInfoHtml(c, wide) {
+  const n = N(c), lv = simLevel(c), st = nodeState(c);
+  const label = {locked: 'Verrouillée', available: 'Déblocable', progress: 'Débloquée', maxed: 'Au maximum'}[st];
+  const eff = n.effects.map(e => {
+    const meta = EFFECT[e.type] || {label: e.type, unit: ''};
+    const now = lv ? e.values[Math.min(lv, e.values.length) - 1] : null, max = e.values[e.values.length - 1];
+    return `<div>${esc(meta.label)} : <b>${fmtVal(meta, lv ? now : max)}</b>${!lv || lv >= n.max_level ? '' : ` <span class="muted">(max ${fmtVal(meta, max)})</span>`}</div>`;
+  }).join('');
+  const miss = st === 'locked' ? incoming(c).filter(l => simLevel(l.from) < N(l.from).max_level)
+    .map(l => `${esc(N(l.from).name || l.from)} (${simLevel(l.from)}/${N(l.from).max_level})`) : [];
+  const next = lv < n.max_level && !n.start ? `<div class="muted">Prochain niveau : ${n.costs[lv]} point(s)</div>` : '';
+  return `<div style="font-size:${wide ? '.85rem' : 'inherit'}">
+    <div><span style="font-size:1.3em">${esc(n.icon)}</span> <b>${esc(n.name || c)}</b></div>
+    <div class="muted">${esc(typeOf(n).label || n.node_type)} · ${S.mode === 'player' ? label + ' · ' : ''}niveau ${S.mode === 'player' ? lv : n.max_level === 1 ? 1 : '1→' + n.max_level}${S.mode === 'player' ? '/' + n.max_level : ''}</div>
+    ${n.description ? `<div style="margin:5px 0">${esc(n.description)}</div>` : ''}
+    ${eff}${S.mode === 'player' ? next : ''}
+    ${miss.length ? `<div class="bad">Manque : ${miss.join(', ')}${n.unlock_rule === 'any' ? ' (une seule suffit)' : ''}</div>` : ''}</div>`;
+}
+
+// =====================================================================
+//  Actions d'édition
+// =====================================================================
+function freshCode(base) {
+  base = String(base || 'case').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'case';
+  let i = 1, c;
+  do { c = `${base}_${i++}`; } while (S.tree.nodes[c]);
+  return c;
+}
+function addNode(pos, parent) {
+  if (nodeAt(pos.x, pos.y, 18)) return toast('Emplacement déjà occupé', true);
+  const code = freshCode(S.ntype);
+  mutate(() => {
+    S.tree.nodes[code] = {
+      name: (S.tree.node_types[S.ntype] || {}).label || 'Nouvelle case', description: '', icon: '',
+      shape: S.shape, node_type: S.ntype, start: S.ntype === 'depart', unlock_rule: 'all',
+      max_level: 1, costs: [S.ntype === 'depart' ? 0 : 1], effects: [], position: pos,
+    };
+    if (parent && N(parent)) S.tree.links.push({from: parent, to: code, type: S.ltype});
+    S.sel = new Set([code]); S.selLink = null;
+  });
+}
+function addLink(from, to) {
+  if (from === to) return false;
+  if (S.tree.links.some(l => (l.from === from && l.to === to) || (l.from === to && l.to === from))) { toast('Ces deux cases sont déjà reliées', true); return false; }
+  if (wouldCycle(from, to)) { toast('Refusé : ce lien créerait une boucle', true); return false; }
+  mutate(() => { S.tree.links.push({from, to, type: S.ltype}); });
+  return true;
+}
+function deleteNodes(codes) {
+  if (!codes.length) return;
+  mutate(() => {
+    for (const c of codes) { delete S.tree.nodes[c]; delete S.sim[c]; }
+    S.tree.links = S.tree.links.filter(l => S.tree.nodes[l.from] && S.tree.nodes[l.to]);
+    S.sel = new Set(); S.selLink = null; S.hoverNode = null;
+  });
+  saveSim();
+  toast(codes.length > 1 ? `${codes.length} cases supprimées` : 'Case supprimée');
+}
+function renameNode(old, nu) {
+  if (nu === old) return;
+  if (!/^[a-z0-9_]+$/.test(nu)) { toast('Code : minuscules, chiffres et _ uniquement', true); return renderInspector(); }
+  if (S.tree.nodes[nu]) { toast('Ce code existe déjà', true); return renderInspector(); }
+  mutate(() => {
+    const t = S.tree, out = {};
+    for (const [c, n] of Object.entries(t.nodes)) out[c === old ? nu : c] = n;   // garde l'ordre
+    t.nodes = out;
+    t.links.forEach(l => { if (l.from === old) l.from = nu; if (l.to === old) l.to = nu; });
+    if (S.sim[old] !== undefined) { S.sim[nu] = S.sim[old]; delete S.sim[old]; saveSim(); }
+    S.sel = new Set([nu]);
+  });
+}
+function duplicateSelection() {
+  const codes = [...S.sel]; if (!codes.length) return toast('Rien à dupliquer', true);
+  const map = {};
+  mutate(() => {
+    for (const c of codes) {
+      const n = JSON.parse(JSON.stringify(N(c))), nc = freshCode(c.replace(/_\d+$/, ''));
+      n.position = {x: n.position.x + 40, y: n.position.y + 40}; n.start = false;
+      S.tree.nodes[nc] = n; map[c] = nc;
+    }
+    for (const l of [...S.tree.links]) if (map[l.from] && map[l.to]) S.tree.links.push({from: map[l.from], to: map[l.to], type: l.type});
+    S.sel = new Set(Object.values(map));
+  });
+  toast(`${codes.length} case(s) dupliquée(s)`);
+}
+function focusNode(code) {
+  if (!N(code)) return;
+  S.sel = new Set([code]); S.selLink = null;
+  const r = svg.getBoundingClientRect(), p = N(code).position;
+  S.view.x = r.width / 2 - p.x * S.view.k; S.view.y = r.height / 2 - p.y * S.view.k;
+  applyView(); render();
+}
+
+// ------------------------------------------------------------------ problèmes
+function problems() {
+  const out = [], t = S.tree, nodes = t.nodes;
+  if (!t.roots.length) out.push({text: 'Aucune case de départ : personne ne pourrait commencer'});
+  const linkedTo = new Set(t.links.map(l => l.to));
+  for (const [c, n] of Object.entries(nodes)) {
+    if (!n.start && !linkedTo.has(c)) out.push({code: c, text: `« ${n.name || c} » n'est relié à rien`});
+    if (!n.icon) out.push({code: c, warn: true, text: `« ${n.name || c} » n'a pas d'icône`});
+    for (const e of n.effects) if (CODE_EFFECTS.has(e.type) && !e.values[0]) out.push({code: c, text: `« ${n.name || c} » : ${(EFFECT[e.type] || {}).label} sans code`});
+  }
+  const pos = Object.entries(nodes);
+  for (let i = 0; i < pos.length; i++) for (let j = i + 1; j < pos.length; j++)
+    if (Math.hypot(pos[i][1].position.x - pos[j][1].position.x, pos[i][1].position.y - pos[j][1].position.y) < 24)
+      out.push({code: pos[j][0], warn: true, text: `« ${pos[i][1].name}» et « ${pos[j][1].name} » se chevauchent`});
+  return out.slice(0, 14);
+}
+
+// =====================================================================
+//  Interactions canevas
+// =====================================================================
+const toWorld = ev => { const r = svg.getBoundingClientRect(); return {x: (ev.clientX - r.left - S.view.x) / S.view.k, y: (ev.clientY - r.top - S.view.y) / S.view.k}; };
+const hit = ev => {
+  const g = ev.target.closest('[data-node]'), l = ev.target.closest('[data-link]'), gh = ev.target.closest('[data-ghost]');
+  return {node: g ? g.dataset.node : null, link: l ? +l.dataset.link : null, ghost: gh ? gh.dataset.ghost : null};
+};
+
+svg.addEventListener('mousedown', ev => {
+  if (ev.button === 2) return;
+  const w = toWorld(ev), h = hit(ev);
+  closeTip();
+  // Pan : clic molette, espace, ou glisser le fond en vue joueur.
+  if (ev.button === 1 || S.space || (S.mode === 'player' && !h.node)) {
+    S.drag = {kind: 'pan', sx: ev.clientX, sy: ev.clientY, ox: S.view.x, oy: S.view.y}; ev.preventDefault(); return;
+  }
+  if (S.mode === 'player') { if (h.node) invest(h.node); return; }
+
+  if (S.tool === 'delete') {
+    if (h.node) return deleteNodes([h.node]);
+    if (h.link !== null) { mutate(() => { S.tree.links.splice(h.link, 1); S.hoverLink = null; }); return toast('Lien supprimé'); }
+    S.drag = {kind: 'box', x0: w.x, y0: w.y, x1: w.x, y1: w.y}; return;
+  }
+  if (S.tool === 'link') {
+    if (!h.node) { S.linkFrom = null; drawScene(); return; }
+    if (!S.linkFrom) { S.linkFrom = h.node; drawScene(); return; }
+    if (addLink(S.linkFrom, h.node)) toast('Lien créé');
+    // Maj : on enchaîne depuis la cible pour tracer une branche d'un trait.
+    S.linkFrom = ev.shiftKey ? h.node : null; drawScene(); return;
+  }
+  if (S.tool === 'place') {
+    if (h.ghost) { const [x, y] = h.ghost.split(',').map(Number); return addNode({x, y}, [...S.sel][0]); }
+    if (h.node) { S.sel = new Set([h.node]); S.selLink = null; render(); return; }
+    const pos = ev.altKey ? {x: Math.round(w.x), y: Math.round(w.y)} : snap(w.x, w.y);
+    return addNode(pos, S.sel.size === 1 ? [...S.sel][0] : null);
+  }
+  // Sélection
+  if (h.node) {
+    if (ev.shiftKey) { S.sel.has(h.node) ? S.sel.delete(h.node) : S.sel.add(h.node); S.selLink = null; render(); return; }
+    if (!S.sel.has(h.node)) { S.sel = new Set([h.node]); S.selLink = null; }
+    S.drag = {kind: 'move', before: snapshot(), w0: w, start: Object.fromEntries([...S.sel].map(c => [c, {...N(c).position}])), moved: false, anchor: h.node};
+    render(); return;
+  }
+  if (h.link !== null) { S.sel = new Set(); S.selLink = h.link; render(); return; }
+  if (!ev.shiftKey) { S.sel = new Set(); S.selLink = null; }
+  S.drag = {kind: 'box', x0: w.x, y0: w.y, x1: w.x, y1: w.y, add: ev.shiftKey}; render();
+});
+
+window.addEventListener('mousemove', ev => {
+  const d = S.drag;
+  if (d && d.kind === 'pan') { S.view.x = d.ox + ev.clientX - d.sx; S.view.y = d.oy + ev.clientY - d.sy; applyView(); return; }
+  if (!svg.contains(ev.target) && !d) return;
+  const w = toWorld(ev);
+  S.cursor = w;
+  if (d && d.kind === 'move') {
+    const dx = w.x - d.w0.x, dy = w.y - d.w0.y;
+    if (Math.hypot(dx, dy) * S.view.k > 3) d.moved = true;
+    if (!d.moved) return;
+    // On aimante l'ANCRE ; le reste du groupe suit au même décalage. Les
+    // racines déplacées ne servent pas de centre (elles bougent avec nous).
+    // Si le groupe emporte sa propre racine, c'est un arbre entier qu'on
+    // déplace : on le translate sur une grille de 10 px sans le déformer.
+    const a = d.start[d.anchor], moving = new Set(Object.keys(d.start));
+    let ox = dx, oy = dy;
+    if (!ev.altKey) {
+      if ([...moving].some(c => N(c).start)) { ox = Math.round(dx / 10) * 10; oy = Math.round(dy / 10) * 10; }
+      else { const t = snap(a.x + dx, a.y + dy, moving); ox = t.x - a.x; oy = t.y - a.y; }
+    }
+    ox = Math.round(ox); oy = Math.round(oy);
+    for (const [c, p] of Object.entries(d.start)) N(c).position = {x: p.x + ox, y: p.y + oy};
+    drawScene(); setStatus(); return;
+  }
+  if (d && d.kind === 'box') { d.x1 = w.x; d.y1 = w.y; drawOverlay(); return; }
+  const h = hit(ev);
+  if (h.node !== S.hoverNode || h.link !== S.hoverLink) {
+    S.hoverNode = h.node; S.hoverLink = h.node ? null : h.link;
+    drawScene();
+    if (S.mode === 'player') renderInspector();
+  } else if (S.linkFrom) drawOverlay();
+  showTip(ev, h.node);
+  setStatus();
+});
+
+window.addEventListener('mouseup', () => {
+  const d = S.drag; S.drag = null;
+  if (!d) return;
+  if (d.kind === 'move' && d.moved) {
+    S.undo.push(d.before); S.redo = []; render();
+  } else if (d.kind === 'box') {
+    const x0 = Math.min(d.x0, d.x1), x1 = Math.max(d.x0, d.x1), y0 = Math.min(d.y0, d.y1), y1 = Math.max(d.y0, d.y1);
+    const inside = Object.entries(S.tree.nodes).filter(([, n]) => n.position.x >= x0 && n.position.x <= x1 && n.position.y >= y0 && n.position.y <= y1).map(([c]) => c);
+    if (S.tool === 'delete') { if (inside.length) deleteNodes(inside); else drawOverlay(); return; }
+    if (!d.add) S.sel = new Set();
+    inside.forEach(c => S.sel.add(c));
+    render();
+  }
+});
+
+svg.addEventListener('contextmenu', ev => {
+  ev.preventDefault();
+  const h = hit(ev);
+  if (S.mode === 'player' && h.node) refund(h.node);
+});
+svg.addEventListener('mouseleave', () => { S.hoverNode = null; S.hoverLink = null; closeTip(); drawScene(); });
+svg.addEventListener('wheel', ev => { ev.preventDefault(); zoomAt(ev.deltaY < 0 ? 1.12 : 1 / 1.12, ev.clientX, ev.clientY); }, {passive: false});
+
+function zoomAt(f, cx, cy) {
+  const r = svg.getBoundingClientRect();
+  if (cx === undefined) { cx = r.left + r.width / 2; cy = r.top + r.height / 2; }
+  const k = Math.min(3, Math.max(.15, S.view.k * f)), px = cx - r.left, py = cy - r.top;
+  S.view.x = px - (px - S.view.x) * (k / S.view.k); S.view.y = py - (py - S.view.y) * (k / S.view.k); S.view.k = k;
+  applyView();
+}
+function fitView() {
+  const ns = Object.values(S.tree.nodes), r = svg.getBoundingClientRect();
+  if (!ns.length || !r.width) { S.view = {x: r.width / 2, y: r.height / 2, k: 1}; return applyView(); }
+  const xs = ns.map(n => n.position.x), ys = ns.map(n => n.position.y);
+  // Marges : légende et toasts en haut, barre d'état en bas.
+  const minX = Math.min(...xs) - 90, maxX = Math.max(...xs) + 90, minY = Math.min(...ys) - 120, maxY = Math.max(...ys) + 130;
+  S.view.k = Math.min(1.6, Math.min(r.width / (maxX - minX), r.height / (maxY - minY)));
+  S.view.x = r.width / 2 - (minX + maxX) / 2 * S.view.k; S.view.y = r.height / 2 - (minY + maxY) / 2 * S.view.k;
+  applyView();
+}
+
+// --------------------------------------------------------------- info-bulle
+function showTip(ev, code) {
+  const tip = $('tip');
+  if (!code || S.drag) return closeTip();
+  tip.innerHTML = nodeInfoHtml(code, false);
+  const r = stage.getBoundingClientRect();
+  let x = ev.clientX - r.left + 16, y = ev.clientY - r.top + 16;
+  tip.style.display = 'block';
+  if (x + tip.offsetWidth > r.width - 8) x = ev.clientX - r.left - tip.offsetWidth - 14;
+  if (y + tip.offsetHeight > r.height - 8) y = ev.clientY - r.top - tip.offsetHeight - 14;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+}
+function closeTip() { $('tip').style.display = 'none'; }
+
+// ---------------------------------------------------------------- statut
+const HINTS = {
+  place: 'Clique pour poser · un <b>emplacement proposé</b> prolonge la case sélectionnée · <kbd>Alt</kbd> place librement',
+  select: 'Clic · <kbd>Maj</kbd>+clic ajoute · glisse le fond pour un rectangle · glisse une case pour déplacer',
+  link: 'Clique la source puis la cible · <kbd>Maj</kbd> enchaîne depuis la cible · <kbd>Échap</kbd> annule',
+  delete: 'Clique une case ou un lien pour l\'effacer · glisse un rectangle pour tout effacer dedans',
+};
+function setStatus() {
+  const c = S.cursor ? ` · <span style="opacity:.7">${Math.round(S.cursor.x)}, ${Math.round(S.cursor.y)}</span>` : '';
+  $('status').innerHTML = (S.mode === 'player'
+    ? 'Clic : investir · <b>clic droit</b> : retirer · glisse le fond pour te déplacer'
+    : HINTS[S.tool]) + ' · <kbd>Espace</kbd>+glisser : se déplacer' + c;
+}
+
+// =====================================================================
+//  Modales : icônes et palettes
+// =====================================================================
+function openModal(html) { $('dlg').innerHTML = html; $('modal').classList.add('open'); }
+function closeModal() { $('modal').classList.remove('open'); }
+$('modal').addEventListener('mousedown', e => { if (e.target === $('modal')) closeModal(); });
+
+function openIconPicker(code) {
+  const cur = N(code).icon;
+  // « Déjà dans l'arbre » est calculé à l'ouverture : il suit les modifications.
+  const used = [...new Set(Object.values(S.tree.nodes).map(n => n.icon).filter(Boolean))];
+  const groups = (used.length ? [{label: 'Déjà dans l\'arbre', icons: used}] : []).concat(ICON_GROUPS);
+  const grid = () => groups.map(g =>
+    `<div class="bt-igrp">${esc(g.label)}</div><div class="bt-icons">${g.icons.map(i => `<button data-ic="${esc(i)}" class="${i === cur ? 'on' : ''}" title="${esc(i)}">${esc(i)}</button>`).join('')}</div>`).join('');
+  openModal(`<header><h2>Icône de « ${esc(N(code).name || code)} »</h2><button class="bt-x" id="ic-close" aria-label="Fermer">✕</button></header>
+    <div class="body"><div class="bt-row" style="margin-bottom:6px">
+      <input class="bt-in" id="ic-free" placeholder="…ou colle n'importe quel emoji" value="${esc(cur)}">
+      <button class="bt-btn" id="ic-apply" style="flex:0 0 auto">Appliquer</button>
+      <button class="bt-btn" id="ic-none" style="flex:0 0 auto">Aucune</button></div>
+      <div id="ic-grid">${grid()}</div></div>`);
+  const set = v => { mutate(() => { N(code).icon = v; }); closeModal(); };
+  $('ic-close').onclick = closeModal;
+  $('ic-none').onclick = () => set('');
+  $('ic-apply').onclick = () => set($('ic-free').value.trim());
+  $('ic-grid').addEventListener('click', e => { const b = e.target.closest('[data-ic]'); if (b) set(b.dataset.ic); });
+}
+
+function openPalettes() {
+  const t = S.tree;
+  const used = (key, code) => Object.values(t.nodes).filter(n => n[key] === code).length;
+  const usedLinks = code => t.links.filter(l => l.type === code).length;
+  const geomOpts = cur => Object.entries(GEOMETRIES).map(([g, l]) => `<option value="${g}"${g === cur ? ' selected' : ''}>${l}</option>`).join('');
+  const styleOpts = cur => Object.entries(LINK_STYLES).map(([g, l]) => `<option value="${g}"${g === cur ? ' selected' : ''}>${l}</option>`).join('');
+  openModal(`<header><h2>Formes, types et liens</h2><button class="bt-x" id="pl-close" aria-label="Fermer">✕</button></header>
+    <div class="body">
+      <p class="bt-hint">La forme est purement visuelle. Le <b>type</b> donne la couleur et le sens de la case. Une entrée utilisée ne peut pas être supprimée.</p>
+      <div class="bt-igrp">Formes</div>
+      <table class="bt-ptable"><tbody>${Object.entries(t.shapes).map(([c, m]) => `<tr data-pal="shapes" data-code="${esc(c)}">
+        <td style="width:26px">${shapeIcon(m.geometry, '#9b6dd1', m.ring)}</td>
+        <td><input data-f="label" value="${esc(m.label)}"></td><td style="width:110px"><select data-f="geometry">${geomOpts(m.geometry)}</select></td>
+        <td style="width:64px"><input data-f="size" type="number" min="10" max="50" value="${m.size}"></td>
+        <td style="width:70px;font-size:.74rem"><label><input data-f="ring" type="checkbox" ${m.ring ? 'checked' : ''} style="width:auto"> anneau</label></td>
+        <td style="width:28px"><button class="bt-x" data-drop ${used('shape', c) ? `disabled title="Utilisée par ${used('shape', c)} case(s)"` : ''}>✕</button></td></tr>`).join('')}</tbody></table>
+      <button class="bt-mini" data-add="shapes" style="margin-top:5px">+ Forme</button>
+      <div class="bt-igrp">Types de case</div>
+      <table class="bt-ptable"><tbody>${Object.entries(t.node_types).map(([c, m]) => `<tr data-pal="node_types" data-code="${esc(c)}">
+        <td style="width:46px"><input data-f="color" type="color" value="${esc(m.color)}"></td><td><input data-f="label" value="${esc(m.label)}"></td>
+        <td style="width:28px"><button class="bt-x" data-drop ${used('node_type', c) ? `disabled title="Utilisé par ${used('node_type', c)} case(s)"` : ''}>✕</button></td></tr>`).join('')}</tbody></table>
+      <button class="bt-mini" data-add="node_types" style="margin-top:5px">+ Type</button>
+      <div class="bt-igrp">Types de lien</div>
+      <table class="bt-ptable"><tbody>${Object.entries(t.link_types).map(([c, m]) => `<tr data-pal="link_types" data-code="${esc(c)}">
+        <td style="width:46px"><input data-f="color" type="color" value="${esc(m.color || '#6c5f92')}"></td><td><input data-f="label" value="${esc(m.label)}"></td>
+        <td style="width:96px"><select data-f="style">${styleOpts(m.style)}</select></td><td style="width:60px"><input data-f="width" type="number" min="1" max="10" value="${m.width}"></td>
+        <td style="width:28px"><button class="bt-x" data-drop ${usedLinks(c) ? `disabled title="Utilisé par ${usedLinks(c)} lien(s)"` : ''}>✕</button></td></tr>`).join('')}</tbody></table>
+      <button class="bt-mini" data-add="link_types" style="margin-top:5px">+ Type de lien</button>
+    </div>`);
+  $('pl-close').onclick = closeModal;
+  const dlg = $('dlg');
+  dlg.querySelectorAll('tr[data-pal] [data-f]').forEach(el => el.addEventListener('change', () => {
+    const tr = el.closest('tr'), pal = tr.dataset.pal, code = tr.dataset.code, f = el.dataset.f;
+    let v = el.type === 'checkbox' ? el.checked : el.value;
+    if (f === 'size' || f === 'width') v = Math.max(1, parseInt(v, 10) || 1);
+    mutate(() => { S.tree[pal][code][f] = v; }, {inspector: true});
+    openPalettes();
+  }));
+  dlg.querySelectorAll('[data-drop]').forEach(b => b.addEventListener('click', () => {
+    const tr = b.closest('tr'); mutate(() => { delete S.tree[tr.dataset.pal][tr.dataset.code]; });
+    fixPicks(); openPalettes();
+  }));
+  dlg.querySelectorAll('[data-add]').forEach(b => b.addEventListener('click', () => {
+    const pal = b.dataset.add, base = {shapes: 'forme', node_types: 'type', link_types: 'lien'}[pal];
+    let i = 1; while (S.tree[pal][`${base}_${i}`]) i++;
+    const entry = pal === 'shapes' ? {label: 'Nouvelle forme', geometry: 'circle', size: 22}
+      : pal === 'node_types' ? {label: 'Nouveau type', color: '#8fa3ff'} : {label: 'Nouveau lien', style: 'solid', width: 3, color: '#6c5f92'};
+    mutate(() => { S.tree[pal][`${base}_${i}`] = entry; });
+    openPalettes();
+  }));
+}
+function fixPicks() {
+  if (!S.tree.shapes[S.shape]) S.shape = Object.keys(S.tree.shapes)[0];
+  if (!S.tree.node_types[S.ntype]) S.ntype = Object.keys(S.tree.node_types)[0];
+  if (!S.tree.link_types[S.ltype]) S.ltype = Object.keys(S.tree.link_types)[0];
+}
+
+// =====================================================================
+//  Barre d'outils, sauvegarde, plein écran
+// =====================================================================
+function renderToolbar() {
+  document.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === S.tool));
+  document.querySelectorAll('[data-mode]').forEach(b => { b.classList.toggle('on', b.dataset.mode === S.mode); b.setAttribute('aria-checked', b.dataset.mode === S.mode); });
+  $('tools-edit').style.display = S.mode === 'edit' ? 'contents' : 'none';
+  $('b-palettes').style.display = S.mode === 'edit' ? '' : 'none';
+  $('legend').style.display = S.mode === 'player' ? 'flex' : 'none';
+  $('b-undo').disabled = !S.undo.length; $('b-redo').disabled = !S.redo.length;
+  $('b-undo').title = `Annuler (Ctrl+Z) — ${S.undo.length} étape(s)`; $('b-redo').title = `Rétablir (Ctrl+Y) — ${S.redo.length} étape(s)`;
+  const dirty = snapshot() !== S.saved, el = $('dirty');
+  el.className = 'bt-dirty' + (dirty ? '' : ' clean');
+  el.textContent = dirty ? '● non enregistré' : '✓ enregistré';
+  stage.dataset.tool = S.tool; stage.dataset.mode = S.mode;
+  setStatus();
+  layout();   // la barre peut changer de hauteur (retour à la ligne)
+}
+function render({inspector = true} = {}) { drawScene(); renderSide(); if (inspector) renderInspector(); renderToolbar(); }
+
+function setTool(t) { S.tool = t; S.linkFrom = null; S.drag = null; render(); }
+function setMode(m) { S.mode = m; S.linkFrom = null; S.hoverNode = null; S.drag = null; closeTip(); render(); }
+
+let toastTimer;
+function toast(msg, bad = false) {
+  const t = $('toast'); t.textContent = msg; t.className = 'bt-toast show' + (bad ? ' bad' : '');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.className = 'bt-toast'; }, 2300);
 }
 
 async function save() {
-  flash('Enregistrement…');
-  const res = await fetch('/admin/skill-tree/builder/save', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(TREE),
-  });
-  const data = await res.json().catch(() => ({ok: false, error: 'réponse illisible'}));
-  if (!data.ok) { flash('❌ ' + (data.error || 'échec'), true); return; }
-  flash(`✅ ${data.nodes} cases, ${data.links} liens enregistrés — redémarre le bot pour l'appliquer.`);
+  const blocking = problems().filter(p => !p.warn);
+  if (blocking.length) { toast(`${blocking.length} problème(s) à corriger avant d'enregistrer`, true); return renderSide(); }
+  $('b-save').disabled = true;
+  try {
+    const res = await fetch('/admin/skill-tree/builder/save', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: snapshot()});
+    const data = await res.json().catch(() => ({ok: false, error: 'réponse illisible'}));
+    if (!data.ok) return toast('❌ ' + (data.error || 'échec'), true);
+    S.saved = snapshot(); renderToolbar();
+    toast(`✅ ${data.nodes} cases et ${data.links} liens enregistrés — redémarre le bot pour l'appliquer`);
+  } catch (e) { toast('❌ Serveur injoignable', true); }
+  finally { $('b-save').disabled = false; }
 }
-
 async function reload() {
+  if (snapshot() !== S.saved && !confirm('Abandonner les modifications non enregistrées ?')) return;
   const res = await fetch('/admin/skill-tree/builder/data');
-  TREE = await res.json();
-  selected = null; linkFrom = null;
-  renderInspector(); paintPalettes(); fitView();
-  flash('Rechargé depuis le disque.');
+  S.tree = normalize(await res.json()); S.saved = snapshot(); S.undo = []; S.redo = [];
+  S.sel = new Set(); S.selLink = null; S.linkFrom = null; fixPicks(); render(); fitView(); toast('Rechargé depuis le disque');
 }
 
-paintPalettes();
-renderInspector();
+function layout() {
+  const root = $('bt-root'), main = $('bt-main');
+  const top = main.getBoundingClientRect().top + window.scrollY;
+  const h = document.fullscreenElement === root
+    ? window.innerHeight - main.getBoundingClientRect().top - 12
+    : Math.max(560, window.innerHeight - top - 14);
+  if (main.style.height !== h + 'px') main.style.height = h + 'px';
+}
+function toggleFull() {
+  const root = $('bt-root');
+  if (document.fullscreenElement) document.exitFullscreen();
+  else root.requestFullscreen?.().catch(() => toast('Plein écran refusé par le navigateur', true));
+}
+document.addEventListener('fullscreenchange', () => {
+  $('b-full').textContent = document.fullscreenElement ? '⛶ Quitter le plein écran' : '⛶ Plein écran';
+  setTimeout(() => { layout(); fitView(); }, 60);
+});
+window.addEventListener('resize', layout);
+window.addEventListener('beforeunload', e => { if (snapshot() !== S.saved) { e.preventDefault(); e.returnValue = ''; } });
+
+// ------------------------------------------------------------------- liaisons
+document.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => setTool(b.dataset.tool));
+document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+$('b-undo').onclick = undo; $('b-redo').onclick = redo; $('b-save').onclick = save; $('b-reload').onclick = reload;
+$('b-full').onclick = toggleFull; $('b-palettes').onclick = openPalettes;
+$('z-in').onclick = () => zoomAt(1.2); $('z-out').onclick = () => zoomAt(1 / 1.2); $('z-fit').onclick = fitView;
+$('side').addEventListener('click', e => {
+  const p = e.target.closest('[data-pick]');
+  if (p) { S[{shape: 'shape', ntype: 'ntype', ltype: 'ltype'}[p.dataset.pick]] = p.dataset.code; renderSide(); return; }
+  const f = e.target.closest('[data-focus]');
+  if (f && f.dataset.focus) focusNode(f.dataset.focus);
+});
+
+document.addEventListener('keydown', e => {
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName);
+  const mod = e.ctrlKey || e.metaKey;
+  if (e.key === 'Escape') { if ($('modal').classList.contains('open')) return closeModal(); S.linkFrom = null; S.sel = new Set(); S.selLink = null; render(); return; }
+  if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); return save(); }
+  if (typing) return;
+  if (mod && !e.shiftKey && e.key.toLowerCase() === 'z') { e.preventDefault(); return undo(); }
+  if (mod && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))) { e.preventDefault(); return redo(); }
+  if (mod && e.key.toLowerCase() === 'd') { e.preventDefault(); return duplicateSelection(); }
+  if (mod && e.key.toLowerCase() === 'a' && S.mode === 'edit') { e.preventDefault(); S.sel = new Set(Object.keys(S.tree.nodes)); return render(); }
+  if (mod) return;
+  if (e.key === ' ') { S.space = true; e.preventDefault(); return; }
+  if ((e.key === 'Delete' || e.key === 'Backspace') && S.mode === 'edit') {
+    if (S.sel.size) return deleteNodes([...S.sel]);
+    if (S.selLink !== null) { mutate(() => { S.tree.links.splice(S.selLink, 1); S.selLink = null; }); return toast('Lien supprimé'); }
+  }
+  const tools = {'1': 'place', '2': 'select', '3': 'link', '4': 'delete'};
+  if (tools[e.key] && S.mode === 'edit') return setTool(tools[e.key]);
+  if (e.key === '+' || e.key === '=') return zoomAt(1.2);
+  if (e.key === '-') return zoomAt(1 / 1.2);
+  if (e.key === '0') return fitView();
+  if (e.key.toLowerCase() === 'f') return toggleFull();
+});
+document.addEventListener('keyup', e => { if (e.key === ' ') S.space = false; });
+
+layout();
+render();
 fitView();
+})();
 </script>
+{% endraw %}
 {% endblock %}

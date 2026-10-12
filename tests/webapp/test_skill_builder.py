@@ -5,10 +5,15 @@ ne doit jamais pouvoir enregistrer un arbre injouable, et ce qu'on enregistre
 doit être relu à l'identique par le moteur.
 """
 
-import pytest
-
 from app.infrastructure.skill_tree.skill_tree_loader import parse_definition
-from webapp.admin.routers.skill_builder_router import coverage, validate
+from app.domain.services.skill_tree_service import SkillTreeService
+from webapp.admin.routers.skill_builder_router import (
+    _icon_library,
+    _script_json,
+    coverage,
+    find_cycle,
+    validate,
+)
 
 
 def _tree(**overrides):
@@ -129,3 +134,76 @@ def test_le_squelette_livre_est_valide():
     assert validate(raw) == []
     d = parse_definition(raw)
     assert len(d.all_roots) >= 1
+
+
+# ---------------------------------------------------------------- boucles --
+def test_une_boucle_de_liens_est_refusee():
+    """Deux cases qui s'attendent l'une l'autre ne se débloquent jamais."""
+    tree = _tree()
+    tree["links"].append({"from": "a", "to": "r", "type": "simple"})
+    assert any("boucle" in p for p in validate(tree))
+
+
+def test_find_cycle_ne_voit_rien_dans_un_losange():
+    """Deux chemins qui se rejoignent (classe à la jonction) ne sont PAS une boucle."""
+    nodes = {c: {} for c in "rabc"}
+    links = [{"from": "r", "to": "a"}, {"from": "r", "to": "b"},
+             {"from": "a", "to": "c"}, {"from": "b", "to": "c"}]
+    assert find_cycle(nodes, links) is None
+
+
+def test_find_cycle_renvoie_le_chemin():
+    nodes = {c: {} for c in "abc"}
+    links = [{"from": "a", "to": "b"}, {"from": "b", "to": "c"}, {"from": "c", "to": "a"}]
+    cycle = find_cycle(nodes, links)
+    assert cycle is not None and set(cycle) >= {"a", "b", "c"}
+
+
+# ------------------------------------------------- règles de déblocage --
+def _junction(rule: str):
+    """r → a, r → b, puis a + b → classe (jonction de deux voies)."""
+    raw = _tree()
+    raw["nodes"]["b"] = {"name": "B", "max_level": 1, "costs": [1], "effects": [],
+                         "position": {"x": 95, "y": 0}}
+    raw["nodes"]["classe"] = {"name": "Classe", "max_level": 1, "costs": [1], "effects": [],
+                              "unlock_rule": rule, "position": {"x": 95, "y": -95}}
+    raw["links"] += [{"from": "r", "to": "b"}, {"from": "a", "to": "classe"},
+                     {"from": "b", "to": "classe"}]
+    return SkillTreeService(parse_definition(raw))
+
+
+def test_une_case_de_depart_compte_comme_acquise():
+    """Le joueur n'investit jamais dans la racine : ses enfants sont ouverts d'emblée."""
+    assert _junction("all").compute_node_state({}, "a") == "unlockable"
+
+
+def test_regle_all_exige_toutes_les_cases_reliees_au_max():
+    svc = _junction("all")
+    assert svc.compute_node_state({"a": 2}, "classe") == "locked"
+    assert svc.compute_node_state({"a": 2, "b": 1}, "classe") == "unlockable"
+
+
+def test_regle_any_se_contente_d_une_case_reliee_au_max():
+    svc = _junction("any")
+    assert svc.compute_node_state({"a": 1}, "classe") == "locked"   # pas au max
+    assert svc.compute_node_state({"a": 2}, "classe") == "unlockable"
+
+
+def test_unlock_rule_inconnue_retombe_sur_all():
+    raw = _tree()
+    raw["nodes"]["a"]["unlock_rule"] = "n_importe_quoi"
+    assert parse_definition(raw).skills["a"].unlock_rule == "all"
+
+
+# ------------------------------------------------------------- page HTML --
+def test_script_json_garde_l_ordre_et_ne_ferme_pas_la_balise():
+    """L'ordre des palettes est celui de l'auteur, et un `</script>` dans une
+    description ne doit pas casser la page."""
+    out = _script_json({"zeta": 1, "alpha": "</script><b>"})
+    assert out.index("zeta") < out.index("alpha")
+    assert "</script>" not in out
+
+
+def test_la_bibliotheque_d_icones_ne_repete_aucune_icone():
+    seen = [i.replace("️", "") for g in _icon_library() for i in g["icons"]]
+    assert seen and len(seen) == len(set(seen))

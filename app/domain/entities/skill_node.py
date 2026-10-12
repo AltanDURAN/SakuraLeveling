@@ -34,6 +34,10 @@ class SkillNode:
     node_type: str = "stat"
     #: Déjà débloqué au début de l'aventure (les racines).
     start: bool = False
+    #: Comment les cases reliées EN AMONT ouvrent celle-ci :
+    #:   "all" — toutes doivent être montées au maximum (jonction de classe) ;
+    #:   "any" — une seule suffit (deux chemins qui mènent au même nœud).
+    unlock_rule: str = "all"
 
     def cost_for_level(self, target_level: int) -> int:
         """Coût pour passer au niveau target_level (1-indexed)."""
