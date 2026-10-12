@@ -96,8 +96,8 @@
       ],
       "effects": [],
       "position": {
-        "x": -490,
-        "y": 340
+        "x": -80,
+        "y": 450
       }
     },
     "voie_attaque": {
@@ -114,8 +114,8 @@
       ],
       "effects": [],
       "position": {
-        "x": -490,
-        "y": 150
+        "x": -80,
+        "y": 260
       }
     },
     "voie_defense": {
@@ -132,8 +132,8 @@
       ],
       "effects": [],
       "position": {
-        "x": -335,
-        "y": 435
+        "x": 75,
+        "y": 545
       }
     },
     "voie_support": {
@@ -150,8 +150,8 @@
       ],
       "effects": [],
       "position": {
-        "x": -655,
-        "y": 435
+        "x": -245,
+        "y": 545
       }
     },
     "classe_combattant": {
@@ -168,8 +168,8 @@
       ],
       "effects": [],
       "position": {
-        "x": -325,
-        "y": 245
+        "x": 85,
+        "y": 355
       }
     },
     "classe_paladin": {
@@ -186,8 +186,8 @@
       ],
       "effects": [],
       "position": {
-        "x": -490,
-        "y": 530
+        "x": -80,
+        "y": 640
       }
     },
     "classe_vampire": {
@@ -204,8 +204,8 @@
       ],
       "effects": [],
       "position": {
-        "x": -655,
-        "y": 245
+        "x": -245,
+        "y": 355
       }
     },
     "racine_explorateur": {
