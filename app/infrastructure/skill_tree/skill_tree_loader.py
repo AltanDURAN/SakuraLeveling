@@ -74,6 +74,7 @@ def _parse_node(code: str, raw: dict) -> SkillNode:
         shape=str(raw.get("shape", "cercle_stat")),
         node_type=str(raw.get("node_type", "stat")),
         start=bool(raw.get("start", False)),
+        unlock_rule="any" if raw.get("unlock_rule") == "any" else "all",
     )
 
 

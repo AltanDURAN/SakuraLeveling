@@ -157,7 +157,7 @@ class SkillTreeService:
         if node is None:
             return "locked"
 
-        current_level = allocations.get(skill_code, 0)
+        current_level = self._level(allocations, node)
 
         if current_level >= node.max_level:
             return "maxed"
@@ -167,20 +167,34 @@ class SkillTreeService:
             return "unlockable"
         return "locked"
 
+    @staticmethod
+    def _level(allocations: dict[str, int], node: SkillNode) -> int:
+        """Niveau effectif d'un nœud. Une case de DÉPART est acquise d'office :
+        le joueur la possède dès le début de l'aventure, sans rien investir."""
+        if getattr(node, "start", False):
+            return node.max_level
+        return allocations.get(node.code, 0)
+
     def _prerequisites_satisfied(
         self, allocations: dict[str, int], node: SkillNode
     ) -> bool:
-        """Un nœud n'est débloquable que si CHAQUE prérequis est COMPLÈTEMENT
-        maxé (pas juste niveau 1). Comme l'arbre est une chaîne stricte, exiger
-        que le parent immédiat soit maxé revient à exiger que TOUTES les cases
-        précédentes (jusqu'au centre) soient maxées."""
-        for prereq_code in node.prerequisites:
-            prereq = self.definition.get(prereq_code)
-            if prereq is None:
-                continue
-            if allocations.get(prereq_code, 0) < prereq.max_level:
-                return False
-        return True
+        """Les cases reliées en amont doivent être COMPLÈTEMENT montées (pas
+        juste niveau 1).
+
+        Règle `all` (défaut) : TOUTES — c'est ce qui fait qu'une classe à la
+        jonction de deux voies exige d'avoir poussé les deux.
+        Règle `any` : UNE SEULE suffit — deux chemins mènent au même nœud.
+        """
+        prereqs = [
+            self.definition.get(code) for code in node.prerequisites
+        ]
+        prereqs = [p for p in prereqs if p is not None]
+        if not prereqs:
+            return True
+        maxed = [self._level(allocations, p) >= p.max_level for p in prereqs]
+        if getattr(node, "unlock_rule", "all") == "any":
+            return any(maxed)
+        return all(maxed)
 
     # ---------- Liste des compétences débloquables ----------
 
@@ -198,7 +212,7 @@ class SkillTreeService:
         """
         candidates: list[SkillNode] = []
         for node in self.definition:
-            current_level = allocations.get(node.code, 0)
+            current_level = self._level(allocations, node)
             if current_level >= node.max_level:
                 continue
             if not self._prerequisites_satisfied(allocations, node):

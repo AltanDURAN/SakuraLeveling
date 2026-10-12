@@ -12,13 +12,14 @@ contenu.
 
 from __future__ import annotations
 
+import json
 import logging
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from app.infrastructure.skill_tree import skill_tree_loader
-from webapp.admin import git_sync, json_writer
+from webapp.admin import json_writer
 from webapp.admin.auth import AdminUser, require_admin
 from webapp.admin._shared import get_templates
 
@@ -99,6 +100,7 @@ def _serialise(definition) -> dict:
                 "shape": node.shape,
                 "node_type": node.node_type,
                 "start": node.start,
+                "unlock_rule": getattr(node, "unlock_rule", "all"),
                 "max_level": node.max_level,
                 "costs": node.costs,
                 "effects": [
@@ -151,6 +153,69 @@ def coverage(payload: dict) -> list[dict]:
     return out
 
 
+def _script_json(data) -> str:
+    """JSON à injecter dans un <script type="application/json">.
+
+    ⚠️ Pas le filtre `tojson` de Jinja : il TRIE les clés, et l'ordre des
+    palettes (formes, types, liens) est voulu par l'auteur — la forme de départ
+    doit venir en premier, pas « Carré moyen » par ordre alphabétique.
+    `</` est échappé pour qu'une description ne puisse pas fermer la balise.
+    """
+    return json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
+
+
+#: Icônes proposées par le sélecteur, en plus de celles déjà utilisées par
+#: l'arbre et par le reste du jeu (stats, éléments, objets, titres).
+_CURATED_ICONS: dict[str, str] = {
+    "Combat": "⚔️ 🗡️ 🏹 🪓 🔨 ⚒️ 🔱 🪃 🛡️ 💥 🩸 👊 🦾 💀 ☠️ 🎯 🧨",
+    "Magie": "✨ 🌟 ⭐ 💫 🔮 🪄 📜 📖 🕯️ 🌙 ☀️ 🌑 🌀 💠 🔷 🔶 ♾️ 🧿",
+    "Éléments": "🔥 💧 🌊 🌿 🍃 ❄️ 🌪️ ⚡ 🪨 🌋 🌈 🌫️",
+    "Soin & défense": "💚 ❤️ 🩹 💊 🧪 🫀 🫧 🍀 🧱 🏰 ⛑️ 🦺",
+    "Créatures & classes": "🧙 🧝 🧛 🥷 🧚 🐉 🦅 🐺 🦁 🐍 🦂 🕷️ 👹 👻 🗿",
+    "Utilité": "💰 🪙 💎 🎁 🧭 🗺️ ⏳ ⌛ 📦 🎒 🔑 🗝️ 🏆 🎖️ 👑 📈 ⚙️ 🧰 🛠️ 🍖 🍷",
+}
+
+
+def _icon_library() -> list[dict]:
+    """Groupes d'icônes pour le sélecteur — d'abord celles DÉJÀ dans le jeu.
+
+    Une icône n'apparaît qu'une fois, dans le premier groupe qui la contient :
+    ⚔️ est à la fois une stat, une catégorie d'objet et une arme, et la voir
+    trois fois noie le choix. (Le groupe « Déjà dans l'arbre » est calculé
+    côté navigateur, il doit suivre les modifications en cours.)
+    """
+    from app.shared.enums import CATEGORY_ICONS, ELEMENT_EMOJIS, STAT_EMOJIS
+
+    raw: list[tuple[str, list[str]]] = [
+        ("Stats du jeu", list(STAT_EMOJIS.values())),
+        ("Éléments du jeu", list(ELEMENT_EMOJIS.values())),
+        ("Objets du jeu", list(CATEGORY_ICONS.values())),
+    ]
+    try:
+        titles = json.loads(
+            (skill_tree_loader.content_path().parent / "titles.json").read_text(encoding="utf-8")
+        )
+        title_list = titles if isinstance(titles, list) else titles.get("titles", [])
+        raw.append(("Titres du jeu", [t.get("icon") for t in title_list if t.get("icon")]))
+    except (OSError, ValueError):
+        pass
+    raw += [(label, icons.split()) for label, icons in _CURATED_ICONS.items()]
+
+    seen: set[str] = set()
+    groups: list[dict] = []
+    for label, icons in raw:
+        kept = []
+        for icon in icons:
+            # ⚔ et ⚔️ (avec sélecteur de variante) sont la même icône.
+            key = icon.replace("\ufe0f", "")
+            if icon and key not in seen:
+                seen.add(key)
+                kept.append(icon)
+        if kept:
+            groups.append({"label": label, "icons": kept})
+    return groups
+
+
 @router.get("/builder", response_class=HTMLResponse)
 async def builder(request: Request, user: AdminUser = Depends(require_admin)):
     payload = _serialise(skill_tree_loader.get_definition())
@@ -158,9 +223,9 @@ async def builder(request: Request, user: AdminUser = Depends(require_admin)):
         request, "admin/skill_tree/builder.html",
         context={
             "user": user,
-            "tree": payload,
-            "catalogue": EFFECT_CATALOGUE,
-            "coverage": coverage(payload),
+            "tree_json": _script_json(payload),
+            "catalogue_json": _script_json(EFFECT_CATALOGUE),
+            "icons_json": _script_json(_icon_library()),
         },
     )
 
@@ -200,12 +265,9 @@ async def builder_save(request: Request, user: AdminUser = Depends(require_admin
         "root": (payload.get("roots") or [next(iter(nodes))])[0],
     }
 
+    # atomic_write_json invalide les caches ET pousse sur git.
     json_writer.atomic_write_json(CONTENT_FILE, document)
     skill_tree_loader.reset_cache()
-    try:
-        git_sync.push_content([CONTENT_FILE], f"arbre de compétences ({user.username})")
-    except Exception:  # noqa: BLE001
-        _logger.warning("Push git de l'arbre impossible", exc_info=True)
 
     return JSONResponse({
         "ok": True,
@@ -247,10 +309,50 @@ def validate(payload: dict) -> list[str]:
         if source not in nodes or target not in nodes:
             problems.append(f"lien orphelin {source} → {target}")
 
+    for code, node in nodes.items():
+        if node.get("unlock_rule", "all") not in ("all", "any"):
+            problems.append(f"« {code} » : règle de déblocage inconnue")
+
     # Un nœud inatteignable est du contenu mort : ni racine, ni relié à rien.
     linked = {link.get("to") for link in links}
     for code in nodes:
         if code not in roots and code not in linked:
             problems.append(f"« {code} » n'est relié à rien — inatteignable")
 
+    # Un cycle rend toutes ses cases indéblocables (chacune attend l'autre).
+    cycle = find_cycle(nodes, links)
+    if cycle:
+        problems.append("boucle de liens : " + " → ".join(cycle))
+
     return problems[:12]
+
+
+def find_cycle(nodes: dict, links: list) -> list[str] | None:
+    """Renvoie un cycle de liens s'il en existe un (sinon None)."""
+    graph: dict[str, list[str]] = {code: [] for code in nodes}
+    for link in links:
+        if link.get("from") in graph and link.get("to") in graph:
+            graph[link["from"]].append(link["to"])
+    state: dict[str, int] = {}  # 1 = en cours, 2 = terminé
+    stack: list[str] = []
+
+    def visit(code: str) -> list[str] | None:
+        state[code] = 1
+        stack.append(code)
+        for nxt in graph[code]:
+            if state.get(nxt) == 1:
+                return stack[stack.index(nxt):] + [nxt]
+            if state.get(nxt) is None:
+                found = visit(nxt)
+                if found:
+                    return found
+        stack.pop()
+        state[code] = 2
+        return None
+
+    for code in graph:
+        if state.get(code) is None:
+            found = visit(code)
+            if found:
+                return found
+    return None
