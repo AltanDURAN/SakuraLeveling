@@ -36,14 +36,19 @@ from app.infrastructure.db.models.player_status_effect_model import (
 )
 from app.infrastructure.db.models.event_model import EventParticipationModel
 from app.infrastructure.db.models.player_item_level_model import PlayerItemLevelModel
+from app.infrastructure.db.models.work_order_model import (
+    PlayerArtisanMasteryModel,
+    PlayerWorkOrderModel,
+)
 
 
 class ResetPlayerUseCase:
     """Remet le profil d'un joueur à zéro tout en gardant son identité Discord.
 
     Conserve : `players` (id, discord_id, username, display_name, timestamps).
-    Réinitialise : niveau/XP/skill_points, or, classes, équipement, inventaire,
-    quêtes, cooldowns, professions, kills, état HP.
+    Réinitialise : niveau/XP/skill_points, points de stats, or, équipement et
+    niveaux d'amélioration, inventaire, quêtes, cooldowns, professions, kills,
+    état HP/mana, maîtrise et commandes des artisans.
     """
 
     def execute(self, session: Session, player_id: int) -> None:
@@ -55,6 +60,11 @@ class ResetPlayerUseCase:
             progression.level = 1
             progression.xp = 0
             progression.skill_points = 0
+            # Saison 1 : points de stats en réserve ET déjà placés.
+            progression.stat_points = 0
+            progression.points_attack = 0
+            progression.points_defense = 0
+            progression.points_max_hp = 0
             progression.updated_at = now
 
         resources = session.get(PlayerResourceModel, player_id)
@@ -109,6 +119,8 @@ class ResetPlayerUseCase:
             PlayerStatusEffectModel,
             EventParticipationModel,
             PlayerItemLevelModel,
+            PlayerArtisanMasteryModel,
+            PlayerWorkOrderModel,
         ):
             session.execute(delete(model_cls).where(model_cls.player_id == player_id))
 

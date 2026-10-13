@@ -18,6 +18,7 @@ KNOWN_ACTIONS = (
     "spawn_boss",        # {boss_code}
     "stop_boss",         # {}
     "spawn_event",       # {event_type}
+    "reset_rank_roles",  # {} — tout le monde redescend au Rang F (reset de saison)
 )
 
 

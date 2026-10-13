@@ -106,7 +106,35 @@ class AdminBridgeCog(commands.Cog):
                 )
             return True, f"Événement « {event_type} » lancé."
 
+        if action == "reset_rank_roles":
+            return await self._reset_rank_roles()
+
         return False, f"Action non gérée : {action}"
+
+    async def _reset_rank_roles(self) -> tuple[bool, str]:
+        """Reset de saison : chaque porteur d'un rang supérieur redescend au
+        Rang F (les rôles ouvrent les salons de zone)."""
+        from app.bot.rank_roles import START_RANK, set_rank_role
+        from app.infrastructure.config.settings import settings
+
+        start_id = settings.rank_roles.get(START_RANK)
+        if not start_id:
+            return False, "Rôles de rang non configurés (RANK_ROLE_IDS)."
+        moved, failed = 0, 0
+        for guild in self.bot.guilds:
+            members: dict[int, object] = {}
+            for rank, role_id in settings.rank_roles.items():
+                if rank == START_RANK:
+                    continue
+                role = guild.get_role(role_id)
+                for member in (role.members if role else []):
+                    members[member.id] = member
+            for member in members.values():
+                if await set_rank_role(member, START_RANK):
+                    moved += 1
+                else:
+                    failed += 1
+        return failed == 0, f"{moved} joueur(s) remis au Rang {START_RANK}, {failed} échec(s)."
 
 
 async def setup(bot: commands.Bot) -> None:
