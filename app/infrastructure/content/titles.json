@@ -100,7 +100,7 @@
   {
     "code": "taverne_addict",
     "name": "Taverne Addict",
-    "description": "Daily streak de 30 jours. Reçoit en bonus une potion de soin I à chaque /daily (en plus de l'or).",
+    "description": "Daily streak de 30 jours. Reçoit en bonus une potion de soin à chaque /daily (en plus de l'or).",
     "icon": "🍺",
     "condition_type": "daily_streak",
     "condition_value": 30,

@@ -1,856 +1,493 @@
 ================================================================================
                         SAKURALEVELING — TUTORIEL
-                  Bot Discord RPG — V2 (en développement)
+                       Bot Discord RPG — Saison 1
 ================================================================================
 
-Ce document est tenu à jour automatiquement à chaque évolution du bot.
+Ce document suit le bot : toute commande ou formule visible qui change doit
+être répercutée ici dans le même commit.
 Section 1 : commandes pour les joueurs
-Section 2 : commandes pour les administrateurs
+Section 2 : commandes et outils pour les administrateurs
+Section 3 : notes techniques (formules)
 
 ================================================================================
                           1. COMMANDES JOUEUR
 ================================================================================
 
-Note : la plupart des commandes ne fonctionnent que dans le canal beta dédié.
+Note : les commandes joueur ne fonctionnent que dans les salons autorisés du
+serveur. Les monstres, eux, apparaissent dans les salons de ZONE.
 
 --------------------------------------------------------------------------------
-1.1 — PROFIL & PROGRESSION
+1.1 — DÉMARRER
 --------------------------------------------------------------------------------
+
+/demarrer
+    Le guide du débutant. Crée ton personnage s'il n'existe pas encore et te
+    donne le rôle Rang F, qui ouvre la première zone de farm.
+
+/help [commande]
+    Le mini-tutoriel intégré : une page d'accueil (la boucle de jeu, les
+    premiers pas) puis une page par catégorie de commandes, avec ◀ ▶.
+    Avec une commande (autocomplétée) : son détail et ses paramètres.
 
 /ping
-    Vérifie que le bot répond. Rien de plus.
-
-/help [command]
-    Mini-tutoriel intégré au bot. Sans argument : une page d'accueil
-    (pitch du bot + boucle de jeu + premiers pas) puis UNE PAGE PAR
-    CATÉGORIE thématique de commandes (Profil & progression, Combat &
-    aventure, Équipement & inventaire, Artisanat & récolte, Économie &
-    échanges, Classements & utilitaires). Navigation par boutons ◀ ▶,
-    réponse éphémère.
-    Avec `command` (autocomplete) : détaille une commande précise et ses
-    paramètres. Les commandes admin sont masquées du catalogue mais
-    restent consultables via /help <commande> (ex : /help admin set).
-
-/affinites [target]
-    Affiche vos 8 affinités élémentaires (0 à 100 par élément) et votre
-    progression d'essences vers le palier suivant.
-        • Chaque joueur démarre avec une affinité ALÉATOIRE de 0 à 10 par
-          élément. La montée jusqu'à 100 se fait en FARMANT.
-        • En tuant un monstre d'un élément, vous gagnez des ESSENCES de cet
-          élément. Le nombre par kill dépend de la zone de farm (clairière
-          sinistre : 1 essence/kill, cimetière abandonné : 2 essences/kill).
-        • Les essences montent l'affinité AUTOMATIQUEMENT : passer du palier
-          N à N+1 coûte N+1 essences du même élément (0→1 : 1 essence,
-          1→2 : 2 essences, …, 99→100 : 100 essences). Le surplus est gardé.
-        • Une plus haute affinité renforce vos dégâts élémentaires (±30%
-          selon l'élément de l'ennemi). Les montées d'affinité sont annoncées
-          dans le récap de combat.
-
-/profile [target]
-    Affiche votre profil joueur. Si vous ajoutez `target`, vous voyez le
-    profil d'un autre joueur via le sélecteur Discord (ex : /profile @Altan).
-    Au premier usage sans target, votre profil est créé automatiquement.
-
-    Le profil est rendu en UNE SEULE IMAGE PNG (pas de fields textuels
-    dupliqués) générée à la volée par Pillow, avec emojis couleur. La
-    bannière contient :
-        • Header : avatar circulaire, titre actif en or (avec son emoji),
-          nom, "Niveau X · Classe", barre d'XP gradient bleu→cyan avec
-          "⚡ XP : 152 / 1 200 (13%)".
-        • Badge de rang à droite : disque coloré selon la lettre (F- gris,
-          E vert, D bleu, C violet, B orange, A or, S/SS/SSS rouge), avec
-          la lettre du rang et "PWR X.XK" écrits dedans.
-        • Ligne d'infos : 💰 or, 🔥 Daily Streak, ⚔️ Duel #N (WV-DD),
-          📚 SP libres. Wrap auto sur 2 lignes si nécessaire.
-        • Section "Stats de combat" : 10 cards avec barre d'accent colorée
-          par type de stat (❤️ PV rouge, ⚔️ Atk orange, 🛡️ Def bleu,
-          💨 Vit cyan, 🔷 Mana bleu, 🌊 Régén M bleu, 🎯 Crit jaune,
-          💥 Crit dmg magenta, 🌀 Esquive, ✨ Régen PV vert).
-          Le Mana s'affiche en "courant/max" comme les PV : c'est la réserve
-          d'énergie qui alimente vos compétences actives (voir /competences).
-          Il se régénère HORS combat (comme les PV) selon votre "Régén M".
-        • Section "Statistiques de carrière" : 8 cards (💀 Tués,
-          ⚔️ Combats %W, 💰 Or amassé, 💢 Dégâts infligés, 🛡️ Dégâts
-          encaissés, 💚 PV soignés, 🌀 Esquives totales, 🏆 V/D).
-
-    Rangs : tirés du score de puissance, paliers stricts F-/F/F+, E-/E/E+, …,
-    SSS-/SSS/SSS+. Ex : <200 = F-, <500 = F, <1000 = F+, <2000 = E-, etc.,
-    chaque lettre couvre 3 sous-rangs avant de basculer sur la suivante.
-
-    Note : ces statistiques de carrière n'augmentent que par le jeu
-    (combats, daily, quêtes, ventes au shop). L'or donné par /admin
-    give_gold n'est PAS comptabilisé dans le total amassé.
-
-    En cas d'échec de la génération d'image (cas extrême), un embed
-    textuel "fallback" plein de fields prend le relais — le profil reste
-    accessible, juste moins joli.
-
-/inventory [target]
-    Affiche votre inventaire (consommables et ressources uniquement).
-    Les pièces d'équipement sont listées séparément via /equipement_list
-    pour ne pas saturer la vue. Pages naviguables : Consommables, Ressources.
-    Avec un target, vous voyez l'inventaire d'un autre joueur.
-
-/equipement_list [target]
-    Liste tous les équipements possédés (portés ou en réserve), répartis
-    en 5 catégories (armes, boucliers, tête, corps, accessoires — une page
-    par catégorie). Chaque ligne indique
-    l'item, sa quantité, et un marqueur "✅ équipé" si l'item est
-    actuellement porté. Pratique pour faire le tri / vendre / brocanter
-    ses doublons sans polluer /inventory.
-
-/equipement [target]
-    Affiche l'équipement porté sous forme d'IMAGE PNG générée à la volée
-    par Pillow. Deux pages naviguables avec ⬅️ ➡️ :
-        Page 1 — Équipement : les 7 emplacements du jeu
-                              tête, corps, arme 1, arme 2,
-                              accessoire 1, accessoire 2, accessoire 3
-        Page 2 — Résumé : stats totales apportées par l'équipement
-                          (mana inclus) + bonus de panoplies actifs
-
-    LES 7 EMPLACEMENTS :
-        🪖 Tête        ×1
-        👕 Corps       ×1   (remplace plastron + jambières + bottes)
-        💍 Accessoire  ×3   (collier, bague, ceinture, cape… au choix :
-                             il n'y a plus de slot dédié par bijou)
-        ⚔️ Arme        ×2   (armes ET boucliers partagent ces 2 mains)
-
-    Chaque emplacement affiche :
-        • L'image de l'item (depuis assets/items/<code>.png) si elle
-          existe, sinon un placeholder stylisé avec l'icône du slot.
-        • Le nom de l'item et ses bonus de stats.
-    Emplacement vide → marqueur "VIDE" lisible.
-
-    Note : tu ne choisis JAMAIS l'emplacement toi-même. Un item déclare
-    son TYPE (tête / corps / accessoire / arme) et se pose dans le premier
-    emplacement LIBRE de ce type ; si tout est plein, il remplace le
-    premier. Une pièce à 2 mains occupe l'emplacement arme 1 et laisse
-    arme 2 inutilisable ; équiper une pièce à 1 main la remplace.
-
-    Système de panoplie (set bonus) :
-        Chaque pièce d'équipement peut appartenir à une famille, qui forme
-        une PANOPLIE. Seuls QUATRE emplacements comptent pour une panoplie :
-        tête, corps, arme 1 et arme 2 — les accessoires en sont exclus.
-
-        Paliers à 2 et 4 pièces. Le bonus du palier le plus haut REMPLACE
-        celui du palier inférieur (pas cumulatif), et s'estompe
-        automatiquement dès que tu descends sous le palier.
-
-        Règles de comptage :
-        - une pièce à 2 mains compte pour 2 ;
-        - deux armes IDENTIQUES comptent pour 1, deux armes différentes
-          de la même famille comptent pour 2.
-
-/panoplie <nom>
-    Affiche le détail d'une panoplie : description, paliers de bonus
-    (2 et 4 pièces avec l'effet de chaque palier), et la liste des
-    pièces qui composent la panoplie regroupées par type d'emplacement.
-    Autocomplete
-    sur les familles disponibles.
-    Exemple : /panoplie iron → détail complet de la panoplie Acier.
-
-/gold [target]
-    Affiche un encart "bourse" : or actuel + or amassé en carrière (si > 0)
-    + avatar du joueur. Avec un target, montre la bourse d'un autre joueur.
-
-/cd [target]
-    Liste les cooldowns en cours d'un joueur : prochain /daily, prochain
-    combat de world boss, reset de l'arbre de compétences, défi 1v1, etc.
-    Affiche un timestamp relatif (ex : <t:...:R>) + l'horodatage absolu.
-    Si aucun cooldown actif → "Tout est disponible !".
-
-/unequip <slot|all>
-    Retire l'équipement du slot spécifié sans le remplacer (laisse le slot
-    vide). Autocomplete sur les slots actuellement occupés (affiche aussi
-    le nom de l'item porté pour chaque entrée, avec un libellé lisible du
-    type « Accessoire 2 »). Si l'emplacement contenait une pièce à 2 mains,
-    les deux mains redeviennent libres automatiquement.
-    Cas spécial `slot=all` : déséquipe TOUTES les pièces d'un coup.
-
-/equip_panoplie <nom>
-    Équipe en un clic les pièces d'une panoplie sur les 4 emplacements
-    qui comptent : tête, corps, arme 1, arme 2. Il n'y a plus d'option à
-    choisir — la commande prend la meilleure configuration possible avec
-    ce que tu possèdes (deux pièces à 1 main si tu les as, sinon une
-    pièce à 2 mains).
-    Comportement :
-    - Pièces de la bonne famille déjà équipées → conservées.
-    - Emplacements tenus par du hors-famille → déséquipés et remplacés.
-    - Les accessoires ne sont pas touchés (hors panoplie).
-
-/create_set <nom>
-    Sauvegarde l'équipement actuellement équipé sous un nom libre
-    (max 50 caractères). Permet ensuite de rappeler ce loadout via
-    /equip_set. Refuse si le nom existe déjà ou si rien n'est équipé.
-
-/delete_set <nom>
-    Supprime un set d'équipement sauvegardé. Autocomplete sur vos sets.
-
-/equip_set <nom>
-    Applique un set d'équipement précédemment sauvegardé. Refuse si
-    une pièce du set n'est plus possédée (vendue / tradée). Conserve
-    les pièces déjà équipées identiques pour éviter les écritures DB
-    inutiles. Autocomplete sur vos sets.
-
-/class [target]
-    Affiche la classe active.
-
-/classes
-    Liste toutes les classes du jeu, leurs bonus de stats et les conditions
-    pour les débloquer (niveau de métier requis, item à posséder, etc.).
-
-/class_set <class_code>
-    Définit votre classe active. Vous devez avoir débloqué la classe.
-    Exemple : /class_set warrior
-
-/skill [target]
-    Affiche votre arbre de compétences :
-        • Image générée à la volée (PNG) avec couleurs par état :
-            violet = niveau max  /  or = en cours
-            bleu = débloquable    /  gris = verrouillée
-            (les liens parent → enfant sont rouges quand le prérequis
-            n'est pas encore rempli, signalant ce qu'il faut investir avant)
-        • Compteur de points disponibles / dépensés / compétences débloquées
-        • Bouton "Investir un point" → Select Menu listant les 5 prochaines
-          compétences débloquables, avec coût et description
-        • Bouton "Vue détaillée" → page web interactive avec tooltip enrichi
-          (coût du prochain niveau, prérequis remplis ✅ / manquants ❌, panning
-          + zoom à la souris)
-        • Bouton "Réinitialiser" → restitue tous les points investis,
-          cooldown de 7 jours
-    Si vous ajoutez `target`, vous pouvez consulter l'arbre d'un autre
-    joueur en lecture seule (boutons d'action désactivés).
-
-    Bonus passifs accordés (cumul des compétences débloquées) :
-        • Stats principales en pourcentage (atk, def, max_hp) — multiplicatif
-        • Stats de combat flat (crit_chance, crit_damage, dodge, speed,
-          hp_regeneration)
-        • Bonus farm : XP drop %, gold drop %, drop rate multiplier
-          (sur le taux de base de chaque drop, pour préserver la rareté
-          des items rares)
-    Les bonus s'appliquent automatiquement dans /profile, en combat
-    (de groupe et solo), au calcul du score de puissance, et aux drops.
-
-/daily_quest et /weekly_quest
-    Le système de quêtes (cf. section 1.3) — les anciennes commandes
-    /quests et /quest_claim ont été retirées, tout passe désormais par
-    les quêtes quotidiennes et hebdomadaires.
-
-/daily
-    Récupère votre récompense quotidienne. Reset à minuit UTC :
-    réclamer à 23:59 vous autorise une nouvelle récup' dès 00:00.
-    Mécanique de série (streak) :
-        • Première récupération : +100 or, série = 1
-        • Chaque récupération suivante : +(streak × 100) or, série += 1
-        • La série n'est JAMAIS perdue, même si vous sautez des jours
-        • Seul un /admin reset_player remet la série à 0
-    Affichage type :
-        Daily Streak 3 🔥 !
-        Vous récupérez :
-        300 🪙
-        Revenez également demain !
-
-/title [target] et /title_set [code]
-    Affiche / change votre titre cosmétique. Tous les titres débloqués
-    appliquent leurs effets passifs en permanence (peu importe celui activé
-    pour l'affichage). Titres actuellement disponibles :
-
-        🟢 Slime Slayer / 👹 Gobelin Slayer
-            +10% dégâts infligés et -10% dégâts subis face à la famille
-            ciblée. Débloqué après 100 kills sur la famille.
-
-        👑 Champion en 1vs1 (titre exclusif — 1 seul détenteur)
-            Va automatiquement au joueur en tête du ladder /top duel_rank.
-            Bonus passif : +1% sur toutes les stats. Multiplicatif (arrondi
-            entier supérieur) sur PV/atk/def, additif sur crit/dodge/crit_dmg,
-            +1 flat sur vitesse/régénération. Le titre se transfère dès qu'un
-            autre joueur prend la 1re place et le bonus est retiré aussitôt
-            (même s'il était choisi comme titre actif visible).
-
-        🌾 Le Farmer Fou (titre exclusif — 1 seul détenteur)
-            Va au joueur qui détient le record absolu de monstres tués
-            (toutes familles confondues). En cas d'égalité, le premier arrivé
-            au record garde le titre. Bonus : +1% sur l'or et l'XP gagnés à
-            la fin d'un combat (encounter et solo). Bonus retiré dès que le
-            record est battu par un autre joueur.
-
-        🩸 Le Bourreau
-            Tuer 500 monstres (toutes familles confondues). Bonus : +5%
-            additif sur les dégâts critiques (crit_damage 150 → 155).
-
-        🌪️ L'Intouchable
-            Encaisser 100 esquives en combat de groupe (encounters
-            uniquement, pas en solo). Bonus : +1% d'esquive permanent.
-
-        🍺 Taverne Addict
-            Atteindre une daily streak de 30. Bonus : reçoit 1 potion de
-            soin I supplémentaire à chaque /daily (en plus de l'or).
-
-        🏹 Chasseur Légendaire — <Mob>
-            50 kills sur un même mob spécifique → titre dédié à CE mob.
-            Bonus : +5% drop rate sur ce mob (multiplicatif, préserve la
-            rareté des items rares). Un titre par mob du jeu : avec 9 mobs
-            actuels, c'est 9 chasseurs distincts à débloquer.
+    Vérifie que le bot répond.
 
 --------------------------------------------------------------------------------
-1.2 — MÉTIERS & RESSOURCES
+1.2 — TON PERSONNAGE : NIVEAUX, POINTS DE STATS, RANG
 --------------------------------------------------------------------------------
 
-/gather <profession_code>
-    Récolte des ressources via un métier (mining, woodcutting, etc.).
-    Vous gagnez de l'XP de métier et un objet selon votre niveau.
-    Exemple : /gather mining
+LA PROGRESSION
+    Tu gagnes de l'XP en combattant (et avec les quêtes et le raid).
+    Le niveau maximum est 100 : au niveau 100, l'XP n'est plus accumulée.
+    Il faut environ 9 victoires pour passer le niveau 1, 35 au niveau 50,
+    62 au niveau 99 : un nouveau rattrape vite en niveaux, un ancien garde
+    l'avance en temps investi. Compte de six mois (joueur assidu) à un an
+    (joueur régulier) pour atteindre le niveau 100.
+
+    Chaque niveau donne :
+        • 1 POINT DE STATS  → à placer avec /stats ;
+        • 1 POINT D'ARBRE   → à investir avec /arbre.
+
+/stats
+    Ta feuille de personnage. Place tes points de stats avec les boutons :
+        +ATK  →  +2 attaque
+        +DEF  →  +2 défense
+        +PV   →  +50 PV max
+    Départ : 10 attaque, 5 défense, 100 PV. Les points de stats sont la SEULE
+    source de puissance brute du jeu : l'équipement et l'arbre donnent des
+    POURCENTAGES de ce socle (voir 1.4). Un point placé ne se reprend pas.
+
+/profil [joueur]
+    Ton personnage en une image : titre actif, niveau, barres PV / mana / XP,
+    or, points de stats et d'arbre à dépenser, série du /daily, place au
+    ladder des duels, rang et puissance, stats de combat, statistiques de
+    carrière et affinités élémentaires. Avec un joueur : son profil.
+
+    Le RANG affiché sur le profil (F- … SSS+) est calculé à partir de ta
+    puissance. Le rang qui ouvre les zones est un rôle Discord, gagné avec
+    /epreuve (ci-dessous).
 
 /epreuve
-    Fait apparaître le GARDIEN du rang au-dessus du tien. Le bats, et tu es
-    promu — ton rôle Discord change et de nouvelles zones de farm s'ouvrent.
+    Fait apparaître le GARDIEN du rang au-dessus du tien. Bats-le et tu es
+    promu : ton rôle Discord change et une nouvelle zone de farm s'ouvre.
+    Deux conditions, dans cet ordre :
+        1. ta PUISSANCE atteint le seuil du rang visé (l'écran dit combien
+           il en manque) ;
+        2. tu BATS le gardien en combat singulier.
+    Les gardiens sont réglés pour être battus environ deux fois sur trois
+    par un joueur qui vient d'atteindre le seuil. En cas d'échec, tu ne
+    perds aucun PV réel, mais tu attends 6 h avant de retenter. On passe
+    les rangs un par un.
 
-    Il y a deux conditions, dans cet ordre :
-      1. ta PUISSANCE doit atteindre le seuil du rang visé (l'écran te dit
-         combien il t'en manque) ;
-      2. tu dois BATTRE le gardien en combat singulier.
-    Le seuil dit que tu as la force, le combat dit que tu sais t'en servir.
+    Rangs et zones (V1) : F Clairière sinistre · E Cimetière abandonné ·
+    D Berceau cataclysmique · C, B et A à venir. S, SS et SSS se passent en
+    épreuve ; leurs zones viendront après la V1.
 
-    Les gardiens sont calibrés pour être gagnés environ deux fois sur trois
-    par un joueur qui vient tout juste d'atteindre le seuil : c'est fait pour
-    être serré. Monte tes stats avant de tenter si tu veux de la marge.
+/affinites [joueur]
+    Tes 8 affinités élémentaires (0 à 100) et ta progression d'essences.
+        • À la création, chaque affinité est tirée au hasard entre 0 et 10.
+        • Tuer un monstre d'un élément donne des ESSENCES de cet élément
+          (le nombre dépend de la zone).
+        • Les essences montent l'affinité toutes seules : passer de N à N+1
+          coûte N+1 essences du même élément (0→1 : 1, …, 99→100 : 100).
+        • Voir 1.5 pour l'effet en combat.
 
-    En cas d'échec tu ne perds aucun PV réel, mais tu dois attendre 6 h avant
-    de retenter. La progression est séquentielle : même très puissant, tu
-    passes les rangs un par un.
+/or [joueur]
+    Ta bourse : or actuel et or amassé en carrière.
 
-/forgeron
-    Fait venir BORAK, LE FORGERON. Il forge tout ce qui se porte au combat :
-    armes, boucliers, pièces de tête et pièces de corps.
+/cd [joueur]
+    Tes temps de recharge en cours : /daily, combat de world boss, reset de
+    l'arbre, défi en duel, épreuve…
 
-    Tu ne tapes aucun code. Tu choisis une CATÉGORIE dans un menu, puis un
-    OBJET ; sa fiche s'affiche avec ses stats, les ingrédients qu'il te faut
-    (✅ possédé / ❌ manquant), le prix de son travail et le temps qu'il y
-    passera. Le bouton « Forger » ne s'active que si tout est réuni.
+/daily
+    Ta récompense quotidienne (remise à zéro à minuit UTC).
+        • Chaque récupération donne (série × 100) or, puis la série +1.
+        • La série n'est jamais perdue, même si tu sautes des jours.
 
-    CE QUE ÇA COÛTE
-        • les INGRÉDIENTS de la recette (pris dans ton inventaire) ;
-        • un PRIX EN OR pour son travail, qui monte avec la puissance de la
-          pièce — une arme de haut rang coûte disproportionnellement cher.
-        Les deux sont débités au moment où il commence.
-
-    LE TEMPS DE FORGE
-        Plus la pièce est puissante, plus il met de temps. Tu peux fermer la
-        fenêtre : le bot te préviendra dans le salon quand ce sera prêt.
-        Reviens ensuite faire /forgeron et clique sur « Récupérer ».
-        Tu ne peux avoir QU'UNE SEULE forge en cours à la fois.
-
-    ANNULER
-        Possible à tout moment. Tu récupères tous tes ingrédients, mais Borak
-        garde la moitié de l'or : il avait déjà entamé la matière.
-
-    SA MAÎTRISE (Apprenti → Compagnon → Maître → Légendaire)
-        Chaque travail que tu lui commandes ET que tu récupères le fait
-        progresser AVEC TOI. Sa maîtrise détermine :
-        • le PLAFOND DE PUISSANCE des pièces qu'il accepte de faire (une pièce
-          trop forte affiche 🔒 et le palier qu'il lui faudrait) ;
-        • une remise sur son prix ;
-        • un délai raccourci.
-        Un travail annulé ne compte pas.
-
-/artisan
-    Fait venir ELNA, L'ARTISANE. Même fonctionnement exactement que le
-    forgeron, mais pour les ACCESSOIRES. Elle a sa propre maîtrise et sa
-    propre file : tu peux avoir une forge ET une confection en cours en même
-    temps.
+/titre [joueur] et /titre_actif
+    Tes titres débloqués, et celui affiché sur ton profil. Tous les titres
+    débloqués appliquent leurs effets en permanence, quel que soit celui
+    affiché. Quelques exemples :
+        🟢 / 👹 Slayer de famille (100 victoires sur une famille) :
+            +10 % de dégâts infligés et −10 % subis face à cette famille.
+        👑 Champion en 1vs1 (exclusif : le 1er du ladder des duels) :
+            +1 % sur toutes les stats.
+        🌾 Le Farmer Fou (exclusif : le record de victoires) :
+            +1 % d'or et d'XP en fin de combat.
+        🏆 MVP des World Boss (exclusif : meilleur contributeur du dernier
+            raid gagné) : +2 % sur toutes les stats.
+        🩸 Le Bourreau (500 victoires) : +5 de dégâts critiques.
+        🌪️ L'Intouchable (100 esquives en combat de groupe) : +1 d'esquive.
+        🍺 Taverne Addict (série de 30 au /daily) : une potion par /daily.
+        🏹 Chasseur Légendaire (50 victoires sur un monstre précis) :
+            +5 % de chances de butin sur ce monstre.
+        ⚔️ Tueur de boss : avoir participé à la victoire contre un world boss.
 
 --------------------------------------------------------------------------------
-1.3 — ÉQUIPEMENT
+1.3 — L'ARBRE DE COMPÉTENCES
 --------------------------------------------------------------------------------
 
-Emplacements d'équipement (7 au total) :
-    tete          ×1
-    corps         ×1
-    arme_1        ×2 avec arme_2 — armes ET boucliers y vont indifféremment
-    accessoire_1  ×3 avec accessoire_2 et accessoire_3
+/arbre [joueur]
+    Ton arbre, en image, avec :
+        • le nombre de points disponibles et dépensés ;
+        • « Investir un point » : un menu des cases que tu peux monter ;
+        • « Vue détaillée » : la page web interactive (zoom, déplacement,
+          détail de chaque case au survol ou au toucher) ;
+        • « Réinitialiser » : rend tous les points investis (une fois tous
+          les 7 jours).
+    Avec un joueur : son arbre, en lecture seule.
 
-    Un item ne déclare PAS un emplacement précis mais un TYPE : tête, corps,
-    accessoire ou arme. Le jeu place la pièce tout seul.
+    LES RÈGLES
+        • Les CASES DE DÉPART (au centre de chaque arbre) sont acquises
+          d'office.
+        • Un LIEN est un prérequis : une case ne se débloque que quand la
+          case reliée en amont est montée au MAXIMUM.
+        • Si plusieurs liens arrivent sur une case, il faut en général
+          TOUTES les cases reliées au maximum (c'est le cas des classes, aux
+          jonctions de deux voies). Certaines cases n'en demandent qu'une.
+        • Chaque niveau d'une case a son propre coût en points.
 
-Règles d'équipement :
-    • Un seul objet par emplacement.
-    • Équiper sans rien préciser remplit le premier emplacement LIBRE du
-      type ; si tous sont pleins, la première pièce est remplacée.
-    • Armes et boucliers partagent les deux mains : tu peux porter deux
-      armes, deux boucliers, ou un de chaque. Pour porter deux fois le MÊME
-      objet, il faut en posséder deux exemplaires.
-    • Une pièce à 2 mains occupe arme_1 et rend arme_2 inutilisable ;
-      l'équiper libère les deux mains. Équiper une pièce à 1 main
-      par-dessus une 2-mains la remplace.
-    • On ne gagne PAS de stats en craftant un équipement, on en gagne
-      uniquement en l'équipant. Changer d'équipement est gratuit et permet
-      le théorycrafting.
+    LES COULEURS
+        gris = verrouillée · cadre bleu = déblocable · cadre vert = en cours
+        · cadre or = au maximum. Un lien s'allume quand sa case de départ est
+        au maximum.
 
-/equip <item_code> [slot]
-    Équipe un objet de votre inventaire. Le `slot` est optionnel et
-    rarement utile : sans lui, l'objet va dans le premier emplacement
-    libre de son type. Autocomplete : ne propose que les objets équipables
-    présents dans votre inventaire. Si l'emplacement visé est déjà occupé,
-    un aperçu du gain/perte de stats vous est proposé avant confirmation.
-    Exemples :
-        /equip bandana              → emplacement tete
-        /equip arc                  → arme_1 (ou arme_2 si arme_1 est pris)
-        /equip dagues_jumelles      → 2-mains : occupe arme_1, libère arme_2
+    CE QUE DONNE L'ARBRE
+        • ATK / DEF / PV en POURCENTAGE du socle (en petite quantité) ;
+        • les stats secondaires à PLAT : vitesse, esquive, chances et dégâts
+          critiques, régénération de PV, mana max, régénération de mana ;
+        • des bonus de farm : XP, or, chances de butin ;
+        • des compétences passives et, aux jonctions, des classes.
 
 --------------------------------------------------------------------------------
-1.4 — COMBAT
+1.4 — ÉQUIPEMENT
 --------------------------------------------------------------------------------
 
-Combat de groupe (encounters) — déclenché automatiquement
-    Toutes les ~10 minutes, un monstre apparaît dans le canal d'encounter.
-    Vous avez 5 minutes pour cliquer sur "Combattre" pour rejoindre le combat,
-    ou "Quitter" pour vous retirer.
+LES 7 EMPLACEMENTS
+    🪖 Tête ×1 · 👕 Corps ×1 · 💍 Accessoire ×3 · ⚔️ Arme ×2
+    Armes et boucliers partagent les deux emplacements d'arme : deux armes,
+    deux boucliers ou un de chaque. Une pièce à deux mains occupe les deux.
+    Tu ne choisis jamais l'emplacement : la pièce va dans le premier
+    emplacement libre de son type, sinon elle remplace la première.
+    Porter deux fois le même objet demande d'en posséder deux exemplaires.
 
-    Quand le combat démarre, le bot envoie un second message "⚔️ Combat en
-    cours" dans le même canal. Ce message est édité à chaque tour avec :
-        • Le détail du tour (qui frappe qui, dégâts, crit, esquive)
-        • Les PV courants du mob et de l'équipe
-    À la fin du combat, ce message indique "✅ Combat terminé" et fournit
-    un lien direct vers le récap (le message original du spawn).
+CE QUE DONNE L'ÉQUIPEMENT
+    • ATK / DEF / PV en POURCENTAGE de ton socle (tes points de stats) : une
+      pièce de fin de jeu offerte à un débutant ne multiplie qu'un socle
+      minuscule — elle ne le rend pas surpuissant.
+    • Les stats secondaires à plat.
+    • Les pourcentages de toutes les sources (équipement, arbre, panoplies)
+      s'ADDITIONNENT avant d'être appliqués une seule fois, avec un plafond
+      de +300 %.
 
-    Le récap final (sur le message de spawn) reste affiché en deux pages
-    d'embed (navigables avec les flèches ⬅️ ➡️) :
-        • Page 1 — Récompenses : or, XP et drops reçus par chaque participant
-        • Page 2 — Détails : un graphique en barres ASCII (🏅 Part de victoire)
-          en haut de la page synthétise la répartition de la contribution
-          (médailles 🥇🥈🥉 pour le top 3) ; en dessous, le détail par joueur :
-          dégâts infligés, dégâts encaissés, PV soignés, PV restants.
+NIVEAU REQUIS
+    Chaque pièce a un niveau requis : en dessous, impossible de l'équiper.
 
-    Note sur la part de contribution : la régénération passive (hp_regen tour
-    par tour) ne compte PAS comme "PV soignés" pour le partage de l'or — un
-    joueur tanky avec gros hp_regen ne monopolise plus la part heal. Le champ
-    "PV soignés" est réservé aux soins actifs (futur système de classe Soigneur).
+AMÉLIORATION (+0 → +10)
+    Chaque niveau d'amélioration ajoute +10 % des bonus de la pièce : une
+    pièce à +10 vaut le double d'une pièce neuve. Deux façons de monter :
+        • la FUSION chez l'artisan qui fabrique la pièce (voir /forgeron) ;
+        • la FORGE SACRÉE, un événement qui offre un niveau gratuit.
+    Le niveau appartient à l'objet : toutes tes copies de la même pièce le
+    partagent.
 
-Note : les morts en combat ne reçoivent ni or, ni XP, ni drops, ni kill credit.
-       Tant que vous êtes mort durant un combat, vous ne pouvez pas vous
-       régénérer en PV jusqu'à la fin du combat.
+/equiper <objet>
+    Équipe un objet de ton inventaire (autocomplété). Si un emplacement est
+    déjà pris, un aperçu du gain ou de la perte de stats s'affiche avant de
+    confirmer.
 
-/fight @target
-    Duel 1v1 PvP entre joueurs, purement compétitif. Déterminant le ladder
-    1v1 (visible via /top "Classement duels 1v1") sans rien faire perdre :
-        • Aucun gain ni perte d'or, d'XP, de drops ou de kill counter
-        • Aucune perte de PV réelle : l'animation montre une barre d'HP qui
-          descend (les deux combattants démarrent à leur max_hp) mais à la
-          fin, votre current_hp réel est exactement celui que vous aviez
-          avant le défi
-        • Le combat est animé tour par tour dans le canal beta
+/desequiper <emplacement|all>
+    Retire la pièce d'un emplacement, ou tout l'équipement avec « all ».
 
-    Règle de défi :
-        • Vous ne pouvez défier qu'un joueur STRICTEMENT mieux classé que
-          vous (rank_position plus petit = mieux placé)
-        • Si vous gagnez → échange des places dans le ladder
-        • Si vous perdez → ladder inchangé, mais le compteur W-L reflète
-          la défaite/victoire
-        • Tout joueur jamais inscrit est ajouté au ladder en dernier rang
-          la première fois qu'il défie ou est défié
-        • Cooldown : 60 secondes entre 2 défis sortants
+/equipement [joueur]
+    L'équipement porté, en deux pages d'image : les 7 emplacements (avec le
+    niveau d'amélioration 🔨+N de chaque pièce), puis le résumé des stats
+    apportées et des panoplies actives.
 
-    Pas de validation de la cible : tant que le défi est éligible (vous
-    êtes moins bien classé), le combat se lance immédiatement.
+/equipement_liste [joueur]
+    Tous les équipements possédés, portés ou non, par catégorie.
 
-    Exemple : /fight @Bob (vous êtes #5, Bob est #2 → défi accepté)
+/inventaire [joueur]
+    Consommables et ressources (les équipements sont dans /equipement_liste).
+
+PANOPLIES
+    Une pièce peut appartenir à une famille de panoplie. Seuls la tête, le
+    corps et les deux armes comptent (pas les accessoires). Paliers à 2 et
+    4 pièces ; le palier le plus haut remplace le précédent. Une pièce à
+    deux mains compte pour 2 ; deux armes identiques comptent pour 1.
+
+/panoplie <nom>
+    Le détail d'une panoplie : paliers, bonus et pièces qui la composent.
+
+/equiper_panoplie <nom>
+    Équipe en un clic la meilleure configuration possible d'une panoplie
+    (tête, corps, armes) avec ce que tu possèdes.
+
+/creer_set <nom> · /equiper_set <nom> · /supprimer_set <nom>
+    Tes tenues sauvegardées : enregistre l'équipement porté sous un nom,
+    rappelle-le plus tard, ou supprime-le.
 
 --------------------------------------------------------------------------------
-1.5 — RÉPARTITION DES RÉCOMPENSES (combat de groupe)
+1.5 — COMBAT
 --------------------------------------------------------------------------------
 
-Or : pool FIXE = mob.gold_reward (PAS ×nb_survivants), partagé entre les
-     survivants selon le score de contribution multi-métriques (dégâts
-     infligés, dégâts tankés, PV soignés). En groupe, chacun touche une part
-     plus petite mais on tue plus vite → l'or/heure reste ≈ celui du solo.
-     C'est le régulateur de l'économie. Mort en combat → 0 or.
+COMBATS DE GROUPE (automatiques)
+    Un monstre apparaît dans chaque salon de zone ; le suivant revient
+    environ une minute après la fin du combat. Clique « Rejoindre » : tu as
+    5 minutes pour te joindre au groupe (le combat peut être lancé avant).
+    Un second message suit le combat tour par tour ; à la fin, il renvoie
+    vers le récapitulatif (deux pages : récompenses, puis détail et part de
+    victoire de chacun).
 
-XP : montant PLEIN, identique pour tous les participants (aucune variance de
-     puissance), MORTS INCLUS. Un joueur mort gagne l'XP (et peut level-up)
-     mais ni or ni loot. En groupe, chacun reçoit le plein montant.
+RÉCOMPENSES D'UN COMBAT DE GROUPE
+    • Or : une somme FIXE par monstre, partagée entre les survivants selon
+      leur contribution (dégâts infligés, dégâts encaissés, soins donnés).
+      En groupe on tue plus vite mais chacun touche une part plus petite.
+      Mort en combat : pas d'or.
+    • XP : le montant plein pour TOUS, morts compris.
+    • Butin : un tirage par survivant, plus le butin commun de la famille.
+    • Essences : selon l'élément du monstre (survivants uniquement).
 
-Drops : roll indépendant pour chaque survivant + drop commun de famille
-        (quantité croissante avec la puissance du mob).
+LES ÉLÉMENTS
+    Chaque monstre a un élément. Ton attaque prend toute seule l'élément qui
+    frappe le plus fort CE monstre (« Coup Tranchant de Feu »). La faiblesse
+    du monstre ouvre la porte, ta MAÎTRISE de l'élément décide du gain :
+    15 % du bonus avec une affinité de 0, 100 % avec 100 — jusqu'à +30 % de
+    dégâts.
 
-Kill counter : tous les survivants reçoivent +1 (les morts n'ont pas le kill).
+PV ET MANA
+    Les PV et le mana ne remontent PAS pendant un combat : ils se régénèrent
+    entre les combats, à la minute, selon tes stats de régénération.
 
-/use <item_code>
-    Utiliser un consommable de votre inventaire (autocomplete sur les
-    consommables possédés). Décrémente la quantité de 1 et applique
-    l'effet immédiatement. Si déjà full HP avec une potion : l'effet
-    cap à max_hp (pas de gaspillage évité — le consommable est tout
-    de même utilisé).
+/utiliser <consommable>
+    Utilise un consommable de ton inventaire (ex. la potion de soin).
 
-    Consommables actuellement disponibles :
-        • potion_soin_i    (Potion de soin I)   — restaure 50% PV max
-        • potion_soin_ii   (Potion de soin II)  — restaure 75% PV max
-        • potion_soin_iii  (Potion de soin III) — restaure 100% PV max
-
-    Tous les 3 sont vendus en boutique. À craft / loot pour des recettes
-    dédiées plus tard.
+/duel @joueur
+    Duel 1v1 pour le ladder des duels, sans rien à gagner ni à perdre : ni
+    or, ni XP, ni PV réels (les deux combattants partent de leurs PV max).
+        • Tu ne peux défier qu'un joueur MIEUX classé que toi.
+        • Si tu gagnes, vous échangez vos places.
+        • 60 secondes entre deux défis.
 
 /bestiaire
-    Catalogue paginé des monstres du jeu (1 mob par page, navigation via
-    flèches ⬅️ ➡️). Pour chaque mob :
-        • Stats brutes (PV max, attaque, défense, vitesse, crit, esquive)
-        • Récompenses (XP, or, poids de spawn, famille)
-        • Drops possibles avec leur taux de base
-    Les mobs sont triés par famille puis par PV pour faciliter la lecture.
+    Le catalogue des monstres : stats, élément, récompenses et butin.
+
+WORLD BOSS — /boss moi, /boss historique, /boss list
+    Un boss apparaît chaque semaine. Inscris-toi avec 🤝 avant 20 h 50 : le
+    combat collectif se lance automatiquement à 21 h (heure de Paris). Les
+    récompenses suivent ta part de l'effort (paliers de contribution), avec
+    du butin exclusif et le titre de MVP.
+        /boss moi        : ton rang, ta part, tes dégâts / encaissé / soins.
+        /boss historique : les raids des semaines passées.
+        /boss list       : le catalogue des boss.
 
 --------------------------------------------------------------------------------
-1.6 — CLASSEMENTS
+1.6 — QUÊTES
 --------------------------------------------------------------------------------
 
-/top <category>
-    Affiche un classement (top 10) avec autocomplete dynamique.
-    Catégories disponibles :
-        • Puissance (score de combat global)
-        • Niveau, Or
-        • Stats individuelles : Points de vie, Attaque, Défense, Vitesse,
-          Chance de critique, Dégâts de critique, Esquive, Régénération
-        • Monstres tués (total)
-        • Tués par mob spécifique (ex : Tués : Gobelin Géant)
-        • Tués par famille de mob (ex : Tués : famille Gobelin)
-        • Classement duels 1v1 (cf. section 1.4 pour les règles)
-    Tapez le début du nom et l'autocomplete vous propose les options.
+/quetes
+    Tes 3 quêtes du jour (tirées au hasard, renouvelées à minuit UTC), avec
+    un bouton pour réclamer les récompenses.
+
+/quetes_hebdo
+    Tes 3 quêtes de la semaine (tirées le lundi, UTC).
+
+    Les récompenses en or et en XP suivent ton niveau : une quête pèse le
+    même poids à tous les niveaux.
 
 --------------------------------------------------------------------------------
-1.7 — BOUTIQUE
+1.7 — LES ARTISANS ET LE MARCHAND
 --------------------------------------------------------------------------------
+
+/forgeron
+    BORAK, le forgeron : armes, boucliers, pièces de tête et de corps.
+    Tu ne tapes aucun code : une catégorie, puis un objet ; la fiche montre
+    ses stats, les ingrédients (✅ / ❌), le prix et le temps de travail.
+
+    FABRIQUER
+        • Les ingrédients ET l'or sont pris au lancement.
+        • Le prix et la durée montent avec la puissance de la pièce.
+        • Une seule commande à la fois chez chaque artisan ; le bot te
+          prévient dans le salon quand c'est prêt. Reviens et « Récupérer ».
+        • Annuler rend les ingrédients et la moitié de l'or.
+
+    AMÉLIORER (bouton « 🔨 Améliorer »)
+        Choisis une pièce que tu possèdes en double : Borak fusionne une
+        copie identique pour la faire monter d'un niveau, immédiatement.
+        • Prix : (niveau visé) × 50 % du prix de fabrication de la pièce.
+        • Tu gardes toujours les pièces que tu portes : porter deux fois la
+          même arme demande une troisième copie pour fusionner.
+        • Maximum +10.
+
+    SA MAÎTRISE (Apprenti → Compagnon → Maître → Légendaire)
+        Chaque commande RÉCUPÉRÉE le fait progresser avec toi : il accepte
+        des pièces plus puissantes, fait une remise et travaille plus vite.
+        Une commande annulée ne compte pas.
+
+/artisan
+    ELNA, l'artisane : les ACCESSOIRES. Même fonctionnement, sa propre
+    maîtrise et sa propre file : une forge et une confection peuvent
+    tourner en même temps.
 
 /marchand
-    Fait venir SORN, LE MARCHAND. Il déballe son étal : tu choisis un RAYON
-    dans un menu, puis un ARTICLE, tu règles la quantité avec les boutons
-    ×1 / ×5 / ×10, et tu achètes. Aucun code à taper.
-
-    La fiche affiche la description de l'article, son prix à l'unité, combien
-    tu en possèdes déjà et le prix total. Le bouton « Acheter » reste grisé
-    tant que ta bourse ne suit pas.
-
-    ACHAT UNIQUEMENT — on ne peut rien lui revendre.
-    Note : les DROPS DE MOB (dent de gobelin, gelée de slime…) ne sont PAS
-    chez lui — ils servent uniquement à faire travailler les artisans.
-
+    SORN, le marchand : un rayon, un article, la quantité (×1 / ×5 / ×10),
+    acheter. Achat uniquement. Le butin des monstres n'est pas chez lui : il
+    sert aux artisans.
 
 --------------------------------------------------------------------------------
 1.8 — ÉCHANGES ENTRE JOUEURS
 --------------------------------------------------------------------------------
 
-/pay @target <amount>
-    Envoie de l'or à un autre joueur. Transfert unilatéral, simple et
-    sécurisé.
-    Validations :
-        • amount strictement positif (≥ 1) — bloqué côté Discord et côté
-          use case
-        • Refus si vous tentez de vous payer vous-même
-        • Refus si la cible n'a pas de profil joueur
-        • Refus si vos fonds sont insuffisants au moment de l'envoi
-    L'or transféré n'est PAS comptabilisé dans le `gold_earned_total` du
-    receiver (cohérent avec /admin give_gold et /trade : seuls les gains
-    "via le jeu" comptent dans les stats de carrière).
-    Exemple : /pay @Bob 50
+/payer @joueur <montant>
+    Envoie de l'or à un autre joueur.
 
-/trade @target
-    Propose un échange à un autre joueur. Un brouillon ephemeral s'ouvre
-    et se construit en cliquant sur des boutons (workflow itératif, pas
-    de saisie manuelle de codes d'item) :
-        • [+ Mon item]      → Select Menu listant vos items en inventaire
-                              (top 25 par quantité), puis modal de quantité
-        • [+ Item demandé]  → Select Menu listant les items de la cible,
-                              puis modal de quantité
-        • [💰 Mon or]       → modal d'un seul champ pour le montant que
-                              vous proposez
-        • [💰 Or demandé]   → modal d'un seul champ pour le montant que
-                              vous demandez en retour
-        • [🔄 Reset]        → vide entièrement le brouillon
-        • [🛑 Annuler]      → ferme le brouillon sans rien envoyer
-        • [✅ Soumettre]    → crée le trade et poste le message public
+/echange @joueur
+    Propose un échange d'objets et/ou d'or. Un brouillon (visible de toi
+    seul) se construit avec des boutons : tes objets, les siens, ton or,
+    son or. Soumis, il est posté dans le salon avec Accepter / Refuser /
+    Annuler.
+        • Tout est revérifié au moment de l'acceptation : si quelqu'un n'a
+          plus ce qu'il proposait, rien ne bouge.
+        • Un échange expire au bout de 5 minutes.
+        • Un seul échange en attente par paire de joueurs.
 
-    Le brouillon est mis à jour visuellement à chaque action : embed avec
-    deux colonnes "Vous proposez" / "La cible doit donner". Si vous
-    cliquez deux fois sur le même item, les quantités sont additionnées.
+/brocante annonces · mes_annonces · vendre · acheter · annuler
+    La place de marché entre joueurs (commission de 5 %).
 
-    Une fois soumis, un récapitulatif est posté dans le canal avec
-    @target tag et 3 boutons :
-        • ✅ Accepter (réservé à @target) : exécute l'échange
-        • ✋ Refuser (réservé à @target) : ferme le trade
-        • 🛑 Annuler (réservé à l'initiateur) : ferme le trade
+--------------------------------------------------------------------------------
+1.9 — CLASSEMENTS ET DIVERS
+--------------------------------------------------------------------------------
 
-    Sécurité :
-        • Vérification des items et de l'or à la proposition (vous ne
-          pouvez pas proposer ce que vous n'avez pas)
-        • Re-vérification au moment de l'acceptation (anti-exploitation
-          du décalage entre proposition et accept : si l'un des deux
-          a entre temps consommé ses ressources, l'échange échoue
-          proprement et rien ne bouge)
-        • Cooldown 5 minutes : le trade expire si pas accepté dans ce délai.
-          Un cleanup loop côté bot marque automatiquement les trades
-          dépassés en "expired" toutes les minutes pour libérer la paire
-        • Un seul trade pending par paire de joueurs à la fois
-        • Pas de trade avec un bot, pas de trade avec soi-même
+/classement <catégorie>
+    Les classements (top 10), avec autocomplétion : puissance, niveau, or,
+    stats, victoires (au total, par monstre, par famille), duels 1v1.
 
-    Exemple : /trade @Bob
-        → [+ Mon item] → choisir "iron_ingot" → quantité 5
-        → [💰 Mon or] → 50
-        → [+ Item demandé] → choisir "gobelin_tooth" → quantité 10
-        → [✅ Soumettre]
+/chad
+    Prendre ou retirer le rôle @chad (tagué quand quelqu'un demande de l'aide
+    en combat).
 
 ================================================================================
-                       2. COMMANDES ADMINISTRATEUR
+                  2. COMMANDES ET OUTILS ADMINISTRATEUR
 ================================================================================
 
-Les commandes /admin ... ne sont accessibles qu'aux Discord IDs déclarés dans
-la variable d'environnement ADMIN_DISCORD_IDS (cf. .env).
+Les commandes /admin ne sont accessibles qu'aux comptes listés dans
+ADMIN_DISCORD_IDS (.env). Réponses éphémères, depuis n'importe quel salon.
 
-Toutes les commandes admin sont éphémères (réponse visible uniquement par
-l'admin). Elles fonctionnent depuis n'importe quel canal (pas de restriction
-beta channel sur le cog admin).
-
-INTERFACE WEB ADMIN
-    En complément des commandes Discord, une webapp d'administration permet
-    de gérer le contenu du jeu via le navigateur :
-
-        http://<vps-ip>:8001/admin       (en prod, depuis le VPS)
-        http://localhost:8001/admin      (en dev local)
-
-    Authentification : OAuth2 Discord (cliquer "Se connecter avec Discord").
-    Seuls les comptes listés dans ADMIN_DISCORD_IDS peuvent accéder.
-
-    Périmètre V1 actif :
-        • Items (créer / éditer)
-        • Mobs (créer / éditer)
-    Le reste (classes, recettes, skill tree, panoplies, titres, quêtes,
-    world bosses, shop, joueurs) apparaît en "à venir" et reste gérable
-    via les JSON dans app/infrastructure/content/ + reseed, ou via les
-    commandes /admin ci-dessous.
+INTERFACE WEB D'ADMINISTRATION
+    http://<vps>/admin (connexion Discord, mêmes comptes autorisés).
+    On y gère tout le contenu : objets, monstres, zones et familles, scènes,
+    boutique, artisans, titres, quêtes, événements, world boss, joueurs, et
+    l'ARBRE DE COMPÉTENCES avec son builder visuel (/admin/skill-tree/builder,
+    utilisable aussi sur téléphone). Les « Actions rapides » permettent aussi
+    de demander au bot de faire apparaître un monstre, un boss ou un
+    événement.
+    ⚠️ Les fichiers de contenu lus au démarrage (arbre, artisans, zones,
+    événements) demandent un REDÉMARRAGE du bot après modification.
 
 --------------------------------------------------------------------------------
 2.1 — GESTION DES JOUEURS
 --------------------------------------------------------------------------------
 
-/admin give_gold <target> <amount>
-    Ajoute de l'or au profil de @target.
-    Range : 1 à 1 000 000 000.
-    Exemple : /admin give_gold @TestPlayer 5000
+/admin give | set | remove <joueur> <ressource> <montant>
+    Ajoute, fixe ou retire une ressource : or, XP, points d'arbre, points de
+    stats (en réserve), PV courants, mana courant, série du /daily.
+    « give » sur l'XP calcule les passages de niveau.
 
-/admin set_gold <target> <amount>
-    Définit l'or de @target à un montant absolu (clamp à 0 minimum).
-    Range : 0 à 1 000 000 000.
-    Exemple : /admin set_gold @TestPlayer 0
+/admin set_level <joueur> <niveau>
+    Fixe le niveau (XP remise à 0). Ne donne pas les points de ce niveau :
+    ajoute-les avec /admin give.
 
-/admin give_xp <target> <amount>
-    Ajoute de l'XP. Peut faire monter de niveau (le bot affiche la transition).
-    Range : 1 à 1 000 000 000.
-    Exemple : /admin give_xp @TestPlayer 1000
+/admin give_item | remove_item <joueur> <objet> <quantité>
+    Ajoute ou retire des objets de l'inventaire.
 
-/admin set_level <target> <level>
-    Définit le niveau du joueur (XP remis à 0 pour ce niveau).
-    Range : 1 à 1000.
-    Exemple : /admin set_level @TestPlayer 10
+/admin heal_full <joueur>
+    PV et mana au maximum.
 
-/admin give_item <target> <item_code> <quantity>
-    Ajoute des objets à l'inventaire de @target.
-    Autocomplete sur item_code (parmi tous les items définis).
-    Exemple : /admin give_item @TestPlayer slime_gel 50
+/admin set_rank <joueur> <rang>
+    Pose un rôle de rang (et retire les autres).
 
-/admin remove_item <target> <item_code> <quantity>
-    Retire des objets de l'inventaire de @target.
-    Échec si le joueur n'a pas la quantité demandée.
-    Exemple : /admin remove_item @TestPlayer slime_gel 10
+/admin set_kills <joueur> <monstre> <nombre>
+    Fixe le compteur de victoires sur un monstre (0 supprime la ligne).
 
-/admin give_skill_points <target> <amount>
-    Ajoute (ou retire si négatif) des skill points à @target. Le total est
-    clampé à 0 minimum. Range : -1000 à 1000.
-    Exemple : /admin give_skill_points @TestPlayer 5
+/admin force_equip <joueur> <objet> [emplacement] · /admin force_unequip
+    Équipe ou déséquipe en contournant toutes les vérifications.
 
-/admin set_skill_points <target> <amount>
-    Définit le nombre exact de skill points de @target. Range : 0 à 10 000.
-    Exemple : /admin set_skill_points @TestPlayer 0
+/admin set_duel_rank <joueur> <position>
+    Place un joueur dans le ladder des duels (les autres sont décalés).
 
-/admin set_current_hp <target> <hp>
-    Définit les PV courants de @target. Utile pour tester les KO ou la régen.
-    Range : 0 à 1 000 000.
-
-/admin heal_full <target>
-    Restaure les PV de @target à son `max_hp` courant (recalculé en fonction
-    du niveau, équipement, classe, skill bonuses).
-
-/admin set_daily_streak <target> <streak>
-    Définit le compteur de streak du /daily de @target (≥ 0).
-
-/admin set_class <target> <class_code>
-    Force la classe active de @target (ignore les prérequis de niveau).
-    Autocomplete sur class_code.
-
-/admin set_kills <target> <mob_code> <count>
-    Définit le compteur de kills de @target pour un mob spécifique.
-    `count = 0` supprime la ligne. Autocomplete sur mob_code.
-
-/admin force_equip <target> <item_code> [slot]
-    Force l'équipement d'un item sur un slot. Bypass tous les checks
-    (inventaire, prérequis, slot canonique). Si `slot` non précisé,
-    utilise le slot canonique de l'item.
-
-/admin force_unequip <target> <slot>
-    Vide un slot d'équipement de @target. Aucun retour en inventaire :
-    l'item est juste détaché. Autocomplete sur slot.
-
-/admin set_duel_rank <target> <position>
-    Force la position de @target dans le ladder 1v1 (#1 = meilleur).
-    Si la position est déjà occupée, les autres joueurs sont décalés
-    automatiquement. Range : 1 à 10 000.
-
-/admin reset_player <target>
-    Réinitialise complètement le profil de @target tout en gardant son
-    identité Discord (id, username, display_name).
-    Réinitialise : niveau (1), XP (0), or (0), inventaire (vide), équipement
-    (vide), classes, quêtes, cooldowns, état HP, kills, professions, skill
-    points, allocations skill tree, position duel rank.
-    Très utile pour tester un nouveau flow.
+/admin reset_player <joueur>
+    Remet le joueur à zéro en gardant son identité Discord : niveau, XP,
+    points d'arbre et de stats (placés compris), or, inventaire, équipement
+    et niveaux d'amélioration, quêtes, temps de recharge, PV/mana, victoires,
+    titres, place au ladder, affinités et essences, maîtrise et commandes
+    des artisans.
 
 --------------------------------------------------------------------------------
-2.2 — TEST & DEBUG
+2.2 — TESTS ET DÉBOGAGE
 --------------------------------------------------------------------------------
 
-/admin spawn_encounter [mob_code]
-    Force l'apparition immédiate d'un monstre dans le canal d'encounter
-    (dans les ~10 secondes suivantes). Refuse si un combat est déjà actif.
-    Sans paramètre : mob aléatoire. Avec mob_code (autocomplete) : ce mob
-    précis sera spawn.
+/admin spawn_encounter [monstre] [élément]
+    Fait apparaître un monstre tout de suite, dans le salon où la commande
+    est tapée s'il s'agit d'une zone.
 
-/admin end_encounter
-    Annule l'encounter actif (combat de groupe en cours). Le timer de
-    respawn est posé à +1 minute pour éviter un respawn instantané.
+/admin start_encounter · /admin end_encounter
+    Lance tout de suite le combat en attente, ou l'annule.
 
-/boss spawn <boss_code>
-    [Admin] Spawn manuel d'un world boss défini dans
-    `app/infrastructure/content/boss_definitions.json`. Refuse si un
-    autre boss est actif. Le boss apparaît dans le canal défini par
-    BOSS_CHANNEL_ID (fallback : ENCOUNTER_CHANNEL_ID si non défini).
-    Le boss ne regagne JAMAIS de PV — vaincu à l'usure.
-    Autocomplete sur boss_code.
+/event spawn <type>
+    Fait apparaître un événement : coffre, petite fille, forge sacrée.
 
-/boss list
-    Affiche le catalogue complet des world bosses définis : stats, tier
-    (intro/medium/hard/endgame), poids de spawn, particularités, lore.
-
-Auto-spawn
-    Toutes les heures, le bot vérifie si un nouveau boss peut apparaître :
-        • Pas de boss actuellement actif
-        • Dernière défaite > 7 jours OU jamais spawné
-        • Tirage aléatoire 5%/heure → ~1 spawn / jour de moyenne après
-          la fenêtre 7j
-    Sélection pondérée par `spawn_weight` : plus le poids est haut, plus
-    le boss a de chance d'apparaître. Les bosses easy ont des poids hauts
-    (100), les endgame des poids bas (5).
-
-5 bosses définis par défaut (test/early-game) :
-    • [intro]       slime_titan      — 50k PV, immunité dmg <5
-    • [medium]      gobelin_warlord  — 200k PV, enrage 30% (atk ×1.5)
-    • [medium_hard] stone_colossus   — 500k PV, immunité dmg <50
-    • [hard]        shadow_wraith    — 800k PV, immune aux crits, dodge 30
-    • [endgame]     ancient_dragon   — 2M PV, immunité dmg <100, enrage 25% (atk ×1.8)
-
-Ces stats sont des données de test : à remplacer par les vraies valeurs
-quand ces dernières seront fournies.
-
-Particularités (modifiers) supportées :
-    • damage_immunity_threshold : les dégâts < N sont ignorés (boss "armuré")
-    • enrage_below_pct + enrage_attack_multiplier : à X% PV, atk × N
-    • crit_immunity : ignore l'effet des coups critiques du joueur
-
-Le message du boss embarque 3 boutons :
-    • [🤝 Rejoindre]      → s'inscrire au raid (1 fois)
-    • [🚪 Quitter]        → se désinscrire (refusé si déjà combattu)
-    • [⚔️ Lancer le combat] → solo combat avec bonus d'équipe (cooldown
-      1/jour, reset minuit UTC). Bonus = +5% atk/def/HP par participant
-      inscrit, capé à +50%.
-
-À la défaite, le bot poste un récap dans le canal et distribue :
-    • Top dégâts / Top tank / Top heal : +200g, +100xp, +1 potion_soin_iii
-    • Tous les participants : +50g, +25xp, +1 potion_soin_i (en plus
-      du bonus catégorie pour les top-X — cumul possible).
+/boss spawn <boss> · /boss stop · /boss list
+    Fait apparaître un world boss, l'arrête sans récompense, ou liste les
+    boss. Un boss ne regagne jamais ses PV.
 
 --------------------------------------------------------------------------------
-2.3 — GESTION DE LA BOUTIQUE
+2.3 — BOUTIQUE
 --------------------------------------------------------------------------------
 
-/admin shop_add <item_code> <buy_price> <max_sell_price> [min_sell_price=0] [stock_threshold=100]
-    Ajoute un objet au shop.
-    Paramètres :
-        • item_code : code de l'objet (autocomplete : items pas encore en shop)
-        • buy_price : prix fixe que les joueurs paient pour acheter (≥ 0)
-        • max_sell_price : prix payé au joueur quand le shop est vide (≥ 0)
-        • min_sell_price : prix minimum quand le shop est saturé (par défaut 0)
-        • stock_threshold : stock à partir duquel le prix de vente atteint le
-          minimum (par défaut 100)
-    Validation : min_sell_price doit être ≤ max_sell_price.
-    Exemple : /admin shop_add slime_gel 15 8 2 100
-              → Achat 15 or, vente 2-8 or, saturation à 100 unités en stock
-
-/admin shop_set <item_code> [buy_price] [max_sell_price] [min_sell_price] [stock_threshold] [enabled]
-    Modifie un objet existant du shop. Tous les champs sont optionnels :
-    seuls ceux fournis sont mis à jour.
-    Autocomplete sur item_code (items déjà dans le shop).
-    Exemple : /admin shop_set slime_gel buy_price:20 enabled:False
-              → Change le prix d'achat à 20 et désactive l'item
-
-/admin shop_remove <item_code>
-    Retire complètement un objet du shop.
-    Autocomplete sur item_code (items présents dans le shop).
-    Exemple : /admin shop_remove slime_gel
-
-/admin shop_set_stock <item_code> <stock>
-    Définit manuellement le stock d'un objet (clamp à 0 minimum).
-    Utile pour relancer le prix de vente vers le maximum après modération.
-    Range : 0 à 10 000 000.
-    Exemple : /admin shop_set_stock slime_gel 0
-              → Reset le stock à 0, le prix de vente revient à max
+/admin shop_add · shop_set · shop_remove · shop_set_stock
+    Ajoute, modifie, retire un article du marchand, ou fixe son stock.
 
 --------------------------------------------------------------------------------
-2.4 — WORKFLOW ADMIN TYPE
+2.4 — SAISON : RESET ET SIMULATION
 --------------------------------------------------------------------------------
 
-Tester un nouveau flow shop (achat uniquement) :
-    /admin reset_player @MoiTest          # repart de zéro
-    /admin give_gold @MoiTest 1000        # bourse
-    /admin shop_add potion_soin_i 30 0 0 100  # ajout shop
-    /shop                                 # voir le shop
-    /buy potion_soin_i 5                  # tester l'achat
+Reset de saison (sur le VPS, de préférence bot arrêté) :
+    .venv/bin/python -m scripts.season_reset                       # aperçu
+    .venv/bin/python -m scripts.season_reset --confirm "SAISON 1"  # exécute
+    La base est sauvegardée avant toute écriture. Tous les joueurs repartent
+    de zéro (seule l'identité Discord reste) ; world boss, événements,
+    brocante, échanges et commandes d'artisans sont vidés. Au démarrage
+    suivant, le bot remet tous les rôles de rang au Rang F.
 
-Tester un combat de groupe :
-    /admin spawn_encounter                # spawn forcé d'un mob
-    (clic sur "Combattre" pour rejoindre)
-    (attendre ou regarder les autres joueurs rejoindre)
-    (combat se résout automatiquement)
-    (récap 2 pages s'affiche)
+Simulation de la saison :
+    .venv/bin/python -m scripts.simulate_season [--minutes 30] [--cycle 3]
+    Joue un joueur type jour par jour : jours pour atteindre chaque niveau,
+    or gagné par source, prix d'une tenue complète à chaque palier.
 
 ================================================================================
                            3. NOTES TECHNIQUES
 ================================================================================
 
-— Toutes les valeurs de stats (crit_chance, crit_damage, dodge) sont en
-  pourcentages entiers 0..100, sauf crit_damage où 100 = neutre, 150 = ×1.5.
+— Pourcentages : chances de critique et esquive de 0 à 100 ; dégâts
+  critiques où 100 = neutre et 150 = ×1,5.
 
-— Formule de dégâts (identique en combat de groupe, solo et duel 1v1) :
-    1. raw_attack = attaque
-    2. SI crit (random < crit_chance/100) :
-           raw_attack = int(raw_attack × crit_damage / 100)
-    3. dégâts = max(1, raw_attack - défense_cible)
-    4. (groupe uniquement) bonus de titre Slayer : dégâts × multiplicateur famille
-    5. SI esquive de la cible (random < dodge/100) → dégâts = 0
-  Le crit est donc appliqué au coup BRUT puis la défense est soustraite —
-  un crit garde sa pleine valeur même contre une cible blindée.
+— Formule de dégâts :
+    1. attaque brute = attaque ;
+    2. coup critique (au hasard selon les chances de critique) :
+       attaque brute × dégâts critiques / 100 ;
+    3. dégâts = max(1, attaque brute − défense de la cible) ;
+    4. multiplicateurs : élément (±30 % au plus), titres de famille ;
+    5. esquive de la cible (au hasard) → 0 dégât.
+  Le critique s'applique AVANT la défense : il garde sa pleine valeur contre
+  une cible très défensive.
 
-— Les images de monstres sont stockées localement dans assets/mobs/.
-  Si une image manque, un placeholder gris s'affiche.
+— XP pour passer le niveau N : 6,25 × N × (8 + 0,547 × N).
+  XP d'un monstre : 6,25 × son niveau ; or : 3 × son niveau.
 
-— Les combats de groupe ont un lobby de 5 minutes. Si personne ne rejoint,
-  le monstre s'enfuit (pas de combat ni de récompense).
+— Quêtes : le montant écrit dans daily_quests.json / weekly_quests.json est
+  la récompense au niveau 20 ; elle suit ensuite le niveau (× niveau / 20).
 
-— Le système de famille de monstres permet d'agréger plusieurs variantes
-  (gobelin, gobelin_combattant, gobelin_chaman...) sous une famille commune
-  (gobelin) — utile pour les classements et futurs titres.
+— Amélioration : bonus d'une pièce × (1 + 0,10 × niveau), de +0 à +10.
 
 ================================================================================
                               FIN DU TUTORIEL

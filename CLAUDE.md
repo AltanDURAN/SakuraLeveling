@@ -21,8 +21,12 @@ Bot Discord RPG en Python 3.12, architecture clean (bot / application / domain /
 # Synchroniser sans rejouer le SQL (uniquement si schéma déjà à la cible)
 .venv/bin/alembic stamp head
 
-# Seed contenu (mobs, items, classes, crafts, quêtes)
+# Seed contenu (mobs, items, crafts, quêtes)
 .venv/bin/python -m app.infrastructure.db.seeders.seed_content
+
+# Saison : simulation de progression / reset (aperçu sans --confirm)
+.venv/bin/python -m scripts.simulate_season
+.venv/bin/python -m scripts.season_reset
 
 # Inspecter la DB
 sqlite3 lita_v2.db "SELECT id, code, name FROM mob_definitions;"
@@ -76,6 +80,10 @@ Ordre de lecture conseillé avant patch : `pyproject.toml` → `alembic.ini` →
   - **Niveau requis sur l'équipement** (`level_requirement`) : bloque l'équipement sous le niveau. Protège le PARCOURS, pas l'équilibre instantané (le % s'en charge déjà) — sans lui, un nouveau à qui on offre une pièce ultime n'aurait plus jamais besoin d'en chercher.
   - **Courbe d'XP QUADRATIQUE** : `kills(niveau) = 8 + 0,547 × niveau` → 9 kills au niveau 1, 62 au niveau 99, **~3 500 pour le cap 100** (6 mois assidu à 1 an régulier). Avant c'était 16 kills constant à vie, donc l'écart entre un ancien et un nouveau ne se refermait JAMAIS. Désormais un nouveau gagne 4 niveaux pendant qu'un ancien en gagne 1 : il rattrape en NIVEAUX, l'ancien garde l'avance en TEMPS investi. Plancher de 8 kills au niveau 1 — les premiers niveaux ne tombent pas tout seuls.
   - **`LEVEL_CAP = 100`** : au cap, l'XP n'est plus accumulée (une barre qui se remplit pour rien est plus frustrante qu'un palier assumé).
+  - **Récompenses de quêtes indexées sur le niveau** ([`quest_reward_service.py`](app/domain/services/quest_reward_service.py)) : le montant écrit dans `daily_quests.json` / `weekly_quests.json` est la récompense au **niveau 20**, puis × niveau / 20. ⚠️ Pas « montant de niveau 1 × niveau » : simulé, les quêtes valaient alors 2,5× les combats et le niveau 100 tombait en 63 jours.
+  - **Simulateur de saison** : `scripts/simulate_season.py` — jours pour atteindre chaque niveau (contenu actuel vs zones complètes), or par source, prix d'une tenue complète par palier. Référence actuelle : ~260 j à 30 min/jour, ~150 j à 1 h/jour (3 min par combat). ⚠️ `/daily` (série × 100 sans plafond) fournit ~84 % de tout l'or simulé — décision d'économie en attente.
+  - **Amélioration d'équipement** ([`item_upgrade_service.py`](app/domain/services/item_upgrade_service.py)) : une pièce va de **+0 à +10**, **+10 % de ses bonus par niveau** (+10 = ×2). Niveau stocké par (joueur, définition) dans `player_item_levels` (les objets sont fongibles : toutes les copies partagent le niveau). Gagné par **fusion** chez l'artisan qui fabrique la pièce (`UpgradeItemUseCase` : une copie identique + or = N × `upgrade_gold_pct_per_level` % du prix de fabrication pour passer à +N ; on ne sacrifie jamais une pièce portée → `copies_required = max(2, portées + 1)`) ou par la **forge sacrée** (+1 gratuit). ⚠️ Avant : `× (1 + niveau)`, +10 valait ×11 — ne pas y revenir.
+  - **Reset de saison** : `scripts/season_reset.py` (aperçu par défaut, `--confirm "SAISON 1"`, sauvegarde SQLite avant écriture) → `reset_season` ([`reset_season.py`](app/application/use_cases/reset_season.py)) : `ResetPlayerUseCase` pour chaque joueur + vidage des tables de saison + action `reset_rank_roles` en file (le bot remet tout le monde au Rang F). Décision : TOUT repart à zéro, seule l'identité Discord reste.
   - **UN SEUL joueur de référence** pour tout le calibrage : [`reference_player.py`](app/domain/services/reference_player.py) — répartition équilibrée des points + `EXPECTED_GEAR_PERCENT` d'équipement. `restat_mobs`, `restat_bosses`, `calibrate_rank_trials` et `ItemPowerService` en dépendent TOUS. Changer cette définition recalibre tout de façon cohérente ; chaque script avait avant sa propre idée du joueur type, et elles avaient divergé.
   - ⚠️ **Piège de la saison 1** : un build équilibré a désormais **ATK ≈ DEF** (même coût par point). L'ancienne règle « ATK de l'ennemi = 45 % de l'ATK du joueur » place donc l'ennemi SOUS la défense du joueur → plancher de 1 dégât et impasse jusqu'au tour maximum. L'attaque d'un mob ou d'un boss se calcule sur la **défense et les PV** du joueur, jamais sur son attaque.
   - **Les classes ne donnent plus de stats** : elles deviennent des nœuds de l'arbre (hexagones). `active_class` est encore accepté par `resolve_player_stats` mais **ignoré**, le temps du nettoyage.
@@ -122,45 +130,31 @@ git checkout main
 
 ## Slash commands disponibles
 
-> **⚠️ Renommage FR (juin 2026)** — les commandes ont été renommées en français (sans accents/majuscules). Le tableau ci-dessous garde parfois les anciens noms ; mapping appliqué dans le code (décorateurs `command(name=...)`, méthodes Python inchangées) :
-> `profile→profil` · `inventory→inventaire` · `gold→or` · `fight→duel` · `use→utiliser` · `pay→payer` · `shop→boutique` · `buy→acheter` · `top→classement` · `class→classe` · `class_set→choisir_classe` · `craft→fabriquer` · `forge→forger` · `craft_list→recettes` · `forge_list→recettes_forge` · `craft_panoplie→fabriquer_panoplie` · `forge_panoplie→forger_panoplie` · `equip→equiper` · `unequip→desequiper` · `equip_panoplie→equiper_panoplie` · `equip_set→equiper_set` · `create_set→creer_set` · `delete_set→supprimer_set` · `equipement_list→equipement_liste` · `skill→arbre` · `title→titre` · `title_set→titre_actif` · `trade→echange` · `weekly_quest→quetes_hebdo` · `daily_quest→quetes`. Nouvelles : `/competences`, `/demarrer`. Inchangées : `daily`, `help`, `ping`, `cd`, `chad`, `bestiaire`, `panoplie`, `equipement`, groupes `admin`/`boss`/`brocante`. (tuto.txt + xlsx restent à resynchroniser.)
+Noms FRANÇAIS (sans accents) — c'est ce que le joueur tape. Liste tirée du code (décorateurs `command(name=…)`), à tenir à jour avec `tuto.txt`.
 
 | Commande | Cog | Rôle |
 |---|---|---|
-| `/profile [target]`, `/equipement [target]`, `/equipement_list [target]`, `/inventory [target]`, `/class [target]`, `/gold [target]` | `player_cog` | Consultatives — `target` optionnel : par défaut soi-même, sinon profil d'un autre joueur |
-| `/equip`, `/unequip <slot>`, `/class_set`, `/classes`, `/daily`, `/craft`, `/craft_list`, `/forge`, `/forge_list` | `player_cog` | Actions sur soi ou listes globales (`/daily` reset à minuit UTC). `/gather` RETIRÉ (métiers à retravailler). |
-| `/fight @target` | `player_cog` | Duel 1v1 PvP entre joueurs (rien à gagner ni à perdre, juste pour le ladder) |
-| (boucle automatique) | `encounter_cog` | Spawn d'encounters, recrutement, combat de groupe |
-| `/top <category>` | `leaderboard_cog` | Classements (puissance, niveau, or, stats, kills total/mob/famille, duels 1v1) avec autocomplete |
-| `/admin give_gold`, `/admin set_gold`, `/admin give_xp`, `/admin set_level`, `/admin give_item`, `/admin remove_item` | `admin_cog` | **Admin uniquement** — tous prennent `target: discord.Member` |
-| `/admin give_skill_points` (+/-), `/admin set_skill_points` | `admin_cog` | **Admin uniquement** — gestion directe des skill points |
-| `/admin set_current_hp`, `/admin heal_full` | `admin_cog` | **Admin uniquement** — manipulation des PV courants |
-| `/admin set_daily_streak`, `/admin set_class`, `/admin set_kills` | `admin_cog` | **Admin uniquement** — set arbitraire (avec autocomplete sur class/mob) |
-| `/admin force_equip`, `/admin force_unequip` | `admin_cog` | **Admin uniquement** — bypass des checks d'équipement (slot canonique par défaut) |
-| `/admin set_duel_rank` | `admin_cog` | **Admin uniquement** — force la position du joueur dans le ladder 1v1 (décale les autres) |
-| `/admin reset_player @target` | `admin_cog` | **Admin uniquement** — réinitialise tout sauf l'identité Discord |
-| `/admin spawn_encounter [mob_code]` | `admin_cog` | **Admin uniquement** — spawn immédiat d'un encounter (random ou mob spécifique) |
-| `/admin end_encounter` | `admin_cog` | **Admin uniquement** — annule l'encounter actif |
-| `/event spawn <type>` | `event_cog` | **Admin uniquement** — spawn immédiat d'un événement non-combat (coffre / petite fille / forge sacrée) |
-| `/admin shop_add`, `/admin shop_set`, `/admin shop_remove`, `/admin shop_set_stock` | `admin_cog` | **Admin uniquement** — gestion du shop (autocomplete sur item_code) |
-| (webapp) `/admin/actions` | webapp | **Admin uniquement** — ACTIONS RAPIDES : or/XP/niveau/points/items/panoplies, PV courants, cooldowns, buffs temporaires, reset joueur (écriture DB directe) **+ actions du bot** (spawn monstre/boss/événement, arrêt ou résolution du combat) via la file `admin_commands` que `AdminBridgeCog` exécute côté bot en ≤5 s, avec journal de statut. |
-| (webapp) `/admin` | webapp | **Admin uniquement** — interface web pour CRUD items/mobs (OAuth Discord, port 8001). Voir section Skill Tree pour détails. |
-| `/marchand` | `shop_cog` | Le marchand : rayons et articles en menus, achat au bouton. Pas de vente (V2). Les drops de mob ne sont PAS en boutique. |
-| `/epreuve` | `rank_trial_cog` | Épreuve du rang suivant : seuil de power score, puis combat solo contre le gardien. Victoire ⇒ promotion du rôle Discord ; échec ⇒ cooldown. |
-| `/forgeron`, `/artisan` | `artisan_cog` | Les deux artisans : choisir une catégorie puis un objet, payer en ressources + or, attendre, récupérer. |
-| `/skill [target]` | `skill_cog` | Arbre de compétences avec image, boutons Investir/Vue web/Reset (cooldown 7j) |
-| `/use <item_code>` | `player_cog` | Utiliser un consommable (potions de soin I/II/III en V1) |
-| `/help [command]` | `help_cog` | Liste dynamique des commandes (autocomplete) ou détail d'une commande |
-| `/title [target]`, `/title_set [code]` | `title_cog` | Voir / activer un titre (cosmétique) — effets passifs toujours actifs |
-| `/panoplie <nom>` | `panoplie_cog` | Détail d'une panoplie : paliers, bonus, pièces qui la composent (autocomplete sur les familles) |
-| `/equip_panoplie <nom>` | `player_cog` | Équipe en 1 clic toute une panoplie 12/12. Refuse si pondéré < 12 (les armes 2-mains comptent pour 2). Conserve les pièces de la bonne famille déjà équipées. |
-| `/craft_panoplie <nom>`, `/forge_panoplie <nom>` | `player_cog` | Bulk-craft des pièces de panoplie manquantes (filtré par station forge/craft). Preview avec ingrédients utilisés + boutons Confirmer/Annuler. Liste les manquants si ressources insuffisantes. |
-| `/create_set <nom>`, `/delete_set <nom>`, `/equip_set <nom>` | `player_cog` | Loadouts personnels : sauvegarde l'équipement actuel sous un nom libre, supprime, ou rappelle un set. Tables `player_equipment_sets` + `player_equipment_set_items`. Refuse à l'equip si une pièce du set n'est plus possédée. |
-| `/unequip <slot\|all>` | `player_cog` | `slot=all` retire tout l'équipement d'un coup. |
-| `/weekly_quest` (claim par bouton) | `weekly_quest_cog` | 3 quêtes hebdo random tirées le lundi UTC. (`/daily_quest` : quêtes quotidiennes.) |
-| `/brocante annonces/mes_annonces/vendre/acheter/annuler` | `brocante_cog` | Marketplace P2P avec commission shop (5%) |
-| `/boss moi`, `/boss historique` | `world_boss_cog` | **RAID HEBDOMADAIRE** — `/boss moi` : rang, part de l'effort, palier de contribution, dégâts/encaissé/soins, progrès vs semaine précédente. `/boss historique` : 8 derniers raids (dégâts cumulés, MVP, issue, record). |
-| `/boss spawn <boss_code>`, `/boss list`, `/boss stop` | `world_boss_cog` | Spawn manuel admin / catalogue + auto-spawn hebdo. `stop` arrête le boss actif sans distribuer de récompenses (cleanup/debug). |
+| `/demarrer`, `/help [commande]`, `/ping` | `onboarding_cog`, `help_cog`, `player_cog` | Guide débutant (crée le profil + rôle Rang F), aide paginée par catégorie (`CATEGORIES` dans `help_cog`), ping |
+| `/profil [joueur]`, `/or [joueur]`, `/cd [joueur]`, `/affinites [joueur]` | `player_cog` | Consultatives — `joueur` optionnel (défaut : soi). `/profil` = bannière PNG |
+| `/stats` | `stats_cog` | **Saison 1** — feuille de perso, placer les points de stats (+2 ATK / +2 DEF / +50 PV) |
+| `/arbre [joueur]` | `skill_cog` | Arbre de compétences (image + Investir / Vue web / Reset 7 j) |
+| `/epreuve` | `rank_trial_cog` | Épreuve du rang suivant (seuil de puissance puis gardien) |
+| `/daily`, `/quetes`, `/quetes_hebdo` | `player_cog`, `daily_quest_cog`, `weekly_quest_cog` | Récompense quotidienne, 3 quêtes/jour, 3 quêtes/semaine |
+| `/titre [joueur]`, `/titre_actif` | `title_cog` | Titres débloqués / titre affiché |
+| `/inventaire`, `/equipement`, `/equipement_liste` | `player_cog` | Inventaire (consommables + ressources), équipement en image 2 pages, liste des équipements |
+| `/equiper`, `/desequiper <slot\|all>`, `/equiper_panoplie`, `/creer_set`, `/equiper_set`, `/supprimer_set`, `/panoplie` | `player_cog`, `panoplie_cog` | Équipement (placement automatique), panoplies, loadouts |
+| `/forgeron`, `/artisan` | `artisan_cog` | Artisans : fabriquer (commande + attente) et **améliorer** (fusion, +0 → +10) |
+| `/marchand` | `shop_cog` | Achat uniquement |
+| `/utiliser <consommable>`, `/duel @joueur`, `/bestiaire` | `player_cog`, `bestiaire_cog` | Consommable, duel 1v1 (ladder, sans enjeu), catalogue des monstres |
+| `/boss moi`, `/boss historique`, `/boss list` | `world_boss_cog` | Raid hebdomadaire (contribution, historique, catalogue) |
+| `/payer`, `/echange`, `/brocante annonces\|mes_annonces\|vendre\|acheter\|annuler` | `player_cog`, `trade_cog`, `brocante_cog` | Or, échanges, place de marché (5 %) |
+| `/classement <catégorie>`, `/chad` | `leaderboard_cog`, `chad_cog` | Classements, rôle @chad |
+| (boucle automatique) | `encounter_cog`, `event_cog`, `world_boss_cog`, `artisan_cog`, `admin_bridge_cog` | Spawn d'encounters, événements, raid 21 h, travaux d'artisans, file `admin_commands` |
+| `/admin give\|set\|remove <ressource>` | `admin_cog` | **Admin** — or, XP, points d'arbre, **points de stats**, PV/mana courants, série daily |
+| `/admin set_level`, `give_item`, `remove_item`, `heal_full`, `set_rank`, `set_kills`, `force_equip`, `force_unequip`, `set_duel_rank`, `reset_player` | `admin_cog` | **Admin** — gestion des joueurs (`target: discord.Member`) |
+| `/admin spawn_encounter [mob] [élément]`, `start_encounter`, `end_encounter`, `/event spawn`, `/boss spawn\|stop` | `admin_cog`, `event_cog`, `world_boss_cog` | **Admin** — tests et débogage |
+| `/admin shop_add\|shop_set\|shop_remove\|shop_set_stock` | `admin_cog` | **Admin** — boutique |
+| (webapp) `/admin/*` | webapp | **Admin** — tout le contenu (objets, mobs, zones, scènes, boutique, artisans, titres, quêtes, événements, boss, joueurs), builder d'arbre, actions rapides via `admin_commands` |
 
 ## Système d'administration
 
@@ -297,9 +291,9 @@ Refonte d'août 2026 — `/fabriquer`, `/forger`, `/recettes`, `/recettes_forge`
 ## Système de consommables
 
 - **Convention** : `category="consumable"` + `stat_bonuses_json={"effect": str, "value": ...}`. V1 supporte uniquement `effect="heal_percent"` (heal X% du max_hp courant, capé à max_hp).
-- **3 potions de soin** (I=50%, II=75%, III=100%) seedées dans [`items.json`](app/infrastructure/content/items.json) et [`shop_items.json`](app/infrastructure/content/shop_items.json).
+- **Une seule potion** (`potion_soin`) depuis la saison 1 — les potions I/II/III ont été fusionnées. D'autres consommables viendront (contenu).
 - **Use case** : [`UseConsumableUseCase`](app/application/use_cases/use_consumable.py) — décrément atomique de l'inventaire, calcul du `max_hp` via `StatsService` (équipement + classe + skill bonuses), update `player_health_state`.
-- **Commande** : `/use <item_code>` avec autocomplete sur les consommables actuellement possédés. Refus si pas en inventaire ou si l'item n'est pas marqué consommable.
+- **Commande** : `/utiliser <item_code>` avec autocomplete sur les consommables actuellement possédés. Refus si pas en inventaire ou si l'item n'est pas marqué consommable.
 
 ## Système de world boss
 
@@ -318,7 +312,7 @@ Refonte d'août 2026 — `/fabriquer`, `/forger`, `/recettes`, `/recettes_forge`
   - `crit_immunity` (bool) : neutralise la crit_chance du joueur (les crits = dmg normaux)
   - Modifier inconnu = ignoré poliment → extensibilité par contenu pur
 - **Persistence HP** : le boss garde `current_hp` entre les combats. `hp_regeneration=0` forcé — un boss ne regen jamais ses PV.
-- **Récompenses** ([`CompleteWorldBossUseCase`](app/application/use_cases/world_boss.py)) : à la défaite, top_damage/top_tank/top_heal reçoivent +200g/+100xp/+1 potion_soin_iii (cumul possible). Tous les participants reçoivent en plus la base : +50g/+25xp/+1 potion_soin_i.
+- **Récompenses** ([`CompleteWorldBossUseCase`](app/application/use_cases/world_boss.py)) : base de présence + part du pool d'or selon le score de contribution, amplifiées par le palier de contribution ; bonus top-3 et top par catégorie ; loot exclusif ; titre MVP. ⚠️ Tous les montants de la classe sont des montants de **niveau 1**, multipliés par le niveau du joueur (`scale_reward(..., reference_level=1)`).
 - **Catalogue** : `/boss list` affiche tous les bosses définis avec leurs stats et particularités (utile pour debug/preview).
 - **À faire quand le user enverra ses vraies données** : remplacer/étendre `boss_definitions.json`, ajuster `spawn_probability` du loop si besoin.
 

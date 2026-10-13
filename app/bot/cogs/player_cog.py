@@ -388,7 +388,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
 
     @app_commands.command(
         name="equipement",
-        description="Afficher l'équipement en image (3 pages : principal / secondaire / résumé)",
+        description="Afficher l'équipement en image (2 pages : emplacements / résumé)",
     )
     @app_commands.describe(target="Joueur dont afficher l'équipement (par défaut : vous)")
     async def equipment(

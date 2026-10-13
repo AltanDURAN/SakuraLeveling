@@ -37,8 +37,11 @@ def build_welcome_embed(display_name: str | None = None) -> discord.Embed:
     embed.add_field(
         name="1️⃣ Ton personnage",
         value=(
-            "**`/profil`** — crée ton perso et vois tes stats + tes **affinités "
+            "**`/profil`** — ton perso, tes stats et tes **affinités "
             "élémentaires** (tirées à ta création).\n"
+            "**`/stats`** — à chaque niveau tu gagnes **1 point de stats** : "
+            "place-le en attaque, en défense ou en PV. C'est ta seule source de "
+            "puissance brute.\n"
             "**`/daily`** — récompense quotidienne (reviens chaque jour !)."
         ),
         inline=False,
@@ -47,25 +50,39 @@ def build_welcome_embed(display_name: str | None = None) -> discord.Embed:
         name="2️⃣ Combats & progression",
         value=(
             "Les **monstres** apparaissent dans les salons de zone : clique "
-            "**Rejoindre** pour combattre en groupe et gagner XP/or/loot.\n"
-            "**`/arbre`** — dépense tes points de compétence (moteur de stats).\n"
-            "**`/equiper`**, **`/boutique`**, **`/recettes`** — équipe-toi."
+            "**Rejoindre** pour combattre en groupe et gagner XP, or et butin.\n"
+            "**`/arbre`** — chaque niveau donne aussi **1 point d'arbre** : "
+            "bonus, passifs et, aux jonctions, des classes.\n"
+            "**`/epreuve`** — bats le gardien du rang suivant pour ouvrir une "
+            "nouvelle zone."
         ),
         inline=False,
     )
     embed.add_field(
-        name="3️⃣ Éléments & compétences ✨",
+        name="3️⃣ Équipement 🛠️",
         value=(
-            "**`/competences`** — équipe **2 compétences élémentaires** "
-            "(offensive/défense/support). L'offensive fixe ton **élément "
-            "d'attaque** → **±30%** de dégâts selon l'élément de l'ennemi.\n"
-            "**`/bestiaire`** — vois l'élément et les **faiblesses** des monstres.\n"
-            "_L'art de l'adaptation : choisis ton build selon l'ennemi !_"
+            "**`/forgeron`** (armes, boucliers, tête, corps) et **`/artisan`** "
+            "(accessoires) fabriquent ton équipement avec les drops de monstres. "
+            "Ils l'**améliorent** aussi : fusionne une copie identique pour "
+            "gagner un niveau, jusqu'à +10.\n"
+            "L'équipement donne des **%** de tes stats : il amplifie ce que tu as "
+            "construit avec tes points.\n"
+            "**`/marchand`** — potions et articles utiles."
         ),
         inline=False,
     )
     embed.add_field(
-        name="4️⃣ World Boss 👑",
+        name="4️⃣ Les éléments ✨",
+        value=(
+            "Chaque monstre a un élément. Ton attaque prend toute seule "
+            "l'élément qui le frappe le plus fort, et ta **maîtrise** de cet "
+            "élément décide du bonus (jusqu'à **+30 %**). Monte tes affinités en "
+            "farmant des essences (`/affinites`, `/bestiaire`)."
+        ),
+        inline=False,
+    )
+    embed.add_field(
+        name="5️⃣ World Boss 👑",
         value=(
             "Un boss apparaît chaque semaine. **Inscris-toi** (🤝) avant **20h50**, "
             "le combat collectif se lance **automatiquement à 21h**. Récompenses "

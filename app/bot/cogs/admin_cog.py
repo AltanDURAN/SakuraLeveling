@@ -52,7 +52,8 @@ class AdminCog(commands.Cog):
     _RESOURCE_CHOICES = [
         app_commands.Choice(name="Or", value="gold"),
         app_commands.Choice(name="XP", value="xp"),
-        app_commands.Choice(name="Skill points", value="skill_points"),
+        app_commands.Choice(name="Points d'arbre", value="skill_points"),
+        app_commands.Choice(name="Points de stats", value="stat_points"),
         app_commands.Choice(name="PV courants", value="current_hp"),
         app_commands.Choice(name="Mana courant", value="current_mana"),
         app_commands.Choice(name="Daily streak", value="daily_streak"),
@@ -125,6 +126,21 @@ class AdminCog(commands.Cog):
                     repo.add_skill_points(profile.player.id, -amount)
                     new = max(0, current - amount)
                 label = "Skill points"
+
+            elif resource == "stat_points":
+                # Points de stats EN RÉSERVE (pas ceux déjà placés via /stats).
+                current = profile.progression.stat_points
+                if action == "set":
+                    new = max(0, amount)
+                elif action == "give":
+                    new = current + amount
+                else:
+                    new = max(0, current - amount)
+                prog = profile.progression
+                repo.apply_progression(
+                    profile.player.id, prog.level, prog.xp, prog.skill_points, new,
+                )
+                label = "Points de stats"
 
             elif resource == "current_hp":
                 equipped = EquipmentRepository(session).list_by_player_id(profile.player.id)

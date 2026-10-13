@@ -224,16 +224,23 @@ def write_equipment_sheet(wb: Workbook) -> None:
     ))
 
     ws = wb.create_sheet("🎽 Équipements")
+    # Saison 1 : ATK / DEF / PV en POURCENTAGE du socle (attack_pct…). La
+    # puissance d'une pièce en % dépend de qui la porte : elle est évaluée
+    # au niveau requis (ItemPowerService), donc calculée ici, pas en formule.
     headers = [
         "Code", "Nom", "Type", "Slot", "Panoplie", "Rareté", "2-mains",
-        "Atk", "Def", "PV", "Crit %", "Crit dmg", "Esquive", "Vitesse", "Regen",
-        "Mana max", "Regen mana",
+        "Niv. requis", "Atk %", "Def %", "PV %", "Crit %", "Crit dmg", "Esquive",
+        "Vitesse", "Regen", "Mana max", "Regen mana",
         "Power", "Prix achat", "Description",
     ]
     ws.append(headers)
 
+    from app.domain.services.item_power_service import ItemPowerService
+    power = ItemPowerService()
+
     for it in equip:
         b = it.get("stat_bonuses") or {}
+        level_req = int(it.get("level_requirement", 1) or 1)
         ws.append([
             it["code"], it["name"],
             EQUIPMENT_TYPES.get(it["category"], it["category"]),
@@ -241,25 +248,26 @@ def write_equipment_sheet(wb: Workbook) -> None:
             it.get("family") or "",
             it.get("rarity", "—"),
             "oui" if it.get("requires_two_hands") else "non",
-            b.get("attack", 0), b.get("defense", 0), b.get("max_hp", 0),
+            level_req,
+            b.get("attack_pct", 0), b.get("defense_pct", 0), b.get("max_hp_pct", 0),
             b.get("crit_chance", 0), b.get("crit_damage", 0),
             b.get("dodge", 0), b.get("speed", 0), b.get("hp_regeneration", 0),
             b.get("mana_max", 0), b.get("mana_regeneration", 0),
-            None,  # Power : formule injectée ci-dessous
+            power.marginal_power(b, level_req),
             it.get("buy_price") or 0,
             it.get("description", ""),
         ])
 
     last = ws.max_row
+    power_col = headers.index("Power") + 1
+    letter = get_column_letter(power_col)
     for r in range(2, last + 1):
-        ws.cell(row=r, column=16, value=_equip_power_formula(r))   # P = Power
-        ws.cell(row=r, column=16).number_format = "0.0"
-        ws.cell(row=r, column=16).fill = LOCK_FILL                 # auto-calc
-        ws.cell(row=r, column=16).font = Font(bold=True)
+        ws.cell(row=r, column=power_col).fill = LOCK_FILL   # calculé, ne pas éditer
+        ws.cell(row=r, column=power_col).font = Font(bold=True)
 
     _finalize(ws, freeze="C2")
-    _power_color_scale(ws, "P", last)
-    ws.column_dimensions["P"].width = 9
+    _power_color_scale(ws, letter, last)
+    ws.column_dimensions[letter].width = 9
 
 
 # ------------------------------------------------------------- mobs -----------
@@ -371,25 +379,47 @@ def write_shop_sheet(wb: Workbook) -> None:
 
 
 def write_skill_tree_sheet(wb: Workbook) -> None:
+    """Arbre v2 (builder) : cases + liens. Les prérequis se lisent dans les
+    liens — une case exige les cases reliées en amont au niveau MAX."""
     try:
         tree = _load("skill_tree.json")
     except FileNotFoundError:
         return
+    nodes = tree.get("nodes") or tree.get("skills") or {}
+    incoming: dict[str, list[str]] = {}
+    for link in tree.get("links", []):
+        incoming.setdefault(link.get("to", ""), []).append(link.get("from", ""))
+    for code, node in nodes.items():
+        for parent in node.get("prerequisites", []):
+            if parent not in incoming.get(code, []):
+                incoming.setdefault(code, []).append(parent)
+
+    shapes = tree.get("shapes", {})
+    types = tree.get("node_types", {})
     ws = wb.create_sheet("🌳 Skill Tree")
-    ws.append(["Code", "Nom", "Niveau max", "Coûts/niveau", "Effets",
-               "Prérequis", "Position", "Icône", "Description"])
-    for code, node in tree.get("skills", {}).items():
+    ws.append(["Code", "Nom", "Type", "Forme", "Départ", "Niveau max", "Coûts/niveau",
+               "Effets", "Prérequis", "Règle", "Position", "Icône", "Description"])
+    for code, node in nodes.items():
         effects = "\n".join(
             f"{e.get('type','?')} → [{','.join(str(v) for v in e.get('values', []))}]"
             for e in node.get("effects", [])
         )
+        names = [nodes.get(p, {}).get("name") or p for p in incoming.get(code, [])]
         pos = node.get("position", {})
-        ws.append([code, node.get("name", ""), node.get("max_level", 0),
-                   ",".join(str(c) for c in node.get("costs", [])),
-                   effects or "—",
-                   ", ".join(node.get("prerequisites", [])) or "racine",
-                   f"{pos.get('x', 0)}, {pos.get('y', 0)}",
-                   node.get("icon", ""), node.get("description", "")])
+        ws.append([
+            code, node.get("name", ""),
+            (types.get(node.get("node_type", ""), {}) or {}).get("label", node.get("node_type", "")),
+            (shapes.get(node.get("shape", ""), {}) or {}).get("label", node.get("shape", "")),
+            "oui" if node.get("start") else "",
+            node.get("max_level", 0),
+            ",".join(str(c) for c in node.get("costs", [])),
+            effects or "—",
+            ", ".join(names) or ("départ" if node.get("start") else "—"),
+            "une seule" if node.get("unlock_rule") == "any" and len(names) > 1 else
+            ("toutes" if len(names) > 1 else ""),
+            f"{pos.get('x', 0)}, {pos.get('y', 0)}",
+            node.get("icon", ""), node.get("description", ""),
+        ])
     _finalize(ws, freeze="B2")
 
 

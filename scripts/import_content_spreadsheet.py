@@ -38,8 +38,11 @@ EQUIPMENT_TYPES = {
 _TYPE_TO_CAT = {v: k for k, v in EQUIPMENT_TYPES.items()}
 
 # stat de la feuille → clé stat_bonuses
+# Saison 1 : ATK / DEF / PV en POURCENTAGE du socle. ⚠️ Ne jamais remapper
+# vers les anciennes clés plates (attack…) : StatsService les ignore.
 _STAT_COLS = {
-    "Atk": "attack", "Def": "defense", "PV": "max_hp", "Crit %": "crit_chance",
+    "Atk %": "attack_pct", "Def %": "defense_pct", "PV %": "max_hp_pct",
+    "Crit %": "crit_chance",
     "Crit dmg": "crit_damage", "Esquive": "dodge", "Vitesse": "speed",
     "Regen": "hp_regeneration",
     "Mana max": "mana_max", "Regen mana": "mana_regeneration",
@@ -86,10 +89,21 @@ def _bool(v):
     return _s(v).lower() in ("oui", "true", "1", "vrai", "yes")
 
 
+def _num(v):
+    """Nombre du tableur : entier si possible, décimal sinon (2,5 % de crit)."""
+    if v in (None, "", "—", "∞"):
+        return 0
+    try:
+        f = float(str(v).replace(",", "."))
+    except ValueError:
+        return 0
+    return int(f) if f.is_integer() else f
+
+
 def _stats_from_row(row):
     out = {}
     for col, key in _STAT_COLS.items():
-        val = _i(row.get(col))
+        val = _num(row.get(col))
         if val:
             out[key] = val
     return out
@@ -121,6 +135,7 @@ def apply_equipment(wb, delete: bool, log: list[str]) -> bool:
             "family": _s(row.get("Panoplie")),
             "requires_two_hands": _bool(row.get("2-mains")),
             "stat_bonuses": _stats_from_row(row),
+            "level_requirement": max(1, _i(row.get("Niv. requis"), 1)),
             "buy_price": _i(row.get("Prix achat")) or None,
             "description": _s(row.get("Description")),
         }

@@ -33,10 +33,9 @@ HIDDEN_GROUP_PREFIXES = ("admin",)
 # des pages. Une commande absente de tous les sets va dans « Autres ».
 CATEGORIES: list[tuple[str, str, str, set[str]]] = [
     ("👤", "Profil & progression",
-     "Ton personnage, sa classe, ses compétences, ses titres, son arbre et ta routine quotidienne.",
-     {"profil", "or", "classe", "classes", "choisir_classe", "arbre",
-      "competences", "titre", "titre_actif", "cd", "daily", "quetes",
-      "quetes_hebdo", "demarrer"}),
+     "Ton personnage, ses points de stats, son arbre, ses titres et ta routine quotidienne.",
+     {"profil", "or", "stats", "arbre", "affinites", "titre", "titre_actif",
+      "cd", "daily", "quetes", "quetes_hebdo", "demarrer", "epreuve"}),
     ("⚔️", "Combat & aventure",
      "Affronte les monstres, les world bosses et les autres joueurs.",
      {"duel", "utiliser", "boss", "bestiaire"}),
@@ -44,13 +43,12 @@ CATEGORIES: list[tuple[str, str, str, set[str]]] = [
      "Gère ton stuff, tes panoplies et tes loadouts perso.",
      {"inventaire", "equipement", "equipement_liste", "equiper", "desequiper",
       "equiper_panoplie", "panoplie", "creer_set", "equiper_set", "supprimer_set"}),
-    ("🛠️", "Artisanat",
-     "Fabrique / forge ton équipement.",
-     {"fabriquer", "recettes", "forger", "recettes_forge",
-      "fabriquer_panoplie", "forger_panoplie"}),
+    ("🛠️", "Artisans",
+     "Fais forger, confectionner et améliorer ton équipement.",
+     {"forgeron", "artisan"}),
     ("💰", "Économie & échanges",
-     "Boutique, monnaie et commerce entre joueurs.",
-     {"boutique", "acheter", "payer", "echange", "brocante"}),
+     "Le marchand, la monnaie et le commerce entre joueurs.",
+     {"marchand", "payer", "echange", "brocante"}),
     ("🏆", "Classements & utilitaires",
      "Compare-toi aux autres et trouve de l'aide.",
      {"classement", "help", "ping", "chad"}),
@@ -64,34 +62,34 @@ def _build_intro_embed(total_cmds: int, n_pages: int) -> discord.Embed:
         title="🌸 Bienvenue dans SakuraLeveling",
         description=(
             "Un **RPG Discord** où tu fais grandir ton personnage : combats les "
-            "monstres qui apparaissent dans le salon, récolte et forge ton "
-            "équipement, débloque des compétences et grimpe dans les classements."
+            "monstres qui apparaissent dans les salons, fais forger ton "
+            "équipement, développe ton arbre de compétences et grimpe de rang."
         ),
         color=discord.Color.magenta(),
     )
     embed.add_field(
         name="🎯 La boucle de jeu",
         value=(
-            "**1.** ⚔️ **Combats** — des monstres spawnent tout seuls : rejoins le "
-            "combat de groupe (ou défie un joueur avec `/duel`).\n"
-            "**2.** 📈 **Progresse** — gagne XP, or et butin ; chaque niveau donne "
-            "**1 point de compétence** à investir dans l'arbre (`/arbre`).\n"
-            "**3.** 🛠️ **Équipe-toi** — fabrique (`/fabriquer`, "
-            "`/forger`) et porte une panoplie complète (`/equiper_panoplie`).\n"
-            "**4.** 🔮 **Adapte** — équipe tes 2 compétences élémentaires "
-            "(`/competences`) selon l'élément de l'ennemi (`/bestiaire`).\n"
-            "**5.** 🏆 **Brille** — quêtes (`/quetes_hebdo`), classements "
-            "(`/classement`) et ladder de duels."
+            "**1.** ⚔️ **Combats** — des monstres apparaissent tout seuls dans les "
+            "salons de zone : rejoins le combat de groupe.\n"
+            "**2.** 📈 **Progresse** — chaque niveau donne **1 point de stats** "
+            "(`/stats` : attaque, défense ou PV) et **1 point d'arbre** (`/arbre`).\n"
+            "**3.** 🛠️ **Équipe-toi** — Borak (`/forgeron`) et Elna (`/artisan`) "
+            "fabriquent et **améliorent** ton équipement, jusqu'à +10.\n"
+            "**4.** 🎖️ **Monte en rang** — `/epreuve` : bats le gardien du rang "
+            "suivant pour ouvrir une nouvelle zone.\n"
+            "**5.** 🏆 **Brille** — quêtes (`/quetes`, `/quetes_hebdo`), raid du "
+            "world boss et `/classement`."
         ),
         inline=False,
     )
     embed.add_field(
         name="🚀 Premiers pas",
         value=(
-            "• `/profil` — crée ton personnage et vois tout d'un coup d'œil.\n"
-            "• `/daily` — ta récompense quotidienne (à faire chaque jour !).\n"
-            "• `/demarrer` — le guide complet du débutant.\n"
-            "• `/competences` — équipe tes compétences élémentaires."
+            "• `/demarrer` — le guide du débutant (et ton rôle de Rang F).\n"
+            "• `/profil` — ton personnage d'un coup d'œil.\n"
+            "• `/stats` — place tes points de stats après chaque niveau.\n"
+            "• `/daily` — ta récompense quotidienne (à faire chaque jour !)."
         ),
         inline=False,
     )
