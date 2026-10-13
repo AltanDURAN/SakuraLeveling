@@ -617,6 +617,7 @@ def compose_profile_banner(
     duel_losses: int = 0,
     daily_streak: int = 0,
     skill_points: int = 0,
+    stat_points: int = 0,
     active_title: str | None = None,
     #: élément → affinité 0..100. None ⇒ section masquée.
     affinities: dict[str, int] | None = None,
@@ -763,6 +764,12 @@ def compose_profile_banner(
     parts: list[tuple[str, tuple[int, int, int, int]]] = [
         (f"💰 {_format_compact(gold)} or", COLORS["gold_color"]),
     ]
+    # Points à dépenser juste après l'or : c'est ce qui doit sauter aux yeux
+    # après un niveau (la ligne est limitée à deux rangées, la fin peut sauter).
+    if stat_points > 0:
+        parts.append((f"💪 {stat_points} pt(s) de stats", (255, 214, 120, 255)))
+    if skill_points > 0:
+        parts.append((f"📚 {skill_points} pt(s) d'arbre", (180, 230, 220, 255)))
     if daily_streak > 0:
         parts.append((f"🔥 Daily Streak : {daily_streak}", (255, 170, 90, 255)))
     if duel_position is not None:
@@ -770,8 +777,6 @@ def compose_profile_banner(
             (f"⚔️ Duel #{duel_position} ({duel_wins}V-{duel_losses}D)",
              COLORS["text_secondary"]),
         )
-    if skill_points > 0:
-        parts.append((f"📚 {skill_points} SP libres", (180, 230, 220, 255)))
 
     # Wrap automatique sur 2 lignes max — pour ne pas rentrer dans la
     # zone du badge à droite et garder tout lisible.

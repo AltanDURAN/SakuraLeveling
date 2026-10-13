@@ -316,6 +316,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 duel_losses=duel_rank.losses if duel_rank else 0,
                 daily_streak=profile.resources.daily_streak,
                 skill_points=profile.progression.skill_points,
+                stat_points=profile.progression.stat_points,
                 stats={
                     "max_hp": stats.max_hp,
                     "current_hp": regenerated_current_hp,
