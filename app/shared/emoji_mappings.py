@@ -26,9 +26,26 @@ BONUS_EMOJIS: dict[str, str] = {
 }
 
 
+#: Saison 1 : l'équipement donne ATK / DEF / PV en POURCENTAGE du socle.
+#: Même symbole que la stat, suivi d'un « % » à l'affichage.
+PERCENT_STAT_KEYS: dict[str, str] = {
+    "attack_pct": "attack", "defense_pct": "defense", "max_hp_pct": "max_hp",
+}
+
+
+def is_known_stat(stat_key: str) -> bool:
+    return stat_key in STAT_EMOJIS or stat_key in PERCENT_STAT_KEYS
+
+
 def stat_emoji(stat_key: str) -> str:
     """Récupère l'emoji d'une stat ; renvoie la clé brute si absente."""
-    return STAT_EMOJIS.get(stat_key, stat_key)
+    return STAT_EMOJIS.get(PERCENT_STAT_KEYS.get(stat_key, stat_key), stat_key)
+
+
+def format_stat_value(stat_key: str, value) -> str:
+    """`+20 %` pour un bonus en pourcentage du socle, `+3` sinon."""
+    sign = "+" if value > 0 else ""
+    return f"{sign}{value}{' %' if stat_key in PERCENT_STAT_KEYS else ''}"
 
 
 def bonus_emoji(bonus_type: str) -> str:
@@ -64,10 +81,9 @@ def format_stat_bonuses_parts(stat_bonuses: dict | None) -> list[str]:
         return []
     parts: list[str] = []
     for k, v in stat_bonuses.items():
-        if not v:
+        if not v or isinstance(v, bool) or not isinstance(v, (int, float)):
             continue
-        sign = "+" if v > 0 else ""
-        parts.append(f"{sign}{v} {stat_emoji(k)}")
+        parts.append(f"{format_stat_value(k, v)} {stat_emoji(k)}")
     return parts
 
 

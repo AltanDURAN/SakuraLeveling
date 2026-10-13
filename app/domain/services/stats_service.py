@@ -32,6 +32,7 @@ from __future__ import annotations
 
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
 from app.domain.entities.player_profile import PlayerProfile
+from app.domain.services.item_upgrade_service import level_multiplier
 from app.domain.services.set_bonus_service import SetBonuses
 from app.domain.services.title_bonus_service import TitleBonuses
 from app.domain.value_objects.base_stats import BaseStats
@@ -89,10 +90,10 @@ class StatsService:
         # ---- Équipement : % sur le socle, plat sur les stats secondaires ----
         for item in equipped_items:
             bonuses = item.item_definition.stat_bonuses or {}
-            # Forge sacrée : chaque niveau rajoute une fois les bonus de base
-            # de la pièce. Niveau 0 = comportement normal.
+            # Amélioration (fusion / forge sacrée) : +10 % des bonus de la
+            # pièce par niveau, +10 = ×2. Cf. item_upgrade_service.
             level = (item_levels or {}).get(item.item_definition.id, 0)
-            multiplier = 1 + max(0, level)
+            multiplier = level_multiplier(level)
             self._accumulate(bonuses, pct, flat, multiplier)
 
         # ---- Arbre de compétences ----

@@ -49,6 +49,7 @@ def _render_page(
             equipped_items=equipped_items,
             set_bonuses=set_bonuses,
             seed=player_id,
+            item_levels=item_levels,
         )
     return str(out)
 

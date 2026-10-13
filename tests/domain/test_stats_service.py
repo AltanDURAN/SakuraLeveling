@@ -213,12 +213,12 @@ def test_le_mana_est_toujours_reporte():
     assert s.mana_max > 0 and s.mana_regeneration > 0
 
 
-def test_la_forge_multiplie_les_bonus_de_la_piece():
-    """Forge sacrée : chaque niveau rajoute une fois les bonus de base."""
-    item = build_item({"attack_pct": 10})
-    socle = stats_of(build_profile(points_attack=20)).attack
+def test_l_amelioration_ajoute_dix_pourcent_de_la_piece_par_niveau():
+    """Une pièce à +10 vaut le double d'une pièce neuve, jamais ×11."""
+    item = build_item({"attack_pct": 40})
+    socle = stats_of(build_profile(points_attack=40)).attack
     s = stats_of(
-        build_profile(points_attack=20), [item],
-        item_levels={item.item_definition.id: 2},
+        build_profile(points_attack=40), [item],
+        item_levels={item.item_definition.id: 10},
     )
-    assert s.attack == round(socle * 1.30)  # 10 % × (1 + 2)
+    assert s.attack == round(socle * 1.80)  # 40 % × 2

@@ -46,6 +46,7 @@ from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_health_repository import (
     PlayerHealthRepository,
 )
+from app.domain.services.item_upgrade_service import MAX_ITEM_LEVEL
 from app.infrastructure.db.repositories.player_item_level_repository import (
     PlayerItemLevelRepository,
 )
@@ -603,7 +604,7 @@ class EventCog(commands.Cog):
             return None
         config = cfg.get_config("sacred_forge")
         minutes = max(1, int(config.get("window_minutes", 5)))
-        max_level = int(config.get("max_level", 10))
+        max_level = min(MAX_ITEM_LEVEL, int(config.get("max_level", MAX_ITEM_LEVEL)))
         expires_at = _now() + timedelta(minutes=minutes)
         with get_db_session() as session:
             repo = EventRepository(session)
@@ -661,7 +662,7 @@ class EventCog(commands.Cog):
             levels = PlayerItemLevelRepository(session).get_levels_for_player(
                 profile.player.id
             )
-            max_level = int(cfg.get_config("sacred_forge").get("max_level", 10))
+            max_level = min(MAX_ITEM_LEVEL, int(cfg.get_config("sacred_forge").get("max_level", MAX_ITEM_LEVEL)))
             options: list[discord.SelectOption] = []
             seen: set[int] = set()
             for eq in equipped:
@@ -721,7 +722,7 @@ class EventCog(commands.Cog):
                     "Cet équipement n'est plus équipé.", ephemeral=True
                 )
                 return
-            max_level = int(cfg.get_config("sacred_forge").get("max_level", 10))
+            max_level = min(MAX_ITEM_LEVEL, int(cfg.get_config("sacred_forge").get("max_level", MAX_ITEM_LEVEL)))
             level_repo = PlayerItemLevelRepository(session)
             new_level = level_repo.increment(
                 profile.player.id, item_definition_id, max_level

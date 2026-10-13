@@ -27,6 +27,7 @@ from app.bot.rendering.pillow_utils import (
     try_font,
 )
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
+from app.domain.services.item_upgrade_service import scaled_bonuses
 from app.domain.services.set_bonus_service import SetBonuses
 from app.domain.value_objects.stats import Stats
 from app.shared.emoji_mappings import (
@@ -300,7 +301,7 @@ def _draw_slot_card(
         lvl = item_levels.get(equipment.item_definition.id, 0)
         if lvl > 0:
             badge_font = _try_font(19, bold=True)
-            badge_text = f"🔨{lvl}"
+            badge_text = f"🔨+{lvl}"
             bw = int(measure_text_with_emojis(badge_text, badge_font, badge_font.size))
             pad_x = 8
             bx2 = min(x + w - 12, img_x + img_size + 6)
@@ -341,7 +342,9 @@ def _draw_slot_card(
         # pour rester dans la card). On distribue les parts sur les
         # lignes selon la largeur pixel disponible.
         from app.shared.emoji_mappings import format_stat_bonuses_parts
-        parts = format_stat_bonuses_parts(item.stat_bonuses)
+        # Bonus RÉELS de la pièce, amélioration comprise.
+        level = (item_levels or {}).get(item.id, 0)
+        parts = format_stat_bonuses_parts(scaled_bonuses(item.stat_bonuses, level))
         if parts:
             available_w = w - 32  # marge x+16 à droite
             sep = " · "
@@ -476,6 +479,7 @@ def compose_equipment_summary_page(
     set_bonuses: SetBonuses,
     *,
     seed: int = 0,
+    item_levels: dict[int, int] | None = None,
 ) -> None:
     """Page 2 : résumé des stats apportées par l'équipement + bonus de
     panoplie actifs."""
@@ -495,10 +499,22 @@ def compose_equipment_summary_page(
         # pièce mais le résumé l'oublie.
         "mana_max": 0, "mana_regeneration": 0,
     }
+    # Saison 1 : ATK / DEF / PV viennent de l'équipement en % du socle.
+    totals.update({"attack_pct": 0.0, "defense_pct": 0.0, "max_hp_pct": 0.0})
     for eq in equipped_items:
-        b = eq.item_definition.stat_bonuses or {}
+        b = scaled_bonuses(
+            eq.item_definition.stat_bonuses,
+            (item_levels or {}).get(eq.item_definition.id, 0),
+        )
         for k in totals.keys():
-            totals[k] += int(b.get(k, 0) or 0)
+            value = b.get(k, 0) or 0
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                totals[k] += value
+    totals["attack_pct"] += round(getattr(set_bonuses, "attack_percent", 0.0) * 100, 1)
+    totals["defense_pct"] += round(getattr(set_bonuses, "defense_percent", 0.0) * 100, 1)
+    totals["max_hp_pct"] += round(getattr(set_bonuses, "max_hp_percent", 0.0) * 100, 1)
+    for k, v in totals.items():
+        totals[k] = int(v) if float(v).is_integer() else round(v, 1)
 
     # Ajouter les bonus de panoplie sur le total affiché
     totals["max_hp"] += set_bonuses.max_hp_flat
@@ -541,15 +557,15 @@ def compose_equipment_summary_page(
     # les stats pièce par pièce avec STAT_EMOJIS, la page 2 doit utiliser les
     # MÊMES symboles (sinon 🌀 = esquive ici et régén mana là-bas).
     _SUMMARY_STATS: list[tuple[str, str, bool]] = [
-        ("max_hp", "PV", False), ("attack", "Atk", False),
-        ("defense", "Def", False), ("speed", "Vit", False),
+        ("max_hp_pct", "PV", True), ("attack_pct", "Atk", True),
+        ("defense_pct", "Def", True), ("speed", "Vit", False),
         ("crit_chance", "Crit %", True), ("crit_damage", "Crit dmg", True),
         ("dodge", "Esquive", True), ("hp_regeneration", "Régen", False),
         ("mana_max", "Mana", False), ("mana_regeneration", "Régen mana", False),
     ]
     stat_cards = [
         (
-            STAT_EMOJIS.get(key, "•"),
+            STAT_EMOJIS.get(key.removesuffix("_pct"), "•"),
             label,
             _signed(totals[key]) + ("%" if pct else ""),
             key,

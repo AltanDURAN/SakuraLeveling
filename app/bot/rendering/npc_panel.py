@@ -22,7 +22,7 @@ from app.bot.rendering.pillow_utils import (
     gradient_background,
     try_font,
 )
-from app.shared.enums import STAT_EMOJIS
+from app.shared.emoji_mappings import format_stat_value, is_known_stat, stat_emoji
 from app.shared.paths import GENERATED_NPCS_DIR, ITEMS_ASSETS_DIR, NPCS_ASSETS_DIR
 
 WIDTH = 1024
@@ -300,11 +300,11 @@ def compose_npc_panel(
     # Stats apportées
     sy = iy + thumb + 16
     bonuses = selection.get("stat_bonuses") or {}
-    if bonuses:
+    if bonuses and selection.get("kind") != "upgrade":
         parts = [
-            f"{STAT_EMOJIS[k]} {'+' if v > 0 else ''}{v}"
+            f"{stat_emoji(k)} {format_stat_value(k, v)}"
             for k, v in bonuses.items()
-            if k in STAT_EMOJIS and isinstance(v, (int, float)) and v
+            if is_known_stat(k) and isinstance(v, (int, float)) and v
         ][:6]
         draw_text_with_emojis(
             bg, (ix, sy), "   ".join(parts), f_body, fill=_TEXT, emoji_size=19,
@@ -313,7 +313,36 @@ def compose_npc_panel(
 
     # Corps de fiche : le marchand VEND (description + panier), les artisans
     # FABRIQUENT (liste d'ingrédients). Deux lectures du même emplacement.
-    if selection.get("kind") == "purchase":
+    if selection.get("kind") == "upgrade":
+        # Fusion : on montre ce que la pièce gagne, stat par stat.
+        draw_text_with_shadow(
+            draw, (ix, sy), "AVANT  →  APRÈS", f_label, fill=_DIM, shadow=_SHADOW,
+        )
+        sy += 26
+        before = selection.get("bonuses_now") or {}
+        after = selection.get("bonuses_next") or {}
+        shown = 0
+        for key, new in after.items():
+            if not is_known_stat(key) or not isinstance(new, (int, float)) or not new:
+                continue
+            old = before.get(key, 0)
+            # Un malus qui grossit avec la pièce reste un malus : en rouge.
+            fill = _TEXT if new == old else (_OK if new > old else _BAD)
+            draw_text_with_emojis(
+                bg, (ix, sy),
+                f"{stat_emoji(key)} {format_stat_value(key, old)}  →  {format_stat_value(key, new)}",
+                f_small, fill=fill, emoji_size=15,
+            )
+            sy += 24
+            shown += 1
+            if shown >= 4:
+                break
+        sy += 6
+        draw_text_with_shadow(
+            draw, (ix, sy), "FUSION", f_label, fill=_DIM, shadow=_SHADOW,
+        )
+        sy += 24
+    elif selection.get("kind") == "purchase":
         desc = selection.get("description") or ""
         if desc:
             for line in _wrap(draw, desc, f_small, inner_w, max_lines=3):
@@ -376,6 +405,15 @@ def compose_npc_panel(
         draw_text_with_shadow(
             draw, (ix + 190, by + 3), "prix total", f_small, fill=_MUTED,
             shadow=_SHADOW,
+        )
+    elif selection.get("kind") == "upgrade":
+        lvl = int(selection.get("level", 0))
+        target = f"+{lvl}  →  +{lvl + 1}" if not selection.get("maxed") else f"+{lvl}  ·  MAX"
+        draw_text_with_shadow(
+            draw, (ix + 190, by), target, f_title, fill=_TEXT, shadow=_SHADOW,
+        )
+        draw_text_with_shadow(
+            draw, (ix + 380, by + 3), "immédiat", f_small, fill=_MUTED, shadow=_SHADOW,
         )
     else:
         draw_text_with_emojis(

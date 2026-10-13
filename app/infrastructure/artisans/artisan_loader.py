@@ -72,6 +72,9 @@ def load_pricing() -> PricingRules:
         cancel_refund_pct=int(
             data.get("cancel_refund_pct", default.cancel_refund_pct)
         ),
+        upgrade_gold_pct_per_level=int(
+            data.get("upgrade_gold_pct_per_level", default.upgrade_gold_pct_per_level)
+        ),
     )
 
 

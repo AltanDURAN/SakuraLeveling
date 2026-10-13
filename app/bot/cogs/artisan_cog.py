@@ -17,15 +17,20 @@ from discord import app_commands
 from discord.ext import commands, tasks
 
 from app.application.use_cases.artisan_work import ArtisanWorkUseCase
+from app.application.use_cases.upgrade_item import UpgradeItemUseCase
 from app.bot.cogs._mixins import BetaChannelOnlyMixin
 from app.bot.views.artisan_view import ArtisanView
 from app.domain.services.artisan_service import ArtisanService
 from app.infrastructure.artisans import artisan_loader
 from app.infrastructure.db.repositories.craft_repository import CraftRepository
+from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.inventory_repository import (
     InventoryRepository,
 )
 from app.infrastructure.db.repositories.item_repository import ItemRepository
+from app.infrastructure.db.repositories.player_item_level_repository import (
+    PlayerItemLevelRepository,
+)
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.work_order_repository import (
     WorkOrderRepository,
@@ -41,6 +46,17 @@ def _use_case_factory(session) -> ArtisanWorkUseCase:
         inventory_repository=InventoryRepository(session),
         item_repository=ItemRepository(session),
         craft_repository=CraftRepository(session),
+        work_order_repository=WorkOrderRepository(session),
+        artisan_service=ArtisanService(artisan_loader.load_pricing()),
+    )
+
+
+def _upgrade_factory(session) -> UpgradeItemUseCase:
+    return UpgradeItemUseCase(
+        player_repository=PlayerRepository(session),
+        inventory_repository=InventoryRepository(session),
+        equipment_repository=EquipmentRepository(session),
+        item_level_repository=PlayerItemLevelRepository(session),
         work_order_repository=WorkOrderRepository(session),
         artisan_service=ArtisanService(artisan_loader.load_pricing()),
     )
@@ -80,6 +96,7 @@ class ArtisanCog(BetaChannelOnlyMixin, commands.Cog):
             player_id=player_id,
             session_factory=get_db_session,
             use_case_factory=_use_case_factory,
+            upgrade_factory=_upgrade_factory,
             artisan_service=ArtisanService(artisan_loader.load_pricing()),
             channel_id=interaction.channel_id or 0,
         )

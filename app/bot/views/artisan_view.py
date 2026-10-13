@@ -48,6 +48,7 @@ class ArtisanView(discord.ui.View):
         session_factory,
         use_case_factory,
         artisan_service,
+        upgrade_factory=None,
         channel_id: int = 0,
         timeout: float = 300.0,
     ) -> None:
@@ -56,8 +57,15 @@ class ArtisanView(discord.ui.View):
         self.player_id = player_id
         self._session_factory = session_factory
         self._use_case_factory = use_case_factory
+        self._upgrade_factory = upgrade_factory
         self.artisans = artisan_service
         self.channel_id = channel_id
+
+        # Deux modes : « fabriquer » (commandes) et « améliorer » (fusion).
+        self.mode = "craft"
+        self.upgrade_code: str | None = None
+        self._upgrade_candidates: list = []
+        self._upgrade_preview = None
 
         self.category: str | None = None
         self.recipe_code: str | None = None
@@ -101,6 +109,19 @@ class ArtisanView(discord.ui.View):
             else:
                 self._preview = None
 
+            if self._upgrade_factory is not None:
+                upgrades = self._upgrade_factory(session)
+                self._upgrade_candidates = upgrades.candidates(
+                    self.definition, self.player_id,
+                )
+                codes = {c.item_code for c in self._upgrade_candidates}
+                if self.upgrade_code not in codes:
+                    self.upgrade_code = None
+                self._upgrade_preview = (
+                    upgrades.preview(self.definition, self.player_id, self.upgrade_code)
+                    if self.upgrade_code else None
+                )
+
     def _describe_order(self, session, order, use_case) -> dict | None:
         if order is None:
             return None
@@ -129,6 +150,14 @@ class ArtisanView(discord.ui.View):
     # -------------------------------------------------------- composition --
     def _build_components(self) -> None:
         self.clear_items()
+        if self.mode == "upgrade":
+            if self._upgrade_candidates:
+                self.add_item(_UpgradeSelect(self, self._upgrade_candidates))
+            preview = self._upgrade_preview
+            self.add_item(_FuseButton(self, enabled=bool(preview and preview.can_upgrade)))
+            self.add_item(_ModeButton(self))
+            self.add_item(_CloseButton(self))
+            return
 
         categories = sorted(self._recipes_by_category)
         if categories:
@@ -145,7 +174,20 @@ class ArtisanView(discord.ui.View):
         else:
             can = bool(self._preview and self._preview.can_start)
             self.add_item(_StartButton(self, enabled=can))
+        if self._upgrade_factory is not None:
+            self.add_item(_ModeButton(self))
         self.add_item(_CloseButton(self))
+
+    def _upgrade_info_rows(self) -> list[tuple[str, str]]:
+        from app.domain.services.item_upgrade_service import MAX_ITEM_LEVEL
+
+        fusable = sum(1 for c in self._upgrade_candidates if c.owned >= 2)
+        return [
+            ("Amélioration", f"+10 % des bonus de la pièce par niveau, jusqu'à +{MAX_ITEM_LEVEL}"),
+            ("Il lui faut", "une copie identique de la pièce, qu'il fusionne"),
+            ("Pièces possédées", f"{len(self._upgrade_candidates)} · {fusable} en double"),
+            ("Forge sacrée", "offre aussi un niveau gratuit quand elle s'allume"),
+        ]
 
     def _info_rows(self) -> list[tuple[str, str]]:
         tier = self.artisans.tier_for(self.definition, self._orders_completed)
@@ -181,7 +223,33 @@ class ArtisanView(discord.ui.View):
 
         return ItemPowerService().marginal_power(item.stat_bonuses)
 
+    def _upgrade_payload(self) -> dict | None:
+        p = self._upgrade_preview
+        if p is None:
+            return None
+        return {
+            "kind": "upgrade",
+            "item_code": p.item_code,
+            "item_name": f"{p.item_name}  +{p.level}",
+            "category_label": ITEM_CATEGORY_LABELS.get(p.item_category, p.item_category),
+            "result_quantity": 1,
+            "bonuses_now": p.bonuses_now,
+            "bonuses_next": p.bonuses_next,
+            "ingredients": [{
+                "name": "copie identique fusionnée",
+                "required": p.required,
+                "owned": p.owned,
+            }],
+            "gold_cost": p.gold_cost,
+            "can_afford": p.can_afford,
+            "level": p.level,
+            "maxed": p.maxed,
+            "blocking_reason": p.blocking_reason,
+        }
+
     def _selection_payload(self) -> dict | None:
+        if self.mode == "upgrade":
+            return self._upgrade_payload()
         preview = self._preview
         if preview is None:
             return None
@@ -211,6 +279,7 @@ class ArtisanView(discord.ui.View):
     async def render(self) -> tuple[discord.Embed, discord.File]:
         tier = self.artisans.tier_for(self.definition, self._orders_completed)
         path = panel_path(self.definition.code, self.player_id)
+        selection = self._selection_payload()
         await asyncio.to_thread(
             compose_npc_panel,
             path,
@@ -229,9 +298,16 @@ class ArtisanView(discord.ui.View):
             orders_to_next=self.artisans.orders_until_next_tier(
                 self.definition, self._orders_completed,
             ),
-            selection=self._selection_payload(),
-            info_rows=self._info_rows() if self._preview is None else None,
-            active_order=self._active_order if self._preview is None else None,
+            selection=selection,
+            info_rows=(
+                None if selection is not None
+                else self._upgrade_info_rows() if self.mode == "upgrade"
+                else self._info_rows()
+            ),
+            active_order=(
+                self._active_order
+                if selection is None and self.mode == "craft" else None
+            ),
             seed=self.player_id,
         )
         filename = path.rsplit("/", 1)[-1]
@@ -421,3 +497,80 @@ class _CloseButton(discord.ui.Button):
             child.disabled = True
         await interaction.response.edit_message(view=self._parent)
         self._parent.stop()
+
+
+# ------------------------------------------------------------ amélioration --
+class _ModeButton(discord.ui.Button):
+    """Bascule entre « fabriquer » et « améliorer »."""
+
+    def __init__(self, view: ArtisanView) -> None:
+        upgrading = view.mode == "upgrade"
+        super().__init__(
+            label=view.definition.verb.capitalize() if upgrading else "Améliorer",
+            emoji="⚒️" if upgrading else "🔨",
+            style=discord.ButtonStyle.primary,
+            row=2,
+        )
+        self._parent = view
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        parent = self._parent
+        parent.mode = "craft" if parent.mode == "upgrade" else "upgrade"
+        parent.upgrade_code = None
+        await parent.refresh(interaction)
+
+
+class _UpgradeSelect(discord.ui.Select):
+    def __init__(self, view: ArtisanView, candidates: list) -> None:
+        # Les pièces fusionnables d'abord : c'est ce que le joueur cherche.
+        ordered = sorted(candidates, key=lambda c: (c.owned < 2, c.item_name.lower()))
+        options = [
+            discord.SelectOption(
+                label=f"{c.item_name}  +{c.level}"[:100],
+                value=c.item_code,
+                emoji=CATEGORY_ICONS.get(c.category),
+                description=(
+                    f"{c.owned} exemplaire(s)"
+                    + (" · fusion possible" if c.owned >= 2 else " · il en faut 2")
+                )[:100],
+                default=(c.item_code == view.upgrade_code),
+            )
+            for c in ordered[:25]
+        ]
+        super().__init__(placeholder="🔨  Choisis une pièce à améliorer", options=options)
+        self._parent = view
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        self._parent.upgrade_code = self.values[0]
+        await self._parent.refresh(interaction)
+
+
+class _FuseButton(discord.ui.Button):
+    def __init__(self, view: ArtisanView, enabled: bool) -> None:
+        super().__init__(
+            label="Fusionner", emoji="✨", style=discord.ButtonStyle.success,
+            disabled=not enabled, row=2,
+        )
+        self._parent = view
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        parent = self._parent
+        if parent.upgrade_code is None or parent._upgrade_factory is None:
+            await interaction.response.defer()
+            return
+
+        def _run():
+            with parent._session_factory() as session:
+                result = parent._upgrade_factory(session).upgrade(
+                    parent.definition, parent.player_id, parent.upgrade_code,
+                )
+                if result.success:
+                    session.commit()
+                return result
+
+        result = await asyncio.to_thread(_run)
+        if not result.success:
+            await interaction.response.send_message(result.message, ephemeral=True)
+            return
+        await parent.refresh(interaction)
+        await interaction.followup.send(result.message, ephemeral=True)

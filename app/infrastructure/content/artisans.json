@@ -1,5 +1,5 @@
 {
-  "_comment": "PNJ artisans. `categories` = catégories d'items que le PNJ traite (doit couvrir toutes les catégories équipables, sans recouvrement). `pricing` : or = base + coef x puissance^exposant ; duree_s = base + coef x puissance, plafonnée. Les paliers de maîtrise montent avec le nombre de commandes terminées ; `max_item_power: 0` = illimité. Mettre `duration_pct: 0` sur tous les paliers rend le travail instantané.",
+  "_comment": "PNJ artisans. `categories` = catégories d'items que le PNJ traite (doit couvrir toutes les catégories équipables, sans recouvrement). `pricing` : or = base + coef x puissance^exposant ; duree_s = base + coef x puissance, plafonnée. Les paliers de maîtrise montent avec le nombre de commandes terminées ; `max_item_power: 0` = illimité. Mettre `duration_pct: 0` sur tous les paliers rend le travail instantané. `upgrade_gold_pct_per_level` : fusion d'une copie pour passer à +N = N × ce % du prix de fabrication (remise de maîtrise incluse).",
   "pricing": {
     "gold_base": 20,
     "gold_coef": 1.6,
@@ -7,7 +7,8 @@
     "duration_base_s": 60,
     "duration_coef_s": 1.1,
     "duration_max_s": 3600,
-    "cancel_refund_pct": 50
+    "cancel_refund_pct": 50,
+    "upgrade_gold_pct_per_level": 50
   },
   "artisans": [
     {

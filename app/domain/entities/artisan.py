@@ -57,6 +57,8 @@ class PricingRules:
     duration_coef_s: float = 4.0
     duration_max_s: int = 3600
     cancel_refund_pct: int = 50
+    #: Fusion : passer à +N coûte N × ce % du prix de fabrication de la pièce.
+    upgrade_gold_pct_per_level: int = 50
 
 
 @dataclass(frozen=True)
