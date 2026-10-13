@@ -906,9 +906,11 @@ class CompleteWorldBossUseCase:
 
             # Les montants ci-dessus sont des montants de NIVEAU 1 : on les
             # indexe sur le niveau du joueur (cf. quest_reward_service), sinon
-            # le raid de la semaine ne vaudrait plus rien à haut niveau.
-            total_gold = scale_reward(total_gold, profile.progression.level)
-            total_xp = scale_reward(total_xp, profile.progression.level)
+            # le raid de la semaine ne vaudrait plus rien à haut niveau. Le
+            # raid est hebdomadaire et doit rester marquant : référence 1.
+            level = profile.progression.level
+            total_gold = scale_reward(total_gold, level, reference_level=1)
+            total_xp = scale_reward(total_xp, level, reference_level=1)
 
             # Application en DB
             self.player_repository.add_gold(p.player_id, total_gold)

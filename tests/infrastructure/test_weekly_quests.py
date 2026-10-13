@@ -7,6 +7,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from app.domain.services.quest_reward_service import scale_reward
 from app.application.use_cases.weekly_quests import (
     ClaimAllWeeklyUseCase,
     GetWeeklyQuestsUseCase,
@@ -199,8 +200,10 @@ def test_claim_all_distributes_rewards_and_is_idempotent(session):
     result = claim.execute(discord_id=1, username="a", display_name="A")
     assert result.success is True
     assert len(result.rewards) == 1
-    assert result.rewards[0].gold == 500
-    assert result.rewards[0].xp == 200
+    # Montants du JSON = récompense au niveau de référence, suivie du niveau
+    # du joueur (ici niveau 1) — cf. quest_reward_service.
+    assert result.rewards[0].gold == scale_reward(500, 1)
+    assert result.rewards[0].xp == scale_reward(200, 1)
 
     # Idempotent : plus rien à réclamer au 2e appel.
     second = claim.execute(discord_id=1, username="a", display_name="A")
