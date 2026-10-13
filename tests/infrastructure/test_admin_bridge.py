@@ -106,8 +106,9 @@ class _FakeEventCog:
 
 
 class _FakeBot:
-    def __init__(self, cogs):
+    def __init__(self, cogs, guilds=()):
         self._cogs = cogs
+        self.guilds = list(guilds)
 
     def get_cog(self, name):
         return self._cogs.get(name)
@@ -184,4 +185,34 @@ def test_every_known_action_is_dispatchable():
     payloads = {"spawn_boss": {"boss_code": "x"}, "spawn_event": {"event_type": "chest"}}
     for action in KNOWN_ACTIONS:
         ok, msg = _run(_bridge(cogs), action, payloads.get(action))
-        assert ok is True, f"{action} non dispatché : {msg}"
+        assert "non gérée" not in msg and "inconnue" not in msg.lower(), (
+            f"{action} non dispatché : {msg}"
+        )
+        if action != "reset_rank_roles":  # dépend de RANK_ROLE_IDS, testé à part
+            assert ok is True, f"{action} en échec : {msg}"
+
+
+def test_reset_rank_roles_redescend_tous_les_rangs_au_rang_f(monkeypatch):
+    """Reset de saison : chaque porteur d'un rang ≥ E repasse au Rang F."""
+    from types import SimpleNamespace
+
+    import app.bot.rank_roles as rank_roles
+    from app.infrastructure.config.settings import settings
+
+    monkeypatch.setattr(type(settings), "rank_roles", property(lambda self: {"F": 1, "E": 2, "D": 3}))
+    alice, bob = SimpleNamespace(id=10), SimpleNamespace(id=11)
+    roles = {1: SimpleNamespace(members=[]), 2: SimpleNamespace(members=[alice]),
+             3: SimpleNamespace(members=[bob, alice])}
+    guild = SimpleNamespace(get_role=roles.get)
+    moved = []
+
+    async def fake_set_rank_role(member, rank):
+        moved.append((member.id, rank))
+        return True
+
+    monkeypatch.setattr(rank_roles, "set_rank_role", fake_set_rank_role)
+    bridge = _bridge({})
+    bridge.bot = _FakeBot({}, guilds=[guild])
+    ok, msg = _run(bridge, "reset_rank_roles")
+    assert ok and "2 joueur(s)" in msg
+    assert sorted(moved) == [(10, "F"), (11, "F")]
