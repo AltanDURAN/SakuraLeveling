@@ -17,6 +17,7 @@ from datetime import datetime, UTC, timedelta
 
 from app.domain.entities.weekly_quest_definition import WeeklyQuestDefinition
 from app.domain.services.progression_service import ProgressionService
+from app.domain.services.quest_reward_service import scale_reward
 from app.infrastructure.daily_quests.quest_loader import (
     get_definition,
     list_for_objective_type,
@@ -87,6 +88,7 @@ class GetDailyQuestsUseCase:
         profile = self.player_repository.get_or_create_by_discord_id(
             discord_id=discord_id, username=username, display_name=display_name,
         )
+        level = profile.progression.level
         day_start = get_current_day_start()
 
         if not self.quest_repository.has_assignments_for_day(
@@ -112,7 +114,8 @@ class GetDailyQuestsUseCase:
                     tier=d.tier, progress=a.progress,
                     objective_quantity=d.objective_quantity,
                     completed=a.completed, claimed=a.claimed,
-                    reward_gold=d.reward_gold, reward_xp=d.reward_xp,
+                    reward_gold=scale_reward(d.reward_gold, level),
+                    reward_xp=scale_reward(d.reward_xp, level),
                     reward_items=d.reward_items,
                 )
             )
@@ -184,9 +187,12 @@ class ClaimAllDailyUseCase:
             d = get_definition(a.quest_code)
             if d is None:
                 continue
-            self.player_repository.add_gold(profile.player.id, d.reward_gold)
-            total_gold += d.reward_gold
-            total_xp += d.reward_xp
+            # Montants indexés sur le niveau au moment de la réclamation.
+            gold = scale_reward(d.reward_gold, starting_level)
+            xp = scale_reward(d.reward_xp, starting_level)
+            self.player_repository.add_gold(profile.player.id, gold)
+            total_gold += gold
+            total_xp += xp
             for item_code, qty in d.reward_items:
                 item = self.item_repository.get_by_code(item_code)
                 if item is not None:
@@ -200,8 +206,8 @@ class ClaimAllDailyUseCase:
             )
             rewards.append(
                 ClaimedReward(
-                    quest_code=a.quest_code, name=d.name, gold=d.reward_gold,
-                    xp=d.reward_xp, items=list(d.reward_items),
+                    quest_code=a.quest_code, name=d.name, gold=gold,
+                    xp=xp, items=list(d.reward_items),
                 )
             )
 

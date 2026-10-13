@@ -27,6 +27,7 @@ from app.domain.services.boss_modifier_service import BossModifierService
 from app.domain.services.cooldown_service import CooldownService
 from app.domain.services.contribution_tier_service import tier_for_share
 from app.domain.services.progression_service import ProgressionService
+from app.domain.services.quest_reward_service import scale_reward
 from app.domain.services.skill_tree_service import SkillTreeService
 from app.domain.services.stats_service import StatsService
 from app.domain.services.world_boss_scaling_service import WorldBossScalingService
@@ -902,6 +903,12 @@ class CompleteWorldBossUseCase:
                     continue
 
             role = roles_won[0] if roles_won else "participant"
+
+            # Les montants ci-dessus sont des montants de NIVEAU 1 : on les
+            # indexe sur le niveau du joueur (cf. quest_reward_service), sinon
+            # le raid de la semaine ne vaudrait plus rien à haut niveau.
+            total_gold = scale_reward(total_gold, profile.progression.level)
+            total_xp = scale_reward(total_xp, profile.progression.level)
 
             # Application en DB
             self.player_repository.add_gold(p.player_id, total_gold)
