@@ -156,7 +156,7 @@ async def skill_page(request: Request, discord_id: int):
 
     # Web : vue d'ensemble du triskèle complet (la page est zoomable/pannable),
     # contrairement à l'image Discord qui est cadrée sur la zone d'action.
-    svg = render_to_svg(state, definition, focus=False)
+    svg = render_to_svg(state, definition, focus=False, header=False)
     service = SkillTreeService(definition)
 
     nodes_payload = []
@@ -168,13 +168,19 @@ async def skill_page(request: Request, discord_id: int):
             prereq_node = definition.get(prereq_code)
             if prereq_node is None:
                 continue
-            prereq_level = state.allocations.get(prereq_code, 0)
+            # Une case de départ est acquise d'office ; un prérequis n'est
+            # rempli qu'au niveau MAXIMUM (règle du moteur).
+            prereq_level = (
+                prereq_node.max_level if prereq_node.start
+                else state.allocations.get(prereq_code, 0)
+            )
             prereqs_with_state.append({
                 "code": prereq_code,
                 "name": prereq_node.name,
                 "icon": prereq_node.icon,
                 "current_level": prereq_level,
-                "satisfied": prereq_level > 0,
+                "max_level": prereq_node.max_level,
+                "satisfied": prereq_level >= prereq_node.max_level,
             })
 
         nodes_payload.append(
@@ -184,7 +190,10 @@ async def skill_page(request: Request, discord_id: int):
                 "description": node.description,
                 "icon": node.icon,
                 "max_level": node.max_level,
-                "current_level": state.allocations.get(node.code, 0),
+                "current_level": (
+                    node.max_level if node.start else state.allocations.get(node.code, 0)
+                ),
+                "unlock_rule": node.unlock_rule,
                 "state": service.compute_node_state(state.allocations, node.code),
                 "costs": node.costs,
                 "prerequisites": node.prerequisites,
@@ -330,7 +339,10 @@ async def skill_api(discord_id: int):
                 "effects": [asdict(e) for e in node.effects],
                 "prerequisites": node.prerequisites,
                 "position": {"x": node.position.x, "y": node.position.y},
-                "current_level": state.allocations.get(node.code, 0),
+                "current_level": (
+                    node.max_level if node.start else state.allocations.get(node.code, 0)
+                ),
+                "unlock_rule": node.unlock_rule,
                 "state": service.compute_node_state(state.allocations, node.code),
             }
             for node in definition.skills.values()

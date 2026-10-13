@@ -207,3 +207,20 @@ def test_script_json_garde_l_ordre_et_ne_ferme_pas_la_balise():
 def test_la_bibliotheque_d_icones_ne_repete_aucune_icone():
     seen = [i.replace("️", "") for g in _icon_library() for i in g["icons"]]
     assert seen and len(seen) == len(set(seen))
+
+
+def test_on_n_investit_pas_dans_une_case_de_depart():
+    ok, message, _ = _junction("all").validate_investment({}, 10, "r")
+    assert not ok and "départ" in message
+
+
+def test_les_effets_d_une_case_de_depart_s_appliquent_d_office():
+    raw = _tree()
+    raw["nodes"]["r"]["effects"] = [{"type": "gold_drop_percent", "values": [5]}]
+    bonuses = SkillTreeService(parse_definition(raw)).aggregate_bonuses({})
+    assert bonuses.gold_drop_percent == 0.05
+
+
+def test_une_case_de_depart_ne_se_rembourse_pas():
+    """Rien n'a été payé pour elle : un reset ne doit pas créer de points."""
+    assert _junction("all").compute_total_refund({"r": 1, "a": 2}) == 3

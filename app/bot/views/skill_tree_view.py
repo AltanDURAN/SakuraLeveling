@@ -219,14 +219,17 @@ class SkillInvestSelect(discord.ui.Select):
             current = allocations.get(node.code, 0)
             target = current + 1
             cost = node.cost_for_level(target)
-            label = f"{node.name} ({current}/{node.max_level})"[:100]
+            # L'icône va dans le TEXTE : passée en `emoji=`, une icône que
+            # Discord ne reconnaît pas (emoji composé, texte libre de l'admin)
+            # ferait échouer tout le message.
+            icon = f"{node.icon} " if node.icon else ""
+            label = f"{icon}{node.name} ({current}/{node.max_level})"[:100]
             description = f"Coût : {cost} pt(s) — {node.description}"[:100]
             options.append(
                 discord.SelectOption(
                     label=label,
                     description=description,
                     value=node.code,
-                    emoji=node.icon[:2] if node.icon else None,
                 )
             )
 

@@ -64,7 +64,14 @@ class SkillTreeService:
         gold_drop_percent = 0.0
         drop_rate_multiplier = 1.0
 
-        for skill_code, level in allocations.items():
+        # Niveaux EFFECTIFS : une case de départ est acquise d'office, ses
+        # effets s'appliquent donc sans qu'on y ait investi quoi que ce soit.
+        effective: dict[str, int] = dict(allocations)
+        for node in self.definition:
+            if getattr(node, "start", False):
+                effective[node.code] = node.max_level
+
+        for skill_code, level in effective.items():
             if level <= 0:
                 continue
             node = self.definition.get(skill_code)
@@ -260,6 +267,13 @@ class SkillTreeService:
         if node is None:
             return False, f"Compétence inconnue : `{skill_code}`.", 0
 
+        if getattr(node, "start", False):
+            return (
+                False,
+                f"**{node.name}** est une case de départ : elle est acquise d'office.",
+                0,
+            )
+
         current_level = allocations.get(skill_code, 0)
         target_level = current_level + 1
 
@@ -276,14 +290,17 @@ class SkillTreeService:
                 prereq = self.definition.get(p)
                 if prereq is None:
                     continue
-                if allocations.get(p, 0) < prereq.max_level:
-                    missing.append(
-                        f"{prereq.name} ({allocations.get(p, 0)}/{prereq.max_level})"
-                    )
+                lvl = self._level(allocations, prereq)
+                if lvl < prereq.max_level:
+                    missing.append(f"{prereq.name} ({lvl}/{prereq.max_level})")
+            rule = (
+                "une des cases reliées doit être montée au maximum"
+                if getattr(node, "unlock_rule", "all") == "any" and len(missing) > 1
+                else "la/les case(s) précédente(s) doivent être MAXÉES d'abord"
+            )
             return (
                 False,
-                f"**{node.name}** est verrouillé : la/les case(s) précédente(s) "
-                f"doivent être MAXÉES d'abord → {', '.join(missing)}.",
+                f"**{node.name}** est verrouillé : {rule} → {', '.join(missing)}.",
                 0,
             )
 
@@ -309,7 +326,8 @@ class SkillTreeService:
         total = 0
         for skill_code, level in allocations.items():
             node = self.definition.get(skill_code)
-            if node is None or level <= 0:
+            # Une case de départ n'a jamais rien coûté : rien à rembourser.
+            if node is None or level <= 0 or getattr(node, "start", False):
                 continue
             total += node.cumulative_cost(level)
         return total

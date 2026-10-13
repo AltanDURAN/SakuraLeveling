@@ -58,12 +58,14 @@
         if (skill.prereqs_detail && skill.prereqs_detail.length > 0) {
             const h = document.createElement('p');
             h.className = 'tooltip-prereqs-heading';
-            h.textContent = 'Prérequis :';
+            h.textContent = skill.unlock_rule === 'any' && skill.prereqs_detail.length > 1
+                ? 'Prérequis (un seul suffit, au niveau max) :'
+                : 'Prérequis (au niveau max) :';
             tooltipPrereqs.appendChild(h);
             skill.prereqs_detail.forEach(p => {
                 const line = document.createElement('p');
                 line.className = 'tooltip-prereq ' + (p.satisfied ? 'satisfied' : 'missing');
-                line.textContent = `${p.satisfied ? '✅' : '❌'} ${p.icon} ${p.name} (niv. ${p.current_level})`;
+                line.textContent = `${p.satisfied ? '✅' : '❌'} ${p.icon} ${p.name} (${p.current_level}/${p.max_level ?? '?'})`;
                 tooltipPrereqs.appendChild(line);
             });
         }
@@ -111,10 +113,16 @@
     });
 
     /* ----- ViewBox (pan + zoom) ----- */
-    const initialViewBox = svg.getAttribute('viewBox').split(/\s+/).map(Number);
+    // Sur un petit écran, on ouvre sur l'arbre principal plutôt que sur tout
+    // l'arbre (qui tiendrait dans un timbre-poste) ; le reste est à portée de doigt.
+    const fullViewBox = svg.getAttribute('viewBox').split(/\s+/).map(Number);
+    const mainView = (svg.dataset.mainView || '').split(/\s+/).map(Number);
+    const initialViewBox = (window.innerWidth < 700 && mainView.length === 4 && mainView.every(Number.isFinite))
+        ? mainView : fullViewBox;
+    svg.setAttribute('viewBox', initialViewBox.join(' '));
     let viewBox = [...initialViewBox];
     const MIN_W = 250;
-    const MAX_W = initialViewBox[2] * 4;
+    const MAX_W = Math.max(initialViewBox[2], fullViewBox[2]) * 4;
 
     const setViewBox = (vb) => svg.setAttribute('viewBox', vb.join(' '));
 

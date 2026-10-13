@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import discord
 
 from app.application.use_cases.get_skill_tree_state import SkillTreeState
@@ -39,8 +37,9 @@ def build_skill_tree_embed(
         )
 
     if state.next_reset_available_at is not None:
+        # Dans un champ, pas dans le pied : Discord n'y interprète pas <t:…>.
         ts = int(state.next_reset_available_at.timestamp())
-        embed.set_footer(text=f"Prochain reset disponible : <t:{ts}:R>")
+        embed.add_field(name="↺ Prochain reset", value=f"<t:{ts}:R>", inline=False)
 
     embed.set_image(url="attachment://skill_tree.png")
     return embed
