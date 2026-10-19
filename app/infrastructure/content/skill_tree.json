@@ -284,9 +284,9 @@
         {
           "type": "drop_rate_multiplier",
           "values": [
-            1,
-            4,
-            9
+            0.1,
+            0.4,
+            0.9
           ]
         }
       ],
@@ -1530,9 +1530,9 @@
         {
           "type": "drop_rate_multiplier",
           "values": [
-            1,
-            4,
-            9
+            0.1,
+            0.4,
+            0.9
           ]
         }
       ],
@@ -1642,9 +1642,9 @@
         {
           "type": "drop_rate_multiplier",
           "values": [
-            1,
-            4,
-            9
+            0.1,
+            0.4,
+            0.9
           ]
         }
       ],
