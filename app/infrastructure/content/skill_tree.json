@@ -8,31 +8,37 @@
     "cercle_depart": {
       "label": "Départ",
       "geometry": "circle",
-      "size": 38,
+      "size": 46,
       "ring": true
     },
     "cercle_stat_plus": {
-      "label": "Stats",
+      "label": "Voies",
       "geometry": "diamond",
-      "size": 30,
+      "size": 40,
       "ring": true
     },
     "carre_passif": {
-      "label": "Compétence Passive",
+      "label": "Passives",
       "geometry": "square",
-      "size": 32,
-      "ring": true
-    },
-    "carre_actif": {
-      "label": "Compétence Active",
-      "geometry": "square",
-      "size": 34,
+      "size": 40,
       "ring": true
     },
     "hexagone_classe": {
-      "label": "Classe",
+      "label": "Classes",
       "geometry": "hexagon",
-      "size": 36,
+      "size": 42,
+      "ring": true
+    },
+    "forme_2": {
+      "label": "Stats",
+      "geometry": "circle",
+      "size": 34,
+      "ring": true
+    },
+    "forme_1": {
+      "label": "Stats Avancées",
+      "geometry": "circle",
+      "size": 40,
       "ring": true
     }
   },
@@ -60,6 +66,18 @@
     "utilite": {
       "label": "Utilité",
       "color": "#ffbedc"
+    },
+    "type_1": {
+      "label": "Mage",
+      "color": "#aa9991"
+    },
+    "type_2": {
+      "label": "Gardien",
+      "color": "#5db7c6"
+    },
+    "type_3": {
+      "label": "Sentinelle",
+      "color": "#8fa3ff"
     }
   },
   "link_types": {
@@ -215,15 +233,15 @@
       ],
       "effects": [],
       "position": {
-        "x": 1210,
-        "y": 310
+        "x": 2010,
+        "y": 440
       }
     },
     "axe_or": {
       "name": "Axe de l'Or",
       "description": "Début d'axe — à étoffer.",
       "icon": "💰",
-      "shape": "cercle_stat_plus",
+      "shape": "carre_passif",
       "node_type": "utilite",
       "start": false,
       "unlock_rule": "all",
@@ -244,15 +262,15 @@
         }
       ],
       "position": {
-        "x": 1344,
-        "y": 444
+        "x": 2144,
+        "y": 574
       }
     },
     "axe_drop": {
       "name": "Axe du Butin",
       "description": "Début d'axe — à étoffer.",
       "icon": "🍀",
-      "shape": "cercle_stat_plus",
+      "shape": "carre_passif",
       "node_type": "utilite",
       "start": false,
       "unlock_rule": "all",
@@ -273,15 +291,15 @@
         }
       ],
       "position": {
-        "x": 1210,
-        "y": 595
+        "x": 2010,
+        "y": 725
       }
     },
     "axe_xp": {
       "name": "Axe de l'Expérience",
       "description": "Début d'axe — à étoffer.",
       "icon": "⚡",
-      "shape": "cercle_stat_plus",
+      "shape": "carre_passif",
       "node_type": "utilite",
       "start": false,
       "unlock_rule": "all",
@@ -302,15 +320,15 @@
         }
       ],
       "position": {
-        "x": 1076,
-        "y": 444
+        "x": 1876,
+        "y": 574
       }
     },
     "axe_confort": {
       "name": "Axe du Confort",
       "description": "Début d'axe — à étoffer.",
       "icon": "🎁",
-      "shape": "cercle_stat_plus",
+      "shape": "carre_passif",
       "node_type": "utilite",
       "start": false,
       "unlock_rule": "all",
@@ -347,15 +365,15 @@
         }
       ],
       "position": {
-        "x": 1210,
-        "y": 785
+        "x": 2010,
+        "y": 915
       }
     },
     "passif_1": {
       "name": "Support",
       "description": "",
       "icon": "❤️",
-      "shape": "cercle_depart",
+      "shape": "forme_2",
       "node_type": "passif",
       "start": false,
       "unlock_rule": "all",
@@ -369,29 +387,11 @@
         "y": 640
       }
     },
-    "passif_3": {
-      "name": "Support",
-      "description": "",
-      "icon": "💧",
-      "shape": "cercle_depart",
-      "node_type": "passif",
-      "start": false,
-      "unlock_rule": "all",
-      "max_level": 1,
-      "costs": [
-        1
-      ],
-      "effects": [],
-      "position": {
-        "x": -574,
-        "y": 735
-      }
-    },
     "passif_4": {
       "name": "Support",
       "description": "",
       "icon": "💨",
-      "shape": "cercle_depart",
+      "shape": "forme_1",
       "node_type": "passif",
       "start": false,
       "unlock_rule": "all",
@@ -409,7 +409,7 @@
       "name": "Support",
       "description": "",
       "icon": "💨",
-      "shape": "cercle_depart",
+      "shape": "forme_1",
       "node_type": "passif",
       "start": false,
       "unlock_rule": "all",
@@ -427,7 +427,7 @@
       "name": "Support",
       "description": "",
       "icon": "❤️",
-      "shape": "cercle_depart",
+      "shape": "forme_2",
       "node_type": "passif",
       "start": false,
       "unlock_rule": "all",
@@ -445,7 +445,7 @@
       "name": "Support",
       "description": "",
       "icon": "❤️",
-      "shape": "cercle_depart",
+      "shape": "forme_2",
       "node_type": "passif",
       "start": false,
       "unlock_rule": "all",
@@ -463,7 +463,7 @@
       "name": "Support",
       "description": "",
       "icon": "❤️",
-      "shape": "cercle_depart",
+      "shape": "forme_2",
       "node_type": "passif",
       "start": false,
       "unlock_rule": "all",
@@ -481,7 +481,7 @@
       "name": "Support",
       "description": "",
       "icon": "❤️",
-      "shape": "cercle_depart",
+      "shape": "forme_2",
       "node_type": "passif",
       "start": false,
       "unlock_rule": "all",
@@ -499,7 +499,7 @@
       "name": "Défense",
       "description": "",
       "icon": "🛡️",
-      "shape": "cercle_depart",
+      "shape": "forme_2",
       "node_type": "stat",
       "start": false,
       "unlock_rule": "all",
@@ -517,7 +517,7 @@
       "name": "Attaque",
       "description": "",
       "icon": "⚔️",
-      "shape": "cercle_depart",
+      "shape": "forme_2",
       "node_type": "actif",
       "start": false,
       "unlock_rule": "all",
@@ -535,7 +535,7 @@
       "name": "Attaque",
       "description": "",
       "icon": "⚔️",
-      "shape": "cercle_depart",
+      "shape": "forme_2",
       "node_type": "actif",
       "start": false,
       "unlock_rule": "all",
@@ -553,7 +553,7 @@
       "name": "Attaque",
       "description": "",
       "icon": "⚔️",
-      "shape": "cercle_depart",
+      "shape": "forme_2",
       "node_type": "actif",
       "start": false,
       "unlock_rule": "all",
@@ -567,29 +567,11 @@
         "y": 203
       }
     },
-    "actif_5": {
-      "name": "Attaque",
-      "description": "",
-      "icon": "🎯",
-      "shape": "cercle_depart",
-      "node_type": "actif",
-      "start": false,
-      "unlock_rule": "all",
-      "max_level": 1,
-      "costs": [
-        1
-      ],
-      "effects": [],
-      "position": {
-        "x": -80,
-        "y": -120
-      }
-    },
     "actif_6": {
       "name": "Attaque",
       "description": "",
       "icon": "💨",
-      "shape": "cercle_depart",
+      "shape": "forme_1",
       "node_type": "actif",
       "start": false,
       "unlock_rule": "all",
@@ -607,7 +589,7 @@
       "name": "Attaque",
       "description": "",
       "icon": "⚔️",
-      "shape": "cercle_depart",
+      "shape": "forme_2",
       "node_type": "actif",
       "start": false,
       "unlock_rule": "all",
@@ -625,7 +607,7 @@
       "name": "Attaque",
       "description": "",
       "icon": "💨",
-      "shape": "cercle_depart",
+      "shape": "forme_1",
       "node_type": "actif",
       "start": false,
       "unlock_rule": "all",
@@ -643,7 +625,7 @@
       "name": "Attaque",
       "description": "",
       "icon": "⚔️",
-      "shape": "cercle_depart",
+      "shape": "forme_2",
       "node_type": "actif",
       "start": false,
       "unlock_rule": "all",
@@ -661,7 +643,7 @@
       "name": "Attaque",
       "description": "",
       "icon": "💥",
-      "shape": "cercle_depart",
+      "shape": "forme_1",
       "node_type": "actif",
       "start": false,
       "unlock_rule": "all",
@@ -679,7 +661,7 @@
       "name": "Attaque",
       "description": "",
       "icon": "💥",
-      "shape": "cercle_depart",
+      "shape": "forme_1",
       "node_type": "actif",
       "start": false,
       "unlock_rule": "all",
@@ -697,7 +679,7 @@
       "name": "Défense",
       "description": "",
       "icon": "🛡️",
-      "shape": "cercle_depart",
+      "shape": "forme_2",
       "node_type": "stat",
       "start": false,
       "unlock_rule": "all",
@@ -715,7 +697,7 @@
       "name": "Défense",
       "description": "",
       "icon": "🛡️",
-      "shape": "cercle_depart",
+      "shape": "forme_2",
       "node_type": "stat",
       "start": false,
       "unlock_rule": "all",
@@ -729,29 +711,11 @@
         "y": 450
       }
     },
-    "stat_5": {
-      "name": "Défense",
-      "description": "",
-      "icon": "🌀",
-      "shape": "cercle_depart",
-      "node_type": "stat",
-      "start": false,
-      "unlock_rule": "all",
-      "max_level": 1,
-      "costs": [
-        1
-      ],
-      "effects": [],
-      "position": {
-        "x": 414,
-        "y": 735
-      }
-    },
     "stat_7": {
       "name": "Défense",
       "description": "",
       "icon": "💨",
-      "shape": "cercle_depart",
+      "shape": "forme_1",
       "node_type": "stat",
       "start": false,
       "unlock_rule": "all",
@@ -769,7 +733,7 @@
       "name": "Défense",
       "description": "",
       "icon": "🛡️",
-      "shape": "cercle_depart",
+      "shape": "forme_2",
       "node_type": "stat",
       "start": false,
       "unlock_rule": "all",
@@ -787,7 +751,7 @@
       "name": "Défense",
       "description": "",
       "icon": "💨",
-      "shape": "cercle_depart",
+      "shape": "forme_1",
       "node_type": "stat",
       "start": false,
       "unlock_rule": "all",
@@ -805,7 +769,7 @@
       "name": "Défense",
       "description": "",
       "icon": "✨",
-      "shape": "cercle_depart",
+      "shape": "forme_1",
       "node_type": "stat",
       "start": false,
       "unlock_rule": "all",
@@ -823,7 +787,7 @@
       "name": "Défense",
       "description": "",
       "icon": "✨",
-      "shape": "cercle_depart",
+      "shape": "forme_1",
       "node_type": "stat",
       "start": false,
       "unlock_rule": "all",
@@ -841,7 +805,7 @@
       "name": "Défense",
       "description": "",
       "icon": "🛡️",
-      "shape": "cercle_depart",
+      "shape": "forme_2",
       "node_type": "stat",
       "start": false,
       "unlock_rule": "all",
@@ -859,7 +823,7 @@
       "name": "Support",
       "description": "",
       "icon": "🔷",
-      "shape": "cercle_depart",
+      "shape": "forme_1",
       "node_type": "passif",
       "start": false,
       "unlock_rule": "all",
@@ -877,7 +841,7 @@
       "name": "Support",
       "description": "",
       "icon": "🔷",
-      "shape": "cercle_depart",
+      "shape": "forme_1",
       "node_type": "passif",
       "start": false,
       "unlock_rule": "all",
@@ -889,6 +853,654 @@
       "position": {
         "x": -539,
         "y": 327
+      }
+    },
+    "passif_14": {
+      "name": "Support",
+      "description": "",
+      "icon": "",
+      "shape": "cercle_stat_plus",
+      "node_type": "type_1",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -574,
+        "y": 165
+      }
+    },
+    "type_1_6": {
+      "name": "Mage",
+      "description": "",
+      "icon": "",
+      "shape": "hexagone_classe",
+      "node_type": "classe",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -820,
+        "y": 22
+      }
+    },
+    "type_1_8": {
+      "name": "Mage",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "type_1",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -550,
+        "y": -20
+      }
+    },
+    "type_1_10": {
+      "name": "Mage",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "type_1",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -722,
+        "y": 278
+      }
+    },
+    "type_1_1": {
+      "name": "Mage",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "type_1",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -906,
+        "y": 229
+      }
+    },
+    "type_1_2": {
+      "name": "Mage",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "type_1",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -685,
+        "y": -155
+      }
+    },
+    "passif_11": {
+      "name": "Support",
+      "description": "",
+      "icon": "",
+      "shape": "cercle_stat_plus",
+      "node_type": "type_2",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -80,
+        "y": 1020
+      }
+    },
+    "type_1_3": {
+      "name": "Mage",
+      "description": "",
+      "icon": "",
+      "shape": "hexagone_classe",
+      "node_type": "classe",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -80,
+        "y": 1305
+      }
+    },
+    "type_1_4": {
+      "name": "Mage",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "type_2",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -252,
+        "y": 1092
+      }
+    },
+    "type_1_5": {
+      "name": "Mage",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "type_2",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 92,
+        "y": 1092
+      }
+    },
+    "type_1_7": {
+      "name": "Mage",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "type_2",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 141,
+        "y": 1276
+      }
+    },
+    "type_1_9": {
+      "name": "Mage",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "type_2",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -301,
+        "y": 1276
+      }
+    },
+    "passif_12": {
+      "name": "Support",
+      "description": "",
+      "icon": "",
+      "shape": "cercle_stat_plus",
+      "node_type": "type_3",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 414,
+        "y": 165
+      }
+    },
+    "type_1_11": {
+      "name": "Mage",
+      "description": "",
+      "icon": "",
+      "shape": "hexagone_classe",
+      "node_type": "classe",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 660,
+        "y": 23
+      }
+    },
+    "type_1_12": {
+      "name": "Mage",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "type_3",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 390,
+        "y": -20
+      }
+    },
+    "type_1_13": {
+      "name": "Mage",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "type_3",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 562,
+        "y": 278
+      }
+    },
+    "type_1_14": {
+      "name": "Mage",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "type_3",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 746,
+        "y": 229
+      }
+    },
+    "type_1_15": {
+      "name": "Mage",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "type_3",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 525,
+        "y": -155
+      }
+    },
+    "passif_13": {
+      "name": "Support",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "passif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -935,
+        "y": 450
+      }
+    },
+    "passif_15": {
+      "name": "Support",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "passif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -507,
+        "y": 1190
+      }
+    },
+    "passif_16": {
+      "name": "Support",
+      "description": "",
+      "icon": "",
+      "shape": "hexagone_classe",
+      "node_type": "classe",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -820,
+        "y": 878
+      }
+    },
+    "passif_17": {
+      "name": "Support",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "passif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -906,
+        "y": 671
+      }
+    },
+    "passif_18": {
+      "name": "Support",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "passif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -685,
+        "y": 1055
+      }
+    },
+    "passif_3": {
+      "name": "Support",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "stat",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 348,
+        "y": 1190
+      }
+    },
+    "passif_19": {
+      "name": "Support",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "stat",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 775,
+        "y": 450
+      }
+    },
+    "passif_20": {
+      "name": "Support",
+      "description": "",
+      "icon": "",
+      "shape": "hexagone_classe",
+      "node_type": "classe",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 660,
+        "y": 878
+      }
+    },
+    "passif_21": {
+      "name": "Support",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "stat",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 525,
+        "y": 1055
+      }
+    },
+    "passif_22": {
+      "name": "Support",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "stat",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 746,
+        "y": 671
+      }
+    },
+    "passif_23": {
+      "name": "Support",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "actif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 348,
+        "y": -290
+      }
+    },
+    "passif_24": {
+      "name": "Support",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "actif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 141,
+        "y": -376
+      }
+    },
+    "passif_25": {
+      "name": "Support",
+      "description": "",
+      "icon": "",
+      "shape": "hexagone_classe",
+      "node_type": "classe",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -80,
+        "y": -405
+      }
+    },
+    "passif_26": {
+      "name": "Support",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "actif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -301,
+        "y": -376
+      }
+    },
+    "passif_27": {
+      "name": "Support",
+      "description": "",
+      "icon": "",
+      "shape": "forme_1",
+      "node_type": "actif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -507,
+        "y": -290
+      }
+    },
+    "passif_28": {
+      "name": "Support",
+      "description": "",
+      "icon": "",
+      "shape": "carre_passif",
+      "node_type": "stat",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": 414,
+        "y": 735
+      }
+    },
+    "passif_29": {
+      "name": "Support",
+      "description": "",
+      "icon": "",
+      "shape": "carre_passif",
+      "node_type": "passif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -574,
+        "y": 735
+      }
+    },
+    "actif_4": {
+      "name": "Attaque",
+      "description": "",
+      "icon": "",
+      "shape": "carre_passif",
+      "node_type": "actif",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [],
+      "position": {
+        "x": -80,
+        "y": -120
       }
     }
   },
@@ -966,16 +1578,6 @@
     {
       "from": "actif_8",
       "to": "actif_9",
-      "type": "majeur"
-    },
-    {
-      "from": "actif_8",
-      "to": "actif_5",
-      "type": "majeur"
-    },
-    {
-      "from": "actif_6",
-      "to": "actif_5",
       "type": "majeur"
     },
     {
@@ -1079,26 +1681,6 @@
       "type": "majeur"
     },
     {
-      "from": "passif_5",
-      "to": "passif_3",
-      "type": "majeur"
-    },
-    {
-      "from": "passif_4",
-      "to": "passif_3",
-      "type": "majeur"
-    },
-    {
-      "from": "stat_9",
-      "to": "stat_5",
-      "type": "majeur"
-    },
-    {
-      "from": "stat_7",
-      "to": "stat_5",
-      "type": "majeur"
-    },
-    {
       "from": "stat_7",
       "to": "stat_8",
       "type": "majeur"
@@ -1156,6 +1738,246 @@
     {
       "from": "passif_10",
       "to": "classe_vampire",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_14",
+      "to": "type_1_10",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_14",
+      "to": "type_1_8",
+      "type": "majeur"
+    },
+    {
+      "from": "type_1_2",
+      "to": "type_1_6",
+      "type": "majeur"
+    },
+    {
+      "from": "type_1_1",
+      "to": "type_1_6",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_11",
+      "to": "type_1_5",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_11",
+      "to": "type_1_4",
+      "type": "majeur"
+    },
+    {
+      "from": "type_1_9",
+      "to": "type_1_3",
+      "type": "majeur"
+    },
+    {
+      "from": "type_1_7",
+      "to": "type_1_3",
+      "type": "majeur"
+    },
+    {
+      "from": "type_1_5",
+      "to": "type_1_7",
+      "type": "majeur"
+    },
+    {
+      "from": "type_1_4",
+      "to": "type_1_9",
+      "type": "majeur"
+    },
+    {
+      "from": "type_1_8",
+      "to": "type_1_2",
+      "type": "majeur"
+    },
+    {
+      "from": "type_1_10",
+      "to": "type_1_1",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_10",
+      "to": "passif_14",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_10",
+      "to": "passif_14",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_2",
+      "to": "passif_11",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_10",
+      "to": "passif_11",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_12",
+      "to": "type_1_13",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_12",
+      "to": "type_1_12",
+      "type": "majeur"
+    },
+    {
+      "from": "type_1_15",
+      "to": "type_1_11",
+      "type": "majeur"
+    },
+    {
+      "from": "type_1_14",
+      "to": "type_1_11",
+      "type": "majeur"
+    },
+    {
+      "from": "type_1_13",
+      "to": "type_1_14",
+      "type": "majeur"
+    },
+    {
+      "from": "type_1_12",
+      "to": "type_1_15",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_11",
+      "to": "passif_12",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_2",
+      "to": "passif_12",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_6",
+      "to": "passif_13",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_7",
+      "to": "passif_15",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_13",
+      "to": "passif_17",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_15",
+      "to": "passif_18",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_17",
+      "to": "passif_16",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_18",
+      "to": "passif_16",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_3",
+      "to": "passif_21",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_19",
+      "to": "passif_22",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_21",
+      "to": "passif_20",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_22",
+      "to": "passif_20",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_23",
+      "to": "passif_24",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_27",
+      "to": "passif_26",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_24",
+      "to": "passif_25",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_26",
+      "to": "passif_25",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_7",
+      "to": "passif_27",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_9",
+      "to": "passif_23",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_8",
+      "to": "passif_19",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_6",
+      "to": "passif_3",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_7",
+      "to": "passif_28",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_9",
+      "to": "passif_28",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_5",
+      "to": "passif_29",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_4",
+      "to": "passif_29",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_6",
+      "to": "actif_4",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_8",
+      "to": "actif_4",
       "type": "majeur"
     }
   ],
