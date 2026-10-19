@@ -123,7 +123,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "atk_percent",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": -80,
         "y": 260
@@ -141,7 +148,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "def_percent",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": 85,
         "y": 545
@@ -159,7 +173,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "hp_max_percent",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": -245,
         "y": 545
@@ -361,7 +382,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "hp_max_percent",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": -409,
         "y": 640
@@ -379,7 +407,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "speed_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": -416,
         "y": 786
@@ -397,7 +432,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "speed_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": -539,
         "y": 573
@@ -415,7 +457,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "hp_max_percent",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": -650,
         "y": 450
@@ -433,7 +482,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "hp_max_percent",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": -366,
         "y": 943
@@ -451,7 +507,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "hp_max_percent",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": -222,
         "y": 697
@@ -469,7 +532,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "hp_max_percent",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": -365,
         "y": 450
@@ -487,7 +557,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "def_percent",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": 249,
         "y": 640
@@ -505,7 +582,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "atk_percent",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": -80,
         "y": 70
@@ -523,7 +607,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "atk_percent",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": -222,
         "y": 203
@@ -541,7 +632,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "atk_percent",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": 63,
         "y": 203
@@ -559,7 +657,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "speed_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": -203,
         "y": -9
@@ -577,7 +682,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "atk_percent",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": -365,
         "y": -44
@@ -595,7 +707,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "speed_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": 43,
         "y": -9
@@ -613,7 +732,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "atk_percent",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": 205,
         "y": -44
@@ -631,7 +757,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "crit_damage_flat",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": -416,
         "y": 114
@@ -649,7 +782,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "crit_damage_flat",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": 256,
         "y": 114
@@ -667,7 +807,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "def_percent",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": 63,
         "y": 697
@@ -685,7 +832,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "def_percent",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": 205,
         "y": 450
@@ -703,7 +857,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "speed_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": 379,
         "y": 573
@@ -721,7 +882,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "def_percent",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": 490,
         "y": 450
@@ -739,7 +907,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "speed_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": 256,
         "y": 786
@@ -757,7 +932,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "hp_regeneration_flat",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": 43,
         "y": 909
@@ -775,7 +957,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "hp_regeneration_flat",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": 379,
         "y": 327
@@ -793,14 +982,21 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "def_percent",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": 205,
         "y": 944
       }
     },
     "passif_2": {
-      "name": "Rég. mana",
+      "name": "Rég. Mana",
       "description": "",
       "icon": "🔷",
       "shape": "forme_1",
@@ -811,14 +1007,21 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "mana_max_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": -204,
         "y": 909
       }
     },
     "passif_10": {
-      "name": "Rég. mana",
+      "name": "Rég. Mana",
       "description": "",
       "icon": "🔷",
       "shape": "forme_1",
@@ -829,7 +1032,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "mana_regeneration_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": -539,
         "y": 327
@@ -883,7 +1093,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "crit_chance_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": -550,
         "y": -20
@@ -901,14 +1118,21 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "mana_max_flat",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": -722,
         "y": 278
       }
     },
     "type_1_1": {
-      "name": "Rég. mana",
+      "name": "Rég. Mana",
       "description": "",
       "icon": "🔷",
       "shape": "forme_1",
@@ -919,7 +1143,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "mana_regeneration_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": -906,
         "y": 229
@@ -937,7 +1168,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "crit_damage_flat",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": -685,
         "y": -155
@@ -991,7 +1229,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "mana_max_flat",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": -252,
         "y": 1092
@@ -1009,7 +1254,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "dodge_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": 92,
         "y": 1092
@@ -1027,14 +1279,21 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "hp_regeneration_flat",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": 141,
         "y": 1276
       }
     },
     "type_1_9": {
-      "name": "Rég. mana",
+      "name": "Rég. Mana",
       "description": "",
       "icon": "🔷",
       "shape": "forme_1",
@@ -1045,7 +1304,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "mana_max_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": -301,
         "y": 1276
@@ -1099,7 +1365,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "crit_chance_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": 390,
         "y": -20
@@ -1117,7 +1390,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "dodge_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": 562,
         "y": 278
@@ -1135,7 +1415,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "hp_regeneration_flat",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": 746,
         "y": 229
@@ -1153,7 +1440,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "crit_damage_flat",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": 525,
         "y": -155
@@ -1171,7 +1465,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "mana_max_flat",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": -935,
         "y": 450
@@ -1189,7 +1490,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "mana_max_flat",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": -507,
         "y": 1190
@@ -1214,7 +1522,7 @@
       }
     },
     "passif_17": {
-      "name": "Rég. mana",
+      "name": "Rég. Mana",
       "description": "",
       "icon": "🔷",
       "shape": "forme_1",
@@ -1232,7 +1540,7 @@
       }
     },
     "passif_18": {
-      "name": "Rég. mana",
+      "name": "Rég. Mana",
       "description": "",
       "icon": "🔷",
       "shape": "forme_1",
@@ -1243,7 +1551,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "mana_regeneration_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": -685,
         "y": 1055
@@ -1261,7 +1576,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "dodge_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": 348,
         "y": 1190
@@ -1279,7 +1601,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "dodge_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": 775,
         "y": 450
@@ -1315,7 +1644,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "hp_regeneration_flat",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": 525,
         "y": 1055
@@ -1333,7 +1669,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "hp_regeneration_flat",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": 746,
         "y": 671
@@ -1351,7 +1694,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "crit_chance_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": 348,
         "y": -290
@@ -1369,7 +1719,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "crit_damage_flat",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": 141,
         "y": -376
@@ -1405,7 +1762,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "crit_damage_flat",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": -301,
         "y": -376
@@ -1423,7 +1787,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "crit_chance_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": -507,
         "y": -290
