@@ -1009,7 +1009,7 @@
       ],
       "effects": [
         {
-          "type": "mana_max_flat",
+          "type": "mana_regeneration_flat",
           "values": [
             1
           ]
@@ -1306,7 +1306,7 @@
       ],
       "effects": [
         {
-          "type": "mana_max_flat",
+          "type": "mana_regeneration_flat",
           "values": [
             1
           ]
@@ -1533,7 +1533,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "mana_regeneration_flat",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": -906,
         "y": 671
