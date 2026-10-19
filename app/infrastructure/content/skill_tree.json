@@ -233,8 +233,8 @@
       ],
       "effects": [],
       "position": {
-        "x": 2010,
-        "y": 440
+        "x": 1090,
+        "y": -230
       }
     },
     "axe_or": {
@@ -262,8 +262,8 @@
         }
       ],
       "position": {
-        "x": 2144,
-        "y": 574
+        "x": 1224,
+        "y": -96
       }
     },
     "axe_drop": {
@@ -291,8 +291,8 @@
         }
       ],
       "position": {
-        "x": 2010,
-        "y": 725
+        "x": 1090,
+        "y": 55
       }
     },
     "axe_xp": {
@@ -320,8 +320,8 @@
         }
       ],
       "position": {
-        "x": 1876,
-        "y": 574
+        "x": 956,
+        "y": -96
       }
     },
     "axe_confort": {
@@ -332,41 +332,21 @@
       "node_type": "utilite",
       "start": false,
       "unlock_rule": "all",
-      "max_level": 3,
+      "max_level": 1,
       "costs": [
-        1,
-        2,
-        3
+        1
       ],
       "effects": [
         {
           "type": "unlock_feature",
           "values": [
-            "Notification privé lorsque le cooldown d'une commande est prêt",
-            "Notification privé lorsque le cooldown d'une commande est prêt",
             "Notification privé lorsque le cooldown d'une commande est prêt"
-          ]
-        },
-        {
-          "type": "unlock_feature",
-          "values": [
-            "1 participation journalière supplémentaire pour défier la tour solo",
-            "1 participation journalière supplémentaire pour défier la tour solo",
-            "1 participation journalière supplémentaire pour défier la tour solo"
-          ]
-        },
-        {
-          "type": "unlock_feature",
-          "values": [
-            "Notifié lorsqu'un événement aparait",
-            "Notifié lorsqu'un événement aparait",
-            "Notifié lorsqu'un événement aparait"
           ]
         }
       ],
       "position": {
-        "x": 2010,
-        "y": 915
+        "x": 1090,
+        "y": 245
       }
     },
     "passif_1": {
@@ -1502,6 +1482,230 @@
         "x": -80,
         "y": -120
       }
+    },
+    "axe_or_1": {
+      "name": "Axe de l'Or",
+      "description": "Début d'axe — à étoffer.",
+      "icon": "💰",
+      "shape": "carre_passif",
+      "node_type": "utilite",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 3,
+      "costs": [
+        1,
+        2,
+        3
+      ],
+      "effects": [
+        {
+          "type": "gold_drop_percent",
+          "values": [
+            1,
+            3,
+            5
+          ]
+        }
+      ],
+      "position": {
+        "x": 1224,
+        "y": 379
+      }
+    },
+    "axe_drop_1": {
+      "name": "Axe du Butin",
+      "description": "Début d'axe — à étoffer.",
+      "icon": "🍀",
+      "shape": "carre_passif",
+      "node_type": "utilite",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 3,
+      "costs": [
+        1,
+        2,
+        3
+      ],
+      "effects": [
+        {
+          "type": "drop_rate_multiplier",
+          "values": [
+            1,
+            3,
+            5
+          ]
+        }
+      ],
+      "position": {
+        "x": 1090,
+        "y": 530
+      }
+    },
+    "axe_xp_1": {
+      "name": "Axe de l'Expérience",
+      "description": "Début d'axe — à étoffer.",
+      "icon": "⚡",
+      "shape": "carre_passif",
+      "node_type": "utilite",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 3,
+      "costs": [
+        1,
+        2,
+        3
+      ],
+      "effects": [
+        {
+          "type": "xp_drop_percent",
+          "values": [
+            1,
+            3,
+            5
+          ]
+        }
+      ],
+      "position": {
+        "x": 956,
+        "y": 379
+      }
+    },
+    "axe_confort_1": {
+      "name": "Axe du Confort",
+      "description": "Début d'axe — à étoffer.",
+      "icon": "🎁",
+      "shape": "carre_passif",
+      "node_type": "utilite",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [
+        {
+          "type": "unlock_feature",
+          "values": [
+            "1 participation journalière supplémentaire pour défier la tour solo"
+          ]
+        }
+      ],
+      "position": {
+        "x": 1090,
+        "y": 720
+      }
+    },
+    "axe_or_2": {
+      "name": "Axe de l'Or",
+      "description": "Début d'axe — à étoffer.",
+      "icon": "💰",
+      "shape": "carre_passif",
+      "node_type": "utilite",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 3,
+      "costs": [
+        1,
+        2,
+        3
+      ],
+      "effects": [
+        {
+          "type": "gold_drop_percent",
+          "values": [
+            1,
+            3,
+            5
+          ]
+        }
+      ],
+      "position": {
+        "x": 1224,
+        "y": 854
+      }
+    },
+    "axe_drop_2": {
+      "name": "Axe du Butin",
+      "description": "Début d'axe — à étoffer.",
+      "icon": "🍀",
+      "shape": "carre_passif",
+      "node_type": "utilite",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 3,
+      "costs": [
+        1,
+        2,
+        3
+      ],
+      "effects": [
+        {
+          "type": "drop_rate_multiplier",
+          "values": [
+            1,
+            3,
+            5
+          ]
+        }
+      ],
+      "position": {
+        "x": 1090,
+        "y": 1005
+      }
+    },
+    "axe_xp_2": {
+      "name": "Axe de l'Expérience",
+      "description": "Début d'axe — à étoffer.",
+      "icon": "⚡",
+      "shape": "carre_passif",
+      "node_type": "utilite",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 3,
+      "costs": [
+        1,
+        2,
+        3
+      ],
+      "effects": [
+        {
+          "type": "xp_drop_percent",
+          "values": [
+            1,
+            3,
+            5
+          ]
+        }
+      ],
+      "position": {
+        "x": 956,
+        "y": 854
+      }
+    },
+    "axe_confort_2": {
+      "name": "Axe du Confort",
+      "description": "Début d'axe — à étoffer.",
+      "icon": "🎁",
+      "shape": "carre_passif",
+      "node_type": "utilite",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        1
+      ],
+      "effects": [
+        {
+          "type": "unlock_feature",
+          "values": [
+            "Notifié lorsqu'un événement aparait"
+          ]
+        }
+      ],
+      "position": {
+        "x": 1090,
+        "y": 1195
+      }
     }
   },
   "links": [
@@ -1978,6 +2182,56 @@
     {
       "from": "actif_8",
       "to": "actif_4",
+      "type": "majeur"
+    },
+    {
+      "from": "axe_or_1",
+      "to": "axe_drop_1",
+      "type": "majeur"
+    },
+    {
+      "from": "axe_drop_1",
+      "to": "axe_confort_1",
+      "type": "majeur"
+    },
+    {
+      "from": "axe_xp_1",
+      "to": "axe_drop_1",
+      "type": "majeur"
+    },
+    {
+      "from": "axe_or_2",
+      "to": "axe_drop_2",
+      "type": "majeur"
+    },
+    {
+      "from": "axe_drop_2",
+      "to": "axe_confort_2",
+      "type": "majeur"
+    },
+    {
+      "from": "axe_xp_2",
+      "to": "axe_drop_2",
+      "type": "majeur"
+    },
+    {
+      "from": "axe_confort",
+      "to": "axe_xp_1",
+      "type": "majeur"
+    },
+    {
+      "from": "axe_confort",
+      "to": "axe_or_1",
+      "type": "majeur"
+    },
+    {
+      "from": "axe_confort_1",
+      "to": "axe_xp_2",
+      "type": "majeur"
+    },
+    {
+      "from": "axe_confort_1",
+      "to": "axe_or_2",
       "type": "majeur"
     }
   ],
