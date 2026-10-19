@@ -112,7 +112,7 @@
       }
     },
     "voie_attaque": {
-      "name": "Voie de l'Attaque",
+      "name": "Voie du Guerrier",
       "description": "Début de voie — à étoffer.",
       "icon": "⚔️",
       "shape": "cercle_stat_plus",
@@ -130,7 +130,7 @@
       }
     },
     "voie_defense": {
-      "name": "Voie de la Défense",
+      "name": "Voie du Protecteur",
       "description": "Début de voie — à étoffer.",
       "icon": "🛡️",
       "shape": "cercle_stat_plus",
@@ -370,7 +370,7 @@
       }
     },
     "passif_1": {
-      "name": "Support",
+      "name": "PV",
       "description": "",
       "icon": "❤️",
       "shape": "forme_2",
@@ -388,7 +388,7 @@
       }
     },
     "passif_4": {
-      "name": "Support",
+      "name": "Vitesse",
       "description": "",
       "icon": "💨",
       "shape": "forme_1",
@@ -406,7 +406,7 @@
       }
     },
     "passif_5": {
-      "name": "Support",
+      "name": "Vitesse",
       "description": "",
       "icon": "💨",
       "shape": "forme_1",
@@ -424,7 +424,7 @@
       }
     },
     "passif_6": {
-      "name": "Support",
+      "name": "PV",
       "description": "",
       "icon": "❤️",
       "shape": "forme_2",
@@ -442,7 +442,7 @@
       }
     },
     "passif_7": {
-      "name": "Support",
+      "name": "PV",
       "description": "",
       "icon": "❤️",
       "shape": "forme_2",
@@ -460,7 +460,7 @@
       }
     },
     "passif_8": {
-      "name": "Support",
+      "name": "PV",
       "description": "",
       "icon": "❤️",
       "shape": "forme_2",
@@ -478,7 +478,7 @@
       }
     },
     "passif_9": {
-      "name": "Support",
+      "name": "PV",
       "description": "",
       "icon": "❤️",
       "shape": "forme_2",
@@ -568,7 +568,7 @@
       }
     },
     "actif_6": {
-      "name": "Attaque",
+      "name": "Vitesse",
       "description": "",
       "icon": "💨",
       "shape": "forme_1",
@@ -604,7 +604,7 @@
       }
     },
     "actif_8": {
-      "name": "Attaque",
+      "name": "Vitesse",
       "description": "",
       "icon": "💨",
       "shape": "forme_1",
@@ -640,7 +640,7 @@
       }
     },
     "actif_10": {
-      "name": "Attaque",
+      "name": "Deg. Crit.",
       "description": "",
       "icon": "💥",
       "shape": "forme_1",
@@ -658,7 +658,7 @@
       }
     },
     "actif_11": {
-      "name": "Attaque",
+      "name": "Deg. Crit.",
       "description": "",
       "icon": "💥",
       "shape": "forme_1",
@@ -712,7 +712,7 @@
       }
     },
     "stat_7": {
-      "name": "Défense",
+      "name": "Vitesse",
       "description": "",
       "icon": "💨",
       "shape": "forme_1",
@@ -748,7 +748,7 @@
       }
     },
     "stat_9": {
-      "name": "Défense",
+      "name": "Vitesse",
       "description": "",
       "icon": "💨",
       "shape": "forme_1",
@@ -766,7 +766,7 @@
       }
     },
     "stat_10": {
-      "name": "Défense",
+      "name": "Régénération",
       "description": "",
       "icon": "✨",
       "shape": "forme_1",
@@ -784,7 +784,7 @@
       }
     },
     "stat_2": {
-      "name": "Défense",
+      "name": "Régénération",
       "description": "",
       "icon": "✨",
       "shape": "forme_1",
@@ -820,7 +820,7 @@
       }
     },
     "passif_2": {
-      "name": "Support",
+      "name": "Rég. mana",
       "description": "",
       "icon": "🔷",
       "shape": "forme_1",
@@ -838,7 +838,7 @@
       }
     },
     "passif_10": {
-      "name": "Support",
+      "name": "Rég. mana",
       "description": "",
       "icon": "🔷",
       "shape": "forme_1",
@@ -856,7 +856,7 @@
       }
     },
     "passif_14": {
-      "name": "Support",
+      "name": "AOE",
       "description": "",
       "icon": "🔮",
       "shape": "carre_passif",
@@ -892,7 +892,7 @@
       }
     },
     "type_1_8": {
-      "name": "Mage",
+      "name": "Chance Crit.",
       "description": "",
       "icon": "🎯",
       "shape": "forme_1",
@@ -910,7 +910,7 @@
       }
     },
     "type_1_10": {
-      "name": "Mage",
+      "name": "Mana",
       "description": "",
       "icon": "💧",
       "shape": "forme_1",
@@ -928,7 +928,7 @@
       }
     },
     "type_1_1": {
-      "name": "Mage",
+      "name": "Rég. mana",
       "description": "",
       "icon": "🔷",
       "shape": "forme_1",
@@ -946,7 +946,7 @@
       }
     },
     "type_1_2": {
-      "name": "Mage",
+      "name": "Deg. Crit.",
       "description": "",
       "icon": "💥",
       "shape": "forme_1",
@@ -964,7 +964,7 @@
       }
     },
     "passif_11": {
-      "name": "Support",
+      "name": "Résistant",
       "description": "",
       "icon": "🫧",
       "shape": "carre_passif",
@@ -1000,7 +1000,7 @@
       }
     },
     "type_1_4": {
-      "name": "Mage",
+      "name": "Mana",
       "description": "",
       "icon": "💧",
       "shape": "forme_1",
@@ -1018,7 +1018,7 @@
       }
     },
     "type_1_5": {
-      "name": "Mage",
+      "name": "Esquive",
       "description": "",
       "icon": "🌀",
       "shape": "forme_1",
@@ -1036,7 +1036,7 @@
       }
     },
     "type_1_7": {
-      "name": "Mage",
+      "name": "Régénération",
       "description": "",
       "icon": "✨",
       "shape": "forme_1",
@@ -1054,7 +1054,7 @@
       }
     },
     "type_1_9": {
-      "name": "Mage",
+      "name": "Rég. mana",
       "description": "",
       "icon": "🔷",
       "shape": "forme_1",
@@ -1072,7 +1072,7 @@
       }
     },
     "passif_12": {
-      "name": "Support",
+      "name": "Gourmant",
       "description": "",
       "icon": "🍖",
       "shape": "carre_passif",
@@ -1108,7 +1108,7 @@
       }
     },
     "type_1_12": {
-      "name": "Mage",
+      "name": "Chance Crit.",
       "description": "",
       "icon": "🎯",
       "shape": "forme_1",
@@ -1126,7 +1126,7 @@
       }
     },
     "type_1_13": {
-      "name": "Mage",
+      "name": "Esquive",
       "description": "",
       "icon": "🌀",
       "shape": "forme_1",
@@ -1144,7 +1144,7 @@
       }
     },
     "type_1_14": {
-      "name": "Mage",
+      "name": "Régénération",
       "description": "",
       "icon": "✨",
       "shape": "forme_1",
@@ -1162,7 +1162,7 @@
       }
     },
     "type_1_15": {
-      "name": "Mage",
+      "name": "Deg. Crit.",
       "description": "",
       "icon": "💥",
       "shape": "forme_1",
@@ -1180,7 +1180,7 @@
       }
     },
     "passif_13": {
-      "name": "Support",
+      "name": "Mana",
       "description": "",
       "icon": "💧",
       "shape": "forme_1",
@@ -1198,7 +1198,7 @@
       }
     },
     "passif_15": {
-      "name": "Support",
+      "name": "Mana",
       "description": "",
       "icon": "💧",
       "shape": "forme_1",
@@ -1234,7 +1234,7 @@
       }
     },
     "passif_17": {
-      "name": "Support",
+      "name": "Rég. mana",
       "description": "",
       "icon": "🔷",
       "shape": "forme_1",
@@ -1252,7 +1252,7 @@
       }
     },
     "passif_18": {
-      "name": "Support",
+      "name": "Rég. mana",
       "description": "",
       "icon": "🔷",
       "shape": "forme_1",
@@ -1270,7 +1270,7 @@
       }
     },
     "passif_3": {
-      "name": "Support",
+      "name": "Esquive",
       "description": "",
       "icon": "🌀",
       "shape": "forme_1",
@@ -1288,7 +1288,7 @@
       }
     },
     "passif_19": {
-      "name": "Support",
+      "name": "Esquive",
       "description": "",
       "icon": "🌀",
       "shape": "forme_1",
@@ -1324,7 +1324,7 @@
       }
     },
     "passif_21": {
-      "name": "Support",
+      "name": "Régénération",
       "description": "",
       "icon": "✨",
       "shape": "forme_1",
@@ -1342,7 +1342,7 @@
       }
     },
     "passif_22": {
-      "name": "Support",
+      "name": "Régénération",
       "description": "",
       "icon": "✨",
       "shape": "forme_1",
@@ -1360,7 +1360,7 @@
       }
     },
     "passif_23": {
-      "name": "Support",
+      "name": "Chance Crit.",
       "description": "",
       "icon": "🎯",
       "shape": "forme_1",
@@ -1378,7 +1378,7 @@
       }
     },
     "passif_24": {
-      "name": "Support",
+      "name": "Deg. Crit.",
       "description": "",
       "icon": "💥",
       "shape": "forme_1",
@@ -1414,7 +1414,7 @@
       }
     },
     "passif_26": {
-      "name": "Support",
+      "name": "Deg. Crit.",
       "description": "",
       "icon": "💥",
       "shape": "forme_1",
@@ -1432,7 +1432,7 @@
       }
     },
     "passif_27": {
-      "name": "Support",
+      "name": "Chance Crit.",
       "description": "",
       "icon": "🎯",
       "shape": "forme_1",
@@ -1450,7 +1450,7 @@
       }
     },
     "passif_28": {
-      "name": "Support",
+      "name": "Vaillant",
       "description": "",
       "icon": "🫀",
       "shape": "carre_passif",
@@ -1468,7 +1468,7 @@
       }
     },
     "passif_29": {
-      "name": "Support",
+      "name": "Buff",
       "description": "",
       "icon": "💊",
       "shape": "carre_passif",
@@ -1486,7 +1486,7 @@
       }
     },
     "actif_4": {
-      "name": "Attaque",
+      "name": "Léthal",
       "description": "",
       "icon": "🗡️",
       "shape": "carre_passif",
