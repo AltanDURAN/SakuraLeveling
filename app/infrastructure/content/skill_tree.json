@@ -168,7 +168,7 @@
     "classe_combattant": {
       "name": "Combattant",
       "description": "Classe obtenue en reliant deux voies.",
-      "icon": "🦾",
+      "icon": "👊",
       "shape": "hexagone_classe",
       "node_type": "classe",
       "start": false,
@@ -204,7 +204,7 @@
     "classe_vampire": {
       "name": "Vampire",
       "description": "Classe obtenue en reliant deux voies.",
-      "icon": "🩸",
+      "icon": "🧛",
       "shape": "hexagone_classe",
       "node_type": "classe",
       "start": false,
@@ -858,8 +858,8 @@
     "passif_14": {
       "name": "Support",
       "description": "",
-      "icon": "",
-      "shape": "cercle_stat_plus",
+      "icon": "🔮",
+      "shape": "carre_passif",
       "node_type": "type_1",
       "start": false,
       "unlock_rule": "all",
@@ -876,7 +876,7 @@
     "type_1_6": {
       "name": "Mage",
       "description": "",
-      "icon": "",
+      "icon": "🧙",
       "shape": "hexagone_classe",
       "node_type": "classe",
       "start": false,
@@ -894,7 +894,7 @@
     "type_1_8": {
       "name": "Mage",
       "description": "",
-      "icon": "",
+      "icon": "🎯",
       "shape": "forme_1",
       "node_type": "type_1",
       "start": false,
@@ -912,7 +912,7 @@
     "type_1_10": {
       "name": "Mage",
       "description": "",
-      "icon": "",
+      "icon": "💧",
       "shape": "forme_1",
       "node_type": "type_1",
       "start": false,
@@ -930,7 +930,7 @@
     "type_1_1": {
       "name": "Mage",
       "description": "",
-      "icon": "",
+      "icon": "🔷",
       "shape": "forme_1",
       "node_type": "type_1",
       "start": false,
@@ -948,7 +948,7 @@
     "type_1_2": {
       "name": "Mage",
       "description": "",
-      "icon": "",
+      "icon": "💥",
       "shape": "forme_1",
       "node_type": "type_1",
       "start": false,
@@ -966,8 +966,8 @@
     "passif_11": {
       "name": "Support",
       "description": "",
-      "icon": "",
-      "shape": "cercle_stat_plus",
+      "icon": "🫧",
+      "shape": "carre_passif",
       "node_type": "type_2",
       "start": false,
       "unlock_rule": "all",
@@ -982,9 +982,9 @@
       }
     },
     "type_1_3": {
-      "name": "Mage",
+      "name": "Egide",
       "description": "",
-      "icon": "",
+      "icon": "🗿",
       "shape": "hexagone_classe",
       "node_type": "classe",
       "start": false,
@@ -1002,7 +1002,7 @@
     "type_1_4": {
       "name": "Mage",
       "description": "",
-      "icon": "",
+      "icon": "💧",
       "shape": "forme_1",
       "node_type": "type_2",
       "start": false,
@@ -1020,7 +1020,7 @@
     "type_1_5": {
       "name": "Mage",
       "description": "",
-      "icon": "",
+      "icon": "🌀",
       "shape": "forme_1",
       "node_type": "type_2",
       "start": false,
@@ -1038,7 +1038,7 @@
     "type_1_7": {
       "name": "Mage",
       "description": "",
-      "icon": "",
+      "icon": "✨",
       "shape": "forme_1",
       "node_type": "type_2",
       "start": false,
@@ -1056,7 +1056,7 @@
     "type_1_9": {
       "name": "Mage",
       "description": "",
-      "icon": "",
+      "icon": "🔷",
       "shape": "forme_1",
       "node_type": "type_2",
       "start": false,
@@ -1074,8 +1074,8 @@
     "passif_12": {
       "name": "Support",
       "description": "",
-      "icon": "",
-      "shape": "cercle_stat_plus",
+      "icon": "🍖",
+      "shape": "carre_passif",
       "node_type": "type_3",
       "start": false,
       "unlock_rule": "all",
@@ -1090,9 +1090,9 @@
       }
     },
     "type_1_11": {
-      "name": "Mage",
+      "name": "Titan",
       "description": "",
-      "icon": "",
+      "icon": "🦾",
       "shape": "hexagone_classe",
       "node_type": "classe",
       "start": false,
@@ -1110,7 +1110,7 @@
     "type_1_12": {
       "name": "Mage",
       "description": "",
-      "icon": "",
+      "icon": "🎯",
       "shape": "forme_1",
       "node_type": "type_3",
       "start": false,
@@ -1128,7 +1128,7 @@
     "type_1_13": {
       "name": "Mage",
       "description": "",
-      "icon": "",
+      "icon": "🌀",
       "shape": "forme_1",
       "node_type": "type_3",
       "start": false,
@@ -1146,7 +1146,7 @@
     "type_1_14": {
       "name": "Mage",
       "description": "",
-      "icon": "",
+      "icon": "✨",
       "shape": "forme_1",
       "node_type": "type_3",
       "start": false,
@@ -1164,7 +1164,7 @@
     "type_1_15": {
       "name": "Mage",
       "description": "",
-      "icon": "",
+      "icon": "💥",
       "shape": "forme_1",
       "node_type": "type_3",
       "start": false,
@@ -1182,7 +1182,7 @@
     "passif_13": {
       "name": "Support",
       "description": "",
-      "icon": "",
+      "icon": "💧",
       "shape": "forme_1",
       "node_type": "passif",
       "start": false,
@@ -1200,7 +1200,7 @@
     "passif_15": {
       "name": "Support",
       "description": "",
-      "icon": "",
+      "icon": "💧",
       "shape": "forme_1",
       "node_type": "passif",
       "start": false,
@@ -1216,9 +1216,9 @@
       }
     },
     "passif_16": {
-      "name": "Support",
+      "name": "Soigneur",
       "description": "",
-      "icon": "",
+      "icon": "💚",
       "shape": "hexagone_classe",
       "node_type": "classe",
       "start": false,
@@ -1236,7 +1236,7 @@
     "passif_17": {
       "name": "Support",
       "description": "",
-      "icon": "",
+      "icon": "🔷",
       "shape": "forme_1",
       "node_type": "passif",
       "start": false,
@@ -1254,7 +1254,7 @@
     "passif_18": {
       "name": "Support",
       "description": "",
-      "icon": "",
+      "icon": "🔷",
       "shape": "forme_1",
       "node_type": "passif",
       "start": false,
@@ -1272,7 +1272,7 @@
     "passif_3": {
       "name": "Support",
       "description": "",
-      "icon": "",
+      "icon": "🌀",
       "shape": "forme_1",
       "node_type": "stat",
       "start": false,
@@ -1290,7 +1290,7 @@
     "passif_19": {
       "name": "Support",
       "description": "",
-      "icon": "",
+      "icon": "🌀",
       "shape": "forme_1",
       "node_type": "stat",
       "start": false,
@@ -1306,9 +1306,9 @@
       }
     },
     "passif_20": {
-      "name": "Support",
+      "name": "Rempart",
       "description": "",
-      "icon": "",
+      "icon": "🧱",
       "shape": "hexagone_classe",
       "node_type": "classe",
       "start": false,
@@ -1326,7 +1326,7 @@
     "passif_21": {
       "name": "Support",
       "description": "",
-      "icon": "",
+      "icon": "✨",
       "shape": "forme_1",
       "node_type": "stat",
       "start": false,
@@ -1344,7 +1344,7 @@
     "passif_22": {
       "name": "Support",
       "description": "",
-      "icon": "",
+      "icon": "✨",
       "shape": "forme_1",
       "node_type": "stat",
       "start": false,
@@ -1362,7 +1362,7 @@
     "passif_23": {
       "name": "Support",
       "description": "",
-      "icon": "",
+      "icon": "🎯",
       "shape": "forme_1",
       "node_type": "actif",
       "start": false,
@@ -1380,7 +1380,7 @@
     "passif_24": {
       "name": "Support",
       "description": "",
-      "icon": "",
+      "icon": "💥",
       "shape": "forme_1",
       "node_type": "actif",
       "start": false,
@@ -1396,9 +1396,9 @@
       }
     },
     "passif_25": {
-      "name": "Support",
+      "name": "Assassin",
       "description": "",
-      "icon": "",
+      "icon": "🥷",
       "shape": "hexagone_classe",
       "node_type": "classe",
       "start": false,
@@ -1416,7 +1416,7 @@
     "passif_26": {
       "name": "Support",
       "description": "",
-      "icon": "",
+      "icon": "💥",
       "shape": "forme_1",
       "node_type": "actif",
       "start": false,
@@ -1434,7 +1434,7 @@
     "passif_27": {
       "name": "Support",
       "description": "",
-      "icon": "",
+      "icon": "🎯",
       "shape": "forme_1",
       "node_type": "actif",
       "start": false,
@@ -1452,7 +1452,7 @@
     "passif_28": {
       "name": "Support",
       "description": "",
-      "icon": "",
+      "icon": "🫀",
       "shape": "carre_passif",
       "node_type": "stat",
       "start": false,
@@ -1470,7 +1470,7 @@
     "passif_29": {
       "name": "Support",
       "description": "",
-      "icon": "",
+      "icon": "💊",
       "shape": "carre_passif",
       "node_type": "passif",
       "start": false,
@@ -1488,7 +1488,7 @@
     "actif_4": {
       "name": "Attaque",
       "description": "",
-      "icon": "",
+      "icon": "🗡️",
       "shape": "carre_passif",
       "node_type": "actif",
       "start": false,
