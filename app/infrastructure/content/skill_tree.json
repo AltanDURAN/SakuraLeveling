@@ -215,8 +215,8 @@
       ],
       "effects": [],
       "position": {
-        "x": 1820,
-        "y": 500
+        "x": 1210,
+        "y": 310
       }
     },
     "axe_or": {
@@ -244,8 +244,8 @@
         }
       ],
       "position": {
-        "x": 1954,
-        "y": 634
+        "x": 1344,
+        "y": 444
       }
     },
     "axe_drop": {
@@ -273,8 +273,8 @@
         }
       ],
       "position": {
-        "x": 1820,
-        "y": 785
+        "x": 1210,
+        "y": 595
       }
     },
     "axe_xp": {
@@ -302,8 +302,8 @@
         }
       ],
       "position": {
-        "x": 1686,
-        "y": 634
+        "x": 1076,
+        "y": 444
       }
     },
     "axe_confort": {
@@ -347,8 +347,8 @@
         }
       ],
       "position": {
-        "x": 1820,
-        "y": 975
+        "x": 1210,
+        "y": 785
       }
     },
     "passif_1": {
@@ -894,21 +894,6 @@
   },
   "links": [
     {
-      "from": "racine_combat",
-      "to": "voie_attaque",
-      "type": "majeur"
-    },
-    {
-      "from": "racine_combat",
-      "to": "voie_defense",
-      "type": "majeur"
-    },
-    {
-      "from": "racine_combat",
-      "to": "voie_support",
-      "type": "majeur"
-    },
-    {
       "from": "racine_explorateur",
       "to": "axe_xp",
       "type": "majeur"
@@ -934,43 +919,13 @@
       "type": "majeur"
     },
     {
-      "from": "voie_support",
-      "to": "passif_1",
+      "from": "racine_combat",
+      "to": "voie_attaque",
       "type": "majeur"
     },
     {
-      "from": "passif_3",
-      "to": "passif_4",
-      "type": "majeur"
-    },
-    {
-      "from": "passif_3",
-      "to": "passif_5",
-      "type": "majeur"
-    },
-    {
-      "from": "passif_5",
-      "to": "passif_6",
-      "type": "majeur"
-    },
-    {
-      "from": "passif_4",
-      "to": "passif_7",
-      "type": "majeur"
-    },
-    {
-      "from": "passif_1",
-      "to": "passif_8",
-      "type": "majeur"
-    },
-    {
-      "from": "passif_1",
-      "to": "passif_9",
-      "type": "majeur"
-    },
-    {
-      "from": "voie_defense",
-      "to": "stat_1",
+      "from": "voie_attaque",
+      "to": "actif_3",
       "type": "majeur"
     },
     {
@@ -979,28 +934,33 @@
       "type": "majeur"
     },
     {
-      "from": "actif_1",
+      "from": "voie_attaque",
       "to": "actif_2",
       "type": "majeur"
     },
     {
-      "from": "actif_1",
-      "to": "actif_3",
+      "from": "actif_2",
+      "to": "classe_vampire",
       "type": "majeur"
     },
     {
-      "from": "actif_5",
-      "to": "actif_6",
+      "from": "actif_3",
+      "to": "classe_combattant",
       "type": "majeur"
     },
     {
-      "from": "actif_6",
-      "to": "actif_7",
+      "from": "actif_11",
+      "to": "classe_combattant",
       "type": "majeur"
     },
     {
-      "from": "actif_5",
-      "to": "actif_8",
+      "from": "actif_10",
+      "to": "classe_vampire",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_9",
+      "to": "actif_11",
       "type": "majeur"
     },
     {
@@ -1009,28 +969,133 @@
       "type": "majeur"
     },
     {
-      "from": "actif_2",
+      "from": "actif_8",
+      "to": "actif_5",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_6",
+      "to": "actif_5",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_6",
+      "to": "actif_7",
+      "type": "majeur"
+    },
+    {
+      "from": "actif_7",
       "to": "actif_10",
       "type": "majeur"
     },
     {
-      "from": "actif_3",
-      "to": "actif_11",
+      "from": "actif_1",
+      "to": "actif_8",
       "type": "majeur"
     },
     {
-      "from": "stat_1",
+      "from": "actif_1",
+      "to": "actif_6",
+      "type": "majeur"
+    },
+    {
+      "from": "racine_combat",
+      "to": "voie_support",
+      "type": "majeur"
+    },
+    {
+      "from": "racine_combat",
+      "to": "voie_defense",
+      "type": "majeur"
+    },
+    {
+      "from": "voie_defense",
+      "to": "stat_1",
+      "type": "majeur"
+    },
+    {
+      "from": "voie_support",
+      "to": "passif_1",
+      "type": "majeur"
+    },
+    {
+      "from": "voie_support",
+      "to": "passif_8",
+      "type": "majeur"
+    },
+    {
+      "from": "voie_support",
+      "to": "passif_9",
+      "type": "majeur"
+    },
+    {
+      "from": "voie_defense",
       "to": "stat_3",
       "type": "majeur"
     },
     {
-      "from": "stat_1",
+      "from": "voie_defense",
       "to": "stat_4",
       "type": "majeur"
     },
     {
-      "from": "stat_5",
+      "from": "stat_4",
+      "to": "classe_combattant",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_9",
+      "to": "classe_vampire",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_8",
+      "to": "classe_paladin",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_3",
+      "to": "classe_paladin",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_1",
       "to": "stat_7",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_1",
+      "to": "stat_9",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_1",
+      "to": "passif_4",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_1",
+      "to": "passif_5",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_5",
+      "to": "passif_3",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_4",
+      "to": "passif_3",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_9",
+      "to": "stat_5",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_7",
+      "to": "stat_5",
       "type": "majeur"
     },
     {
@@ -1039,53 +1104,13 @@
       "type": "majeur"
     },
     {
-      "from": "stat_5",
-      "to": "stat_9",
-      "type": "majeur"
-    },
-    {
-      "from": "stat_1",
-      "to": "stat_5",
-      "type": "majeur"
-    },
-    {
-      "from": "passif_1",
-      "to": "passif_3",
-      "type": "majeur"
-    },
-    {
-      "from": "actif_1",
-      "to": "actif_5",
-      "type": "majeur"
-    },
-    {
-      "from": "actif_11",
-      "to": "actif_9",
-      "type": "majeur"
-    },
-    {
-      "from": "actif_10",
-      "to": "actif_7",
-      "type": "majeur"
-    },
-    {
-      "from": "actif_10",
-      "to": "classe_vampire",
-      "type": "majeur"
-    },
-    {
-      "from": "actif_11",
-      "to": "classe_combattant",
-      "type": "majeur"
-    },
-    {
-      "from": "stat_3",
-      "to": "stat_10",
-      "type": "majeur"
-    },
-    {
-      "from": "stat_4",
+      "from": "stat_8",
       "to": "stat_2",
+      "type": "majeur"
+    },
+    {
+      "from": "stat_2",
+      "to": "classe_combattant",
       "type": "majeur"
     },
     {
@@ -1094,82 +1119,42 @@
       "type": "majeur"
     },
     {
+      "from": "stat_6",
+      "to": "stat_10",
+      "type": "majeur"
+    },
+    {
       "from": "stat_10",
-      "to": "stat_6",
+      "to": "classe_paladin",
       "type": "majeur"
     },
     {
-      "from": "stat_2",
-      "to": "stat_8",
+      "from": "passif_4",
+      "to": "passif_7",
       "type": "majeur"
     },
     {
-      "from": "passif_8",
+      "from": "passif_7",
       "to": "passif_2",
       "type": "majeur"
     },
     {
-      "from": "passif_9",
+      "from": "passif_2",
+      "to": "classe_paladin",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_5",
+      "to": "passif_6",
+      "type": "majeur"
+    },
+    {
+      "from": "passif_6",
       "to": "passif_10",
       "type": "majeur"
     },
     {
       "from": "passif_10",
-      "to": "passif_6",
-      "type": "majeur"
-    },
-    {
-      "from": "passif_2",
-      "to": "passif_7",
-      "type": "majeur"
-    },
-    {
-      "from": "passif_2",
-      "to": "classe_paladin",
-      "type": "majeur"
-    },
-    {
-      "from": "stat_10",
-      "to": "classe_paladin",
-      "type": "majeur"
-    },
-    {
-      "from": "stat_2",
-      "to": "classe_combattant",
-      "type": "majeur"
-    },
-    {
-      "from": "passif_10",
-      "to": "classe_vampire",
-      "type": "majeur"
-    },
-    {
-      "from": "passif_8",
-      "to": "classe_paladin",
-      "type": "majeur"
-    },
-    {
-      "from": "stat_3",
-      "to": "classe_paladin",
-      "type": "majeur"
-    },
-    {
-      "from": "stat_4",
-      "to": "classe_combattant",
-      "type": "majeur"
-    },
-    {
-      "from": "actif_3",
-      "to": "classe_combattant",
-      "type": "majeur"
-    },
-    {
-      "from": "actif_2",
-      "to": "classe_vampire",
-      "type": "majeur"
-    },
-    {
-      "from": "passif_9",
       "to": "classe_vampire",
       "type": "majeur"
     }
