@@ -1047,7 +1047,7 @@
     },
     "passif_14": {
       "name": "AOE",
-      "description": "",
+      "description": "Les attaques infligent aussi des dégats aux ennemis adjacents la cible, 25% de dégats de l'attaque.",
       "icon": "🔮",
       "shape": "carre_passif",
       "node_type": "type_1",
@@ -1065,7 +1065,7 @@
     },
     "type_1_6": {
       "name": "Mage",
-      "description": "",
+      "description": "Double ses dégats lorsque que son affinité élémentaire est d'au moins 25 dans l'élément de l'attaque, triple si d'au moins 50, quintuple si à 100.",
       "icon": "🧙",
       "shape": "hexagone_classe",
       "node_type": "classe",
@@ -1741,7 +1741,7 @@
     },
     "passif_25": {
       "name": "Assassin",
-      "description": "",
+      "description": "Double ses chances de critique et triple ses dégats critiques.",
       "icon": "🥷",
       "shape": "hexagone_classe",
       "node_type": "classe",
@@ -1827,7 +1827,7 @@
     },
     "passif_29": {
       "name": "Buff",
-      "description": "",
+      "description": "Les soins accordent également un bonus pour le combat de 10% d'attaque et 10% de défense sur la cible du soin et sur soit même, non cumulable.",
       "icon": "💊",
       "shape": "carre_passif",
       "node_type": "passif",
@@ -1845,7 +1845,7 @@
     },
     "actif_4": {
       "name": "Léthal",
-      "description": "",
+      "description": "Ignore 10% de la défense ennemie.",
       "icon": "🗡️",
       "shape": "carre_passif",
       "node_type": "actif",
