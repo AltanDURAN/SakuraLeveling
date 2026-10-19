@@ -238,7 +238,7 @@
       }
     },
     "axe_or": {
-      "name": "Axe de l'Or",
+      "name": "Bonus Or",
       "description": "Début d'axe — à étoffer.",
       "icon": "💰",
       "shape": "carre_passif",
@@ -267,7 +267,7 @@
       }
     },
     "axe_drop": {
-      "name": "Axe du Butin",
+      "name": "Chance Drop",
       "description": "Début d'axe — à étoffer.",
       "icon": "🍀",
       "shape": "carre_passif",
@@ -296,7 +296,7 @@
       }
     },
     "axe_xp": {
-      "name": "Axe de l'Expérience",
+      "name": "Bonus XP",
       "description": "Début d'axe — à étoffer.",
       "icon": "⚡",
       "shape": "carre_passif",
@@ -325,7 +325,7 @@
       }
     },
     "axe_confort": {
-      "name": "Axe du Confort",
+      "name": "Confort",
       "description": "Début d'axe — à étoffer.",
       "icon": "🎁",
       "shape": "carre_passif",
@@ -1484,7 +1484,7 @@
       }
     },
     "axe_or_1": {
-      "name": "Axe de l'Or",
+      "name": "Bonus Or",
       "description": "Début d'axe — à étoffer.",
       "icon": "💰",
       "shape": "carre_passif",
@@ -1513,7 +1513,7 @@
       }
     },
     "axe_drop_1": {
-      "name": "Axe du Butin",
+      "name": "Chance Drop",
       "description": "Début d'axe — à étoffer.",
       "icon": "🍀",
       "shape": "carre_passif",
@@ -1542,7 +1542,7 @@
       }
     },
     "axe_xp_1": {
-      "name": "Axe de l'Expérience",
+      "name": "Bonus XP",
       "description": "Début d'axe — à étoffer.",
       "icon": "⚡",
       "shape": "carre_passif",
@@ -1571,7 +1571,7 @@
       }
     },
     "axe_confort_1": {
-      "name": "Axe du Confort",
+      "name": "Confort",
       "description": "Début d'axe — à étoffer.",
       "icon": "🎁",
       "shape": "carre_passif",
@@ -1596,7 +1596,7 @@
       }
     },
     "axe_or_2": {
-      "name": "Axe de l'Or",
+      "name": "Bonus Or",
       "description": "Début d'axe — à étoffer.",
       "icon": "💰",
       "shape": "carre_passif",
@@ -1625,7 +1625,7 @@
       }
     },
     "axe_drop_2": {
-      "name": "Axe du Butin",
+      "name": "Chance Drop",
       "description": "Début d'axe — à étoffer.",
       "icon": "🍀",
       "shape": "carre_passif",
@@ -1654,7 +1654,7 @@
       }
     },
     "axe_xp_2": {
-      "name": "Axe de l'Expérience",
+      "name": "Bonus XP",
       "description": "Début d'axe — à étoffer.",
       "icon": "⚡",
       "shape": "carre_passif",
@@ -1683,7 +1683,7 @@
       }
     },
     "axe_confort_2": {
-      "name": "Axe du Confort",
+      "name": "Confort",
       "description": "Début d'axe — à étoffer.",
       "icon": "🎁",
       "shape": "carre_passif",
