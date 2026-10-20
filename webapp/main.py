@@ -1,7 +1,8 @@
 """Application web FastAPI : visualisation de l'arbre de compétences.
 
-Lecture seule : aucune modification possible depuis le navigateur. La logique
-métier (déblocage, reset) reste exclusivement côté bot Discord.
+Un joueur connecté avec Discord (OAuth, cookie joueur distinct de l'admin)
+peut investir dans SON arbre ; tout le reste est en lecture seule. La logique
+métier passe par les mêmes use cases que le bot.
 
 Lancement local :
     .venv/bin/python -m webapp.main
@@ -11,6 +12,8 @@ Routes :
     GET /                          → page d'accueil minimaliste (instructions)
     GET /skill/<discord_id>        → page HTML interactive
     GET /api/skill/<discord_id>    → JSON brut (état + définition)
+    POST /api/skill/<id>/invest    → +1 niveau (joueur connecté, son arbre)
+    GET /skill/login, /skill/logout → connexion Discord du joueur
     GET /static/*                  → CSS/JS
 """
 
@@ -27,6 +30,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.application.use_cases.get_skill_tree_state import GetSkillTreeStateUseCase
+from app.application.use_cases.invest_skill_point import InvestSkillPointUseCase
 from app.domain.services.skill_effect_text import effect_lines
 from app.bot.rendering.skill_tree_renderer import render_to_svg
 from app.domain.services.power_score_service import PowerScoreService
@@ -59,6 +63,7 @@ from webapp.admin.routers.scenes_router import router as admin_scenes_router
 from webapp.admin.routers.families_router import router as admin_families_router
 from webapp.admin.routers.events_router import router as admin_events_router
 from webapp.admin.routers.image_gen_router import router as admin_image_gen_router
+from webapp.player_auth import current_player, router as player_auth_router
 
 
 WEBAPP_DIR = Path(__file__).resolve().parent
@@ -97,6 +102,7 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # en priorité (sinon /admin/{slug} du dashboard router gobble nos sous-routes).
 # L'ordre des inclusions compte : auth → items → mobs → dashboard (fallback).
 app.include_router(admin_auth_router)
+app.include_router(player_auth_router)
 app.include_router(admin_items_router)
 app.include_router(admin_mobs_router)
 app.include_router(admin_zones_router)
@@ -146,20 +152,9 @@ async def index(request: Request):
     return templates.TemplateResponse(request, "index.html")
 
 
-@app.get("/skill/{discord_id}", response_class=HTMLResponse)
-async def skill_page(request: Request, discord_id: int):
-    state, definition = _load_state_for_discord(discord_id)
-    if state is None:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Aucun joueur trouvé pour le Discord ID {discord_id}.",
-        )
-
-    # Web : vue d'ensemble du triskèle complet (la page est zoomable/pannable),
-    # contrairement à l'image Discord qui est cadrée sur la zone d'action.
-    svg = render_to_svg(state, definition, focus=False, header=False)
+def _nodes_payload(state, definition) -> list[dict]:
+    """Cases de l'arbre pour la page (tooltip, état, coût, prérequis)."""
     service = SkillTreeService(definition)
-
     nodes_payload = []
     for node in definition.skills.values():
         # Pour chaque prérequis, on enrichit avec son nom + niveau courant
@@ -191,6 +186,7 @@ async def skill_page(request: Request, discord_id: int):
                 "description": node.description,
                 "icon": node.icon,
                 "max_level": node.max_level,
+                "start": bool(node.start),
                 "current_level": (
                     node.max_level if node.start else state.allocations.get(node.code, 0)
                 ),
@@ -206,16 +202,91 @@ async def skill_page(request: Request, discord_id: int):
                 ],
             }
         )
+    return nodes_payload
 
+
+def _render_tree(state, definition) -> str:
+    # Web : vue d'ensemble du triskèle complet (la page est zoomable/pannable),
+    # contrairement à l'image Discord qui est cadrée sur la zone d'action.
+    return render_to_svg(state, definition, focus=False, header=False)
+
+
+@app.get("/skill/{discord_id}", response_class=HTMLResponse)
+async def skill_page(request: Request, discord_id: int):
+    state, definition = _load_state_for_discord(discord_id)
+    if state is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Aucun joueur trouvé pour le Discord ID {discord_id}.",
+        )
+
+    viewer = current_player(request)
     return templates.TemplateResponse(
         request,
         "skill_tree.html",
         context={
             "state": state,
-            "svg": svg,
-            "nodes": nodes_payload,
+            "svg": _render_tree(state, definition),
+            "nodes": _nodes_payload(state, definition),
+            "page": {
+                "discord_id": str(discord_id),
+                "logged_in": viewer is not None,
+                "viewer_name": viewer.display_name if viewer else "",
+                "viewer_id": str(viewer.discord_id) if viewer else "",
+                "is_owner": viewer is not None and viewer.discord_id == discord_id,
+                "available_points": state.available_points,
+                "login_url": f"/skill/login?next=/skill/{discord_id}",
+                "logout_url": f"/skill/logout?next=/skill/{discord_id}",
+            },
         },
     )
+
+
+@app.post("/api/skill/{discord_id}/invest")
+async def skill_invest(request: Request, discord_id: int):
+    """Investit +1 niveau depuis le web — même use case que le bouton Discord.
+
+    Réservé au joueur connecté (OAuth Discord) et à SON arbre uniquement.
+    """
+    viewer = current_player(request)
+    if viewer is None:
+        return JSONResponse(
+            status_code=401,
+            content={"ok": False, "message": "Connecte-toi avec Discord pour investir."},
+        )
+    if viewer.discord_id != discord_id:
+        return JSONResponse(
+            status_code=403,
+            content={"ok": False, "message": "Tu ne peux investir que dans ton propre arbre."},
+        )
+    try:
+        body = await request.json()
+    except Exception:  # noqa: BLE001
+        body = {}
+    code = str((body or {}).get("code", ""))[:100]
+
+    definition = get_skill_tree_definition()
+    with get_db_session() as session:
+        result = InvestSkillPointUseCase(
+            player_repository=PlayerRepository(session),
+            skill_allocation_repository=PlayerSkillAllocationRepository(session),
+            skill_tree_definition=definition,
+        ).execute(discord_id, code)
+
+    state, definition = _load_state_for_discord(discord_id)
+    payload = {
+        "ok": result.success,
+        # Le message du bot est en Markdown Discord (**gras**) : on l'aplatit.
+        "message": result.message.replace("**", ""),
+    }
+    if state is not None:
+        payload.update(
+            svg=_render_tree(state, definition),
+            nodes=_nodes_payload(state, definition),
+            available_points=state.available_points,
+            spent_points=state.spent_points,
+        )
+    return JSONResponse(status_code=200 if result.success else 400, content=payload)
 
 
 @app.get("/bestiary", response_class=HTMLResponse)

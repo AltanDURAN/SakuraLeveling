@@ -8,7 +8,7 @@
 
 (function () {
     const container = document.getElementById('tree-container');
-    const svg = container && container.querySelector('svg');
+    let svg = container && container.querySelector('svg');  // remplacé après un investissement
     const tooltip = document.getElementById('tooltip');
     if (!svg || !tooltip) return;
 
@@ -19,6 +19,12 @@
     const tooltipCost = tooltip.querySelector('.tooltip-cost');
     const tooltipPrereqs = tooltip.querySelector('.tooltip-prereqs');
     const tooltipClose = tooltip.querySelector('.tooltip-close');
+    const tooltipAction = tooltip.querySelector('.tooltip-action');
+    const toast = document.getElementById('toast');
+    const PAGE = window.SKILL_PAGE || {};
+    let pinned = false;        // fiche ouverte par un clic : reste à l'écran
+    let currentCode = null;    // case affichée dans la fiche
+    let investing = false;
 
     const isMobile = () => window.matchMedia('(max-width: 700px)').matches;
     // Feuille du bas dès qu'on est sur un appareil TACTILE (fiable partout :
@@ -71,11 +77,132 @@
                 tooltipPrereqs.appendChild(line);
             });
         }
+        fillAction(skill);
     }
 
-    function showTooltip(node, clientX, clientY) {
+    /* ----- Investir depuis le web ----- */
+    function actionNote(text) {
+        const p = document.createElement('p');
+        p.className = 'tooltip-action-note';
+        p.textContent = text;
+        return p;
+    }
+
+    function fillAction(skill) {
+        tooltipAction.innerHTML = '';
+        // Survol simple (souris) : on indique seulement qu'un clic ouvre l'action.
+        if (!pinned) {
+            if (skill.state === 'unlockable' || skill.state === 'in_progress') {
+                tooltipAction.appendChild(actionNote('🖱️ Clique sur la case pour l\'investir.'));
+            }
+            return;
+        }
+        if (skill.start || skill.state === 'maxed') return;
+
+        if (!PAGE.logged_in) {
+            tooltipAction.appendChild(actionNote(
+                'Pour investir pour de vrai, connecte-toi avec ton compte Discord.'));
+            const a = document.createElement('a');
+            a.className = 'action-btn action-btn--discord';
+            a.href = PAGE.login_url;
+            a.textContent = '🔐 Se connecter avec Discord';
+            tooltipAction.appendChild(a);
+            return;
+        }
+        if (!PAGE.is_owner) {
+            tooltipAction.appendChild(actionNote(
+                'Ce n\'est pas ton arbre : tu ne peux investir que dans le tien.'));
+            const a = document.createElement('a');
+            a.className = 'action-btn';
+            a.href = '/skill/' + PAGE.viewer_id;
+            a.textContent = '🌳 Ouvrir mon arbre';
+            tooltipAction.appendChild(a);
+            return;
+        }
+
+        const cost = (skill.costs || [])[skill.current_level];
+        const points = PAGE.available_points;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'action-btn action-btn--invest';
+        btn.textContent = investing ? 'Investissement…'
+            : `✨ Investir (${cost ?? '?'} pt${cost > 1 ? 's' : ''})`;
+        let reason = '';
+        if (skill.state === 'locked') reason = 'Débloque d\'abord les prérequis.';
+        else if (cost != null && points < cost) reason = `Il te manque ${cost - points} point(s) (${points} disponible${points > 1 ? 's' : ''}).`;
+        btn.disabled = investing || !!reason;
+        btn.addEventListener('click', () => invest(skill.code));
+        tooltipAction.appendChild(btn);
+        if (reason) tooltipAction.appendChild(actionNote(reason));
+    }
+
+    function showToast(text, ok) {
+        if (!toast) return;
+        toast.textContent = text;
+        toast.className = 'toast ' + (ok ? 'toast--ok' : 'toast--bad');
+        toast.hidden = false;
+        clearTimeout(showToast.timer);
+        showToast.timer = setTimeout(() => { toast.hidden = true; }, 3200);
+    }
+
+    function swapSvg(markup) {
+        const holder = document.createElement('div');
+        holder.innerHTML = markup;
+        const fresh = holder.querySelector('svg');
+        if (!fresh) return;
+        fresh.setAttribute('viewBox', viewBox.join(' '));  // garde le zoom en cours
+        svg.replaceWith(fresh);
+        svg = fresh;
+    }
+
+    async function invest(code) {
+        if (investing) return;
+        investing = true;
+        refreshTooltip();
+        try {
+            const resp = await fetch(`/api/skill/${PAGE.discord_id}/invest`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ code }),
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (resp.status === 401) {
+                PAGE.logged_in = false;
+                showToast(data.message || 'Session expirée : reconnecte-toi.', false);
+            } else {
+                if (data.nodes) window.SKILL_NODES = data.nodes;
+                if (data.svg) swapSvg(data.svg);
+                if (typeof data.available_points === 'number') {
+                    PAGE.available_points = data.available_points;
+                    const a = document.getElementById('points-available');
+                    const sp = document.getElementById('points-spent');
+                    if (a) a.textContent = data.available_points;
+                    if (sp && typeof data.spent_points === 'number') sp.textContent = data.spent_points;
+                }
+                showToast(data.message || (data.ok ? 'Investi !' : 'Impossible d\'investir.'), !!data.ok);
+            }
+        } catch (err) {
+            showToast('Connexion perdue, réessaie.', false);
+        } finally {
+            investing = false;
+            refreshTooltip();
+        }
+    }
+
+    function refreshTooltip() {
+        if (tooltip.hidden || !currentCode) return;
+        const skill = (window.SKILL_NODES || []).find(s => s.code === currentCode);
+        if (skill) fillTooltip(skill);
+    }
+
+    function showTooltip(node, clientX, clientY, pin = false) {
         const skill = (window.SKILL_NODES || []).find(s => s.code === node.dataset.code);
         if (!skill) return;
+        if (pinned && !pin) return;  // une fiche épinglée ne bouge pas au survol
+        pinned = pin;
+        currentCode = skill.code;
+        tooltip.classList.toggle('tooltip--pinned', pin);
         fillTooltip(skill);
 
         const sheet = wantsSheet();
@@ -100,18 +227,26 @@
             tooltip.style.top = Math.max(pad, top) + 'px';
         }
     }
-    const hideTooltip = () => { tooltip.hidden = true; };
+    const hideTooltip = () => {
+        tooltip.hidden = true;
+        pinned = false;
+        currentCode = null;
+        tooltip.classList.remove('tooltip--pinned');
+    };
     if (tooltipClose) tooltipClose.addEventListener('click', hideTooltip);
 
     // Survol : seulement sur souris/desktop (pointeur fin). Sur tactile, on
     // passe par le tap (feuille du bas).
-    svg.querySelectorAll('.skill-node').forEach(node => {
-        node.addEventListener('mousemove', e => {
-            if (isFinePointer() && activePointers.size === 0) showTooltip(node, e.clientX, e.clientY);
-        });
-        node.addEventListener('mouseleave', () => {
-            if (isFinePointer()) hideTooltip();
-        });
+    // Délégation sur le conteneur : le SVG est remplacé après chaque
+    // investissement, des écouteurs posés sur ses cases seraient perdus.
+    container.addEventListener('mousemove', e => {
+        if (!isFinePointer() || activePointers.size !== 0 || pinned) return;
+        const node = e.target.closest && e.target.closest('.skill-node');
+        if (node) showTooltip(node, e.clientX, e.clientY);
+        else if (!tooltip.hidden) hideTooltip();
+    });
+    container.addEventListener('mouseleave', () => {
+        if (isFinePointer() && !pinned) hideTooltip();
     });
 
     /* ----- ViewBox (pan + zoom) ----- */
@@ -169,6 +304,8 @@
     let pinchStart = null;             // {dist, w, h, cx, cy}
     let tapCandidate = null;           // {node, x, y} pour distinguer tap/drag
     const TAP_TOLERANCE = 10;
+    let dragged = false;               // le dernier geste était un glissement
+    let downAt = null;
 
     function pointersArray() {
         return [...activePointers.values()];
@@ -177,6 +314,8 @@
     container.addEventListener('pointerdown', e => {
         container.setPointerCapture?.(e.pointerId);
         activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (activePointers.size === 1) { dragged = false; downAt = { x: e.clientX, y: e.clientY }; }
+        else dragged = true;
 
         const node = e.target.closest && e.target.closest('.skill-node');
         if (node && activePointers.size === 1) {
@@ -198,6 +337,8 @@
     container.addEventListener('pointermove', e => {
         if (!activePointers.has(e.pointerId)) return;
         activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (downAt && (Math.abs(e.clientX - downAt.x) > TAP_TOLERANCE ||
+                       Math.abs(e.clientY - downAt.y) > TAP_TOLERANCE)) dragged = true;
 
         if (activePointers.size >= 2 && pinchStart) {
             const [a, b] = pointersArray();
@@ -227,7 +368,13 @@
     function endPointer(e) {
         // tap sur un nœud → tooltip ; tap dans le vide → masquer
         if (tapCandidate) {
-            showTooltip(tapCandidate.node, tapCandidate.x, tapCandidate.y);
+            // Un clic / tap épingle la fiche : c'est là qu'on investit.
+            showTooltip(tapCandidate.node, tapCandidate.x, tapCandidate.y, true);
+        } else if (!dragged && activePointers.size === 1) {
+            // Clic / tap dans le vide : referme la fiche. Géré ici et pas sur
+            // « click » : la capture du pointeur attribue le click au conteneur,
+            // même quand on a touché une case.
+            hideTooltip();
         } else if (activePointers.size === 1 && panLast &&
                    Math.abs(e.clientX - panLast.x) < TAP_TOLERANCE) {
             // (cas géré par tapCandidate ; rien)
@@ -247,12 +394,7 @@
         pinchStart = null; panLast = null; tapCandidate = null;
     });
 
-    // Tap dans le vide masque le tooltip (mobile)
-    container.addEventListener('click', e => {
-        if (wantsSheet() && !(e.target.closest && e.target.closest('.skill-node'))) {
-            hideTooltip();
-        }
-    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') hideTooltip(); });
 
     /* ----- Molette (desktop) ----- */
     container.addEventListener('wheel', e => {

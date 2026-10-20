@@ -32,3 +32,9 @@ def test_referer_used_as_fallback():
     assert request_origin_is_allowed(
         "DELETE", "/admin/mobs/x/delete", None, "http://127.0.0.1:8001/admin/mobs"
     ) is True
+
+
+def test_post_api_foreign_origin_rejected():
+    assert request_origin_is_allowed(
+        "POST", "/api/skill/1/invest", "https://evil.example.com", None
+    ) is False

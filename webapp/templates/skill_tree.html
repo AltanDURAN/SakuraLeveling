@@ -11,9 +11,20 @@
         <div>
             <h1>🌳 Arbre de {{ state.player_display_name }}</h1>
             <p class="subtitle">
-                ✨ <strong>{{ state.available_points }}</strong> points disponibles
-                · 🔧 <strong>{{ state.spent_points }}</strong> points investis
+                ✨ <strong id="points-available">{{ state.available_points }}</strong> points disponibles
+                · 🔧 <strong id="points-spent">{{ state.spent_points }}</strong> points investis
             </p>
+        </div>
+        <div class="account">
+            {% if page.logged_in %}
+                <span class="account-name">🔓 {{ page.viewer_name }}</span>
+                {% if not page.is_owner %}
+                    <a class="account-link" href="/skill/{{ page.viewer_id }}">Mon arbre</a>
+                {% endif %}
+                <a class="account-link account-link--muted" href="{{ page.logout_url }}">Se déconnecter</a>
+            {% else %}
+                <a class="account-btn" href="{{ page.login_url }}">🔐 Se connecter avec Discord</a>
+            {% endif %}
         </div>
         <div class="legend">
             <span class="legend-item legend-maxed">⬣ Max</span>
@@ -33,7 +44,7 @@
         <button id="zoom-reset" class="tree-ctrl-btn" aria-label="Recentrer">⟳</button>
     </div>
 
-    <p class="tree-hint">👆 Glisse pour te déplacer · pince ou +/− pour zoomer · touche un nœud pour les détails</p>
+    <p class="tree-hint">👆 Glisse pour te déplacer · pince ou +/− pour zoomer · touche une case pour les détails et l'investir</p>
 
     <aside id="tooltip" class="tooltip" hidden>
         <button class="tooltip-close" aria-label="Fermer">✕</button>
@@ -43,10 +54,14 @@
         <p class="tooltip-level"></p>
         <p class="tooltip-cost"></p>
         <div class="tooltip-prereqs"></div>
+        <div class="tooltip-action"></div>
     </aside>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
     <script>
         window.SKILL_NODES = {{ nodes | tojson }};
+        window.SKILL_PAGE = {{ page | tojson }};
     </script>
     <script src="/static/skill_tree.js"></script>
 </body>

@@ -38,7 +38,8 @@ def request_origin_is_allowed(method: str, path: str, origin: str | None, refere
     """Cœur testable de la vérif (sans dépendre de l'objet Request)."""
     if method.upper() not in _UNSAFE_METHODS:
         return True
-    if not path.startswith("/admin"):
+    # /admin (back-office) et /api (investir dans l'arbre depuis le web).
+    if not (path.startswith("/admin") or path.startswith("/api/")):
         return True
 
     allowed = _allowed_origins()

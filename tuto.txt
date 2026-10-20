@@ -146,7 +146,10 @@ LA PROGRESSION
         • le nombre de points disponibles et dépensés ;
         • « Investir un point » : un menu des cases que tu peux monter ;
         • « Vue détaillée » : la page web interactive (zoom, déplacement,
-          détail de chaque case au survol ou au toucher) ;
+          détail de chaque case au survol ou au toucher). Clique sur une
+          case pour l'INVESTIR directement sur le web : le site te propose
+          de te connecter avec ton compte Discord la première fois (tu
+          restes connecté 30 jours). On ne peut investir que dans SON arbre ;
         • « Réinitialiser » : rend tous les points investis pour les
           réinvestir. UN reset par semaine : de nouveau disponible chaque
           lundi à 00h (heure de Paris), non cumulable.

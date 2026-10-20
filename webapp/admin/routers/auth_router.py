@@ -20,6 +20,7 @@ from webapp.admin.auth import (
     store_oauth_state,
 )
 from app.infrastructure.config.settings import settings
+from webapp.player_auth import issue_player_session, pop_player_next
 
 
 router = APIRouter(prefix="/admin", tags=["admin-auth"])
@@ -37,6 +38,8 @@ async def login_page(request: Request):
         context={"auth_url": auth_url, "user": user},
     )
     store_oauth_state(response, state)
+    # Un parcours joueur abandonné ne doit pas détourner la connexion admin.
+    response.delete_cookie("sakura_oauth_next")
     return response
 
 
@@ -73,6 +76,16 @@ async def oauth_callback(
             or identity.get("username", "?")
         ),
     )
+
+    # Parcours JOUEUR (connexion depuis la page de l'arbre) : même callback
+    # OAuth, mais session joueur distincte — aucun droit admin.
+    redirect = RedirectResponse("/", status_code=303)
+    player_next = pop_player_next(request, redirect)
+    if player_next is not None:
+        redirect.headers["location"] = player_next
+        issue_player_session(redirect, user.discord_id, user.display_name)
+        clear_oauth_state(redirect)
+        return redirect
 
     if not user.is_admin:
         # Connecté mais pas admin → on l'affiche pour qu'il comprenne le refus

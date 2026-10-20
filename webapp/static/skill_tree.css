@@ -358,3 +358,85 @@ html, body {
     .tree-controls { bottom: 76px; right: 14px; }
     .tree-hint { font-size: 11px; bottom: 10px; }
 }
+
+/* ----- Compte joueur + investir depuis le web ----- */
+.account {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 13px;
+}
+.account-name { color: #e8e8f0; font-weight: 600; }
+.account-link { color: #a991f2; text-decoration: none; }
+.account-link:hover { text-decoration: underline; }
+.account-link--muted { color: #a0a0c0; }
+.account-btn,
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(88, 101, 242, 0.9);   /* bleu Discord */
+    color: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.account-btn:hover, .action-btn:hover:not(:disabled) { filter: brightness(1.1); }
+
+/* Fiche épinglée (clic sur une case) : devient cliquable. */
+.tooltip--pinned { pointer-events: auto; }
+.tooltip--pinned .tooltip-close { display: block; }
+.tooltip--pinned .tooltip-title { padding-right: 44px; }
+
+.tooltip-action:empty { display: none; }
+.tooltip-action {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+.tooltip-action-note { font-size: 12px; color: #a0a0c0; line-height: 1.4; }
+.action-btn { width: 100%; padding: 10px 14px; font-size: 14px; }
+.action-btn--invest { background: linear-gradient(135deg, #4fc383, #2f8a5b); }
+.action-btn--invest:disabled {
+    background: rgba(255, 255, 255, 0.08);
+    color: #8a82a0;
+    cursor: not-allowed;
+}
+.tooltip--sheet .action-btn { min-height: 46px; font-size: 15px; }
+
+.toast {
+    position: fixed;
+    top: 86px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    padding: 10px 16px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+    max-width: 92vw;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+    animation: toast-in 0.18s ease;
+}
+.toast--ok { background: rgba(47, 138, 91, 0.95); color: #fff; }
+.toast--bad { background: rgba(184, 56, 77, 0.95); color: #fff; }
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, -8px); } }
+
+@media (max-width: 700px) {
+    .account { font-size: 12px; }
+    .account-btn { padding: 6px 12px; font-size: 12px; }
+    .toast { top: 120px; }
+}
