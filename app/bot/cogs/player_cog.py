@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 import discord
 from discord import app_commands
@@ -1064,28 +1065,59 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             essences = ElementEssenceRepository(session).get_essences(profile.player.id)
             player_id = profile.player.id
 
+        # Rendu Pillow ≈ quelques centaines de ms : on prend la main d'abord.
+        await interaction.response.defer()
+
         is_self = target_member.id == interaction.user.id
         next_price = paper_price(
             len(revealed), artisan_loader.get_merchant().element_paper_prices,
         )
-        embed = build_affinities_embed(
-            display_name=target_member.display_name,
-            affinities=affinities,
-            essences=essences,
-            is_self=is_self,
-            talents=talents,
-            revealed=revealed,
-            next_paper_price=next_price,
-        )
+        view = None
         if is_self and next_price is not None:
             view = discord.ui.View(timeout=300)
             view.add_item(PaperButton(
                 get_db_session, player_id, next_price,
                 owner_discord_id=interaction.user.id,
             ))
-            await interaction.response.send_message(embed=embed, view=view)
-            return
-        await interaction.response.send_message(embed=embed)
+
+        try:
+            from app.bot.rendering.affinities_image import (
+                build_affinity_cards,
+                compose_affinities_image,
+            )
+            from app.shared.paths import GENERATED_PROFILES_DIR
+
+            GENERATED_PROFILES_DIR.mkdir(parents=True, exist_ok=True)
+            filename = f"affinities_{player_id}.png"
+            path = GENERATED_PROFILES_DIR / filename
+            await asyncio.to_thread(
+                compose_affinities_image,
+                str(path),
+                display_name=target_member.display_name,
+                cards=build_affinity_cards(affinities, essences, talents, revealed),
+                is_self=is_self,
+                next_paper_price=next_price,
+                seed=player_id,
+            )
+            embed = discord.Embed(color=discord.Color.purple())
+            embed.set_image(url=f"attachment://{filename}")
+            kwargs = {"embed": embed, "file": discord.File(str(path), filename=filename)}
+        except Exception:
+            logging.getLogger(__name__).exception(
+                "Rendu de /affinites en échec, repli sur l'embed texte"
+            )
+            kwargs = {"embed": build_affinities_embed(
+                display_name=target_member.display_name,
+                affinities=affinities,
+                essences=essences,
+                is_self=is_self,
+                talents=talents,
+                revealed=revealed,
+                next_paper_price=next_price,
+            )}
+        if view is not None:
+            kwargs["view"] = view
+        await interaction.followup.send(**kwargs)
 
     # ------------------------------------------------------------------
     # Le craft et la forge ont quitté ce cog : ils passent désormais par
