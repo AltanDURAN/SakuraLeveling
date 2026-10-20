@@ -241,6 +241,14 @@ class SkillTreeService:
             classes=tuple(dict.fromkeys(classes)),
         )
 
+    def class_names(self, allocations: dict[str, int]) -> list[str]:
+        """Noms des classes obtenues (cases « accorde la classe » investies)."""
+        names: list[str] = []
+        for node, _level, effect in self._active_effects(allocations):
+            if effect.type == "grant_class" and node.name not in names:
+                names.append(node.name)
+        return names
+
     def unlocked_features(self, allocations: dict[str, int]) -> set[str]:
         """Fonctionnalités « Confort » débloquées (case montée au maximum)."""
         out: set[str] = set()

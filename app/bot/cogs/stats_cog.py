@@ -18,6 +18,7 @@ from discord.ext import commands
 
 from app.application.services.player_stats_resolver import resolve_player_stats
 from app.bot.cogs._mixins import BetaChannelOnlyMixin
+from app.domain.services.combat_passives import TACTICS, normalize_tactic
 from app.domain.services.progression_service import LEVEL_CAP, ProgressionService
 from app.domain.services.stats_service import StatsService
 from app.domain.value_objects.base_stats import STAT_POINT_GAIN, STAT_POINT_TARGETS
@@ -180,6 +181,50 @@ class StatsCog(BetaChannelOnlyMixin, commands.Cog):
         )
         view = StatsView(data, owner_id=interaction.user.id)
         await interaction.followup.send(embed=_build_embed(data), view=view)
+
+
+    @app_commands.command(
+        name="tactique",
+        description="Ta tactique de combat (cible de tes soins) — figée pendant un combat",
+    )
+    @app_commands.describe(choix="Laisse vide pour voir ta tactique actuelle")
+    @app_commands.choices(choix=[
+        app_commands.Choice(name=label, value=code) for code, (label, _) in TACTICS.items()
+    ])
+    async def tactique(
+        self, interaction: discord.Interaction,
+        choix: app_commands.Choice[str] | None = None,
+    ) -> None:
+        def _run() -> str:
+            with get_db_session() as session:
+                repo = PlayerRepository(session)
+                profile = repo.get_or_create_by_discord_id(
+                    discord_id=interaction.user.id, username=interaction.user.name,
+                    display_name=interaction.user.display_name,
+                )
+                if choix is not None:
+                    repo.set_combat_tactic(profile.player.id, choix.value)
+                    return normalize_tactic(choix.value)
+                return normalize_tactic(profile.player.combat_tactic)
+
+        current = await asyncio.to_thread(_run)
+        label, text = TACTICS[current]
+        others = "\n".join(
+            f"• **{lbl}** — {txt}" for code, (lbl, txt) in TACTICS.items() if code != current
+        )
+        embed = discord.Embed(
+            title=f"🎯 Tactique : {label}",
+            description=(
+                f"{text}\n\n"
+                + ("✅ Enregistrée. Elle s'appliquera dès ton prochain combat.\n\n"
+                   if choix is not None else "")
+                + f"**Autres tactiques**\n{others}\n\n"
+                "Elle décide aujourd'hui de la cible du sort de soin (classe Soigneur). "
+                "Elle ne change pas pendant un combat."
+            ),
+            color=discord.Color.teal(),
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 async def setup(bot: commands.Bot) -> None:

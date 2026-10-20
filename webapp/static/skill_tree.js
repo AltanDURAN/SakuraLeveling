@@ -41,7 +41,9 @@
         tooltipTitle.textContent = `${skill.icon} ${skill.name}`;
         tooltipState.textContent = STATE_LABELS[skill.state] || skill.state;
         tooltipState.className = 'tooltip-state ' + skill.state;
-        tooltipDescription.textContent = skill.description || '';
+        const effects = (skill.effects_text || []).join(' · ');
+        tooltipDescription.textContent = [skill.description, effects].filter(Boolean).join('\n');
+        tooltipDescription.style.whiteSpace = 'pre-line';
         tooltipLevel.textContent = `Niveau : ${skill.current_level} / ${skill.max_level}`;
 
         if (skill.state === 'maxed') {

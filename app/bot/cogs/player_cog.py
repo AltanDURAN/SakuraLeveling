@@ -269,9 +269,18 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             avatar_url = (
                 target_member.display_avatar.url if target_member else None
             )
-            # La classe revient par l'arbre de compétences (nœuds « classe »)
-            # — plus aucune classe de départ en saison 1.
-            class_name = None
+            # Classes : obtenues dans l'arbre de compétences (cases « classe »).
+            from app.domain.services.skill_tree_service import SkillTreeService
+            from app.infrastructure.db.repositories.player_skill_allocation_repository import (
+                PlayerSkillAllocationRepository,
+            )
+            from app.infrastructure.skill_tree.skill_tree_loader import (
+                get_definition as _tree_definition,
+            )
+            classes = SkillTreeService(_tree_definition()).class_names(
+                PlayerSkillAllocationRepository(session).list_by_player(profile.player.id)
+            )
+            class_name = " · ".join(classes) if classes else None
             xp_required = ProgressionService().xp_required_for_next_level(
                 profile.progression.level
             )
@@ -1175,6 +1184,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             "daily":              "🌅 Récompense quotidienne (/daily)",
             "world_boss_fight":   "👑 Combat du world boss",
             "skill_tree_reset":   "🌳 Reset de l'arbre de compétences",
+            "rank_trial":         "🎖️ Épreuve de rang",
         }
         # Cooldowns trop courts pour être pertinents dans cet affichage.
         HIDDEN_COOLDOWNS = {"duel_challenge"}
@@ -1188,8 +1198,16 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             cooldowns = CooldownRepository(session).list_for_player(
                 profile.player.id,
             )
+            from app.application.use_cases.tower_tickets import TowerTicketsUseCase
+
+            tickets = TowerTicketsUseCase(session).status(profile.player.id)
 
         now = datetime.now(UTC)
+        ticket_line = (
+            f"🎟️ Tour solo : **{tickets.available}/{tickets.allowance}** ticket(s) "
+            f"aujourd'hui" + (" (bonus compris)" if tickets.has_bonus else "")
+            + " — non cumulables, renouvelés à minuit UTC"
+        )
         # On garde uniquement les cooldowns encore actifs et non cachés
         active: list[tuple[str, datetime]] = []
         for cd in cooldowns:
@@ -1216,7 +1234,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
 
         if not active:
             embed.description = (
-                "✅ Aucun cooldown en cours — tout est disponible !"
+                "✅ Aucun cooldown en cours — tout est disponible !\n\n" + ticket_line
             )
             await interaction.response.send_message(embed=embed)
             return
@@ -1228,7 +1246,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             label = ACTION_LABELS.get(action_key, f"`{action_key}`")
             ts = int(next_at.timestamp())
             lines.append(f"{label} — <t:{ts}:R> (<t:{ts}:f>)")
-        embed.description = "\n".join(lines)
+        embed.description = "\n".join(lines) + "\n\n" + ticket_line
         embed.set_footer(text=f"{len(active)} cooldown(s) actif(s)")
         await interaction.response.send_message(embed=embed)
 

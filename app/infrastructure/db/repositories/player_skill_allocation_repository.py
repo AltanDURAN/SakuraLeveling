@@ -65,3 +65,18 @@ class PlayerSkillAllocationRepository:
             )
         )
         self.session.commit()
+
+    def player_ids_with_levels(self, min_levels: dict[str, int]) -> set[int]:
+        """Joueurs ayant au moins une des cases `code` au niveau `min_level`
+        (sert à retrouver les détenteurs d'une fonctionnalité « Confort »)."""
+        if not min_levels:
+            return set()
+        stmt = select(
+            PlayerSkillAllocationModel.player_id,
+            PlayerSkillAllocationModel.skill_code,
+            PlayerSkillAllocationModel.level,
+        ).where(PlayerSkillAllocationModel.skill_code.in_(list(min_levels)))
+        return {
+            pid for pid, code, level in self.session.execute(stmt).all()
+            if level >= min_levels.get(code, 1)
+        }

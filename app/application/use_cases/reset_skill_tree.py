@@ -22,11 +22,10 @@ class ResetSkillTreeResult:
 
 class ResetSkillTreeUseCase:
     """Réinitialise complètement l'arbre du joueur, restitue tous ses points
-    investis. Cooldown de 7 jours via la table `player_cooldowns` (action_key
-    = 'skill_tree_reset').
+    investis. UN reset par semaine calendaire (de nouveau disponible le lundi
+    à 00h, heure de Paris), non cumulable — via `player_cooldowns`
+    (action_key = 'skill_tree_reset').
     """
-
-    COOLDOWN_DAYS = 7
 
     def __init__(
         self,
@@ -84,11 +83,9 @@ class ResetSkillTreeUseCase:
             new_xp=profile.progression.xp,
             new_skill_points=profile.progression.skill_points + refunded,
         )
-        # 3. Pose le cooldown 7 jours
+        # 3. Prochain reset : lundi prochain, 00h (Paris)
         last_used_at, next_available_at = (
-            self.cooldown_service.build_next_skill_reset_cooldown(
-                now, days=self.COOLDOWN_DAYS
-            )
+            self.cooldown_service.build_weekly_skill_reset_cooldown(now)
         )
         self.cooldown_repository.upsert(
             player_id=profile.player.id,

@@ -55,6 +55,23 @@ class CooldownService:
         next_available_at = now + timedelta(days=days)
         return last_used_at, next_available_at
 
+    def build_weekly_skill_reset_cooldown(self, now: datetime) -> tuple[datetime, datetime]:
+        """Reset de l'arbre : UN par semaine CALENDAIRE, non cumulable.
+
+        Disponible de nouveau le lundi suivant à 00h, heure de Paris : un reset
+        fait dimanche soir laisse en reprendre un dès lundi, un reset fait lundi
+        matin attend le lundi d'après. Ne pas l'utiliser ne le reporte pas.
+        """
+        paris = ZoneInfo("Europe/Paris")
+        local = (now if now.tzinfo else now.replace(tzinfo=UTC)).astimezone(paris)
+        monday = (local - timedelta(days=local.weekday())).replace(
+            hour=0, minute=0, second=0, microsecond=0,
+        )
+        next_monday = (monday + timedelta(days=7)).replace(tzinfo=None)
+        # Recalcule l'heure de Paris après le saut (changement d'heure possible).
+        next_at = next_monday.replace(tzinfo=paris).astimezone(UTC)
+        return now, next_at
+
     def build_next_duel_challenge_cooldown(
         self, now: datetime, seconds: int = 60
     ) -> tuple[datetime, datetime]:

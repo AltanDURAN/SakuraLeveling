@@ -12,6 +12,7 @@ from app.application.use_cases.get_skill_tree_state import (
 from app.application.use_cases.invest_skill_point import InvestSkillPointUseCase
 from app.application.use_cases.reset_skill_tree import ResetSkillTreeUseCase
 from app.bot.embeds.skill_embeds import build_skill_tree_embed
+from app.domain.services.skill_effect_text import node_summary
 from app.bot.rendering.skill_tree_renderer import render_to_png
 from app.domain.entities.skill_tree_definition import SkillTreeDefinition
 from app.domain.services.cooldown_service import CooldownService
@@ -194,7 +195,7 @@ class SkillTreeView(discord.ui.View):
         )
         await interaction.response.send_message(
             "⚠️ Voulez-vous **vraiment** réinitialiser votre arbre ?\n"
-            "Tous les points seront restitués, mais un cooldown de **7 jours** s'appliquera.",
+            "Tous les points seront restitués pour être réinvestis. **Un seul reset par semaine** : le prochain sera possible lundi à 00h (heure de Paris).",
             view=confirm_view,
             ephemeral=True,
         )
@@ -224,7 +225,7 @@ class SkillInvestSelect(discord.ui.Select):
             # ferait échouer tout le message.
             icon = f"{node.icon} " if node.icon else ""
             label = f"{icon}{node.name} ({current}/{node.max_level})"[:100]
-            description = f"Coût : {cost} pt(s) — {node.description}"[:100]
+            description = f"Coût : {cost} pt(s) — {node_summary(node, target)}"[:100]
             options.append(
                 discord.SelectOption(
                     label=label,

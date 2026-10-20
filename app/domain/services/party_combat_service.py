@@ -23,6 +23,12 @@ from app.domain.value_objects.player_contribution import PlayerContribution
 from app.domain.value_objects.stats import Stats
 
 
+#: Garde-fou absolu du nombre d'actions d'un combat, même sans `max_turns` :
+#: un groupe de Soigneurs qui soignent exactement ce qu'ils encaissent
+#: n'attaquerait plus jamais. Atteint ⇒ le monstre n'est pas vaincu.
+HARD_MAX_TURNS = 2000
+
+
 class PartyCombatService:
     def fight_party_vs_mob(
         self,
@@ -311,7 +317,7 @@ class PartyCombatService:
 
         while mob_hp > 0 and _party_alive():
             round_count += 1
-            if max_turns and turns >= max_turns:
+            if (max_turns and turns >= max_turns) or turns >= HARD_MAX_TURNS:
                 break
 
             # Saignement (ogre) : tick de début de round sur les joueurs qui saignent.

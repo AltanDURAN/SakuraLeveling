@@ -71,3 +71,25 @@ class CooldownRepository:
             last_used_at=model.last_used_at,
             next_available_at=model.next_available_at,
         )
+
+    def list_due_unnotified(
+        self, now: datetime, since: datetime, action_keys: set[str],
+    ) -> list[tuple[int, int, str, datetime]]:
+        """Cooldowns échus entre `since` et `now` dont le joueur n'a pas encore
+        été prévenu : (id, player_id, action_key, next_available_at)."""
+        stmt = select(PlayerCooldownModel).where(
+            PlayerCooldownModel.action_key.in_(list(action_keys)),
+            PlayerCooldownModel.next_available_at.is_not(None),
+            PlayerCooldownModel.next_available_at <= now.replace(tzinfo=None),
+            PlayerCooldownModel.next_available_at >= since.replace(tzinfo=None),
+        )
+        out = []
+        for model in self.session.execute(stmt).scalars().all():
+            if model.notified_for != model.next_available_at:
+                out.append((model.id, model.player_id, model.action_key, model.next_available_at))
+        return out
+
+    def mark_notified(self, cooldown_id: int, next_available_at: datetime) -> None:
+        model = self.session.get(PlayerCooldownModel, cooldown_id)
+        if model is not None:
+            model.notified_for = next_available_at

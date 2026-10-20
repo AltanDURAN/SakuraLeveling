@@ -269,3 +269,35 @@ def test_assassin_double_les_chances_et_triple_le_multiplicateur():
     )
     assert assassin.crit_chance == base.crit_chance * 2
     assert assassin.crit_damage == base.crit_damage * 3  # 150 % → 450 %
+
+
+# ----------------------------------------------------- reset hebdomadaire --
+def test_reset_de_l_arbre_disponible_lundi_suivant_heure_de_paris():
+    from datetime import datetime, UTC
+    from zoneinfo import ZoneInfo
+
+    from app.domain.services.cooldown_service import CooldownService
+
+    paris = ZoneInfo("Europe/Paris")
+    svc = CooldownService()
+    # Dimanche 23h (Paris) → lundi 00h, une heure plus tard.
+    sunday = datetime(2026, 10, 18, 23, 0, tzinfo=paris).astimezone(UTC)
+    _, nxt = svc.build_weekly_skill_reset_cooldown(sunday)
+    assert nxt.astimezone(paris) == datetime(2026, 10, 19, 0, 0, tzinfo=paris)
+    # Lundi 00h30 → lundi d'après (passage à l'heure d'hiver le 25/10 compris).
+    monday = datetime(2026, 10, 19, 0, 30, tzinfo=paris).astimezone(UTC)
+    _, nxt = svc.build_weekly_skill_reset_cooldown(monday)
+    assert nxt.astimezone(paris) == datetime(2026, 10, 26, 0, 0, tzinfo=paris)
+
+
+def test_un_groupe_de_soigneurs_ne_bloque_jamais_le_combat():
+    """Soin = dégâts reçus : sans garde-fou, le combat ne finirait jamais."""
+    from app.domain.services.party_combat_service import HARD_MAX_TURNS
+
+    mob = build_mob(current_hp=10**9, max_hp=10**9, attack=60, defense=0, speed=50)
+    result = PartyCombatService().fight_party_vs_mob(
+        [_member(1, _stats(atk=100, speed=50))], mob,
+        passives_by_player={1: CombatPassives(healer=True)},
+    )
+    assert not result.victory
+    assert result.turns <= HARD_MAX_TURNS + 10

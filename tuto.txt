@@ -96,8 +96,8 @@ LA PROGRESSION
     Ta bourse : or actuel et or amassé en carrière.
 
 /cd [joueur]
-    Tes temps de recharge en cours : /daily, combat de world boss, reset de
-    l'arbre, défi en duel, épreuve…
+    Tes temps de recharge en cours (/daily, combat de world boss, reset de
+    l'arbre, épreuve…) et tes tickets du jour pour la tour solo.
 
 /daily
     Ta récompense quotidienne (remise à zéro à minuit UTC).
@@ -133,8 +133,9 @@ LA PROGRESSION
         • « Investir un point » : un menu des cases que tu peux monter ;
         • « Vue détaillée » : la page web interactive (zoom, déplacement,
           détail de chaque case au survol ou au toucher) ;
-        • « Réinitialiser » : rend tous les points investis (une fois tous
-          les 7 jours).
+        • « Réinitialiser » : rend tous les points investis pour les
+          réinvestir. UN reset par semaine : de nouveau disponible chaque
+          lundi à 00h (heure de Paris), non cumulable.
     Avec un joueur : son arbre, en lecture seule.
 
     LES RÈGLES
@@ -157,7 +158,57 @@ LA PROGRESSION
         • les stats secondaires à PLAT : vitesse, esquive, chances et dégâts
           critiques, régénération de PV, mana max, régénération de mana ;
         • des bonus de farm : XP, or, chances de butin ;
-        • des compétences passives et, aux jonctions, des classes.
+        • des PASSIFS de combat et, aux jonctions, des CLASSES ;
+        • des cases « Confort » (voir plus bas).
+    Le menu « Investir » et la page web disent ce que donne chaque case.
+    Tes classes s'affichent sur ton /profil.
+
+    LES PASSIFS (toujours actifs, dans tous les combats)
+        Résistant    −10 % de dégâts reçus
+        Léthal       ignore 10 % de la défense ennemie
+        Tenace       le premier coup qui devait te tuer te laisse à 1 PV
+        Vaillant     50 % de chances, à chaque attaque, de provoquer
+                     l'ennemi : sa prochaine attaque te vise (le dernier
+                     provocateur l'emporte)
+        Buff         tes soins donnent +10 % d'attaque et de défense pour le
+                     combat, à la cible et à toi (une seule fois)
+        AOE          25 % des dégâts aux ennemis adjacents (combats à
+                     plusieurs monstres, à venir)
+        Les réductions de dégâts de plusieurs cases s'additionnent.
+
+    LES CLASSES
+        Combattant   +5 % de PV max et +5 % d'attaque
+        Paladin      soins reçus +50 % et +5 % de défense
+        Vampire      se soigne de 5 % des dégâts infligés
+        Mage         dégâts ×1,5 si son affinité dans l'élément de l'attaque
+                     atteint 25, ×2 à 50, ×5 à 100
+        Égide        au début du combat, bouclier de 10 % de ses PV max pour
+                     lui et chaque allié
+        Titan        +5 % de dégâts infligés et −5 % de dégâts reçus
+        Soigneur     remplace son attaque par un sort de soin (50 % de son
+                     attaque, doublé : 100 %), +1 vitesse par allié présent ;
+                     s'il n'y a personne à soigner, il attaque
+        Rempart      encaisse 50 % des coups portés à ses alliés
+        Assassin     chances de critique ×2, dégâts critiques ×3
+        En duel, les effets qui concernent des alliés (Égide, Rempart, soin)
+        n'agissent pas : le Soigneur y attaque normalement.
+
+/tactique [choix]
+    Ta tactique de combat, choisie AVANT le combat et figée pendant. Elle
+    décide de la cible de ton sort de soin :
+        Égoïste      toi d'abord ; si tu es au maximum, l'allié le plus
+                     blessé
+        Pragmatique  celui qui a encaissé le plus de dégâts
+        All-in       celui qui a infligé le plus de dégâts
+    Personne n'est soigné s'il est déjà au maximum de ses PV.
+
+LES CASES « CONFORT » (montées au maximum)
+    • Message privé quand un de tes temps de recharge est terminé (/daily,
+      world boss, épreuve, reset de l'arbre, duel).
+    • Message privé, avec le lien, quand un événement apparaît.
+    • +1 ticket par jour pour la tour solo (à venir). Les tickets ne
+      s'accumulent pas : 1 de base, 2 avec la case, renouvelés à minuit UTC.
+      Ils s'affichent dans /cd.
 
 --------------------------------------------------------------------------------
 1.4 — ÉQUIPEMENT

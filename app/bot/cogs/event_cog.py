@@ -277,15 +277,36 @@ class EventCog(commands.Cog):
     # ---------------- spawn ----------------
 
     async def spawn_event(self, event_type: str) -> discord.Message | None:
-        """Fait apparaître un événement. Lot 1 : seul `chest` est implémenté."""
-        if event_type == "chest":
-            return await self._spawn_chest()
-        if event_type == "little_girl":
-            return await self._spawn_little_girl()
-        if event_type == "sacred_forge":
-            return await self._spawn_sacred_forge()
-        _logger.info("spawn_event: type '%s' non encore implémenté", event_type)
-        return None
+        """Fait apparaître un événement, puis prévient en privé les joueurs qui
+        ont débloqué la notification d'événement (case « Confort »)."""
+        spawners = {
+            "chest": self._spawn_chest,
+            "little_girl": self._spawn_little_girl,
+            "sacred_forge": self._spawn_sacred_forge,
+        }
+        if event_type not in spawners:
+            _logger.info("spawn_event: type '%s' non encore implémenté", event_type)
+            return None
+        message = await spawners[event_type]()
+        if message is not None:
+            await self._notify_event(event_type, message)
+        return message
+
+    async def _notify_event(self, event_type: str, message: discord.Message) -> None:
+        from app.bot.notifications import holders_of, send_dm
+
+        labels = {
+            "chest": "🎁 Un coffre au trésor vient d'apparaître — le premier qui l'ouvre gagne !",
+            "little_girl": "👧 Une petite fille demande de l'aide…",
+            "sacred_forge": "🔨 La forge sacrée s'est allumée : +1 niveau gratuit sur une pièce !",
+        }
+        try:
+            with get_db_session() as session:
+                discord_ids = list(holders_of(session, "notify_events").values())
+            for discord_id in discord_ids:
+                await send_dm(self.bot, discord_id, f"{labels[event_type]}\n{message.jump_url}")
+        except Exception:  # noqa: BLE001 — une notification ne casse pas l'événement
+            _logger.exception("notification d'événement échouée")
 
     async def _spawn_chest(self) -> discord.Message | None:
         channel = _event_channel(self.bot)

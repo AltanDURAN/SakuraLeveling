@@ -34,7 +34,7 @@ HIDDEN_GROUP_PREFIXES = ("admin",)
 CATEGORIES: list[tuple[str, str, str, set[str]]] = [
     ("👤", "Profil & progression",
      "Ton personnage, ses points de stats, son arbre, ses titres et ta routine quotidienne.",
-     {"profil", "or", "stats", "arbre", "affinites", "titre", "titre_actif",
+     {"profil", "or", "stats", "tactique", "arbre", "affinites", "titre", "titre_actif",
       "cd", "daily", "quetes", "quetes_hebdo", "demarrer", "epreuve"}),
     ("⚔️", "Combat & aventure",
      "Affronte les monstres, les world bosses et les autres joueurs.",
