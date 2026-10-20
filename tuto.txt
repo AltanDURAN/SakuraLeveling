@@ -336,9 +336,16 @@ COMBATS QUI S'ÉTERNISENT
 PV ET MANA
     Les PV et le mana ne remontent PAS pendant un combat : ils se régénèrent
     entre les combats, à la minute, selon tes stats de régénération.
+        • À 0 PV tu es K.O. : impossible de rejoindre un combat tant que tes
+          PV ne sont pas remontés (repos ou potion).
+        • En rejoignant un combat, le bot te prévient si le monstre est
+          nettement plus puissant que toi (« Risqué », « Très dangereux ») ou
+          s'il te reste peu de PV. Une zone couvre plusieurs niveaux : tous
+          ses monstres ne sont pas pour toi tout de suite.
 
 /utiliser <consommable>
-    Utilise un consommable de ton inventaire (ex. la potion de soin).
+    Utilise un consommable de ton inventaire (ex. la potion de soin). Si tes
+    PV sont déjà pleins, la potion n'est pas consommée.
 
 /duel @joueur
     Duel 1v1 pour le ladder des duels, sans rien à gagner ni à perdre : ni

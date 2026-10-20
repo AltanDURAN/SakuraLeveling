@@ -14,7 +14,12 @@ Hypothèses, volontairement neutres :
     niveau, soit `EXPECTED_GEAR_PERCENT` de bonus sur les stats structurelles.
     Calibrer sur un joueur nu rendrait tout le contenu trivial dès qu'il
     s'équipe ; calibrer sur un joueur parfaitement optimisé le rendrait
-    infranchissable pour tous les autres.
+    infranchissable pour tous les autres ;
+  • **sauf au tout début** — un nouveau joueur n'a RIEN sur le dos. Le bonus
+    attendu monte donc de 0 % au niveau 1 à `EXPECTED_GEAR_PERCENT` au niveau
+    `GEAR_RAMP_END_LEVEL` (`expected_gear_percent`). Avant cette rampe, tout
+    était calibré sur +50 % dès le niveau 1 : un compte neuf perdait 100 % de
+    ses combats, même contre un slime (audit d'octobre 2026).
 """
 
 from __future__ import annotations
@@ -34,6 +39,16 @@ from app.domain.value_objects.stats import Stats
 #: optimisé ».
 EXPECTED_GEAR_PERCENT = 0.50
 
+#: Niveau où le joueur de référence atteint l'équipement « de son palier ».
+GEAR_RAMP_END_LEVEL = 15
+
+
+def expected_gear_percent(level: int) -> float:
+    """Bonus d'équipement attendu à ce niveau : 0 au niveau 1, plafond au
+    niveau `GEAR_RAMP_END_LEVEL` (rampe linéaire)."""
+    progress = max(0, level - 1) / max(1, GEAR_RAMP_END_LEVEL - 1)
+    return EXPECTED_GEAR_PERCENT * min(1.0, progress)
+
 #: Valeurs de départ des stats secondaires (miroir de StatsService).
 BASE_SPEED = 5
 BASE_CRIT_CHANCE = 5.0
@@ -51,13 +66,15 @@ def base_points_at(level: int) -> float:
 
 def reference_stats(
     level: int,
-    gear_percent: float = EXPECTED_GEAR_PERCENT,
+    gear_percent: float | None = None,
     *,
     crit_chance: float | None = None,
     dodge: float | None = None,
 ) -> Stats:
     """Stats complètes du joueur de référence à ce niveau."""
     points = base_points_at(level)
+    if gear_percent is None:
+        gear_percent = expected_gear_percent(level)
     factor = 1 + max(-0.9, gear_percent)
     return Stats(
         max_hp=max(1, int((START_MAX_HP + MAX_HP_PER_POINT * points) * factor)),

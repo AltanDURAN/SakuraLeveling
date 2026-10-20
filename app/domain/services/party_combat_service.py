@@ -292,6 +292,10 @@ class PartyCombatService:
         adds_max = int(boss_adds.get("max_active", 0))
         active_adds = 0
         round_count = 0
+        # Tours JOUÉS par le boss : base du soin et des invocations. La boucle
+        # avance par TICKS de jauge (un combattant agit tous les 100/vitesse
+        # ticks) : appliquer ces effets à chaque tick les multipliait par ~10-20.
+        boss_turn_count = 0
 
         # ─── Frappe d'ouverture prioritaire (assassin) ───
         if "opening_assassinate" in ab and mob_hp > 0:
@@ -606,10 +610,12 @@ class PartyCombatService:
             if _charmed_alive():
                 mob_gauge = 0  # succube protégée, passive tant que le charmé vit
             _escalate()
+            boss_actions = 0
             while mob_gauge >= 100 and mob_hp > 0 and _party_alive() and not _charmed_alive():
                 turns += 1
                 acted = True
                 mob_gauge -= 100
+                boss_actions += 1
 
                 # Chaman : soin d'urgence (remplace l'attaque de ce tour).
                 if chaman_pending:
@@ -710,22 +716,28 @@ class PartyCombatService:
                 if not _party_alive():
                     break
 
-            # Invocations (adds) — world boss.
-            if mob_hp > 0 and adds_attack > 0 and adds_interval > 0 and adds_max > 0:
-                if round_count % adds_interval == 0 and active_adds < adds_max:
-                    active_adds += 1
-                for _ in range(active_adds):
-                    alive = [p for p in alive_party if p["hp"] > 0]
-                    if not alive:
-                        break
-                    victim = random.choice(alive)
-                    add_dmg = max(1, adds_attack - victim["stats"].defense)
-                    self._apply_player_damage(victim, add_dmg)
-                    contributions[victim["player_id"]].damage_tanked += adds_attack
-
-            # Auto-soin du boss — world boss.
-            if boss_heal_per_turn > 0 and mob_hp > 0:
-                mob_hp = min(mob_max_hp, mob_hp + boss_heal_per_turn)
+            # Effets « à chaque tour du boss » — world boss : un passage par
+            # action du boss pendant ce tick (pas un par tick).
+            for _ in range(boss_actions):
+                boss_turn_count += 1
+                if mob_hp <= 0 or not _party_alive():
+                    break
+                # Invocations (adds) : une de plus tous les `summon_turn_interval`
+                # tours du boss, chacune frappe un joueur au hasard.
+                if adds_attack > 0 and adds_interval > 0 and adds_max > 0:
+                    if boss_turn_count % adds_interval == 0 and active_adds < adds_max:
+                        active_adds += 1
+                    for _ in range(active_adds):
+                        alive = [p for p in alive_party if p["hp"] > 0]
+                        if not alive:
+                            break
+                        victim = random.choice(alive)
+                        add_dmg = max(1, adds_attack - victim["stats"].defense)
+                        self._apply_player_damage(victim, add_dmg)
+                        contributions[victim["player_id"]].damage_tanked += adds_attack
+                # Auto-soin du boss.
+                if boss_heal_per_turn > 0:
+                    mob_hp = min(mob_max_hp, mob_hp + boss_heal_per_turn)
 
             if not acted:
                 continue

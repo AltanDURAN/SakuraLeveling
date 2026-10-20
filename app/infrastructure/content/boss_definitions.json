@@ -7,7 +7,7 @@
     "tier": "intro",
     "spawn_weight": 100,
     "element": "eau",
-    "max_hp": 14000,
+    "max_hp": 6000,
     "attack": 64,
     "defense": 12,
     "speed": 8,
@@ -15,8 +15,8 @@
     "crit_damage": 100,
     "dodge": 0,
     "modifiers": {
-      "damage_immunity_threshold": 5,
-      "auto_heal_per_turn": 50
+      "damage_immunity_threshold": 7,
+      "auto_heal_per_turn": 14
     },
     "lore": "Premier obstacle des aventuriers ambitieux. Élément Eau (faible à plante/foudre… ici : plante/terre/glace). Se régénère un peu chaque tour : il faut le tuer assez vite.",
     "loot_table": [
@@ -36,7 +36,7 @@
     "tier": "medium",
     "spawn_weight": 8,
     "element": "feu",
-    "max_hp": 20000,
+    "max_hp": 11000,
     "attack": 114,
     "defense": 19,
     "speed": 12,
@@ -70,7 +70,7 @@
     "tier": "medium_hard",
     "spawn_weight": 3,
     "element": "terre",
-    "max_hp": 28000,
+    "max_hp": 22000,
     "attack": 164,
     "defense": 26,
     "speed": 5,
@@ -78,7 +78,7 @@
     "crit_damage": 100,
     "dodge": 0,
     "modifiers": {
-      "damage_immunity_threshold": 50,
+      "damage_immunity_threshold": 30,
       "reflect_pct": 15
     },
     "lore": "Élément Terre (faible à plante/glace/vent). Sa carapace runique ignore les dégâts < 50 et renvoie 15% des coups reçus. Frapper fort, ou souffrir du retour.",
@@ -99,7 +99,7 @@
     "tier": "hard",
     "spawn_weight": 2,
     "element": "tenebre",
-    "max_hp": 38000,
+    "max_hp": 13000,
     "attack": 214,
     "defense": 33,
     "speed": 18,
@@ -137,7 +137,7 @@
     "tier": "endgame",
     "spawn_weight": 1,
     "element": "lumiere",
-    "max_hp": 41000,
+    "max_hp": 15000,
     "attack": 264,
     "defense": 40,
     "speed": 15,
@@ -145,13 +145,13 @@
     "crit_damage": 200,
     "dodge": 10,
     "modifiers": {
-      "damage_immunity_threshold": 100,
+      "damage_immunity_threshold": 46,
       "enrage_below_pct": 25,
       "enrage_attack_multiplier": 1.8,
-      "auto_heal_per_turn": 2000,
+      "auto_heal_per_turn": 20,
       "reflect_pct": 20,
       "adds": {
-        "attack": 250,
+        "attack": 158,
         "summon_turn_interval": 5,
         "max_active": 2
       },

@@ -54,7 +54,10 @@ def test_pick_random_definition_respects_weights():
 def test_modifiers_loaded_correctly():
     clear_cache()
     titan = get_definition("slime_titan")
-    assert titan.modifiers.get("damage_immunity_threshold") == 5
+    # La VALEUR vient du recalibrage (scripts/restat_bosses.py) : on vérifie le
+    # chargement, pas l'équilibrage.
+    assert titan.modifiers.get("damage_immunity_threshold", 0) > 0
+    assert titan.modifiers.get("auto_heal_per_turn", 0) > 0
 
     warlord = get_definition("gobelin_warlord")
     assert warlord.modifiers.get("enrage_below_pct") == 30

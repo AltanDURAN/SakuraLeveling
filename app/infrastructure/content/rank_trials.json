@@ -4,22 +4,22 @@
   "trials": [
     {
       "rank": "E",
-      "required_power": 582,
+      "required_power": 503,
       "guardian": {
         "name": "Sentinelle Ébréchée",
         "lore": "Une armure vide qui refuse de tomber.",
-        "max_hp": 371,
-        "attack": 23,
-        "defense": 9,
+        "max_hp": 349,
+        "attack": 22,
+        "defense": 8,
         "speed": 8,
         "crit_chance": 10,
         "crit_damage": 150,
         "dodge": 5
       },
       "_mesure": {
-        "joueur_ref_atk": 26,
-        "joueur_ref_def": 18,
-        "joueur_ref_pv": 425,
+        "joueur_ref_atk": 24,
+        "joueur_ref_def": 17,
+        "joueur_ref_pv": 394,
         "taux_victoire": 0.672
       }
     },

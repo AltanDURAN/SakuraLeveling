@@ -18,6 +18,7 @@ Usage : .venv/bin/python -m scripts.restat_bosses [--write]
 from __future__ import annotations
 
 import json
+import random
 import sys
 from pathlib import Path
 
@@ -32,15 +33,36 @@ TARGET_LEVEL = {
     "ancient_dragon": 100,
 }
 
+from app.application.use_cases.world_boss import BOSS_FIGHT_MAX_TURNS
+
+#: Capacités de chaque boss, exprimées en PROPORTIONS des joueurs de son
+#: niveau (l'intention de design), converties en valeurs par `compute`.
+#: Avant, c'étaient des valeurs fixes héritées de l'ancien modèle de stats
+#: (V2, chiffres bien plus gros) : soin et immunité annulaient tout le raid.
+#:   heal_share     : le boss regagne cette part des dégâts que le raid lui
+#:                    inflige par tour (le raid doit donc taper plus fort) ;
+#:   immunity_share : il ignore les coups inférieurs à cette part d'un coup
+#:                    typique d'un joueur de son niveau (punit le sous-niveau) ;
+#:   adds_share     : ses invocations frappent à cette part de son attaque.
+MODIFIER_DESIGN: dict[str, dict[str, float]] = {
+    "slime_titan": {"heal_share": 0.25, "immunity_share": 0.25},
+    "gobelin_warlord": {"adds_share": 0.70},
+    "stone_colossus": {"immunity_share": 0.50},
+    "shadow_wraith": {},
+    "ancient_dragon": {"heal_share": 0.20, "immunity_share": 0.50, "adds_share": 0.60},
+}
+
 PARTY_SIZE = 4                # taille d'équipe de référence
 ASSAULTS_TO_KILL = 6          # le raid doit durer ~6 jours
 
 
 def _reference_party(level: int, size: int = PARTY_SIZE) -> list[dict]:
-    """Équipe de référence au niveau visé — définition partagée du joueur type."""
+    """Équipe de référence au niveau visé — définition partagée du joueur type,
+    avec le bonus d'équipe RÉEL du raid (+5 % par participant en plus)."""
     from app.domain.services.reference_player import reference_stats
+    from app.domain.services.world_boss_scaling_service import WorldBossScalingService
 
-    stats = reference_stats(level)
+    stats = WorldBossScalingService().apply_team_bonus(reference_stats(level), size)
     return [
         {"player_id": i, "user_id": i, "name": f"ref{i}", "avatar_url": "",
          "stats": stats, "current_hp": stats.max_hp, "max_hp": stats.max_hp,
@@ -49,30 +71,78 @@ def _reference_party(level: int, size: int = PARTY_SIZE) -> list[dict]:
     ]
 
 
-def _measure_damage_per_assault(level: int, attack: int, defense: int) -> int:
-    """Simule un assaut réel avec le moteur de combat pour MESURER les dégâts,
-    au lieu de les estimer avec une constante devinée."""
+def _measure_damage_per_assault(level: int, attack: int, defense: int, boss: dict) -> int:
+    """Rejoue un assaut RÉEL (moteur de combat, escalade comprise) et mesure les
+    dégâts NETS : soins du boss déduits, immunité, renvoi et invocations
+    appliqués — exactement comme `LaunchPartyFightWorldBossUseCase`.
+
+    Avant, la mesure se faisait contre un boss SANS ses capacités : le Titan
+    (soin 50 PV/tour) ou le Dragon (immunité < 100) étaient bien plus durs que
+    prévu, et le raid de la semaine devenait ingagnable."""
     from datetime import datetime, UTC
 
     from app.domain.entities.mob_definition import MobDefinition
     from app.domain.services.party_combat_service import PartyCombatService
 
     now = datetime.now(UTC)
-    dummy_hp = 10 ** 9  # assez gros pour que le boss ne meure pas pendant la mesure
+    # Le boss d'un raid en cours est déjà entamé : ses soins ne sont jamais
+    # plafonnés par ses PV max. On le simule donc à mi-vie d'une réserve énorme.
+    reserve = 10 ** 9
     mob = MobDefinition(
         id=1, code="calib", name="calib", description="", image_name="", family="",
-        max_hp=dummy_hp, current_hp=dummy_hp, attack=attack, defense=defense,
-        speed=12, crit_chance=10, crit_damage=150, dodge=0, hp_regeneration=0,
-        xp_reward=0, gold_reward=0, spawn_weight=1, loot_table=[],
+        max_hp=2 * reserve, current_hp=reserve, attack=attack, defense=defense,
+        speed=int(boss.get("speed", 8)), crit_chance=int(boss.get("crit_chance", 0)),
+        crit_damage=int(boss.get("crit_damage", 150)), dodge=int(boss.get("dodge", 0)),
+        hp_regeneration=0, xp_reward=0, gold_reward=0, spawn_weight=1, loot_table=[],
         created_at=now, updated_at=now, element="",
     )
-    result = PartyCombatService().fight_party_vs_mob(
-        _reference_party(level), mob, max_turns=4000,
-    )
-    return sum(c.damage_dealt for c in result.contributions)
+    mods = boss.get("modifiers") or {}
+    totals, actions = [], []
+    for seed in range(5):
+        random.seed(seed)
+        result = PartyCombatService().fight_party_vs_mob(
+            _reference_party(level), mob, max_turns=BOSS_FIGHT_MAX_TURNS,
+            damage_immunity_threshold=int(mods.get("damage_immunity_threshold", 0)),
+            boss_heal_per_turn=int(mods.get("auto_heal_per_turn", 0)),
+            boss_reflect_pct=int(mods.get("reflect_pct", 0)),
+            boss_adds=mods.get("adds"),
+        )
+        totals.append(max(0, reserve - result.mob_remaining_hp))
+        actions.append(result.turns)
+    _LAST_ACTIONS[0] = sum(actions) / len(actions)
+    return int(sum(totals) / len(totals))
 
 
-def compute(level: int) -> dict:
+#: Nombre moyen d'actions du dernier assaut mesuré (sert au soin par tour).
+_LAST_ACTIONS = [1.0]
+
+
+def _scaled_modifiers(boss: dict, level: int, attack: int, defense: int) -> dict:
+    """Recalcule les capacités du boss à partir de `MODIFIER_DESIGN`."""
+    from app.domain.services.reference_player import reference_stats
+    from app.domain.services.world_boss_scaling_service import WorldBossScalingService
+
+    mods = dict(boss.get("modifiers") or {})
+    design = MODIFIER_DESIGN.get(boss.get("code", ""), {})
+    player = WorldBossScalingService().apply_team_bonus(reference_stats(level), PARTY_SIZE)
+    typical_hit = max(1, player.attack - defense)
+    if "immunity_share" in design:
+        mods["damage_immunity_threshold"] = max(1, round(typical_hit * design["immunity_share"]))
+    if "adds_share" in design and isinstance(mods.get("adds"), dict):
+        mods["adds"] = {**mods["adds"], "attack": max(1, round(attack * design["adds_share"]))}
+    if "heal_share" in design:
+        # Dégâts BRUTS du raid par tour du boss (sans soin), puis la part soignée.
+        raw = _measure_damage_per_assault(
+            level, attack, defense, {**boss, "modifiers": {**mods, "auto_heal_per_turn": 0}},
+        )
+        boss_speed = int(boss.get("speed", 8))
+        party_speed = player.speed * PARTY_SIZE
+        boss_turns = max(1.0, _LAST_ACTIONS[0] * boss_speed / (boss_speed + party_speed))
+        mods["auto_heal_per_turn"] = max(1, round(design["heal_share"] * raw / boss_turns))
+    return mods
+
+
+def compute(level: int, boss: dict | None = None) -> dict:
     from app.domain.services.reference_player import reference_stats
 
     ref = reference_stats(level)
@@ -86,10 +156,12 @@ def compute(level: int) -> dict:
     # point) : une attaque exprimée en fraction de l'ATK du joueur passerait
     # donc SOUS sa défense. On la calcule sur la défense et les PV.
     attack = max(10, round(ref.defense + 0.06 * ref.max_hp))
-    measured = _measure_damage_per_assault(level, attack, defense)
+    boss = boss or {}
+    modifiers = _scaled_modifiers(boss, level, attack, defense) if boss else {}
+    measured = _measure_damage_per_assault(level, attack, defense, {**boss, "modifiers": modifiers})
     max_hp = max(1000, int(round(measured * ASSAULTS_TO_KILL / 1000.0) * 1000))
     return {"max_hp": max_hp, "attack": attack, "defense": defense,
-            "ref_atk": ref_atk, "measured": measured}
+            "ref_atk": ref_atk, "measured": measured, "modifiers": modifiers}
 
 
 def main() -> None:
@@ -101,11 +173,17 @@ def main() -> None:
         level = TARGET_LEVEL.get(b["code"])
         if level is None:
             continue
-        c = compute(level)
+        c = compute(level, b)
+        if c["measured"] <= 0:
+            print(f"⚠️  {b['name']} : AUCUN dégât net mesuré — ses capacités "
+                  f"(soin, immunité…) annulent l'équipe de référence. À revoir.")
         print(f"{b['name']:<26}{c['max_hp']:>12,}{c['attack']:>7}{c['defense']:>7}"
               f"   niv {level} · {c['measured']:,} dégâts/assaut mesurés"
               .replace(",", " "))
         b["max_hp"], b["attack"], b["defense"] = c["max_hp"], c["attack"], c["defense"]
+        if c["modifiers"] != (b.get("modifiers") or {}):
+            print(f"{'':26}capacités : {b.get('modifiers')} → {c['modifiers']}")
+            b["modifiers"] = c["modifiers"]
     if write:
         CONTENT.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n",
                            encoding="utf-8")

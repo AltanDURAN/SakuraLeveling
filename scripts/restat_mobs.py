@@ -42,9 +42,13 @@ def restat(L: float, arch: str) -> dict:
     spd, cc, cd, dodge = 5, 0, 100, 0
     if arch == "brute":          # tape fort, fragile
         atk *= 1.5; deff *= 0.5; hp *= 0.8
-    elif arch == "blinde":       # tank ; DEF capée à 70% ATK joueur (anti-plancher)
-        deff = min(deff * 2, 0.70 * reference_stats(int(L)).attack)
-        hp *= 1.5; atk *= 0.6
+    elif arch == "blinde":       # tank : la plus forte DEF, combat le plus long
+        # DEF capée à 60 % de l'ATK joueur, PV ×0,9, ATK ×0,7 : ~47 actions
+        # (contre ~39 pour un standard), donc AVANT l'escalade du monstre
+        # (action 50). L'ancien réglage (DEF 70 %, PV ×1,5) durait ~95 actions :
+        # l'escalade le rendait imbattable en solo, même à son propre palier.
+        deff = min(deff * 2, 0.60 * reference_stats(int(L)).attack)
+        hp *= 0.9; atk *= 0.7
     elif arch == "rapide":       # agit souvent, bursty, fragile
         atk *= 0.9; deff *= 0.8; hp *= 0.6; spd = 9; cc = 20; cd = 150
     return {
@@ -57,7 +61,7 @@ def restat(L: float, arch: str) -> dict:
 # (niveau-palier, archétype) par mob.
 ASSIGN: dict[str, tuple[int, str]] = {
     # --- Gobelins & slimes (Clairière sinistre, rang F)
-    "slime":              (3,  "standard"),
+    "slime":              (1,  "standard"),   # premier monstre d'un compte neuf
     "gobelin":            (6,  "standard"),
     "gobelin_combattant": (10, "standard"),
     "gobelin_chaman":     (15, "brute"),

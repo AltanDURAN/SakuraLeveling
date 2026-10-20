@@ -22,6 +22,7 @@ from app.domain.services.progression_service import ProgressionService
 from app.domain.services.reward_distribution_service import RewardDistributionService
 from app.domain.services.skill_tree_service import SkillTreeService
 from app.domain.services.stats_service import StatsService
+from app.domain.value_objects.stats import Stats
 from app.domain.services.element_affinity_progression_service import (
     ElementAffinityProgressionService,
 )
@@ -143,6 +144,16 @@ class EncounterService:
             hp_regeneration=stats.hp_regeneration,
         )
 
+        # K.O. : on ne rejoint pas un combat à 0 PV. Sans ce verrou, un joueur
+        # à terre rejoignait, mourait au premier coup et touchait quand même
+        # l'XP pleine (les morts la reçoivent) sans avoir combattu.
+        if regenerated_current_hp <= 0:
+            return False, (
+                "💀 Tu es K.O. (0 PV) : impossible de combattre. Tes PV remontent "
+                "tout seuls hors combat — vérifie-les avec /profil — ou bois une "
+                "potion avec /utiliser."
+            )
+
         participant = EncounterParticipant(
             user_id=user_id,
             player_id=profile.player.id,
@@ -155,7 +166,42 @@ class EncounterService:
 
         encounter.participants[user_id] = participant
 
-        return True, "Vous avez rejoint le combat."
+        return True, "Vous avez rejoint le combat." + self._danger_note(
+            encounter, stats, regenerated_current_hp,
+        )
+
+    @staticmethod
+    def _danger_note(encounter, stats: Stats, current_hp: int) -> str:
+        """Avertissement personnel quand le combat est déséquilibré.
+
+        Une zone couvre une large plage de niveaux et le monstre est tiré sans
+        regarder qui va le combattre : un débutant peut tomber sur un monstre
+        prévu pour le niveau 30. La puissance affichée sur l'image (« 1K ») ne
+        lui dit rien — on la compare donc à la sienne."""
+        mob = encounter.mob_state
+        power = PowerScoreService()
+        mob_power = power.calculate_from_stats(Stats(
+            max_hp=mob.max_hp, attack=mob.attack, defense=mob.defense,
+            speed=mob.speed, crit_chance=mob.crit_chance, crit_damage=mob.crit_damage,
+            dodge=mob.dodge, hp_regeneration=0,
+        ))
+        player_power = power.calculate_from_stats(stats)
+        ratio = mob_power / max(1, player_power)
+        notes = []
+        if ratio >= 2:
+            notes.append(
+                f"💀 **Très dangereux** : {mob.name} est environ **{ratio:.0f}×** plus "
+                f"puissant que toi ({power.format_score(mob_power)} contre "
+                f"{power.format_score(player_power)}). Sans alliés, tu risques le K.O."
+            )
+        elif ratio >= 1.2:
+            notes.append(
+                f"⚠️ **Risqué** : {mob.name} est plus puissant que toi "
+                f"({power.format_score(mob_power)} contre {power.format_score(player_power)})."
+            )
+        if stats.max_hp and current_hp < 0.3 * stats.max_hp:
+            notes.append(f"❤️ Attention, il ne te reste que **{current_hp} / {stats.max_hp}** PV.")
+        return ("\n" + "\n".join(notes)) if notes else ""
 
     def resolve_active_encounter(self, encounter):
         if encounter is None:
