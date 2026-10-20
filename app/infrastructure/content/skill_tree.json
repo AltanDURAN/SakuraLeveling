@@ -1183,7 +1183,7 @@
     },
     "passif_11": {
       "name": "Résistant",
-      "description": "",
+      "description": "Réduit de 10% les dégats reçus.",
       "icon": "🫧",
       "shape": "carre_passif",
       "node_type": "type_2",
@@ -1201,7 +1201,7 @@
     },
     "type_1_3": {
       "name": "Egide",
-      "description": "",
+      "description": "Au début du combat donne un bouclier de 10% de ses points de vie max à lui et tous ses alliés.",
       "icon": "🗿",
       "shape": "hexagone_classe",
       "node_type": "classe",
@@ -1318,9 +1318,9 @@
       }
     },
     "passif_12": {
-      "name": "Gourmant",
-      "description": "",
-      "icon": "🍖",
+      "name": "Tenace",
+      "description": "Lors d'un combat, la première attaque devant le tuer le laisse à 1 pv à la place.",
+      "icon": "💀",
       "shape": "carre_passif",
       "node_type": "type_3",
       "start": false,
@@ -1337,7 +1337,7 @@
     },
     "type_1_11": {
       "name": "Titan",
-      "description": "",
+      "description": "Inflige 5% de dégats supplémentaires et réduit de 5% les dégats reçus.",
       "icon": "🦾",
       "shape": "hexagone_classe",
       "node_type": "classe",
@@ -1505,7 +1505,7 @@
     },
     "passif_16": {
       "name": "Soigneur",
-      "description": "",
+      "description": "Double la quantité de soin donnée à ses alliés, pendant le combat gagne +1 de vitesse pour chaque alliés avec lui.",
       "icon": "💚",
       "shape": "hexagone_classe",
       "node_type": "classe",
@@ -1623,7 +1623,7 @@
     },
     "passif_20": {
       "name": "Rempart",
-      "description": "",
+      "description": "Redirige 50% des dégats que devrait recevoir ses alliés sur lui à la place.",
       "icon": "🧱",
       "shape": "hexagone_classe",
       "node_type": "classe",
@@ -1809,7 +1809,7 @@
     },
     "passif_28": {
       "name": "Vaillant",
-      "description": "",
+      "description": "Durant le combat à 50% de chance d'appliquer provocation sur l'ennemi, la prochaine attaque de l'ennemi devra cibler en priorité le lanceur de provocation, si plusieurs joueurs on lancé provocation, seul le dernier lanceur sera ciblé.",
       "icon": "🫀",
       "shape": "carre_passif",
       "node_type": "stat",
