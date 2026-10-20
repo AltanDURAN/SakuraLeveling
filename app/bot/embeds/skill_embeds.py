@@ -32,7 +32,12 @@ def build_skill_tree_embed(
     if web_url:
         embed.add_field(
             name="🔗 Vue détaillée",
-            value=f"[Ouvrir l'arbre dans le navigateur]({web_url})",
+            value=(
+                f"[Ouvrir l'arbre dans le navigateur]({web_url})\n"
+                "🖱️ Tu peux y **interagir avec ton arbre** : clique sur une case "
+                "pour voir son détail et l'**investir** directement "
+                "(connexion avec ton compte Discord la première fois)."
+            ),
             inline=False,
         )
 

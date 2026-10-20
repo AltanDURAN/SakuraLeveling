@@ -171,7 +171,10 @@ class SkillTreeView(discord.ui.View):
             )
             return
         await interaction.response.send_message(
-            f"🔗 **Vue détaillée :** {self.web_url}",
+            f"🔗 **Vue détaillée :** {self.web_url}\n"
+            "🖱️ Zoome, déplace-toi et **clique sur une case pour l'investir** "
+            "directement depuis le navigateur. La première fois, le site te "
+            "propose de te connecter avec ton compte Discord.",
             ephemeral=True,
         )
 
