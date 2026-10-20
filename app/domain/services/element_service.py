@@ -89,14 +89,16 @@ def damage_multiplier(
     defender_affinities: dict,
     magnitude: float = DEFAULT_MAGNITUDE,
 ) -> float:
-    """Multiplicateur de dégâts élémentaire dans [1-magnitude, 1+magnitude].
+    """Multiplicateur de dégâts élémentaire : `magnitude` (30 %) par tranche de
+    100 points de score, SANS plafond (une affinité de 300 vaut +90 %).
 
-    Le score (clampé à ±100) est mappé linéairement : +100 → +magnitude,
-    -100 → -magnitude, 0 → neutre (×1.0).
+    Symétrique : autant de résistance que de bonus. Une résistance de 100 % ou
+    plus rend IMMUNISÉ aux dégâts de cet élément (multiplicateur 0).
+    Avant la saison 1, le score était plafonné à ±100 (±30 %) ; les affinités
+    peuvent désormais dépasser 100 grâce aux éléments boostés.
     """
     score = elemental_score(attack_element, attacker_affinities, defender_affinities)
-    clamped = max(-100, min(100, score))
-    return 1.0 + (clamped / 100.0) * magnitude
+    return max(0.0, 1.0 + (score / 100.0) * magnitude)
 
 
 def relation(attack_element: str | Element, defender_element: str | Element) -> str:

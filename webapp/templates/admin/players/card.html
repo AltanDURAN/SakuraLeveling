@@ -233,7 +233,7 @@
 
         {% elif section == 'affinities' %}
             <div class="pcard-grid">{% for a in affinities %}
-                <div class="pfield"><span>{{ a.emoji }} {{ a.label }}</span><strong>{{ a.value }}/100 · {{ a.essences }} ess.</strong></div>
+                <div class="pfield"><span>{{ a.emoji }} {{ a.label }}</span><strong>{{ a.value }}/{{ a.cap }} · {{ a.essences }} ess. · talent {% if a.talent <= 0 %}💀 mort{% else %}{{ a.talent }}{% endif %}{% if a.revealed %} 👁{% endif %}</strong></div>
             {% endfor %}</div>
 
         {% elif section == 'skills' %}

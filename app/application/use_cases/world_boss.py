@@ -579,7 +579,9 @@ class LaunchPartyFightWorldBossUseCase:
                 aff = affinity_repo.get_affinities(v.player_id)
                 # L'ÉLÉMENT EST CHOISI TOUT SEUL, selon la faiblesse du boss
                 # et la maîtrise du joueur (cf. ElementalInfusionService).
-                infusion = ElementalInfusionService().best_for(aff, boss_aff)
+                infusion = ElementalInfusionService().best_for(
+                    aff, boss_aff, affinity_repo.dead_elements(v.player_id),
+                )
                 if infusion.element:
                     elemental_out[v.player_id] = outgoing_elemental_multiplier(
                         infusion.multiplier, infusion.element, aff,
@@ -940,6 +942,7 @@ class CompleteWorldBossUseCase:
                 new_level=new_level,
                 new_xp=new_xp,
                 new_skill_points=new_skill_points,
+                new_stat_points=progression.stat_points,
             )
             for item_code, qty in items:
                 item = self.item_repository.get_by_code(item_code)

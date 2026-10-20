@@ -62,11 +62,13 @@ def test_une_forte_affinite_peut_l_emporter_sur_le_contre_evident(svc):
     assert choisi.multiplier > seul_feu.multiplier
 
 
-def test_le_multiplicateur_reste_borne(svc):
-    """Même tout à 100, on ne dépasse pas la magnitude du jeu (±30 %)."""
-    plein = {e.value: 100 for e in __import__(
+def test_un_element_mort_n_est_jamais_utilise(svc):
+    """Talent 0 : l'élément ne peut pas servir en combat, même s'il serait le meilleur."""
+    affinities = {e.value: 100 for e in __import__(
         "app.shared.enums", fromlist=["ALL_ELEMENTS"]).ALL_ELEMENTS}
-    assert svc.best_for(plein, PLANTE).multiplier <= 1 + element_service.DEFAULT_MAGNITUDE + 1e-9
+    best = svc.best_for(affinities, PLANTE)
+    assert best.element
+    assert svc.best_for(affinities, PLANTE, dead_elements={best.element}).element != best.element
 
 
 def test_aucune_infusion_quand_rien_n_apporte_de_gain(svc):

@@ -621,6 +621,9 @@ def compose_profile_banner(
     active_title: str | None = None,
     #: élément → affinité 0..100. None ⇒ section masquée.
     affinities: dict[str, int] | None = None,
+    #: élément → {"known", "dead", "cap", "boosts"} (talents découverts avec
+    #: un papier élémentaire). Absent ⇒ talent inconnu, affiché ❓.
+    affinity_talents: dict[str, dict] | None = None,
 ) -> None:
     height = HEIGHT + (AFFINITY_BLOCK_H if affinities else 0)
     bg = _gradient_background(WIDTH, height)
@@ -922,10 +925,23 @@ def compose_profile_banner(
 
         career_rows = -(-len(career_cards) // grid_cols)
         aff_section_y = career_grid_y + career_rows * (card_h + spacing) + 20
+        talents_meta = affinity_talents or {}
+        any_unknown = any(
+            not talents_meta.get(e.value, {}).get("known") for e in ALL_ELEMENTS
+        )
         _draw_section_header(
             bg, (margin, aff_section_y), "✨  AFFINITÉS ÉLÉMENTAIRES",
             section_font, WIDTH - 2 * margin,
         )
+        if any_unknown:
+            # Le talent caché doit donner envie : on dit où le découvrir.
+            hint_font = _try_font(17, bold=False)
+            hint = "❓ talent inconnu → papier chez /marchand"
+            hint_w = ImageDraw.Draw(bg).textlength(hint, font=hint_font) + 10
+            draw_text_with_emojis(
+                bg, (int(WIDTH - margin - hint_w), aff_section_y + 12), hint,
+                hint_font, fill=(196, 186, 220, 255), emoji_size=16,
+            )
         aff_y = aff_section_y + 50
         elements = [e.value if hasattr(e, "value") else str(e) for e in ALL_ELEMENTS]
         cols = 4
@@ -935,7 +951,10 @@ def compose_profile_banner(
         aff_value_font = _try_font(19, bold=True)
 
         for idx, element in enumerate(elements[:8]):
-            value = max(0, min(100, int(affinities.get(element, 0))))
+            meta = talents_meta.get(element, {})
+            known = bool(meta.get("known"))
+            cap = int(meta.get("cap", 100)) if known else 100
+            value = max(0, min(max(cap, 100), int(affinities.get(element, 0))))
             row, col = divmod(idx, cols)
             x = margin + col * (cell_w + spacing)
             y = aff_y + row * (cell_h + spacing)
@@ -947,13 +966,29 @@ def compose_profile_banner(
                 bg, (x + 12, y + 6), head, aff_label_font,
                 fill=(238, 234, 246, 255), emoji_size=18,
             )
-            value_text = f"{value}"
+            if known and meta.get("dead"):
+                value_text = "mort"
+            elif known and cap > 100:
+                value_text = f"{value}/{cap}"
+            else:
+                value_text = f"{value}"
+            marker = (
+                "❓ " if not known
+                else "💀 " if meta.get("dead")
+                else "✨ " if meta.get("boosts") else ""
+            )
             tw = ImageDraw.Draw(bg).textlength(value_text, font=aff_value_font)
             _draw_text_with_shadow(
                 ImageDraw.Draw(bg), (x + cell_w - 12 - tw, y + 6),
                 value_text, aff_value_font,
-                fill=(*color, 255), shadow=(0, 0, 0, 160),
+                fill=(*color, 255) if not meta.get("dead") else (130, 126, 140, 255),
+                shadow=(0, 0, 0, 160),
             )
+            if marker:
+                draw_text_with_emojis(
+                    bg, (int(x + cell_w - 12 - tw - 26), y + 6), marker.strip(),
+                    aff_value_font, fill=(238, 234, 246, 255), emoji_size=18,
+                )
             # Barre de progression vers 100 : montre le chemin restant.
             bar_x, bar_y, bar_w = x + 12, y + 34, cell_w - 24
             layer = Image.new("RGBA", bg.size, (0, 0, 0, 0))
@@ -962,7 +997,7 @@ def compose_profile_banner(
                 [(bar_x, bar_y), (bar_x + bar_w, bar_y + 7)],
                 radius=3, fill=(58, 52, 76, 220),
             )
-            filled = int(bar_w * value / 100)
+            filled = int(bar_w * min(value, cap) / max(cap, 1))
             if filled > 2:
                 d.rounded_rectangle(
                     [(bar_x, bar_y), (bar_x + filled, bar_y + 7)],

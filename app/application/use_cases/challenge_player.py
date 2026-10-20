@@ -255,7 +255,9 @@ class ChallengePlayerUseCase:
             ElementalInfusionService,
         )
 
-        elem = ElementalInfusionService().best_for(a_aff, d_aff).element
+        elem = ElementalInfusionService().best_for(
+            a_aff, d_aff, aff_repo.dead_elements(attacker_profile.player.id),
+        ).element
         if not elem:
             return 1.0
         from app.domain.services.combat_passives import outgoing_elemental_multiplier

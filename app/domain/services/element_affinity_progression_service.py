@@ -23,9 +23,9 @@ class ElementAffinityProgressionService:
     suivant.
     """
 
-    def cost_for_next_level(self, current_affinity: int) -> int | None:
-        """Coût du prochain palier, ou None si déjà au max."""
-        if current_affinity >= MAX_AFFINITY:
+    def cost_for_next_level(self, current_affinity: int, cap: int = MAX_AFFINITY) -> int | None:
+        """Coût du prochain palier, ou None si déjà au plafond."""
+        if current_affinity >= cap:
             return None
         return current_affinity + 1
 
@@ -34,12 +34,15 @@ class ElementAffinityProgressionService:
         current_affinity: int,
         current_essences: int,
         added_essences: int,
+        cap: int = MAX_AFFINITY,
     ) -> AffinityConversion:
-        affinity = max(0, min(MAX_AFFINITY, int(current_affinity)))
+        """`cap` : plafond de l'élément — 100, +100 par tirage bonus reçu
+        (cf. element_talent_service)."""
+        affinity = max(0, min(cap, int(current_affinity)))
         essences = max(0, int(current_essences)) + max(0, int(added_essences))
         levels = 0
 
-        while affinity < MAX_AFFINITY and essences >= (affinity + 1):
+        while affinity < cap and essences >= (affinity + 1):
             essences -= affinity + 1
             affinity += 1
             levels += 1

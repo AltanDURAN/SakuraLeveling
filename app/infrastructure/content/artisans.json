@@ -143,6 +143,7 @@
       106,
       200
     ],
-    "greeting": "Approche. J'ai fait un long voyage pour t'apporter tout ça."
+    "greeting": "Approche. J'ai fait un long voyage pour t'apporter tout ça.",
+    "element_paper_prices": [0, 1500, 4000, 10000, 25000, 50000, 90000, 150000]
   }
 }

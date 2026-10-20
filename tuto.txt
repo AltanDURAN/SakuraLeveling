@@ -84,12 +84,26 @@ LA PROGRESSION
     épreuve ; leurs zones viendront après la V1.
 
 /affinites [joueur]
-    Tes 8 affinités élémentaires (0 à 100) et ta progression d'essences.
-        • À la création, chaque affinité est tirée au hasard entre 0 et 10.
+    Tes 8 affinités élémentaires et ta progression d'essences.
+        • Tout le monde démarre à 0 dans chaque élément.
         • Tuer un monstre d'un élément donne des ESSENCES de cet élément
           (le nombre dépend de la zone).
         • Les essences montent l'affinité toutes seules : passer de N à N+1
           coûte N+1 essences du même élément (0→1 : 1, …, 99→100 : 100).
+        • TALENT CACHÉ : à la création (et à chaque saison), tu reçois un
+          talent de 0 à 10 par élément. Il donne +10 % d'essences par point
+          (talent 10 : deux fois plus d'essences).
+            – Talent 0 = élément MORT : aucune essence, affinité bloquée à 0,
+              impossible de l'utiliser en combat cette saison.
+            – Chaque élément mort offre un DON à un autre élément tiré au
+              hasard : +10 à +30 de talent, et son affinité peut monter
+              jusqu'à 200 (300 avec deux dons…) au lieu de 100.
+            – Les 8 morts d'un coup (rarissime) : talent 50 et plafond 300
+              partout.
+        • Le talent est INCONNU (❓) tant que tu ne l'as pas découvert avec un
+          PAPIER ÉLÉMENTAIRE (bouton dans /affinites ou chez Sorn, /marchand).
+          Un papier = un élément. Le premier est offert, chaque suivant coûte
+          plus cher.
         • Voir 1.5 pour l'effet en combat.
 
 /or [joueur]
@@ -303,8 +317,12 @@ LES ÉLÉMENTS
     Chaque monstre a un élément. Ton attaque prend toute seule l'élément qui
     frappe le plus fort CE monstre (« Coup Tranchant de Feu »). La faiblesse
     du monstre ouvre la porte, ta MAÎTRISE de l'élément décide du gain :
-    15 % du bonus avec une affinité de 0, 100 % avec 100 — jusqu'à +30 % de
-    dégâts.
+    15 % du bonus avec une affinité de 0, 100 % avec 100.
+    Chaque tranche de 100 points d'écart élémentaire vaut ±30 % de dégâts,
+    SANS plafond : une affinité de 300 donne +90 %, et elle s'ajoute à la
+    faiblesse du monstre. Ça marche aussi en défense : la résistance est
+    symétrique, et au-delà de 100 % de résistance on est IMMUNISÉ (0 dégât).
+    Un élément mort ne sert jamais en combat.
 
 COMBATS QUI S'ÉTERNISENT
     À partir de la 50ᵉ action d'un combat, puis toutes les 10 actions, le
@@ -390,6 +408,9 @@ WORLD BOSS — /boss moi, /boss historique, /boss list
     SORN, le marchand : un rayon, un article, la quantité (×1 / ×5 / ×10),
     acheter. Achat uniquement. Le butin des monstres n'est pas chez lui : il
     sert aux artisans.
+    Il vend aussi les PAPIERS ÉLÉMENTAIRES (bouton 📜) : choisis un élément,
+    le papier révèle ton talent caché. 1er offert, puis 1 500 · 4 000 ·
+    10 000 · 25 000 · 50 000 · 90 000 · 150 000 or.
 
 --------------------------------------------------------------------------------
 1.8 — ÉCHANGES ENTRE JOUEURS

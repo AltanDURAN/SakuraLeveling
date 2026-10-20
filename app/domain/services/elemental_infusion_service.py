@@ -80,6 +80,7 @@ class ElementalInfusionService:
         self,
         attacker_affinities: dict,
         defender_affinities: dict,
+        dead_elements: set[str] | frozenset[str] = frozenset(),
     ) -> Infusion:
         """Élément le plus efficace contre CETTE cible, pour CE joueur.
 
@@ -92,6 +93,8 @@ class ElementalInfusionService:
 
         for element in ALL_ELEMENTS:
             code = element.value if hasattr(element, "value") else str(element)
+            if code in dead_elements:  # élément mort : inutilisable en combat
+                continue
             affinity = int((attacker_affinities or {}).get(code, 0) or 0)
             raw = element_service.damage_multiplier(
                 code, attacker_affinities, defender_affinities, self.magnitude,

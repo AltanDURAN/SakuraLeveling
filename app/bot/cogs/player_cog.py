@@ -301,9 +301,16 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
 
             # Affinités élémentaires : la stat la plus lente du jeu, affichée
             # sur la bannière pour ne pas obliger à passer par /affinites.
-            affinities_payload = ElementAffinityRepository(
-                session,
-            ).get_affinities(profile.player.id)
+            _aff_repo = ElementAffinityRepository(session)
+            _talents = _aff_repo.get_talents(profile.player.id)
+            affinities_payload = _aff_repo.get_affinities(profile.player.id)
+            _revealed = _aff_repo.revealed_elements(profile.player.id)
+            affinity_talents_payload = {
+                code: {
+                    "known": True, "dead": t.dead, "cap": t.cap, "boosts": t.boosts,
+                }
+                for code, t in _talents.items() if code in _revealed
+            }
 
             # Rendu Pillow sync + download avatar Discord : off-thread pour ne
             # pas bloquer l'event loop (cf. audit B5).
@@ -342,6 +349,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 },
                 career=career_payload,
                 affinities=affinities_payload,
+                affinity_talents=affinity_talents_payload,
             )
 
             # /profil = bannière PNG seule (l'embed n'est qu'un conteneur pour
@@ -1039,6 +1047,9 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             ElementEssenceRepository,
         )
         from app.bot.embeds.player_embeds import build_affinities_embed
+        from app.bot.views.element_paper_view import PaperButton
+        from app.domain.services.element_talent_service import paper_price
+        from app.infrastructure.artisans import artisan_loader
 
         with get_db_session() as session:
             profile, target_member = self._resolve_profile(interaction, target, session)
@@ -1046,18 +1057,34 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 await self._send_no_profile_error(interaction, target_member)
                 return
 
-            affinities = ElementAffinityRepository(session).get_affinities(
-                profile.player.id
-            )
+            affinity_repo = ElementAffinityRepository(session)
+            talents = affinity_repo.get_talents(profile.player.id)
+            affinities = affinity_repo.get_affinities(profile.player.id)
+            revealed = affinity_repo.revealed_elements(profile.player.id)
             essences = ElementEssenceRepository(session).get_essences(profile.player.id)
+            player_id = profile.player.id
 
         is_self = target_member.id == interaction.user.id
+        next_price = paper_price(
+            len(revealed), artisan_loader.get_merchant().element_paper_prices,
+        )
         embed = build_affinities_embed(
             display_name=target_member.display_name,
             affinities=affinities,
             essences=essences,
             is_self=is_self,
+            talents=talents,
+            revealed=revealed,
+            next_paper_price=next_price,
         )
+        if is_self and next_price is not None:
+            view = discord.ui.View(timeout=300)
+            view.add_item(PaperButton(
+                get_db_session, player_id, next_price,
+                owner_discord_id=interaction.user.id,
+            ))
+            await interaction.response.send_message(embed=embed, view=view)
+            return
         await interaction.response.send_message(embed=embed)
 
     # ------------------------------------------------------------------

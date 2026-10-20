@@ -240,7 +240,9 @@ class EncounterService:
                     # frappe le plus fort cette cible, compte tenu de sa
                     # faiblesse ET de la maîtrise du joueur. Plus de
                     # compétence élémentaire à équiper.
-                    infusion = ElementalInfusionService().best_for(aff, mob_aff)
+                    infusion = ElementalInfusionService().best_for(
+                        aff, mob_aff, affinity_repo.dead_elements(participant.player_id),
+                    )
                     if infusion.element:
                         # Mage : ×1,5 / ×2 / ×5 selon son affinité dans cet élément.
                         elemental_out[participant.player_id] = outgoing_elemental_multiplier(
@@ -610,15 +612,23 @@ class EncounterService:
         if not elements or essences_per_kill <= 0:
             return []
 
+        from app.domain.services.element_talent_service import essence_gain
+
         essences_map = essence_repository.get_essences(player_id)
         affinities_map = affinity_repository.get_affinities(player_id)
+        talents = affinity_repository.get_talents(player_id)
 
         gains: list[EssenceGain] = []
         for elem in elements:
+            talent = talents.get(elem)
+            # Talent : +10 % d'essences par point ; élément mort ⇒ rien.
+            gained = essence_gain(essences_per_kill, talent.talent if talent else 0)
+            if gained <= 0:
+                continue
             before_aff = int(affinities_map.get(elem, 0))
             current_ess = int(essences_map.get(elem, 0))
             conv = progression_service.apply_essences(
-                before_aff, current_ess, essences_per_kill,
+                before_aff, current_ess, gained, cap=talent.cap,
             )
             essence_repository.set_essence(player_id, elem, conv.remaining_essences)
             if conv.levels_gained > 0:
@@ -626,7 +636,7 @@ class EncounterService:
             gains.append(
                 EssenceGain(
                     element=elem,
-                    essences_gained=essences_per_kill,
+                    essences_gained=gained,
                     affinity_before=before_aff,
                     affinity_after=conv.new_affinity,
                 )
@@ -653,14 +663,14 @@ class EncounterService:
             current_skill_points=profile_after.progression.skill_points,
             current_stat_points=profile_after.progression.stat_points,
         )
-        new_level = progression.level
-        new_xp = progression.xp
-        new_skill_points = progression.skill_points
+        # ⚠️ Les points de STATS (saison 1) doivent suivre : sans eux, un
+        # passage de niveau en combat ne donnait aucun point à placer.
         player_repository.apply_progression(
             player_id=player_id,
-            new_level=new_level,
-            new_xp=new_xp,
-            new_skill_points=new_skill_points,
+            new_level=progression.level,
+            new_xp=progression.xp,
+            new_skill_points=progression.skill_points,
+            new_stat_points=progression.stat_points,
         )
 
     def _record_combat_career_stats(

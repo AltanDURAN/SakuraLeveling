@@ -812,10 +812,12 @@ class PartyCombatService:
             mob_damage = after_defense
 
         incoming_mult = incoming_mult_by_player.get(target["player_id"], 1.0)
-        if incoming_mult != 1.0:
+        if incoming_mult <= 0:
+            mob_damage = 0  # résistance élémentaire ≥ 100 % : immunisé
+        elif incoming_mult != 1.0:
             mob_damage = max(1, round(mob_damage * incoming_mult))
 
-        mob_damage = self._reduced(target, mob_damage)
+        mob_damage = self._reduced(target, mob_damage) if mob_damage > 0 else 0
 
         # Rempart : un allié encaisse une part du coup à la place de la cible.
         guard = self._guardian_for(target)

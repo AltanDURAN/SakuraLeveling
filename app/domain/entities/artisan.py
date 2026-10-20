@@ -69,6 +69,8 @@ class MerchantDefinition:
     image: str
     greeting: str
     accent: tuple[int, int, int]
+    #: Papiers élémentaires : prix du 1er, 2e… 8e papier (le 1er est offert).
+    element_paper_prices: tuple[int, ...] = ()
 
     @property
     def display_name(self) -> str:

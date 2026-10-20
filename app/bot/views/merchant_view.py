@@ -12,6 +12,7 @@ import asyncio
 import discord
 
 from app.bot.rendering.npc_panel import compose_npc_panel, panel_path
+from app.bot.views.element_paper_view import PaperButton, paper_price_label
 from app.domain.entities.artisan import MerchantDefinition
 from app.shared.enums import CATEGORY_ICONS, ITEM_CATEGORY_LABELS
 from app.shared.formatters import format_int
@@ -45,6 +46,8 @@ class MerchantView(discord.ui.View):
         self._selected = None
         self._player_gold = 0
         self._owned = 0
+        self._paper_price: int | None = None
+        self._papers_known = 0
 
         self._build_components()
 
@@ -73,6 +76,15 @@ class MerchantView(discord.ui.View):
                 self.player_id,
             )
             self._player_gold = profile.resources.gold if profile else 0
+
+            from app.application.use_cases.reveal_element_talent import (
+                RevealElementTalentUseCase,
+            )
+            paper = RevealElementTalentUseCase(
+                session, self.definition.element_paper_prices,
+            ).status(self.player_id)
+            self._paper_price = paper.next_price
+            self._papers_known = 8 - len(paper.unrevealed)
 
             self._selected = None
             self._owned = 0
@@ -128,6 +140,10 @@ class MerchantView(discord.ui.View):
                 self.add_item(_QuantityButton(self, step))
         self.add_item(_BuyButton(self, enabled=self.can_buy))
         self.add_item(_CloseButton(self))
+        self.add_item(PaperButton(
+            self._session_factory, self.player_id, self._paper_price,
+            owner_discord_id=self._user.id, row=4,
+        ))
 
     def _selection_payload(self) -> dict | None:
         if self._selected is None:
@@ -164,6 +180,10 @@ class MerchantView(discord.ui.View):
             ("Articles", f"{total} référence(s)"),
             ("Ta bourse", f"💰 {format_int(self._player_gold)} or"),
             ("Sa règle", "il achète, il ne reprend rien"),
+            ("Papiers", (
+                f"📜 {self._papers_known}/8 talents connus · prochain : "
+                f"{paper_price_label(self._paper_price)}"
+            )),
         ]
 
     async def render(self) -> tuple[discord.Embed, discord.File]:

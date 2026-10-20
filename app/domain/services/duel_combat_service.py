@@ -94,11 +94,13 @@ class DuelCombatService:
         if mine.armor_penetration_pct > 0:
             defense = int(defense * (1 - min(100.0, mine.armor_penetration_pct) / 100))
         damage = max(1, raw_attack - defense)
-        if me["mult"] != 1.0:
+        if me["mult"] <= 0:
+            damage = 0  # le défenseur est immunisé à cet élément
+        elif me["mult"] != 1.0:
             damage = max(1, round(damage * me["mult"]))
-        if mine.damage_dealt_pct:
+        if mine.damage_dealt_pct and damage:
             damage = max(1, round(damage * (1 + mine.damage_dealt_pct / 100)))
-        if theirs.damage_reduction_fraction > 0:
+        if theirs.damage_reduction_fraction > 0 and damage:
             damage = max(1, round(damage * (1 - theirs.damage_reduction_fraction)))
 
         if random.random() < (foe["stats"].dodge / 100):

@@ -278,13 +278,20 @@ async def players_titles(player_id: int, request: Request, edit: int = 0, user: 
 async def players_affinities(player_id: int, request: Request, edit: int = 0, user: AdminUser = Depends(require_admin)):
     with get_db_session() as session:
         ctx, _ = await _base_ctx(session, user, player_id, "affinities")
-        aff = ElementAffinityRepository(session).get_affinities(player_id)
+        aff_repo = ElementAffinityRepository(session)
+        talents = aff_repo.get_talents(player_id)
+        revealed = aff_repo.revealed_elements(player_id)
+        aff = aff_repo.get_affinities(player_id)
         ess = ElementEssenceRepository(session).get_essences(player_id)
         ctx["edit"] = bool(edit)
+        # L'admin voit les talents cachés (support) ; 👁 = découvert par le joueur.
         ctx["affinities"] = [
             {"element": e.value, "emoji": ELEMENT_EMOJIS.get(e.value, ""),
              "label": ELEMENT_LABELS.get(e.value, e.value),
-             "value": int(aff.get(e.value, 0)), "essences": int(ess.get(e.value, 0))}
+             "value": int(aff.get(e.value, 0)), "essences": int(ess.get(e.value, 0)),
+             "talent": talents[e.value].talent if e.value in talents else 0,
+             "cap": talents[e.value].cap if e.value in talents else 100,
+             "revealed": e.value in revealed}
             for e in ALL_ELEMENTS
         ]
     return get_templates().TemplateResponse(request, "admin/players/card.html", context=ctx)

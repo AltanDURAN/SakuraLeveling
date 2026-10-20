@@ -44,18 +44,22 @@ def test_user_example_score_equals_100():
     assert score == 100 - 20 - 10 - 10 + 40  # == 100
 
 
-def test_multiplier_is_bounded_to_default_magnitude():
-    # Score très positif → +magnitude max (défaut ±30%).
-    attacker = {Element.FEU.value: 100}
+def test_trente_pourcent_par_tranche_de_cent_sans_plafond():
+    """Saison 1 : plus de plafond à ±30 % — une affinité de 300 vaut +90 %,
+    et l'affinité s'ajoute à la faiblesse de la cible."""
+    neutral = {}
+    assert es.damage_multiplier(Element.FEU, {Element.FEU.value: 300}, neutral) == pytest.approx(1.9)
     weak_defender = es.single_element_affinities(Element.GLACE)  # feu bat glace
-    mult_max = es.damage_multiplier(Element.FEU, attacker, weak_defender)
-    assert mult_max == pytest.approx(1.0 + es.DEFAULT_MAGNITUDE)
+    assert es.damage_multiplier(Element.FEU, {Element.FEU.value: 100}, weak_defender) == pytest.approx(1.6)
 
-    # Score très négatif → -magnitude max.
+
+def test_resistance_symetrique_et_immunite():
     poor_attacker = {Element.FEU.value: 0}
     strong_defender = es.single_element_affinities(Element.EAU)  # eau bat feu
-    mult_min = es.damage_multiplier(Element.FEU, poor_attacker, strong_defender)
-    assert mult_min == pytest.approx(1.0 - es.DEFAULT_MAGNITUDE)
+    assert es.damage_multiplier(Element.FEU, poor_attacker, strong_defender) == pytest.approx(0.7)
+    # Résistance ≥ 100 % ⇒ immunité (jamais de dégâts négatifs).
+    fortress = {Element.EAU.value: 300, Element.FEU.value: 200}
+    assert es.damage_multiplier(Element.FEU, poor_attacker, fortress) == 0.0
 
 
 def test_neutral_multiplier_when_score_zero():

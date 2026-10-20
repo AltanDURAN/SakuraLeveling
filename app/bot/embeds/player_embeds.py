@@ -10,8 +10,9 @@ from app.domain.services.element_affinity_progression_service import (
 from app.domain.value_objects.stats import Stats
 
 
-def _affinity_bar(value: int, width: int = 10) -> str:
-    filled = round(max(0, min(100, value)) / 100 * width)
+def _affinity_bar(value: int, width: int = 10, cap: int = 100) -> str:
+    cap = max(1, cap)
+    filled = round(max(0, min(cap, value)) / cap * width)
     return "█" * filled + "░" * (width - filled)
 
 
@@ -20,18 +21,44 @@ def build_affinities_embed(
     affinities: dict[str, int],
     essences: dict[str, int],
     is_self: bool = True,
+    talents: dict | None = None,
+    revealed: set[str] | None = None,
+    next_paper_price: int | None = 0,
 ) -> discord.Embed:
-    """Affinités élémentaires (0..100) + progression d'essences vers le palier
-    suivant (coût N→N+1 = N+1 essences), pour chaque élément."""
+    """Affinités élémentaires + progression d'essences vers le palier suivant
+    (coût N→N+1 = N+1 essences), pour chaque élément.
+
+    Le TALENT (caché) n'est affiché que pour les éléments découverts avec un
+    papier élémentaire ; les autres portent un ❓ qui dit comment le découvrir.
+    Tant qu'un talent est inconnu, rien ne trahit son plafond réel."""
+    from app.bot.views.element_paper_view import paper_price_label
+
     progression = ElementAffinityProgressionService()
+    talents = talents or {}
+    revealed = revealed or set()
     who = "Vos" if is_self else f"Affinités de {display_name} —"
+    unknown = sum(1 for e in ALL_ELEMENTS if e.value not in revealed)
+    description = (
+        "Tuez des monstres d'un élément pour gagner des **essences** ; "
+        "elles montent automatiquement l'affinité de cet élément "
+        "(coût du palier N→N+1 = N+1 essences)."
+    )
+    if unknown:
+        hint = (
+            f"\n\n🔮 **{unknown} talent(s) encore inconnu(s).** Chacun de vous "
+            "naît avec un talent caché par élément : il décide à quelle vitesse "
+            "les essences tombent… et certains éléments réservent des surprises."
+        )
+        if is_self:
+            hint += (
+                "\n📜 Découvre-le avec un **papier élémentaire** chez Sorn "
+                f"(`/marchand`) ou avec le bouton ci-dessous — prochain papier : "
+                f"**{paper_price_label(next_paper_price)}**."
+            )
+        description += hint
     embed = discord.Embed(
         title=f"✨ {who} affinités élémentaires",
-        description=(
-            "Tuez des monstres d'un élément pour gagner des **essences** ; "
-            "elles montent automatiquement l'affinité de cet élément "
-            "(coût du palier N→N+1 = N+1 essences)."
-        ),
+        description=description,
         color=discord.Color.purple(),
     )
     for element in ALL_ELEMENTS:
@@ -40,15 +67,36 @@ def build_affinities_embed(
         ess = int(essences.get(code, 0))
         emoji = ELEMENT_EMOJIS.get(code, "")
         label = ELEMENT_LABELS.get(code, code)
-        next_cost = progression.cost_for_next_level(aff)
-        bar = _affinity_bar(aff)
+        talent = talents.get(code)
+        cap = talent.cap if talent is not None else 100
+        known = code in revealed and talent is not None
+
+        if known and talent.dead:
+            embed.add_field(
+                name=f"{emoji} {label} — 💀 élément mort",
+                value="Aucune essence cette saison, inutilisable en combat.",
+                inline=False,
+            )
+            continue
+
+        next_cost = progression.cost_for_next_level(aff, cap=cap)
         if next_cost is None:
             progress = "**MAX** 🏆"
         else:
             progress = f"{ess}/{next_cost} essences → palier suivant"
+        if known:
+            name = f"{emoji} {label} — {aff}/{cap}"
+            line = f"Talent **{talent.talent}** (+{talent.essence_bonus_pct} % d'essences)"
+            if talent.boosts:
+                line = "✨ " + line + " · don rare"
+            bar = _affinity_bar(aff, cap=cap)
+        else:
+            name = f"{emoji} {label} — {aff}"
+            line = "Talent ❓"
+            bar = _affinity_bar(aff)
         embed.add_field(
-            name=f"{emoji} {label} — {aff}/100",
-            value=f"`{bar}` {progress}",
+            name=name,
+            value=f"`{bar}` {progress}\n{line}",
             inline=False,
         )
     return embed

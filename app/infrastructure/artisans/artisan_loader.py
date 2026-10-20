@@ -121,4 +121,7 @@ def get_merchant() -> MerchantDefinition:
         image=str(data.get("image", "marchand.png")),
         greeting=str(data.get("greeting", "")),
         accent=_accent(data.get("accent"), (150, 106, 200)),
+        element_paper_prices=tuple(
+            max(0, int(v)) for v in data.get("element_paper_prices") or ()
+        ),
     )
