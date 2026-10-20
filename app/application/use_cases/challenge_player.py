@@ -150,8 +150,19 @@ class ChallengePlayerUseCase:
         # Avantage élémentaire (±30%) : élément d'attaque de chacun (compétence
         # offensive équipée, sinon affinité la plus haute) vs affinités de
         # l'adversaire. Symétrique.
-        chal_mult = self._elemental_damage_mult(challenger_profile, target_profile, session)
-        tgt_mult = self._elemental_damage_mult(target_profile, challenger_profile, session)
+        # Passifs de l'arbre (Titan, Léthal, Tenace, Vampire, Mage…).
+        chal_passives = skill_service.combat_passives(
+            self.skill_allocation_repository.list_by_player(challenger_profile.player.id)
+        )
+        tgt_passives = skill_service.combat_passives(
+            self.skill_allocation_repository.list_by_player(target_profile.player.id)
+        )
+        chal_mult = self._elemental_damage_mult(
+            challenger_profile, target_profile, session, chal_passives,
+        )
+        tgt_mult = self._elemental_damage_mult(
+            target_profile, challenger_profile, session, tgt_passives,
+        )
 
         # Combat (a = challenger, b = target). Démarre full HP des deux côtés.
         result = self.duel_combat_service.fight_player_vs_player(
@@ -159,6 +170,8 @@ class ChallengePlayerUseCase:
             b_stats=target_stats,
             a_damage_mult=chal_mult,
             b_damage_mult=tgt_mult,
+            a_passives=chal_passives,
+            b_passives=tgt_passives,
         )
 
         challenger_won = result.winner == "a"
@@ -224,7 +237,9 @@ class ChallengePlayerUseCase:
             challenger_won=challenger_won,
         )
 
-    def _elemental_damage_mult(self, attacker_profile, defender_profile, session) -> float:
+    def _elemental_damage_mult(
+        self, attacker_profile, defender_profile, session, passives=None,
+    ) -> float:
         """Multiplicateur de dégâts élémentaire (±30%) de l'attaquant vs le
         défenseur : élément d'attaque de l'attaquant (compétence offensive
         équipée, sinon affinité la plus haute) confronté aux affinités des deux.
@@ -243,7 +258,11 @@ class ChallengePlayerUseCase:
         elem = ElementalInfusionService().best_for(a_aff, d_aff).element
         if not elem:
             return 1.0
-        return element_service.damage_multiplier(elem, a_aff, d_aff)
+        from app.domain.services.combat_passives import outgoing_elemental_multiplier
+
+        return outgoing_elemental_multiplier(
+            element_service.damage_multiplier(elem, a_aff, d_aff), elem, a_aff, passives,
+        )
 
     def _compute_stats(self, profile, skill_service: SkillTreeService, session):
         equipped_items = self.equipment_repository.list_by_player_id(profile.player.id)

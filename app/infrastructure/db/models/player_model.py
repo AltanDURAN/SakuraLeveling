@@ -19,6 +19,8 @@ class PlayerModel(Base):
     # Slots libres ; NULL = vide.
     skill_slot_1: Mapped[str | None] = mapped_column(String(40), nullable=True)
     skill_slot_2: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    # Tactique de combat (/tactique) : cible du sort de soin, figée en combat.
+    combat_tactic: Mapped[str] = mapped_column(String(20), default="egoiste", server_default="egoiste")
 
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))

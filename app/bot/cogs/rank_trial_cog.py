@@ -171,8 +171,13 @@ class RankTrialCog(BetaChannelOnlyMixin, commands.Cog):
             "stats": stats, "current_hp": stats.max_hp, "max_hp": stats.max_hp,
             "current_mana": stats.mana_max, "mana_max": stats.mana_max,
         }]
+        from app.application.services.combat_passives_resolver import resolve_party_passives
+
+        with get_db_session() as session:
+            passives, tactics = resolve_party_passives(session, [player_id])
         result = PartyCombatService().fight_party_vs_mob(
             party, _guardian_mob(elig.trial.guardian), max_turns=MAX_TURNS,
+            passives_by_player=passives, tactics_by_player=tactics,
         )
         contribution = next(
             (c for c in result.contributions if c.player_id == player_id), None,

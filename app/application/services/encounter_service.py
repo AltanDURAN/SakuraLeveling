@@ -182,6 +182,10 @@ class EncounterService:
             from app.domain.services.elemental_infusion_service import (
                 ElementalInfusionService,
             )
+            from app.application.services.combat_passives_resolver import (
+                resolve_party_passives,
+            )
+            from app.domain.services.combat_passives import outgoing_elemental_multiplier
             mob_element = (encounter.mob_state.element or "").strip()
             mob_aff = element_service.single_element_affinities(mob_element) if mob_element else None
             affinity_repo = ElementAffinityRepository(session)
@@ -190,6 +194,10 @@ class EncounterService:
 
             party = []
             title_bonuses_by_player: dict = {}
+            # Passifs de l'arbre (classes, Tenace, Égide…) et tactique de combat.
+            passives_by_player, tactics_by_player = resolve_party_passives(
+                session, [p.player_id for p in encounter.participants.values()],
+            )
 
             for participant in encounter.participants.values():
                 profile = player_repository.get_by_discord_id(participant.user_id)
@@ -234,7 +242,11 @@ class EncounterService:
                     # compétence élémentaire à équiper.
                     infusion = ElementalInfusionService().best_for(aff, mob_aff)
                     if infusion.element:
-                        elemental_out[participant.player_id] = infusion.multiplier
+                        # Mage : ×1,5 / ×2 / ×5 selon son affinité dans cet élément.
+                        elemental_out[participant.player_id] = outgoing_elemental_multiplier(
+                            infusion.multiplier, infusion.element, aff,
+                            passives_by_player.get(participant.player_id),
+                        )
                     elemental_in[participant.player_id] = element_service.damage_multiplier(
                         mob_element, mob_aff, aff,
                     )
@@ -261,6 +273,8 @@ class EncounterService:
             elemental_mult_by_player=elemental_out,
             incoming_elemental_mult_by_player=elemental_in,
             mob_abilities=get_mob_abilities(mob.code),
+            passives_by_player=passives_by_player,
+            tactics_by_player=tactics_by_player,
         )
 
     def persist_final_players_hp(self, result) -> None:

@@ -492,6 +492,8 @@ class LaunchPartyFightWorldBossUseCase:
             ElementAffinityRepository,
         )
         from app.domain.services.mana_regeneration_service import ManaRegenerationService
+        from app.application.services.combat_passives_resolver import resolve_party_passives
+        from app.domain.services.combat_passives import outgoing_elemental_multiplier
         from app.infrastructure.db.repositories.player_mana_repository import (
             PlayerManaRepository,
         )
@@ -537,6 +539,11 @@ class LaunchPartyFightWorldBossUseCase:
             player_crit_chance=0,  # spécifique par voteur, on recalcule plus bas
         )
 
+        # Passifs de l'arbre (classes, Égide, Rempart…) et tactiques.
+        passives_by_player, tactics_by_player = resolve_party_passives(
+            self.world_boss_repository.session, [v.player_id for v in voters],
+        )
+
         for v in voters:
             # Cooldown daily
             cd = self.cooldown_repository.get_by_player_and_action(
@@ -561,12 +568,9 @@ class LaunchPartyFightWorldBossUseCase:
             boosted = self.scaling_service.apply_team_bonus(base_stats, num_joined)
             # Si crit immunity : neutralise crit_chance
             if adjustments.player_crit_chance == 0 and modifiers.get("crit_immunity"):
-                boosted = type(boosted)(
-                    max_hp=boosted.max_hp, attack=boosted.attack,
-                    defense=boosted.defense, speed=boosted.speed,
-                    crit_chance=0, crit_damage=boosted.crit_damage,
-                    dodge=boosted.dodge, hp_regeneration=boosted.hp_regeneration,
-                )
+                # replace() garde TOUTES les stats (mana compris : invariant).
+                from dataclasses import replace as _replace
+                boosted = _replace(boosted, crit_chance=0)
             # Compétences équipées (slots libres, peuvent être vides) → passées
             # telles quelles au combat, qui les résout par tour.
 
@@ -577,7 +581,10 @@ class LaunchPartyFightWorldBossUseCase:
                 # et la maîtrise du joueur (cf. ElementalInfusionService).
                 infusion = ElementalInfusionService().best_for(aff, boss_aff)
                 if infusion.element:
-                    elemental_out[v.player_id] = infusion.multiplier
+                    elemental_out[v.player_id] = outgoing_elemental_multiplier(
+                        infusion.multiplier, infusion.element, aff,
+                        passives_by_player.get(v.player_id),
+                    )
                 elemental_in[v.player_id] = element_service.damage_multiplier(
                     boss.element, boss_aff, aff,
                 )
@@ -635,6 +642,8 @@ class LaunchPartyFightWorldBossUseCase:
             boss_reflect_pct=int(modifiers.get("reflect_pct", 0)),
             boss_adds=modifiers.get("adds"),
             max_turns=BOSS_FIGHT_MAX_TURNS,
+            passives_by_player=passives_by_player,
+            tactics_by_player=tactics_by_player,
         )
 
         # Les PV restants du boss = résultat réel de la simulation (intègre

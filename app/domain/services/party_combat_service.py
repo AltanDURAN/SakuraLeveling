@@ -1,4 +1,5 @@
 import random
+from dataclasses import replace
 
 from app.domain.entities.element_skill import (
     SKILL_KIND_DAMAGE,
@@ -7,6 +8,12 @@ from app.domain.entities.element_skill import (
     SKILL_KIND_SHIELD_TEAM,
 )
 from app.domain.entities.mob_definition import MobDefinition
+from app.domain.services.combat_passives import (
+    BASE_HEAL_PCT,
+    NO_PASSIVES,
+    CombatPassives,
+    normalize_tactic,
+)
 from app.domain.services.power_score_service import PowerScoreService
 from app.domain.services.skill_effect_service import SkillEffectService
 from app.domain.services.title_bonus_service import TitleBonuses
@@ -31,13 +38,21 @@ class PartyCombatService:
         boss_adds: dict | None = None,
         max_turns: int = 0,
         mob_abilities: dict | None = None,
+        passives_by_player: dict[int, CombatPassives] | None = None,
+        tactics_by_player: dict[int, str] | None = None,
     ) -> PartyBattleResult:
         title_bonuses_by_player = title_bonuses_by_player or {}
         elemental_mult_by_player = elemental_mult_by_player or {}
         incoming_elemental_mult_by_player = incoming_elemental_mult_by_player or {}
         skill_loadouts_by_player = skill_loadouts_by_player or {}
         ab = mob_abilities or {}
+        passives_by_player = passives_by_player or {}
+        tactics_by_player = tactics_by_player or {}
+        self._passives = passives_by_player
         _skill_svc = SkillEffectService()
+
+        def P(member) -> CombatPassives:
+            return passives_by_player.get(member["player_id"], NO_PASSIVES)
         mob_family = mob.family or ""
         mob_hp = mob.current_hp
         mob_gauge = 0
@@ -61,10 +76,13 @@ class PartyCombatService:
                 "slow": 0,          # stacks de ralentissement (momie)
                 "bleeds": [],       # saignements actifs (ogre) : [{dmg, turns}]
                 "absorbed": False,  # englouti par le slime → hors combat
+                "last_stand_used": False,  # Tenace : déjà sauvé une fois
+                "buffed": False,           # Buff de soin déjà reçu (non cumulable)
             }
             for player in party
         ]
 
+        self._party = alive_party
         contributions: dict[int, PlayerContribution] = {
             member["player_id"]: PlayerContribution(
                 player_id=member["player_id"],
@@ -131,6 +149,93 @@ class PartyCombatService:
         def snap(action, players=None):
             return self._snapshot(turns, players or [], action, alive_party, mob, mob_hp,
                                   mob_shield, mob_max_hp)
+
+        # ── Passifs : soins, provocation (cf. combat_passives) ──
+        taunter_id: int | None = None
+
+        def _buff(member, pct: float) -> None:
+            if member["buffed"] or pct <= 0:
+                return
+            st = member["stats"]
+            member["stats"] = replace(
+                st,
+                attack=max(1, round(st.attack * (1 + pct / 100))),
+                defense=max(0, round(st.defense * (1 + pct / 100))),
+            )
+            member["buffed"] = True
+
+        def _heal(healer, target, amount: float, allow_buff: bool = True) -> int:
+            """Soigne `target` : soins reçus (Paladin), Buff (cible + soigneur).
+            Seuls les soins donnés aux ALLIÉS comptent dans la contribution."""
+            if amount <= 0 or target["hp"] <= 0:
+                return 0
+            amount *= 1 + P(target).heal_received_pct / 100
+            before = target["hp"]
+            target["hp"] = min(target["max_hp"], target["hp"] + int(round(amount)))
+            healed = target["hp"] - before
+            if healer["player_id"] != target["player_id"]:
+                contributions[healer["player_id"]].hp_healed += healed
+            if allow_buff and P(healer).heal_buff_pct > 0:
+                _buff(target, P(healer).heal_buff_pct)
+                _buff(healer, P(healer).heal_buff_pct)
+            return healed
+
+        def _heal_target(healer):
+            """Cible du sort de soin selon la tactique (figée pour le combat)."""
+            team = [m for m in alive_party
+                    if m["hp"] > 0 and not m["absorbed"] and m["player_id"] != charmed_id]
+            injured = [m for m in team if m["hp"] < m["max_hp"]]
+            if not injured:
+                return None
+            tactic = normalize_tactic(tactics_by_player.get(healer["player_id"]))
+            if tactic == "egoiste":
+                if healer in injured:
+                    return healer
+                return min(injured, key=lambda m: m["hp"] / max(1, m["max_hp"]))
+            metric = "damage_tanked" if tactic == "pragmatique" else "damage_dealt"
+            return max(injured, key=lambda m: (
+                getattr(contributions[m["player_id"]], metric),
+                -(m["hp"] / max(1, m["max_hp"])),
+            ))
+
+        def _single_target(pool):
+            """Cible d'une attaque mono-cible : le dernier provocateur s'il peut
+            être frappé (Vaillant), sinon au hasard."""
+            if taunter_id is not None:
+                forced = next((m for m in pool if m["player_id"] == taunter_id), None)
+                if forced is not None:
+                    return forced
+            return random.choice(pool)
+
+        def _tags(member) -> str:
+            tag = ""
+            redirected = member.pop("_redirected", None)
+            if redirected:
+                tag += f" (🧱 {redirected[0]} encaisse {redirected[1]})"
+            if member.pop("_held", False):
+                tag += " — tient bon à 1 PV !"
+            return tag
+
+        # ─── Début du combat : vitesse par allié (Soigneur), boucliers (Égide) ───
+        allies_count = max(0, len([m for m in alive_party if m["hp"] > 0]) - 1)
+        for m in alive_party:
+            if P(m).speed_per_ally and allies_count:
+                m["stats"] = replace(m["stats"], speed=m["stats"].speed + P(m).speed_per_ally * allies_count)
+        shield_lines = []
+        for caster in alive_party:
+            pct = P(caster).team_shield_pct
+            if pct <= 0 or caster["hp"] <= 0:
+                continue
+            amount = int(round(caster["max_hp"] * pct / 100))
+            for m in alive_party:
+                if m["hp"] <= 0:
+                    continue
+                m["shield"] += amount
+                if m["player_id"] != caster["player_id"]:
+                    contributions[caster["player_id"]].hp_healed += amount
+            shield_lines.append(f"{caster['name']} ({amount})")
+        if shield_lines:
+            turn_logs.append(snap("🗿 Égide : bouclier pour tout le groupe — " + " · ".join(shield_lines)))
 
         # ── État des modifiers boss dynamiques (neutres hors world boss) ──
         boss_adds = boss_adds or {}
@@ -216,7 +321,7 @@ class PartyCombatService:
                     continue
                 total = sum(s["dmg"] for s in p["bleeds"])
                 if total > 0:
-                    p["hp"] = max(0, p["hp"] - total)
+                    self._apply_player_damage(p, total, use_shield=False)
                     contributions[p["player_id"]].damage_tanked += total
                     bled.append(f"{p['name']} −{total}" + (" 💀" if p["hp"] <= 0 else ""))
                 for s in p["bleeds"]:
@@ -292,6 +397,19 @@ class PartyCombatService:
                         continue
 
                     stats: Stats = player["stats"]
+                    mine = P(player)
+
+                    # Soigneur : le sort de soin REMPLACE l'attaque. Personne à
+                    # soigner (tout le monde au maximum) → il attaque.
+                    if mine.healer:
+                        heal_target = _heal_target(player)
+                        if heal_target is not None:
+                            amount = stats.attack * BASE_HEAL_PCT / 100 * mine.heal_power_multiplier
+                            healed = _heal(player, heal_target, amount)
+                            who = "se soigne" if heal_target is player else f"soigne {heal_target['name']}"
+                            turn_logs.append(snap(f"{mob.name} observe.",
+                                                  players=[f"💚 {player['name']} {who} : +{healed} PV"]))
+                            continue
 
                     # Compétences équipées (mana-gated) — world boss uniquement.
                     loadout = skill_loadouts_by_player.get(player["player_id"]) or []
@@ -321,7 +439,10 @@ class PartyCombatService:
                     if offensive_mult != 1.0:
                         raw_attack = int(raw_attack * offensive_mult)
 
-                    damage = max(1, raw_attack - _mob_defense_now())
+                    mob_def = _mob_defense_now()
+                    if mine.armor_penetration_pct > 0:  # Léthal
+                        mob_def = int(mob_def * (1 - min(100.0, mine.armor_penetration_pct) / 100))
+                    damage = max(1, raw_attack - mob_def)
 
                     title_bonus = title_bonuses_by_player.get(player["player_id"])
                     if title_bonus is not None and mob_family:
@@ -330,6 +451,11 @@ class PartyCombatService:
                     elem_mult = elemental_mult_by_player.get(player["player_id"], 1.0)
                     if elem_mult != 1.0:
                         damage = max(1, round(damage * elem_mult))
+
+                    if mine.damage_dealt_pct:  # Titan
+                        damage = max(1, round(damage * (1 + mine.damage_dealt_pct / 100)))
+                    # NB : AOE (splash_damage_pct) — sans effet tant que les
+                    # combats n'opposent qu'un seul monstre.
 
                     immune = False
                     if damage_immunity_threshold > 0 and damage < damage_immunity_threshold:
@@ -372,9 +498,19 @@ class PartyCombatService:
                     elif landed and mob_shield > 0:
                         action_text += " 🛡️"
 
+                    if mine.lifesteal_pct > 0 and actual_damage > 0:  # Vampire
+                        stolen = _heal(player, player, actual_damage * mine.lifesteal_pct / 100,
+                                       allow_buff=False)
+                        if stolen:
+                            action_text += f" 🧛 +{stolen}"
+
+                    if mine.taunt_chance_pct > 0 and random.random() < mine.taunt_chance_pct / 100:
+                        taunter_id = player["player_id"]  # Vaillant : le dernier l'emporte
+                        action_text += " 🫀 provoque"
+
                     if boss_reflect_pct > 0 and actual_damage > 0:
                         reflected = max(1, round(actual_damage * boss_reflect_pct / 100))
-                        player["hp"] = max(0, player["hp"] - reflected)
+                        self._apply_player_damage(player, reflected, use_shield=False)
                         action_text += f" (renvoi {reflected})"
 
                     turn_logs.append(snap(mob_action_text, players=[action_text]))
@@ -388,9 +524,8 @@ class PartyCombatService:
                                       if m["player_id"] != player["player_id"] and m["hp"] > 0]
                             if heal_amt > 0 and allies:
                                 target_ally = min(allies, key=lambda m: m["hp"])
-                                before_hp = target_ally["hp"]
-                                target_ally["hp"] = min(target_ally["max_hp"], target_ally["hp"] + heal_amt)
-                                contributions[player["player_id"]].hp_healed += target_ally["hp"] - before_hp
+                                _heal(player, target_ally,
+                                      heal_amt * mine.heal_power_multiplier)
                         elif eff.kind == SKILL_KIND_SHIELD_TEAM:
                             shield_amt = int(stats.defense * eff.value)
                             if shield_amt > 0:
@@ -450,7 +585,7 @@ class PartyCombatService:
                     pool = _mob_targets()
                     if not pool:
                         break
-                    targets = pool if aoe else [random.choice(pool)]
+                    targets = pool if aoe else [_single_target(pool)]
                     parts = []
                     for target in targets:
                         dmg, mob_crit, dodged = self._resolve_mob_hit(
@@ -489,6 +624,7 @@ class PartyCombatService:
                             tag += " 🐌" if (not aoe and "slow" in ab) else ""
                             tag += " 🩸" if "bleed" in ab else ""
                             tag += " 💀" if target["hp"] <= 0 else ""
+                            tag += _tags(target)
                             parts.append(f"{target['name']} −{dmg}{tag}")
                     verb = "déchaîne une frappe de zone" if aoe else "frappe"
                     heal_tag = " (vol de vie)" if "lifesteal" in ab else ""
@@ -519,6 +655,8 @@ class PartyCombatService:
                         turn_logs.append(snap(f"💥 Réaction en chaîne (réplique {rep}) : "
                                               + " · ".join(parts)))
 
+                # La provocation ne vaut que pour la PROCHAINE attaque.
+                taunter_id = None
                 if not _party_alive():
                     break
 
@@ -532,7 +670,7 @@ class PartyCombatService:
                         break
                     victim = random.choice(alive)
                     add_dmg = max(1, adds_attack - victim["stats"].defense)
-                    victim["hp"] = max(0, victim["hp"] - add_dmg)
+                    self._apply_player_damage(victim, add_dmg)
                     contributions[victim["player_id"]].damage_tanked += adds_attack
 
             # Auto-soin du boss — world boss.
@@ -627,14 +765,55 @@ class PartyCombatService:
         if incoming_mult != 1.0:
             mob_damage = max(1, round(mob_damage * incoming_mult))
 
-        if target["shield"] > 0 and mob_damage > 0:
-            absorbed = min(target["shield"], mob_damage)
-            target["shield"] -= absorbed
-            mob_damage -= absorbed
+        mob_damage = self._reduced(target, mob_damage)
 
-        target["hp"] = max(0, target["hp"] - mob_damage)
+        # Rempart : un allié encaisse une part du coup à la place de la cible.
+        guard = self._guardian_for(target)
+        if guard is not None and mob_damage > 0:
+            portion = int(round(mob_damage * self._p(guard).redirect_ally_damage_pct / 100))
+            if portion > 0:
+                mob_damage -= portion
+                taken = self._apply_player_damage(guard, self._reduced(guard, portion))
+                contributions[guard["player_id"]].damage_tanked += portion
+                target["_redirected"] = (guard["name"], taken)
+
+        dealt = self._apply_player_damage(target, mob_damage)
         contributions[target["player_id"]].damage_tanked += raw_attack
-        return mob_damage, crit, False
+        return dealt, crit, False
+
+    # ------------------------------------------------------------ passifs
+    def _p(self, member) -> CombatPassives:
+        return getattr(self, "_passives", {}).get(member["player_id"], NO_PASSIVES)
+
+    def _reduced(self, member, damage: int) -> int:
+        """Réductions des dégâts reçus (Résistant, Titan…), additionnées."""
+        frac = self._p(member).damage_reduction_fraction
+        return max(1, round(damage * (1 - frac))) if frac > 0 and damage > 0 else damage
+
+    def _guardian_for(self, target):
+        """Le Rempart vivant qui protège `target` (jamais lui-même)."""
+        party = getattr(self, "_party", None) or []
+        guards = [m for m in party
+                  if m is not target and m["hp"] > 0 and not m.get("absorbed")
+                  and self._p(m).redirect_ally_damage_pct > 0]
+        return max(guards, key=lambda m: self._p(m).redirect_ally_damage_pct, default=None)
+
+    def _apply_player_damage(self, member, damage: int, use_shield: bool = True) -> int:
+        """Bouclier puis PV ; Tenace laisse à 1 PV le premier coup fatal.
+        Renvoie les dégâts retirés aux PV (après bouclier), comme avant."""
+        if damage <= 0:
+            return 0
+        if use_shield and member.get("shield", 0) > 0:
+            absorbed = min(member["shield"], damage)
+            member["shield"] -= absorbed
+            damage -= absorbed
+        if (damage >= member["hp"] > 0 and self._p(member).last_stand
+                and not member.get("last_stand_used")):
+            member["last_stand_used"] = True
+            member["_held"] = True
+            damage = member["hp"] - 1
+        member["hp"] = max(0, member["hp"] - damage)
+        return damage
 
     def _pvp_hit(self, attacker, target, contributions) -> tuple[int, bool, bool]:
         """Coup joueur → joueur (charme) : crit AVANT défense, puis bouclier, puis PV."""
@@ -649,12 +828,8 @@ class PartyCombatService:
         crit = random.random() < (astats.crit_chance / 100)
         if crit:
             raw = int(raw * (astats.crit_damage / 100))
-        dmg = max(1, raw - tstats.defense)
-        if target["shield"] > 0 and dmg > 0:
-            absorbed = min(target["shield"], dmg)
-            target["shield"] -= absorbed
-            dmg -= absorbed
-        target["hp"] = max(0, target["hp"] - dmg)
+        dmg = self._reduced(target, max(1, raw - tstats.defense))
+        dmg = self._apply_player_damage(target, dmg)
         contributions[target["player_id"]].damage_tanked += raw
         return dmg, crit, False
 

@@ -13,3 +13,4 @@ class Player:
     last_seen_at: datetime
     skill_slot_1: str | None = None
     skill_slot_2: str | None = None
+    combat_tactic: str = "egoiste"

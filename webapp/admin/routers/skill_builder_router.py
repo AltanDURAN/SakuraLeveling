@@ -18,6 +18,7 @@ import logging
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
+from app.domain.services.combat_passives import DAMAGE_REDUCTION_WARNING, FEATURES
 from app.infrastructure.skill_tree import skill_tree_loader
 from webapp.admin import json_writer
 from webapp.admin.auth import AdminUser, require_admin
@@ -61,17 +62,43 @@ EFFECT_CATALOGUE: list[dict] = [
         "effects": [
             {"type": "gold_drop_percent", "label": "Or gagné", "unit": "%", "scale": 0.01},
             {"type": "xp_drop_percent", "label": "XP gagnée", "unit": "%", "scale": 0.01},
-            {"type": "drop_rate_multiplier", "label": "Taux de drop", "unit": "×"},
+            {"type": "drop_rate_multiplier", "label": "Chance de butin", "unit": "%"},
+        ],
+    },
+    {
+        "group": "Passifs de combat",
+        "hint": "En %, sauf les drapeaux (1 = actif). Les réductions de dégâts reçus s'additionnent.",
+        "effects": [
+            {"type": "damage_dealt_percent", "label": "Dégâts infligés", "unit": "%"},
+            {"type": "damage_taken_reduction_percent", "label": "Réduction des dégâts reçus", "unit": "%",
+             # Alerte du builder si le total de l'arbre dépasse ce seuil.
+             "warn_total": DAMAGE_REDUCTION_WARNING},
+            {"type": "armor_penetration_percent", "label": "Ignore la défense ennemie", "unit": "%"},
+            {"type": "lifesteal_percent", "label": "Vol de vie (des dégâts infligés)", "unit": "%"},
+            {"type": "splash_damage_percent", "label": "Dégâts aux ennemis adjacents", "unit": "%"},
+            {"type": "taunt_chance_percent", "label": "Chance de provoquer à chaque attaque", "unit": "%"},
+            {"type": "team_shield_percent", "label": "Bouclier d'équipe au début (% de ses PV max)", "unit": "%"},
+            {"type": "redirect_ally_damage_percent", "label": "Encaisse les coups des alliés", "unit": "%"},
+            {"type": "heal_received_percent", "label": "Soins reçus", "unit": "%"},
+            {"type": "heal_buff_percent", "label": "Un soin donne +ATK/+DEF (cible et soi)", "unit": "%"},
+            {"type": "heal_power_multiplier", "label": "Soins donnés", "unit": "×"},
+            {"type": "speed_per_ally", "label": "Vitesse par allié présent", "unit": "pts"},
+            {"type": "crit_chance_multiplier", "label": "Chances de critique", "unit": "×"},
+            {"type": "crit_damage_multiplier", "label": "Dégâts critiques", "unit": "×"},
+            {"type": "last_stand", "label": "Survit au 1er coup fatal (1 = oui)", "unit": "drapeau"},
+            {"type": "healer_spell", "label": "Sort de soin à la place de l'attaque (1 = oui)", "unit": "drapeau"},
+            {"type": "mage_affinity_bonus", "label": "Bonus du Mage selon l'affinité (1 = oui)", "unit": "drapeau"},
         ],
     },
     {
         "group": "Compétences et classes",
-        "hint": "Branchées au combat dans un second temps — on peut déjà les poser.",
+        "hint": "La classe accordée s'affiche au joueur ; la fonctionnalité se choisit dans une liste.",
         "effects": [
-            {"type": "passive_skill", "label": "Compétence passive", "unit": "code"},
-            {"type": "active_skill", "label": "Compétence active", "unit": "code"},
             {"type": "grant_class", "label": "Accorde la classe", "unit": "code"},
-            {"type": "unlock_feature", "label": "Débloque une fonctionnalité", "unit": "code"},
+            {"type": "unlock_feature", "label": "Débloque une fonctionnalité", "unit": "code",
+             "choices": FEATURES},
+            {"type": "passive_skill", "label": "Compétence passive (réservé)", "unit": "code"},
+            {"type": "active_skill", "label": "Compétence active (en pause)", "unit": "code"},
         ],
     },
 ]
@@ -310,6 +337,11 @@ def validate(payload: dict) -> list[str]:
             problems.append(f"lien orphelin {source} → {target}")
 
     for code, node in nodes.items():
+        for effect in node.get("effects", []):
+            if effect.get("type") == "unlock_feature":
+                unknown = [v for v in effect.get("values", []) if v not in FEATURES]
+                if unknown:
+                    problems.append(f"« {code} » : fonctionnalité inconnue {unknown[0]!r}")
         if node.get("unlock_rule", "all") not in ("all", "any"):
             problems.append(f"« {code} » : règle de déblocage inconnue")
 

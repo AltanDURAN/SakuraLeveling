@@ -36,6 +36,9 @@ class SkillBonuses:
     xp_drop_percent: float = 0.0
     gold_drop_percent: float = 0.0
     drop_rate_multiplier: float = 1.0
+    # Multiplicateurs de critique (Assassin) appliqués à la stat FINALE.
+    crit_chance_multiplier: float = 1.0
+    crit_damage_multiplier: float = 1.0
 
     @classmethod
     def empty(cls) -> "SkillBonuses":

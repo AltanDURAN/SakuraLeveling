@@ -113,7 +113,7 @@
     },
     "voie_attaque": {
       "name": "Voie du Guerrier",
-      "description": "Début de voie — à étoffer.",
+      "description": "",
       "icon": "⚔️",
       "shape": "cercle_stat_plus",
       "node_type": "actif",
@@ -138,7 +138,7 @@
     },
     "voie_defense": {
       "name": "Voie du Protecteur",
-      "description": "Début de voie — à étoffer.",
+      "description": "",
       "icon": "🛡️",
       "shape": "cercle_stat_plus",
       "node_type": "stat",
@@ -163,7 +163,7 @@
     },
     "voie_support": {
       "name": "Voie du Support",
-      "description": "Début de voie — à étoffer.",
+      "description": "",
       "icon": "❤️",
       "shape": "cercle_stat_plus",
       "node_type": "passif",
@@ -188,7 +188,7 @@
     },
     "classe_combattant": {
       "name": "Combattant",
-      "description": "Classe obtenue en reliant deux voies.",
+      "description": "Classe Combattant : +5 % de PV max et +5 % d'attaque.",
       "icon": "👊",
       "shape": "hexagone_classe",
       "node_type": "classe",
@@ -198,7 +198,26 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "grant_class",
+          "values": [
+            "combattant"
+          ]
+        },
+        {
+          "type": "hp_max_percent",
+          "values": [
+            5
+          ]
+        },
+        {
+          "type": "atk_percent",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": 249,
         "y": 260
@@ -206,7 +225,7 @@
     },
     "classe_paladin": {
       "name": "Paladin",
-      "description": "Classe obtenue en reliant deux voies.",
+      "description": "Classe Paladin : soins reçus +50 % et +5 % de défense.",
       "icon": "🏰",
       "shape": "hexagone_classe",
       "node_type": "classe",
@@ -216,7 +235,26 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "grant_class",
+          "values": [
+            "paladin"
+          ]
+        },
+        {
+          "type": "heal_received_percent",
+          "values": [
+            50
+          ]
+        },
+        {
+          "type": "def_percent",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": -80,
         "y": 830
@@ -224,7 +262,7 @@
     },
     "classe_vampire": {
       "name": "Vampire",
-      "description": "Classe obtenue en reliant deux voies.",
+      "description": "Classe Vampire : se soigne de 5 % des dégâts infligés.",
       "icon": "🧛",
       "shape": "hexagone_classe",
       "node_type": "classe",
@@ -234,7 +272,20 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "grant_class",
+          "values": [
+            "vampire"
+          ]
+        },
+        {
+          "type": "lifesteal_percent",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": -409,
         "y": 260
@@ -260,7 +311,7 @@
     },
     "axe_or": {
       "name": "Bonus Or",
-      "description": "Début d'axe — à étoffer.",
+      "description": "",
       "icon": "💰",
       "shape": "carre_passif",
       "node_type": "utilite",
@@ -289,7 +340,7 @@
     },
     "axe_drop": {
       "name": "Chance Drop",
-      "description": "Début d'axe — à étoffer.",
+      "description": "",
       "icon": "🍀",
       "shape": "carre_passif",
       "node_type": "utilite",
@@ -305,9 +356,9 @@
         {
           "type": "drop_rate_multiplier",
           "values": [
-            0.1,
-            0.4,
-            1
+            10,
+            40,
+            100
           ]
         }
       ],
@@ -318,7 +369,7 @@
     },
     "axe_xp": {
       "name": "Bonus XP",
-      "description": "Début d'axe — à étoffer.",
+      "description": "",
       "icon": "⚡",
       "shape": "carre_passif",
       "node_type": "utilite",
@@ -347,7 +398,7 @@
     },
     "axe_confort": {
       "name": "Confort",
-      "description": "Début d'axe — à étoffer.",
+      "description": "Reçois un message privé quand un de tes temps de recharge est terminé.",
       "icon": "🎁",
       "shape": "carre_passif",
       "node_type": "utilite",
@@ -361,7 +412,7 @@
         {
           "type": "unlock_feature",
           "values": [
-            "Notification privé lorsque le cooldown d'une commande est prêt"
+            "notify_cooldowns"
           ]
         }
       ],
@@ -1057,7 +1108,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "splash_damage_percent",
+          "values": [
+            25
+          ]
+        }
+      ],
       "position": {
         "x": -574,
         "y": 165
@@ -1065,7 +1123,7 @@
     },
     "type_1_6": {
       "name": "Mage",
-      "description": "Double ses dégats lorsque que son affinité élémentaire est d'au moins 25 dans l'élément de l'attaque, triple si d'au moins 50, quintuple si à 100.",
+      "description": "Classe Mage : dégâts ×1,5 si son affinité dans l'élément de l'attaque atteint 25, ×2 à 50, ×5 à 100.",
       "icon": "🧙",
       "shape": "hexagone_classe",
       "node_type": "classe",
@@ -1075,7 +1133,20 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "grant_class",
+          "values": [
+            "mage"
+          ]
+        },
+        {
+          "type": "mage_affinity_bonus",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": -820,
         "y": 22
@@ -1193,7 +1264,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "damage_taken_reduction_percent",
+          "values": [
+            10
+          ]
+        }
+      ],
       "position": {
         "x": -80,
         "y": 1020
@@ -1211,7 +1289,20 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "grant_class",
+          "values": [
+            "egide"
+          ]
+        },
+        {
+          "type": "team_shield_percent",
+          "values": [
+            10
+          ]
+        }
+      ],
       "position": {
         "x": -80,
         "y": 1305
@@ -1329,7 +1420,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "last_stand",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": 414,
         "y": 165
@@ -1347,7 +1445,26 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "grant_class",
+          "values": [
+            "titan"
+          ]
+        },
+        {
+          "type": "damage_dealt_percent",
+          "values": [
+            5
+          ]
+        },
+        {
+          "type": "damage_taken_reduction_percent",
+          "values": [
+            5
+          ]
+        }
+      ],
       "position": {
         "x": 660,
         "y": 23
@@ -1505,7 +1622,7 @@
     },
     "passif_16": {
       "name": "Soigneur",
-      "description": "Double la quantité de soin donnée à ses alliés, pendant le combat gagne +1 de vitesse pour chaque alliés avec lui.",
+      "description": "Classe Soigneur : remplace son attaque par un sort de soin (cible choisie selon sa tactique, /tactique), soins donnés doublés, +1 de vitesse par allié présent au combat.",
       "icon": "💚",
       "shape": "hexagone_classe",
       "node_type": "classe",
@@ -1515,7 +1632,32 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "grant_class",
+          "values": [
+            "soigneur"
+          ]
+        },
+        {
+          "type": "healer_spell",
+          "values": [
+            1
+          ]
+        },
+        {
+          "type": "heal_power_multiplier",
+          "values": [
+            2
+          ]
+        },
+        {
+          "type": "speed_per_ally",
+          "values": [
+            1
+          ]
+        }
+      ],
       "position": {
         "x": -820,
         "y": 878
@@ -1633,7 +1775,20 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "grant_class",
+          "values": [
+            "rempart"
+          ]
+        },
+        {
+          "type": "redirect_ally_damage_percent",
+          "values": [
+            50
+          ]
+        }
+      ],
       "position": {
         "x": 660,
         "y": 878
@@ -1751,7 +1906,26 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "grant_class",
+          "values": [
+            "assassin"
+          ]
+        },
+        {
+          "type": "crit_chance_multiplier",
+          "values": [
+            2
+          ]
+        },
+        {
+          "type": "crit_damage_multiplier",
+          "values": [
+            3
+          ]
+        }
+      ],
       "position": {
         "x": -80,
         "y": -405
@@ -1819,7 +1993,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "taunt_chance_percent",
+          "values": [
+            50
+          ]
+        }
+      ],
       "position": {
         "x": 414,
         "y": 735
@@ -1837,7 +2018,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "heal_buff_percent",
+          "values": [
+            10
+          ]
+        }
+      ],
       "position": {
         "x": -574,
         "y": 735
@@ -1855,7 +2043,14 @@
       "costs": [
         1
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "armor_penetration_percent",
+          "values": [
+            10
+          ]
+        }
+      ],
       "position": {
         "x": -80,
         "y": -120
@@ -1863,7 +2058,7 @@
     },
     "axe_or_1": {
       "name": "Bonus Or",
-      "description": "Début d'axe — à étoffer.",
+      "description": "",
       "icon": "💰",
       "shape": "carre_passif",
       "node_type": "utilite",
@@ -1892,7 +2087,7 @@
     },
     "axe_drop_1": {
       "name": "Chance Drop",
-      "description": "Début d'axe — à étoffer.",
+      "description": "",
       "icon": "🍀",
       "shape": "carre_passif",
       "node_type": "utilite",
@@ -1908,9 +2103,9 @@
         {
           "type": "drop_rate_multiplier",
           "values": [
-            0.1,
-            0.4,
-            1
+            10,
+            40,
+            100
           ]
         }
       ],
@@ -1921,7 +2116,7 @@
     },
     "axe_xp_1": {
       "name": "Bonus XP",
-      "description": "Début d'axe — à étoffer.",
+      "description": "",
       "icon": "⚡",
       "shape": "carre_passif",
       "node_type": "utilite",
@@ -1950,7 +2145,7 @@
     },
     "axe_confort_1": {
       "name": "Confort",
-      "description": "Début d'axe — à étoffer.",
+      "description": "+1 ticket par jour pour la tour solo (non cumulable : 1 maximum par jour).",
       "icon": "🎁",
       "shape": "carre_passif",
       "node_type": "utilite",
@@ -1964,7 +2159,7 @@
         {
           "type": "unlock_feature",
           "values": [
-            "1 participation journalière supplémentaire pour défier la tour solo"
+            "tower_bonus_ticket"
           ]
         }
       ],
@@ -1975,7 +2170,7 @@
     },
     "axe_or_2": {
       "name": "Bonus Or",
-      "description": "Début d'axe — à étoffer.",
+      "description": "",
       "icon": "💰",
       "shape": "carre_passif",
       "node_type": "utilite",
@@ -2004,7 +2199,7 @@
     },
     "axe_drop_2": {
       "name": "Chance Drop",
-      "description": "Début d'axe — à étoffer.",
+      "description": "",
       "icon": "🍀",
       "shape": "carre_passif",
       "node_type": "utilite",
@@ -2020,9 +2215,9 @@
         {
           "type": "drop_rate_multiplier",
           "values": [
-            0.1,
-            0.4,
-            1
+            10,
+            40,
+            100
           ]
         }
       ],
@@ -2033,7 +2228,7 @@
     },
     "axe_xp_2": {
       "name": "Bonus XP",
-      "description": "Début d'axe — à étoffer.",
+      "description": "",
       "icon": "⚡",
       "shape": "carre_passif",
       "node_type": "utilite",
@@ -2062,7 +2257,7 @@
     },
     "axe_confort_2": {
       "name": "Confort",
-      "description": "Début d'axe — à étoffer.",
+      "description": "Reçois un message privé quand un événement apparaît.",
       "icon": "🎁",
       "shape": "carre_passif",
       "node_type": "utilite",
@@ -2076,7 +2271,7 @@
         {
           "type": "unlock_feature",
           "values": [
-            "Notifié lorsqu'un événement aparait"
+            "notify_events"
           ]
         }
       ],

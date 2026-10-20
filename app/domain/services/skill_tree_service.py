@@ -1,5 +1,6 @@
 from app.domain.entities.skill_node import SkillNode
 from app.domain.entities.skill_tree_definition import SkillTreeDefinition
+from app.domain.services.combat_passives import FEATURES, CombatPassives
 from app.domain.value_objects.skill_bonuses import SkillBonuses
 
 
@@ -31,6 +32,26 @@ _EFFECT_FIELD_MAP: dict[str, str] = {
 # ×2. Les nœuds PLATS (atk/def/hp_max) ne sont JAMAIS plafonnés — ils sont le
 # moteur de progression infinie. Au-delà du cap, prendre des nœuds % est inutile
 # (le contenu de l'arbre front-load les % et bascule sur le flat dans le tail).
+# Passifs de combat (cf. combat_passives.py) : type d'effet → champ.
+_PASSIVE_PCT_FIELDS: dict[str, str] = {
+    "damage_dealt_percent": "damage_dealt_pct",
+    "damage_taken_reduction_percent": "damage_taken_reduction_pct",
+    "armor_penetration_percent": "armor_penetration_pct",
+    "taunt_chance_percent": "taunt_chance_pct",
+    "splash_damage_percent": "splash_damage_pct",
+    "team_shield_percent": "team_shield_pct",
+    "redirect_ally_damage_percent": "redirect_ally_damage_pct",
+    "lifesteal_percent": "lifesteal_pct",
+    "heal_received_percent": "heal_received_pct",
+    "heal_buff_percent": "heal_buff_pct",
+    "speed_per_ally": "speed_per_ally",
+}
+_PASSIVE_FLAGS: dict[str, str] = {
+    "last_stand": "last_stand",
+    "healer_spell": "healer",
+    "mage_affinity_bonus": "mage",
+}
+
 _PCT_STAT_CAP = 2.0       # +200% sur atk/def/hp_max
 _PCT_ECONOMY_CAP = 1.0    # +100% sur xp/gold drop
 _DROP_MULT_CAP = 2.0      # ×2 sur le drop rate
@@ -127,6 +148,17 @@ class SkillTreeService:
                         # +5% de chance = drop_rate_multiplier = 1.05.
                         drop_rate_multiplier += cumulative / 100.0
 
+        # Multiplicateurs de critique (Assassin) : ils MULTIPLIENT la stat
+        # finale (appliqués par StatsService après les caps).
+        crit_chance_multiplier = 1.0
+        crit_damage_multiplier = 1.0
+        for node, level, effect in self._active_effects(allocations):
+            value = self._value_at(effect, level)
+            if effect.type == "crit_chance_multiplier" and value:
+                crit_chance_multiplier *= float(value)
+            elif effect.type == "crit_damage_multiplier" and value:
+                crit_damage_multiplier *= float(value)
+
         # Plafonds anti-explosion sur les % (les flats restent illimités).
         atk_percent = min(atk_percent, _PCT_STAT_CAP)
         def_percent = min(def_percent, _PCT_STAT_CAP)
@@ -152,7 +184,80 @@ class SkillTreeService:
             xp_drop_percent=xp_drop_percent,
             gold_drop_percent=gold_drop_percent,
             drop_rate_multiplier=drop_rate_multiplier,
+            crit_chance_multiplier=crit_chance_multiplier,
+            crit_damage_multiplier=crit_damage_multiplier,
         )
+
+    # ---------- Passifs de combat, classes, fonctionnalités ----------
+
+    def _effective_levels(self, allocations: dict[str, int]) -> dict[str, int]:
+        levels = {code: lvl for code, lvl in allocations.items() if lvl > 0}
+        for node in self.definition:
+            if getattr(node, "start", False):
+                levels[node.code] = node.max_level
+        return levels
+
+    def _active_effects(self, allocations: dict[str, int]):
+        """(nœud, niveau, effet) pour chaque effet d'une case investie."""
+        for code, level in self._effective_levels(allocations).items():
+            node = self.definition.get(code)
+            if node is None:
+                continue
+            for effect in node.effects:
+                yield node, min(level, node.max_level), effect
+
+    @staticmethod
+    def _value_at(effect, level: int):
+        if not effect.values or level <= 0:
+            return 0
+        return effect.values[min(level, len(effect.values)) - 1]
+
+    def combat_passives(self, allocations: dict[str, int]) -> CombatPassives:
+        """Effets de combat des cases investies (valeurs cumulées au niveau)."""
+        acc: dict[str, float] = {}
+        flags: set[str] = set()
+        heal_mult = 1.0
+        classes: list[str] = []
+        for node, level, effect in self._active_effects(allocations):
+            value = self._value_at(effect, level)
+            if effect.type in _PASSIVE_PCT_FIELDS:
+                try:
+                    acc[_PASSIVE_PCT_FIELDS[effect.type]] = (
+                        acc.get(_PASSIVE_PCT_FIELDS[effect.type], 0.0) + float(value)
+                    )
+                except (TypeError, ValueError):
+                    continue
+            elif effect.type in _PASSIVE_FLAGS and value:
+                flags.add(_PASSIVE_FLAGS[effect.type])
+            elif effect.type == "heal_power_multiplier" and value:
+                heal_mult *= float(value)
+            elif effect.type == "grant_class" and value:
+                classes.append(str(value))
+        return CombatPassives(
+            **{k: v for k, v in acc.items() if k != "speed_per_ally"},
+            speed_per_ally=int(acc.get("speed_per_ally", 0)),
+            heal_power_multiplier=heal_mult,
+            **{flag: True for flag in flags},
+            classes=tuple(dict.fromkeys(classes)),
+        )
+
+    def unlocked_features(self, allocations: dict[str, int]) -> set[str]:
+        """Fonctionnalités « Confort » débloquées (case montée au maximum)."""
+        out: set[str] = set()
+        for node, level, effect in self._active_effects(allocations):
+            if effect.type != "unlock_feature" or level < node.max_level:
+                continue
+            for value in effect.values:
+                if value in FEATURES:
+                    out.add(value)
+        return out
+
+    def nodes_granting_feature(self, feature: str) -> list:
+        """Les cases qui débloquent `feature` (pour retrouver ses détenteurs)."""
+        return [
+            node for node in self.definition
+            if any(e.type == "unlock_feature" and feature in e.values for e in node.effects)
+        ]
 
     # ---------- État d'un nœud ----------
 

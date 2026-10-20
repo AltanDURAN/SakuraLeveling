@@ -30,6 +30,8 @@ ingérable dès qu'on ajoute une quatrième source.
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
 from app.domain.entities.player_profile import PlayerProfile
 from app.domain.services.item_upgrade_service import level_multiplier
@@ -137,6 +139,19 @@ class StatsService:
             mana_max=max(0, int(flat["mana_max"])),
             mana_regeneration=max(0, int(flat["mana_regeneration"])),
         )
+
+        # ---- Multiplicateurs de critique (classe Assassin : chances ×2, dégâts
+        # ×3). Ils agissent sur la stat FINALE, au-delà du plafond de 75 % des
+        # chances (borné à 100 %) : c'est l'identité de la classe. ----
+        if skill_bonuses is not None and (
+            skill_bonuses.crit_chance_multiplier != 1.0
+            or skill_bonuses.crit_damage_multiplier != 1.0
+        ):
+            stats = replace(
+                stats,
+                crit_chance=min(100.0, stats.crit_chance * skill_bonuses.crit_chance_multiplier),
+                crit_damage=max(100.0, stats.crit_damage * skill_bonuses.crit_damage_multiplier),
+            )
 
         # ---- Titres : appliqués APRÈS les plafonds (c'est leur privilège) ----
         if title_bonuses is not None:

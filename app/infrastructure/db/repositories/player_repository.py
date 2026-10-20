@@ -197,6 +197,23 @@ class PlayerRepository:
         player_model.updated_at = datetime.now(UTC)
         self.session.commit()
 
+    def set_combat_tactic(self, player_id: int, tactic: str) -> None:
+        player_model = self.session.get(PlayerModel, player_id)
+        if player_model is None:
+            return
+        player_model.combat_tactic = tactic
+        player_model.updated_at = datetime.now(UTC)
+        self.session.commit()
+
+    def get_combat_tactics(self, player_ids: list[int]) -> dict[int, str]:
+        """Tactiques de plusieurs joueurs en une requête (combats de groupe)."""
+        if not player_ids:
+            return {}
+        rows = self.session.execute(
+            select(PlayerModel.id, PlayerModel.combat_tactic).where(PlayerModel.id.in_(player_ids))
+        ).all()
+        return {pid: (tactic or "egoiste") for pid, tactic in rows}
+
     def add_skill_points(self, player_id: int, amount: int) -> None:
         progression = self.session.get(PlayerProgressionModel, player_id)
         if progression is None:
@@ -292,6 +309,7 @@ class PlayerRepository:
             last_seen_at=player_model.last_seen_at,
             skill_slot_1=player_model.skill_slot_1,
             skill_slot_2=player_model.skill_slot_2,
+            combat_tactic=getattr(player_model, "combat_tactic", None) or "egoiste",
         )
 
         progression = PlayerProgression(

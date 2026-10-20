@@ -753,7 +753,11 @@ function renderNodeInspector(box, code) {
     const meta = EFFECT[e.type] || {label: e.type, unit: ''};
     const isCode = CODE_EFFECTS.has(e.type);
     const inputs = isCode
-      ? `<input class="bt-in" data-effcode="${i}" value="${esc(e.values[0] || '')}" placeholder="code (ex. coup_tranchant)">`
+      ? (meta.choices
+          // Valeurs imposées (ex. fonctionnalités) : une liste, pas de texte libre.
+          ? `<select class="bt-in" data-effcode="${i}"><option value="">— choisir —</option>${Object.entries(meta.choices).map(([k, l]) =>
+              `<option value="${esc(k)}"${k === e.values[0] ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`
+          : `<input class="bt-in" data-effcode="${i}" value="${esc(e.values[0] || '')}" placeholder="code (ex. coup_tranchant)">`)
       : `<div class="bt-lv">${e.values.map((v, j) => `<label>niv. ${j + 1}<input data-eff="${i}" data-lv="${j}" value="${esc(v)}" inputmode="decimal"></label>`).join('')}</div>
          ${n.max_level > 1 ? `<div style="margin-top:5px"><button class="bt-mini" data-linear="${i}" title="Répartit linéairement jusqu'à la valeur du dernier niveau">↗ Remplir linéairement</button></div>` : ''}`;
     return `<div class="bt-eff"><div class="bt-eff-h"><b>${esc(meta.label)}</b><span style="color:var(--text-faint);font-size:.72rem">${esc(meta.unit === 'code' ? '' : meta.unit)}</span>
@@ -988,7 +992,21 @@ function problems() {
   for (const [c, n] of Object.entries(nodes)) {
     if (!n.start && !linkedTo.has(c)) out.push({code: c, text: `« ${n.name || c} » n'est relié à rien`});
     if (!n.icon) out.push({code: c, warn: true, text: `« ${n.name || c} » n'a pas d'icône`});
-    for (const e of n.effects) if (CODE_EFFECTS.has(e.type) && !e.values[0]) out.push({code: c, text: `« ${n.name || c} » : ${(EFFECT[e.type] || {}).label} sans code`});
+    for (const e of n.effects) {
+      const meta = EFFECT[e.type] || {};
+      if (CODE_EFFECTS.has(e.type) && !e.values[0]) out.push({code: c, text: `« ${n.name || c} » : ${meta.label} sans code`});
+      else if (meta.choices && e.values[0] && !(e.values[0] in meta.choices))
+        out.push({code: c, text: `« ${n.name || c} » : ${meta.label} inconnue (${e.values[0]})`});
+    }
+  }
+  // Seuils d'alerte : le TOTAL de l'arbre (tout monté au max) d'un effet
+  // dépasse ce que l'auteur s'est fixé (ex. réduction des dégâts > 25 %).
+  for (const meta of EFFECTS.filter(m => m.warn_total)) {
+    let total = 0, where = null;
+    for (const [c, n] of Object.entries(nodes))
+      for (const e of n.effects) if (e.type === meta.type) { total += parseFloat(e.values[e.values.length - 1]) || 0; where = where || c; }
+    if (total > meta.warn_total)
+      out.unshift({code: where, warn: true, text: `${meta.label} : ${total} % au total (seuil fixé : ${meta.warn_total} %)`});
   }
   const pos = Object.entries(nodes);
   for (let i = 0; i < pos.length; i++) for (let j = i + 1; j < pos.length; j++)

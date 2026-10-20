@@ -1,5 +1,6 @@
 import random
 
+from app.domain.services.combat_passives import NO_PASSIVES, CombatPassives
 from app.domain.value_objects.duel_result import DuelResult, DuelTurnLog
 from app.domain.value_objects.stats import Stats
 
@@ -7,14 +8,18 @@ from app.domain.value_objects.stats import Stats
 class DuelCombatService:
     """Combat 1v1 entre deux joueurs (PvP).
 
-    Reprend la mécanique gauge speed-based de `CombatService.fight_player_vs_mob`
-    mais symétrique : pas de mob, deux `Stats` strictement comparables. Les deux
-    combattants démarrent à `max_hp` (les current_hp réels ne sont pas lus —
-    cf. spec : aucune perte d'HP réelle suite au duel).
+    Mécanique de jauge par la vitesse, symétrique : deux `Stats` strictement
+    comparables. Les deux combattants démarrent à `max_hp` (les PV réels ne
+    sont pas lus — aucune perte de PV réelle après un duel).
 
-    Garde-fou : `MAX_TURNS` (200) borne la boucle si jamais deux jeux de stats
-    s'auto-équilibrent (peu probable avec dégâts ≥ 1, mais évite tout risque).
-    Au-delà, on déclare gagnant celui qui a le plus de PV restants.
+    Passifs de l'arbre appliqués (cf. combat_passives) : dégâts infligés
+    (Titan), défense ignorée (Léthal), réduction des dégâts reçus, vol de vie
+    (Vampire, soins reçus du Paladin compris) et Tenace. Ceux qui concernent
+    des alliés (Égide, Rempart, provocation, sort de soin) n'ont pas d'effet
+    seul : le Soigneur attaque normalement en duel.
+
+    Garde-fou : `MAX_TURNS` (200) borne la boucle. Au-delà, le gagnant est celui
+    qui a le plus de PV restants (en % de ses PV max).
     """
 
     MAX_TURNS = 200
@@ -25,134 +30,97 @@ class DuelCombatService:
         b_stats: Stats,
         a_damage_mult: float = 1.0,
         b_damage_mult: float = 1.0,
+        a_passives: CombatPassives | None = None,
+        b_passives: CombatPassives | None = None,
     ) -> DuelResult:
-        # a_damage_mult / b_damage_mult : avantage élémentaire (±30%) appliqué
-        # aux dégâts sortants, APRÈS défense (même règle que le combat de party).
-        a_hp = a_stats.max_hp
-        b_hp = b_stats.max_hp
-
-        a_gauge = 0
-        b_gauge = 0
+        # a_damage_mult / b_damage_mult : avantage élémentaire (Mage compris),
+        # appliqué aux dégâts sortants APRÈS défense (même règle que le groupe).
+        fighters = {
+            "a": {"stats": a_stats, "hp": a_stats.max_hp, "gauge": 0, "mult": a_damage_mult,
+                  "passives": a_passives or NO_PASSIVES, "held": False},
+            "b": {"stats": b_stats, "hp": b_stats.max_hp, "gauge": 0, "mult": b_damage_mult,
+                  "passives": b_passives or NO_PASSIVES, "held": False},
+        }
         turns = 0
         turn_logs: list[DuelTurnLog] = []
 
-        while a_hp > 0 and b_hp > 0 and turns < self.MAX_TURNS:
-            a_gauge += a_stats.speed
-            b_gauge += b_stats.speed
+        def finished() -> bool:
+            return fighters["a"]["hp"] <= 0 or fighters["b"]["hp"] <= 0
 
-            acted = False
+        while not finished() and turns < self.MAX_TURNS:
+            fighters["a"]["gauge"] += a_stats.speed
+            fighters["b"]["gauge"] += b_stats.speed
 
-            while a_gauge >= 100 and a_hp > 0 and b_hp > 0 and turns < self.MAX_TURNS:
-                turns += 1
-                acted = True
-                a_gauge -= 100
-
-                # NOTE: hp_regeneration ne s'applique PAS en combat (V2).
-
-                # Cascade : crit AVANT défense (symétrique entre tous les
-                # combats du jeu : party / solo / duel).
-                raw_attack = a_stats.attack
-                is_crit = False
-                dodged = False
-                if random.random() < (a_stats.crit_chance / 100):
-                    raw_attack = int(raw_attack * (a_stats.crit_damage / 100))
-                    is_crit = True
-
-                damage = max(1, raw_attack - b_stats.defense)
-                if a_damage_mult != 1.0:
-                    damage = max(1, round(damage * a_damage_mult))
-
-                if random.random() < (b_stats.dodge / 100):
-                    damage = 0
-                    dodged = True
-                else:
-                    b_hp = max(0, b_hp - damage)
-
-                turn_logs.append(
-                    DuelTurnLog(
-                        turn_number=turns,
-                        actor="a",
-                        damage=damage,
-                        is_crit=is_crit,
-                        target_dodged=dodged,
-                        a_hp_after=a_hp,
-                        b_hp_after=b_hp,
+            for actor, foe_key in (("a", "b"), ("b", "a")):
+                me, foe = fighters[actor], fighters[foe_key]
+                while me["gauge"] >= 100 and not finished() and turns < self.MAX_TURNS:
+                    turns += 1
+                    me["gauge"] -= 100
+                    # NB : hp_regeneration ne s'applique PAS en combat.
+                    damage, is_crit, dodged = self._strike(me, foe)
+                    turn_logs.append(
+                        DuelTurnLog(
+                            turn_number=turns,
+                            actor=actor,
+                            damage=damage,
+                            is_crit=is_crit,
+                            target_dodged=dodged,
+                            a_hp_after=fighters["a"]["hp"],
+                            b_hp_after=fighters["b"]["hp"],
+                        )
                     )
-                )
+                    if finished():
+                        return self._result(actor, turns, fighters, a_stats, b_stats, turn_logs)
 
-                if b_hp <= 0:
-                    return DuelResult(
-                        winner="a",
-                        turns=turns,
-                        a_remaining_hp=a_hp,
-                        b_remaining_hp=0,
-                        a_max_hp=a_stats.max_hp,
-                        b_max_hp=b_stats.max_hp,
-                        turn_logs=turn_logs,
-                    )
-
-            while b_gauge >= 100 and a_hp > 0 and b_hp > 0 and turns < self.MAX_TURNS:
-                turns += 1
-                acted = True
-                b_gauge -= 100
-
-                # NOTE: hp_regeneration ne s'applique PAS en combat (V2).
-
-                # Cascade : crit AVANT défense (cf. côté A → B plus haut).
-                raw_attack = b_stats.attack
-                is_crit = False
-                dodged = False
-                if random.random() < (b_stats.crit_chance / 100):
-                    raw_attack = int(raw_attack * (b_stats.crit_damage / 100))
-                    is_crit = True
-
-                damage = max(1, raw_attack - a_stats.defense)
-                if b_damage_mult != 1.0:
-                    damage = max(1, round(damage * b_damage_mult))
-
-                if random.random() < (a_stats.dodge / 100):
-                    damage = 0
-                    dodged = True
-                else:
-                    a_hp = max(0, a_hp - damage)
-
-                turn_logs.append(
-                    DuelTurnLog(
-                        turn_number=turns,
-                        actor="b",
-                        damage=damage,
-                        is_crit=is_crit,
-                        target_dodged=dodged,
-                        a_hp_after=a_hp,
-                        b_hp_after=b_hp,
-                    )
-                )
-
-                if a_hp <= 0:
-                    return DuelResult(
-                        winner="b",
-                        turns=turns,
-                        a_remaining_hp=0,
-                        b_remaining_hp=b_hp,
-                        a_max_hp=a_stats.max_hp,
-                        b_max_hp=b_stats.max_hp,
-                        turn_logs=turn_logs,
-                    )
-
-            if not acted:
-                continue
-
-        # Sortie sur MAX_TURNS sans KO : le vainqueur est celui aux HP les plus
-        # élevés (en pourcentage de max_hp pour comparer équitablement deux
-        # plafonds différents). Égalité parfaite → "a" (l'attaquant).
-        a_ratio = a_hp / a_stats.max_hp if a_stats.max_hp > 0 else 0
-        b_ratio = b_hp / b_stats.max_hp if b_stats.max_hp > 0 else 0
+        a_ratio = fighters["a"]["hp"] / a_stats.max_hp if a_stats.max_hp > 0 else 0
+        b_ratio = fighters["b"]["hp"] / b_stats.max_hp if b_stats.max_hp > 0 else 0
         winner = "a" if a_ratio >= b_ratio else "b"
+        return self._result(winner, turns, fighters, a_stats, b_stats, turn_logs)
+
+    @staticmethod
+    def _strike(me: dict, foe: dict) -> tuple[int, bool, bool]:
+        """Un coup : crit AVANT défense, puis multiplicateurs, esquive, Tenace."""
+        stats: Stats = me["stats"]
+        mine: CombatPassives = me["passives"]
+        theirs: CombatPassives = foe["passives"]
+
+        raw_attack = stats.attack
+        is_crit = False
+        if random.random() < (stats.crit_chance / 100):
+            raw_attack = int(raw_attack * (stats.crit_damage / 100))
+            is_crit = True
+
+        defense = foe["stats"].defense
+        if mine.armor_penetration_pct > 0:
+            defense = int(defense * (1 - min(100.0, mine.armor_penetration_pct) / 100))
+        damage = max(1, raw_attack - defense)
+        if me["mult"] != 1.0:
+            damage = max(1, round(damage * me["mult"]))
+        if mine.damage_dealt_pct:
+            damage = max(1, round(damage * (1 + mine.damage_dealt_pct / 100)))
+        if theirs.damage_reduction_fraction > 0:
+            damage = max(1, round(damage * (1 - theirs.damage_reduction_fraction)))
+
+        if random.random() < (foe["stats"].dodge / 100):
+            return 0, is_crit, True
+
+        if damage >= foe["hp"] > 0 and theirs.last_stand and not foe["held"]:
+            foe["held"] = True
+            damage = foe["hp"] - 1
+        foe["hp"] = max(0, foe["hp"] - damage)
+
+        if mine.lifesteal_pct > 0 and damage > 0 and me["hp"] > 0:
+            heal = damage * mine.lifesteal_pct / 100 * (1 + mine.heal_received_pct / 100)
+            me["hp"] = min(stats.max_hp, me["hp"] + int(round(heal)))
+        return damage, is_crit, False
+
+    @staticmethod
+    def _result(winner, turns, fighters, a_stats, b_stats, turn_logs) -> DuelResult:
         return DuelResult(
             winner=winner,
             turns=turns,
-            a_remaining_hp=a_hp,
-            b_remaining_hp=b_hp,
+            a_remaining_hp=fighters["a"]["hp"],
+            b_remaining_hp=fighters["b"]["hp"],
             a_max_hp=a_stats.max_hp,
             b_max_hp=b_stats.max_hp,
             turn_logs=turn_logs,
