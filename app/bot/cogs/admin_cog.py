@@ -194,11 +194,11 @@ class AdminCog(commands.Cog):
                 return f"❌ Ressource inconnue : `{resource}`."
 
         verb = {"set": "défini à", "give": "augmenté à", "remove": "réduit à"}[action]
-        return (
-            f"✅ {label} de {target.mention} {verb} **{_format_int(new)}** "
-            f"({'+' if action == 'give' else '-' if action == 'remove' else ''}"
-            f"{_format_int(amount) if action != 'set' else ''})."
+        delta = (
+            "" if action == "set"
+            else f" ({'+' if action == 'give' else '-'}{_format_int(amount)})"
         )
+        return f"✅ {label} de {target.mention} {verb} **{_format_int(new)}**{delta}."
 
     @admin.command(name="set", description="Définit une ressource d'un joueur à une valeur")
     @app_commands.describe(

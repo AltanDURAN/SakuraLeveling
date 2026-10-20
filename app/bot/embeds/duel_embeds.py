@@ -170,5 +170,5 @@ def build_duel_result_embed(
             inline=False,
         )
 
-    embed.set_footer(text="Voir /top duel_rank pour le classement complet")
+    embed.set_footer(text="Classement complet : /classement → Classement duels 1v1")
     return embed

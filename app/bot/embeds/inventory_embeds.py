@@ -71,7 +71,7 @@ def build_inventory_embed(
     if not inventory_items:
         embed.description = (
             "_Inventaire vide_ (les équipements sont visibles via "
-            "`/equipement_list`)."
+            "`/equipement_liste`)."
         )
         return embed
 

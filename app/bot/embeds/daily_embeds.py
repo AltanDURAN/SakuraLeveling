@@ -23,7 +23,7 @@ def build_daily_success_embed(
     lines.append("Revenez également demain !")
 
     embed = discord.Embed(
-        title=f"Daily Streak {streak} 🔥 !",
+        title=f"Série de {streak} jour{'s' if streak > 1 else ''} 🔥 !",
         description="\n".join(lines),
         color=discord.Color.gold(),
     )

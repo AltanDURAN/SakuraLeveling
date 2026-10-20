@@ -1,6 +1,6 @@
 """Cog des quêtes quotidiennes (/daily_quest).
 
-3 quêtes assignées chaque jour à minuit UTC. Bouton 'Récupérer ma/mes
+3 quêtes assignées chaque jour à minuit (heure de Paris). Bouton 'Récupérer ma/mes
 récompense(s)' affiché si au moins une quête est complétée non-claim.
 """
 
@@ -39,7 +39,7 @@ def build_daily_embed(display_name: str, state: DailyQuestState) -> discord.Embe
     embed = discord.Embed(
         title=f"📅 Quêtes quotidiennes de {display_name}",
         description=(
-            f"Reset à minuit UTC. Dernière rotation : "
+            f"Reset à minuit (heure de Paris). Dernière rotation : "
             f"<t:{int(state.day_start.timestamp())}:D>."
         ),
         color=discord.Color.teal(),

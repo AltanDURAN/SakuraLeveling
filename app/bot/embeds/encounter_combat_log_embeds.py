@@ -11,6 +11,7 @@ from __future__ import annotations
 import discord
 
 from app.domain.value_objects.party_battle_turn_log import PartyBattleTurnLog
+from app.shared.formatters import format_int
 
 
 # Limite Discord pour le champ description (4096 chars). On coupe les
@@ -98,7 +99,7 @@ def build_combat_log_embed(
     # PV du mob — toujours utile pendant le combat
     embed.add_field(
         name=f"👹 {mob_name}",
-        value=f"❤️ **{max(0, mob_current_hp):,} / {mob_max_hp:,}** PV",
+        value=f"❤️ **{format_int(max(0, mob_current_hp))} / {format_int(mob_max_hp)}** PV",
         inline=False,
     )
 
@@ -110,7 +111,7 @@ def build_combat_log_embed(
             chp = max(0, int(ps.get("current_hp", 0) or 0))
             mhp = int(ps.get("max_hp", 1) or 1)
             status = "💀" if chp <= 0 else "❤️"
-            lines.append(f"{status} **{name}** — {chp:,} / {mhp:,}")
+            lines.append(f"{status} **{name}** — {format_int(chp)} / {format_int(mhp)}")
         embed.add_field(
             name="👥 Équipe",
             value="\n".join(lines) or "_aucun_",

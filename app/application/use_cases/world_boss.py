@@ -14,6 +14,7 @@ en wrappant le boss dans une `MobDefinition` éphémère.
 """
 
 import random
+from app.shared.formatters import format_int
 from dataclasses import dataclass, field
 from datetime import datetime, UTC, timedelta
 from zoneinfo import ZoneInfo
@@ -162,7 +163,7 @@ class SpawnWorldBossUseCase:
                 success=False,
                 message=(
                     f"❌ Un world boss est déjà actif : **{existing.name}** "
-                    f"({existing.current_hp:,}/{existing.max_hp:,} PV)."
+                    f"({format_int(existing.current_hp)}/{format_int(existing.max_hp)} PV)."
                 ),
             )
 
@@ -175,7 +176,7 @@ class SpawnWorldBossUseCase:
         boss = _create_boss_from_definition(self.world_boss_repository, definition)
         return SpawnBossResult(
             success=True,
-            message=(f"⚡ **{boss.name}** apparaît avec **{boss.max_hp:,}** PV !"),
+            message=(f"⚡ **{boss.name}** apparaît avec **{format_int(boss.max_hp)}** PV !"),
             boss=boss,
         )
 
@@ -725,9 +726,9 @@ class LaunchPartyFightWorldBossUseCase:
         msg = (
             f"⚔️ Raid collectif contre **{boss.name}** terminé "
             f"({len(eligible)} combattants).\n"
-            f"💥 Dégâts totaux : **{damage_total:,}** "
-            f"({total_tanked:,} encaissés)\n"
-            f"📊 PV restants du boss : **{boss_after.current_hp:,} / {boss.max_hp:,}**"
+            f"💥 Dégâts totaux : **{format_int(damage_total)}** "
+            f"({format_int(total_tanked)} encaissés)\n"
+            f"📊 PV restants du boss : **{format_int(boss_after.current_hp)} / {format_int(boss.max_hp)}**"
         )
         if skipped > 0:
             msg += f"\n_({skipped} voteur(s) ignoré(s) — déjà combattu(s) aujourd'hui.)_"

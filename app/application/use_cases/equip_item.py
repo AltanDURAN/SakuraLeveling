@@ -4,6 +4,7 @@ from app.infrastructure.db.repositories.equipment_repository import EquipmentRep
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.shared.enums import (
+    SLOT_LABELS,
     SLOTS_FOR_ITEM_TYPE,
     WEAPON_SLOTS,
     EquipmentSlot,
@@ -235,7 +236,10 @@ class EquipItemUseCase:
         )
         return EquipResult(
             success=True,
-            message=f"✅ **{item_def.name}** équipé — emplacement `{target_slot}`.",
+            message=(
+                f"✅ **{item_def.name}** équipé — "
+                f"{SLOT_LABELS.get(target_slot, target_slot)}."
+            ),
             slots_equipped=[target_slot],
             unequipped_items=unequipped,
         )

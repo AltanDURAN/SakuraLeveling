@@ -8,6 +8,7 @@ from app.application.use_cases.world_boss import BossRewardEntry
 from app.domain.entities.world_boss import WorldBoss
 from app.domain.services import element_service
 from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
+from app.shared.formatters import format_int
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
@@ -72,15 +73,15 @@ def build_boss_dashboard_embed(
         name="❤️ PV restants",
         value=(
             f"{_hp_bar(boss.current_hp, boss.max_hp)}\n"
-            f"**{boss.current_hp:,} / {boss.max_hp:,}**"
+            f"**{format_int(boss.current_hp)} / {format_int(boss.max_hp)}**"
         ),
         inline=False,
     )
     embed.add_field(
         name="📊 Stats",
         value=(
-            f"⚔️ Atk : **{boss.attack:,}**\n"
-            f"🛡️ Def : **{boss.defense:,}**\n"
+            f"⚔️ Atk : **{format_int(boss.attack)}**\n"
+            f"🛡️ Def : **{format_int(boss.defense)}**\n"
             f"💨 Spd : **{boss.speed}**"
         ),
         inline=True,

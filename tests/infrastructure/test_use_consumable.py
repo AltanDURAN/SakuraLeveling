@@ -120,8 +120,8 @@ def test_potion_50_percent_heals_correctly(session):
     assert result.hp_after == round(stats.max_hp * 0.5)
 
 
-def test_potion_caps_at_max_hp(session):
-    """Potion 100% sur HP déjà presque pleins ne dépasse pas max_hp."""
+def test_potion_refusee_si_pv_pleins(session):
+    """PV déjà pleins : la potion n'est PAS consommée (elle serait gâchée)."""
     item_id = _seed_potion(session, "potion_soin", 100)
     use_case = _build_use_case(session)
 
@@ -143,8 +143,60 @@ def test_potion_caps_at_max_hp(session):
         item_code="potion_soin",
     )
 
+    assert result.success is False
+    assert "maximum" in result.message
+    inv = InventoryRepository(session).list_by_player_id(profile.player.id)
+    assert inv[0].quantity == 1  # potion conservée
+
+
+def test_potion_plafonnee_au_max(session):
+    """Potion 100 % sur des PV entamés : on remonte au max, pas au-delà."""
+    item_id = _seed_potion(session, "potion_soin", 100)
+    use_case = _build_use_case(session)
+    profile = PlayerRepository(session).get_or_create_by_discord_id(
+        discord_id=1, username="alice", display_name="Alice",
+    )
+    InventoryRepository(session).add_item(profile.player.id, item_id, 1)
+    stats = StatsService().calculate_player_stats(profile=profile, equipped_items=[])
+    health_repo = PlayerHealthRepository(session)
+    health_repo.get_or_create(profile.player.id, default_current_hp=stats.max_hp)
+    health_repo.update_current_hp(profile.player.id, stats.max_hp - 1)
+
+    result = use_case.execute(
+        discord_id=1, username="alice", display_name="Alice",
+        item_code="potion_soin",
+    )
     assert result.success is True
-    assert result.hp_after == stats.max_hp  # cap
+    assert result.hp_after == stats.max_hp
+
+
+def test_potion_compte_la_regeneration_ecoulee(session):
+    """Les PV régénérés depuis le dernier combat ne sont pas effacés par la potion."""
+    from datetime import timedelta
+
+    from app.infrastructure.db.models.player_health_state_model import PlayerHealthStateModel
+
+    item_id = _seed_potion(session, "potion_soin", 10)
+    use_case = _build_use_case(session)
+    profile = PlayerRepository(session).get_or_create_by_discord_id(
+        discord_id=1, username="alice", display_name="Alice",
+    )
+    InventoryRepository(session).add_item(profile.player.id, item_id, 1)
+    stats = StatsService().calculate_player_stats(profile=profile, equipped_items=[])
+    health_repo = PlayerHealthRepository(session)
+    health_repo.get_or_create(profile.player.id, default_current_hp=stats.max_hp)
+    health_repo.update_current_hp(profile.player.id, 0)
+    # 10 minutes de repos depuis le dernier combat
+    row = session.query(PlayerHealthStateModel).filter_by(player_id=profile.player.id).one()
+    row.updated_at = datetime.now(UTC) - timedelta(minutes=10)
+    session.commit()
+
+    result = use_case.execute(
+        discord_id=1, username="alice", display_name="Alice",
+        item_code="potion_soin",
+    )
+    assert stats.hp_regeneration > 0
+    assert result.hp_before > 0  # la régénération a été comptée
 
 
 def test_potion_consumes_from_inventory(session):
@@ -156,6 +208,11 @@ def test_potion_consumes_from_inventory(session):
     )
     inv_repo = InventoryRepository(session)
     inv_repo.add_item(profile.player.id, item_id, 3)
+    # Blessé : sinon la potion est refusée (PV pleins)
+    stats = StatsService().calculate_player_stats(profile=profile, equipped_items=[])
+    health_repo = PlayerHealthRepository(session)
+    health_repo.get_or_create(profile.player.id, default_current_hp=stats.max_hp)
+    health_repo.update_current_hp(profile.player.id, 0)
 
     use_case.execute(
         discord_id=1, username="alice", display_name="Alice",

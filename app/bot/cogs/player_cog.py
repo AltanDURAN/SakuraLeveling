@@ -59,7 +59,7 @@ from app.infrastructure.skill_tree.skill_tree_loader import (
 )
 from app.domain.services.skill_tree_service import SkillTreeService
 from app.infrastructure.db.session import get_db_session
-from app.shared.enums import SLOT_LABELS
+from app.shared.enums import EQUIPMENT_SLOT_LABELS, SLOT_LABELS
 from app.domain.services.health_regeneration_service import HealthRegenerationService
 from app.infrastructure.db.repositories.player_health_repository import PlayerHealthRepository
 from app.domain.services.power_score_service import PowerScoreService
@@ -271,16 +271,9 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 target_member.display_avatar.url if target_member else None
             )
             # Classes : obtenues dans l'arbre de compétences (cases « classe »).
-            from app.domain.services.skill_tree_service import SkillTreeService
-            from app.infrastructure.db.repositories.player_skill_allocation_repository import (
-                PlayerSkillAllocationRepository,
-            )
-            from app.infrastructure.skill_tree.skill_tree_loader import (
-                get_definition as _tree_definition,
-            )
-            classes = SkillTreeService(_tree_definition()).class_names(
-                PlayerSkillAllocationRepository(session).list_by_player(profile.player.id)
-            )
+            # ⚠️ Pas d'import local ici : il rendrait ces noms LOCAUX à toute la
+            # fonction et ferait planter leur premier usage plus haut.
+            classes = SkillTreeService(get_skill_tree_definition()).class_names(allocations)
             class_name = " · ".join(classes) if classes else None
             xp_required = ProgressionService().xp_required_for_next_level(
                 profile.progression.level
@@ -636,9 +629,14 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        """Propose les items équipables en inventaire, en excluant ceux qui
-        sont DÉJÀ équipés (par item_definition_id) — évite la confusion
-        d'avoir un même item proposé alors qu'il est déjà porté."""
+        """Propose les items équipables en inventaire qu'il reste à porter.
+
+        Un objet porté reste en inventaire : on ne le propose que s'il en
+        reste une copie libre (porter deux fois la même arme à une main exige
+        deux exemplaires). Les pièces au-dessus du niveau du joueur sont
+        listées en dernier, cadenassées, pour qu'il sache pourquoi."""
+        from collections import Counter
+
         with get_db_session() as session:
             player_repository = PlayerRepository(session)
             profile = player_repository.get_by_discord_id(interaction.user.id)
@@ -648,31 +646,38 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             inventory_repository = InventoryRepository(session)
             equipment_repository = EquipmentRepository(session)
             items = inventory_repository.list_by_player_id(profile.player.id)
-            equipped_ids = {
+            worn = Counter(
                 e.item_definition.id
                 for e in equipment_repository.list_by_player_id(profile.player.id)
-            }
+            )
+            level = profile.progression.level
 
         current_lower = current.lower()
-        choices: list[app_commands.Choice[str]] = []
+        ready: list[app_commands.Choice[str]] = []
+        locked: list[app_commands.Choice[str]] = []
         for item in items:
             definition = item.item_definition
             if not definition.is_equipable:
                 continue
-            # Filtre : ne propose pas un item déjà équipé (même définition)
-            if definition.id in equipped_ids:
-                continue
-            label = f"{definition.name} ({definition.equipment_slot})"[:100]
-            if (
+            if item.quantity <= worn.get(definition.id, 0):
+                continue  # toutes les copies sont déjà portées
+            if not (
                 current_lower in definition.code.lower()
                 or current_lower in definition.name.lower()
             ):
-                choices.append(
-                    app_commands.Choice(name=label, value=definition.code)
-                )
-            if len(choices) >= 25:
-                break
-        return choices
+                continue
+            required = int(getattr(definition, "level_requirement", 0) or 0)
+            slot = EQUIPMENT_SLOT_LABELS.get(definition.equipment_slot, definition.equipment_slot)
+            if required > level:
+                locked.append(app_commands.Choice(
+                    name=f"🔒 {definition.name} ({slot}) — niveau {required}"[:100],
+                    value=definition.code,
+                ))
+            else:
+                ready.append(app_commands.Choice(
+                    name=f"{definition.name} ({slot})"[:100], value=definition.code,
+                ))
+        return (ready + locked)[:25]
 
     @app_commands.command(
         name="desequiper",
@@ -1265,7 +1270,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         ticket_line = (
             f"🎟️ Tour solo : **{tickets.available}/{tickets.allowance}** ticket(s) "
             f"aujourd'hui" + (" (bonus compris)" if tickets.has_bonus else "")
-            + " — non cumulables, renouvelés à minuit UTC"
+            + " — non cumulables, renouvelés à minuit (heure de Paris)"
         )
         # On garde uniquement les cooldowns encore actifs et non cachés
         active: list[tuple[str, datetime]] = []

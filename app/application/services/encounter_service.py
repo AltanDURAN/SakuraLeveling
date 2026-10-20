@@ -112,7 +112,7 @@ class EncounterService:
 
             profile = player_repository.get_by_discord_id(user_id)
             if profile is None:
-                return False, "Votre profil joueur n'existe pas encore. Utilisez /profile d'abord."
+                return False, "Votre profil joueur n'existe pas encore. Utilisez /demarrer d'abord."
 
             equipped_items = equipment_repository.list_by_player_id(profile.player.id)
             allocations = skill_allocation_repository.list_by_player(profile.player.id)

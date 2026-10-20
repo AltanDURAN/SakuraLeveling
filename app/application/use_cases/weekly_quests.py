@@ -11,7 +11,7 @@ Workflow :
     4. `/weekly_claim` retire les récompenses (gold + xp + items + level-up).
 
 Convention semaine :
-    week_start = lundi 00:00 UTC de la semaine courante. Tous les joueurs
+    week_start = lundi 00:00 (Paris) de la semaine courante, stocké en UTC. Tous les joueurs
     partagent la même clé de rotation.
 """
 

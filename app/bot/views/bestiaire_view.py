@@ -14,6 +14,7 @@ from app.domain.services import element_service
 from app.domain.services.power_score_service import PowerScoreService
 from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
 from app.shared.paths import MOBS_ASSETS_DIR
+from app.shared.formatters import format_int
 
 
 def _element_line(element: str) -> str:
@@ -65,9 +66,9 @@ def build_mob_embed(
     embed.add_field(
         name="📊 Stats",
         value=(
-            f"❤️ PV : **{mob.max_hp:,}**\n"
-            f"⚔️ Atk : **{mob.attack:,}**\n"
-            f"🛡️ Def : **{mob.defense:,}**\n"
+            f"❤️ PV : **{format_int(mob.max_hp)}**\n"
+            f"⚔️ Atk : **{format_int(mob.attack)}**\n"
+            f"🛡️ Def : **{format_int(mob.defense)}**\n"
             f"💨 Spd : **{mob.speed}**\n"
             f"🎯 Chance crit : **{mob.crit_chance}%**\n"
             f"💥 Dégâts crit : **{mob.crit_damage}%**\n"

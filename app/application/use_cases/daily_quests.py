@@ -9,7 +9,7 @@ Workflow :
        non-claim (utilisé par le bouton du cog).
 
 Convention période :
-    day_start = aujourd'hui 00:00 UTC. Reset à minuit.
+    day_start = aujourd'hui 00:00 (Paris), stocké en UTC. Reset à minuit Paris.
 """
 
 from dataclasses import dataclass, field

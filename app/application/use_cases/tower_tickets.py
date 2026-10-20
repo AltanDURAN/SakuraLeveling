@@ -1,6 +1,6 @@
 """Tickets d'entrée de la tour solo (la tour elle-même viendra plus tard).
 
-Chaque jour (UTC), un joueur a un quota de tickets : 1 de base, +1 s'il a monté
+Chaque jour (minuit heure de Paris, comme tous les resets du jeu), un joueur a un quota de tickets : 1 de base, +1 s'il a monté
 la case « Confort » qui donne le ticket bonus. Les tickets ne s'accumulent
 PAS : un ticket non utilisé est perdu à minuit, le lendemain on repart du
 quota (1 bonus maximum par jour, jamais 2).
@@ -42,7 +42,8 @@ class TowerTicketsUseCase:
         self.session = session
 
     def _today(self, now: datetime | None = None) -> date:
-        return (now or datetime.now(UTC)).astimezone(UTC).date()
+        from zoneinfo import ZoneInfo
+        return (now or datetime.now(UTC)).astimezone(ZoneInfo("Europe/Paris")).date()
 
     def _features(self, player_id: int) -> set[str]:
         allocations = PlayerSkillAllocationRepository(self.session).list_by_player(player_id)

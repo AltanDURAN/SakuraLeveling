@@ -24,6 +24,7 @@ from app.bot.rendering.pillow_utils import (
 )
 from app.domain.services.element_service import BEATS
 from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS, Element
+from app.shared.formatters import format_int
 
 WIDTH = 1024
 _PAD = 28
@@ -341,7 +342,7 @@ def compose_affinities_image(
         if next_paper_price == 0:
             line1 = "📜 Ton premier papier élémentaire est OFFERT"
         else:
-            price = f"{next_paper_price:,} or".replace(",", " ")
+            price = f"{format_int(next_paper_price)} or"
             line1 = f"📜 Papier élémentaire — prochain : {price}"
         line2 = ("Il révèle ton talent caché dans l'élément choisi. Sorn le vend (/marchand), "
                  "ou utilise le bouton ci-dessous.")

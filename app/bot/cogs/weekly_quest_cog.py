@@ -1,6 +1,6 @@
 """Cog des quêtes hebdomadaires (/weekly_quest).
 
-3 quêtes assignées chaque lundi 00:00 UTC. Bouton 'Récupérer ma/mes
+3 quêtes assignées chaque lundi 00:00 (heure de Paris). Bouton 'Récupérer ma/mes
 récompense(s)' affiché si au moins une quête est complétée non-claim.
 """
 
@@ -44,7 +44,7 @@ def build_weekly_embed(
         title=f"📅 Quêtes hebdo de {display_name}",
         description=(
             f"Semaine du <t:{int(state.week_start.timestamp())}:D>. "
-            "Reset chaque lundi à minuit UTC."
+            "Reset chaque lundi à minuit (heure de Paris)."
         ),
         color=discord.Color.purple(),
     )

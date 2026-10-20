@@ -8,8 +8,10 @@ ou si l'item n'est pas marqué `category=consumable`.
 """
 
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from app.application.services.player_stats_resolver import resolve_player_stats
+from app.domain.services.health_regeneration_service import HealthRegenerationService
 from app.domain.services.stats_service import StatsService
 from app.domain.services.skill_tree_service import SkillTreeService
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
@@ -90,7 +92,55 @@ class UseConsumableUseCase:
             discord_id=discord_id, username=username, display_name=display_name,
         )
 
-        # Décrément atomique : retire 1 d'abord, refuse si pas en inventaire
+        owned = sum(
+            i.quantity for i in self.inventory_repository.list_by_player_id(profile.player.id)
+            if i.item_definition.id == item.id
+        )
+        if owned < 1:
+            return UseConsumableResult(
+                success=False,
+                message=f"❌ Vous n'avez pas de **{item.name}** en inventaire.",
+                item_name=item.name,
+            )
+
+        # PV réels AVANT de consommer quoi que ce soit : max_hp par la chaîne
+        # complète (arbre, sets, titres…) et régénération hors combat écoulée
+        # depuis la dernière mise à jour. Sans elle, boire une potion après
+        # une pause effaçait les PV régénérés entre-temps.
+        equipped = self.equipment_repository.list_by_player_id(profile.player.id)
+        stats = resolve_player_stats(
+            self.equipment_repository.session,
+            profile,
+            equipped,
+            stats_service=self.stats_service,
+        )
+        max_hp = stats.max_hp
+        health_state = self.health_repository.get_or_create(
+            profile.player.id, default_current_hp=max_hp
+        )
+        hp_before = HealthRegenerationService().apply_out_of_combat_regeneration(
+            current_hp=health_state.current_hp,
+            max_hp=max_hp,
+            hp_regeneration=stats.hp_regeneration,
+            last_updated_at=health_state.updated_at,
+            now=datetime.now(UTC),
+        )
+
+        # PV déjà pleins : on ne gâche pas la potion.
+        if hp_before >= max_hp:
+            return UseConsumableResult(
+                success=False,
+                message=(
+                    f"💚 Tes PV sont déjà au maximum ({max_hp} / {max_hp}) : "
+                    f"**{item.name}** n'a pas été utilisée."
+                ),
+                item_name=item.name,
+                hp_before=hp_before,
+                hp_after=hp_before,
+                max_hp=max_hp,
+            )
+
+        # Décrément atomique : retire 1, refuse si pas en inventaire
         removed = self.inventory_repository.remove_item(
             player_id=profile.player.id, item_definition_id=item.id, quantity=1,
         )
@@ -100,24 +150,6 @@ class UseConsumableUseCase:
                 message=f"❌ Vous n'avez pas de **{item.name}** en inventaire.",
                 item_name=item.name,
             )
-
-        # Calcul du max_hp courant — chaîne complète (skill + classe + sets +
-        # TITRES) via le helper centralisé (corrige l'oubli des titres : un
-        # Champion 1v1 a un max_hp majoré qui doit servir au plafond de soin).
-        equipped = self.equipment_repository.list_by_player_id(profile.player.id)
-        stats = resolve_player_stats(
-            self.equipment_repository.session,
-            profile,
-            equipped,
-            stats_service=self.stats_service,
-        )
-        max_hp = stats.max_hp
-
-        # Lecture / création de l'état HP. Default = max_hp si aucune ligne.
-        health_state = self.health_repository.get_or_create(
-            profile.player.id, default_current_hp=max_hp
-        )
-        hp_before = health_state.current_hp
 
         # Application de l'effet
         percent = int(bonuses.get("value", 0))

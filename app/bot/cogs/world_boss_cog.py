@@ -7,7 +7,7 @@ Système final V1 :
                                             mais pratique pour tous)
     • View attachée au message du boss : Rejoindre / Quitter / Lancer combat
     • Le boss reste actif jusqu'à mort (HP persistés en DB entre combats)
-    • Cooldown 1 combat / joueur / jour, reset à minuit UTC
+    • Cooldown 1 combat / joueur / jour, reset à minuit (heure de Paris)
     • Modifiers du boss (immunity, enrage, crit_immunity) appliqués en combat
     • Auto-spawn loop : check toutes les heures. Si pas de boss actif et
       cooldown respawn 7j passé, tirage aléatoire pondéré (5%/heure) →
@@ -415,7 +415,7 @@ class WorldBossCog(commands.Cog):
             mod_keys = ", ".join(d.modifiers.keys()) if d.modifiers else "—"
             lines.append(
                 f"**[{d.tier}] {d.name}** (`{d.code}`)\n"
-                f"  ❤️ {d.max_hp:,} PV | ⚔️ {d.attack} atk | 🛡️ {d.defense} def | "
+                f"  ❤️ {format_int(d.max_hp)} PV | ⚔️ {d.attack} atk | 🛡️ {d.defense} def | "
                 f"💨 {d.speed} spd | poids {d.spawn_weight}\n"
                 f"  Particularités : {mod_keys}\n"
                 f"  _{d.lore or d.description}_"
