@@ -116,11 +116,11 @@ class _AllocateButton(discord.ui.Button):
             style=discord.ButtonStyle.success,
             disabled=view.data["stat_points"] <= 0,
         )
-        self._parent = view
+        self._owner = view
         self._target = target
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        parent = self._parent
+        parent = self._owner
         if interaction.user.id != parent.owner_id:
             await interaction.response.send_message(
                 "❌ Ce n'est pas ta feuille.", ephemeral=True,

@@ -338,12 +338,12 @@ class _CategorySelect(discord.ui.Select):
             for c in categories[:25]
         ]
         super().__init__(placeholder="1️⃣  Choisis une catégorie", options=options)
-        self._parent = view
+        self._owner = view
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        self._parent.category = self.values[0]
-        self._parent.recipe_code = None
-        await self._parent.refresh(interaction)
+        self._owner.category = self.values[0]
+        self._owner.recipe_code = None
+        await self._owner.refresh(interaction)
 
 
 class _RecipeSelect(discord.ui.Select):
@@ -369,11 +369,11 @@ class _RecipeSelect(discord.ui.Select):
                 )
             )
         super().__init__(placeholder="2️⃣  Choisis un objet", options=options)
-        self._parent = view
+        self._owner = view
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        self._parent.recipe_code = self.values[0]
-        await self._parent.refresh(interaction)
+        self._owner.recipe_code = self.values[0]
+        await self._owner.refresh(interaction)
 
 
 class _StartButton(discord.ui.Button):
@@ -385,10 +385,10 @@ class _StartButton(discord.ui.Button):
             disabled=not enabled,
             row=2,
         )
-        self._parent = view
+        self._owner = view
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        parent = self._parent
+        parent = self._owner
         if parent.recipe_code is None:
             await interaction.response.defer()
             return
@@ -438,10 +438,10 @@ class _CollectButton(discord.ui.Button):
             disabled=not enabled,
             row=2,
         )
-        self._parent = view
+        self._owner = view
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        parent = self._parent
+        parent = self._owner
 
         def _run():
             with parent._session_factory() as session:
@@ -469,10 +469,10 @@ class _CancelButton(discord.ui.Button):
             style=discord.ButtonStyle.danger,
             row=2,
         )
-        self._parent = view
+        self._owner = view
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        parent = self._parent
+        parent = self._owner
 
         def _run():
             with parent._session_factory() as session:
@@ -490,13 +490,13 @@ class _CancelButton(discord.ui.Button):
 class _CloseButton(discord.ui.Button):
     def __init__(self, view: ArtisanView) -> None:
         super().__init__(label="Fermer", style=discord.ButtonStyle.secondary, row=2)
-        self._parent = view
+        self._owner = view
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        for child in self._parent.children:
+        for child in self._owner.children:
             child.disabled = True
-        await interaction.response.edit_message(view=self._parent)
-        self._parent.stop()
+        await interaction.response.edit_message(view=self._owner)
+        self._owner.stop()
 
 
 # ------------------------------------------------------------ amélioration --
@@ -511,10 +511,10 @@ class _ModeButton(discord.ui.Button):
             style=discord.ButtonStyle.primary,
             row=2,
         )
-        self._parent = view
+        self._owner = view
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        parent = self._parent
+        parent = self._owner
         parent.mode = "craft" if parent.mode == "upgrade" else "upgrade"
         parent.upgrade_code = None
         await parent.refresh(interaction)
@@ -538,11 +538,11 @@ class _UpgradeSelect(discord.ui.Select):
             for c in ordered[:25]
         ]
         super().__init__(placeholder="🔨  Choisis une pièce à améliorer", options=options)
-        self._parent = view
+        self._owner = view
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        self._parent.upgrade_code = self.values[0]
-        await self._parent.refresh(interaction)
+        self._owner.upgrade_code = self.values[0]
+        await self._owner.refresh(interaction)
 
 
 class _FuseButton(discord.ui.Button):
@@ -551,10 +551,10 @@ class _FuseButton(discord.ui.Button):
             label="Fusionner", emoji="✨", style=discord.ButtonStyle.success,
             disabled=not enabled, row=2,
         )
-        self._parent = view
+        self._owner = view
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        parent = self._parent
+        parent = self._owner
         if parent.upgrade_code is None or parent._upgrade_factory is None:
             await interaction.response.defer()
             return

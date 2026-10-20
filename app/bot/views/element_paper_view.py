@@ -133,13 +133,13 @@ class _ElementSelect(discord.ui.Select):
             for code in view.status.unrevealed
         ]
         super().__init__(placeholder="Choisis l'élément à révéler", options=options, row=0)
-        self._parent = view
+        self._owner = view
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        self._parent.element = self.values[0]
-        self._parent._build()
+        self._owner.element = self.values[0]
+        self._owner._build()
         await interaction.response.edit_message(
-            embed=self._parent.embed(), view=self._parent,
+            embed=self._owner.embed(), view=self._owner,
         )
 
 
@@ -153,10 +153,10 @@ class _ReadButton(discord.ui.Button):
             disabled=not view.can_read,
             row=1,
         )
-        self._parent = view
+        self._owner = view
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        parent = self._parent
+        parent = self._owner
         element = parent.element
         if element is None:
             await interaction.response.defer()
@@ -213,10 +213,10 @@ class PaperButton(discord.ui.Button):
         )
         self._session_factory = session_factory
         self._player_id = player_id
-        self._owner = owner_discord_id
+        self._owner_id = owner_discord_id
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        if interaction.user.id != self._owner:
+        if interaction.user.id != self._owner_id:
             await interaction.response.send_message(
                 "📜 Ce papier n'est pas pour toi : tape `/affinites` ou `/marchand`.",
                 ephemeral=True,

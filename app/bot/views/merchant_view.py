@@ -229,13 +229,13 @@ class _CategorySelect(discord.ui.Select):
             for c in categories[:25]
         ]
         super().__init__(placeholder="1️⃣  Choisis un rayon", options=options)
-        self._parent = view
+        self._owner = view
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        self._parent.category = self.values[0]
-        self._parent.item_code = None
-        self._parent.quantity = 1
-        await self._parent.refresh(interaction)
+        self._owner.category = self.values[0]
+        self._owner.item_code = None
+        self._owner.quantity = 1
+        await self._owner.refresh(interaction)
 
 
 class _ArticleSelect(discord.ui.Select):
@@ -250,12 +250,12 @@ class _ArticleSelect(discord.ui.Select):
             for s in entries[:25]
         ]
         super().__init__(placeholder="2️⃣  Choisis un article", options=options)
-        self._parent = view
+        self._owner = view
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        self._parent.item_code = self.values[0]
-        self._parent.quantity = 1
-        await self._parent.refresh(interaction)
+        self._owner.item_code = self.values[0]
+        self._owner.quantity = 1
+        await self._owner.refresh(interaction)
 
 
 class _QuantityButton(discord.ui.Button):
@@ -269,12 +269,12 @@ class _QuantityButton(discord.ui.Button):
             ),
             row=2,
         )
-        self._parent = view
+        self._owner = view
         self._step = step
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        self._parent.quantity = self._step
-        await self._parent.refresh(interaction)
+        self._owner.quantity = self._step
+        await self._owner.refresh(interaction)
 
 
 class _BuyButton(discord.ui.Button):
@@ -286,10 +286,10 @@ class _BuyButton(discord.ui.Button):
             disabled=not enabled,
             row=3,
         )
-        self._parent = view
+        self._owner = view
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        parent = self._parent
+        parent = self._owner
         if parent._selected is None:
             await interaction.response.defer()
             return
@@ -325,10 +325,10 @@ class _BuyButton(discord.ui.Button):
 class _CloseButton(discord.ui.Button):
     def __init__(self, view: MerchantView) -> None:
         super().__init__(label="Fermer", style=discord.ButtonStyle.secondary, row=3)
-        self._parent = view
+        self._owner = view
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        for child in self._parent.children:
+        for child in self._owner.children:
             child.disabled = True
-        await interaction.response.edit_message(view=self._parent)
-        self._parent.stop()
+        await interaction.response.edit_message(view=self._owner)
+        self._owner.stop()
