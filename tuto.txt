@@ -306,6 +306,12 @@ LES ÉLÉMENTS
     15 % du bonus avec une affinité de 0, 100 % avec 100 — jusqu'à +30 % de
     dégâts.
 
+COMBATS QUI S'ÉTERNISENT
+    À partir de la 50ᵉ action d'un combat, puis toutes les 10 actions, le
+    monstre se renforce : +10 %, puis +20 % par-dessus, puis +30 %… sur son
+    attaque, sa défense, sa vitesse et ses critiques (pas ses PV). Un combat
+    normal dure une quarantaine d'actions ; au-delà, il vaut mieux conclure.
+
 PV ET MANA
     Les PV et le mana ne remontent PAS pendant un combat : ils se régénèrent
     entre les combats, à la minute, selon tes stats de régénération.

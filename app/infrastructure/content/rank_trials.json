@@ -8,7 +8,7 @@
       "guardian": {
         "name": "Sentinelle Ébréchée",
         "lore": "Une armure vide qui refuse de tomber.",
-        "max_hp": 383,
+        "max_hp": 371,
         "attack": 23,
         "defense": 9,
         "speed": 8,
@@ -20,7 +20,7 @@
         "joueur_ref_atk": 26,
         "joueur_ref_def": 18,
         "joueur_ref_pv": 425,
-        "taux_victoire": 0.652
+        "taux_victoire": 0.672
       }
     },
     {
@@ -29,7 +29,7 @@
       "guardian": {
         "name": "Veilleur de Cendres",
         "lore": "Il garde la porte depuis que la cendre est chaude.",
-        "max_hp": 584,
+        "max_hp": 569,
         "attack": 36,
         "defense": 13,
         "speed": 8,
@@ -41,7 +41,7 @@
         "joueur_ref_atk": 39,
         "joueur_ref_def": 31,
         "joueur_ref_pv": 750,
-        "taux_victoire": 0.652
+        "taux_victoire": 0.672
       }
     },
     {
@@ -50,7 +50,7 @@
       "guardian": {
         "name": "Colosse d'Ossements",
         "lore": "Chaque os qu'il porte fut un candidat.",
-        "max_hp": 766,
+        "max_hp": 742,
         "attack": 49,
         "defense": 18,
         "speed": 8,
@@ -62,7 +62,7 @@
         "joueur_ref_atk": 52,
         "joueur_ref_def": 44,
         "joueur_ref_pv": 1075,
-        "taux_victoire": 0.652
+        "taux_victoire": 0.672
       }
     },
     {
@@ -71,7 +71,7 @@
       "guardian": {
         "name": "Héraut du Silence",
         "lore": "Il ne parle pas. Il n'a jamais eu besoin.",
-        "max_hp": 946,
+        "max_hp": 918,
         "attack": 61,
         "defense": 22,
         "speed": 8,
@@ -83,7 +83,7 @@
         "joueur_ref_atk": 64,
         "joueur_ref_def": 56,
         "joueur_ref_pv": 1375,
-        "taux_victoire": 0.652
+        "taux_victoire": 0.672
       }
     },
     {
@@ -92,7 +92,7 @@
       "guardian": {
         "name": "Juge de Fer",
         "lore": "Il pèse ta force et rend son verdict en coups.",
-        "max_hp": 1147,
+        "max_hp": 1113,
         "attack": 74,
         "defense": 26,
         "speed": 8,
@@ -104,7 +104,7 @@
         "joueur_ref_atk": 77,
         "joueur_ref_def": 69,
         "joueur_ref_pv": 1700,
-        "taux_victoire": 0.652
+        "taux_victoire": 0.672
       }
     },
     {
@@ -113,7 +113,7 @@
       "guardian": {
         "name": "Archonte Déchu",
         "lore": "Il a tenu ce rang. Il te fera mériter le tien.",
-        "max_hp": 1306,
+        "max_hp": 1267,
         "attack": 86,
         "defense": 31,
         "speed": 8,
@@ -125,7 +125,7 @@
         "joueur_ref_atk": 89,
         "joueur_ref_def": 81,
         "joueur_ref_pv": 2000,
-        "taux_victoire": 0.652
+        "taux_victoire": 0.672
       }
     },
     {
@@ -134,7 +134,7 @@
       "guardian": {
         "name": "Effigie du Vide",
         "lore": "Ce qui reste quand un rang a été arraché.",
-        "max_hp": 1509,
+        "max_hp": 1465,
         "attack": 99,
         "defense": 35,
         "speed": 8,
@@ -146,7 +146,7 @@
         "joueur_ref_atk": 102,
         "joueur_ref_def": 94,
         "joueur_ref_pv": 2325,
-        "taux_victoire": 0.652
+        "taux_victoire": 0.672
       }
     },
     {
@@ -155,7 +155,7 @@
       "guardian": {
         "name": "Le Dernier Gardien",
         "lore": "Au-delà, il n'y a plus personne pour t'arrêter.",
-        "max_hp": 1689,
+        "max_hp": 1638,
         "attack": 111,
         "defense": 39,
         "speed": 8,
@@ -167,7 +167,7 @@
         "joueur_ref_atk": 114,
         "joueur_ref_def": 106,
         "joueur_ref_pv": 2625,
-        "taux_victoire": 0.652
+        "taux_victoire": 0.672
       }
     }
   ]

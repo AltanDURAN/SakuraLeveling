@@ -72,12 +72,12 @@ def _member(pid: int, attack=40, defense=10, max_hp=100000, mana=1_000_000):
 def test_defensive_skill_shield_reduces_hp_loss():
     random.seed(0)
     svc = PartyCombatService()
-    res_none = svc.fight_party_vs_mob([_member(1)], _mob(600, 100, 10), max_turns=2000)
+    res_none = svc.fight_party_vs_mob([_member(1)], _mob(600, 100, 10), max_turns=9)
     random.seed(0)
     res_def = svc.fight_party_vs_mob(
         [_member(1)], _mob(600, 100, 10),
         skill_loadouts_by_player={1: [L.get_skill("feu_defensive")]},
-        max_turns=2000,
+        max_turns=9,  # avant l'escalade du monstre (tour 10)
     )
     assert res_def.contributions[0].final_hp > res_none.contributions[0].final_hp
 

@@ -290,8 +290,17 @@ def test_reset_de_l_arbre_disponible_lundi_suivant_heure_de_paris():
     assert nxt.astimezone(paris) == datetime(2026, 10, 26, 0, 0, tzinfo=paris)
 
 
-def test_un_groupe_de_soigneurs_ne_bloque_jamais_le_combat():
-    """Soin = dégâts reçus : sans garde-fou, le combat ne finirait jamais."""
+def test_escalade_cumulee_tous_les_dix_tours():
+    from app.domain.services.party_combat_service import escalation_multiplier
+
+    assert escalation_multiplier(49) == 1.0
+    assert escalation_multiplier(50) == pytest.approx(1.1)
+    assert escalation_multiplier(60) == pytest.approx(1.1 * 1.2)
+    assert escalation_multiplier(75) == pytest.approx(1.1 * 1.2 * 1.3)
+
+
+def test_le_monstre_se_renforce_et_finit_le_combat_des_soigneurs():
+    """Soin = dégâts reçus au départ : l'escalade du monstre finit par percer."""
     from app.domain.services.party_combat_service import HARD_MAX_TURNS
 
     mob = build_mob(current_hp=10**9, max_hp=10**9, attack=60, defense=0, speed=50)
@@ -300,4 +309,13 @@ def test_un_groupe_de_soigneurs_ne_bloque_jamais_le_combat():
         passives_by_player={1: CombatPassives(healer=True)},
     )
     assert not result.victory
-    assert result.turns <= HARD_MAX_TURNS + 10
+    assert result.turns < HARD_MAX_TURNS  # tombé grâce à l'escalade, pas au garde-fou
+    assert any("se renforce" in log.mob_action for log in result.turn_logs)
+    # Les PV du monstre ne montent jamais (world boss : PV conservés).
+    assert all(log.mob_state["max_hp"] == 10**9 for log in result.turn_logs)
+
+
+def test_garde_fou_a_500_actions():
+    from app.domain.services.party_combat_service import HARD_MAX_TURNS
+
+    assert HARD_MAX_TURNS == 500

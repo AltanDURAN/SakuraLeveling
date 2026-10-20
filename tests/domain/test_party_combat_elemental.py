@@ -50,10 +50,10 @@ def test_incoming_elemental_multiplier_increases_damage_taken():
     svc = PartyCombatService()
     # Boss assez tanky pour frapper plusieurs fois (joueur faible attaque),
     # joueur survit dans les deux cas. crit/dodge=0 → trajectoire déterministe.
-    res_neutral = svc.fight_party_vs_mob(_party(attack=40), _mob(600, 100, 10))
+    res_neutral = svc.fight_party_vs_mob(_party(attack=40), _mob(600, 100, 10), max_turns=9)
     res_boosted = svc.fight_party_vs_mob(
         _party(attack=40), _mob(600, 100, 10),
-        incoming_elemental_mult_by_player={1: 1.5},
+        incoming_elemental_mult_by_player={1: 1.5}, max_turns=9,  # avant l'escalade du monstre (tour 10)
     )
     # final_hp plus bas quand le joueur subit l'avantage élémentaire adverse.
     hp_neutral = res_neutral.contributions[0].final_hp

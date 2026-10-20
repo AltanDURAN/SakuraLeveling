@@ -23,10 +23,29 @@ from app.domain.value_objects.player_contribution import PlayerContribution
 from app.domain.value_objects.stats import Stats
 
 
-#: Garde-fou absolu du nombre d'actions d'un combat, même sans `max_turns` :
-#: un groupe de Soigneurs qui soignent exactement ce qu'ils encaissent
-#: n'attaquerait plus jamais. Atteint ⇒ le monstre n'est pas vaincu.
-HARD_MAX_TURNS = 2000
+#: Escalade : à partir de l'action 50, puis toutes les 10 actions, le monstre
+#: se renforce de +10 % × palier, PAR-DESSUS les paliers précédents
+#: (action 50 : ×1,1 ; 60 : ×1,1×1,2 ; 70 : ×1,1×1,2×1,3…). Décidé avec
+#: l'auteur : démarrer au tour 10 faisait tomber le joueur de référence de
+#: 100 % à 27 % de victoires en solo (un combat normal dure ~37 actions). Seules ses stats OFFENSIVES montent
+#: (attaque, défense, vitesse, critiques) : augmenter ses PV ou son esquive
+#: rallongerait le combat, l'inverse du but — et les PV d'un world boss sont
+#: conservés d'un jour à l'autre.
+ESCALATION_START = 40    # 1er palier à l'action 50 (40 + 10) : un combat normal en dure ~37
+ESCALATION_EVERY = 10
+ESCALATION_STEP = 0.10
+
+#: Garde-fou absolu du nombre d'actions, en dernier recours si l'escalade ne
+#: suffit pas (ex. Soigneurs qui soignent tout). Atteint ⇒ monstre non vaincu.
+HARD_MAX_TURNS = 500
+
+
+def escalation_multiplier(turns: int) -> float:
+    """Multiplicateur cumulé des stats du monstre après `turns` actions."""
+    mult = 1.0
+    for level in range(1, max(0, turns - ESCALATION_START) // ESCALATION_EVERY + 1):
+        mult *= 1 + ESCALATION_STEP * level
+    return mult
 
 
 class PartyCombatService:
@@ -60,6 +79,8 @@ class PartyCombatService:
         def P(member) -> CombatPassives:
             return passives_by_player.get(member["player_id"], NO_PASSIVES)
         mob_family = mob.family or ""
+        base_mob = mob
+        escalation_level = 0
         mob_hp = mob.current_hp
         mob_gauge = 0
         turns = 0
@@ -151,6 +172,27 @@ class PartyCombatService:
                 d *= 1 + ab.get("revive", {}).get("def_pct", 0) / 100
             d *= 1 + _enrage_pct() / 100
             return int(round(d))
+
+        def _escalate() -> None:
+            """Applique le palier d'escalade atteint (cf. ESCALATION_EVERY)."""
+            nonlocal mob, escalation_level
+            level = max(0, turns - ESCALATION_START) // ESCALATION_EVERY
+            if level <= escalation_level or mob_hp <= 0:
+                return
+            escalation_level = level
+            mult = escalation_multiplier(turns)
+            mob = replace(
+                base_mob,
+                attack=max(1, round(base_mob.attack * mult)),
+                defense=round(base_mob.defense * mult),
+                speed=max(1, round(base_mob.speed * mult)),
+                crit_chance=min(100, base_mob.crit_chance * mult),
+                crit_damage=max(100, base_mob.crit_damage * mult),
+                current_hp=mob_hp,
+            )
+            turn_logs.append(snap(
+                f"🔥 Le combat s'éternise : {mob.name} se renforce "
+                f"(+{round(ESCALATION_STEP * level * 100)} %, ×{mult:.2f} au total)"))
 
         def snap(action, players=None):
             return self._snapshot(turns, players or [], action, alive_party, mob, mob_hp,
@@ -319,6 +361,7 @@ class PartyCombatService:
             round_count += 1
             if (max_turns and turns >= max_turns) or turns >= HARD_MAX_TURNS:
                 break
+            _escalate()
 
             # Saignement (ogre) : tick de début de round sur les joueurs qui saignent.
             bled = []
@@ -562,6 +605,7 @@ class PartyCombatService:
             # ── Tour du mob ──
             if _charmed_alive():
                 mob_gauge = 0  # succube protégée, passive tant que le charmé vit
+            _escalate()
             while mob_gauge >= 100 and mob_hp > 0 and _party_alive() and not _charmed_alive():
                 turns += 1
                 acted = True

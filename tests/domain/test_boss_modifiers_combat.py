@@ -106,9 +106,9 @@ def test_adds_deal_extra_damage():
     adds = {"attack": 200, "summon_turn_interval": 1, "max_active": 3}
     res_adds = svc.fight_party_vs_mob(
         _party(attack=40, max_hp=100000), _mob(600, 50, 10),
-        boss_adds=adds, max_turns=500,
+        boss_adds=adds, max_turns=9,  # avant l'escalade du monstre (tour 10)
     )
     res_none = svc.fight_party_vs_mob(
-        _party(attack=40, max_hp=100000), _mob(600, 50, 10), max_turns=500,
+        _party(attack=40, max_hp=100000), _mob(600, 50, 10), max_turns=9,
     )
     assert res_adds.contributions[0].final_hp < res_none.contributions[0].final_hp
