@@ -77,7 +77,7 @@ class ElementAffinityRepository:
 
     def get_talents(self, player_id: int) -> dict[str, ElementTalent]:
         """Talents du joueur (tirés si besoin). Réservé au moteur et aux
-        papiers élémentaires : le joueur ne les voit qu'une fois découverts."""
+        lectures de la voyante : le joueur ne les voit qu'une fois découverts."""
         self.ensure_talents(player_id)
         return {
             code: ElementTalent(

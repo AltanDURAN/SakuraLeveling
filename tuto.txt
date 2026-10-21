@@ -100,10 +100,10 @@ LA PROGRESSION
               jusqu'à 200 (300 avec deux dons…) au lieu de 100.
             – Les 8 morts d'un coup (rarissime) : talent 50 et plafond 300
               partout.
-        • Le talent est INCONNU (❓) tant que tu ne l'as pas découvert avec un
-          PAPIER ÉLÉMENTAIRE (bouton dans /affinites ou chez Sorn, /marchand).
-          Un papier = un élément. Le premier est offert, chaque suivant coûte
-          plus cher.
+        • Le talent est INCONNU (❓) tant que YSALINE, LA VOYANTE, ne l'a pas
+          lu (/voyante, ou le bouton dans /affinites). Une lecture = un
+          élément, payée et révélée d'un coup. La première est offerte, chaque
+          suivante coûte plus cher.
         • Voir 1.5 pour l'effet en combat.
 
 /or [joueur]
@@ -114,9 +114,11 @@ LA PROGRESSION
     l'arbre, épreuve…) et tes tickets du jour pour la tour solo.
 
 /daily
-    Ta récompense quotidienne (remise à zéro à minuit UTC).
-        • Chaque récupération donne (série × 100) or, puis la série +1.
-        • La série n'est jamais perdue, même si tu sautes des jours.
+    Ta récompense quotidienne (de nouveau disponible à minuit, heure de Paris).
+        • Elle donne 20 × ton niveau en or, +3 % par jour de série (jusqu'à
+          +90 % à 30 jours de suite).
+        • Chaque jour manqué DIVISE ta série par deux.
+        • Paliers de série : un titre à 7, 30 et 100 jours (voir /titre).
 
 /titre [joueur] et /titre_actif
     Tes titres débloqués, et celui affiché sur ton profil. Tous les titres
@@ -132,7 +134,9 @@ LA PROGRESSION
             raid gagné) : +2 % sur toutes les stats.
         🩸 Le Bourreau (500 victoires) : +5 de dégâts critiques.
         🌪️ L'Intouchable (100 esquives en combat de groupe) : +1 d'esquive.
-        🍺 Taverne Addict (série de 30 au /daily) : une potion par /daily.
+        🍻 Habitué de la taverne (série de 7 au /daily) : +1 % d'or et d'XP.
+        🍺 Taverne Addict (série de 30) : +3 de dégâts critiques.
+        🏛️ Pilier de la taverne (série de 100) : +2 % d'or et d'XP.
         🏹 Chasseur Légendaire (50 victoires sur un monstre précis) :
             +5 % de chances de butin sur ce monstre.
         ⚔️ Tueur de boss : avoir participé à la victoire contre un world boss.
@@ -418,9 +422,13 @@ WORLD BOSS — /boss moi, /boss historique, /boss list
     SORN, le marchand : un rayon, un article, la quantité (×1 / ×5 / ×10),
     acheter. Achat uniquement. Le butin des monstres n'est pas chez lui : il
     sert aux artisans.
-    Il vend aussi les PAPIERS ÉLÉMENTAIRES (bouton 📜) : choisis un élément,
-    le papier révèle ton talent caché. 1er offert, puis 1 500 · 4 000 ·
-    10 000 · 25 000 · 50 000 · 90 000 · 150 000 or.
+
+/voyante
+    YSALINE, la voyante, lit ton TALENT caché dans l'élément de ton choix.
+    Choisis l'élément, paie sa prestation : le talent est révélé aussitôt.
+    1re lecture offerte, puis 1 200 · 3 000 · 7 500 · 19 000 · 38 000 ·
+    68 000 · 112 000 or. « Chaque vision m'arrache un peu de moi », dit-elle,
+    et chaque secret arraché à ton âme enfouit le suivant plus profond.
 
 --------------------------------------------------------------------------------
 1.8 — ÉCHANGES ENTRE JOUEURS

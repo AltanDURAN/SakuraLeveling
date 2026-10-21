@@ -1053,7 +1053,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             ElementEssenceRepository,
         )
         from app.bot.embeds.player_embeds import build_affinities_embed
-        from app.bot.views.element_paper_view import PaperButton
+        from app.bot.views.seer_view import SeerButton
         from app.domain.services.element_talent_service import paper_price
         from app.infrastructure.artisans import artisan_loader
 
@@ -1075,12 +1075,12 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
 
         is_self = target_member.id == interaction.user.id
         next_price = paper_price(
-            len(revealed), artisan_loader.get_merchant().element_paper_prices,
+            len(revealed), artisan_loader.get_seer().reading_prices,
         )
         view = None
         if is_self and next_price is not None:
             view = discord.ui.View(timeout=300)
-            view.add_item(PaperButton(
+            view.add_item(SeerButton(
                 get_db_session, player_id, next_price,
                 owner_discord_id=interaction.user.id,
             ))
@@ -1387,6 +1387,10 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 streak=result.streak,
                 gold_gained=result.gold_gained,
                 bonus_items=result.bonus_items,
+                streak_bonus_pct=result.streak_bonus_pct,
+                days_missed=result.days_missed,
+                streak_before_absence=result.streak_before_absence,
+                titles_unlocked=result.titles_unlocked,
             )
             await interaction.response.send_message(embed=embed)
         else:

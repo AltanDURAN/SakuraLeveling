@@ -14,6 +14,7 @@ from app.domain.entities.artisan import (
     ArtisanDefinition,
     MasteryTier,
     MerchantDefinition,
+    SeerDefinition,
     PricingRules,
 )
 
@@ -121,7 +122,18 @@ def get_merchant() -> MerchantDefinition:
         image=str(data.get("image", "marchand.png")),
         greeting=str(data.get("greeting", "")),
         accent=_accent(data.get("accent"), (150, 106, 200)),
-        element_paper_prices=tuple(
-            max(0, int(v)) for v in data.get("element_paper_prices") or ()
-        ),
+    )
+
+
+def get_seer() -> SeerDefinition:
+    data = _raw().get("voyante") or {}
+    return SeerDefinition(
+        code=str(data.get("code", "voyante")),
+        name=str(data.get("name", "Voyante")),
+        title=str(data.get("title", "Voyante")),
+        image=str(data.get("image", "voyante.png")),
+        greeting=str(data.get("greeting", "")),
+        accent=_accent(data.get("accent"), (160, 104, 214)),
+        price_story=str(data.get("price_story", "")),
+        reading_prices=tuple(max(0, int(v)) for v in data.get("reading_prices") or ()),
     )

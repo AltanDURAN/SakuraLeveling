@@ -21,18 +21,22 @@ class DailyClaimResult:
     # Items octroyés en plus de l'or par les titres (Taverne Addict, etc.).
     # Liste de tuples (item_name, quantity) pour affichage humain.
     bonus_items: list[tuple[str, int]] = field(default_factory=list)
+    # Série avant l'absence (si des jours ont été manqués), pour l'annoncer.
+    streak_before_absence: int = 0
+    days_missed: int = 0
+    streak_bonus_pct: int = 0
+    # Titres de série débloqués par CE daily (7, 30, 100 jours…).
+    titles_unlocked: list[str] = field(default_factory=list)
 
 
 class ClaimDailyRewardUseCase:
-    """Daily reward gold-only avec série persistante.
+    """Récompense quotidienne : or indexé sur le niveau + bonus de série.
 
-    Chaque /daily récupéré incrémente la série de 1 et donne `streak × 100` or.
-    La série n'est jamais réinitialisée par un jour manqué — elle ne peut que
-    grandir (ou être remise à zéro par un admin via /admin reset_player).
+    Règles (cf. `daily_reward_service`) : 20 × niveau, +3 % par jour de série
+    (plafond +90 % à 30 jours) ; chaque jour manqué divise la série par deux.
     """
 
     DAILY_ACTION_KEY = CooldownAction.DAILY.value
-    GOLD_PER_STREAK = 100
 
     def __init__(
         self,
@@ -75,8 +79,19 @@ class ClaimDailyRewardUseCase:
                 next_available_at=next_at,
             )
 
-        new_streak = self.player_repository.increment_daily_streak(profile.player.id)
-        gold_gained = new_streak * self.GOLD_PER_STREAK
+        from app.domain.services.daily_reward_service import (
+            daily_gold,
+            missed_days,
+            streak_after_absence,
+            streak_bonus_pct,
+        )
+
+        previous_streak = profile.resources.daily_streak
+        missed = missed_days(cooldown.next_available_at if cooldown else None, now)
+        kept = streak_after_absence(previous_streak, missed)
+        new_streak = kept + 1
+        self.player_repository.set_daily_streak(profile.player.id, new_streak)
+        gold_gained = daily_gold(profile.progression.level, new_streak)
 
         self.player_repository.add_gold(profile.player.id, gold_gained)
 
@@ -89,6 +104,7 @@ class ClaimDailyRewardUseCase:
         # des bonus daily_bonus_item au prochain claim. Best effort — si
         # n'importe quoi casse, on garde au moins l'or.
         bonus_items: list[tuple[str, int]] = []
+        titles_unlocked: list[str] = []
         try:
             session = self.cooldown_repository.session
             from app.application.services.title_bonus_resolver import (
@@ -105,10 +121,11 @@ class ClaimDailyRewardUseCase:
             )
 
             # Étape 1 : éventuellement débloquer le titre selon le streak
-            TitleUnlockService(
+            events = TitleUnlockService(
                 PlayerTitleRepository(session),
                 PlayerKillRepository(session),
             ).check_daily_streak(profile.player.id, new_streak)
+            titles_unlocked = [f"{e.title.icon} {e.title.name}" for e in events]
 
             # Étape 2 : appliquer les bonus daily_bonus_item des titres
             # actuellement débloqués (incluant celui qu'on vient peut-être
@@ -174,4 +191,8 @@ class ClaimDailyRewardUseCase:
             gold_gained=gold_gained,
             next_available_at=next_available_at,
             bonus_items=bonus_items,
+            streak_before_absence=previous_streak if missed else 0,
+            days_missed=missed,
+            streak_bonus_pct=streak_bonus_pct(new_streak),
+            titles_unlocked=titles_unlocked,
         )

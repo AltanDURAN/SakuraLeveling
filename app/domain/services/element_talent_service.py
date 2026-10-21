@@ -14,7 +14,7 @@ Règles décidées avec l'auteur (octobre 2026) :
   • Tout le monde démarre à 0 d'affinité ; seul le RYTHME de progression change.
 
 Le talent est caché au joueur : il le découvre élément par élément avec un
-papier élémentaire (cf. `paper_price`).
+lecture de la voyante (cf. `paper_price`).
 """
 
 from __future__ import annotations
@@ -89,7 +89,7 @@ def essence_gain(base: int, talent: int, rng: random.Random | None = None) -> in
 
 
 def paper_price(revealed_count: int, prices: list[int]) -> int | None:
-    """Prix du prochain papier élémentaire (None = tous les talents connus)."""
+    """Prix de la prochaine lecture de la voyante (None = tous les talents connus)."""
     if revealed_count >= len(_codes()):
         return None
     if not prices:

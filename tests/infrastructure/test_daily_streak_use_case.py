@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.application.use_cases.claim_daily_reward import ClaimDailyRewardUseCase
 from app.domain.services.cooldown_service import CooldownService
+from app.domain.services.daily_reward_service import daily_gold
 from app.infrastructure.db.base import Base
 
 # Imports nécessaires pour enregistrer toutes les tables dans Base.metadata
@@ -61,7 +62,7 @@ def _force_cooldown_expiry(session, player_id: int) -> None:
         session.commit()
 
 
-def test_first_daily_returns_streak_1_and_100_gold(session):
+def test_first_daily_returns_streak_1_and_level_indexed_gold(session):
     use_case = _make_use_case(session)
 
     result = use_case.execute(
@@ -72,10 +73,10 @@ def test_first_daily_returns_streak_1_and_100_gold(session):
 
     assert result.success is True
     assert result.streak == 1
-    assert result.gold_gained == 100
+    assert result.gold_gained == daily_gold(1, 1)
 
 
-def test_second_daily_after_cooldown_returns_streak_2_and_200_gold(session):
+def test_second_daily_after_cooldown_returns_streak_2(session):
     use_case = _make_use_case(session)
 
     # 1er daily
@@ -91,7 +92,7 @@ def test_second_daily_after_cooldown_returns_streak_2_and_200_gold(session):
 
     assert result_2.success is True
     assert result_2.streak == 2
-    assert result_2.gold_gained == 200
+    assert result_2.gold_gained == daily_gold(1, 2)
 
 
 def test_streak_keeps_growing_across_multiple_claims(session):
@@ -102,7 +103,7 @@ def test_streak_keeps_growing_across_multiple_claims(session):
         result = use_case.execute(discord_id=1, username="alpha", display_name="Alpha")
         assert result.success is True
         assert result.streak == expected_streak
-        assert result.gold_gained == expected_streak * 100
+        assert result.gold_gained == daily_gold(1, expected_streak)
         expected_total_gold += result.gold_gained
         profile = PlayerRepository(session).get_by_discord_id(1)
         _force_cooldown_expiry(session, profile.player.id)
@@ -138,11 +139,10 @@ def test_daily_does_not_grant_xp_anymore(session):
     assert profile.progression.level == 1
 
 
-def test_streak_persists_after_skipped_day_simulation(session):
-    """La série ne reset jamais, même si le joueur saute des jours.
+def test_skipped_days_halve_the_streak(session):
+    """Chaque jour manqué divise la série par deux.
 
-    On simule un saut de 3 jours en avançant artificiellement le cooldown
-    à plusieurs jours dans le passé (au-delà du délai normal).
+    On simule 3 jours manqués en reculant l'ouverture du daily de 3 jours.
     """
     use_case = _make_use_case(session)
 
@@ -161,5 +161,7 @@ def test_streak_persists_after_skipped_day_simulation(session):
 
     # Streak = 2 (et pas reset à 1) malgré 3 jours sans /daily
     assert result.success is True
-    assert result.streak == 2
-    assert result.gold_gained == 200
+    # Série de 1, 3 jours manqués : 1 → 0 → 0 → 0, puis +1 pour ce claim.
+    assert result.streak == 1
+    assert result.days_missed == 3
+    assert result.gold_gained == daily_gold(1, 1)

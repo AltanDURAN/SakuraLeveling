@@ -29,6 +29,7 @@ _COG_MODULES = [
     "app.bot.cogs.leaderboard_cog",
     "app.bot.cogs.admin_cog",
     "app.bot.cogs.shop_cog",
+    "app.bot.cogs.seer_cog",
     "app.bot.cogs.skill_cog",
     "app.bot.cogs.onboarding_cog",
     "app.bot.cogs.trade_cog",

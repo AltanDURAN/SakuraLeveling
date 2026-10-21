@@ -185,7 +185,16 @@ def test_unlock_taverne_addict_at_streak_30(session):
     service = TitleUnlockService(title_repo, kill_repo)
 
     events = service.check_daily_streak(pid, 29)
-    assert events == []
+    assert not any(e.title.code == "taverne_addict" for e in events)
 
     events = service.check_daily_streak(pid, 30)
     assert any(e.title.code == "taverne_addict" for e in events)
+
+
+def test_paliers_de_serie_7_30_100(session):
+    pid = _create_player(session, 301)
+    service = TitleUnlockService(PlayerTitleRepository(session), PlayerKillRepository(session))
+    assert [e.title.code for e in service.check_daily_streak(pid, 6)] == []
+    assert [e.title.code for e in service.check_daily_streak(pid, 7)] == ["habitue_taverne"]
+    codes = {e.title.code for e in service.check_daily_streak(pid, 100)}
+    assert codes == {"taverne_addict", "pilier_taverne"}

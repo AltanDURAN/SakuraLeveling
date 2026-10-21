@@ -622,7 +622,7 @@ def compose_profile_banner(
     #: élément → affinité 0..100. None ⇒ section masquée.
     affinities: dict[str, int] | None = None,
     #: élément → {"known", "dead", "cap", "boosts"} (talents découverts avec
-    #: un papier élémentaire). Absent ⇒ talent inconnu, affiché ❓.
+    #: la voyante). Absent ⇒ talent inconnu, affiché ❓.
     affinity_talents: dict[str, dict] | None = None,
 ) -> None:
     height = HEIGHT + (AFFINITY_BLOCK_H if affinities else 0)
@@ -936,7 +936,7 @@ def compose_profile_banner(
         if any_unknown:
             # Le talent caché doit donner envie : on dit où le découvrir.
             hint_font = _try_font(17, bold=False)
-            hint = "❓ talent inconnu → papier chez /marchand"
+            hint = "❓ talent inconnu → la voyante (/voyante)"
             hint_w = ImageDraw.Draw(bg).textlength(hint, font=hint_font) + 10
             draw_text_with_emojis(
                 bg, (int(WIDTH - margin - hint_w), aff_section_y + 12), hint,

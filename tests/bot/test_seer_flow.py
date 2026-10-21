@@ -1,4 +1,4 @@
-"""Papier élémentaire de bout en bout, via le VRAI dispatch de discord.py.
+"""La voyante de bout en bout, via le VRAI dispatch de discord.py.
 
 `View._scheduled_task` appelle `item._run_checks` avant le callback : c'est là
 qu'un composant qui écrase un attribut interne de discord.py (`_parent`,
@@ -17,7 +17,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.bot.views import element_paper_view as epv
+from app.bot.views import seer_view as sv
 from app.infrastructure.db.base import Base
 from app.infrastructure.db.models.element_affinity_model import (  # noqa: F401
     PlayerElementAffinityModel,
@@ -40,14 +40,26 @@ class FakeResponse:
     async def edit_message(self, *args, **kwargs):
         self.calls.append(("edit", args, kwargs))
 
+    def is_done(self):
+        return bool(self.calls)
+
     async def defer(self, *args, **kwargs):
         self.calls.append(("defer", args, kwargs))
+
+
+class FakeFollowup:
+    def __init__(self):
+        self.calls = []
+
+    async def send(self, *args, **kwargs):
+        self.calls.append(("send", args, kwargs))
 
 
 def fake_interaction(user_id=1, values=None):
     return SimpleNamespace(
         user=SimpleNamespace(id=user_id),
         response=FakeResponse(),
+        followup=FakeFollowup(),
         data={"values": values or []},
     )
 
@@ -74,7 +86,7 @@ def session_factory(monkeypatch):
         p.resources = PlayerResourceModel(gold=1000, created_at=now, updated_at=now)
         s.add(p)
         s.commit()
-    monkeypatch.setattr(epv, "_prices", lambda: (0, 500, 900, 1, 1, 1, 1, 1))
+    monkeypatch.setattr(sv, "_prices", lambda: (0, 500, 900, 1, 1, 1, 1, 1))
 
     @contextmanager
     def factory():
@@ -94,43 +106,45 @@ def _item(view, cls):
     return next(c for c in view.children if isinstance(c, cls))
 
 
-def test_parcours_complet_papier(session_factory):
+def test_parcours_complet_voyante(session_factory):
     async def run():
-        status = epv.load_status(session_factory, 1)
-        view = epv.ElementPaperView(session_factory, 1, status)
+        view = sv.SeerView(session_factory, 1)
+        view.refresh_data()
+        view.build()
 
         # 1. choisir l'élément
         inter = fake_interaction(values=["feu"])
-        await _dispatch(view, _item(view, epv._ElementSelect), inter)
+        await _dispatch(view, _item(view, sv._ElementSelect), inter)
         assert inter.response.calls and inter.response.calls[0][0] == "edit"
         assert view.element == "feu"
 
-        # 2. lire le papier (offert)
-        button = _item(view, epv._ReadButton)
+        # 2. payer et consulter (première lecture offerte) : payé ET révélé d'un coup
+        button = _item(view, sv._ReadButton)
         assert not button.disabled
         inter = fake_interaction()
         await _dispatch(view, button, inter)
         kind, _, kwargs = inter.response.calls[0]
-        assert kind == "edit" and "Ton talent" in kwargs["embed"].title
+        assert kind == "edit"
+        assert any("Ton talent" in (e.title or "") for e in kwargs["embeds"])
 
-        status = epv.load_status(session_factory, 1)
+        status = sv.load_status(session_factory, 1)
         assert "feu" in status.revealed and status.next_price == 500
     asyncio.run(run())
 
 
-def test_bouton_papier_refuse_un_autre_joueur(session_factory):
+def test_bouton_voyante_refuse_un_autre_joueur(session_factory):
     async def run():
         view = discord.ui.View()
-        button = epv.PaperButton(session_factory, 1, 0, owner_discord_id=1)
+        button = sv.SeerButton(session_factory, 1, 0, owner_discord_id=1)
         view.add_item(button)
         inter = fake_interaction(user_id=2)
         await _dispatch(view, button, inter)
         kind, args, kwargs = inter.response.calls[0]
         assert kind == "send" and kwargs.get("ephemeral")
-        assert "pas pour toi" in args[0]
+        assert "/voyante" in args[0]
 
         inter = fake_interaction(user_id=1)
         await _dispatch(view, button, inter)
-        kind, _, kwargs = inter.response.calls[0]
-        assert kind == "send" and isinstance(kwargs["view"], epv.ElementPaperView)
+        kind, _, kwargs = inter.followup.calls[0]
+        assert kind == "send" and isinstance(kwargs["view"], sv.SeerView)
     asyncio.run(run())

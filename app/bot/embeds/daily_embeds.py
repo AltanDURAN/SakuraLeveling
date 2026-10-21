@@ -9,11 +9,33 @@ def build_daily_success_embed(
     streak: int,
     gold_gained: int,
     bonus_items: list[tuple[str, int]] | None = None,
+    streak_bonus_pct: int = 0,
+    days_missed: int = 0,
+    streak_before_absence: int = 0,
+    titles_unlocked: list[str] | None = None,
 ) -> discord.Embed:
     lines = [
         "Vous récupérez :",
-        f"**{_format_int(gold_gained)}** 🪙",
+        f"**{_format_int(gold_gained)}** 🪙"
+        + (f" (dont **+{streak_bonus_pct} %** de série)" if streak_bonus_pct else ""),
     ]
+    if days_missed:
+        lines.append("")
+        lines.append(
+            f"💔 {days_missed} jour{'s' if days_missed > 1 else ''} manqué"
+            f"{'s' if days_missed > 1 else ''} : ta série de **{streak_before_absence}** "
+            f"a été divisée par deux par jour d'absence."
+        )
+    if titles_unlocked:
+        lines.append("")
+        for title in titles_unlocked:
+            lines.append(f"🏷️ Nouveau titre débloqué : **{title}** (voir `/titre`)")
+    if streak_bonus_pct < 90:
+        lines.append("")
+        lines.append(
+            "_La série ajoute +3 % par jour (jusqu'à +90 % à 30 jours). "
+            "Un jour manqué la divise par deux._"
+        )
     if bonus_items:
         lines.append("")
         lines.append("🏷️ **Bonus de titres :**")

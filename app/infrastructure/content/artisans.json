@@ -143,7 +143,29 @@
       106,
       200
     ],
-    "greeting": "Approche. J'ai fait un long voyage pour t'apporter tout ça.",
-    "element_paper_prices": [0, 1500, 4000, 10000, 25000, 50000, 90000, 150000]
+    "greeting": "Approche. J'ai fait un long voyage pour t'apporter tout ça."
+  },
+  "voyante": {
+    "code": "voyante",
+    "name": "Ysaline",
+    "title": "Voyante",
+    "image": "voyante.png",
+    "accent": [
+      160,
+      104,
+      214
+    ],
+    "greeting": "Assieds-toi. Ton sang porte des éléments que tu ignores encore… Je peux les lire, si tu en acceptes le prix.",
+    "price_story": "Chaque vision m'arrache un peu de moi. Et ton âme se défend : chaque secret que je lui arrache enfouit le suivant plus profond.",
+    "reading_prices": [
+      0,
+      1200,
+      3000,
+      7500,
+      19000,
+      38000,
+      68000,
+      112000
+    ]
   }
 }

@@ -29,9 +29,9 @@ def build_affinities_embed(
     (coût N→N+1 = N+1 essences), pour chaque élément.
 
     Le TALENT (caché) n'est affiché que pour les éléments découverts avec un
-    papier élémentaire ; les autres portent un ❓ qui dit comment le découvrir.
+    la voyante ; les autres portent un ❓ qui dit comment le découvrir.
     Tant qu'un talent est inconnu, rien ne trahit son plafond réel."""
-    from app.bot.views.element_paper_view import paper_price_label
+    from app.bot.views.seer_view import reading_price_label
 
     progression = ElementAffinityProgressionService()
     talents = talents or {}
@@ -51,9 +51,9 @@ def build_affinities_embed(
         )
         if is_self:
             hint += (
-                "\n📜 Découvre-le avec un **papier élémentaire** chez Sorn "
-                f"(`/marchand`) ou avec le bouton ci-dessous — prochain papier : "
-                f"**{paper_price_label(next_paper_price)}**."
+                "\n🔮 Ysaline, la **voyante** (`/voyante` ou le bouton ci-dessous), "
+                "peut le lire pour toi — prochaine lecture : "
+                f"**{reading_price_label(next_paper_price)}**."
             )
         description += hint
     embed = discord.Embed(

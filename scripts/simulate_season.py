@@ -34,6 +34,7 @@ from app.domain.services.progression_service import (
     XP_PER_KILL_COEF,
     ProgressionService,
 )
+from app.domain.services.daily_reward_service import daily_gold as daily_reward_gold
 from app.domain.services.quest_reward_service import scale_reward
 from app.infrastructure.artisans import artisan_loader
 
@@ -50,7 +51,7 @@ DAILY_QUESTS_DONE = 2      # sur 3 tirées chaque jour
 WEEKLY_QUESTS_DONE = 2     # sur 3 tirées chaque lundi
 RAID_XP_BASE = 50          # CompleteWorldBossUseCase.XP_PER_TIER (palier 1)
 RAID_GOLD_BASE = 50 + 200 * 0.25  # base + part moyenne du pool d'un raid à 4
-DAILY_GOLD_PER_STREAK = 100       # ClaimDailyRewardUseCase.GOLD_PER_STREAK
+# /daily : règle réelle du jeu (daily_reward_service), joueur assidu (pas de jour manqué).
 
 
 def _load(name: str):
@@ -147,7 +148,7 @@ def simulate(world: World, minutes_per_day: float, minutes_per_kill: float, days
             gained += scale_reward(RAID_XP_BASE, level, reference_level=1)
             gold["raid"] += scale_reward(round(RAID_GOLD_BASE), level, reference_level=1)
         streak += 1
-        gold["daily"] += streak * DAILY_GOLD_PER_STREAK
+        gold["daily"] += daily_reward_gold(level, streak)
 
         result = prog.apply_level_up(
             current_level=level, current_xp=xp, gained_xp=int(gained),

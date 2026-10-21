@@ -1,8 +1,9 @@
-"""Papier élémentaire : révèle le talent caché du joueur dans UN élément.
+"""La voyante révèle le talent caché du joueur dans UN élément.
 
-Vendu par Sorn (`/marchand`), accessible aussi depuis `/affinites`. Le prix
-monte à chaque papier (`element_paper_prices` dans artisans.json) — c'est un
-puits d'or ; le premier est offert. 8 éléments ⇒ 8 papiers au plus.
+Ysaline (`/voyante`, bouton dans `/affinites`) : on choisit l'élément, on paie,
+le talent est révélé dans la foulée. Le prix monte à chaque lecture
+(`reading_prices`, section `voyante` d'artisans.json) — puits d'or ; la
+première est offerte. 8 éléments ⇒ 8 lectures au plus, propres à chaque joueur.
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ from app.shared.enums import ALL_ELEMENTS
 
 @dataclass(frozen=True)
 class PaperStatus:
-    """Ce qu'il faut pour afficher l'offre : prix du prochain papier et
+    """Ce qu'il faut pour afficher l'offre : prix de la prochaine lecture et
     éléments encore inconnus."""
     next_price: int | None          # None = tous les talents sont connus
     unrevealed: tuple[str, ...]
@@ -66,7 +67,7 @@ class RevealElementTalentUseCase:
         price = status.next_price
         if status.gold < price:
             return RevealResult(
-                False, f"Il te manque {price - status.gold} or pour ce papier.", element,
+                False, f"Il te manque {price - status.gold} or pour cette lecture.", element,
                 price=price,
             )
         talent = self.affinities.reveal(player_id, element)  # flush

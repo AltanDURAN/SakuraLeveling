@@ -69,8 +69,25 @@ class MerchantDefinition:
     image: str
     greeting: str
     accent: tuple[int, int, int]
-    #: Papiers élémentaires : prix du 1er, 2e… 8e papier (le 1er est offert).
-    element_paper_prices: tuple[int, ...] = ()
+
+    @property
+    def display_name(self) -> str:
+        return f"{self.name}, {self.title.lower()}"
+
+
+@dataclass(frozen=True)
+class SeerDefinition:
+    """La voyante : lit le talent caché d'un élément, contre une prestation."""
+    code: str
+    name: str
+    title: str
+    image: str
+    greeting: str
+    accent: tuple[int, int, int]
+    #: Pourquoi chaque lecture coûte plus cher que la précédente (dit par elle).
+    price_story: str
+    #: Prix de la 1re, 2e… 8e lecture (la 1re est offerte).
+    reading_prices: tuple[int, ...]
 
     @property
     def display_name(self) -> str:

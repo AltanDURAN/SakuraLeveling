@@ -98,17 +98,44 @@
     ]
   },
   {
+    "code": "habitue_taverne",
+    "name": "Habitué de la taverne",
+    "description": "Série /daily de 7 jours. +1 % sur l'or et l'XP gagnés en combat.",
+    "icon": "🍻",
+    "condition_type": "daily_streak",
+    "condition_value": 7,
+    "effects": [
+      {
+        "type": "gold_xp_bonus_pct",
+        "value": 1
+      }
+    ]
+  },
+  {
     "code": "taverne_addict",
     "name": "Taverne Addict",
-    "description": "Daily streak de 30 jours. Reçoit en bonus une potion de soin à chaque /daily (en plus de l'or).",
+    "description": "Série /daily de 30 jours. +3 % de dégâts critiques.",
     "icon": "🍺",
     "condition_type": "daily_streak",
     "condition_value": 30,
     "effects": [
       {
-        "type": "daily_bonus_item",
-        "target": "potion_soin",
-        "value": 1
+        "type": "crit_damage_flat",
+        "value": 3
+      }
+    ]
+  },
+  {
+    "code": "pilier_taverne",
+    "name": "Pilier de la taverne",
+    "description": "Série /daily de 100 jours. +2 % sur l'or et l'XP gagnés en combat.",
+    "icon": "🏛️",
+    "condition_type": "daily_streak",
+    "condition_value": 100,
+    "effects": [
+      {
+        "type": "gold_xp_bonus_pct",
+        "value": 2
       }
     ]
   },

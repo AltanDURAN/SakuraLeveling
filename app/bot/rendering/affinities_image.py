@@ -4,7 +4,7 @@ Même grammaire visuelle que la bannière et les PNJ (dégradé nuit, pétales d
 sakura, panneaux translucides, badges d'élément). Chaque élément a sa carte :
 affinité, progression d'essences vers le palier suivant, talent.
 
-Le talent est CACHÉ tant qu'un papier élémentaire ne l'a pas révélé : la carte
+Le talent est CACHÉ tant que la voyante ne l'a pas révélé : la carte
 le montre comme un mystère (❓, pointillés), sans jamais trahir le plafond réel.
 """
 
@@ -48,7 +48,7 @@ class AffinityCard:
     affinity: int
     essences: int
     next_cost: int | None      # None = plafond atteint
-    known: bool                # talent révélé par un papier
+    known: bool                # talent révélé par la voyante
     talent: int = 0
     cap: int = 100
     boosts: int = 0
@@ -330,22 +330,22 @@ def compose_affinities_image(
     f_foot_b = try_font(17, bold=True)
     if known >= len(cards):
         if is_self:
-            line1 = "📜 Tu connais tous tes talents."
+            line1 = "🔮 Tu connais tous tes talents."
             line2 = "Les essences tombent au rythme de ton talent : farme les éléments qui te sourient."
         else:
-            line1 = f"📜 {display_name} connaît tous ses talents."
+            line1 = f"🔮 {display_name} connaît tous ses talents."
             line2 = "Les essences tombent au rythme du talent de chacun."
     elif not is_self:
-        line1 = f"📜 {display_name} a découvert {known} talent(s) sur {len(cards)}."
-        line2 = "Chacun découvre les siens avec un papier élémentaire, vendu par Sorn (/marchand)."
+        line1 = f"🔮 {display_name} a découvert {known} talent(s) sur {len(cards)}."
+        line2 = "Chacun découvre les siens auprès d'Ysaline, la voyante (/voyante)."
     else:
         if next_paper_price == 0:
-            line1 = "📜 Ton premier papier élémentaire est OFFERT"
+            line1 = "🔮 Ta première lecture chez la voyante est OFFERTE"
         else:
             price = f"{format_int(next_paper_price)} or"
-            line1 = f"📜 Papier élémentaire — prochain : {price}"
-        line2 = ("Il révèle ton talent caché dans l'élément choisi. Sorn le vend (/marchand), "
-                 "ou utilise le bouton ci-dessous.")
+            line1 = f"🔮 La voyante — prochaine lecture : {price}"
+        line2 = ("Ysaline lit ton talent caché dans l'élément de ton choix : /voyante, "
+                 "ou le bouton ci-dessous.")
     draw_text_with_emojis(bg, (_PAD + 20, fy + 12), line1, f_foot_b, fill=_GOLD, emoji_size=18)
     draw_text_with_shadow(draw, (_PAD + 20, fy + 42), line2, f_foot, fill=_MUTED, shadow=_SHADOW)
 
