@@ -61,9 +61,10 @@ def _setup(session, items):
         discord_id=1, username="u", display_name="U",
     )
     pid = player.player.id
+    from app.infrastructure.db.repositories.gear_repository import GearRepository
+
     for it in items:
-        InventoryRepository(session).add_item(pid, it.id, 1)
-    session.commit()
+        GearRepository(session).add(pid, it.id)
     use_case = EquipPanoplieUseCase(
         player_repository=PlayerRepository(session),
         inventory_repository=InventoryRepository(session),

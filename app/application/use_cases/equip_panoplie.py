@@ -58,20 +58,20 @@ class EquipPanoplieUseCase:
         )
         player_id = profile.player.id
 
-        # Pièces de la famille disponibles : inventaire + déjà équipées.
-        owned = [
-            inv.item_definition
-            for inv in self.inventory_repository.list_by_player_id(player_id)
-            if (inv.item_definition.family or "").strip() == family
-            and inv.item_definition.is_equipable
-        ]
+        # Pièces de la famille possédées (portées ou non), une par définition :
+        # une pièce ne se porte qu'une fois, sa meilleure copie est posée.
+        from app.infrastructure.db.repositories.gear_repository import GearRepository
+
+        owned_by_id = {}
+        for gear in GearRepository(self.equipment_repository.session).list_owned(player_id):
+            item = gear.item_definition
+            if (item.family or "").strip() == family and item.is_equipable:
+                owned_by_id.setdefault(item.id, item)
+        owned = list(owned_by_id.values())
         worn = {
             eq.slot: eq.item_definition
             for eq in self.equipment_repository.list_by_player_id(player_id)
         }
-        for slot, item in worn.items():
-            if (item.family or "").strip() == family:
-                owned.append(item)
 
         by_type: dict[str, list] = {}
         for item in owned:

@@ -36,6 +36,9 @@ class ItemDefinition:
     # à qui on offre une pièce ultime n'aurait plus jamais besoin d'en chercher,
     # elle grandirait toute seule avec lui.
     level_requirement: int = 1
+    # Passif d'équipement (code de `gear_passives.PASSIVES`) — actif à partir
+    # de l'épique. Vide pour tout ce qui n'est pas une pièce d'équipement.
+    passive: str = ""
 
     def can_be_equipped_by(self, player_level: int) -> bool:
         return player_level >= max(1, self.level_requirement)

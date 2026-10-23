@@ -24,6 +24,8 @@ class MobDefinitionModel(Base):
     image_name: Mapped[str] = mapped_column(String(100), nullable=True)
     family: Mapped[str] = mapped_column(String(100), nullable=False, server_default="unknown", index=True)
     element: Mapped[str] = mapped_column(String(20), nullable=False, server_default="")
+    #: La pièce d'équipement que ce monstre lâche (une seule par monstre).
+    gear_item_code: Mapped[str] = mapped_column(String(100), nullable=False, default="", server_default="")
 
     max_hp: Mapped[int] = mapped_column(Integer)
     current_hp: Mapped[int] = mapped_column(Integer)

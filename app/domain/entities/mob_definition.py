@@ -27,3 +27,6 @@ class MobDefinition:
     updated_at: datetime
     # Élément du mob (mono-élément V1). "" = neutre. Modifiable via /admin.
     element: str = ""
+    # LA pièce d'équipement que ce monstre lâche (code d'objet). Une seule par
+    # monstre : celle qu'il porte (cf. gear_service).
+    gear_item_code: str = ""

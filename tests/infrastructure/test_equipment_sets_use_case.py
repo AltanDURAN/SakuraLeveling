@@ -99,21 +99,17 @@ def _create_item(
 
 
 def _give(session, pid, item_id, qty=1):
-    now = datetime.now(UTC)
-    session.add(PlayerInventoryItemModel(
-        player_id=pid, item_definition_id=item_id, quantity=qty,
-        created_at=now, updated_at=now,
-    ))
-    session.commit()
+    from app.infrastructure.db.repositories.gear_repository import GearRepository
+
+    for _ in range(qty):
+        GearRepository(session).add(pid, item_id)
 
 
 def _equip_pre(session, pid, item_id, slot):
-    now = datetime.now(UTC)
-    session.add(PlayerEquipmentItemModel(
-        player_id=pid, item_definition_id=item_id, slot=slot,
-        created_at=now, updated_at=now,
-    ))
-    session.commit()
+    from app.infrastructure.db.repositories.gear_repository import GearRepository
+
+    gear = GearRepository(session).add(pid, item_id)
+    GearRepository(session).set_slot(gear.id, slot)
 
 
 def _make_create(session):
@@ -252,9 +248,11 @@ def test_equip_set_fails_if_item_missing(session):
         discord_id=1, username="a", display_name="A", name="halfset",
     )
 
-    # Le joueur perd l'item (vendu / tradé). On le retire.
-    EquipmentRepository(session).unequip_slot(pid, "tete")
-    # Il n'a plus iron_helmet en inventaire ni équipé.
+    # Le joueur perd la pièce (vendue / échangée) : la copie disparaît.
+    from app.infrastructure.db.repositories.gear_repository import GearRepository
+
+    for gear in GearRepository(session).list_owned(pid):
+        GearRepository(session).remove(gear.id)
 
     result = _make_equip(session).execute(
         discord_id=1, username="a", display_name="A", name="halfset",

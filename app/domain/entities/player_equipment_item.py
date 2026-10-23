@@ -12,3 +12,7 @@ class PlayerEquipmentItem:
     item_definition: ItemDefinition
     created_at: datetime
     updated_at: datetime
+    # Exemplaire porté (équipement v2) : rareté et forge sacrée de CETTE copie.
+    rarity: str = "common"
+    forge_level: int = 0
+    gear_id: int | None = None

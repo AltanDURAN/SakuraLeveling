@@ -28,6 +28,8 @@ class ItemDefinitionModel(Base):
     level_requirement: Mapped[int] = mapped_column(
         Integer, nullable=False, default=1, server_default="1",
     )
+    #: Passif d'équipement (code de gear_passives), actif à partir de l'épique.
+    passive: Mapped[str] = mapped_column(String(64), nullable=False, default="", server_default="")
 
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))

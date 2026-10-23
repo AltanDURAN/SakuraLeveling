@@ -122,47 +122,6 @@
     "level_requirement": 1
   },
   {
-    "code": "dagues_jumelles",
-    "name": "Dagues jumelles",
-    "description": "Une paire de dagues gobelines bien affutées.",
-    "category": "arme",
-    "rarity": "rare",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 18,
-      "crit_damage": 20
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": true,
-    "family": "",
-    "level_requirement": 25
-  },
-  {
-    "code": "cape_silencieuse",
-    "name": "Cape silencieuse",
-    "description": "Annule la première attaque subie.",
-    "category": "accessoire",
-    "rarity": "epic",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "speed": 4,
-      "crit_chance": 5,
-      "crit_damage": 10
-    },
-    "equipment_slot": "accessoire",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 45
-  },
-  {
     "code": "bois",
     "name": "Bois",
     "description": "",
@@ -231,597 +190,6 @@
     "level_requirement": 1
   },
   {
-    "code": "p_simple",
-    "name": "épé simple",
-    "description": "(D4)",
-    "category": "arme",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 50,
-    "buy_price": 75,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 8,
-      "speed": -1
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "dague_simple",
-    "name": "Dague simple",
-    "description": "(D3)",
-    "category": "arme",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 50,
-    "buy_price": 80,
-    "icon": null,
-    "stat_bonuses": {
-      "defense_pct": -3,
-      "crit_chance": 15,
-      "crit_damage": 5
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "bouclier_simple",
-    "name": "Bouclier simple",
-    "description": "(D2)",
-    "category": "arme",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 50,
-    "buy_price": 80,
-    "icon": null,
-    "stat_bonuses": {
-      "defense_pct": 7,
-      "max_hp_pct": 1,
-      "attack_pct": -3
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "baton_simple",
-    "name": "Baton simple",
-    "description": "(D1)",
-    "category": "arme",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 50,
-    "buy_price": 80,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 8,
-      "max_hp_pct": -3,
-      "speed": 1
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "chapeau",
-    "name": "chapeau",
-    "description": "(D4",
-    "category": "tete",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 50,
-    "buy_price": 80,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 7,
-      "max_hp_pct": 1,
-      "crit_damage": -20
-    },
-    "equipment_slot": "tete",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "capuche",
-    "name": "capuche",
-    "description": "(D4) (D6)\r\n+20 de mana aussi",
-    "category": "tete",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 50,
-    "buy_price": 80,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 8,
-      "speed": -1,
-      "crit_chance": 5
-    },
-    "equipment_slot": "tete",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "casque",
-    "name": "Casque",
-    "description": "(D2)",
-    "category": "tete",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 50,
-    "buy_price": 80,
-    "icon": null,
-    "stat_bonuses": {
-      "defense_pct": 7,
-      "max_hp_pct": 1
-    },
-    "equipment_slot": "tete",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "bandana",
-    "name": "bandana",
-    "description": "(D1)",
-    "category": "tete",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 50,
-    "buy_price": 80,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 8,
-      "speed": 1
-    },
-    "equipment_slot": "tete",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "tenu_d_aventurier",
-    "name": "tenu d'aventurier",
-    "description": "(D4)",
-    "category": "corps",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 80,
-    "buy_price": 120,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 5,
-      "defense_pct": 3,
-      "speed": -1
-    },
-    "equipment_slot": "corps",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "armure_de_garde",
-    "name": "armure de garde",
-    "description": "(D2)",
-    "category": "corps",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 80,
-    "buy_price": 120,
-    "icon": null,
-    "stat_bonuses": {
-      "defense_pct": 6,
-      "max_hp_pct": 2,
-      "speed": -1,
-      "crit_damage": -20
-    },
-    "equipment_slot": "corps",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "robe",
-    "name": "robe",
-    "description": "(D3)(D6)\r\n+30 mana",
-    "category": "corps",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 80,
-    "buy_price": 120,
-    "icon": null,
-    "stat_bonuses": {
-      "max_hp_pct": 8,
-      "speed": -1,
-      "crit_chance": 5,
-      "crit_damage": 10
-    },
-    "equipment_slot": "corps",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "v_tement_vagabon",
-    "name": "Vétement vagabon",
-    "description": "(D1) (D3)",
-    "category": "corps",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "max_hp_pct": 8,
-      "speed": 1,
-      "crit_chance": 15,
-      "dodge": 2
-    },
-    "equipment_slot": "corps",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "tenu_d_aventurier_niv_goblin",
-    "name": "Tenu d'aventurier niv goblin",
-    "description": "(D4)(D5)  \r\ncraft : tissu ,fourure et dent de goblin\r\néquipement de niv 3-5",
-    "category": "corps",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 200,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 5,
-      "defense_pct": 2,
-      "max_hp_pct": 1,
-      "speed": -1
-    },
-    "equipment_slot": "corps",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "armure_a_suspention_visceuse",
-    "name": "armure a suspention visceuse",
-    "description": "(D2)\r\ncraft: fer beaucoup ,gelé de slime beaucoup\r\nniv 3-5",
-    "category": "corps",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 200,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "defense_pct": 6,
-      "max_hp_pct": 2,
-      "hp_regeneration": 5
-    },
-    "equipment_slot": "corps",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "tenu_de_mercen_re",
-    "name": "tenu de mercenère",
-    "description": "(D3)(D8)\r\ncraft: tissu ,fourures ,griff de goblin\r\nniv 5-8",
-    "category": "corps",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 250,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 7,
-      "max_hp_pct": 1,
-      "speed": 1,
-      "crit_chance": 15,
-      "crit_damage": 25,
-      "dodge": 5
-    },
-    "equipment_slot": "corps",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "tenu_d_aprentie",
-    "name": "tenu d'aprentie",
-    "description": "(D6)(D5)\r\ncraft :fourure ,tissu et (un drop du goblin chaman \r\nNiv 5-8\r\n+100pt de mana",
-    "category": "corps",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 250,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 6,
-      "defense_pct": 1,
-      "max_hp_pct": 1,
-      "crit_damage": 5
-    },
-    "equipment_slot": "corps",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "chapeau_de_sorcier",
-    "name": "chapeau de sorcier",
-    "description": "(D6)\r\ncraft :tissu + drop du chaman goblin\r\nniv 3-5\r\n+50man",
-    "category": "tete",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 150,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 7,
-      "max_hp_pct": 1,
-      "crit_damage": 10
-    },
-    "equipment_slot": "tete",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "masque_de_camouflage",
-    "name": "masque de camouflage",
-    "description": "(D3)\r\ncraft ,tissu ,gelé de slime ,fourure\r\nniv 3-5",
-    "category": "tete",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 150,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 8,
-      "speed": -1,
-      "crit_chance": 15,
-      "crit_damage": 15
-    },
-    "equipment_slot": "tete",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "home_blind",
-    "name": "Home blindé",
-    "description": "(D2)\r\ncraft : fer, fourure ,gelé de slime\r\nniv 5-8",
-    "category": "tete",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 170,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "defense_pct": 7,
-      "max_hp_pct": 1,
-      "hp_regeneration": 5
-    },
-    "equipment_slot": "tete",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "casque_piquant",
-    "name": "Casque piquant",
-    "description": "(D4)(D5)\r\ncraft: grife de goblin ,fer\r\nNiv 5-8",
-    "category": "tete",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 170,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 6,
-      "defense_pct": 1
-    },
-    "equipment_slot": "tete",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "masse",
-    "name": "masse",
-    "description": "(D5)\r\ncraft :fer, grif de goblin, dent de goblin\r\nniv 3-5",
-    "category": "arme",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 150,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 7,
-      "defense_pct": 1,
-      "speed": -2
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "baton_de_sorcier",
-    "name": "Baton de sorcier",
-    "description": "(D6)\r\ncraft : boi ,drop du chaman\r\nniv3-5\r\n+50mana",
-    "category": "arme",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 150,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 8,
-      "speed": -1
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "p_d_scrime",
-    "name": "épé d'éscrime",
-    "description": "(D1)\r\ncraft bois ,fer, gelé de slime\r\nniv 5-8",
-    "category": "arme",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 170,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 8,
-      "max_hp_pct": -3,
-      "speed": 3,
-      "dodge": 10
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "arc",
-    "name": "arc",
-    "description": "(D8)\r\n(snipeur) ta première ataque inflige +5dégat\r\ncraft: bois tissu ,grifes de goblin, dent de goblin\r\nniv 5-8",
-    "category": "arme",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 170,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 8,
-      "dodge": 5
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "sabre",
-    "name": "sabre",
-    "description": "(D4)\r\ncraft fer ,gelé de slime ,griffe de goblin\r\nniv 5-8",
-    "category": "arme",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 170,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 8,
-      "speed": -1
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "hache",
-    "name": "hache",
-    "description": "(D4)\r\ncraft: fer ,bois ,gelé de slime ,griff de goblin\r\nniv 5-8",
-    "category": "arme",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 170,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 8,
-      "hp_regeneration": 15
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "boucli_piquant",
-    "name": "bouclié piquant",
-    "description": "(D2),(D4)\r\nquand un énémie l'ataque il perd 2pv\r\ncraft: bois ,fer ,dent de goblin ,griffe de goblin\r\nniv 5-10",
-    "category": "arme",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 200,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 6,
-      "defense_pct": 2,
-      "hp_regeneration": 5
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
-    "code": "faux",
-    "name": "Faux",
-    "description": "(D3)\r\ncraft :fer ,boi ,griffe de goblin \r\nniv 5-10",
-    "category": "arme",
-    "rarity": "common",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 200,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 8,
-      "speed": -1,
-      "crit_chance": 35,
-      "crit_damage": 25
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 1
-  },
-  {
     "code": "cuir_brut",
     "name": "Cuir brut",
     "description": "",
@@ -839,66 +207,6 @@
     "level_requirement": 1
   },
   {
-    "code": "brassard_de_cuir",
-    "name": "Brassard de cuir",
-    "description": "",
-    "category": "accessoire",
-    "rarity": "uncommon",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "defense_pct": 12,
-      "speed": 1
-    },
-    "equipment_slot": "accessoire",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 10
-  },
-  {
-    "code": "baton_a_crane",
-    "name": "Bâton à crâne",
-    "description": "",
-    "category": "arme",
-    "rarity": "rare",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 18,
-      "mana_max": 20
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 25
-  },
-  {
-    "code": "fetiche_d_os",
-    "name": "Fétiche d'os",
-    "description": "",
-    "category": "accessoire",
-    "rarity": "uncommon",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "crit_chance": 3,
-      "mana_max": 10
-    },
-    "equipment_slot": "accessoire",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 10
-  },
-  {
     "code": "gourde_de_chaman",
     "name": "Gourde de chaman",
     "description": "",
@@ -914,46 +222,6 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1
-  },
-  {
-    "code": "gourdin_de_tronc",
-    "name": "Gourdin de tronc",
-    "description": "",
-    "category": "arme",
-    "rarity": "rare",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 18,
-      "speed": -2
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 25
-  },
-  {
-    "code": "ceinturon_epais",
-    "name": "Ceinturon épais",
-    "description": "",
-    "category": "accessoire",
-    "rarity": "uncommon",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "defense_pct": 8,
-      "max_hp_pct": 4
-    },
-    "equipment_slot": "accessoire",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 10
   },
   {
     "code": "os_massif",
@@ -988,26 +256,6 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1
-  },
-  {
-    "code": "collier_de_perles",
-    "name": "Collier de perles",
-    "description": "",
-    "category": "accessoire",
-    "rarity": "uncommon",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "mana_max": 25,
-      "mana_regeneration": 2
-    },
-    "equipment_slot": "accessoire",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 10
   },
   {
     "code": "encre_rituelle",
@@ -1061,68 +309,6 @@
     "level_requirement": 1
   },
   {
-    "code": "masse_cloutee",
-    "name": "Masse cloutée",
-    "description": "",
-    "category": "arme",
-    "rarity": "epic",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 25,
-      "speed": -3,
-      "crit_damage": 15
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 45
-  },
-  {
-    "code": "plaque_a_pointes",
-    "name": "Plaque à pointes",
-    "description": "",
-    "category": "corps",
-    "rarity": "rare",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "defense_pct": 16,
-      "max_hp_pct": 2
-    },
-    "equipment_slot": "corps",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 25
-  },
-  {
-    "code": "casque_a_cornes",
-    "name": "Casque à cornes",
-    "description": "",
-    "category": "tete",
-    "rarity": "rare",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "defense_pct": 16,
-      "max_hp_pct": 2,
-      "crit_damage": 5
-    },
-    "equipment_slot": "tete",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 25
-  },
-  {
     "code": "os_poli",
     "name": "Os poli",
     "description": "",
@@ -1138,26 +324,6 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1
-  },
-  {
-    "code": "dague_rouillee",
-    "name": "Dague rouillée",
-    "description": "",
-    "category": "arme",
-    "rarity": "uncommon",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 12,
-      "crit_chance": 2
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 10
   },
   {
     "code": "poussiere_d_ossements",
@@ -1228,68 +394,6 @@
     "level_requirement": 1
   },
   {
-    "code": "chaine_spectrale",
-    "name": "Chaîne spectrale",
-    "description": "",
-    "category": "accessoire",
-    "rarity": "rare",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "defense_pct": 15,
-      "max_hp_pct": 3,
-      "dodge": 2
-    },
-    "equipment_slot": "accessoire",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 25
-  },
-  {
-    "code": "voile_ectoplasmique",
-    "name": "Voile ectoplasmique",
-    "description": "",
-    "category": "accessoire",
-    "rarity": "rare",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "speed": 3,
-      "dodge": 6
-    },
-    "equipment_slot": "accessoire",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 25
-  },
-  {
-    "code": "boulet_hante",
-    "name": "Boulet hanté",
-    "description": "",
-    "category": "arme",
-    "rarity": "rare",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 17,
-      "max_hp_pct": 1,
-      "speed": -4
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 25
-  },
-  {
     "code": "bandelette_maudite",
     "name": "Bandelette maudite",
     "description": "",
@@ -1324,26 +428,6 @@
     "level_requirement": 1
   },
   {
-    "code": "griffe_noircie",
-    "name": "Griffe noircie",
-    "description": "",
-    "category": "arme",
-    "rarity": "uncommon",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 12,
-      "crit_chance": 4
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 10
-  },
-  {
     "code": "eclat_de_pierre",
     "name": "Éclat de pierre",
     "description": "",
@@ -1361,27 +445,6 @@
     "level_requirement": 1
   },
   {
-    "code": "aile_de_pierre",
-    "name": "Aile de pierre",
-    "description": "",
-    "category": "accessoire",
-    "rarity": "rare",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "defense_pct": 16,
-      "max_hp_pct": 2,
-      "speed": -1
-    },
-    "equipment_slot": "accessoire",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 25
-  },
-  {
     "code": "coeur_de_granit",
     "name": "Cœur de granit",
     "description": "",
@@ -1397,89 +460,6 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1
-  },
-  {
-    "code": "couronne_ternie",
-    "name": "Couronne ternie",
-    "description": "",
-    "category": "tete",
-    "rarity": "epic",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "defense_pct": 25,
-      "crit_damage": 12,
-      "mana_max": 40
-    },
-    "equipment_slot": "tete",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 45
-  },
-  {
-    "code": "orbe_maudit",
-    "name": "Orbe maudit",
-    "description": "",
-    "category": "bouclier",
-    "rarity": "epic",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "crit_damage": 15,
-      "mana_max": 50,
-      "mana_regeneration": 3
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 45
-  },
-  {
-    "code": "grimoire_en_lambeaux",
-    "name": "Grimoire en lambeaux",
-    "description": "",
-    "category": "bouclier",
-    "rarity": "rare",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "mana_max": 30,
-      "mana_regeneration": 2
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 25
-  },
-  {
-    "code": "couronne_d_epines",
-    "name": "Couronne d'épines",
-    "description": "",
-    "category": "tete",
-    "rarity": "epic",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "max_hp_pct": -8,
-      "crit_chance": 7,
-      "crit_damage": 18
-    },
-    "equipment_slot": "tete",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 45
   },
   {
     "code": "larme_spectrale",
@@ -1533,26 +513,6 @@
     "level_requirement": 1
   },
   {
-    "code": "trident_ebreche",
-    "name": "Trident ébréché",
-    "description": "",
-    "category": "arme",
-    "rarity": "uncommon",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 12,
-      "speed": 1
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 10
-  },
-  {
     "code": "corne_naissante",
     "name": "Corne naissante",
     "description": "",
@@ -1604,89 +564,6 @@
     "level_requirement": 1
   },
   {
-    "code": "lame_infernale",
-    "name": "Lame infernale",
-    "description": "",
-    "category": "arme",
-    "rarity": "rare",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 18,
-      "crit_damage": 12
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 25
-  },
-  {
-    "code": "ceinturon_cloute",
-    "name": "Ceinturon clouté",
-    "description": "",
-    "category": "accessoire",
-    "rarity": "rare",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "defense_pct": 16,
-      "max_hp_pct": 2,
-      "crit_chance": 2
-    },
-    "equipment_slot": "accessoire",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 25
-  },
-  {
-    "code": "espadon_dentele",
-    "name": "Espadon denté",
-    "description": "",
-    "category": "arme",
-    "rarity": "epic",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 25,
-      "defense_pct": -8,
-      "crit_damage": 20
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 45
-  },
-  {
-    "code": "plaque_rouillee",
-    "name": "Plaque rouillée",
-    "description": "",
-    "category": "corps",
-    "rarity": "rare",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "defense_pct": 16,
-      "max_hp_pct": 2,
-      "speed": -2
-    },
-    "equipment_slot": "corps",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 25
-  },
-  {
     "code": "croc_d_ogre",
     "name": "Croc d'ogre",
     "description": "",
@@ -1702,46 +579,6 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1
-  },
-  {
-    "code": "collier_a_pointes",
-    "name": "Collier à pointes",
-    "description": "",
-    "category": "accessoire",
-    "rarity": "rare",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 10,
-      "defense_pct": 8
-    },
-    "equipment_slot": "accessoire",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 25
-  },
-  {
-    "code": "chaine_de_l_abime",
-    "name": "Chaîne de l'abîme",
-    "description": "",
-    "category": "accessoire",
-    "rarity": "rare",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "defense_pct": 14,
-      "max_hp_pct": 4
-    },
-    "equipment_slot": "accessoire",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 25
   },
   {
     "code": "croc_triple",
@@ -1761,26 +598,6 @@
     "level_requirement": 1
   },
   {
-    "code": "aile_de_cuir",
-    "name": "Aile de cuir",
-    "description": "",
-    "category": "accessoire",
-    "rarity": "rare",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "speed": 5,
-      "dodge": 4
-    },
-    "equipment_slot": "accessoire",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 25
-  },
-  {
     "code": "philtre_de_charme",
     "name": "Philtre de charme",
     "description": "",
@@ -1798,27 +615,6 @@
     "level_requirement": 1
   },
   {
-    "code": "corset_de_soie_noire",
-    "name": "Corset de soie noire",
-    "description": "",
-    "category": "corps",
-    "rarity": "epic",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "speed": 4,
-      "crit_chance": 5,
-      "dodge": 8
-    },
-    "equipment_slot": "corps",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 45
-  },
-  {
     "code": "plume_noircie",
     "name": "Plume noircie",
     "description": "",
@@ -1834,28 +630,6 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1
-  },
-  {
-    "code": "couronne_dechue",
-    "name": "Couronne déchue",
-    "description": "",
-    "category": "tete",
-    "rarity": "legendary",
-    "stackable": false,
-    "max_stack": null,
-    "sell_price": 0,
-    "buy_price": null,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 18,
-      "defense_pct": 18,
-      "crit_damage": 15,
-      "mana_max": 40
-    },
-    "equipment_slot": "tete",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 70
   },
   {
     "code": "flamme_sacree",
@@ -1892,284 +666,480 @@
     "level_requirement": 1
   },
   {
-    "code": "lame_des_enfers",
-    "name": "Lame des enfers",
-    "description": "",
+    "code": "surin_dentele",
+    "name": "Surin dentelé",
+    "description": "Une lame courbe ébréchée, plus rapide que la pensée d'un gobelin.",
     "category": "arme",
-    "rarity": "legendary",
+    "rarity": "common",
     "stackable": false,
     "max_stack": null,
     "sell_price": 0,
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack_pct": 35,
-      "crit_chance": 6,
-      "crit_damage": 25
+      "attack_pct": 8,
+      "crit_chance": 3
     },
     "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": "",
-    "level_requirement": 70
+    "level_requirement": 1,
+    "passive": "first_strike_crit"
   },
   {
-    "code": "sceau_de_corruption",
-    "name": "Sceau de corruption",
-    "description": "",
-    "category": "accessoire",
-    "rarity": "legendary",
+    "code": "epee_de_l_ossuaire",
+    "name": "Épée de l'ossuaire",
+    "description": "Rouillée, mais elle trouve toujours le défaut de l'armure.",
+    "category": "arme",
+    "rarity": "common",
     "stackable": false,
     "max_stack": null,
     "sell_price": 0,
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack_pct": 28,
-      "max_hp_pct": 7,
-      "crit_damage": 20
+      "attack_pct": 8,
+      "crit_chance": 2
     },
-    "equipment_slot": "accessoire",
+    "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": "",
-    "level_requirement": 70
+    "level_requirement": 1,
+    "passive": "armor_pierce"
   },
   {
-    "code": "katana",
-    "name": "katana (D7)",
-    "description": "",
+    "code": "baton_du_crane_totem",
+    "name": "Bâton du crâne-totem",
+    "description": "Le crâne au sommet murmure encore des incantations.",
     "category": "arme",
-    "rarity": "rare",
-    "stackable": true,
+    "rarity": "common",
+    "stackable": false,
     "max_stack": null,
-    "sell_price": 1000,
+    "sell_price": 0,
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack_pct": 18,
-      "crit_chance": 10,
-      "crit_damage": 10
+      "attack_pct": 8,
+      "mana_max": 15
     },
     "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": "",
-    "level_requirement": 25
+    "level_requirement": 1,
+    "passive": "healing_hands"
   },
   {
-    "code": "grife_nergis_e_d6_energis_e_10_du_mana_en_attaque",
-    "name": "grife énergisée (D6) energisée (+10% du mana en attaque)",
-    "description": "",
+    "code": "tronc_arrache",
+    "name": "Tronc arraché",
+    "description": "Un arbre entier, déraciné à mains nues.",
     "category": "arme",
-    "rarity": "rare",
-    "stackable": true,
+    "rarity": "common",
+    "stackable": false,
     "max_stack": null,
-    "sell_price": 1000,
-    "buy_price": 1200,
+    "sell_price": 0,
+    "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack_pct": 18,
-      "mana_max": 100
-    },
-    "equipment_slot": "arme",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 25
-  },
-  {
-    "code": "armure_de_m_tal_sup_rieur_d4",
-    "name": "armure de métal supérieur (D2)",
-    "description": "",
-    "category": "corps",
-    "rarity": "rare",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 1300,
-    "buy_price": 1600,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 4,
-      "defense_pct": 12,
-      "max_hp_pct": 2,
-      "hp_regeneration": 10
-    },
-    "equipment_slot": "corps",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 25
-  },
-  {
-    "code": "exo_squelette_exp_rimental_d5_d4",
-    "name": "exo squelette expérimental (D5)(D4)",
-    "description": "",
-    "category": "corps",
-    "rarity": "rare",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 1300,
-    "buy_price": 1600,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 14,
-      "defense_pct": 3,
-      "max_hp_pct": 1,
+      "attack_pct": 20,
       "speed": -1
     },
-    "equipment_slot": "corps",
-    "requires_two_hands": false,
+    "equipment_slot": "arme",
+    "requires_two_hands": true,
     "family": "",
-    "level_requirement": 25
+    "level_requirement": 1,
+    "passive": "executioner"
   },
   {
-    "code": "casque_infligeur",
-    "name": "casque infligeur",
-    "description": "",
-    "category": "tete",
-    "rarity": "rare",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 1000,
-    "buy_price": 1200,
-    "icon": null,
-    "stat_bonuses": {
-      "defense_pct": 15,
-      "max_hp_pct": 3,
-      "crit_chance": 20,
-      "mana_max": 25
-    },
-    "equipment_slot": "tete",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 25
-  },
-  {
-    "code": "lunette_de_pr_cision_d8_snipeur_20_de_degat_a_la_premi_re_attaque",
-    "name": "lunette de précision (D8) snipeur+20% de degat a la première attaque",
-    "description": "",
-    "category": "tete",
-    "rarity": "rare",
-    "stackable": true,
-    "max_stack": null,
-    "sell_price": 1000,
-    "buy_price": 1200,
-    "icon": null,
-    "stat_bonuses": {
-      "attack_pct": 18,
-      "crit_chance": 10,
-      "crit_damage": 10,
-      "dodge": 5
-    },
-    "equipment_slot": "tete",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 25
-  },
-  {
-    "code": "titan_gel_core",
-    "name": "Cœur de Gel du Titan",
-    "description": "Un noyau de gelée qui bat encore, arraché au Titan Visqueux.",
-    "category": "accessoire",
-    "rarity": "epic",
-    "stackable": false,
-    "max_stack": 1,
-    "sell_price": 0,
-    "buy_price": 0,
-    "icon": "",
-    "stat_bonuses": {
-      "defense_pct": 17,
-      "max_hp_pct": 8,
-      "hp_regeneration": 8,
-      "mana_max": 60
-    },
-    "equipment_slot": "accessoire",
-    "requires_two_hands": false,
-    "family": "",
-    "level_requirement": 45
-  },
-  {
-    "code": "warlord_blade",
-    "name": "Lame du Seigneur de Guerre",
-    "description": "L'acier ébréché d'un chef gobelin qui n'a jamais reculé.",
+    "code": "trident_ricaneur",
+    "name": "Trident ricaneur",
+    "description": "On jurerait l'entendre rire à chaque coup.",
     "category": "arme",
-    "rarity": "epic",
+    "rarity": "common",
     "stackable": false,
-    "max_stack": 1,
+    "max_stack": null,
     "sell_price": 0,
-    "buy_price": 0,
-    "icon": "",
+    "buy_price": null,
+    "icon": null,
     "stat_bonuses": {
-      "attack_pct": 25,
-      "speed": 4,
-      "crit_chance": 8
+      "attack_pct": 8,
+      "crit_damage": 6
     },
     "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": "",
-    "level_requirement": 45
+    "level_requirement": 1,
+    "passive": "double_strike"
   },
   {
-    "code": "colossus_plate",
-    "name": "Plastron du Colosse",
-    "description": "Une plaque de granit vivant, taillée dans le Colosse lui-même.",
+    "code": "fendoir_d_orage",
+    "name": "Fendoir d'orage",
+    "description": "La foudre court le long du tranchant.",
+    "category": "arme",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack_pct": 8,
+      "speed": 1
+    },
+    "equipment_slot": "arme",
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1,
+    "passive": "boss_slayer"
+  },
+  {
+    "code": "massue_du_chef_de_guerre",
+    "name": "Massue du chef de guerre",
+    "description": "Chaque pointe porte le nom d'un ennemi tombé.",
+    "category": "arme",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "attack_pct": 8,
+      "crit_damage": 8
+    },
+    "equipment_slot": "arme",
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1,
+    "passive": "rising_fury"
+  },
+  {
+    "code": "egide_du_damne",
+    "name": "Égide du Damné",
+    "description": "Le crâne serti mord ceux qui frappent.",
+    "category": "bouclier",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense_pct": 6,
+      "max_hp_pct": 4
+    },
+    "equipment_slot": "arme",
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1,
+    "passive": "thorns"
+  },
+  {
+    "code": "pavois_de_granit",
+    "name": "Pavois de granit",
+    "description": "Plus on le frappe, plus il se durcit.",
+    "category": "bouclier",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense_pct": 6,
+      "max_hp_pct": 4
+    },
+    "equipment_slot": "arme",
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1,
+    "passive": "stone_skin"
+  },
+  {
+    "code": "peau_de_loup_du_lutteur",
+    "name": "Peau de loup du lutteur",
+    "description": "L'odeur du loup rend téméraire.",
     "category": "corps",
-    "rarity": "epic",
+    "rarity": "common",
     "stackable": false,
-    "max_stack": 1,
+    "max_stack": null,
     "sell_price": 0,
-    "buy_price": 0,
-    "icon": "",
+    "buy_price": null,
+    "icon": null,
     "stat_bonuses": {
-      "defense_pct": 19,
-      "max_hp_pct": 6,
-      "speed": -2
+      "defense_pct": 6,
+      "max_hp_pct": 6
     },
     "equipment_slot": "corps",
     "requires_two_hands": false,
     "family": "",
-    "level_requirement": 45
+    "level_requirement": 1,
+    "passive": "counter_attack"
   },
   {
-    "code": "wraith_cloak",
-    "name": "Cape du Spectre",
-    "description": "Elle ne projette aucune ombre. Ceux qui la portent non plus.",
-    "category": "accessoire",
-    "rarity": "legendary",
+    "code": "haillons_du_revenant",
+    "name": "Haillons du revenant",
+    "description": "Ils ont déjà vu leur porteur mourir. Une fois.",
+    "category": "corps",
+    "rarity": "common",
     "stackable": false,
-    "max_stack": 1,
+    "max_stack": null,
     "sell_price": 0,
-    "buy_price": 0,
-    "icon": "",
+    "buy_price": null,
+    "icon": null,
     "stat_bonuses": {
-      "defense_pct": 26,
-      "max_hp_pct": 9,
-      "speed": 7,
-      "crit_damage": 45,
-      "dodge": 12,
-      "mana_regeneration": 6
+      "defense_pct": 6,
+      "max_hp_pct": 6
+    },
+    "equipment_slot": "corps",
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1,
+    "passive": "undying"
+  },
+  {
+    "code": "bandelettes_embaumees",
+    "name": "Bandelettes embaumées",
+    "description": "Imprégnées d'huiles qui amortissent les coups.",
+    "category": "corps",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense_pct": 6,
+      "max_hp_pct": 6
+    },
+    "equipment_slot": "corps",
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1,
+    "passive": "crit_ward"
+  },
+  {
+    "code": "cape_de_nuit_sans_lune",
+    "name": "Cape de nuit sans lune",
+    "description": "Elle boit la lumière autour d'elle.",
+    "category": "corps",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense_pct": 6,
+      "max_hp_pct": 6
+    },
+    "equipment_slot": "corps",
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1,
+    "passive": "shadow_step"
+  },
+  {
+    "code": "cuirasse_de_l_exil",
+    "name": "Cuirasse de l'exil",
+    "description": "Forgée au ciel, ternie en enfer.",
+    "category": "corps",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "defense_pct": 6,
+      "max_hp_pct": 6
+    },
+    "equipment_slot": "corps",
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1,
+    "passive": "first_hit_ward"
+  },
+  {
+    "code": "couronne_de_la_liche",
+    "name": "Couronne de la Liche",
+    "description": "Là où elle passe, rien ne guérit.",
+    "category": "tete",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp_pct": 6,
+      "mana_max": 15
+    },
+    "equipment_slot": "tete",
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1,
+    "passive": "anti_heal"
+  },
+  {
+    "code": "heaume_aux_cornes",
+    "name": "Heaume aux cornes",
+    "description": "Impossible de l'ignorer sur un champ de bataille.",
+    "category": "tete",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp_pct": 6,
+      "crit_chance": 2
+    },
+    "equipment_slot": "tete",
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1,
+    "passive": "taunt_guard"
+  },
+  {
+    "code": "diademe_hurlant",
+    "name": "Diadème hurlant",
+    "description": "Son cri glace le bras qui s'apprête à frapper.",
+    "category": "tete",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "max_hp_pct": 6,
+      "dodge": 1
+    },
+    "equipment_slot": "tete",
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1,
+    "passive": "weakening_cry"
+  },
+  {
+    "code": "perle_de_gelee",
+    "name": "Perle de gelée",
+    "description": "Tout ce qui tombe y reste collé.",
+    "category": "accessoire",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "hp_regeneration": 3
     },
     "equipment_slot": "accessoire",
     "requires_two_hands": false,
     "family": "",
-    "level_requirement": 70
+    "level_requirement": 1,
+    "passive": "lucky_find"
   },
   {
-    "code": "dragon_heart",
-    "name": "Cœur du Dragon Ancestral",
-    "description": "Il bat encore. On l'entend quand le combat se tait.",
-    "category": "arme",
-    "rarity": "legendary",
+    "code": "grenade_de_suie",
+    "name": "Grenade de suie",
+    "description": "On apprend vite à se protéger des explosions.",
+    "category": "accessoire",
+    "rarity": "common",
     "stackable": false,
-    "max_stack": 1,
+    "max_stack": null,
     "sell_price": 0,
-    "buy_price": 0,
-    "icon": "",
+    "buy_price": null,
+    "icon": null,
     "stat_bonuses": {
-      "attack_pct": 33,
-      "max_hp_pct": 2,
-      "crit_chance": 12,
-      "crit_damage": 45
+      "crit_damage": 9
     },
-    "equipment_slot": "arme",
+    "equipment_slot": "accessoire",
     "requires_two_hands": false,
     "family": "",
-    "level_requirement": 70
+    "level_requirement": 1,
+    "passive": "blast_ward"
+  },
+  {
+    "code": "bracelet_runique",
+    "name": "Bracelet runique",
+    "description": "Les runes s'éveillent au contact des éléments.",
+    "category": "accessoire",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "mana_max": 20
+    },
+    "equipment_slot": "accessoire",
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1,
+    "passive": "elemental_power"
+  },
+  {
+    "code": "chaine_de_l_ame_errante",
+    "name": "Chaîne de l'âme errante",
+    "description": "Elle attire les âmes des vaincus.",
+    "category": "accessoire",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "dodge": 2
+    },
+    "equipment_slot": "accessoire",
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1,
+    "passive": "essence_hunter"
+  },
+  {
+    "code": "collier_du_gardien",
+    "name": "Collier du gardien",
+    "description": "Le gardien des enfers ne lâche jamais prise.",
+    "category": "accessoire",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "speed": 1
+    },
+    "equipment_slot": "accessoire",
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1,
+    "passive": "tenacity"
+  },
+  {
+    "code": "baiser_de_la_succube",
+    "name": "Baiser de la Succube",
+    "description": "Qui l'a reçu ne craint plus aucun charme.",
+    "category": "accessoire",
+    "rarity": "common",
+    "stackable": false,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "crit_chance": 3
+    },
+    "equipment_slot": "accessoire",
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1,
+    "passive": "iron_will"
   }
 ]

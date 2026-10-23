@@ -55,11 +55,6 @@ def resolve_player_stats(
     set_bonuses = resolve_set_bonuses(equipped_items)
     status_bonuses = resolve_status_effects(session, player_id)
 
-    from app.infrastructure.db.repositories.player_item_level_repository import (
-        PlayerItemLevelRepository,
-    )
-    item_levels = PlayerItemLevelRepository(session).get_levels_for_player(player_id)
-
     svc = stats_service or StatsService()
     return svc.calculate_player_stats(
         profile=profile,
@@ -68,7 +63,6 @@ def resolve_player_stats(
         set_bonuses=set_bonuses,
         title_bonuses=title_bonuses,
         status_bonuses=status_bonuses,
-        item_levels=item_levels,
     )
 
 
@@ -88,9 +82,6 @@ def resolve_player_stats_bulk(
     if not profiles:
         return {}
 
-    from app.infrastructure.db.repositories.player_item_level_repository import (
-        PlayerItemLevelRepository,
-    )
     from app.infrastructure.db.repositories.equipment_repository import (
         EquipmentRepository,
     )
@@ -106,11 +97,10 @@ def resolve_player_stats_bulk(
 
     ids = [p.player.id for p in profiles]
 
-    # --- 6 requêtes groupées, quel que soit le nombre de joueurs ---
+    # --- 5 requêtes groupées, quel que soit le nombre de joueurs ---
     allocations_by_player = PlayerSkillAllocationRepository(session).list_by_players(ids)
     titles_by_player = PlayerTitleRepository(session).list_codes_for_players(ids)
     status_by_player = PlayerStatusEffectRepository(session).list_active_multipliers_bulk(ids)
-    levels_by_player = PlayerItemLevelRepository(session).get_levels_for_players(ids)
     equipment_by_player = EquipmentRepository(session).list_by_player_ids(ids)
 
     skill_service = SkillTreeService(get_skill_tree_definition())
@@ -135,6 +125,5 @@ def resolve_player_stats_bulk(
             set_bonuses=resolve_set_bonuses(equipped),
             title_bonuses=title_service.aggregate(title_defs),
             status_bonuses=status_service.aggregate(status_by_player.get(pid, [])),
-            item_levels=levels_by_player.get(pid, {}),
         )
     return out

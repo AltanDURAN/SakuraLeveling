@@ -45,6 +45,7 @@ class ItemRepository:
         requires_two_hands: bool = False,
         family: str = "",
         level_requirement: int = 1,
+        passive: str = "",
     ) -> ItemDefinition:
         model = ItemDefinitionModel(
             code=code,
@@ -62,6 +63,7 @@ class ItemRepository:
             requires_two_hands=requires_two_hands,
             family=family,
             level_requirement=max(1, level_requirement),
+            passive=passive or "",
         )
 
         self.session.add(model)
@@ -90,6 +92,7 @@ class ItemRepository:
         requires_two_hands: bool = False,
         family: str = "",
         level_requirement: int = 1,
+        passive: str = "",
     ):
         stmt = select(ItemDefinitionModel).where(ItemDefinitionModel.code == code)
         model = self.session.execute(stmt).scalar_one_or_none()
@@ -111,6 +114,7 @@ class ItemRepository:
         model.requires_two_hands = requires_two_hands
         model.family = family
         model.level_requirement = max(1, level_requirement)
+        model.passive = passive or ""
         model.updated_at = datetime.now(UTC)
 
         self.session.commit()

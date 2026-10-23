@@ -19,14 +19,7 @@
       "auto_heal_per_turn": 14
     },
     "lore": "Premier obstacle des aventuriers ambitieux. Élément Eau (faible à plante/foudre… ici : plante/terre/glace). Se régénère un peu chaque tour : il faut le tuer assez vite.",
-    "loot_table": [
-      {
-        "item_code": "titan_gel_core",
-        "drop_rate": 0.25,
-        "min_quantity": 1,
-        "max_quantity": 1
-      }
-    ]
+    "loot_table": []
   },
   {
     "code": "gobelin_warlord",
@@ -53,14 +46,7 @@
       }
     },
     "lore": "Élément Feu (faible à eau/vent/terre). À 30% PV sa rage le fait frapper 50% plus fort. Invoque des gobelins toutes les 4 manches (max 3) qui tapent l'équipe.",
-    "loot_table": [
-      {
-        "item_code": "warlord_blade",
-        "drop_rate": 0.2,
-        "min_quantity": 1,
-        "max_quantity": 1
-      }
-    ]
+    "loot_table": []
   },
   {
     "code": "stone_colossus",
@@ -82,14 +68,7 @@
       "reflect_pct": 15
     },
     "lore": "Élément Terre (faible à plante/glace/vent). Sa carapace runique ignore les dégâts < 50 et renvoie 15% des coups reçus. Frapper fort, ou souffrir du retour.",
-    "loot_table": [
-      {
-        "item_code": "colossus_plate",
-        "drop_rate": 0.2,
-        "min_quantity": 1,
-        "max_quantity": 1
-      }
-    ]
+    "loot_table": []
   },
   {
     "code": "shadow_wraith",
@@ -120,14 +99,7 @@
       ]
     },
     "lore": "Élément Ténèbre (faible à lumière). Les crits sont annulés. À 50% PV il frappe +30%, à 20% PV +60%. Sa vitesse rend ses esquives redoutables.",
-    "loot_table": [
-      {
-        "item_code": "wraith_cloak",
-        "drop_rate": 0.15,
-        "min_quantity": 1,
-        "max_quantity": 1
-      }
-    ]
+    "loot_table": []
   },
   {
     "code": "ancient_dragon",
@@ -163,13 +135,6 @@
       ]
     },
     "lore": "Élément Lumière (faible à ténèbre). Le boss définitif : armure dragon (ignore <100 dmg), renvoie 20% des coups, régénère 2000 PV/tour, invoque des drakelings, phase à 50% PV, rage finale à 25% PV (+80% atk). Raid massif obligatoire.",
-    "loot_table": [
-      {
-        "item_code": "dragon_heart",
-        "drop_rate": 0.12,
-        "min_quantity": 1,
-        "max_quantity": 1
-      }
-    ]
+    "loot_table": []
   }
 ]

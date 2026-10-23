@@ -4,7 +4,8 @@ Vérifie les règles qui remplacent l'ancien système main droite / main gauche 
   • un accessoire se pose tout seul dans le premier emplacement libre (×3) ;
   • armes et boucliers partagent les 2 mains, sans notion de main dominante ;
   • une pièce à 2 mains occupe les DEUX emplacements et verrouille l'autre ;
-  • on ne peut pas porter deux fois le même item avec un seul exemplaire.
+  • une même pièce ne se porte qu'UNE fois (équipement v2), même avec deux
+    copies ; une meilleure copie remplace celle portée, sur place.
 """
 
 from datetime import UTC, datetime
@@ -64,9 +65,11 @@ def _setup(session):
     return player.player.id, use_case
 
 
-def _give(session, player_id, item, qty=1):
-    InventoryRepository(session).add_item(player_id, item.id, qty)
-    session.commit()
+def _give(session, player_id, item, qty=1, rarity="common"):
+    from app.infrastructure.db.repositories.gear_repository import GearRepository
+
+    for _ in range(qty):
+        GearRepository(session).add(player_id, item.id, rarity)
 
 
 def _equip(use_case, code, slot=None):
@@ -163,22 +166,36 @@ def test_arme_une_main_remplace_la_deux_mains(session):
     assert _worn(session, pid) == {EquipmentSlot.ARME_1.value: "epee"}
 
 
-def test_meme_item_deux_fois_exige_deux_exemplaires(session):
-    pid, uc = _setup(session)
-    it = _item(session, "dague", "arme", "arme")
-    _give(session, pid, it, qty=1)
-    assert _equip(uc, "dague").success
-    refus = _equip(uc, "dague")
-    assert refus.success is False and "second exemplaire" in refus.message
-
-
-def test_meme_item_deux_fois_ok_avec_deux_exemplaires(session):
+def test_une_piece_ne_se_porte_qu_une_fois(session):
     pid, uc = _setup(session)
     it = _item(session, "dague", "arme", "arme")
     _give(session, pid, it, qty=2)
     assert _equip(uc, "dague").success
+    second = _equip(uc, "dague")  # même rareté : rien à gagner, refusé
+    assert second.success is False and "qu'une fois" in second.message
+    assert list(_worn(session, pid).values()) == ["dague"]
+
+
+def test_une_meilleure_copie_remplace_sur_place(session):
+    pid, uc = _setup(session)
+    it = _item(session, "dague", "arme", "arme")
+    _give(session, pid, it, rarity="common")
     assert _equip(uc, "dague").success
-    assert list(_worn(session, pid).values()) == ["dague", "dague"]
+    _give(session, pid, it, rarity="epic")
+    res = _equip(uc, "dague")
+    assert res.success and "épique" in res.message
+    worn = EquipmentRepository(session).list_by_player_id(pid)
+    assert [(w.item_definition.code, w.rarity) for w in worn] == [("dague", "epic")]
+
+
+def test_equipe_toujours_la_meilleure_copie_libre(session):
+    pid, uc = _setup(session)
+    it = _item(session, "dague", "arme", "arme")
+    _give(session, pid, it, rarity="rare")
+    _give(session, pid, it, rarity="legendary")
+    _give(session, pid, it, rarity="common")
+    assert _equip(uc, "dague").success
+    assert EquipmentRepository(session).list_by_player_id(pid)[0].rarity == "legendary"
 
 
 # ---------------------------------------------------------------- tête / corps
@@ -211,4 +228,4 @@ def test_item_non_equipable_refuse(session):
 def test_item_absent_de_inventaire_refuse(session):
     _, uc = _setup(session)
     refus = _equip(uc, "fantome")
-    assert refus.success is False and "inventaire" in refus.message
+    assert refus.success is False and "possèdes" in refus.message

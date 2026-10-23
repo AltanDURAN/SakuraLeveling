@@ -160,7 +160,8 @@ class EquipSavedSetUseCase:
     - conserve les pièces déjà équipées (même item_def + même slot)
     - déséquipe les slots tenus par autre chose, équipe la cible
     - si une 2-mains est sélectionnée pour arme_1, arme_2 est vidé
-    - refuse si un item du set n'est plus possédé (inventaire ∪ équipé)
+    - refuse si une pièce du set n'est plus possédée ; porte la MEILLEURE
+      copie possédée de chaque pièce (équipement v2)
     """
 
     def __init__(
@@ -199,12 +200,13 @@ class EquipSavedSetUseCase:
                 message=f"❌ Le set `{cleaned}` est vide.",
             )
 
+        from app.infrastructure.db.repositories.gear_repository import GearRepository
+
         equipped = self.equipment_repository.list_by_player_id(player_id)
-        inventory = self.inventory_repository.list_by_player_id(player_id)
-        owned_def_ids = (
-            {e.item_definition.id for e in equipped}
-            | {i.item_definition.id for i in inventory}
-        )
+        owned_def_ids = {
+            g.item_definition.id
+            for g in GearRepository(self.equipment_repository.session).list_owned(player_id)
+        }
 
         # Vérification : tous les items du set sont-ils possédés ?
         missing: list[str] = []
@@ -246,20 +248,24 @@ class EquipSavedSetUseCase:
 
         already_ok: dict[str, int] = {e.slot: e.item_definition.id for e in equipped}
 
-        changes: list[tuple[str, int]] = []
-        kept = 0
-        for slot, target_id in plan.items():
-            current_id = already_ok.get(slot)
-            if current_id == target_id:
-                kept += 1
-                continue
-            self.equipment_repository.unequip_slot(player_id, slot)
+        changes: list[tuple[str, int]] = [
+            (slot, target_id) for slot, target_id in plan.items()
+            if already_ok.get(slot) != target_id
+        ]
+        kept = len(plan) - len(changes)
+        # D'abord libérer : les emplacements à changer ET ceux qui portent une
+        # pièce que le set veut ailleurs (une pièce ne se porte qu'une fois —
+        # sinon elle n'aurait aucune copie libre à déplacer).
+        wanted = {target_id for _, target_id in changes}
+        for slot, current_id in already_ok.items():
+            if slot in dict(changes) or current_id in wanted:
+                self.equipment_repository.unequip_slot(player_id, slot)
+        for slot, target_id in changes:
             self.equipment_repository.equip_item(
                 player_id=player_id,
                 item_definition_id=target_id,
                 slot=slot,
             )
-            changes.append((slot, target_id))
 
         # Si la cible arme_1 est 2-mains : vide arme_2 au cas où il y avait
         # une pièce hors-set qui traînait

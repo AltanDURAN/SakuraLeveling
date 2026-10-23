@@ -65,17 +65,17 @@ def plan_equip(item_def, occupied: dict) -> EquipPlan | None:
 
 
 class EquipItemUseCase:
-    """Équipe un item — système SIMPLIFIÉ à 7 emplacements.
+    """Équipe une pièce — 7 emplacements, placement automatique.
 
-    Un item déclare un TYPE d'emplacement (`tete`, `corps`, `accessoire`,
-    `arme`), pas un emplacement précis. Le joueur n'a donc rien à choisir :
-    on pose la pièce dans le premier emplacement LIBRE de son type, et à
-    défaut on remplace le premier.
-
-    Armes et boucliers partagent les deux mains (`arme_1`, `arme_2`) :
-      • 1 main  → un emplacement ; on peut donc en porter deux (deux armes,
-        deux boucliers, ou un de chaque) ;
-      • 2 mains → occupe `arme_1` et VERROUILLE `arme_2` (rien d'autre).
+    Équipement v2 : on porte un EXEMPLAIRE (`gear_id`), ou à défaut la
+    meilleure copie libre de la pièce demandée (`item_code` : rareté, puis
+    forge sacrée). Règles :
+      • une même pièce ne se porte qu'UNE fois (armes et accessoires compris) ;
+        demander une meilleure copie d'une pièce déjà portée la remplace dans
+        son emplacement ;
+      • armes et boucliers partagent les deux mains ; une 2 mains occupe
+        `arme_1` et verrouille `arme_2` ;
+      • aucun niveau requis (tout est en % du socle du joueur).
     """
 
     def __init__(
@@ -83,10 +83,14 @@ class EquipItemUseCase:
         player_repository: PlayerRepository,
         inventory_repository: InventoryRepository,
         equipment_repository: EquipmentRepository,
+        gear_repository=None,
     ):
+        from app.infrastructure.db.repositories.gear_repository import GearRepository
+
         self.player_repository = player_repository
         self.inventory_repository = inventory_repository
         self.equipment_repository = equipment_repository
+        self.gear_repository = gear_repository or GearRepository(equipment_repository.session)
 
     def _occupied(self, player_id: int) -> dict:
         """slot → ItemDefinition portée (entrée de `plan_equip`)."""
@@ -95,13 +99,22 @@ class EquipItemUseCase:
             for e in self.equipment_repository.list_by_player_id(player_id)
         }
 
+    def _pick_copy(self, player_id: int, item_code: str | None, gear_id: int | None):
+        owned = self.gear_repository.list_owned(player_id)  # les plus rares d'abord
+        if gear_id is not None:
+            return next((g for g in owned if g.id == gear_id), None)
+        copies = [g for g in owned if g.item_definition.code == item_code]
+        free = [g for g in copies if not g.equipped]
+        return free[0] if free else (copies[0] if copies else None)
+
     def execute(
         self,
         discord_id: int,
         username: str,
         display_name: str,
-        item_code: str,
+        item_code: str | None = None,
         slot: str | None = None,
+        gear_id: int | None = None,
     ) -> EquipResult:
         profile = self.player_repository.get_or_create_by_discord_id(
             discord_id=discord_id,
@@ -110,38 +123,20 @@ class EquipItemUseCase:
         )
         player_id = profile.player.id
 
-        inventory_items = self.inventory_repository.list_by_player_id(player_id)
-        matched_item = next(
-            (i for i in inventory_items if i.item_definition.code == item_code),
-            None,
-        )
-        if matched_item is None:
+        gear = self._pick_copy(player_id, item_code, gear_id)
+        if gear is None:
             return EquipResult(
                 success=False,
-                message=f"❌ L'item `{item_code}` n'est pas dans votre inventaire.",
+                message=f"❌ Tu ne possèdes pas cette pièce (`{item_code or gear_id}`).",
             )
-
-        item_def = matched_item.item_definition
+        item_def = gear.item_definition
         if not item_def.is_equipable:
+            return EquipResult(success=False, message=f"❌ **{item_def.name}** n'est pas équipable.")
+        if gear.equipped:
             return EquipResult(
                 success=False,
-                message=f"❌ **{item_def.name}** n'est pas équipable.",
-            )
-
-        # Niveau requis : les bonus étant des POURCENTAGES du socle, une pièce
-        # de haut niveau ne rendrait de toute façon pas un débutant
-        # surpuissant. Ce verrou protège le PARCOURS : sans lui, un nouveau
-        # joueur à qui on offre une pièce ultime n'aurait plus jamais besoin
-        # d'en chercher — elle grandirait toute seule avec lui.
-        player_level = profile.progression.level
-        if not item_def.can_be_equipped_by(player_level):
-            return EquipResult(
-                success=False,
-                message=(
-                    f"🔒 **{item_def.name}** demande le niveau "
-                    f"**{item_def.level_requirement}** — tu es niveau "
-                    f"{player_level}. Reviens quand tu seras prêt."
-                ),
+                message=f"ℹ️ **{item_def.name}** est déjà portée "
+                        f"({SLOT_LABELS.get(gear.equipped_slot, gear.equipped_slot)}).",
             )
 
         item_type = item_def.equipment_slot or ""
@@ -155,7 +150,35 @@ class EquipItemUseCase:
                 ),
             )
 
-        # Emplacement demandé explicitement : il doit appartenir au bon type.
+        worn = self.equipment_repository.list_by_player_id(player_id)
+
+        # Une pièce, une fois : une copie déjà portée est REMPLACÉE sur place.
+        same = next((e for e in worn if e.item_definition.id == item_def.id), None)
+        if same is not None and gear_id is None and (
+            (rarity_index(same.rarity), same.forge_level)
+            >= (rarity_index(gear.rarity), gear.forge_level)
+        ):
+            return EquipResult(
+                success=False,
+                message=(
+                    f"ℹ️ Tu portes déjà **{item_def.name}** "
+                    f"({rarity_label(same.rarity)}) : une pièce ne se porte "
+                    f"qu'une fois, et tu n'en as pas de meilleure copie."
+                ),
+            )
+        if same is not None:
+            self.equipment_repository.equip_gear(player_id, gear.id, same.slot)
+            return EquipResult(
+                success=True,
+                message=(
+                    f"✅ **{item_def.name}** : ta copie {rarity_label(gear.rarity)} "
+                    f"remplace celle que tu portais "
+                    f"({SLOT_LABELS.get(same.slot, same.slot)})."
+                ),
+                slots_equipped=[same.slot],
+                unequipped_items=[f"{item_def.name} ({rarity_label(same.rarity)})"],
+            )
+
         if slot is not None:
             if slot not in {s.value for s in allowed}:
                 choices = ", ".join(f"`{s.value}`" for s in allowed)
@@ -168,23 +191,19 @@ class EquipItemUseCase:
                 )
             target_slot = slot
         else:
-            plan = plan_equip(item_def, self._occupied(player_id))
+            plan = plan_equip(item_def, {e.slot: e.item_definition for e in worn})
             target_slot = plan.target_slot if plan else allowed[0].value
 
         unequipped: list[str] = []
 
-        # ---- Armes / boucliers à DEUX MAINS : occupent la paire entière ----
+        # ---- Deux mains : la paire entière ----
         if item_def.requires_two_hands:
             for hand in WEAPON_SLOTS:
                 existing = self.equipment_repository.get_slot(player_id, hand.value)
                 if existing is not None:
                     unequipped.append(existing.item_definition.name)
                     self.equipment_repository.unequip_slot(player_id, hand.value)
-            self.equipment_repository.equip_item(
-                player_id=player_id,
-                item_definition_id=item_def.id,
-                slot=EquipmentSlot.ARME_1.value,
-            )
+            self.equipment_repository.equip_gear(player_id, gear.id, EquipmentSlot.ARME_1.value)
             return EquipResult(
                 success=True,
                 message=(
@@ -195,51 +214,37 @@ class EquipItemUseCase:
                 unequipped_items=unequipped,
             )
 
-        # ---- Une main : libérer une éventuelle 2-mains déjà portée ----
+        # ---- Une main : libérer une éventuelle 2 mains déjà portée ----
         if item_type == ItemSlotType.ARME.value:
-            held = self.equipment_repository.get_slot(
-                player_id, EquipmentSlot.ARME_1.value,
-            )
+            held = self.equipment_repository.get_slot(player_id, EquipmentSlot.ARME_1.value)
             if held is not None and held.item_definition.requires_two_hands:
                 unequipped.append(held.item_definition.name)
-                self.equipment_repository.unequip_slot(
-                    player_id, EquipmentSlot.ARME_1.value,
-                )
+                self.equipment_repository.unequip_slot(player_id, EquipmentSlot.ARME_1.value)
                 target_slot = EquipmentSlot.ARME_1.value
-
-        # Même item dans deux emplacements : il faut deux exemplaires.
-        others = [
-            s.value for s in allowed
-            if s.value != target_slot
-        ]
-        for other in others:
-            worn = self.equipment_repository.get_slot(player_id, other)
-            if worn is not None and worn.item_definition.id == item_def.id:
-                if matched_item.quantity < 2:
-                    return EquipResult(
-                        success=False,
-                        message=(
-                            f"❌ **{item_def.name}** est déjà équipé. Pour en "
-                            f"porter deux, il vous faut un second exemplaire."
-                        ),
-                    )
-                break
 
         existing = self.equipment_repository.get_slot(player_id, target_slot)
         if existing is not None:
             unequipped.append(existing.item_definition.name)
 
-        self.equipment_repository.equip_item(
-            player_id=player_id,
-            item_definition_id=item_def.id,
-            slot=target_slot,
-        )
+        self.equipment_repository.equip_gear(player_id, gear.id, target_slot)
         return EquipResult(
             success=True,
             message=(
-                f"✅ **{item_def.name}** équipé — "
+                f"✅ **{item_def.name}** ({rarity_label(gear.rarity)}) équipé — "
                 f"{SLOT_LABELS.get(target_slot, target_slot)}."
             ),
             slots_equipped=[target_slot],
             unequipped_items=unequipped,
         )
+
+
+def rarity_index(rarity: str) -> int:
+    from app.domain.services.gear_service import rarity_index as _index
+
+    return _index(rarity)
+
+
+def rarity_label(rarity: str) -> str:
+    from app.domain.services.gear_service import RARITY_LABELS
+
+    return RARITY_LABELS.get(rarity, rarity).lower()
