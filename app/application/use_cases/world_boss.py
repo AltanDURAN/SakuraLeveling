@@ -647,6 +647,7 @@ class LaunchPartyFightWorldBossUseCase:
             max_turns=BOSS_FIGHT_MAX_TURNS,
             passives_by_player=passives_by_player,
             tactics_by_player=tactics_by_player,
+            mob_is_boss=True,
         )
 
         # Les PV restants du boss = résultat réel de la simulation (intègre

@@ -134,3 +134,31 @@ def test_multi_element_mob_awards_each_element(session):
     # 2 essences chacun (talent 10) : 0→1 (coût 1), reste 1 pour les deux.
     assert affinities["feu"] == 1 and affinities["glace"] == 1
     assert essences["feu"] == 1 and essences["glace"] == 1
+
+
+def test_chasseur_d_essences_ajoute_une_essence(session):
+    _set_talent(session, "feu", 0 + 10)  # talent 10 : 1 essence de base → 2
+    gains = EncounterService._award_element_essences(
+        essence_repository=ElementEssenceRepository(session),
+        affinity_repository=ElementAffinityRepository(session),
+        progression_service=ElementAffinityProgressionService(),
+        player_id=1,
+        mob=SimpleNamespace(element="feu", family="x"),
+        essences_per_kill=1,
+        bonus_essences=1,
+    )
+    assert gains[0].essences_gained == 3
+
+
+def test_chasseur_d_essences_sans_effet_sur_un_element_mort(session):
+    _set_talent(session, "feu", 0)
+    gains = EncounterService._award_element_essences(
+        essence_repository=ElementEssenceRepository(session),
+        affinity_repository=ElementAffinityRepository(session),
+        progression_service=ElementAffinityProgressionService(),
+        player_id=1,
+        mob=SimpleNamespace(element="feu", family="x"),
+        essences_per_kill=1,
+        bonus_essences=1,
+    )
+    assert gains == []

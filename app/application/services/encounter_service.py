@@ -30,6 +30,7 @@ from app.domain.value_objects.battle_summary import BattleSummary
 from app.domain.value_objects.player_reward import EssenceGain, PlayerReward
 from app.domain.value_objects.skill_bonuses import SkillBonuses
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
+from app.domain.services.gear_passives import active_passives
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.element_affinity_repository import (
@@ -543,6 +544,10 @@ class EncounterService:
                     mob=mob,
                     essences_per_kill=essences_per_kill,
                     element_override=getattr(encounter.mob_state, "element", "") or "",
+                    # Chasseur d'essences (pièce épique et plus) : +1 par kill.
+                    bonus_essences=1 if "essence_hunter" in active_passives(
+                        EquipmentRepository(session).list_by_player_id(participant.player_id)
+                    ) else 0,
                 )
 
                 # Check titres : kills_family / kills_total / kills_mob.
@@ -673,6 +678,7 @@ class EncounterService:
         mob,
         essences_per_kill: int,
         element_override: str = "",
+        bonus_essences: int = 0,
     ) -> list[EssenceGain]:
         """Dépose les essences des élément(s) du mob et convertit
         automatiquement en niveaux d'affinité (coût N→N+1 = N+1). Renvoie les
@@ -699,7 +705,8 @@ class EncounterService:
             # Talent : +10 % d'essences par point ; élément mort ⇒ rien.
             gained = essence_gain(essences_per_kill, talent.talent if talent else 0)
             if gained <= 0:
-                continue
+                continue  # élément mort : même le Chasseur d'essences n'y peut rien
+            gained += max(0, bonus_essences)
             before_aff = int(affinities_map.get(elem, 0))
             current_ess = int(essences_map.get(elem, 0))
             conv = progression_service.apply_essences(
