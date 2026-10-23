@@ -1,6 +1,6 @@
 from datetime import datetime, UTC
 
-from sqlalchemy import ForeignKey, Index, Integer, String, text
+from sqlalchemy import Boolean, ForeignKey, Index, Integer, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.db.base import Base
@@ -36,6 +36,9 @@ class PlayerGearModel(Base):
     equipped_slot: Mapped[str | None] = mapped_column(String(50), nullable=True)
     #: drop | fusion | trade | admin — pour l'historique et l'admin.
     source: Mapped[str] = mapped_column(String(16), nullable=False, default="drop", server_default="drop")
+    #: En vente à la brocante : la pièce reste au vendeur mais ne se porte,
+    #: ne se fusionne ni ne s'échange tant que l'annonce court.
+    listed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="0")
 
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))

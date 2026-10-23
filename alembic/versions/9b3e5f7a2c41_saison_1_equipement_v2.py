@@ -47,6 +47,7 @@ def upgrade() -> None:
         sa.Column("forge_level", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("equipped_slot", sa.String(50), nullable=True),
         sa.Column("source", sa.String(16), nullable=False, server_default="drop"),
+        sa.Column("listed", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
     )
@@ -56,6 +57,12 @@ def upgrade() -> None:
         "uq_player_gear_equipped_slot", "player_gear", ["player_id", "equipped_slot"],
         unique=True, sqlite_where=sa.text("equipped_slot IS NOT NULL"),
     )
+
+    # Une pièce échangée ou vendue l'est en tant qu'EXEMPLAIRE précis.
+    with op.batch_alter_table("trade_items") as batch:
+        batch.add_column(sa.Column("gear_id", sa.Integer(), nullable=True))
+    with op.batch_alter_table("marketplace_listings") as batch:
+        batch.add_column(sa.Column("gear_id", sa.Integer(), nullable=True))
 
     # ---- Suppression de l'ancien équipement ----
     cats = ", ".join(f"'{c}'" for c in _GEAR_CATEGORIES)
@@ -77,6 +84,10 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    with op.batch_alter_table("marketplace_listings") as batch:
+        batch.drop_column("gear_id")
+    with op.batch_alter_table("trade_items") as batch:
+        batch.drop_column("gear_id")
     op.drop_index("uq_player_gear_equipped_slot", table_name="player_gear")
     op.drop_index("ix_player_gear_item_definition_id", table_name="player_gear")
     op.drop_index("ix_player_gear_player_id", table_name="player_gear")

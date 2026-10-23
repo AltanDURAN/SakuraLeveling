@@ -4,6 +4,7 @@ from datetime import datetime, UTC
 from sqlalchemy.orm import Session
 
 from app.domain.entities.trade import Trade, TradeSide, TradeStatus
+from app.infrastructure.db.repositories.gear_repository import GearRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
@@ -37,8 +38,10 @@ class AcceptTradeUseCase:
         inventory_repository: InventoryRepository,
         item_repository: ItemRepository,
         trade_repository: TradeRepository,
+        gear_repository: GearRepository | None = None,
     ) -> None:
         self.session = session
+        self.gear_repository = gear_repository or GearRepository(session)
         self.player_repository = player_repository
         self.inventory_repository = inventory_repository
         self.item_repository = item_repository
@@ -161,6 +164,11 @@ class AcceptTradeUseCase:
             )
         }
         for offer in trade.items_offered_by(TradeSide.INITIATOR):
+            if offer.gear_id is not None:
+                if not self._gear_available(offer.gear_id, initiator_profile.player.id):
+                    return (False, f"❌ {trade.initiator_display_name} n'a plus "
+                                   f"**{offer.item_name}** (vendue, échangée ou en vente).")
+                continue
             if initiator_inv.get(offer.item_code, 0) < offer.quantity:
                 return (
                     False,
@@ -176,6 +184,11 @@ class AcceptTradeUseCase:
             )
         }
         for offer in trade.items_offered_by(TradeSide.TARGET):
+            if offer.gear_id is not None:
+                if not self._gear_available(offer.gear_id, target_profile.player.id):
+                    return (False, f"❌ {trade.target_display_name} n'a plus "
+                                   f"**{offer.item_name}** (vendue, échangée ou en vente).")
+                continue
             if target_inv.get(offer.item_code, 0) < offer.quantity:
                 return (
                     False,
@@ -184,6 +197,10 @@ class AcceptTradeUseCase:
                 )
 
         return True, ""
+
+    def _gear_available(self, gear_id: int, owner_id: int) -> bool:
+        gear = self.gear_repository.get(gear_id)
+        return gear is not None and gear.player_id == owner_id and not gear.listed
 
     def _execute_swap(self, initiator_profile, target_profile, trade: Trade) -> None:
         # Or : initiator donne, target reçoit (et inversement)
@@ -204,6 +221,10 @@ class AcceptTradeUseCase:
 
         # Items côté initiator → target
         for offer in trade.items_offered_by(TradeSide.INITIATOR):
+            if offer.gear_id is not None:
+                # La pièce arrive déséquipée chez le nouveau propriétaire.
+                self.gear_repository.transfer(offer.gear_id, target_profile.player.id)
+                continue
             item = self.item_repository.get_by_code(offer.item_code)
             if item is None:
                 raise RuntimeError(f"Item disparu : {offer.item_code}")
@@ -220,6 +241,10 @@ class AcceptTradeUseCase:
 
         # Items côté target → initiator
         for offer in trade.items_offered_by(TradeSide.TARGET):
+            if offer.gear_id is not None:
+                # La pièce arrive déséquipée chez le nouveau propriétaire.
+                self.gear_repository.transfer(offer.gear_id, initiator_profile.player.id)
+                continue
             item = self.item_repository.get_by_code(offer.item_code)
             if item is None:
                 raise RuntimeError(f"Item disparu : {offer.item_code}")

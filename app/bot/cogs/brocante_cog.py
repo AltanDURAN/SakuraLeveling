@@ -26,7 +26,11 @@ from app.application.use_cases.marketplace import (
     MARKETPLACE_COMMISSION_PCT,
     MAX_LISTING_DAYS,
 )
+from app.domain.services.gear_service import gear_label, gear_ref
 from app.infrastructure.config.settings import settings
+from app.infrastructure.db.models.gear_model import PlayerGearModel
+from app.infrastructure.db.models.item_model import ItemDefinitionModel
+from app.infrastructure.db.repositories.gear_repository import GearRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.marketplace_repository import (
@@ -41,12 +45,35 @@ _logger = logging.getLogger(__name__)
 
 
 def _format_listing_line(listing, item_name: str, seller_name: str) -> str:
+    if listing.gear_id is not None:
+        what = f"**{item_name}** — **{listing.total_price}** or"
+    else:
+        what = (f"**{listing.quantity}× {item_name}** — **{listing.price_per_unit}** or/u "
+                f"({listing.total_price} total)")
     return (
-        f"`#{listing.id}` **{listing.quantity}× {item_name}** — "
-        f"**{listing.price_per_unit}** or/u "
-        f"({listing.total_price} total) · vendeur : {seller_name} · "
+        f"`#{listing.id}` {what} · vendeur : {seller_name} · "
         f"expire <t:{int(listing.expires_at.timestamp())}:R>"
     )
+
+
+def _listing_names(session, listings) -> dict[int, str]:
+    """Nom affiché par annonce ; une pièce montre sa rareté et sa forge."""
+    item_ids = {l.item_definition_id for l in listings}
+    items = {
+        m.id: m for m in session.query(ItemDefinitionModel)
+        .filter(ItemDefinitionModel.id.in_(item_ids)).all()
+    } if item_ids else {}
+    gear_ids = {l.gear_id for l in listings if l.gear_id is not None}
+    gears = {
+        m.id: m for m in session.query(PlayerGearModel)
+        .filter(PlayerGearModel.id.in_(gear_ids)).all()
+    } if gear_ids else {}
+    names: dict[int, str] = {}
+    for l in listings:
+        name = items[l.item_definition_id].name if l.item_definition_id in items else "?"
+        gear = gears.get(l.gear_id)
+        names[l.id] = gear_label(name, gear.rarity, gear.forge_level) if gear else name
+    return names
 
 
 class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
@@ -103,15 +130,10 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
             listings = repo.list_active(limit=25, item_code=item)
 
             # Pre-charge les items et sellers en batch
-            from app.infrastructure.db.models.item_model import ItemDefinitionModel
             from app.infrastructure.db.models.player_model import PlayerModel
 
-            item_ids = {l.item_definition_id for l in listings}
+            names = _listing_names(session, listings)
             seller_ids = {l.seller_player_id for l in listings}
-            items = {
-                m.id: m for m in session.query(ItemDefinitionModel)
-                .filter(ItemDefinitionModel.id.in_(item_ids)).all()
-            } if item_ids else {}
             sellers = {
                 m.id: m for m in session.query(PlayerModel)
                 .filter(PlayerModel.id.in_(seller_ids)).all()
@@ -127,7 +149,7 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
             lines = [
                 _format_listing_line(
                     l,
-                    items[l.item_definition_id].name if l.item_definition_id in items else "?",
+                    names[l.id],
                     sellers[l.seller_player_id].display_name if l.seller_player_id in sellers else "?",
                 )
                 for l in listings
@@ -169,12 +191,7 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
             listings = MarketplaceRepository(session).list_active_for_seller(
                 profile.player.id
             )
-            from app.infrastructure.db.models.item_model import ItemDefinitionModel
-            item_ids = {l.item_definition_id for l in listings}
-            items = {
-                m.id: m for m in session.query(ItemDefinitionModel)
-                .filter(ItemDefinitionModel.id.in_(item_ids)).all()
-            } if item_ids else {}
+            names = _listing_names(session, listings)
 
         embed = discord.Embed(
             title="🏷️ Mes annonces actives",
@@ -184,8 +201,9 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
             embed.description = "_Vous n'avez aucune annonce active._"
         else:
             lines = [
-                f"`#{l.id}` {l.quantity}× **{items.get(l.item_definition_id).name if l.item_definition_id in items else '?'}** "
-                f"à {l.price_per_unit} or/u — expire <t:{int(l.expires_at.timestamp())}:R>"
+                (f"`#{l.id}` **{names[l.id]}** à {l.total_price} or" if l.gear_id is not None
+                 else f"`#{l.id}` {l.quantity}× **{names[l.id]}** à {l.price_per_unit} or/u")
+                + f" — expire <t:{int(l.expires_at.timestamp())}:R>"
                 for l in listings
             ]
             embed.description = "\n".join(lines)
@@ -198,17 +216,17 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
         description="Mettre un item en vente sur la brocante",
     )
     @app_commands.describe(
-        item="Item à vendre (autocomplete sur votre inventaire)",
-        quantity="Quantité à mettre en vente",
-        price_per_unit="Prix unitaire en or",
+        item="Item ou pièce d'équipement à vendre (autocomplete)",
+        quantity="Quantité à mettre en vente (ignorée pour une pièce d'équipement)",
+        price_per_unit="Prix unitaire en or (prix de la pièce pour un équipement)",
         duration_days="Durée de l'annonce en jours (max 5)",
     )
     async def sell(
         self,
         interaction: discord.Interaction,
         item: str,
-        quantity: app_commands.Range[int, 1, 9999],
         price_per_unit: app_commands.Range[int, 1, 1_000_000],
+        quantity: app_commands.Range[int, 1, 9999] = 1,
         duration_days: app_commands.Range[int, 1, 5] = 5,
     ) -> None:
         await interaction.response.defer(ephemeral=True)
@@ -239,8 +257,16 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
             if profile is None:
                 return []
             inventory = InventoryRepository(session).list_by_player_id(profile.player.id)
+            gear = [g for g in GearRepository(session).list_owned(profile.player.id)
+                    if not g.equipped]
         current_lower = current.lower()
         out: list[app_commands.Choice[str]] = []
+        for g in gear:
+            if current_lower in g.item_definition.name.lower():
+                out.append(app_commands.Choice(
+                    name=gear_label(g.item_definition.name, g.rarity, g.forge_level)[:100],
+                    value=gear_ref(g.id),
+                ))
         for inv in inventory:
             i = inv.item_definition
             if current_lower in i.code.lower() or current_lower in i.name.lower():
@@ -251,7 +277,7 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
                 )
             if len(out) >= 25:
                 break
-        return out
+        return out[:25]
 
     # ---------- buy ----------
 

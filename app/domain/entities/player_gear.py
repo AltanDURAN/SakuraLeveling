@@ -15,6 +15,7 @@ class PlayerGear:
     equipped_slot: str | None
     source: str
     created_at: datetime
+    listed: bool = False
 
     @property
     def equipped(self) -> bool:

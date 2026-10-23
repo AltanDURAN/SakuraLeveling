@@ -23,6 +23,9 @@ class TradeItemOffer:
     item_name: str
     quantity: int
     offered_by: TradeSide
+    #: Pièce d'équipement : l'exemplaire précis échangé (quantité 1).
+    gear_id: int | None = None
+    rarity: str | None = None
 
 
 @dataclass

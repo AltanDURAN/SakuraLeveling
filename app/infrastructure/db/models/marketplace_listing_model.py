@@ -18,6 +18,8 @@ class MarketplaceListingModel(Base):
     )
     quantity: Mapped[int] = mapped_column(Integer)
     price_per_unit: Mapped[int] = mapped_column(Integer)
+    #: Exemplaire précis d'une pièce d'équipement (player_gear.id), sinon None.
+    gear_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     status: Mapped[str] = mapped_column(String(20), default="active", index=True)
     listed_at: Mapped[datetime] = mapped_column(DateTime)

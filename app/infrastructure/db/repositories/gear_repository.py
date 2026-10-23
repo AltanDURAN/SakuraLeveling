@@ -27,11 +27,15 @@ class GearRepository:
         ).scalar_one_or_none()
         return self._to_domain(model) if model else None
 
-    def list_owned(self, player_id: int) -> list[PlayerGear]:
-        """Toutes les pièces du joueur, les plus rares d'abord."""
-        models = self.session.execute(
-            self._query().where(PlayerGearModel.player_id == player_id)
-        ).scalars().all()
+    def list_owned(self, player_id: int, include_listed: bool = False) -> list[PlayerGear]:
+        """Les pièces du joueur, les plus rares d'abord.
+
+        Une pièce EN VENTE à la brocante est exclue par défaut : tant que
+        l'annonce court, elle ne se porte, ne se fusionne ni ne s'échange."""
+        stmt = self._query().where(PlayerGearModel.player_id == player_id)
+        if not include_listed:
+            stmt = stmt.where(PlayerGearModel.listed.is_(False))
+        models = self.session.execute(stmt).scalars().all()
         gear = [self._to_domain(m) for m in models]
         return sorted(
             gear,
@@ -77,6 +81,7 @@ class GearRepository:
             return False
         model.player_id = new_player_id
         model.equipped_slot = None
+        model.listed = False
         model.source = "trade"
         model.updated_at = datetime.now(UTC)
         if commit:
@@ -88,6 +93,15 @@ class GearRepository:
         if model is None:
             return
         model.equipped_slot = slot
+        model.updated_at = datetime.now(UTC)
+        if commit:
+            self.session.commit()
+
+    def set_listed(self, gear_id: int, listed: bool, commit: bool = True) -> None:
+        model = self.session.get(PlayerGearModel, gear_id)
+        if model is None:
+            return
+        model.listed = listed
         model.updated_at = datetime.now(UTC)
         if commit:
             self.session.commit()
@@ -111,4 +125,5 @@ class GearRepository:
             equipped_slot=model.equipped_slot,
             source=model.source or "drop",
             created_at=model.created_at,
+            listed=bool(model.listed),
         )

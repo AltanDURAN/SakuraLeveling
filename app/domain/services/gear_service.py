@@ -87,6 +87,27 @@ FORGE_BONUS_PER_LEVEL = 0.01
 PRIMARY_KEYS = frozenset({"attack_pct", "defense_pct", "max_hp_pct"})
 
 
+#: Référence d'un EXEMPLAIRE dans les autocomplétions et menus (« gear:42 »),
+#: là où les objets ordinaires passent leur code.
+GEAR_REF_PREFIX = "gear:"
+
+
+def gear_ref(gear_id: int) -> str:
+    return f"{GEAR_REF_PREFIX}{gear_id}"
+
+
+def parse_gear_ref(value: str | None) -> int | None:
+    if value and value.startswith(GEAR_REF_PREFIX) and value[len(GEAR_REF_PREFIX):].isdigit():
+        return int(value[len(GEAR_REF_PREFIX):])
+    return None
+
+
+def gear_label(name: str, rarity: str, forge_level: int = 0) -> str:
+    """« 🟣 Surin dentelé — Épique +3 »."""
+    forge = f" +{forge_level}" if forge_level else ""
+    return f"{RARITY_EMOJIS.get(rarity, '')} {name} — {RARITY_LABELS.get(rarity, rarity)}{forge}"
+
+
 def rarity_index(rarity: str) -> int:
     return RARITY_ORDER.index(Rarity(rarity))
 

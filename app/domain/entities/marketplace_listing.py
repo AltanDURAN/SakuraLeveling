@@ -29,6 +29,7 @@ class MarketplaceListing:
     expires_at: datetime
     closed_at: datetime | None
     last_buyer_player_id: int | None
+    gear_id: int | None = None
 
     @property
     def total_price(self) -> int:
