@@ -13,7 +13,10 @@ from fastapi import APIRouter, Depends, Request, status, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from app.application.services.player_stats_resolver import resolve_player_stats
+from app.application.use_cases.equip_item import EquipItemUseCase
 from app.application.use_cases.reset_player import ResetPlayerUseCase
+from app.domain.services.gear_passives import get_passive
+from app.domain.services.gear_service import RARITY_EMOJIS, RARITY_LABELS, RARITY_ORDER, passive_active
 from app.domain.services.power_score_service import PowerScoreService
 from app.domain.services.progression_service import ProgressionService
 from app.infrastructure.db.repositories.player_health_repository import PlayerHealthRepository
@@ -25,9 +28,9 @@ from app.infrastructure.db.repositories.element_essence_repository import (
     ElementEssenceRepository,
 )
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
+from app.infrastructure.db.repositories.gear_repository import GearRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
-from app.shared.enums import SLOTS_FOR_ITEM_TYPE
 from app.infrastructure.db.repositories.player_career_stats_repository import (
     PlayerCareerStatsRepository,
 )
@@ -238,12 +241,20 @@ async def players_equipment(player_id: int, request: Request, edit: int = 0, use
     with get_db_session() as session:
         ctx, _ = await _base_ctx(session, user, player_id, "equipment")
         ctx["edit"] = bool(edit)
-        eq = EquipmentRepository(session).list_by_player_id(player_id)
-        ctx["equipment"] = sorted(
-            [{"slot": e.slot, "code": e.item_definition.code, "name": e.item_definition.name,
-              "family": e.item_definition.family or ""} for e in eq],
-            key=lambda x: x["slot"],
-        )
+        # Équipement v2 : TOUS les exemplaires possédés (portés en tête).
+        gear = GearRepository(session).list_owned(player_id, include_listed=True)
+        ctx["equipment"] = [
+            {"id": g.id, "slot": g.equipped_slot or "", "code": g.item_definition.code,
+             "name": g.item_definition.name, "rarity": g.rarity,
+             "rarity_label": RARITY_LABELS.get(g.rarity, g.rarity),
+             "rarity_emoji": RARITY_EMOJIS.get(g.rarity, ""), "forge": g.forge_level,
+             "listed": g.listed, "source": g.source,
+             "passive": (get_passive(g.item_definition.passive).name
+                         if get_passive(g.item_definition.passive) else ""),
+             "passive_on": passive_active(g.rarity)}
+            for g in sorted(gear, key=lambda g: (not g.equipped, g.equipped_slot or ""))
+        ]
+        ctx["rarities"] = [(r.value, RARITY_LABELS[r.value]) for r in RARITY_ORDER]
         ctx["equip_items"] = sorted(
             ({"code": i.code, "name": i.name}
              for i in ItemRepository(session).list_all() if i.equipment_slot),
@@ -435,24 +446,58 @@ async def inv_remove(player_id: int, request: Request, user: AdminUser = Depends
     return _redir(player_id, "inventory")
 
 
-@router.post("/{player_id}/equipment/equip")
-async def eq_equip(player_id: int, request: Request, user: AdminUser = Depends(require_admin)):
+def _form_int(form, key: str, default: int = 0) -> int:
+    try:
+        return int(str(form.get(key, default)).strip())
+    except (ValueError, TypeError):
+        return default
+
+
+@router.post("/{player_id}/equipment/give")
+async def eq_give(player_id: int, request: Request, user: AdminUser = Depends(require_admin)):
+    """Crée un exemplaire (rareté + forge au choix) chez le joueur."""
     form = await request.form()
     code = str(form.get("item_code", "")).strip()
+    rarity = str(form.get("rarity", "common")).strip()
+    if rarity not in RARITY_LABELS:
+        rarity = "common"
+    forge = _form_int(form, "forge", 0)
     with get_db_session() as session:
         item = ItemRepository(session).get_by_code(code)
-        # L'item déclare un TYPE d'emplacement ("arme", "accessoire"…), pas un
-        # emplacement précis : on résout vers le premier emplacement LIBRE de
-        # ce type (sinon on écrirait "arme" dans la colonne slot).
         if item and item.equipment_slot:
-            repo = EquipmentRepository(session)
-            allowed = SLOTS_FOR_ITEM_TYPE.get(item.equipment_slot, [])
-            target = next(
-                (s.value for s in allowed if repo.get_slot(player_id, s.value) is None),
-                allowed[0].value if allowed else None,
-            )
-            if target:
-                repo.equip_item(player_id, item.id, target)
+            GearRepository(session).add(player_id, item.id, rarity, forge, source="admin")
+            _logger.info("Admin %s gave %s (%s +%s) to player %s",
+                         user.discord_id, code, rarity, forge, player_id)
+    return _redir(player_id, "equipment")
+
+
+@router.post("/{player_id}/equipment/equip")
+async def eq_equip(player_id: int, request: Request, user: AdminUser = Depends(require_admin)):
+    """Porte un exemplaire précis, avec les règles du jeu (placement auto,
+    une pièce une fois, deux mains)."""
+    form = await request.form()
+    gear_id = _form_int(form, "gear_id", 0)
+    with get_db_session() as session:
+        profile = PlayerRepository(session).get_profile_by_player_id(player_id)
+        if profile and gear_id:
+            EquipItemUseCase(
+                PlayerRepository(session), InventoryRepository(session),
+                EquipmentRepository(session),
+            ).execute(profile.player.discord_id, profile.player.username,
+                      profile.player.display_name, gear_id=gear_id)
+    return _redir(player_id, "equipment")
+
+
+@router.post("/{player_id}/equipment/delete")
+async def eq_delete(player_id: int, request: Request, user: AdminUser = Depends(require_admin)):
+    form = await request.form()
+    gear_id = _form_int(form, "gear_id", 0)
+    with get_db_session() as session:
+        repo = GearRepository(session)
+        gear = repo.get(gear_id) if gear_id else None
+        if gear and gear.player_id == player_id and not gear.listed:
+            repo.remove(gear_id)
+            _logger.info("Admin %s deleted gear %s of player %s", user.discord_id, gear_id, player_id)
     return _redir(player_id, "equipment")
 
 

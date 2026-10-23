@@ -85,7 +85,7 @@ function itemCard(el){
   return {
     isNew, open:false, code:d.code,
     name:d.name, description:d.description, category:d.category, rarity:d.rarity,
-    family:d.family, slot:d.equipment_slot, twoHands:d.requires_two_hands,
+    family:d.family, slot:d.equipment_slot, twoHands:d.requires_two_hands, passive:d.passive||'',
     stackable:d.stackable, maxStack:d.max_stack, sellPrice:d.sell_price, buyPrice:d.buy_price,
     icon:d.icon||'', stats:d.stats||{},
     preview: d.code ? '/assets/items/'+d.code+'.png' : '',
@@ -199,6 +199,11 @@ document.addEventListener('alpine:init', () => {
             <option value="">— Aucune —</option>
             {% for fam in all_families %}<option value="{{ fam }}">{{ fam }}</option>{% endfor %}
           </select></label>
+        <label class="field" x-show="isEquipable()"><span class="field-label">Passif <span class="hint" title="Effet spécial de la pièce, actif à partir de la rareté ÉPIQUE. Une pièce par passif, un passif par pièce.">ⓘ</span></span>
+          <select class="input" name="passive" x-model="passive">
+            <option value="">— Aucun —</option>
+            {% for p in all_passives %}<option value="{{ p.code }}" title="{{ p.description }}">{{ p.name }}{% if p.used_by %} (sur {{ p.used_by }}){% endif %}</option>{% endfor %}
+          </select></label>
       </div>
       <div class="form-section">
         <h2 class="form-section-title">Économie</h2>
@@ -281,7 +286,7 @@ document.addEventListener('alpine:init', () => {
   <div class="items-grid">
     <!-- Carte de création -->
     <div class="item-card2" id="new" :class="{'is-open':open}" data-new="1"
-         data-item='{{ {"code":"","name":"","description":"","category":"resource","rarity":"common","family":"","equipment_slot":"","requires_two_hands":false,"stackable":true,"max_stack":none,"sell_price":0,"buy_price":none,"stats":{},"icon":""}|tojson }}'
+         data-item='{{ {"code":"","name":"","description":"","category":"resource","rarity":"common","family":"","passive":"","equipment_slot":"","requires_two_hands":false,"stackable":true,"max_stack":none,"sell_price":0,"buy_price":none,"stats":{},"icon":""}|tojson }}'
          x-data="itemCard($el)" x-show="!$store.ifilter.q && !$store.ifilter.cat">
       <div class="newcard" x-show="!open" x-on:click="open=true">➕ Nouvel objet</div>
       {{ editor(none, "/admin/items", true) }}

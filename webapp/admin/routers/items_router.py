@@ -11,9 +11,11 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from PIL import Image
 
+from app.domain.services.gear_passives import PASSIVES
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.session import get_db_session
 from app.shared.enums import (
+    EQUIPABLE_CATEGORIES,
     EQUIPMENT_SLOT_LABELS,
     ItemSlotType,
     ITEM_CATEGORY_DEFAULT_SLOT,
@@ -138,6 +140,7 @@ def _item_card_state(item) -> dict:
         "category": item.category, "rarity": item.rarity,
         "family": item.family or "", "equipment_slot": item.equipment_slot or "",
         "requires_two_hands": bool(item.requires_two_hands),
+        "passive": getattr(item, "passive", "") or "",
         "stackable": bool(item.stackable),
         "max_stack": item.max_stack, "sell_price": item.sell_price or 0,
         "buy_price": item.buy_price, "stats": dict(item.stat_bonuses or {}),
@@ -168,6 +171,9 @@ def _collect_item_fields(form_data: dict[str, str], code: str, fallback_rarity: 
         "equipment_slot": ITEM_CATEGORY_DEFAULT_SLOT.get(category),
         "requires_two_hands": form_data.get("requires_two_hands") == "on",
         "family": form_data.get("family", "").strip(),
+        # Passif d'équipement (actif dès l'épique) ; inconnu ⇒ aucun.
+        "passive": (p if (p := form_data.get("passive", "").strip()) in PASSIVES else "")
+                   if category in EQUIPABLE_CATEGORIES else "",
     }
 
 
@@ -212,6 +218,12 @@ async def items_list(
         context={
             "user": user, "cards": cards,
             "all_families": sorted({i.family for i in items if i.family}),
+            # Une pièce par passif : on indique où chacun est déjà posé.
+            "all_passives": [
+                {"code": p.code, "name": p.name, "description": p.description,
+                 "used_by": ", ".join(i.name for i in items if getattr(i, "passive", "") == p.code)}
+                for p in PASSIVES.values()
+            ],
             "saved": saved, "err": err,
             **_labels_ctx(),
         },

@@ -61,7 +61,7 @@ class EquipmentRepository:
     def equip_gear(self, player_id: int, gear_id: int, slot: str) -> bool:
         """Porte CET exemplaire dans `slot` (l'occupant éventuel est retiré)."""
         model = self.session.get(PlayerGearModel, gear_id)
-        if model is None or model.player_id != player_id:
+        if model is None or model.player_id != player_id or model.listed:
             return False
         current = self._slot_model(player_id, slot)
         if current is not None and current.id != model.id:
@@ -79,6 +79,7 @@ class EquipmentRepository:
                 PlayerGearModel.player_id == player_id,
                 PlayerGearModel.item_definition_id == item_definition_id,
                 PlayerGearModel.equipped_slot.is_(None),
+                PlayerGearModel.listed.is_(False),
             )
         ).scalars().all()
         if not free:
