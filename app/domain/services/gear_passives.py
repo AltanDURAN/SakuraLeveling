@@ -89,3 +89,18 @@ PASSIVES: dict[str, GearPassive] = {p.code: p for p in (
 
 def get_passive(code: str | None) -> GearPassive | None:
     return PASSIVES.get(code or "")
+
+
+def active_passives(equipped_items) -> set[str]:
+    """Codes des passifs ACTIFS d'un équipement porté (pièces épiques et plus).
+
+    `equipped_items` : PlayerEquipmentItem (ou tout objet avec `rarity` et
+    `item_definition.passive`)."""
+    from app.domain.services.gear_service import passive_active
+
+    return {
+        item.item_definition.passive
+        for item in equipped_items or []
+        if getattr(item.item_definition, "passive", "")
+        and passive_active(getattr(item, "rarity", "common") or "common")
+    }

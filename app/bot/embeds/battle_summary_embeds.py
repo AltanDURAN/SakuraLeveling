@@ -81,6 +81,14 @@ def build_rewards_page_embed(summary: BattleSummary) -> discord.Embed:
                 lines.append(f"🎁 {items_text}")
             else:
                 lines.append("🎁 Aucun objet")
+            for gear_name, rarity in getattr(reward, "gear", None) or []:
+                from app.domain.services.gear_service import RARITY_EMOJIS, RARITY_LABELS
+
+                lines.append(
+                    f"{RARITY_EMOJIS.get(rarity, '⚔️')} **{gear_name}** "
+                    f"({RARITY_LABELS.get(rarity, rarity).lower()})"
+                    + (" — **MYTHIQUE !**" if rarity == "mythic" else "")
+                )
             lines.extend(_essence_lines(reward))
         elif summary.is_victory:
             lines.append("_Vaincu pendant le combat — aucune récompense._")
