@@ -11,6 +11,7 @@ from discord.ext import commands
 from app.bot.views.bestiaire_view import BestiaireView
 from app.domain.services.power_score_service import PowerScoreService
 from app.infrastructure.config.settings import settings
+from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.session import get_db_session
 from app.bot.cogs._mixins import BetaChannelOnlyMixin
@@ -27,6 +28,7 @@ class BestiaireCog(BetaChannelOnlyMixin, commands.Cog):
     async def bestiaire(self, interaction: discord.Interaction) -> None:
         with get_db_session() as session:
             mobs = MobRepository(session).list_all()
+            items = {i.code: i for i in ItemRepository(session).list_all()}
 
         if not mobs:
             await interaction.response.send_message(
@@ -38,7 +40,7 @@ class BestiaireCog(BetaChannelOnlyMixin, commands.Cog):
         pss = PowerScoreService()
         mobs_sorted = sorted(mobs, key=lambda m: pss.calculate_from_mob(m))
 
-        view = BestiaireView(author_id=interaction.user.id, mobs=mobs_sorted)
+        view = BestiaireView(author_id=interaction.user.id, mobs=mobs_sorted, items=items)
         embed, file = view.render_current()
         await interaction.response.send_message(
             embed=embed, file=file if file is not None else discord.utils.MISSING,

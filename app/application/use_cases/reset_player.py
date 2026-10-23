@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel
 from app.infrastructure.db.models.equipment_model import PlayerEquipmentItemModel
+from app.infrastructure.db.models.gear_model import PlayerGearModel
 from app.infrastructure.db.models.equipment_set_model import (
     PlayerEquipmentSetItemModel,
     PlayerEquipmentSetModel,
@@ -99,6 +100,7 @@ class ResetPlayerUseCase:
         for model_cls in (
             PlayerInventoryItemModel,
             PlayerEquipmentItemModel,
+            PlayerGearModel,
             PlayerEquipmentSetModel,
             PlayerQuestStateModel,
             PlayerCooldownModel,

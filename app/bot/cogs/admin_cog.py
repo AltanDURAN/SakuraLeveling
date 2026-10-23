@@ -8,7 +8,9 @@ from app.application.use_cases.reset_player import ResetPlayerUseCase
 from app.bot.checks.admin_check import admin_only
 from app.bot.rank_roles import RANK_ORDER, set_rank_role
 from app.infrastructure.config.settings import settings
-from app.shared.enums import ALL_ELEMENTS, ELEMENT_LABELS, EquipmentSlot
+from app.shared.enums import ALL_ELEMENTS, ELEMENT_LABELS, EQUIPABLE_CATEGORIES, EquipmentSlot
+from app.domain.services.gear_service import RARITY_LABELS, RARITY_ORDER, gear_label, rarity_index
+from app.infrastructure.db.repositories.gear_repository import GearRepository
 from app.shared.formatters import format_int as _format_int
 from app.domain.services.progression_service import ProgressionService
 from app.domain.services.shop_pricing_service import ShopPricingService
@@ -29,6 +31,11 @@ from app.infrastructure.db.repositories.player_repository import PlayerRepositor
 from app.infrastructure.db.repositories.shop_repository import ShopRepository
 from app.infrastructure.db.session import get_db_session
 
+
+
+_RARITY_CHOICES = [
+    app_commands.Choice(name=RARITY_LABELS[r], value=r.value) for r in RARITY_ORDER
+]
 
 class AdminCog(commands.Cog):
     """Commandes administrateur — réservées aux Discord IDs listés dans `ADMIN_DISCORD_IDS`."""
@@ -300,7 +307,10 @@ class AdminCog(commands.Cog):
         target="Joueur ciblé",
         item_code="Code de l'objet (ex : slime_gel)",
         quantity="Quantité à ajouter",
+        rarity="Équipement : rareté des copies (commun par défaut)",
+        forge="Équipement : niveau de forge sacrée (0-10)",
     )
+    @app_commands.choices(rarity=_RARITY_CHOICES)
     @admin_only
     async def give_item(
         self,
@@ -308,6 +318,8 @@ class AdminCog(commands.Cog):
         target: discord.Member,
         item_code: str,
         quantity: app_commands.Range[int, 1, 9999],
+        rarity: str = "common",
+        forge: app_commands.Range[int, 0, 10] = 0,
     ) -> None:
         await interaction.response.defer(ephemeral=True)
 
@@ -328,6 +340,21 @@ class AdminCog(commands.Cog):
             if item is None:
                 await interaction.followup.send(
                     f"❌ Objet `{item_code}` introuvable.",
+                    ephemeral=True,
+                )
+                return
+
+            if item.category in EQUIPABLE_CATEGORIES:
+                # Équipement v2 : une ligne par exemplaire (plafonné, c'est un outil de test).
+                gear_repository = GearRepository(session)
+                quantity = min(quantity, 20)
+                for _ in range(quantity):
+                    gear_repository.add(profile.player.id, item.id, rarity, forge,
+                                        source="admin", commit=False)
+                session.commit()
+                await interaction.followup.send(
+                    f"✅ {quantity}× **{gear_label(item.name, rarity, forge)}** "
+                    f"donné à {target.mention}.",
                     ephemeral=True,
                 )
                 return
@@ -376,6 +403,32 @@ class AdminCog(commands.Cog):
             if item is None:
                 await interaction.followup.send(
                     f"❌ Objet `{item_code}` introuvable.",
+                    ephemeral=True,
+                )
+                return
+
+            if item.category in EQUIPABLE_CATEGORIES:
+                # On retire les copies les moins précieuses d'abord, les
+                # portées en dernier ; une pièce en vente n'est pas touchée.
+                gear_repository = GearRepository(session)
+                copies = sorted(
+                    (g for g in gear_repository.list_owned(profile.player.id)
+                     if g.item_definition.id == item.id),
+                    key=lambda g: (g.equipped, rarity_index(g.rarity), g.forge_level),
+                )
+                if len(copies) < quantity:
+                    await interaction.followup.send(
+                        f"❌ {target.display_name} n'a que {len(copies)} copie(s) libre(s) "
+                        f"de **{item.name}**.",
+                        ephemeral=True,
+                    )
+                    return
+                for g in copies[:quantity]:
+                    gear_repository.remove(g.id, commit=False)
+                session.commit()
+                await interaction.followup.send(
+                    f"✅ {quantity}× **{item.name}** retiré à {target.mention} "
+                    "(copies les moins rares d'abord).",
                     ephemeral=True,
                 )
                 return

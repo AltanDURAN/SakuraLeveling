@@ -3,6 +3,7 @@ from discord.utils import escape_markdown
 
 from app.shared.formatters import format_int as _format_int
 from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
+from app.domain.services.gear_service import RARITY_EMOJIS, RARITY_LABELS
 from app.domain.value_objects.battle_summary import BattleSummary
 
 
@@ -76,14 +77,13 @@ def build_rewards_page_embed(summary: BattleSummary) -> discord.Embed:
             lines.append(f"⭐ **{_format_int(reward.xp)}** XP")
             if reward.items:
                 items_text = " • ".join(
-                    f"{quantity}× `{code}`" for code, quantity in reward.items
+                    f"{quantity}× {getattr(reward, 'item_names', {}).get(code) or f'`{code}`'}"
+                    for code, quantity in reward.items
                 )
                 lines.append(f"🎁 {items_text}")
             else:
                 lines.append("🎁 Aucun objet")
             for gear_name, rarity in getattr(reward, "gear", None) or []:
-                from app.domain.services.gear_service import RARITY_EMOJIS, RARITY_LABELS
-
                 lines.append(
                     f"{RARITY_EMOJIS.get(rarity, '⚔️')} **{gear_name}** "
                     f"({RARITY_LABELS.get(rarity, rarity).lower()})"

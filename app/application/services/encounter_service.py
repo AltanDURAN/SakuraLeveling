@@ -626,10 +626,12 @@ class EncounterService:
                     )
 
                 items_total = 0
+                item_names: dict[str, str] = {}
                 for item_code, quantity in dropped_items:
                     item = item_repository.get_by_code(item_code)
                     if item is None:
                         continue
+                    item_names[item_code] = item.name
                     inventory_repository.add_item(
                         player_id=participant.player_id,
                         item_definition_id=item.id,
@@ -649,6 +651,7 @@ class EncounterService:
                         gold=gold,
                         xp=xp,
                         items=dropped_items,
+                        item_names=item_names,
                         contribution=contribution,
                         contribution_share=contribution_shares.get(
                             participant.player_id, 0.0
