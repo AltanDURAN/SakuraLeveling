@@ -91,19 +91,19 @@ class ArtisanCog(BetaChannelOnlyMixin, commands.Cog):
             )
             player_id = profile.player.id
 
-        view = ArtisanView(
+        # Équipement v2 : les artisans ne fabriquent plus, ils FUSIONNENT.
+        from app.bot.views.fusion_view import FusionView
+
+        view = FusionView(
             definition=definition,
             player_id=player_id,
             session_factory=get_db_session,
-            use_case_factory=_use_case_factory,
-            upgrade_factory=_upgrade_factory,
             artisan_service=ArtisanService(artisan_loader.load_pricing()),
-            channel_id=interaction.channel_id or 0,
         )
         import asyncio
 
         await asyncio.to_thread(view.refresh_data)
-        view._build_components()
+        view.build()
         embed, file = await view.render()
         await interaction.followup.send(
             embed=embed, file=file, view=view, ephemeral=True,
@@ -112,14 +112,14 @@ class ArtisanCog(BetaChannelOnlyMixin, commands.Cog):
     # --------------------------------------------------------- commandes --
     @app_commands.command(
         name="forgeron",
-        description="Va voir le forgeron : armes, boucliers, pièces de tête et de corps",
+        description="Va voir le forgeron : il fusionne tes armes, boucliers, têtes et corps",
     )
     async def forgeron(self, interaction: discord.Interaction) -> None:
         await self._open(interaction, "forgeron")
 
     @app_commands.command(
         name="artisan",
-        description="Va voir l'artisane : elle confectionne les accessoires",
+        description="Va voir l'artisane : elle fusionne tes accessoires",
     )
     async def artisan(self, interaction: discord.Interaction) -> None:
         await self._open(interaction, "artisan")
