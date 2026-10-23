@@ -436,8 +436,9 @@ def compose_equipment_grid_page(
     *,
     page: int,  # 1 ou 2
     seed: int = 0,
-) -> None:
-    """Génère un PNG pour la page 1 (Principal) ou 2 (Secondaire)."""
+) -> str:
+    """Génère la page des emplacements ; renvoie le chemin écrit (PNG, ou GIF
+    animé si une pièce mythique est portée)."""
     bg = _gradient_bg(WIDTH, GRID_HEIGHT)
     _add_petals_decoration(bg, seed)
 
@@ -463,6 +464,7 @@ def compose_equipment_grid_page(
     card_w = (WIDTH - 2 * margin - (cols - 1) * spacing) // cols
     card_h = (GRID_HEIGHT - grid_top - 40 - spacing) // 2
 
+    mythic_boxes: list[tuple[int, int, int, int]] = []
     for idx, slot in enumerate(slots):
         row = idx // cols
         col = idx % cols
@@ -476,10 +478,17 @@ def compose_equipment_grid_page(
             bg, (x, y), (card_w, card_h),
             slot, equipment, two_handed_locked=locked,
         )
+        if equipment is not None and getattr(equipment, "rarity", "") == "mythic":
+            mythic_boxes.append((x, y, card_w, card_h))
 
     _draw_page_footer(bg, page_label)
+    if mythic_boxes:
+        from app.bot.rendering.mythic_fx import save_mythic_gif
+
+        return save_mythic_gif(bg, mythic_boxes, output_path)
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     bg.convert("RGB").save(output_path, "PNG", optimize=True)
+    return output_path
 
 
 def compose_equipment_summary_page(

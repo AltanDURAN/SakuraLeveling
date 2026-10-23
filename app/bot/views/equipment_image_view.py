@@ -33,7 +33,7 @@ def _render_page(
     out = GENERATED_EQUIPMENT_DIR / filename
 
     if page_index == 0:
-        compose_equipment_grid_page(
+        return compose_equipment_grid_page(
             str(out),
             player_name=player_name,
             equipped_items=equipped_items,

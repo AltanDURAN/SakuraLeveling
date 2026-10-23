@@ -337,6 +337,9 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 career=career_payload,
                 affinities=affinities_payload,
                 affinity_talents=affinity_talents_payload,
+                mythic_pieces=sum(
+                    1 for e in equipped_items if getattr(e, "rarity", "") == "mythic"
+                ),
             )
 
             # /profil = bannière PNG seule (l'embed n'est qu'un conteneur pour

@@ -86,6 +86,7 @@ def _build_card(gear, equipped_def_ids: set[int], accent) -> CardSpec:
         lines=lines,
         badge="✅" if getattr(gear, "equipped", False) else None,
         code=d.code,
+        mythic=rarity == "mythic",
     )
 
 
@@ -121,11 +122,11 @@ def _render_page(
         GENERATED_LISTS_DIR
         / f"equipment_list_{player_id}_{category}_p{page_index + 1}.png"
     )
-    compose_card_grid_page(
+    path = compose_card_grid_page(
         str(out), title=title, subtitle=subtitle,
         cards=cards, cols=1, rows=_PAGE_SIZE, seed=player_id,
     )
-    return str(out), total_pages, total
+    return path, total_pages, total
 
 
 class _PrevCategoryButton(discord.ui.Button):
