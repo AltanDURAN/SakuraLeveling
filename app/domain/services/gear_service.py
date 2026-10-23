@@ -124,9 +124,11 @@ def gear_stats(base: dict | None, rarity: str, forge_level: int = 0) -> dict[str
         if not isinstance(value, (int, float)) or isinstance(value, bool):
             continue
         if key in PRIMARY_KEYS:
-            out[key] = round(value * PRIMARY_MULTIPLIER[rarity] * forge, 1)
+            v = round(value * PRIMARY_MULTIPLIER[rarity] * forge, 1)
         else:
-            out[key] = _round_secondary(key, value * SECONDARY_MULTIPLIER[rarity] * forge)
+            v = _round_secondary(key, value * SECONDARY_MULTIPLIER[rarity] * forge)
+        # Entier quand la valeur tombe juste : « +32 % », pas « +32.0 % ».
+        out[key] = int(v) if float(v).is_integer() else v
     return out
 
 

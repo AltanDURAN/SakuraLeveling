@@ -27,7 +27,7 @@ from app.bot.rendering.pillow_utils import (
     try_font,
 )
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
-from app.domain.services.item_upgrade_service import scaled_bonuses
+from app.domain.services.gear_service import RARITY_COLORS, gear_stats
 from app.domain.services.set_bonus_service import SetBonuses
 from app.domain.value_objects.stats import Stats
 from app.shared.emoji_mappings import (
@@ -223,6 +223,8 @@ def _draw_slot_card(
 ) -> None:
     """Card individuelle pour un slot équipement."""
     accent = _SLOT_ACCENT.get(slot)
+    if equipment is not None:  # couleur de la RARETÉ de la copie portée
+        accent = (*RARITY_COLORS.get(getattr(equipment, "rarity", "common"), (150, 150, 160)), 255)
     _draw_panel(base, origin, size, accent=accent)
     x, y = origin
     w, h = size
@@ -235,6 +237,15 @@ def _draw_slot_card(
         base, (x + 18, y + 14), header_label, header_font,
         fill=_TEXT_PRIMARY,
     )
+    if equipment is not None:  # rareté de la copie, en couleur, sous l'en-tête
+        from app.domain.services.gear_service import RARITY_LABELS
+
+        rarity = getattr(equipment, "rarity", "common")
+        ImageDraw.Draw(base).text(
+            (x + 20, y + 42), RARITY_LABELS.get(rarity, rarity).upper(),
+            font=_try_font(13, bold=True),
+            fill=(*RARITY_COLORS.get(rarity, (180, 180, 190)), 255),
+        )
 
     # Image de l'item (ou placeholder)
     img_size = min(180, w - 30, h - 130)
@@ -297,8 +308,8 @@ def _draw_slot_card(
 
     # Badge « forge » : niveau de forge sacrée. Dessiné APRÈS l'image — sinon
     # la vignette de l'item le recouvrait entièrement.
-    if equipment is not None and item_levels:
-        lvl = item_levels.get(equipment.item_definition.id, 0)
+    if equipment is not None:
+        lvl = getattr(equipment, "forge_level", 0) or 0
         if lvl > 0:
             badge_font = _try_font(19, bold=True)
             badge_text = f"🔨+{lvl}"
@@ -342,9 +353,11 @@ def _draw_slot_card(
         # pour rester dans la card). On distribue les parts sur les
         # lignes selon la largeur pixel disponible.
         from app.shared.emoji_mappings import format_stat_bonuses_parts
-        # Bonus RÉELS de la pièce, amélioration comprise.
-        level = (item_levels or {}).get(item.id, 0)
-        parts = format_stat_bonuses_parts(scaled_bonuses(item.stat_bonuses, level))
+        # Bonus RÉELS de la copie portée : rareté et forge sacrée comprises.
+        parts = format_stat_bonuses_parts(gear_stats(
+            item.stat_bonuses, getattr(equipment, "rarity", "common"),
+            getattr(equipment, "forge_level", 0),
+        ))
         if parts:
             available_w = w - 32  # marge x+16 à droite
             sep = " · "
@@ -502,9 +515,10 @@ def compose_equipment_summary_page(
     # Saison 1 : ATK / DEF / PV viennent de l'équipement en % du socle.
     totals.update({"attack_pct": 0.0, "defense_pct": 0.0, "max_hp_pct": 0.0})
     for eq in equipped_items:
-        b = scaled_bonuses(
+        b = gear_stats(
             eq.item_definition.stat_bonuses,
-            (item_levels or {}).get(eq.item_definition.id, 0),
+            getattr(eq, "rarity", "common"),
+            getattr(eq, "forge_level", 0),
         )
         for k in totals.keys():
             value = b.get(k, 0) or 0
