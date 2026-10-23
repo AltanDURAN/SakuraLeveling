@@ -36,6 +36,8 @@ import discord
 from app.application.use_cases.create_trade import CreateTradeUseCase, TradeOffer
 from app.bot.embeds.trade_embeds import build_trade_embed
 from app.bot.views.trade_view import TradeResponseView
+from app.domain.services.gear_service import gear_label, gear_ref, parse_gear_ref
+from app.infrastructure.db.repositories.gear_repository import GearRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
@@ -54,6 +56,8 @@ class TradeDraft:
     requested_items: list[tuple[str, int]] = field(default_factory=list)
     offered_gold: int = 0
     requested_gold: int = 0
+    #: Libellé affiché par code (une pièce « gear:<id> » n'a pas de code lisible).
+    labels: dict[str, str] = field(default_factory=dict)
 
     def add_offered_item(self, code: str, quantity: int) -> None:
         self._add(self.offered_items, code, quantity)
@@ -71,7 +75,9 @@ class TradeDraft:
     def _add(target_list: list[tuple[str, int]], code: str, quantity: int) -> None:
         for idx, (existing_code, existing_qty) in enumerate(target_list):
             if existing_code == code:
-                target_list[idx] = (code, existing_qty + quantity)
+                # Une pièce d'équipement est un exemplaire : jamais ×2.
+                if parse_gear_ref(code) is None:
+                    target_list[idx] = (code, existing_qty + quantity)
                 return
         target_list.append((code, quantity))
 
@@ -84,11 +90,17 @@ class TradeDraft:
         )
 
 
-def _format_offer_lines(items: list[tuple[str, int]], gold: int) -> str:
+def _format_offer_lines(items: list[tuple[str, int]], gold: int,
+                        labels: dict[str, str] | None = None) -> str:
+    labels = labels or {}
     parts: list[str] = []
     if gold > 0:
         parts.append(f"💰 **{gold}** or")
-    parts.extend(f"{quantity}× `{code}`" for code, quantity in items)
+    for code, quantity in items:
+        if parse_gear_ref(code) is not None:
+            parts.append(labels.get(code, code))
+        else:
+            parts.append(f"{quantity}× {labels.get(code, f'`{code}`')}")
     return "\n".join(parts) if parts else "_Rien_"
 
 
@@ -107,12 +119,12 @@ def build_draft_embed(
     )
     embed.add_field(
         name=f"📤 {initiator_display_name} propose",
-        value=_format_offer_lines(draft.offered_items, draft.offered_gold),
+        value=_format_offer_lines(draft.offered_items, draft.offered_gold, draft.labels),
         inline=True,
     )
     embed.add_field(
         name=f"📥 {target_display_name} doit donner",
-        value=_format_offer_lines(draft.requested_items, draft.requested_gold),
+        value=_format_offer_lines(draft.requested_items, draft.requested_gold, draft.labels),
         inline=True,
     )
     return embed
@@ -254,6 +266,19 @@ class _ItemSelectView(discord.ui.View):
         await self.on_cancel_callback(interaction)
 
 
+def _gear_choices(gear) -> list[tuple[str, str, int | None]]:
+    """Pièces d'équipement (les plus rares d'abord) pour le menu de sélection."""
+    return [
+        (
+            gear_ref(g.id),
+            gear_label(g.item_definition.name, g.rarity, g.forge_level)
+            + (" (portée)" if g.equipped else ""),
+            1,
+        )
+        for g in gear
+    ]
+
+
 # ---------- Vue principale du brouillon ----------
 
 
@@ -297,16 +322,17 @@ class TradeDraftView(discord.ui.View):
         with get_db_session() as session:
             profile = PlayerRepository(session).get_by_discord_id(self.initiator.id)
             if profile is None:
-                items = []
+                items, gear = [], []
             else:
                 inventory = InventoryRepository(session).list_by_player_id(
                     profile.player.id
                 )
-                items = sorted(
-                    inventory, key=lambda i: -i.quantity
-                )[:SELECT_LIMIT]
+                items = sorted(inventory, key=lambda i: -i.quantity)
+                # Pièces libres seulement : on ne cède pas ce qu'on porte.
+                gear = [g for g in GearRepository(session).list_owned(profile.player.id)
+                        if not g.equipped]
 
-        choices = [
+        choices = _gear_choices(gear) + [
             (
                 item.item_definition.code,
                 f"{item.item_definition.name} (×{item.quantity})",
@@ -314,6 +340,7 @@ class TradeDraftView(discord.ui.View):
             )
             for item in items
         ]
+        choices = choices[:SELECT_LIMIT]
         if not choices:
             await interaction.response.send_message(
                 "❌ Vous n'avez aucun item dans votre inventaire à proposer.",
@@ -337,14 +364,15 @@ class TradeDraftView(discord.ui.View):
         with get_db_session() as session:
             target_profile = PlayerRepository(session).get_by_discord_id(self.target.id)
             if target_profile is None:
-                items = []
+                items, gear = [], []
             else:
                 inventory = InventoryRepository(session).list_by_player_id(
                     target_profile.player.id
                 )
-                items = sorted(inventory, key=lambda i: -i.quantity)[:SELECT_LIMIT]
+                items = sorted(inventory, key=lambda i: -i.quantity)
+                gear = GearRepository(session).list_owned(target_profile.player.id)
 
-        choices = [
+        choices = _gear_choices(gear) + [
             (
                 item.item_definition.code,
                 f"{item.item_definition.name} (chez {self.target.display_name}: ×{item.quantity})",
@@ -352,6 +380,7 @@ class TradeDraftView(discord.ui.View):
             )
             for item in items
         ]
+        choices = choices[:SELECT_LIMIT]
         if not choices:
             await interaction.response.send_message(
                 f"❌ {self.target.display_name} n'a aucun item dans son inventaire à demander.",
@@ -374,8 +403,17 @@ class TradeDraftView(discord.ui.View):
         side: str,  # "offered" ou "requested"
     ) -> None:
         async def on_pick(picked_interaction, code, max_qty):
-            # Ouvre la modal de quantité
             item_name = next((label for c, label, _ in choices if c == code), code)
+            if parse_gear_ref(code) is not None:
+                # Une pièce est un exemplaire unique : pas de quantité à saisir.
+                self.draft.labels[code] = item_name.removesuffix(" (portée)")
+                if side == "offered":
+                    self.draft.add_offered_item(code, 1)
+                else:
+                    self.draft.add_requested_item(code, 1)
+                await self._refresh_self(picked_interaction)
+                return
+            self.draft.labels[code] = item_name.split(" (")[0]
 
             async def on_qty_submit(qty_interaction, qty):
                 if side == "offered":

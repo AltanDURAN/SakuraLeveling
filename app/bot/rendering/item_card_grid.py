@@ -67,6 +67,8 @@ class CardSpec:
     lines: list[str] = field(default_factory=list)
     badge: str | None = None
     code: str | None = None
+    #: Pièce mythique : cadre animé (la page est alors rendue en GIF).
+    mythic: bool = False
 
 
 def _draw_panel(
@@ -205,10 +207,12 @@ def compose_card_grid_page(
     cols: int = 1,
     rows: int = 6,
     seed: int = 0,
-) -> None:
+) -> str:
     """Rend une page (max cols × rows cards). Si plus, le caller paginera.
 
     `title`/`subtitle` : bandeau en haut. `seed` : layout pétales déterministe.
+    Renvoie le chemin écrit : `output_path`, ou sa version `.gif` si une
+    carte mythique demande le cadre animé.
     """
     margin = 30
     spacing = 8
@@ -251,11 +255,14 @@ def compose_card_grid_page(
 
     # ---- Grid ----
     card_w = (WIDTH - 2 * margin - (cols - 1) * spacing) // cols
+    mythic_boxes: list[tuple[int, int, int, int]] = []
     for idx, card in enumerate(cards[: cols * rows]):
         row, col = divmod(idx, cols)
         x = margin + col * (card_w + spacing)
         y = header_h + row * (card_h + spacing)
         _draw_card(bg, (x, y), (card_w, card_h), card, icon_size=icon_size)
+        if card.mythic:
+            mythic_boxes.append((x, y, card_w, card_h))
 
     # ---- Footer ----
     footer_text = f"{len(cards)} item(s) sur cette page"
@@ -266,8 +273,13 @@ def compose_card_grid_page(
         footer_text, ff, fill=_TEXT_MUTED, shadow=_SHADOW,
     )
 
+    if mythic_boxes:
+        from app.bot.rendering.mythic_fx import save_mythic_gif
+
+        return save_mythic_gif(bg, mythic_boxes, output_path)
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     bg.convert("RGB").save(output_path, "PNG", optimize=True)
+    return output_path
 
 
 def item_asset_path(item_code: str) -> Path | None:

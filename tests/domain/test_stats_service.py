@@ -61,7 +61,8 @@ def build_profile(
     )
 
 
-def build_item(bonuses: dict, item_id: int = 1) -> PlayerEquipmentItem:
+def build_item(bonuses: dict, item_id: int = 1, rarity: str = "common",
+               forge_level: int = 0) -> PlayerEquipmentItem:
     return PlayerEquipmentItem(
         id=item_id, player_id=1, slot="arme_1",
         item_definition=ItemDefinition(
@@ -73,6 +74,7 @@ def build_item(bonuses: dict, item_id: int = 1) -> PlayerEquipmentItem:
             created_at=NOW, updated_at=NOW,
         ),
         created_at=NOW, updated_at=NOW,
+        rarity=rarity, forge_level=forge_level,
     )
 
 
@@ -213,12 +215,11 @@ def test_le_mana_est_toujours_reporte():
     assert s.mana_max > 0 and s.mana_regeneration > 0
 
 
-def test_l_amelioration_ajoute_dix_pourcent_de_la_piece_par_niveau():
-    """Une pièce à +10 vaut le double d'une pièce neuve, jamais ×11."""
-    item = build_item({"attack_pct": 40})
+def test_la_rarete_de_la_copie_multiplie_ses_stats():
+    """Équipement v2 : la même pièce vaut ×1 en commun, ×4 en légendaire."""
     socle = stats_of(build_profile(points_attack=40)).attack
-    s = stats_of(
-        build_profile(points_attack=40), [item],
-        item_levels={item.item_definition.id: 10},
-    )
-    assert s.attack == round(socle * 1.80)  # 40 % × 2
+    commun = stats_of(build_profile(points_attack=40), [build_item({"attack_pct": 10})])
+    legendaire = stats_of(build_profile(points_attack=40),
+                          [build_item({"attack_pct": 10}, rarity="legendary")])
+    assert commun.attack == round(socle * 1.10)
+    assert legendaire.attack == round(socle * 1.40)

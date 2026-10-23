@@ -58,5 +58,7 @@ class TradeItemModel(Base):
         nullable=False,
     )
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    #: Exemplaire précis d'une pièce d'équipement (player_gear.id), sinon None.
+    gear_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))

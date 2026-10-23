@@ -8,7 +8,6 @@ from app.infrastructure.db.base import Base
 
 # Imports nécessaires pour enregistrer toutes les tables dans Base.metadata
 from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel  # noqa: F401
-from app.infrastructure.db.models.equipment_model import PlayerEquipmentItemModel  # noqa: F401
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel  # noqa: F401
 from app.infrastructure.db.models.item_model import ItemDefinitionModel  # noqa: F401
 from app.infrastructure.db.models.mob_model import MobDefinitionModel  # noqa: F401

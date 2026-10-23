@@ -37,17 +37,18 @@
       }
     ],
     "image_name": "slime.png",
-    "element": ""
+    "element": "",
+    "gear_item_code": "perle_de_gelee"
   },
   {
     "code": "gobelin",
     "name": "Gobelin",
     "family": "gobelin",
     "description": "Une créature faible.",
-    "max_hp": 165,
-    "current_hp": 165,
+    "max_hp": 154,
+    "current_hp": 154,
     "attack": 14,
-    "defense": 7,
+    "defense": 6,
     "crit_chance": 0,
     "crit_damage": 100,
     "dodge": 0,
@@ -77,17 +78,18 @@
       }
     ],
     "image_name": "gobelin.png",
-    "element": ""
+    "element": "",
+    "gear_item_code": "surin_dentele"
   },
   {
     "code": "gobelin_combattant",
     "name": "Gobelin Combattant",
     "family": "gobelin",
     "description": "Une créature endurcie.",
-    "max_hp": 231,
-    "current_hp": 231,
-    "attack": 22,
-    "defense": 9,
+    "max_hp": 187,
+    "current_hp": 187,
+    "attack": 20,
+    "defense": 8,
     "crit_chance": 0,
     "crit_damage": 100,
     "dodge": 0,
@@ -104,12 +106,6 @@
         "max_quantity": 2
       },
       {
-        "item_code": "brassard_de_cuir",
-        "drop_rate": 0.05,
-        "min_quantity": 1,
-        "max_quantity": 1
-      },
-      {
         "item_code": "silex",
         "drop_rate": 0.15,
         "min_quantity": 1,
@@ -117,7 +113,8 @@
       }
     ],
     "image_name": "gobelin_combattant.png",
-    "element": "terre"
+    "element": "terre",
+    "gear_item_code": "peau_de_loup_du_lutteur"
   },
   {
     "code": "squelette",
@@ -125,10 +122,10 @@
     "family": "mort-vivant",
     "element": "tenebre",
     "description": "Un pantin d'os réanimé. Le premier pas dans le royaume des morts.",
-    "max_hp": 297,
-    "current_hp": 297,
-    "attack": 32,
-    "defense": 12,
+    "max_hp": 231,
+    "current_hp": 231,
+    "attack": 26,
+    "defense": 9,
     "crit_chance": 0,
     "crit_damage": 100,
     "dodge": 0,
@@ -149,25 +146,20 @@
         "drop_rate": 0.18,
         "min_quantity": 1,
         "max_quantity": 2
-      },
-      {
-        "item_code": "dague_rouillee",
-        "drop_rate": 0.05,
-        "min_quantity": 1,
-        "max_quantity": 1
       }
     ],
-    "image_name": "squelette.png"
+    "image_name": "squelette.png",
+    "gear_item_code": "epee_de_l_ossuaire"
   },
   {
     "code": "gobelin_chaman",
     "name": "Gobelin Chaman",
     "family": "gobelin",
     "description": "Une créature intelligente.",
-    "max_hp": 255,
-    "current_hp": 255,
-    "attack": 50,
-    "defense": 7,
+    "max_hp": 194,
+    "current_hp": 194,
+    "attack": 42,
+    "defense": 5,
     "crit_chance": 0,
     "crit_damage": 100,
     "dodge": 0,
@@ -182,32 +174,21 @@
         "drop_rate": 0.2,
         "min_quantity": 1,
         "max_quantity": 1
-      },
-      {
-        "item_code": "fetiche_d_os",
-        "drop_rate": 0.05,
-        "min_quantity": 1,
-        "max_quantity": 1
-      },
-      {
-        "item_code": "baton_a_crane",
-        "drop_rate": 0.02,
-        "min_quantity": 1,
-        "max_quantity": 1
       }
     ],
     "image_name": "gobelin_chaman.png",
-    "element": "tenebre"
+    "element": "tenebre",
+    "gear_item_code": "baton_du_crane_totem"
   },
   {
     "code": "zombie",
     "name": "Zombie",
     "family": "mort-vivant",
     "description": "Une carcasse putride et lente, mais coriace.",
-    "max_hp": 317,
-    "current_hp": 317,
-    "attack": 27,
-    "defense": 19,
+    "max_hp": 248,
+    "current_hp": 248,
+    "attack": 23,
+    "defense": 15,
     "crit_chance": 0,
     "crit_damage": 100,
     "dodge": 0,
@@ -237,17 +218,18 @@
       }
     ],
     "image_name": "zombie.png",
-    "element": ""
+    "element": "",
+    "gear_item_code": "haillons_du_revenant"
   },
   {
     "code": "gobelin_ballon",
     "name": "Gobelin Ballon",
     "family": "gobelin",
     "description": "Un groupe de créatures inventives.",
-    "max_hp": 363,
-    "current_hp": 363,
-    "attack": 40,
-    "defense": 15,
+    "max_hp": 286,
+    "current_hp": 286,
+    "attack": 34,
+    "defense": 12,
     "crit_chance": 0,
     "crit_damage": 100,
     "dodge": 0,
@@ -277,17 +259,18 @@
       }
     ],
     "image_name": "gobelin_ballon.png",
-    "element": ""
+    "element": "",
+    "gear_item_code": "grenade_de_suie"
   },
   {
     "code": "gobelin_geant",
     "name": "Gobelin Géant",
     "family": "gobelin",
     "description": "Une créature imposante.",
-    "max_hp": 366,
-    "current_hp": 366,
-    "attack": 33,
-    "defense": 22,
+    "max_hp": 297,
+    "current_hp": 297,
+    "attack": 29,
+    "defense": 18,
     "crit_chance": 0,
     "crit_damage": 100,
     "dodge": 0,
@@ -302,22 +285,11 @@
         "drop_rate": 0.22,
         "min_quantity": 1,
         "max_quantity": 2
-      },
-      {
-        "item_code": "ceinturon_epais",
-        "drop_rate": 0.05,
-        "min_quantity": 1,
-        "max_quantity": 1
-      },
-      {
-        "item_code": "gourdin_de_tronc",
-        "drop_rate": 0.02,
-        "min_quantity": 1,
-        "max_quantity": 1
       }
     ],
     "image_name": "gobelin_geant.png",
-    "element": ""
+    "element": "",
+    "gear_item_code": "tronc_arrache"
   },
   {
     "code": "momie",
@@ -325,10 +297,10 @@
     "family": "mort-vivant",
     "element": "terre",
     "description": "Un corps embaumé aux bandelettes maudites, quasi increvable.",
-    "max_hp": 418,
-    "current_hp": 418,
-    "attack": 48,
-    "defense": 17,
+    "max_hp": 341,
+    "current_hp": 341,
+    "attack": 43,
+    "defense": 14,
     "crit_chance": 0,
     "crit_damage": 100,
     "dodge": 0,
@@ -349,25 +321,20 @@
         "drop_rate": 0.1,
         "min_quantity": 1,
         "max_quantity": 1
-      },
-      {
-        "item_code": "griffe_noircie",
-        "drop_rate": 0.05,
-        "min_quantity": 1,
-        "max_quantity": 1
       }
     ],
-    "image_name": "momie.png"
+    "image_name": "momie.png",
+    "gear_item_code": "bandelettes_embaumees"
   },
   {
     "code": "gobelin_runique",
     "name": "Gobelin Runique",
     "family": "gobelin",
     "description": "Une créature mystérieuse.",
-    "max_hp": 361,
-    "current_hp": 361,
-    "attack": 79,
-    "defense": 9,
+    "max_hp": 299,
+    "current_hp": 299,
+    "attack": 72,
+    "defense": 8,
     "crit_chance": 0,
     "crit_damage": 100,
     "dodge": 0,
@@ -388,26 +355,21 @@
         "drop_rate": 0.1,
         "min_quantity": 1,
         "max_quantity": 1
-      },
-      {
-        "item_code": "collier_de_perles",
-        "drop_rate": 0.04,
-        "min_quantity": 1,
-        "max_quantity": 1
       }
     ],
     "image_name": "gobelin_runique.png",
-    "element": ""
+    "element": "",
+    "gear_item_code": "bracelet_runique"
   },
   {
     "code": "fantome",
     "name": "Fantôme",
     "family": "mort-vivant",
     "description": "Une âme errante insaisissable qui glisse entre les coups.",
-    "max_hp": 290,
-    "current_hp": 290,
-    "attack": 52,
-    "defense": 16,
+    "max_hp": 244,
+    "current_hp": 244,
+    "attack": 48,
+    "defense": 13,
     "crit_chance": 20,
     "crit_damage": 150,
     "dodge": 0,
@@ -416,38 +378,20 @@
     "xp_reward": 188,
     "gold_reward": 90,
     "spawn_weight": 15,
-    "loot_table": [
-      {
-        "item_code": "voile_ectoplasmique",
-        "drop_rate": 0.04,
-        "min_quantity": 1,
-        "max_quantity": 1
-      },
-      {
-        "item_code": "chaine_spectrale",
-        "drop_rate": 0.04,
-        "min_quantity": 1,
-        "max_quantity": 1
-      },
-      {
-        "item_code": "boulet_hante",
-        "drop_rate": 0.02,
-        "min_quantity": 1,
-        "max_quantity": 1
-      }
-    ],
+    "loot_table": [],
     "image_name": "fantome.png",
-    "element": ""
+    "element": "",
+    "gear_item_code": "chaine_de_l_ame_errante"
   },
   {
     "code": "gobelin_assassin",
     "name": "Gobelin Assassin",
     "family": "gobelin",
     "description": "Une créature discrète.",
-    "max_hp": 297,
-    "current_hp": 297,
-    "attack": 54,
-    "defense": 16,
+    "max_hp": 251,
+    "current_hp": 251,
+    "attack": 49,
+    "defense": 14,
     "crit_chance": 20,
     "crit_damage": 150,
     "dodge": 0,
@@ -462,32 +406,21 @@
         "drop_rate": 0.2,
         "min_quantity": 1,
         "max_quantity": 2
-      },
-      {
-        "item_code": "dagues_jumelles",
-        "drop_rate": 0.05,
-        "min_quantity": 1,
-        "max_quantity": 1
-      },
-      {
-        "item_code": "cape_silencieuse",
-        "drop_rate": 0.01,
-        "min_quantity": 1,
-        "max_quantity": 1
       }
     ],
     "image_name": "gobelin_assassin.png",
-    "element": ""
+    "element": "",
+    "gear_item_code": "cape_de_nuit_sans_lune"
   },
   {
     "code": "gobelin_superieur",
     "name": "Gobelin Supérieur",
     "family": "gobelin",
     "description": "Une créature supérieure.",
-    "max_hp": 539,
-    "current_hp": 539,
-    "attack": 66,
-    "defense": 22,
+    "max_hp": 462,
+    "current_hp": 462,
+    "attack": 63,
+    "defense": 19,
     "crit_chance": 0,
     "crit_damage": 100,
     "dodge": 0,
@@ -496,28 +429,10 @@
     "xp_reward": 219,
     "gold_reward": 105,
     "spawn_weight": 10,
-    "loot_table": [
-      {
-        "item_code": "plaque_a_pointes",
-        "drop_rate": 0.05,
-        "min_quantity": 1,
-        "max_quantity": 1
-      },
-      {
-        "item_code": "casque_a_cornes",
-        "drop_rate": 0.04,
-        "min_quantity": 1,
-        "max_quantity": 1
-      },
-      {
-        "item_code": "masse_cloutee",
-        "drop_rate": 0.015,
-        "min_quantity": 1,
-        "max_quantity": 1
-      }
-    ],
+    "loot_table": [],
     "image_name": "gobelin_superieur.png",
-    "element": ""
+    "element": "",
+    "gear_item_code": "massue_du_chef_de_guerre"
   },
   {
     "code": "gargouille",
@@ -525,10 +440,10 @@
     "family": "mort-vivant",
     "element": "terre",
     "description": "Une statue de pierre animée qui frappe comme un bélier.",
-    "max_hp": 515,
-    "current_hp": 515,
-    "attack": 50,
-    "defense": 31,
+    "max_hp": 446,
+    "current_hp": 446,
+    "attack": 48,
+    "defense": 27,
     "crit_chance": 0,
     "crit_damage": 100,
     "dodge": 0,
@@ -545,29 +460,24 @@
         "max_quantity": 2
       },
       {
-        "item_code": "aile_de_pierre",
-        "drop_rate": 0.04,
-        "min_quantity": 1,
-        "max_quantity": 1
-      },
-      {
         "item_code": "coeur_de_granit",
         "drop_rate": 0.03,
         "min_quantity": 1,
         "max_quantity": 1
       }
     ],
-    "image_name": "gargouille.png"
+    "image_name": "gargouille.png",
+    "gear_item_code": "pavois_de_granit"
   },
   {
     "code": "diablotin",
     "name": "Diablotin",
     "family": "demoniaque",
     "description": "Petit démon espiègle et véloce, tout juste éclos du Berceau.",
-    "max_hp": 383,
-    "current_hp": 383,
+    "max_hp": 343,
+    "current_hp": 343,
     "attack": 73,
-    "defense": 21,
+    "defense": 19,
     "crit_chance": 20,
     "crit_damage": 150,
     "dodge": 0,
@@ -588,26 +498,21 @@
         "drop_rate": 0.1,
         "min_quantity": 1,
         "max_quantity": 1
-      },
-      {
-        "item_code": "trident_ebreche",
-        "drop_rate": 0.05,
-        "min_quantity": 1,
-        "max_quantity": 1
       }
     ],
     "image_name": "diablotin.png",
-    "element": ""
+    "element": "",
+    "gear_item_code": "trident_ricaneur"
   },
   {
     "code": "banshee",
     "name": "Banshee",
     "family": "mort-vivant",
     "description": "Un spectre hurlant dont le cri glaçant transperce l'âme.",
-    "max_hp": 510,
-    "current_hp": 510,
-    "attack": 123,
-    "defense": 13,
+    "max_hp": 466,
+    "current_hp": 466,
+    "attack": 124,
+    "defense": 12,
     "crit_chance": 0,
     "crit_damage": 100,
     "dodge": 0,
@@ -628,26 +533,21 @@
         "drop_rate": 0.05,
         "min_quantity": 1,
         "max_quantity": 1
-      },
-      {
-        "item_code": "couronne_d_epines",
-        "drop_rate": 0.02,
-        "min_quantity": 1,
-        "max_quantity": 1
       }
     ],
     "image_name": "banshee.png",
-    "element": ""
+    "element": "",
+    "gear_item_code": "diademe_hurlant"
   },
   {
     "code": "demon_cornu",
     "name": "Démon cornu",
     "family": "demoniaque",
     "description": "Fantassin cornu des légions infernales, brutal et sans pitié.",
-    "max_hp": 726,
-    "current_hp": 726,
-    "attack": 94,
-    "defense": 30,
+    "max_hp": 671,
+    "current_hp": 671,
+    "attack": 98,
+    "defense": 27,
     "crit_chance": 0,
     "crit_damage": 100,
     "dodge": 0,
@@ -662,22 +562,11 @@
         "drop_rate": 0.2,
         "min_quantity": 1,
         "max_quantity": 2
-      },
-      {
-        "item_code": "ceinturon_cloute",
-        "drop_rate": 0.05,
-        "min_quantity": 1,
-        "max_quantity": 1
-      },
-      {
-        "item_code": "lame_infernale",
-        "drop_rate": 0.025,
-        "min_quantity": 1,
-        "max_quantity": 1
       }
     ],
     "image_name": "demon_cornu.png",
-    "element": ""
+    "element": "",
+    "gear_item_code": "heaume_aux_cornes"
   },
   {
     "code": "liche_maudite",
@@ -685,10 +574,10 @@
     "family": "mort-vivant",
     "element": "tenebre",
     "description": "Un sorcier mort-vivant dont la magie noire dévaste.",
-    "max_hp": 598,
-    "current_hp": 598,
-    "attack": 145,
-    "defense": 15,
+    "max_hp": 554,
+    "current_hp": 554,
+    "attack": 155,
+    "defense": 14,
     "crit_chance": 0,
     "crit_damage": 100,
     "dodge": 0,
@@ -697,37 +586,19 @@
     "xp_reward": 338,
     "gold_reward": 162,
     "spawn_weight": 4,
-    "loot_table": [
-      {
-        "item_code": "grimoire_en_lambeaux",
-        "drop_rate": 0.05,
-        "min_quantity": 1,
-        "max_quantity": 1
-      },
-      {
-        "item_code": "orbe_maudit",
-        "drop_rate": 0.02,
-        "min_quantity": 1,
-        "max_quantity": 1
-      },
-      {
-        "item_code": "couronne_ternie",
-        "drop_rate": 0.015,
-        "min_quantity": 1,
-        "max_quantity": 1
-      }
-    ],
-    "image_name": "liche_maudite.png"
+    "loot_table": [],
+    "image_name": "liche_maudite.png",
+    "gear_item_code": "couronne_de_la_liche"
   },
   {
     "code": "ogre_demoniaque",
     "name": "Ogre démoniaque",
     "family": "demoniaque",
     "description": "Masse de muscles corrompue qui écrase tout sur son passage.",
-    "max_hp": 669,
-    "current_hp": 669,
-    "attack": 165,
-    "defense": 17,
+    "max_hp": 642,
+    "current_hp": 642,
+    "attack": 183,
+    "defense": 16,
     "crit_chance": 0,
     "crit_damage": 100,
     "dodge": 0,
@@ -742,32 +613,21 @@
         "drop_rate": 0.2,
         "min_quantity": 1,
         "max_quantity": 2
-      },
-      {
-        "item_code": "plaque_rouillee",
-        "drop_rate": 0.05,
-        "min_quantity": 1,
-        "max_quantity": 1
-      },
-      {
-        "item_code": "espadon_dentele",
-        "drop_rate": 0.015,
-        "min_quantity": 1,
-        "max_quantity": 1
       }
     ],
     "image_name": "ogre_demoniaque.png",
-    "element": ""
+    "element": "",
+    "gear_item_code": "fendoir_d_orage"
   },
   {
     "code": "cerbere",
     "name": "Cerbère",
     "family": "demoniaque",
     "description": "Molosse à trois têtes gardant les portes de l'abîme.",
-    "max_hp": 924,
-    "current_hp": 924,
-    "attack": 123,
-    "defense": 38,
+    "max_hp": 902,
+    "current_hp": 902,
+    "attack": 139,
+    "defense": 37,
     "crit_chance": 0,
     "crit_damage": 100,
     "dodge": 0,
@@ -782,32 +642,21 @@
         "drop_rate": 0.12,
         "min_quantity": 1,
         "max_quantity": 2
-      },
-      {
-        "item_code": "collier_a_pointes",
-        "drop_rate": 0.05,
-        "min_quantity": 1,
-        "max_quantity": 1
-      },
-      {
-        "item_code": "chaine_de_l_abime",
-        "drop_rate": 0.03,
-        "min_quantity": 1,
-        "max_quantity": 1
       }
     ],
     "image_name": "cerbere.png",
-    "element": ""
+    "element": "",
+    "gear_item_code": "collier_du_gardien"
   },
   {
     "code": "succube",
     "name": "Succube",
     "family": "demoniaque",
     "description": "Démone envoûtante qui draine la vie de ses proies.",
-    "max_hp": 810,
-    "current_hp": 810,
-    "attack": 204,
-    "defense": 21,
+    "max_hp": 792,
+    "current_hp": 792,
+    "attack": 229,
+    "defense": 20,
     "crit_chance": 0,
     "crit_damage": 100,
     "dodge": 0,
@@ -822,32 +671,21 @@
         "drop_rate": 0.1,
         "min_quantity": 1,
         "max_quantity": 1
-      },
-      {
-        "item_code": "aile_de_cuir",
-        "drop_rate": 0.05,
-        "min_quantity": 1,
-        "max_quantity": 1
-      },
-      {
-        "item_code": "corset_de_soie_noire",
-        "drop_rate": 0.02,
-        "min_quantity": 1,
-        "max_quantity": 1
       }
     ],
     "image_name": "succube.png",
-    "element": ""
+    "element": "",
+    "gear_item_code": "baiser_de_la_succube"
   },
   {
     "code": "ange_dechu",
     "name": "Ange déchu",
     "family": "demoniaque",
     "description": "Ancien séraphin banni ; sa lumière s'est muée en fureur.",
-    "max_hp": 1111,
-    "current_hp": 1111,
-    "attack": 150,
-    "defense": 45,
+    "max_hp": 1078,
+    "current_hp": 1078,
+    "attack": 170,
+    "defense": 44,
     "crit_chance": 0,
     "crit_damage": 100,
     "dodge": 0,
@@ -868,26 +706,21 @@
         "drop_rate": 0.05,
         "min_quantity": 1,
         "max_quantity": 1
-      },
-      {
-        "item_code": "couronne_dechue",
-        "drop_rate": 0.01,
-        "min_quantity": 1,
-        "max_quantity": 1
       }
     ],
     "image_name": "ange_dechu.png",
-    "element": ""
+    "element": "",
+    "gear_item_code": "cuirasse_de_l_exil"
   },
   {
     "code": "archidemon",
     "name": "Archidémon",
     "family": "demoniaque",
     "description": "Seigneur des enfers, apogée de la corruption du Berceau.",
-    "max_hp": 1099,
-    "current_hp": 1099,
-    "attack": 117,
-    "defense": 67,
+    "max_hp": 1069,
+    "current_hp": 1069,
+    "attack": 132,
+    "defense": 65,
     "crit_chance": 0,
     "crit_damage": 100,
     "dodge": 0,
@@ -902,21 +735,10 @@
         "drop_rate": 0.12,
         "min_quantity": 1,
         "max_quantity": 1
-      },
-      {
-        "item_code": "sceau_de_corruption",
-        "drop_rate": 0.02,
-        "min_quantity": 1,
-        "max_quantity": 1
-      },
-      {
-        "item_code": "lame_des_enfers",
-        "drop_rate": 0.01,
-        "min_quantity": 1,
-        "max_quantity": 1
       }
     ],
     "image_name": "archidemon.png",
-    "element": ""
+    "element": "",
+    "gear_item_code": "egide_du_damne"
   }
 ]

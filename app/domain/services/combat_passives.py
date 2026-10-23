@@ -79,6 +79,11 @@ class CombatPassives:
     speed_per_ally: int = 0                # Soigneur : +1 vitesse par allié présent
     mage: bool = False                     # Mage : ×1,5 / ×2 / ×5 selon l'affinité
     classes: tuple[str, ...] = field(default_factory=tuple)
+    #: Passifs d'ÉQUIPEMENT actifs (pièces épiques et plus), cf. gear_passives.
+    gear: frozenset[str] = field(default_factory=frozenset)
+
+    def has(self, gear_passive: str) -> bool:
+        return gear_passive in self.gear
 
     @property
     def damage_reduction_fraction(self) -> float:

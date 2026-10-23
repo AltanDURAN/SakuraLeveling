@@ -20,7 +20,6 @@ from app.infrastructure.db.models.progression_model import PlayerProgressionMode
 from app.infrastructure.db.models.resource_model import PlayerResourceModel  # noqa: F401
 from app.infrastructure.db.models.item_model import ItemDefinitionModel
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel  # noqa: F401
-from app.infrastructure.db.models.equipment_model import PlayerEquipmentItemModel  # noqa: F401
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
@@ -61,9 +60,10 @@ def _setup(session, items):
         discord_id=1, username="u", display_name="U",
     )
     pid = player.player.id
+    from app.infrastructure.db.repositories.gear_repository import GearRepository
+
     for it in items:
-        InventoryRepository(session).add_item(pid, it.id, 1)
-    session.commit()
+        GearRepository(session).add(pid, it.id)
     use_case = EquipPanoplieUseCase(
         player_repository=PlayerRepository(session),
         inventory_repository=InventoryRepository(session),

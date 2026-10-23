@@ -27,9 +27,7 @@ from app.domain.services.stats_service import StatsService
 from app.infrastructure.db.base import Base
 
 # Imports nécessaires pour Base.metadata
-from app.infrastructure.db.models.player_item_level_model import (  # noqa: F401
-    PlayerItemLevelModel,
-)
+
 from app.infrastructure.db.models.player_status_effect_model import (  # noqa: F401
     PlayerStatusEffectModel,
 )
@@ -38,7 +36,6 @@ from app.infrastructure.db.models.progression_model import PlayerProgressionMode
 from app.infrastructure.db.models.resource_model import PlayerResourceModel
 from app.infrastructure.db.models.item_model import ItemDefinitionModel  # noqa: F401
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel  # noqa: F401
-from app.infrastructure.db.models.equipment_model import PlayerEquipmentItemModel  # noqa: F401
 from app.infrastructure.db.models.mob_model import MobDefinitionModel  # noqa: F401
 from app.infrastructure.db.models.craft_model import CraftRecipeModel, CraftRecipeIngredientModel  # noqa: F401
 from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel  # noqa: F401

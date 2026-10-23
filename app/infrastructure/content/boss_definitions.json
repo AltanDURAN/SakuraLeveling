@@ -7,26 +7,19 @@
     "tier": "intro",
     "spawn_weight": 100,
     "element": "eau",
-    "max_hp": 6000,
-    "attack": 64,
-    "defense": 12,
+    "max_hp": 5000,
+    "attack": 55,
+    "defense": 9,
     "speed": 8,
     "crit_chance": 0,
     "crit_damage": 100,
     "dodge": 0,
     "modifiers": {
-      "damage_immunity_threshold": 7,
-      "auto_heal_per_turn": 14
+      "damage_immunity_threshold": 6,
+      "auto_heal_per_turn": 11
     },
     "lore": "Premier obstacle des aventuriers ambitieux. Élément Eau (faible à plante/foudre… ici : plante/terre/glace). Se régénère un peu chaque tour : il faut le tuer assez vite.",
-    "loot_table": [
-      {
-        "item_code": "titan_gel_core",
-        "drop_rate": 0.25,
-        "min_quantity": 1,
-        "max_quantity": 1
-      }
-    ]
+    "loot_table": []
   },
   {
     "code": "gobelin_warlord",
@@ -36,9 +29,9 @@
     "tier": "medium",
     "spawn_weight": 8,
     "element": "feu",
-    "max_hp": 11000,
-    "attack": 114,
-    "defense": 19,
+    "max_hp": 10000,
+    "attack": 113,
+    "defense": 17,
     "speed": 12,
     "crit_chance": 5,
     "crit_damage": 130,
@@ -47,20 +40,13 @@
       "enrage_below_pct": 30,
       "enrage_attack_multiplier": 1.5,
       "adds": {
-        "attack": 80,
+        "attack": 79,
         "summon_turn_interval": 4,
         "max_active": 3
       }
     },
     "lore": "Élément Feu (faible à eau/vent/terre). À 30% PV sa rage le fait frapper 50% plus fort. Invoque des gobelins toutes les 4 manches (max 3) qui tapent l'équipe.",
-    "loot_table": [
-      {
-        "item_code": "warlord_blade",
-        "drop_rate": 0.2,
-        "min_quantity": 1,
-        "max_quantity": 1
-      }
-    ]
+    "loot_table": []
   },
   {
     "code": "stone_colossus",
@@ -70,26 +56,19 @@
     "tier": "medium_hard",
     "spawn_weight": 3,
     "element": "terre",
-    "max_hp": 22000,
-    "attack": 164,
-    "defense": 26,
+    "max_hp": 21000,
+    "attack": 183,
+    "defense": 25,
     "speed": 5,
     "crit_chance": 0,
     "crit_damage": 100,
     "dodge": 0,
     "modifiers": {
-      "damage_immunity_threshold": 30,
+      "damage_immunity_threshold": 28,
       "reflect_pct": 15
     },
     "lore": "Élément Terre (faible à plante/glace/vent). Sa carapace runique ignore les dégâts < 50 et renvoie 15% des coups reçus. Frapper fort, ou souffrir du retour.",
-    "loot_table": [
-      {
-        "item_code": "colossus_plate",
-        "drop_rate": 0.2,
-        "min_quantity": 1,
-        "max_quantity": 1
-      }
-    ]
+    "loot_table": []
   },
   {
     "code": "shadow_wraith",
@@ -100,8 +79,8 @@
     "spawn_weight": 2,
     "element": "tenebre",
     "max_hp": 13000,
-    "attack": 214,
-    "defense": 33,
+    "attack": 245,
+    "defense": 32,
     "speed": 18,
     "crit_chance": 10,
     "crit_damage": 150,
@@ -120,14 +99,7 @@
       ]
     },
     "lore": "Élément Ténèbre (faible à lumière). Les crits sont annulés. À 50% PV il frappe +30%, à 20% PV +60%. Sa vitesse rend ses esquives redoutables.",
-    "loot_table": [
-      {
-        "item_code": "wraith_cloak",
-        "drop_rate": 0.15,
-        "min_quantity": 1,
-        "max_quantity": 1
-      }
-    ]
+    "loot_table": []
   },
   {
     "code": "ancient_dragon",
@@ -138,20 +110,20 @@
     "spawn_weight": 1,
     "element": "lumiere",
     "max_hp": 15000,
-    "attack": 264,
-    "defense": 40,
+    "attack": 303,
+    "defense": 39,
     "speed": 15,
     "crit_chance": 25,
     "crit_damage": 200,
     "dodge": 10,
     "modifiers": {
-      "damage_immunity_threshold": 46,
+      "damage_immunity_threshold": 44,
       "enrage_below_pct": 25,
       "enrage_attack_multiplier": 1.8,
-      "auto_heal_per_turn": 20,
+      "auto_heal_per_turn": 19,
       "reflect_pct": 20,
       "adds": {
-        "attack": 158,
+        "attack": 182,
         "summon_turn_interval": 5,
         "max_active": 2
       },
@@ -163,13 +135,6 @@
       ]
     },
     "lore": "Élément Lumière (faible à ténèbre). Le boss définitif : armure dragon (ignore <100 dmg), renvoie 20% des coups, régénère 2000 PV/tour, invoque des drakelings, phase à 50% PV, rage finale à 25% PV (+80% atk). Raid massif obligatoire.",
-    "loot_table": [
-      {
-        "item_code": "dragon_heart",
-        "drop_rate": 0.12,
-        "min_quantity": 1,
-        "max_quantity": 1
-      }
-    ]
+    "loot_table": []
   }
 ]

@@ -46,6 +46,7 @@ def seed_items() -> None:
                 requires_two_hands=bool(item_data.get("requires_two_hands", False)),
                 family=item_data.get("family", ""),
                 level_requirement=int(item_data.get("level_requirement", 1) or 1),
+                passive=item_data.get("passive", "") or "",
             )
 
             if existing is None:
@@ -71,6 +72,7 @@ def seed_mobs() -> None:
                 description=mob_data["description"],
                 family=mob_data.get("family", "unknown"),
                 element=mob_data.get("element", ""),
+                gear_item_code=mob_data.get("gear_item_code", "") or "",
                 max_hp=mob_data["max_hp"],
                 current_hp=mob_data.get("current_hp", mob_data["max_hp"]),
                 attack=mob_data["attack"],

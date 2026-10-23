@@ -11,7 +11,10 @@ import discord
 
 from app.domain.entities.mob_definition import MobDefinition
 from app.domain.services import element_service
+from app.domain.services.gear_passives import get_passive
+from app.domain.services.gear_service import DROP_RATES_PCT, RARITY_LABELS, PASSIVE_MIN_RARITY
 from app.domain.services.power_score_service import PowerScoreService
+from app.shared.emoji_mappings import format_stat_bonuses_short
 from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
 from app.shared.paths import MOBS_ASSETS_DIR
 from app.shared.formatters import format_int
@@ -31,13 +34,31 @@ def _element_line(element: str) -> str:
     return f"Élément : {emoji} **{label}**\nFaible à : {weak_str}"
 
 
-def _format_loot_line(loot_entry: dict) -> str:
+def _format_loot_line(loot_entry: dict, item_names: dict[str, str] | None = None) -> str:
     code = loot_entry.get("item_code", "?")
+    name = (item_names or {}).get(code)
     rate_pct = int(float(loot_entry.get("drop_rate", 0)) * 100)
     qty_min = loot_entry.get("min_quantity", 1)
     qty_max = loot_entry.get("max_quantity", 1)
     qty_label = f"×{qty_min}" if qty_min == qty_max else f"×{qty_min}-{qty_max}"
-    return f"• `{code}` {qty_label} ({rate_pct}%)"
+    return f"• {name or f'`{code}`'} {qty_label} ({rate_pct}%)"
+
+
+def _gear_field(mob: MobDefinition, items: dict) -> str | None:
+    """Pièce que porte le monstre : stats en commun, passif, chance de drop."""
+    item = items.get(getattr(mob, "gear_item_code", "") or "")
+    if item is None:
+        return None
+    chance = f"{sum(DROP_RATES_PCT.values()):.1f}".replace(".", ",")
+    lines = [
+        f"**{item.name}** · {format_stat_bonuses_short(item.stat_bonuses or {})} (commun)",
+    ]
+    passive = get_passive(getattr(item, "passive", ""))
+    if passive:
+        lines.append(f"✨ {passive.name} — {passive.description} "
+                     f"_(dès {RARITY_LABELS[PASSIVE_MIN_RARITY].lower()})_")
+    lines.append(f"🎲 {chance} % de chance par victoire, rareté tirée au sort")
+    return "\n".join(lines)
 
 
 def build_mob_embed(
@@ -46,7 +67,9 @@ def build_mob_embed(
     total: int,
     power_score: str,
     rank: str,
+    items: dict | None = None,
 ) -> discord.Embed:
+    items = items or {}
     embed = discord.Embed(
         title=f"📖 {mob.name}",
         description=mob.description or "_Pas de description._",
@@ -85,8 +108,12 @@ def build_mob_embed(
         ),
         inline=True,
     )
+    gear = _gear_field(mob, items)
+    if gear:
+        embed.add_field(name="⚔️ Équipement porté", value=gear[:1024], inline=False)
     if mob.loot_table:
-        loot_lines = [_format_loot_line(entry) for entry in mob.loot_table]
+        names = {code: item.name for code, item in items.items()}
+        loot_lines = [_format_loot_line(entry, names) for entry in mob.loot_table]
         embed.add_field(
             name="🎁 Drops",
             value="\n".join(loot_lines)[:1024] or "_aucun_",
@@ -106,10 +133,12 @@ class BestiaireView(discord.ui.View):
         author_id: int,
         mobs: list[MobDefinition],
         timeout: float = 300.0,
+        items: dict | None = None,
     ) -> None:
         super().__init__(timeout=timeout)
         self.author_id = author_id
         self.mobs = mobs
+        self.items = items or {}  # code → ItemDefinition
         self.index = 0
         self._pss = PowerScoreService()
         self._refresh_buttons()
@@ -136,6 +165,7 @@ class BestiaireView(discord.ui.View):
             mob, self.index, len(self.mobs),
             power_score=self._pss.format_score(score),
             rank=self._pss.compute_rank(score),
+            items=self.items,
         )
         file = None
         if mob.image_name:

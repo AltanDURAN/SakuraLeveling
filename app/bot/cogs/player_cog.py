@@ -152,15 +152,9 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             from app.application.services.status_effect_resolver import (
                 resolve_status_effects,
             )
-            from app.infrastructure.db.repositories.player_item_level_repository import (
-                PlayerItemLevelRepository,
-            )
             title_bonuses = resolve_title_bonuses(session, profile.player.id)
             set_bonuses = resolve_set_bonuses(equipped_items)
             status_bonuses = resolve_status_effects(session, profile.player.id)
-            item_levels = PlayerItemLevelRepository(session).get_levels_for_player(
-                profile.player.id
-            )
             stats = StatsService().calculate_player_stats(
                 profile=profile,
                 equipped_items=equipped_items,
@@ -168,7 +162,6 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 title_bonuses=title_bonuses,
                 set_bonuses=set_bonuses,
                 status_bonuses=status_bonuses,
-                item_levels=item_levels,
             )
 
             power_score_service = PowerScoreService()
@@ -344,6 +337,9 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 career=career_payload,
                 affinities=affinities_payload,
                 affinity_talents=affinity_talents_payload,
+                mythic_pieces=sum(
+                    1 for e in equipped_items if getattr(e, "rarity", "") == "mythic"
+                ),
             )
 
             # /profil = bannière PNG seule (l'embed n'est qu'un conteneur pour
@@ -419,12 +415,6 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             equipment_repository = EquipmentRepository(session)
             equipment_items = equipment_repository.list_by_player_id(profile.player.id)
             set_bonuses = resolve_set_bonuses(equipment_items)
-            from app.infrastructure.db.repositories.player_item_level_repository import (
-                PlayerItemLevelRepository,
-            )
-            item_levels = PlayerItemLevelRepository(session).get_levels_for_player(
-                profile.player.id
-            )
 
         try:
             view = EquipmentImageView(
@@ -432,7 +422,6 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 player_name=target_member.display_name,
                 equipped_items=equipment_items,
                 set_bonuses=set_bonuses,
-                item_levels=item_levels,
                 timeout=600.0,
             )
             embed, file = await asyncio.to_thread(view.render_current_page)
@@ -472,10 +461,10 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 await self._send_no_profile_error(interaction, target_member)
                 return
 
-            inventory_repository = InventoryRepository(session)
-            equipment_repository = EquipmentRepository(session)
-            items = inventory_repository.list_by_player_id(profile.player.id)
-            equipped = equipment_repository.list_by_player_id(profile.player.id)
+            from app.infrastructure.db.repositories.gear_repository import GearRepository
+
+            items = GearRepository(session).list_owned(profile.player.id)
+            equipped = EquipmentRepository(session).list_by_player_id(profile.player.id)
 
         view = EquipmentListView(
             player_id=profile.player.id,
@@ -486,19 +475,21 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         embed, file, _, _ = await asyncio.to_thread(view.render_current)
         await interaction.followup.send(embed=embed, file=file, view=view)
 
-    @app_commands.command(name="equiper", description="Équiper un item depuis votre inventaire")
-    @app_commands.describe(item_code="Code de l'item (autocomplete sur votre inventaire)")
+    @app_commands.command(name="equiper", description="Équiper une de tes pièces d'équipement")
+    @app_commands.describe(piece="La pièce à porter (autocomplétion : tes copies libres, les plus rares d'abord)")
     async def equip(
         self,
         interaction: discord.Interaction,
-        item_code: str,
+        piece: str,
     ) -> None:
+        from app.application.use_cases.equip_item import rarity_label
         from app.bot.views.equip_confirm_view import (
             EquipConfirmView,
             build_equip_confirm_embed,
             compute_stats_diff,
         )
         from app.domain.entities.player_equipment_item import PlayerEquipmentItem
+        from app.infrastructure.db.repositories.gear_repository import GearRepository
 
         # defer() AVANT le travail lourd (jusqu'à 2 calculs de stats complets) :
         # évite "Unknown interaction" si la DB est chargée.
@@ -510,67 +501,56 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 username=interaction.user.name,
                 display_name=interaction.user.display_name,
             )
-            inventory_repository = InventoryRepository(session)
             equipment_repository = EquipmentRepository(session)
+            owned = GearRepository(session).list_owned(profile.player.id)
 
-            inventory_items = inventory_repository.list_by_player_id(profile.player.id)
-            matched = next(
-                (i for i in inventory_items if i.item_definition.code == item_code),
-                None,
-            )
-            if matched is None:
+            # Valeur d'autocomplétion « gear:<id> », sinon un code ou un nom
+            # tapé à la main : on prend alors la meilleure copie libre.
+            gear = None
+            if piece.startswith("gear:") and piece[5:].isdigit():
+                gear = next((g for g in owned if g.id == int(piece[5:])), None)
+            else:
+                wanted = piece.strip().lower()
+                gear = next((g for g in owned if not g.equipped and wanted in (
+                    g.item_definition.code.lower(), g.item_definition.name.lower())), None)
+            if gear is None:
                 await interaction.followup.send(
-                    f"❌ L'item `{item_code}` n'est pas dans votre inventaire.",
+                    "❌ Tu ne possèdes pas cette pièce (ou toutes ses copies sont déjà portées).",
                     ephemeral=True,
                 )
                 return
-            if not matched.item_definition.is_equipable:
-                await interaction.followup.send(
-                    f"❌ **{matched.item_definition.name}** n'est pas équipable.",
-                    ephemeral=True,
-                )
-                return
 
+            item_def = gear.item_definition
             current_equipment = equipment_repository.list_by_player_id(profile.player.id)
+            same = next((e for e in current_equipment if e.item_definition.id == item_def.id), None)
+            if same is not None:
+                target_slot, freed = same.slot, ()
+            else:
+                # Même décision que le use case, via la fonction pure partagée.
+                plan = plan_equip(item_def, {e.slot: e.item_definition for e in current_equipment})
+                if plan is None:
+                    await interaction.followup.send(
+                        f"❌ **{item_def.name}** n'a pas d'emplacement valide.", ephemeral=True,
+                    )
+                    return
+                target_slot, freed = plan.target_slot, plan.freed_slots
 
-            # Même décision que le use case, via la fonction pure partagée :
-            # emplacement cible + emplacements que l'opération va libérer
-            # (une 2-mains en libère DEUX, ce que le preview ignorait avant).
-            item_def = matched.item_definition
-            occupied = {e.slot: e.item_definition for e in current_equipment}
-            plan = plan_equip(item_def, occupied)
-            if plan is None:
-                await interaction.followup.send(
-                    f"❌ **{item_def.name}** n'a pas d'emplacement valide.",
-                    ephemeral=True,
-                )
-                return
-            target_slot = plan.target_slot
+            current_in_slot = next((e for e in current_equipment if e.slot == target_slot), None)
 
-            current_in_slot = next(
-                (e for e in current_equipment if e.slot == target_slot), None
-            )
-
-            # Si le slot est vide ou occupé par le même item, équipe directement.
-            if (
-                current_in_slot is None
-                or current_in_slot.item_definition.id == matched.item_definition.id
-            ):
-                use_case = EquipItemUseCase(
+            # Emplacement libre : on équipe directement.
+            if current_in_slot is None:
+                result = EquipItemUseCase(
                     player_repository=PlayerRepository(session),
-                    inventory_repository=inventory_repository,
+                    inventory_repository=InventoryRepository(session),
                     equipment_repository=equipment_repository,
-                )
-                result = use_case.execute(
+                ).execute(
                     discord_id=interaction.user.id,
                     username=interaction.user.name,
                     display_name=interaction.user.display_name,
-                    item_code=item_code,
+                    gear_id=gear.id,
                 )
                 if not result.success:
-                    await interaction.followup.send(
-                        result.message, ephemeral=True
-                    )
+                    await interaction.followup.send(result.message, ephemeral=True)
                     return
                 msg = result.message
                 if result.unequipped_items:
@@ -578,106 +558,72 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 await interaction.followup.send(msg)
                 return
 
-            # Sinon : un autre item est déjà dans le slot → calcule diff
-            # (les bonus d'arbre sont résolus par resolve_player_stats)
-
-            # Chaîne complète (skill + classe + sets + TITRES) pour un preview
-            # de diff correct — l'inline oubliait les bonus de titre.
-            current_stats = resolve_player_stats(
-                session, profile, current_equipment
-            )
-            # Simule la nouvelle config : retirer l'occupant du slot, ajouter
-            # le nouvel item. Pas de persistence — juste un objet domain.
+            # Sinon : diff de stats avant / après (chaîne complète, titres compris).
+            current_stats = resolve_player_stats(session, profile, current_equipment)
             simulated_new = PlayerEquipmentItem(
-                id=-1,
-                player_id=profile.player.id,
-                slot=target_slot,
-                item_definition=matched.item_definition,
-                created_at=current_in_slot.created_at,
-                updated_at=current_in_slot.updated_at,
+                id=-1, player_id=profile.player.id, slot=target_slot,
+                item_definition=item_def, created_at=current_in_slot.created_at,
+                updated_at=current_in_slot.updated_at, rarity=gear.rarity,
+                forge_level=gear.forge_level, gear_id=gear.id,
             )
-            dropped = {target_slot, *plan.freed_slots}
-            simulated = [
-                e for e in current_equipment if e.slot not in dropped
-            ] + [simulated_new]
-            new_stats = resolve_player_stats(
-                session, profile, simulated
-            )
+            dropped = {target_slot, *freed}
+            simulated = [e for e in current_equipment if e.slot not in dropped] + [simulated_new]
+            new_stats = resolve_player_stats(session, profile, simulated)
+            replacing = (f"{current_in_slot.item_definition.name} "
+                         f"({rarity_label(current_in_slot.rarity)})")
+            label = f"{item_def.name} ({rarity_label(gear.rarity)})"
 
-            current_in_slot_name = current_in_slot.item_definition.name
-            matched_name = matched.item_definition.name
-
-        diffs = compute_stats_diff(current_stats, new_stats)
         embed = build_equip_confirm_embed(
-            item_name=matched_name,
-            slot=target_slot,
-            replacing_name=current_in_slot_name,
-            diffs=diffs,
+            item_name=label, slot=target_slot, replacing_name=replacing,
+            diffs=compute_stats_diff(current_stats, new_stats),
         )
         view = EquipConfirmView(
             author_id=interaction.user.id,
             discord_id=interaction.user.id,
             username=interaction.user.name,
             display_name=interaction.user.display_name,
-            item_code=item_code,
+            gear_id=gear.id,
         )
         await interaction.followup.send(embed=embed, view=view, ephemeral=True)
 
-    @equip.autocomplete("item_code")
+    @equip.autocomplete("piece")
     async def equip_item_code_autocomplete(
         self,
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        """Propose les items équipables en inventaire qu'il reste à porter.
-
-        Un objet porté reste en inventaire : on ne le propose que s'il en
-        reste une copie libre (porter deux fois la même arme à une main exige
-        deux exemplaires). Les pièces au-dessus du niveau du joueur sont
-        listées en dernier, cadenassées, pour qu'il sache pourquoi."""
-        from collections import Counter
+        """Tes copies LIBRES, les plus rares d'abord : une entrée par (pièce,
+        rareté), avec le niveau de forge sacrée le plus haut de ces copies."""
+        from app.domain.services.gear_service import RARITY_EMOJIS, RARITY_LABELS
+        from app.infrastructure.db.repositories.gear_repository import GearRepository
 
         with get_db_session() as session:
-            player_repository = PlayerRepository(session)
-            profile = player_repository.get_by_discord_id(interaction.user.id)
+            profile = PlayerRepository(session).get_by_discord_id(interaction.user.id)
             if profile is None:
                 return []
-
-            inventory_repository = InventoryRepository(session)
-            equipment_repository = EquipmentRepository(session)
-            items = inventory_repository.list_by_player_id(profile.player.id)
-            worn = Counter(
-                e.item_definition.id
-                for e in equipment_repository.list_by_player_id(profile.player.id)
-            )
-            level = profile.progression.level
+            owned = GearRepository(session).list_owned(profile.player.id)
 
         current_lower = current.lower()
-        ready: list[app_commands.Choice[str]] = []
-        locked: list[app_commands.Choice[str]] = []
-        for item in items:
-            definition = item.item_definition
-            if not definition.is_equipable:
+        seen: set[tuple[int, str]] = set()
+        choices: list[app_commands.Choice[str]] = []
+        for g in owned:  # déjà triées : rareté puis forge décroissantes
+            d = g.item_definition
+            key = (d.id, g.rarity)
+            if g.equipped or key in seen:
                 continue
-            if item.quantity <= worn.get(definition.id, 0):
-                continue  # toutes les copies sont déjà portées
-            if not (
-                current_lower in definition.code.lower()
-                or current_lower in definition.name.lower()
-            ):
+            if current_lower not in d.name.lower() and current_lower not in d.code.lower():
                 continue
-            required = int(getattr(definition, "level_requirement", 0) or 0)
-            slot = EQUIPMENT_SLOT_LABELS.get(definition.equipment_slot, definition.equipment_slot)
-            if required > level:
-                locked.append(app_commands.Choice(
-                    name=f"🔒 {definition.name} ({slot}) — niveau {required}"[:100],
-                    value=definition.code,
-                ))
-            else:
-                ready.append(app_commands.Choice(
-                    name=f"{definition.name} ({slot})"[:100], value=definition.code,
-                ))
-        return (ready + locked)[:25]
+            seen.add(key)
+            forge = f" +{g.forge_level}" if g.forge_level else ""
+            slot = EQUIPMENT_SLOT_LABELS.get(d.equipment_slot, d.equipment_slot)
+            choices.append(app_commands.Choice(
+                name=f"{RARITY_EMOJIS.get(g.rarity, '')} {d.name} — "
+                     f"{RARITY_LABELS.get(g.rarity, g.rarity).lower()}{forge} ({slot})"[:100],
+                value=f"gear:{g.id}",
+            ))
+            if len(choices) >= 25:
+                break
+        return choices
 
     @app_commands.command(
         name="desequiper",

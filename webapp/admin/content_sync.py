@@ -20,14 +20,14 @@ _logger = logging.getLogger(__name__)
 ITEM_FIELDS = (
     "code", "name", "description", "category", "rarity", "stackable",
     "max_stack", "sell_price", "buy_price", "icon", "stat_bonuses",
-    "equipment_slot", "requires_two_hands", "family", "level_requirement",
+    "equipment_slot", "requires_two_hands", "family", "level_requirement", "passive",
 )
 
 
 def build_item_dict(
     *, code, name, description, category, rarity, stackable, max_stack,
     sell_price, buy_price, icon, stat_bonuses, equipment_slot,
-    requires_two_hands, family, level_requirement=1,
+    requires_two_hands, family, level_requirement=1, passive="",
 ) -> dict:
     """Construit le dict d'un item au schéma exact d'items.json."""
     return {
@@ -46,6 +46,7 @@ def build_item_dict(
         "requires_two_hands": bool(requires_two_hands),
         "family": family or "",
         "level_requirement": max(1, int(level_requirement or 1)),
+        "passive": passive or "",
     }
 
 

@@ -27,7 +27,7 @@ from app.bot.rendering.pillow_utils import (
     try_font,
 )
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
-from app.domain.services.item_upgrade_service import scaled_bonuses
+from app.domain.services.gear_service import RARITY_COLORS, gear_stats
 from app.domain.services.set_bonus_service import SetBonuses
 from app.domain.value_objects.stats import Stats
 from app.shared.emoji_mappings import (
@@ -219,10 +219,11 @@ def _draw_slot_card(
     slot: str,
     equipment: PlayerEquipmentItem | None,
     two_handed_locked: bool = False,
-    item_levels: dict[int, int] | None = None,
 ) -> None:
     """Card individuelle pour un slot équipement."""
     accent = _SLOT_ACCENT.get(slot)
+    if equipment is not None:  # couleur de la RARETÉ de la copie portée
+        accent = (*RARITY_COLORS.get(getattr(equipment, "rarity", "common"), (150, 150, 160)), 255)
     _draw_panel(base, origin, size, accent=accent)
     x, y = origin
     w, h = size
@@ -235,6 +236,15 @@ def _draw_slot_card(
         base, (x + 18, y + 14), header_label, header_font,
         fill=_TEXT_PRIMARY,
     )
+    if equipment is not None:  # rareté de la copie, en couleur, sous l'en-tête
+        from app.domain.services.gear_service import RARITY_LABELS
+
+        rarity = getattr(equipment, "rarity", "common")
+        ImageDraw.Draw(base).text(
+            (x + 20, y + 42), RARITY_LABELS.get(rarity, rarity).upper(),
+            font=_try_font(13, bold=True),
+            fill=(*RARITY_COLORS.get(rarity, (180, 180, 190)), 255),
+        )
 
     # Image de l'item (ou placeholder)
     img_size = min(180, w - 30, h - 130)
@@ -297,8 +307,8 @@ def _draw_slot_card(
 
     # Badge « forge » : niveau de forge sacrée. Dessiné APRÈS l'image — sinon
     # la vignette de l'item le recouvrait entièrement.
-    if equipment is not None and item_levels:
-        lvl = item_levels.get(equipment.item_definition.id, 0)
+    if equipment is not None:
+        lvl = getattr(equipment, "forge_level", 0) or 0
         if lvl > 0:
             badge_font = _try_font(19, bold=True)
             badge_text = f"🔨+{lvl}"
@@ -342,9 +352,11 @@ def _draw_slot_card(
         # pour rester dans la card). On distribue les parts sur les
         # lignes selon la largeur pixel disponible.
         from app.shared.emoji_mappings import format_stat_bonuses_parts
-        # Bonus RÉELS de la pièce, amélioration comprise.
-        level = (item_levels or {}).get(item.id, 0)
-        parts = format_stat_bonuses_parts(scaled_bonuses(item.stat_bonuses, level))
+        # Bonus RÉELS de la copie portée : rareté et forge sacrée comprises.
+        parts = format_stat_bonuses_parts(gear_stats(
+            item.stat_bonuses, getattr(equipment, "rarity", "common"),
+            getattr(equipment, "forge_level", 0),
+        ))
         if parts:
             available_w = w - 32  # marge x+16 à droite
             sep = " · "
@@ -424,9 +436,9 @@ def compose_equipment_grid_page(
     *,
     page: int,  # 1 ou 2
     seed: int = 0,
-    item_levels: dict[int, int] | None = None,
-) -> None:
-    """Génère un PNG pour la page 1 (Principal) ou 2 (Secondaire)."""
+) -> str:
+    """Génère la page des emplacements ; renvoie le chemin écrit (PNG, ou GIF
+    animé si une pièce mythique est portée)."""
     bg = _gradient_bg(WIDTH, GRID_HEIGHT)
     _add_petals_decoration(bg, seed)
 
@@ -452,6 +464,7 @@ def compose_equipment_grid_page(
     card_w = (WIDTH - 2 * margin - (cols - 1) * spacing) // cols
     card_h = (GRID_HEIGHT - grid_top - 40 - spacing) // 2
 
+    mythic_boxes: list[tuple[int, int, int, int]] = []
     for idx, slot in enumerate(slots):
         row = idx // cols
         col = idx % cols
@@ -464,12 +477,18 @@ def compose_equipment_grid_page(
         _draw_slot_card(
             bg, (x, y), (card_w, card_h),
             slot, equipment, two_handed_locked=locked,
-            item_levels=item_levels,
         )
+        if equipment is not None and getattr(equipment, "rarity", "") == "mythic":
+            mythic_boxes.append((x, y, card_w, card_h))
 
     _draw_page_footer(bg, page_label)
+    if mythic_boxes:
+        from app.bot.rendering.mythic_fx import save_mythic_gif
+
+        return save_mythic_gif(bg, mythic_boxes, output_path)
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     bg.convert("RGB").save(output_path, "PNG", optimize=True)
+    return output_path
 
 
 def compose_equipment_summary_page(
@@ -479,7 +498,6 @@ def compose_equipment_summary_page(
     set_bonuses: SetBonuses,
     *,
     seed: int = 0,
-    item_levels: dict[int, int] | None = None,
 ) -> None:
     """Page 2 : résumé des stats apportées par l'équipement + bonus de
     panoplie actifs."""
@@ -502,9 +520,10 @@ def compose_equipment_summary_page(
     # Saison 1 : ATK / DEF / PV viennent de l'équipement en % du socle.
     totals.update({"attack_pct": 0.0, "defense_pct": 0.0, "max_hp_pct": 0.0})
     for eq in equipped_items:
-        b = scaled_bonuses(
+        b = gear_stats(
             eq.item_definition.stat_bonuses,
-            (item_levels or {}).get(eq.item_definition.id, 0),
+            getattr(eq, "rarity", "common"),
+            getattr(eq, "forge_level", 0),
         )
         for k in totals.keys():
             value = b.get(k, 0) or 0

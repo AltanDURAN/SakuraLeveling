@@ -28,14 +28,16 @@ Layout (1024 × 980) :
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 from app.bot.rendering.emoji_text import (
     draw_text_with_emojis,
     measure_text_with_emojis,
 )
+from app.bot.rendering.mythic_fx import MYTHIC_GOLD, MYTHIC_RED
 from app.bot.rendering.image_utils import (
     add_outline,
     crop_to_circle,
@@ -598,6 +600,41 @@ def _draw_section_header(
     base.alpha_composite(overlay, (x, line_y))
 
 
+def _draw_mythic_aura(bg: Image.Image, center: tuple[int, int], radius: int) -> None:
+    """Aura d'un porteur de pièce mythique : halo rouge, couronne de rayons
+    dorés et anneau lumineux derrière l'avatar."""
+    size = radius * 2 + 120
+    c = size // 2
+    layer = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    # Halo diffus
+    d.ellipse([(c - radius - 34, c - radius - 34), (c + radius + 34, c + radius + 34)],
+              fill=(*MYTHIC_RED, 150))
+    # Rayons dorés, longueurs alternées
+    for i in range(24):
+        a = math.radians(i * 15)
+        inner, outer = radius + 6, radius + (36 if i % 2 == 0 else 24)
+        d.line([(c + inner * math.cos(a), c + inner * math.sin(a)),
+                (c + outer * math.cos(a), c + outer * math.sin(a))],
+               fill=(*MYTHIC_GOLD, 210), width=5)
+    layer = layer.filter(ImageFilter.GaussianBlur(9))
+    d = ImageDraw.Draw(layer)
+    # Les mêmes rayons, nets et plus fins, par-dessus le flou
+    for i in range(24):
+        a = math.radians(i * 15)
+        inner, outer = radius + 14, radius + (32 if i % 2 == 0 else 22)
+        d.line([(c + inner * math.cos(a), c + inner * math.sin(a)),
+                (c + outer * math.cos(a), c + outer * math.sin(a))],
+               fill=(*MYTHIC_GOLD, 235), width=3)
+    d.ellipse([(c - radius - 12, c - radius - 12), (c + radius + 12, c + radius + 12)],
+              outline=(*MYTHIC_GOLD, 230), width=3)
+    # L'aura déborde du haut de la bannière : paste accepte une origine
+    # négative, alpha_composite non.
+    overlay = Image.new("RGBA", bg.size, (0, 0, 0, 0))
+    overlay.paste(layer, (center[0] - c, center[1] - c))
+    bg.alpha_composite(overlay)
+
+
 def compose_profile_banner(
     output_path: str,
     *,
@@ -624,6 +661,8 @@ def compose_profile_banner(
     #: élément → {"known", "dead", "cap", "boosts"} (talents découverts avec
     #: la voyante). Absent ⇒ talent inconnu, affiché ❓.
     affinity_talents: dict[str, dict] | None = None,
+    #: Pièces mythiques portées : > 0 ⇒ aura rouge et or autour de l'avatar.
+    mythic_pieces: int = 0,
 ) -> None:
     height = HEIGHT + (AFFINITY_BLOCK_H if affinities else 0)
     bg = _gradient_background(WIDTH, height)
@@ -670,6 +709,10 @@ def compose_profile_banner(
             avatar_img = None
     if avatar_img is None:
         avatar_img = Image.new("RGBA", (avatar_size, avatar_size), (60, 60, 80, 255))
+
+    if mythic_pieces:
+        _draw_mythic_aura(bg, (avatar_x + avatar_size // 2, avatar_y + avatar_size // 2),
+                          avatar_size // 2)
 
     avatar_circle = crop_to_circle(avatar_img, avatar_size)
     # Anneau de la couleur du rang : signal visuel immédiat du tier.

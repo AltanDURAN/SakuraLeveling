@@ -151,12 +151,14 @@ class ChallengePlayerUseCase:
         # offensive équipée, sinon affinité la plus haute) vs affinités de
         # l'adversaire. Symétrique.
         # Passifs de l'arbre (Titan, Léthal, Tenace, Vampire, Mage…).
-        chal_passives = skill_service.combat_passives(
-            self.skill_allocation_repository.list_by_player(challenger_profile.player.id)
+        # … et de l'équipement (pièces épiques et plus), via le résolveur commun.
+        from app.application.services.combat_passives_resolver import resolve_party_passives
+
+        duel_passives, _ = resolve_party_passives(
+            session, [challenger_profile.player.id, target_profile.player.id],
         )
-        tgt_passives = skill_service.combat_passives(
-            self.skill_allocation_repository.list_by_player(target_profile.player.id)
-        )
+        chal_passives = duel_passives[challenger_profile.player.id]
+        tgt_passives = duel_passives[target_profile.player.id]
         chal_mult = self._elemental_damage_mult(
             challenger_profile, target_profile, session, chal_passives,
         )
@@ -275,13 +277,7 @@ class ChallengePlayerUseCase:
         from app.application.services.status_effect_resolver import (
             resolve_status_effects,
         )
-        from app.infrastructure.db.repositories.player_item_level_repository import (
-            PlayerItemLevelRepository,
-        )
         status_bonuses = resolve_status_effects(session, profile.player.id)
-        item_levels = PlayerItemLevelRepository(session).get_levels_for_player(
-            profile.player.id
-        )
         return self.stats_service.calculate_player_stats(
             profile=profile,
             equipped_items=equipped_items,
@@ -289,5 +285,4 @@ class ChallengePlayerUseCase:
             title_bonuses=title_bonuses,
             set_bonuses=set_bonuses,
             status_bonuses=status_bonuses,
-            item_levels=item_levels,
         )

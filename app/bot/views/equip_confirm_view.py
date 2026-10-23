@@ -10,6 +10,8 @@ from dataclasses import dataclass
 
 import discord
 
+from app.shared.enums import SLOT_LABELS
+
 from app.application.use_cases.equip_item import EquipItemUseCase
 from app.domain.value_objects.stats import Stats
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
@@ -58,7 +60,7 @@ def build_equip_confirm_embed(
     embed = discord.Embed(
         title=f"🔄 Confirmer l'équipement de {item_name}",
         description=(
-            f"Slot : `{slot}` — actuellement équipé : **{replacing_name}**\n"
+            f"Emplacement : **{SLOT_LABELS.get(slot, slot)}** — actuellement : **{replacing_name}**\n"
             "Voici le diff de vos statistiques après le changement :"
         ),
         color=discord.Color.orange(),
@@ -78,8 +80,9 @@ class EquipConfirmView(discord.ui.View):
         discord_id: int,
         username: str,
         display_name: str,
-        item_code: str,
+        item_code: str | None = None,
         timeout: float = 60.0,
+        gear_id: int | None = None,
     ) -> None:
         super().__init__(timeout=timeout)
         self.author_id = author_id
@@ -87,6 +90,7 @@ class EquipConfirmView(discord.ui.View):
         self.username = username
         self.display_name = display_name
         self.item_code = item_code
+        self.gear_id = gear_id
 
     async def _interaction_is_owner(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.author_id:
@@ -113,6 +117,7 @@ class EquipConfirmView(discord.ui.View):
                 username=self.username,
                 display_name=self.display_name,
                 item_code=self.item_code,
+                gear_id=self.gear_id,
             )
         for child in self.children:
             child.disabled = True

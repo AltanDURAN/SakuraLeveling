@@ -34,7 +34,7 @@ from dataclasses import replace
 
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
 from app.domain.entities.player_profile import PlayerProfile
-from app.domain.services.item_upgrade_service import level_multiplier
+from app.domain.services.gear_service import gear_stats
 from app.domain.services.set_bonus_service import SetBonuses
 from app.domain.services.title_bonus_service import TitleBonuses
 from app.domain.value_objects.base_stats import BaseStats
@@ -74,7 +74,6 @@ class StatsService:
         title_bonuses: TitleBonuses | None = None,
         set_bonuses: SetBonuses | None = None,
         status_bonuses: StatusEffectBonuses | None = None,
-        item_levels: dict[int, int] | None = None,
     ) -> Stats:
         base = self.base_stats_for(profile)
 
@@ -90,13 +89,15 @@ class StatsService:
         }
 
         # ---- Équipement : % sur le socle, plat sur les stats secondaires ----
+        # Équipement v2 : les stats d'une copie dépendent de SA rareté et de
+        # SA forge sacrée (cf. gear_service).
         for item in equipped_items:
-            bonuses = item.item_definition.stat_bonuses or {}
-            # Amélioration (fusion / forge sacrée) : +10 % des bonus de la
-            # pièce par niveau, +10 = ×2. Cf. item_upgrade_service.
-            level = (item_levels or {}).get(item.item_definition.id, 0)
-            multiplier = level_multiplier(level)
-            self._accumulate(bonuses, pct, flat, multiplier)
+            bonuses = gear_stats(
+                item.item_definition.stat_bonuses or {},
+                getattr(item, "rarity", "common") or "common",
+                getattr(item, "forge_level", 0) or 0,
+            )
+            self._accumulate(bonuses, pct, flat)
 
         # ---- Arbre de compétences ----
         if skill_bonuses is not None:

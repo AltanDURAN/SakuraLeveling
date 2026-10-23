@@ -27,7 +27,7 @@ from discord.ext import commands, tasks
 from app.application.services.player_stats_resolver import resolve_player_stats
 from app.bot.checks.admin_check import admin_only
 from app.domain.services.chest_loot_service import ChestLootService
-from app.domain.services.forge_service import ForgeService
+from app.domain.services.gear_service import FORGE_MAX_LEVEL as MAX_ITEM_LEVEL, gear_label, gear_stats
 from app.domain.services.health_regeneration_service import HealthRegenerationService
 from app.domain.services.little_girl_service import (
     CHOICE_HELP,
@@ -46,10 +46,7 @@ from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_health_repository import (
     PlayerHealthRepository,
 )
-from app.domain.services.item_upgrade_service import MAX_ITEM_LEVEL
-from app.infrastructure.db.repositories.player_item_level_repository import (
-    PlayerItemLevelRepository,
-)
+from app.infrastructure.db.repositories.gear_repository import GearRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.player_status_effect_repository import (
     PlayerStatusEffectRepository,
@@ -59,6 +56,7 @@ from app.infrastructure.db.repositories.player_title_repository import (
 )
 from app.infrastructure.db.session import get_db_session
 from app.infrastructure.events import event_config_loader as cfg
+from app.shared.emoji_mappings import format_stat_bonuses_short
 from app.shared.formatters import format_int
 from app.shared.paths import EVENTS_ASSETS_DIR
 
@@ -180,7 +178,7 @@ class ForgeSelect(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
-        await self.cog.handle_forge_pick(interaction, self.event_id, int(self.values[0]))
+        await self.cog.handle_forge_pick(interaction, self.event_id, int(self.values[0]))  # gear_id
 
 
 class ForgeSelectView(discord.ui.View):
@@ -639,8 +637,8 @@ class EventCog(commands.Cog):
             description=(
                 "Une forge légendaire apparaît, brûlant d'une flamme divine. "
                 "Pendant **{m} minutes**, chacun peut y **renforcer un seul de ses "
-                "équipements** (une seule fois). Chaque niveau ajoute les stats de "
-                "base de la pièce — jusqu'au **niveau {lv}**.\n\nClique **Forger** "
+                "pièces** (une seule fois). Chaque niveau ajoute +1 % aux stats de "
+                "la pièce — jusqu'au **niveau {lv}**.\n\nClique **Forger** "
                 "et choisis ta pièce !"
             ).format(m=minutes, lv=max_level),
             color=discord.Color.orange(),
@@ -679,29 +677,25 @@ class EventCog(commands.Cog):
                     "pièce par forge !", ephemeral=True
                 )
                 return
-            equipped = EquipmentRepository(session).list_by_player_id(profile.player.id)
-            levels = PlayerItemLevelRepository(session).get_levels_for_player(
-                profile.player.id
-            )
+            # Chaque EXEMPLAIRE a son niveau de forge : on choisit une copie
+            # précise (portées d'abord, puis les plus rares).
+            owned = GearRepository(session).list_owned(profile.player.id)
+            owned.sort(key=lambda g: not g.equipped)
             max_level = min(MAX_ITEM_LEVEL, int(cfg.get_config("sacred_forge").get("max_level", MAX_ITEM_LEVEL)))
             options: list[discord.SelectOption] = []
-            seen: set[int] = set()
-            for eq in equipped:
-                idef = eq.item_definition
-                if idef.id in seen:
+            for g in owned:
+                if g.forge_level >= max_level:
                     continue
-                seen.add(idef.id)
-                lvl = levels.get(idef.id, 0)
-                if lvl >= max_level:
-                    label = f"{idef.name} (niv MAX)"
-                else:
-                    label = f"{idef.name} (niv {lvl} → {lvl + 1})"
-                options.append(
-                    discord.SelectOption(label=label[:100], value=str(idef.id))
-                )
+                label = gear_label(g.item_definition.name, g.rarity, g.forge_level)
+                options.append(discord.SelectOption(
+                    label=label[:100], value=str(g.id),
+                    description=(f"forge {g.forge_level} → {g.forge_level + 1}"
+                                 + (" · portée" if g.equipped else ""))[:100],
+                ))
             if not options:
                 await interaction.followup.send(
-                    "Tu n'as aucun équipement à forger.", ephemeral=True
+                    "Tu n'as aucune pièce à forger (ou elles sont toutes au maximum).",
+                    ephemeral=True
                 )
                 return
             event_id = ev.id
@@ -712,7 +706,7 @@ class EventCog(commands.Cog):
         )
 
     async def handle_forge_pick(
-        self, interaction: discord.Interaction, event_id: int, item_definition_id: int
+        self, interaction: discord.Interaction, event_id: int, gear_id: int
     ) -> None:
         with get_db_session() as session:
             repo = EventRepository(session)
@@ -731,39 +725,31 @@ class EventCog(commands.Cog):
                     "Tu as déjà forgé une pièce pour cet événement.", ephemeral=True
                 )
                 return
-            # Vérifie que la pièce est bien équipée par le joueur.
-            equipped = EquipmentRepository(session).list_by_player_id(profile.player.id)
-            item = next(
-                (e.item_definition for e in equipped
-                 if e.item_definition.id == item_definition_id),
-                None,
-            )
-            if item is None:
+            # La pièce doit toujours être à lui (ni vendue, ni échangée, ni en vente).
+            gear_repo = GearRepository(session)
+            gear = gear_repo.get(gear_id)
+            if gear is None or gear.player_id != profile.player.id or gear.listed:
                 await interaction.followup.send(
-                    "Cet équipement n'est plus équipé.", ephemeral=True
+                    "Cette pièce n'est plus à toi.", ephemeral=True
                 )
                 return
             max_level = min(MAX_ITEM_LEVEL, int(cfg.get_config("sacred_forge").get("max_level", MAX_ITEM_LEVEL)))
-            level_repo = PlayerItemLevelRepository(session)
-            new_level = level_repo.increment(
-                profile.player.id, item_definition_id, max_level
-            )
-            if new_level == -1:
+            name = gear.item_definition.name
+            if gear.forge_level >= max_level:
                 await interaction.followup.send(
-                    f"**{item.name}** est déjà au niveau maximum ({max_level}).",
+                    f"**{name}** est déjà au niveau maximum ({max_level}).",
                     ephemeral=True,
                 )
                 return
-            # Enregistre la participation (une seule forge par joueur/event).
-            repo.upsert_participation(
-                event_id, profile.player.id, choice=str(item_definition_id)
-            )
-            session.commit()
-            gains = ForgeService().gain_per_level(item.stat_bonuses)
-        gain_txt = ", ".join(f"+{v} {k}" for k, v in gains.items()) or "ses stats de base"
+            # Participation d'abord (une seule forge par joueur/event), même commit.
+            repo.upsert_participation(event_id, profile.player.id, choice=str(gear_id))
+            new_level = gear_repo.increment_forge(gear_id)
+            before = gear_stats(gear.item_definition.stat_bonuses, gear.rarity, new_level - 1)
+            after = gear_stats(gear.item_definition.stat_bonuses, gear.rarity, new_level)
+        label = gear_label(name, gear.rarity, new_level)
         await interaction.followup.send(
-            f"🔨 **{item.name}** forgé au **niveau {new_level}** ! "
-            f"(gain de {gain_txt}). Vérifie avec `/equipement`.",
+            f"🔨 **{label}** — forge sacrée **niveau {new_level}** !\n"
+            f"{format_stat_bonuses_short(before)}  →  **{format_stat_bonuses_short(after)}**",
             ephemeral=True,
         )
 

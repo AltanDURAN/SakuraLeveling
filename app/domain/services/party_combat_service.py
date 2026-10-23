@@ -65,6 +65,7 @@ class PartyCombatService:
         mob_abilities: dict | None = None,
         passives_by_player: dict[int, CombatPassives] | None = None,
         tactics_by_player: dict[int, str] | None = None,
+        mob_is_boss: bool = False,
     ) -> PartyBattleResult:
         title_bonuses_by_player = title_bonuses_by_player or {}
         elemental_mult_by_player = elemental_mult_by_player or {}
@@ -105,11 +106,24 @@ class PartyCombatService:
                 "absorbed": False,  # englouti par le slime → hors combat
                 "last_stand_used": False,  # Tenace : déjà sauvé une fois
                 "buffed": False,           # Buff de soin déjà reçu (non cumulable)
+                # Passifs d'équipement (cf. gear_passives)
+                "opened": False,           # a déjà porté sa 1re attaque
+                "warded": False,           # 1re attaque reçue déjà annulée
+                "gear_revived": False,     # Revenant déjà utilisé
+                "fury": 0,                 # Fureur montante : attaques portées
+                "stone": 0,                # Peau de pierre : coups subis
+                "shadow": False,           # Pas de l'ombre : prochaine action +10 %
+                "shadow_guard": False,     # Pas de l'ombre : prochain coup reçu −10 %
+                "taunt_guard": False,      # Défi : −15 % tant que la provocation dure
             }
             for player in party
         ]
 
         self._party = alive_party
+        # Effets sur l'ennemi : UN exemplaire actif, quel que soit le nombre
+        # de porteurs (dix joueurs à −5 % d'ATK, ça reste −5 %).
+        anti_heal = any(P(m).has("anti_heal") for m in alive_party)
+        self._mob_atk_mult = 0.95 if any(P(m).has("weakening_cry") for m in alive_party) else 1.0
         contributions: dict[int, PlayerContribution] = {
             member["player_id"]: PlayerContribution(
                 player_id=member["player_id"],
@@ -214,15 +228,27 @@ class PartyCombatService:
 
         def _heal(healer, target, amount: float, allow_buff: bool = True) -> int:
             """Soigne `target` : soins reçus (Paladin), Buff (cible + soigneur).
-            Seuls les soins donnés aux ALLIÉS comptent dans la contribution."""
+            Seuls les soins donnés aux ALLIÉS comptent dans la contribution.
+            Mains guérisseuses : soins donnés +10 %, et 10 % des soins donnés à
+            un allié frappent l'ennemi. Pas de l'ombre : prochain soin +10 %."""
+            nonlocal mob_hp
             if amount <= 0 or target["hp"] <= 0:
                 return 0
+            if P(healer).has("healing_hands"):
+                amount *= 1.10
+            if allow_buff and healer["shadow"]:
+                amount *= 1.10
+                healer["shadow"] = False
             amount *= 1 + P(target).heal_received_pct / 100
             before = target["hp"]
             target["hp"] = min(target["max_hp"], target["hp"] + int(round(amount)))
             healed = target["hp"] - before
             if healer["player_id"] != target["player_id"]:
                 contributions[healer["player_id"]].hp_healed += healed
+                if P(healer).has("healing_hands") and healed > 0 and mob_hp > 0:
+                    splash = max(1, round(healed * 0.10))
+                    mob_hp = max(0, mob_hp - splash)
+                    contributions[healer["player_id"]].damage_dealt += splash
             if allow_buff and P(healer).heal_buff_pct > 0:
                 _buff(target, P(healer).heal_buff_pct)
                 _buff(healer, P(healer).heal_buff_pct)
@@ -262,6 +288,13 @@ class PartyCombatService:
                 tag += f" (🧱 {redirected[0]} encaisse {redirected[1]})"
             if member.pop("_held", False):
                 tag += " — tient bon à 1 PV !"
+            if member.pop("_ward", False):
+                tag += " — 🛡️ coup annulé !"
+            if member.pop("_revived", False):
+                tag += " — 🧟 revient à la vie !"
+            thorn = member.pop("_thorns", 0)
+            if thorn:
+                tag += f" (🌵 {thorn} renvoyés)"
             return tag
 
         # ─── Début du combat : vitesse par allié (Soigneur), boucliers (Égide) ───
@@ -320,9 +353,18 @@ class PartyCombatService:
                 if dodged or target["hp"] > 0:
                     break
 
-        # ─── Charme (succube) ───
+        # ─── Défi : le porteur commence en provocation ───
+        guard_holder = next((m for m in alive_party if P(m).has("taunt_guard") and m["hp"] > 0), None)
+        if guard_holder is not None:
+            taunter_id = guard_holder["player_id"]
+            guard_holder["taunt_guard"] = True
+
+        # ─── Charme (succube) ─── (Volonté de fer : immunisé)
         if "charm" in ab and mob_hp > 0:
-            living = [p for p in alive_party if p["hp"] > 0]
+            living = [p for p in alive_party if p["hp"] > 0 and not P(p).has("iron_will")]
+            if not living and any(p["hp"] > 0 for p in alive_party):
+                turns += 1
+                turn_logs.append(snap(f"💋 {mob.name} tente de charmer… mais aucune volonté ne plie !"))
             if living:
                 charmed = max(living, key=lambda p: _power.calculate_from_stats(p["stats"]))
                 charmed_id = charmed["player_id"]
@@ -360,6 +402,133 @@ class PartyCombatService:
                 turn_logs.append(snap(
                     f"🫧 {mob.name} engloutit {', '.join(names)} et absorbe leurs pouvoirs "
                     f"(+{int(mob_bonus_atk)} atk, +{int(mob_bonus_def)} déf, +{gained_hp} PV) !"))
+
+        def _strike(player, offensive_mult: float = 1.0, special_proc: bool = False,
+                    prefix: str = "") -> None:
+            """UNE attaque d'un joueur sur le monstre (toute la chaîne de dégâts)
+            + ses effets immédiats. Réutilisée par Coup double et Riposte, qui
+            ne se déclenchent jamais en chaîne."""
+            nonlocal mob_hp, mob_shield, taunter_id, chaman_pending, chaman_done, mob_revived
+            stats: Stats = player["stats"]
+            mine = P(player)
+            raw_attack = stats.attack
+            if mine.has("rising_fury") and player["fury"]:
+                raw_attack = int(raw_attack * (1 + min(20, player["fury"]) / 100))
+            crit = False
+            if random.random() < (stats.crit_chance / 100):
+                raw_attack = int(raw_attack * (stats.crit_damage / 100))
+                crit = True
+            # Frappe d'ouverture : 1re attaque forcément critique ; si elle
+            # l'était déjà, super-critique (les deux critiques se cumulent).
+            if mine.has("first_strike_crit") and not player["opened"]:
+                raw_attack = int(raw_attack * (stats.crit_damage / 100))
+                crit = True
+            player["opened"] = True
+
+            special_proc = offensive_mult > 1.0
+            if offensive_mult != 1.0:
+                raw_attack = int(raw_attack * offensive_mult)
+
+            mob_def = _mob_defense_now()
+            if mine.armor_penetration_pct > 0:  # Léthal
+                mob_def = int(mob_def * (1 - min(100.0, mine.armor_penetration_pct) / 100))
+            damage = max(1, raw_attack - mob_def)
+
+            title_bonus = title_bonuses_by_player.get(player["player_id"])
+            if title_bonus is not None and mob_family:
+                damage = max(1, round(damage * title_bonus.damage_multiplier_vs(mob_family)))
+
+            elem_mult = elemental_mult_by_player.get(player["player_id"], 1.0)
+            if elem_mult != 1.0:
+                damage = max(1, round(damage * elem_mult))
+
+            if mine.damage_dealt_pct:  # Titan
+                damage = max(1, round(damage * (1 + mine.damage_dealt_pct / 100)))
+            if mine.has("elemental_power") and elem_mult > 1.0:
+                damage = max(1, round(damage * 1.10))
+            if mine.has("executioner") and mob_hp < mob_max_hp * 0.5:
+                damage = max(1, round(damage * 1.20))
+            if mine.has("boss_slayer") and mob_is_boss:
+                damage = max(1, round(damage * 1.15))
+            if player["shadow"]:  # Pas de l'ombre : prochaine action +10 %
+                damage = max(1, round(damage * 1.10))
+                player["shadow"] = False
+            # NB : AOE (splash_damage_pct) — sans effet tant que les
+            # combats n'opposent qu'un seul monstre.
+
+            immune = False
+            if damage_immunity_threshold > 0 and damage < damage_immunity_threshold:
+                damage = 0
+                immune = True
+
+            mob_hp_before = mob_hp
+            landed = False
+
+            fantome_dodge = ("first_hit_dodge" in ab
+                             and player["player_id"] not in fantome_first_dodged)
+            if fantome_dodge:
+                fantome_first_dodged.add(player["player_id"])
+                damage = 0
+                mob_action_text = (f"👻 {mob.name} se dissipe — la première attaque de "
+                                   f"{player['name']} est esquivée !")
+            elif mob.dodge > 0 and random.random() < (mob.dodge / 100):
+                damage = 0
+                mob_action_text = f"{mob.name} esquive l'attaque de {player['name']}."
+            elif immune:
+                mob_action_text = f"{mob.name} ignore le coup (trop faible)."
+            else:
+                landed = True
+                # Bouclier du mob (gobelin supérieur) : absorbe avant les PV.
+                to_shield = min(mob_shield, damage) if mob_shield > 0 else 0
+                mob_shield -= to_shield
+                mob_hp = max(0, mob_hp - (damage - to_shield))
+                mob_action_text = f"{mob.name} subit l'attaque."
+
+            actual_damage = damage if landed else 0
+            contributions[player["player_id"]].damage_dealt += actual_damage
+            if landed and mine.has("rising_fury"):
+                player["fury"] += 1
+
+            action_text = f"{prefix}{player['name']} inflige {damage} dégâts"
+            if crit and damage > 0:
+                action_text += " (CRIT)"
+            if special_proc and damage > 0:
+                action_text += " ✨SPÉCIAL"
+            if immune:
+                action_text = f"{player['name']} : coup ignoré (immunité)"
+            elif landed and mob_shield > 0:
+                action_text += " 🛡️"
+
+            if mine.lifesteal_pct > 0 and actual_damage > 0:  # Vampire
+                stolen = _heal(player, player, actual_damage * mine.lifesteal_pct / 100,
+                               allow_buff=False)
+                if stolen:
+                    action_text += f" 🧛 +{stolen}"
+
+            if mine.taunt_chance_pct > 0 and random.random() < mine.taunt_chance_pct / 100:
+                taunter_id = player["player_id"]  # Vaillant : le dernier l'emporte
+                action_text += " 🫀 provoque"
+
+            if boss_reflect_pct > 0 and actual_damage > 0:
+                reflected = max(1, round(actual_damage * boss_reflect_pct / 100))
+                self._apply_player_damage(player, reflected, use_shield=False)
+                action_text += f" (renvoi {reflected})"
+
+            turn_logs.append(snap(mob_action_text, players=[action_text]))
+            # Chaman : 1ʳᵉ fois sous 50% PV → soin d'urgence au prochain tour.
+            if (landed and "heal_once_below" in ab and not chaman_done and mob_hp > 0
+                    and mob_hp <= mob_max_hp * ab["heal_once_below"].get("hp_pct", 50) / 100):
+                chaman_pending = True
+                chaman_done = True
+
+            # Résurrection (ange déchu) : 1ʳᵉ mort → revient à 100% PV, +100% atk/déf.
+            if mob_hp <= 0 and "revive" in ab and not mob_revived:
+                mob_revived = True
+                mob_hp = mob_max_hp
+                turn_logs.append(snap(
+                    f"👼 {mob.name} renaît à 100% PV, transcendé "
+                    f"(+100% attaque et défense) !"))
+
 
         while mob_hp > 0 and _party_alive():
             round_count += 1
@@ -482,91 +651,10 @@ class PartyCombatService:
                         default=1.0,
                     )
 
-                    raw_attack = stats.attack
-                    crit = False
-                    if random.random() < (stats.crit_chance / 100):
-                        raw_attack = int(raw_attack * (stats.crit_damage / 100))
-                        crit = True
-
-                    special_proc = offensive_mult > 1.0
-                    if offensive_mult != 1.0:
-                        raw_attack = int(raw_attack * offensive_mult)
-
-                    mob_def = _mob_defense_now()
-                    if mine.armor_penetration_pct > 0:  # Léthal
-                        mob_def = int(mob_def * (1 - min(100.0, mine.armor_penetration_pct) / 100))
-                    damage = max(1, raw_attack - mob_def)
-
-                    title_bonus = title_bonuses_by_player.get(player["player_id"])
-                    if title_bonus is not None and mob_family:
-                        damage = max(1, round(damage * title_bonus.damage_multiplier_vs(mob_family)))
-
-                    elem_mult = elemental_mult_by_player.get(player["player_id"], 1.0)
-                    if elem_mult != 1.0:
-                        damage = max(1, round(damage * elem_mult))
-
-                    if mine.damage_dealt_pct:  # Titan
-                        damage = max(1, round(damage * (1 + mine.damage_dealt_pct / 100)))
-                    # NB : AOE (splash_damage_pct) — sans effet tant que les
-                    # combats n'opposent qu'un seul monstre.
-
-                    immune = False
-                    if damage_immunity_threshold > 0 and damage < damage_immunity_threshold:
-                        damage = 0
-                        immune = True
-
-                    mob_hp_before = mob_hp
-                    landed = False
-
-                    fantome_dodge = ("first_hit_dodge" in ab
-                                     and player["player_id"] not in fantome_first_dodged)
-                    if fantome_dodge:
-                        fantome_first_dodged.add(player["player_id"])
-                        damage = 0
-                        mob_action_text = (f"👻 {mob.name} se dissipe — la première attaque de "
-                                           f"{player['name']} est esquivée !")
-                    elif mob.dodge > 0 and random.random() < (mob.dodge / 100):
-                        damage = 0
-                        mob_action_text = f"{mob.name} esquive l'attaque de {player['name']}."
-                    elif immune:
-                        mob_action_text = f"{mob.name} ignore le coup (trop faible)."
-                    else:
-                        landed = True
-                        # Bouclier du mob (gobelin supérieur) : absorbe avant les PV.
-                        to_shield = min(mob_shield, damage) if mob_shield > 0 else 0
-                        mob_shield -= to_shield
-                        mob_hp = max(0, mob_hp - (damage - to_shield))
-                        mob_action_text = f"{mob.name} subit l'attaque."
-
-                    actual_damage = damage if landed else 0
-                    contributions[player["player_id"]].damage_dealt += actual_damage
-
-                    action_text = f"{player['name']} inflige {damage} dégâts"
-                    if crit and damage > 0:
-                        action_text += " (CRIT)"
-                    if special_proc and damage > 0:
-                        action_text += " ✨SPÉCIAL"
-                    if immune:
-                        action_text = f"{player['name']} : coup ignoré (immunité)"
-                    elif landed and mob_shield > 0:
-                        action_text += " 🛡️"
-
-                    if mine.lifesteal_pct > 0 and actual_damage > 0:  # Vampire
-                        stolen = _heal(player, player, actual_damage * mine.lifesteal_pct / 100,
-                                       allow_buff=False)
-                        if stolen:
-                            action_text += f" 🧛 +{stolen}"
-
-                    if mine.taunt_chance_pct > 0 and random.random() < mine.taunt_chance_pct / 100:
-                        taunter_id = player["player_id"]  # Vaillant : le dernier l'emporte
-                        action_text += " 🫀 provoque"
-
-                    if boss_reflect_pct > 0 and actual_damage > 0:
-                        reflected = max(1, round(actual_damage * boss_reflect_pct / 100))
-                        self._apply_player_damage(player, reflected, use_shield=False)
-                        action_text += f" (renvoi {reflected})"
-
-                    turn_logs.append(snap(mob_action_text, players=[action_text]))
+                    _strike(player, offensive_mult)
+                    # Coup double : 10 % de chance d'attaquer une 2e fois (jamais en chaîne).
+                    if mine.has("double_strike") and mob_hp > 0 and random.random() < 0.10:
+                        _strike(player, prefix="⚡ Coup double — ")
 
                     for eff in turn_effects:
                         if eff.kind == SKILL_KIND_SHIELD_SELF:
@@ -589,20 +677,6 @@ class PartyCombatService:
                                     if m["player_id"] != player["player_id"]:
                                         contributions[player["player_id"]].hp_healed += shield_amt
 
-                    # Chaman : 1ʳᵉ fois sous 50% PV → soin d'urgence au prochain tour.
-                    if (landed and "heal_once_below" in ab and not chaman_done and mob_hp > 0
-                            and mob_hp <= mob_max_hp * ab["heal_once_below"].get("hp_pct", 50) / 100):
-                        chaman_pending = True
-                        chaman_done = True
-
-                    # Résurrection (ange déchu) : 1ʳᵉ mort → revient à 100% PV, +100% atk/déf.
-                    if mob_hp <= 0 and "revive" in ab and not mob_revived:
-                        mob_revived = True
-                        mob_hp = mob_max_hp
-                        turn_logs.append(snap(
-                            f"👼 {mob.name} renaît à 100% PV, transcendé "
-                            f"(+100% attaque et défense) !"))
-
                     if mob_hp <= 0:
                         break
 
@@ -620,8 +694,12 @@ class PartyCombatService:
                 # Chaman : soin d'urgence (remplace l'attaque de ce tour).
                 if chaman_pending:
                     chaman_pending = False
-                    mob_hp = mob_max_hp
-                    turn_logs.append(snap(f"✨ {mob.name} canalise et se soigne à 100% PV !"))
+                    if anti_heal:
+                        mob_hp += (mob_max_hp - mob_hp) // 2
+                        turn_logs.append(snap(f"✨ {mob.name} canalise… le soin est entravé (Anti-soin) !"))
+                    else:
+                        mob_hp = mob_max_hp
+                        turn_logs.append(snap(f"✨ {mob.name} canalise et se soigne à 100% PV !"))
                     continue
 
                 # Motif d'attaque : zone / mono ; multi-coups ; alternance (liche).
@@ -647,12 +725,25 @@ class PartyCombatService:
                         dmg, mob_crit, dodged = self._resolve_mob_hit(
                             mob, target, contributions, title_bonuses_by_player,
                             incoming_elemental_mult_by_player, mob_family,
-                            extra_multiplier=single_mult, attack_override=atk_now)
-                        # Vol de vie (gargouille)
+                            extra_multiplier=single_mult, attack_override=atk_now,
+                            is_aoe=aoe)
+                        # Vol de vie (gargouille) — divisé par deux par Anti-soin
                         if not dodged and dmg > 0 and "lifesteal" in ab:
                             heal = round(dmg * ab["lifesteal"].get("pct", 0) / 100)
+                            if anti_heal:
+                                heal //= 2
                             if heal > 0:
                                 mob_hp = min(mob_max_hp, mob_hp + heal)
+                        # Épines : chaque coup subi renvoie 10 % de la DEF.
+                        if not dodged and P(target).has("thorns") and mob_hp > 0:
+                            thorn = max(1, round(target["stats"].defense * 0.10))
+                            mob_hp = max(0, mob_hp - thorn)
+                            contributions[target["player_id"]].damage_dealt += thorn
+                            target["_thorns"] = thorn
+                        # Riposte : 10 % de chance de contre-attaquer (jamais en chaîne).
+                        if (not dodged and target["hp"] > 0 and mob_hp > 0
+                                and P(target).has("counter_attack") and random.random() < 0.10):
+                            _strike(target, prefix="↩️ Riposte — ")
                         # Étourdissement (gobelin géant / banshee) — non cumulable
                         stunned_now = False
                         if not dodged and "stun" in ab and not target["stunned"]:
@@ -703,7 +794,8 @@ class PartyCombatService:
                             dmg, mob_crit, dodged = self._resolve_mob_hit(
                                 mob, target, contributions, title_bonuses_by_player,
                                 incoming_elemental_mult_by_player, mob_family,
-                                extra_multiplier=single_mult, attack_override=atk_now)
+                                extra_multiplier=single_mult, attack_override=atk_now,
+                                is_aoe=aoe)
                             parts.append(f"{target['name']} esquive" if dodged
                                          else f"{target['name']} −{dmg}"
                                          + (" 💀" if target["hp"] <= 0 else ""))
@@ -737,7 +829,8 @@ class PartyCombatService:
                         contributions[victim["player_id"]].damage_tanked += adds_attack
                 # Auto-soin du boss.
                 if boss_heal_per_turn > 0:
-                    mob_hp = min(mob_max_hp, mob_hp + boss_heal_per_turn)
+                    heal = boss_heal_per_turn // 2 if anti_heal else boss_heal_per_turn
+                    mob_hp = min(mob_max_hp, mob_hp + heal)
 
             if not acted:
                 continue
@@ -753,7 +846,7 @@ class PartyCombatService:
                     dmg, crit, dodged = self._resolve_mob_hit(
                         mob, target, contributions, title_bonuses_by_player,
                         incoming_elemental_mult_by_player, mob_family,
-                        extra_multiplier=mult)
+                        extra_multiplier=mult, is_aoe=True)
                     if dodged:
                         parts.append(f"{target['name']} esquive")
                     else:
@@ -797,25 +890,41 @@ class PartyCombatService:
         self, mob, target, contributions, title_bonuses_by_player,
         incoming_mult_by_player, mob_family,
         extra_multiplier: float = 1.0, force_crit: bool = False, can_dodge: bool = True,
-        attack_override: int | None = None,
+        attack_override: int | None = None, is_aoe: bool = False,
     ) -> tuple[int, bool, bool]:
         """Coup du mob sur un joueur (soustractif : crit AVANT défense, puis
         bouclier, puis PV). `attack_override` = attaque effective (furie/résurrection).
         Renvoie (dégâts, crit, esquivé)."""
         tstats: Stats = target["stats"]
+        gear = self._p(target)
 
         if can_dodge and tstats.dodge > 0 and random.random() < (tstats.dodge / 100):
             contributions[target["player_id"]].dodges += 1
+            if gear.has("shadow_step"):
+                target["shadow"] = True
+                target["shadow_guard"] = True
             return 0, False, True
 
+        # Garde de l'exil : la première attaque reçue est annulée.
+        if gear.has("first_hit_ward") and not target.get("warded"):
+            target["warded"] = True
+            target["_ward"] = True
+            return 0, False, False
+
         raw_attack = mob.attack if attack_override is None else attack_override
+        raw_attack = max(1, int(raw_attack * getattr(self, "_mob_atk_mult", 1.0)))  # Cri affaiblissant
         crit = force_crit or (random.random() < (mob.crit_chance / 100))
         if crit:
             raw_attack = int(raw_attack * (mob.crit_damage / 100))
         if extra_multiplier != 1.0:
             raw_attack = int(raw_attack * extra_multiplier)
 
-        after_defense = max(1, raw_attack - tstats.defense)
+        defense = tstats.defense
+        if gear.has("stone_skin") and target.get("stone"):
+            defense = round(defense * (1 + min(20, target["stone"]) / 100))
+        after_defense = max(1, raw_attack - defense)
+        if gear.has("stone_skin"):
+            target["stone"] = target.get("stone", 0) + 1
 
         tb = title_bonuses_by_player.get(target["player_id"])
         if tb is not None and mob_family:
@@ -828,6 +937,21 @@ class PartyCombatService:
             mob_damage = 0  # résistance élémentaire ≥ 100 % : immunisé
         elif incoming_mult != 1.0:
             mob_damage = max(1, round(mob_damage * incoming_mult))
+
+        if mob_damage > 0:
+            mult = 1.0
+            if crit and gear.has("crit_ward"):
+                mult *= 0.75
+            if is_aoe and gear.has("blast_ward"):
+                mult *= 0.50
+            if target.get("shadow_guard"):
+                mult *= 0.90
+                target["shadow_guard"] = False
+            if target.get("taunt_guard"):  # Défi : −15 % tant que la provocation dure
+                mult *= 0.85
+                target["taunt_guard"] = False
+            if mult != 1.0:
+                mob_damage = max(1, round(mob_damage * mult))
 
         mob_damage = self._reduced(target, mob_damage) if mob_damage > 0 else 0
 
@@ -877,6 +1001,11 @@ class PartyCombatService:
             member["_held"] = True
             damage = member["hp"] - 1
         member["hp"] = max(0, member["hp"] - damage)
+        # Revenant : la première mort ramène à 50 % des PV.
+        if member["hp"] <= 0 and self._p(member).has("undying") and not member.get("gear_revived"):
+            member["gear_revived"] = True
+            member["hp"] = max(1, member["max_hp"] // 2)
+            member["_revived"] = True
         return damage
 
     def _pvp_hit(self, attacker, target, contributions) -> tuple[int, bool, bool]:

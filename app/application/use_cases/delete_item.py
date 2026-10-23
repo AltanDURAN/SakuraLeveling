@@ -17,8 +17,8 @@ from app.infrastructure.db.models.craft_model import (
     CraftRecipeIngredientModel,
     CraftRecipeModel,
 )
-from app.infrastructure.db.models.equipment_model import PlayerEquipmentItemModel
 from app.infrastructure.db.models.equipment_set_model import PlayerEquipmentSetItemModel
+from app.infrastructure.db.models.gear_model import PlayerGearModel
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel
 from app.infrastructure.db.models.item_model import ItemDefinitionModel
 from app.infrastructure.db.models.marketplace_listing_model import MarketplaceListingModel
@@ -37,7 +37,7 @@ class DeleteItemResult:
 # Tables qui référencent un item via item_definition_id.
 _REF_MODELS = (
     PlayerInventoryItemModel,
-    PlayerEquipmentItemModel,
+    PlayerGearModel,
     PlayerEquipmentSetItemModel,
     TradeItemModel,
     MarketplaceListingModel,

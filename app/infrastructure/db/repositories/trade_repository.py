@@ -4,6 +4,7 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.domain.entities.trade import Trade, TradeItemOffer, TradeSide, TradeStatus
+from app.infrastructure.db.models.gear_model import PlayerGearModel
 from app.infrastructure.db.models.item_model import ItemDefinitionModel
 from app.infrastructure.db.models.player_model import PlayerModel
 from app.infrastructure.db.models.trade_model import TradeItemModel, TradeModel
@@ -21,7 +22,7 @@ class TradeRepository:
         target_player_id: int,
         initiator_gold_offered: int,
         target_gold_offered: int,
-        items: list[tuple[TradeSide, int, int]],  # (side, item_definition_id, quantity)
+        items: list[tuple],  # (side, item_definition_id, quantity[, gear_id])
         ttl_minutes: int = 5,
     ) -> Trade:
         now = datetime.now(UTC)
@@ -38,13 +39,14 @@ class TradeRepository:
         self.session.add(trade)
         self.session.flush()
 
-        for side, item_def_id, quantity in items:
+        for side, item_def_id, quantity, *rest in items:
             self.session.add(
                 TradeItemModel(
                     trade_id=trade.id,
                     offered_by=side.value,
                     item_definition_id=item_def_id,
                     quantity=quantity,
+                    gear_id=rest[0] if rest else None,
                     created_at=now,
                 )
             )
@@ -115,6 +117,12 @@ class TradeRepository:
 
     # ---------- conversion en domain ----------
 
+    def _gear_rarity(self, gear_id: int | None) -> str | None:
+        if gear_id is None:
+            return None
+        gear = self.session.get(PlayerGearModel, gear_id)
+        return gear.rarity if gear else None
+
     def _to_domain(self, model: TradeModel) -> Trade:
         initiator = self.session.get(PlayerModel, model.initiator_player_id)
         target = self.session.get(PlayerModel, model.target_player_id)
@@ -135,6 +143,8 @@ class TradeRepository:
                     item_name=item_def.name,
                     quantity=item_model.quantity,
                     offered_by=TradeSide(item_model.offered_by),
+                    gear_id=item_model.gear_id,
+                    rarity=self._gear_rarity(item_model.gear_id),
                 )
             )
 

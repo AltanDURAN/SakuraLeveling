@@ -5,9 +5,6 @@ from app.application.services.exclusive_title_service import ExclusiveTitleServi
 from app.application.services.set_bonus_resolver import resolve_set_bonuses
 from app.application.services.status_effect_resolver import resolve_status_effects
 from app.application.services.title_bonus_resolver import resolve_title_bonuses
-from app.infrastructure.db.repositories.player_item_level_repository import (
-    PlayerItemLevelRepository,
-)
 from app.application.services.title_unlock_service import TitleUnlockService
 from app.application.use_cases.daily_quests import DailyQuestProgressService
 from app.application.use_cases.weekly_quests import WeeklyQuestProgressService
@@ -30,6 +27,7 @@ from app.domain.value_objects.battle_summary import BattleSummary
 from app.domain.value_objects.player_reward import EssenceGain, PlayerReward
 from app.domain.value_objects.skill_bonuses import SkillBonuses
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
+from app.domain.services.gear_passives import active_passives
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.element_affinity_repository import (
@@ -124,9 +122,6 @@ class EncounterService:
             title_bonuses = resolve_title_bonuses(session, profile.player.id)
             set_bonuses = resolve_set_bonuses(equipped_items)
             status_bonuses = resolve_status_effects(session, profile.player.id)
-            item_levels = PlayerItemLevelRepository(session).get_levels_for_player(
-                profile.player.id
-            )
 
             stats = StatsService().calculate_player_stats(
                 profile=profile,
@@ -135,7 +130,6 @@ class EncounterService:
                 title_bonuses=title_bonuses,
                 set_bonuses=set_bonuses,
                 status_bonuses=status_bonuses,
-                item_levels=item_levels,
             )
 
         regenerated_current_hp = self.get_regenerated_player_hp(
@@ -265,9 +259,6 @@ class EncounterService:
 
                 set_bonuses = resolve_set_bonuses(equipped_items)
                 status_bonuses = resolve_status_effects(session, participant.player_id)
-                item_levels = PlayerItemLevelRepository(session).get_levels_for_player(
-                    participant.player_id
-                )
 
                 stats = StatsService().calculate_player_stats(
                     profile=profile,
@@ -276,7 +267,6 @@ class EncounterService:
                     title_bonuses=title_bonuses,
                     set_bonuses=set_bonuses,
                     status_bonuses=status_bonuses,
-                    item_levels=item_levels,
                 )
 
                 # Multiplicateurs élémentaires (si le mob a un élément).
@@ -342,6 +332,31 @@ class EncounterService:
                     player_id=player_id,
                     current_hp=player_state["current_hp"],
                 )
+
+    @staticmethod
+    def _roll_gear_drop(session, player_id: int, mob, rng=None) -> list[tuple[str, str]]:
+        """Tirage de la pièce du monstre pour UN survivant (cf. gear_service).
+
+        Le passif « Trouvaille » (épique et plus) multiplie chaque taux de
+        +10 %. Renvoie [(nom, rareté)] ou [] — au plus une pièce par mort."""
+        from app.domain.services.gear_passives import active_passives
+        from app.domain.services.gear_service import roll_drop
+        from app.infrastructure.db.repositories.gear_repository import GearRepository
+        from app.infrastructure.db.repositories.item_repository import ItemRepository
+
+        code = getattr(mob, "gear_item_code", "") or ""
+        if not code:
+            return []
+        equipped = EquipmentRepository(session).list_by_player_id(player_id)
+        multiplier = 1.10 if "lucky_find" in active_passives(equipped) else 1.0
+        rarity = roll_drop(rng, drop_rate_multiplier=multiplier)
+        if rarity is None:
+            return []
+        item = ItemRepository(session).get_by_code(code)
+        if item is None:
+            return []
+        GearRepository(session).add(player_id, item.id, rarity, source="drop")
+        return [(item.name, rarity.value)]
 
     def apply_rewards(self, encounter, result) -> BattleSummary | None:
         if encounter is None:
@@ -500,6 +515,9 @@ class EncounterService:
                     player_repository.add_gold(participant.player_id, gold)
                     career_repository.add(participant.player_id, gold_earned=gold)
 
+                # Équipement v2 : 0 ou 1 pièce, celle que porte le monstre.
+                gear_drop = self._roll_gear_drop(session, participant.player_id, mob)
+
                 kill_repository.increment(participant.player_id, mob_code)
 
                 # Essences élémentaires : drop selon la zone (nombre tiré dans
@@ -515,6 +533,10 @@ class EncounterService:
                     mob=mob,
                     essences_per_kill=essences_per_kill,
                     element_override=getattr(encounter.mob_state, "element", "") or "",
+                    # Chasseur d'essences (pièce épique et plus) : +1 par kill.
+                    bonus_essences=1 if "essence_hunter" in active_passives(
+                        EquipmentRepository(session).list_by_player_id(participant.player_id)
+                    ) else 0,
                 )
 
                 # Check titres : kills_family / kills_total / kills_mob.
@@ -593,10 +615,12 @@ class EncounterService:
                     )
 
                 items_total = 0
+                item_names: dict[str, str] = {}
                 for item_code, quantity in dropped_items:
                     item = item_repository.get_by_code(item_code)
                     if item is None:
                         continue
+                    item_names[item_code] = item.name
                     inventory_repository.add_item(
                         player_id=participant.player_id,
                         item_definition_id=item.id,
@@ -616,11 +640,13 @@ class EncounterService:
                         gold=gold,
                         xp=xp,
                         items=dropped_items,
+                        item_names=item_names,
                         contribution=contribution,
                         contribution_share=contribution_shares.get(
                             participant.player_id, 0.0
                         ),
                         essence_gains=essence_gains,
+                        gear=gear_drop,
                     )
                 )
 
@@ -644,6 +670,7 @@ class EncounterService:
         mob,
         essences_per_kill: int,
         element_override: str = "",
+        bonus_essences: int = 0,
     ) -> list[EssenceGain]:
         """Dépose les essences des élément(s) du mob et convertit
         automatiquement en niveaux d'affinité (coût N→N+1 = N+1). Renvoie les
@@ -670,7 +697,8 @@ class EncounterService:
             # Talent : +10 % d'essences par point ; élément mort ⇒ rien.
             gained = essence_gain(essences_per_kill, talent.talent if talent else 0)
             if gained <= 0:
-                continue
+                continue  # élément mort : même le Chasseur d'essences n'y peut rien
+            gained += max(0, bonus_essences)
             before_aff = int(affinities_map.get(elem, 0))
             current_ess = int(essences_map.get(elem, 0))
             conv = progression_service.apply_essences(

@@ -52,34 +52,41 @@ def _equipped_def_ids(equipped: list[PlayerEquipmentItem]) -> set[int]:
     return {e.item_definition.id for e in equipped}
 
 
-def _filter_for_category(
-    items: list[PlayerInventoryItem], category: str,
-) -> list[PlayerInventoryItem]:
-    return sorted(
-        [i for i in items if i.item_definition.category == category],
-        key=lambda i: (-i.quantity, i.item_definition.name),
+def _filter_for_category(items: list, category: str) -> list:
+    """Copies possédées (PlayerGear) de la catégorie — déjà triées par rareté."""
+    return [i for i in items if i.item_definition.category == category]
+
+
+def _build_card(gear, equipped_def_ids: set[int], accent) -> CardSpec:
+    """Une carte par COPIE : couleur de rareté, stats de la copie, passif."""
+    from app.domain.services.gear_passives import get_passive
+    from app.domain.services.gear_service import (
+        RARITY_COLORS,
+        RARITY_EMOJIS,
+        RARITY_LABELS,
+        gear_stats,
+        passive_active,
     )
 
-
-def _build_card(
-    inv_item: PlayerInventoryItem,
-    equipped_def_ids: set[int],
-    accent: tuple[int, int, int, int] | None,
-) -> CardSpec:
-    d = inv_item.item_definition
-    bonuses_text = format_stat_bonuses_short(d.stat_bonuses)
-    badge = "✅" if d.id in equipped_def_ids else None
-    qty = inv_item.quantity
-    name = f"×{qty}  {d.name}" if qty > 1 else d.name
+    d = gear.item_definition
+    rarity = getattr(gear, "rarity", "common")
+    forge = getattr(gear, "forge_level", 0)
+    bonuses_text = format_stat_bonuses_short(gear_stats(d.stat_bonuses, rarity, forge))
+    passive = get_passive(getattr(d, "passive", ""))
+    lines = [f"{RARITY_EMOJIS.get(rarity, '')} {RARITY_LABELS.get(rarity, rarity)}"]
+    if passive is not None:
+        lines[0] += (f"  ·  ✨ {passive.name}" if passive_active(rarity)
+                     else f"  ·  🔒 {passive.name} (dès l'épique)")
     return CardSpec(
-        name=name,
+        name=d.name + (f" +{forge}" if forge else ""),
         icon_emoji=CATEGORY_ICONS.get(d.category, "📦"),
         icon_path=item_asset_path(d.code),
-        accent=accent,
+        accent=(*RARITY_COLORS.get(rarity, (150, 150, 160)), 255),
         right_text=bonuses_text or None,
-        lines=[],  # famille dispo via /panoplie, on la zappe pour gagner en hauteur
-        badge=badge,
+        lines=lines,
+        badge="✅" if getattr(gear, "equipped", False) else None,
         code=d.code,
+        mythic=rarity == "mythic",
     )
 
 
@@ -107,7 +114,7 @@ def _render_page(
         ((lbl, em) for cat, lbl, em in PAGES if cat == category),
         ("Items", "📦"),
     )
-    title = f"🎒  Inventaire de {display_name}"
+    title = f"🎒  Équipement de {display_name}"
     page_suffix = f" — page {page_index + 1}/{total_pages}" if total_pages > 1 else ""
     subtitle = f"{emoji} {label} ({total}){page_suffix}"
 
@@ -115,11 +122,11 @@ def _render_page(
         GENERATED_LISTS_DIR
         / f"equipment_list_{player_id}_{category}_p{page_index + 1}.png"
     )
-    compose_card_grid_page(
+    path = compose_card_grid_page(
         str(out), title=title, subtitle=subtitle,
         cards=cards, cols=1, rows=_PAGE_SIZE, seed=player_id,
     )
-    return str(out), total_pages, total
+    return path, total_pages, total
 
 
 class _PrevCategoryButton(discord.ui.Button):

@@ -23,7 +23,6 @@ from app.infrastructure.db.models.progression_model import PlayerProgressionMode
 from app.infrastructure.db.models.resource_model import PlayerResourceModel  # noqa: F401
 from app.infrastructure.db.models.item_model import ItemDefinitionModel
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel  # noqa: F401
-from app.infrastructure.db.models.equipment_model import PlayerEquipmentItemModel  # noqa: F401
 from app.infrastructure.db.models.mob_model import MobDefinitionModel  # noqa: F401
 from app.infrastructure.db.models.craft_model import CraftRecipeModel, CraftRecipeIngredientModel  # noqa: F401
 from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel  # noqa: F401
@@ -38,12 +37,9 @@ from app.infrastructure.db.models.trade_model import TradeItemModel, TradeModel 
 from app.infrastructure.db.models.player_duel_rank_model import PlayerDuelRankModel  # noqa: F401
 from app.infrastructure.db.models.player_title_model import PlayerTitleModel  # noqa: F401
 from app.infrastructure.db.models.player_status_effect_model import PlayerStatusEffectModel  # noqa: F401
-from app.infrastructure.db.models.player_item_level_model import PlayerItemLevelModel  # noqa: F401
 
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
-from app.infrastructure.db.repositories.player_item_level_repository import (
-    PlayerItemLevelRepository,
-)
+from app.infrastructure.db.repositories.gear_repository import GearRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.player_skill_allocation_repository import (
     PlayerSkillAllocationRepository,
@@ -90,10 +86,12 @@ def _seed_players(session, n: int) -> list:
             discord_id=1000 + i, username=f"u{i}", display_name=f"U{i}",
         )
         pid = prof.player.id
-        if i % 2 == 0:  # la moitié équipe l'épée
-            EquipmentRepository(session).equip_item(pid, sword.id, "arme_1")
-        if i % 3 == 0:  # un tiers a une épée forgée
-            PlayerItemLevelRepository(session).increment(pid, sword.id, 10)
+        if i % 2 == 0:  # la moitié équipe l'épée (un tiers forgée, rareté variable)
+            gear = GearRepository(session).add(
+                pid, sword.id, ("common", "epic", "mythic")[i % 3],
+                forge_level=10 if i % 3 == 0 else 0,
+            )
+            EquipmentRepository(session).equip_gear(pid, gear.id, "arme_1")
         if i % 4 == 0:  # un quart a un buff actif
             PlayerStatusEffectRepository(session).add(pid, "test", 1.1, 3600)
         if i % 5 == 0:  # un cinquième a des points d'arbre

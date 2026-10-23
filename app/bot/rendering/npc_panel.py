@@ -196,7 +196,7 @@ def compose_npc_panel(
         draw_text_with_shadow(draw, (px, my), label, f_small, fill=_MUTED, shadow=_SHADOW)
         _bar(bg, (px, my + 26), (_PORTRAIT, 8), tier_progress, accent)
         hint = (
-            f"{orders_to_next} commande(s) avant le palier suivant"
+            f"{orders_to_next} fusion(s) avant le palier suivant"
             if orders_to_next
             else "maîtrise maximale atteinte"
         )

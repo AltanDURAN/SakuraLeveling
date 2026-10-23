@@ -15,7 +15,7 @@ from app.infrastructure.db.models.progression_model import PlayerProgressionMode
 from app.infrastructure.db.models.resource_model import PlayerResourceModel
 from app.infrastructure.db.models.item_model import ItemDefinitionModel  # noqa: F401
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel
-from app.infrastructure.db.models.equipment_model import PlayerEquipmentItemModel
+from app.infrastructure.db.models.gear_model import PlayerGearModel
 from app.infrastructure.db.models.mob_model import MobDefinitionModel  # noqa: F401
 from app.infrastructure.db.models.craft_model import CraftRecipeModel, CraftRecipeIngredientModel  # noqa: F401
 from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel
@@ -93,8 +93,8 @@ def _seed_full_profile(session, player_id: int, other_player_id: int) -> None:
         player_id=player_id, item_definition_id=item.id, quantity=5,
         created_at=now, updated_at=now,
     ))
-    session.add(PlayerEquipmentItemModel(
-        player_id=player_id, item_definition_id=item.id, slot="tete",
+    session.add(PlayerGearModel(
+        player_id=player_id, item_definition_id=item.id, rarity="common", equipped_slot="tete",
         created_at=now, updated_at=now,
     ))
     session.add(PlayerCooldownModel(
@@ -236,7 +236,7 @@ def test_reset_player_purges_all_player_tables(session):
     # Toutes les tables 1:N → 0 ligne pour ce joueur
     for model_cls in (
         PlayerInventoryItemModel,
-        PlayerEquipmentItemModel,
+        PlayerGearModel,
         PlayerQuestStateModel,
         PlayerCooldownModel,
         PlayerHealthStateModel,

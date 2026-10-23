@@ -587,7 +587,30 @@ class EncounterCog(commands.Cog):
             except discord.HTTPException:
                 pass
 
+        await self._announce_mythics(channel, battle_summary, getattr(message, "jump_url", None))
         self._reschedule(channel_id)
+
+    @staticmethod
+    async def _announce_mythics(channel, summary, jump_url: str | None) -> None:
+        """Un mythique tombe environ 1 fois sur 25 000 morts : c'est un
+        événement pour tout le serveur, on l'annonce dans le salon."""
+        for reward in getattr(summary, "rewards", None) or []:
+            for gear_name, rarity in getattr(reward, "gear", None) or []:
+                if rarity != "mythic":
+                    continue
+                embed = discord.Embed(
+                    title="🔴 UNE PIÈCE MYTHIQUE EST TOMBÉE",
+                    description=(
+                        f"<@{reward.user_id}> vient d'arracher **{gear_name}** "
+                        f"(mythique) à {summary.mob_name} !"
+                        + (f"\n[Voir le combat]({jump_url})" if jump_url else "")
+                    ),
+                    color=discord.Color.from_rgb(235, 70, 90),
+                )
+                try:
+                    await channel.send(embed=embed)
+                except discord.HTTPException:
+                    pass
 
     async def refresh_encounter_scene(self, channel_id: int) -> None:
         encounter = self.active_encounters.get(channel_id)

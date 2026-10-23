@@ -224,37 +224,42 @@ def write_equipment_sheet(wb: Workbook) -> None:
     ))
 
     ws = wb.create_sheet("🎽 Équipements")
-    # Saison 1 : ATK / DEF / PV en POURCENTAGE du socle (attack_pct…). La
-    # puissance d'une pièce en % dépend de qui la porte : elle est évaluée
-    # au niveau requis (ItemPowerService), donc calculée ici, pas en formule.
+    # Saison 1 / équipement v2 : ATK / DEF / PV en POURCENTAGE du socle, stats
+    # du COMMUN (la rareté les multiplie, cf. gear_service). La puissance
+    # d'une pièce en % dépend de qui la porte : évaluée au niveau 30.
     headers = [
-        "Code", "Nom", "Type", "Slot", "Panoplie", "Rareté", "2-mains",
-        "Niv. requis", "Atk %", "Def %", "PV %", "Crit %", "Crit dmg", "Esquive",
+        "Code", "Nom", "Type", "Slot", "Porté par", "Passif (dès épique)",
+        "Panoplie", "2-mains",
+        "Atk %", "Def %", "PV %", "Crit %", "Crit dmg", "Esquive",
         "Vitesse", "Regen", "Mana max", "Regen mana",
-        "Power", "Prix achat", "Description",
+        "Power", "Description",
     ]
     ws.append(headers)
 
+    from app.domain.services.gear_passives import get_passive
     from app.domain.services.item_power_service import ItemPowerService
     power = ItemPowerService()
+    worn_by: dict[str, list[str]] = {}
+    for m in _load("mobs.json"):
+        if m.get("gear_item_code"):
+            worn_by.setdefault(m["gear_item_code"], []).append(m["name"])
 
     for it in equip:
         b = it.get("stat_bonuses") or {}
-        level_req = int(it.get("level_requirement", 1) or 1)
+        passive = get_passive(it.get("passive"))
         ws.append([
             it["code"], it["name"],
             EQUIPMENT_TYPES.get(it["category"], it["category"]),
             it.get("equipment_slot") or "—",
+            ", ".join(worn_by.get(it["code"], [])) or "—",
+            f"{passive.name} — {passive.description}" if passive else "—",
             it.get("family") or "",
-            it.get("rarity", "—"),
             "oui" if it.get("requires_two_hands") else "non",
-            level_req,
             b.get("attack_pct", 0), b.get("defense_pct", 0), b.get("max_hp_pct", 0),
             b.get("crit_chance", 0), b.get("crit_damage", 0),
             b.get("dodge", 0), b.get("speed", 0), b.get("hp_regeneration", 0),
             b.get("mana_max", 0), b.get("mana_regeneration", 0),
-            power.marginal_power(b, level_req),
-            it.get("buy_price") or 0,
+            power.marginal_power(b, 30),
             it.get("description", ""),
         ])
 
@@ -502,11 +507,11 @@ def write_summary_sheet(wb: Workbook) -> None:
     ws.append(["Feuille", "Contenu"])
     _style_header(ws, row=4)
     feuilles = [
-        ("🎽 Équipements", "TOUS les équipements en 1 feuille. Filtre par Type "
-         "(casque…) ou Panoplie via les flèches d'en-tête. Power calculé en direct."),
+        ("🎽 Équipements", "Les 23 pièces (stats du COMMUN), le monstre qui la "
+         "porte et son passif. Power calculé au niveau 30."),
         ("👹 Mobs", "Monstres : stats, drops, Power & Rang calculés en direct."),
         ("🧪 Consommables / 📦 Ressources", "Potions et ressources de craft."),
-        ("🛠️ Recettes", "Recettes /craft et /forge."),
+        ("🛠️ Recettes", "Recettes (vide : la fabrication a été remplacée par la fusion)."),
         ("🏪 Shop", "Prix d'achat / vente du shop."),
         ("🌳 Skill Tree", "Tous les nœuds de l'arbre."),
         ("🏷️ Titres", "Titres, conditions et effets."),

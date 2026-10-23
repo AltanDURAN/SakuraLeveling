@@ -30,3 +30,7 @@ class PlayerReward:
     contribution: PlayerContribution | None = None
     contribution_share: float = 0.0  # 0..1, part de contribution au combat
     essence_gains: list[EssenceGain] = field(default_factory=list)
+    # Pièce d'équipement lâchée par le monstre : (nom, rareté). Au plus une.
+    gear: list[tuple[str, str]] = field(default_factory=list)
+    #: Nom affiché des objets de `items` (code → nom), pour le récap.
+    item_names: dict[str, str] = field(default_factory=dict)

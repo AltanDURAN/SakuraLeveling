@@ -2,6 +2,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, UTC
 
 from app.domain.entities.trade import Trade, TradeSide
+from app.domain.services.gear_service import parse_gear_ref
+from app.infrastructure.db.repositories.gear_repository import GearRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
@@ -12,7 +14,9 @@ from app.infrastructure.db.repositories.trade_repository import TradeRepository
 class TradeOffer:
     """Format d'entrée des items proposés par un côté du trade."""
 
-    items: list[tuple[str, int]] = field(default_factory=list)  # (item_code, quantity)
+    #: (item_code, quantity) ; une pièce d'équipement est passée comme
+    #: (« gear:<id> », 1) — l'exemplaire précis.
+    items: list[tuple[str, int]] = field(default_factory=list)
     gold: int = 0
 
 
@@ -41,11 +45,13 @@ class CreateTradeUseCase:
         inventory_repository: InventoryRepository,
         item_repository: ItemRepository,
         trade_repository: TradeRepository,
+        gear_repository: GearRepository | None = None,
     ) -> None:
         self.player_repository = player_repository
         self.inventory_repository = inventory_repository
         self.item_repository = item_repository
         self.trade_repository = trade_repository
+        self.gear_repository = gear_repository or GearRepository(trade_repository.session)
 
     def execute(
         self,
@@ -138,9 +144,18 @@ class CreateTradeUseCase:
             i.item_definition.code: i.quantity for i in initiator_inventory
         }
 
-        # Total par item (gère les doublons dans le formulaire)
+        # Total par item (gère les doublons dans le formulaire) ; les pièces
+        # d'équipement sont validées à part, exemplaire par exemplaire.
         initiator_offer_totals = _aggregate_quantities(initiator_offer.items)
         target_request_totals = _aggregate_quantities(target_request.items)
+        initiator_gear, error = self._take_gear(
+            initiator_offer_totals, initiator_profile.player.id, "proposée", mine=True)
+        if error:
+            return CreateTradeResult(success=False, message=error)
+        target_gear, error = self._take_gear(
+            target_request_totals, target_profile.player.id, "demandée", mine=False)
+        if error:
+            return CreateTradeResult(success=False, message=error)
 
         # Or de l'initiator suffisant
         if initiator_profile.resources.gold < initiator_offer.gold:
@@ -189,6 +204,10 @@ class CreateTradeUseCase:
         for item_code, qty in target_request_totals.items():
             item = self.item_repository.get_by_code(item_code)
             items_payload.append((TradeSide.TARGET, item.id, qty))
+        for gear in initiator_gear:
+            items_payload.append((TradeSide.INITIATOR, gear.item_definition.id, 1, gear.id))
+        for gear in target_gear:
+            items_payload.append((TradeSide.TARGET, gear.item_definition.id, 1, gear.id))
 
         trade = self.trade_repository.create_pending(
             initiator_player_id=initiator_profile.player.id,
@@ -204,6 +223,27 @@ class CreateTradeUseCase:
             message="✅ Proposition de trade créée.",
             trade=trade,
         )
+
+
+    def _take_gear(self, totals: dict[str, int], owner_id: int, verb: str, *, mine: bool):
+        """Retire de `totals` les références « gear:<id> » et les valide.
+
+        Renvoie (pièces, message d'erreur ou None). Une pièce proposée doit être
+        libre (ni portée ni en vente) ; une pièce demandée peut être portée —
+        elle sera retirée à l'acceptation — mais pas en vente."""
+        gears = []
+        for code in [c for c in totals if parse_gear_ref(c) is not None]:
+            del totals[code]
+            gear = self.gear_repository.get(parse_gear_ref(code))
+            if gear is None or gear.player_id != owner_id:
+                return [], f"❌ Pièce {verb} introuvable chez son propriétaire."
+            name = gear.item_definition.name
+            if gear.listed:
+                return [], f"❌ **{name}** est en vente à la brocante."
+            if mine and gear.equipped:
+                return [], f"❌ Tu portes **{name}** : retire-la d'abord (`/desequiper`)."
+            gears.append(gear)
+        return gears, None
 
 
 def _aggregate_quantities(items: list[tuple[str, int]]) -> dict[str, int]:

@@ -34,6 +34,8 @@ class MarketplaceRepository:
         quantity: int,
         price_per_unit: int,
         expires_at: datetime,
+        gear_id: int | None = None,
+        commit: bool = True,
     ) -> MarketplaceListing:
         now = datetime.now(UTC)
         model = MarketplaceListingModel(
@@ -45,9 +47,13 @@ class MarketplaceRepository:
             listed_at=now,
             expires_at=expires_at,
             closed_at=None,
+            gear_id=gear_id,
         )
         self.session.add(model)
-        self.session.commit()
+        if commit:
+            self.session.commit()
+        else:
+            self.session.flush()
         return self._to_domain(model)
 
     # ---------- read ----------
@@ -145,4 +151,5 @@ class MarketplaceRepository:
             expires_at=model.expires_at,
             closed_at=model.closed_at,
             last_buyer_player_id=model.last_buyer_player_id,
+            gear_id=model.gear_id,
         )

@@ -27,6 +27,11 @@ Les invariants à respecter :
        - mark_expired bulk
        - Pour chaque listing expiré, restituer les items au vendeur
 
+Pièces d'équipement (exemplaires uniques, `gear_id`) : la « consigne » est le
+drapeau `player_gear.listed`. La pièce reste au vendeur mais disparaît de ses
+listes (ni portée, ni fusionnée, ni échangée) ; à la vente elle est TRANSFÉRÉE,
+à l'annulation / l'expiration le drapeau retombe.
+
 Commission : `MARKETPLACE_COMMISSION_PCT` (5% par défaut). Le shop garde
 ce % du prix total — modèle de "frais de tenue de marché". Pas de cap.
 """
@@ -38,6 +43,8 @@ from app.domain.entities.marketplace_listing import (
     ListingStatus,
     MarketplaceListing,
 )
+from app.domain.services.gear_service import gear_label, parse_gear_ref
+from app.infrastructure.db.repositories.gear_repository import GearRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.marketplace_repository import (
@@ -72,11 +79,13 @@ class ListItemForSaleUseCase:
         inventory_repository: InventoryRepository,
         item_repository: ItemRepository,
         marketplace_repository: MarketplaceRepository,
+        gear_repository: GearRepository | None = None,
     ) -> None:
         self.player_repository = player_repository
         self.inventory_repository = inventory_repository
         self.item_repository = item_repository
         self.marketplace_repository = marketplace_repository
+        self.gear_repository = gear_repository or GearRepository(marketplace_repository.session)
 
     def execute(
         self,
@@ -115,6 +124,10 @@ class ListItemForSaleUseCase:
                 f"annonces actives en simultané.",
             )
 
+        gear_id = parse_gear_ref(item_code)
+        if gear_id is not None:
+            return self._list_gear(profile.player.id, gear_id, price_per_unit, duration_days)
+
         item = self.item_repository.get_by_code(item_code)
         if item is None:
             return ListResult(False, f"❌ Item `{item_code}` introuvable.")
@@ -151,6 +164,50 @@ class ListItemForSaleUseCase:
             listing=listing,
         )
 
+    def _list_gear(self, player_id: int, gear_id: int, price: int, duration_days: int) -> ListResult:
+        gear = self.gear_repository.get(gear_id)
+        if gear is None or gear.player_id != player_id:
+            return ListResult(False, "❌ Tu ne possèdes pas cette pièce.")
+        if gear.listed:
+            return ListResult(False, "❌ Cette pièce est déjà en vente.")
+        if gear.equipped:
+            return ListResult(False, "❌ Retire d'abord cette pièce (`/desequiper`) avant de la vendre.")
+
+        # Consigne AVANT l'annonce, dans la même transaction.
+        self.gear_repository.set_listed(gear_id, True, commit=False)
+        expires_at = datetime.now(UTC) + timedelta(days=duration_days)
+        listing = self.marketplace_repository.create(
+            seller_player_id=player_id,
+            item_definition_id=gear.item_definition.id,
+            quantity=1,
+            price_per_unit=price,
+            expires_at=expires_at,
+            gear_id=gear_id,
+        )
+        label = gear_label(gear.item_definition.name, gear.rarity, gear.forge_level)
+        return ListResult(
+            success=True,
+            message=(
+                f"✅ Annonce créée : **{label}** à **{price}** or. "
+                f"Expire <t:{int(expires_at.timestamp())}:R>. "
+                "D'ici là, la pièce ne peut être ni portée ni fusionnée."
+            ),
+            listing=listing,
+        )
+
+
+def _release(listing: MarketplaceListing, inventory_repository: InventoryRepository,
+             gear_repository: GearRepository) -> None:
+    """Rend au vendeur ce qu'une annonce close (annulée, expirée) consignait."""
+    if listing.gear_id is not None:
+        gear_repository.set_listed(listing.gear_id, False)
+        return
+    inventory_repository.add_item(
+        player_id=listing.seller_player_id,
+        item_definition_id=listing.item_definition_id,
+        quantity=listing.quantity,
+    )
+
 
 # ---------- 2. Buy ----------
 
@@ -169,10 +226,12 @@ class BuyMarketplaceListingUseCase:
         player_repository: PlayerRepository,
         inventory_repository: InventoryRepository,
         marketplace_repository: MarketplaceRepository,
+        gear_repository: GearRepository | None = None,
     ) -> None:
         self.player_repository = player_repository
         self.inventory_repository = inventory_repository
         self.marketplace_repository = marketplace_repository
+        self.gear_repository = gear_repository or GearRepository(marketplace_repository.session)
 
     def execute(
         self,
@@ -195,6 +254,13 @@ class BuyMarketplaceListingUseCase:
         )
         if buyer_profile.player.id == listing.seller_player_id:
             return BuyResult(False, "❌ Vous ne pouvez pas acheter votre propre annonce.")
+
+        if listing.gear_id is not None:
+            gear = self.gear_repository.get(listing.gear_id)
+            if gear is None or gear.player_id != listing.seller_player_id:
+                # La pièce a disparu (admin, reset) : l'annonce ne vaut plus rien.
+                self.marketplace_repository.mark_cancelled(listing_id)
+                return BuyResult(False, "❌ Cette pièce n'est plus disponible.")
 
         total_price = listing.total_price
         if buyer_profile.resources.gold < total_price:
@@ -219,12 +285,15 @@ class BuyMarketplaceListingUseCase:
         self.player_repository.add_gold(buyer_profile.player.id, -total_price)
         self.player_repository.add_gold(listing.seller_player_id, seller_payout)
 
-        # 3. Donner les items au buyer
-        self.inventory_repository.add_item(
-            player_id=buyer_profile.player.id,
-            item_definition_id=listing.item_definition_id,
-            quantity=listing.quantity,
-        )
+        # 3. Donner les items au buyer (une pièce : l'exemplaire lui-même)
+        if listing.gear_id is not None:
+            self.gear_repository.transfer(listing.gear_id, buyer_profile.player.id)
+        else:
+            self.inventory_repository.add_item(
+                player_id=buyer_profile.player.id,
+                item_definition_id=listing.item_definition_id,
+                quantity=listing.quantity,
+            )
 
         return BuyResult(
             success=True,
@@ -252,10 +321,12 @@ class CancelMarketplaceListingUseCase:
         player_repository: PlayerRepository,
         inventory_repository: InventoryRepository,
         marketplace_repository: MarketplaceRepository,
+        gear_repository: GearRepository | None = None,
     ) -> None:
         self.player_repository = player_repository
         self.inventory_repository = inventory_repository
         self.marketplace_repository = marketplace_repository
+        self.gear_repository = gear_repository or GearRepository(marketplace_repository.session)
 
     def execute(
         self,
@@ -276,11 +347,7 @@ class CancelMarketplaceListingUseCase:
 
         # mark_cancelled AVANT la restitution des items pour anti-race
         self.marketplace_repository.mark_cancelled(listing_id)
-        self.inventory_repository.add_item(
-            player_id=listing.seller_player_id,
-            item_definition_id=listing.item_definition_id,
-            quantity=listing.quantity,
-        )
+        _release(listing, self.inventory_repository, self.gear_repository)
         return CancelResult(
             success=True,
             message=f"✅ Annonce annulée. Items restitués à votre inventaire.",
@@ -307,19 +374,17 @@ class ExpireMarketplaceListingsUseCase:
         self,
         inventory_repository: InventoryRepository,
         marketplace_repository: MarketplaceRepository,
+        gear_repository: GearRepository | None = None,
     ) -> None:
         self.inventory_repository = inventory_repository
         self.marketplace_repository = marketplace_repository
+        self.gear_repository = gear_repository or GearRepository(marketplace_repository.session)
 
     def execute(self) -> ExpireResult:
         expired = self.marketplace_repository.expire_overdue()
         items_returned: list[tuple[int, int, int]] = []
         for listing in expired:
-            self.inventory_repository.add_item(
-                player_id=listing.seller_player_id,
-                item_definition_id=listing.item_definition_id,
-                quantity=listing.quantity,
-            )
+            _release(listing, self.inventory_repository, self.gear_repository)
             items_returned.append(
                 (listing.seller_player_id, listing.item_definition_id, listing.quantity)
             )
