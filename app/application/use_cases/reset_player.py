@@ -4,7 +4,6 @@ from sqlalchemy import delete, or_, select, update
 from sqlalchemy.orm import Session
 
 from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel
-from app.infrastructure.db.models.equipment_model import PlayerEquipmentItemModel
 from app.infrastructure.db.models.gear_model import PlayerGearModel
 from app.infrastructure.db.models.equipment_set_model import (
     PlayerEquipmentSetItemModel,
@@ -36,7 +35,6 @@ from app.infrastructure.db.models.player_status_effect_model import (
     PlayerStatusEffectModel,
 )
 from app.infrastructure.db.models.event_model import EventParticipationModel
-from app.infrastructure.db.models.player_item_level_model import PlayerItemLevelModel
 from app.infrastructure.db.models.work_order_model import (
     PlayerArtisanMasteryModel,
     PlayerWorkOrderModel,
@@ -99,7 +97,6 @@ class ResetPlayerUseCase:
         # Tables 1:N — DELETE par player_id
         for model_cls in (
             PlayerInventoryItemModel,
-            PlayerEquipmentItemModel,
             PlayerGearModel,
             PlayerEquipmentSetModel,
             PlayerQuestStateModel,
@@ -120,7 +117,6 @@ class ResetPlayerUseCase:
             HelpSubscriberModel,
             PlayerStatusEffectModel,
             EventParticipationModel,
-            PlayerItemLevelModel,
             PlayerArtisanMasteryModel,
             PlayerWorkOrderModel,
         ):

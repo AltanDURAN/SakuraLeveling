@@ -13,8 +13,8 @@ Create Date: 2026-10-23 10:00:00
     de brocante, objets d'échange, commandes d'artisans, loadouts, puis les
     définitions elles-mêmes (le seed recrée les 23 nouvelles pièces).
 
-`player_equipment` et `player_item_levels` restent en place, vides, le temps
-que plus aucun code ne les lise ; une migration ultérieure les supprimera.
+`player_equipment` (l'ancien équipement porté) et `player_item_levels`
+(l'ancienne amélioration par définition) sont supprimées.
 """
 from typing import Sequence, Union
 
@@ -68,8 +68,10 @@ def upgrade() -> None:
     cats = ", ".join(f"'{c}'" for c in _GEAR_CATEGORIES)
     old = f"(SELECT id FROM item_definitions WHERE category IN ({cats}))"
     conn = op.get_bind()
-    conn.execute(sa.text("DELETE FROM player_equipment"))
-    conn.execute(sa.text("DELETE FROM player_item_levels"))
+    # L'ancien équipement porté et ses niveaux d'amélioration disparaissent
+    # avec leurs tables (remplacés par player_gear, exemplaire par exemplaire).
+    op.drop_table("player_equipment")
+    op.drop_table("player_item_levels")
     conn.execute(sa.text(f"DELETE FROM player_inventory_items WHERE item_definition_id IN {old}"))
     conn.execute(sa.text(f"DELETE FROM player_equipment_set_items WHERE item_definition_id IN {old}"))
     conn.execute(sa.text(f"DELETE FROM marketplace_listings WHERE item_definition_id IN {old}"))
@@ -84,6 +86,32 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    op.create_table(
+        "player_equipment",
+        sa.Column("id", sa.Integer(), primary_key=True),
+        sa.Column("player_id", sa.Integer(), sa.ForeignKey("players.id"), nullable=False),
+        sa.Column("slot", sa.String(50), nullable=False),
+        sa.Column("item_definition_id", sa.Integer(),
+                  sa.ForeignKey("item_definitions.id"), nullable=False),
+        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column("updated_at", sa.DateTime(), nullable=False),
+        sa.UniqueConstraint("player_id", "slot", name="uq_player_equipment_slot"),
+    )
+    op.create_index("ix_player_equipment_player_id", "player_equipment", ["player_id"])
+    op.create_index("ix_player_equipment_item_definition_id", "player_equipment", ["item_definition_id"])
+    op.create_table(
+        "player_item_levels",
+        sa.Column("id", sa.Integer(), primary_key=True),
+        sa.Column("player_id", sa.Integer(),
+                  sa.ForeignKey("players.id", ondelete="CASCADE"), nullable=False),
+        sa.Column("item_definition_id", sa.Integer(),
+                  sa.ForeignKey("item_definitions.id", ondelete="CASCADE"), nullable=False),
+        sa.Column("level", sa.Integer(), nullable=False),
+        sa.Column("updated_at", sa.DateTime(), nullable=False),
+        sa.UniqueConstraint("player_id", "item_definition_id", name="uq_player_item_level"),
+    )
+    op.create_index("ix_player_item_levels_player_id", "player_item_levels", ["player_id"])
+    op.create_index("ix_player_item_levels_item_definition_id", "player_item_levels", ["item_definition_id"])
     with op.batch_alter_table("marketplace_listings") as batch:
         batch.drop_column("gear_id")
     with op.batch_alter_table("trade_items") as batch:

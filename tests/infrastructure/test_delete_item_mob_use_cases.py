@@ -14,7 +14,7 @@ from app.infrastructure.db.base import Base
 from app.infrastructure.db.models.player_model import PlayerModel
 from app.infrastructure.db.models.item_model import ItemDefinitionModel
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel
-from app.infrastructure.db.models.equipment_model import PlayerEquipmentItemModel
+from app.infrastructure.db.models.gear_model import PlayerGearModel
 from app.infrastructure.db.models.shop_item_model import ShopItemModel
 from app.infrastructure.db.models.craft_model import (
     CraftRecipeModel, CraftRecipeIngredientModel,
@@ -92,8 +92,9 @@ def test_delete_item_removes_all_references(session):
     # Références au target dans plusieurs tables
     session.add(PlayerInventoryItemModel(player_id=p.id, item_definition_id=target.id,
                                          quantity=3, created_at=now, updated_at=now))
-    session.add(PlayerEquipmentItemModel(player_id=p.id, item_definition_id=target.id,
-                                         slot="arme_1", created_at=now, updated_at=now))
+    session.add(PlayerGearModel(player_id=p.id, item_definition_id=target.id,
+                                rarity="common", equipped_slot="arme_1",
+                                created_at=now, updated_at=now))
     session.add(ShopItemModel(item_definition_id=target.id, buy_price=10,
                               max_sell_price=5, min_sell_price=1, stock_threshold=100,
                               current_stock=0, enabled=True, created_at=now, updated_at=now))
@@ -116,8 +117,8 @@ def test_delete_item_removes_all_references(session):
         ItemDefinitionModel.code == "iron_sword")).scalar_one_or_none() is None
     assert session.execute(select(PlayerInventoryItemModel).where(
         PlayerInventoryItemModel.item_definition_id == target.id)).first() is None
-    assert session.execute(select(PlayerEquipmentItemModel).where(
-        PlayerEquipmentItemModel.item_definition_id == target.id)).first() is None
+    assert session.execute(select(PlayerGearModel).where(
+        PlayerGearModel.item_definition_id == target.id)).first() is None
     assert session.execute(select(ShopItemModel).where(
         ShopItemModel.item_definition_id == target.id)).first() is None
     # La recette produisant l'item + ses ingrédients sont parties

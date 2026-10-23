@@ -219,7 +219,6 @@ def _draw_slot_card(
     slot: str,
     equipment: PlayerEquipmentItem | None,
     two_handed_locked: bool = False,
-    item_levels: dict[int, int] | None = None,
 ) -> None:
     """Card individuelle pour un slot équipement."""
     accent = _SLOT_ACCENT.get(slot)
@@ -437,7 +436,6 @@ def compose_equipment_grid_page(
     *,
     page: int,  # 1 ou 2
     seed: int = 0,
-    item_levels: dict[int, int] | None = None,
 ) -> None:
     """Génère un PNG pour la page 1 (Principal) ou 2 (Secondaire)."""
     bg = _gradient_bg(WIDTH, GRID_HEIGHT)
@@ -477,7 +475,6 @@ def compose_equipment_grid_page(
         _draw_slot_card(
             bg, (x, y), (card_w, card_h),
             slot, equipment, two_handed_locked=locked,
-            item_levels=item_levels,
         )
 
     _draw_page_footer(bg, page_label)
@@ -492,7 +489,6 @@ def compose_equipment_summary_page(
     set_bonuses: SetBonuses,
     *,
     seed: int = 0,
-    item_levels: dict[int, int] | None = None,
 ) -> None:
     """Page 2 : résumé des stats apportées par l'équipement + bonus de
     panoplie actifs."""

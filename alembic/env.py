@@ -12,7 +12,7 @@ from app.infrastructure.db.models.progression_model import PlayerProgressionMode
 from app.infrastructure.db.models.resource_model import PlayerResourceModel
 from app.infrastructure.db.models.item_model import ItemDefinitionModel
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel
-from app.infrastructure.db.models.equipment_model import PlayerEquipmentItemModel
+from app.infrastructure.db.models.gear_model import PlayerGearModel  # noqa: F401
 from app.infrastructure.db.models.mob_model import MobDefinitionModel
 from app.infrastructure.db.models.craft_model import CraftRecipeModel, CraftRecipeIngredientModel
 from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel
@@ -47,7 +47,6 @@ from app.infrastructure.db.models.event_model import (  # noqa: F401
     EventParticipationModel,
     EventSchedulerStateModel,
 )
-from app.infrastructure.db.models.player_item_level_model import PlayerItemLevelModel  # noqa: F401
 from app.infrastructure.db.models.admin_command_model import AdminCommandModel  # noqa: F401
 from app.infrastructure.db.models.work_order_model import (  # noqa: F401
     PlayerArtisanMasteryModel,

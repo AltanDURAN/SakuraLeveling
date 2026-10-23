@@ -74,7 +74,6 @@ class StatsService:
         title_bonuses: TitleBonuses | None = None,
         set_bonuses: SetBonuses | None = None,
         status_bonuses: StatusEffectBonuses | None = None,
-        item_levels: dict[int, int] | None = None,
     ) -> Stats:
         base = self.base_stats_for(profile)
 
@@ -91,8 +90,7 @@ class StatsService:
 
         # ---- Équipement : % sur le socle, plat sur les stats secondaires ----
         # Équipement v2 : les stats d'une copie dépendent de SA rareté et de
-        # SA forge sacrée (cf. gear_service). `item_levels` (ancienne
-        # amélioration par définition) n'est plus lu.
+        # SA forge sacrée (cf. gear_service).
         for item in equipped_items:
             bonuses = gear_stats(
                 item.item_definition.stat_bonuses or {},
