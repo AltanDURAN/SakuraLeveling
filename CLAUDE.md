@@ -79,12 +79,12 @@ Ordre de lecture conseillé avant patch : `pyproject.toml` → `alembic.ini` →
   - **L'équipement, l'arbre et les panoplies s'expriment en POURCENTAGE de ce socle** pour ATK/DEF/PV (clés `attack_pct`, `defense_pct`, `max_hp_pct`). ⚠️ C'est le cœur de la refonte : un objet de fin de jeu offert à un débutant ne multiplie qu'un socle minuscule, il ne peut plus le rendre surpuissant.
   - **Les stats SECONDAIRES restent PLATES** (vitesse, esquive, crit, crit dmg, régén PV, mana max, régén mana) : un « pourcentage de pourcentage de crit » n'a aucun sens lisible. Elles viennent surtout de l'arbre.
   - ⚠️ **Les pourcentages de toutes les sources s'ADDITIONNENT** avant d'être appliqués UNE SEULE FOIS au socle (+20 % équipement et +15 % arbre = +35 %, pas ×1,20×1,15), et le cumul est plafonné (`MAX_PERCENT_BONUS`). Multiplier les sources rend l'équilibrage ingérable dès la quatrième.
-  - **Niveau requis sur l'équipement** (`level_requirement`) : bloque l'équipement sous le niveau. Protège le PARCOURS, pas l'équilibre instantané (le % s'en charge déjà) — sans lui, un nouveau à qui on offre une pièce ultime n'aurait plus jamais besoin d'en chercher.
+  - **Aucun niveau requis sur l'équipement** (équipement v2) : tout est en % du socle, une pièce reste utile toute l'aventure. La colonne `level_requirement` existe encore mais n'est plus lue.
   - **Courbe d'XP QUADRATIQUE** : `kills(niveau) = 8 + 0,547 × niveau` → 9 kills au niveau 1, 62 au niveau 99, **~3 500 pour le cap 100** (6 mois assidu à 1 an régulier). Avant c'était 16 kills constant à vie, donc l'écart entre un ancien et un nouveau ne se refermait JAMAIS. Désormais un nouveau gagne 4 niveaux pendant qu'un ancien en gagne 1 : il rattrape en NIVEAUX, l'ancien garde l'avance en TEMPS investi. Plancher de 8 kills au niveau 1 — les premiers niveaux ne tombent pas tout seuls.
   - **`LEVEL_CAP = 100`** : au cap, l'XP n'est plus accumulée (une barre qui se remplit pour rien est plus frustrante qu'un palier assumé).
   - **Récompenses de quêtes indexées sur le niveau** ([`quest_reward_service.py`](app/domain/services/quest_reward_service.py)) : le montant écrit dans `daily_quests.json` / `weekly_quests.json` est la récompense au **niveau 20**, puis × niveau / 20. ⚠️ Pas « montant de niveau 1 × niveau » : simulé, les quêtes valaient alors 2,5× les combats et le niveau 100 tombait en 63 jours.
   - **Simulateur de saison** : `scripts/simulate_season.py` — jours pour atteindre chaque niveau (contenu actuel vs zones complètes), or par source, prix d'une tenue complète par palier. Référence actuelle : ~260 j à 30 min/jour, ~150 j à 1 h/jour (3 min par combat). Or sur 2 ans ≈ 7,4 M (combats 20 %, quêtes 33 %, raid 13 %, daily 34 %). Une tenue complète coûte 3 à 7 % de l'or gagné en atteignant son niveau : prix des artisans volontairement non touchés.
-  - **Amélioration d'équipement** ([`item_upgrade_service.py`](app/domain/services/item_upgrade_service.py)) : une pièce va de **+0 à +10**, **+10 % de ses bonus par niveau** (+10 = ×2). Niveau stocké par (joueur, définition) dans `player_item_levels` (les objets sont fongibles : toutes les copies partagent le niveau). Gagné par **fusion** chez l'artisan qui fabrique la pièce (`UpgradeItemUseCase` : une copie identique + or = N × `upgrade_gold_pct_per_level` % du prix de fabrication pour passer à +N ; on ne sacrifie jamais une pièce portée → `copies_required = max(2, portées + 1)`) ou par la **forge sacrée** (+1 gratuit). ⚠️ Avant : `× (1 + niveau)`, +10 valait ×11 — ne pas y revenir.
+  - **Équipement v2** : rareté, fusion, passifs, forge sacrée par exemplaire — cf. la section « Système d'équipement (v2) ». L'ancienne amélioration +0 → +10 par définition (`player_item_levels`, `UpgradeItemUseCase`) a été SUPPRIMÉE.
   - **Reset de saison** : `scripts/season_reset.py` (aperçu par défaut, `--confirm "SAISON 1"`, sauvegarde SQLite avant écriture) → `reset_season` ([`reset_season.py`](app/application/use_cases/reset_season.py)) : `ResetPlayerUseCase` pour chaque joueur + vidage des tables de saison + action `reset_rank_roles` en file (le bot remet tout le monde au Rang F). Décision : TOUT repart à zéro, seule l'identité Discord reste.
   - **UN SEUL joueur de référence** pour tout le calibrage : [`reference_player.py`](app/domain/services/reference_player.py) — répartition équilibrée des points + équipement attendu `expected_gear_percent(niveau)` : **rampe de 0 % au niveau 1 à `EXPECTED_GEAR_PERCENT` (50 %) au niveau `GEAR_RAMP_END_LEVEL` (15)**. ⚠️ Avant la rampe (audit oct. 2026), tout était calibré sur +50 % dès le niveau 1 : un compte neuf perdait 100 % de ses combats, même contre un slime (désormais palier 1). `restat_mobs`, `restat_bosses`, `calibrate_rank_trials` et `ItemPowerService` en dépendent TOUS. Changer cette définition recalibre tout de façon cohérente ; chaque script avait avant sa propre idée du joueur type, et elles avaient divergé.
   - ⚠️ **Piège de la saison 1** : un build équilibré a désormais **ATK ≈ DEF** (même coût par point). L'ancienne règle « ATK de l'ennemi = 45 % de l'ATK du joueur » place donc l'ennemi SOUS la défense du joueur → plancher de 1 dégât et impasse jusqu'au tour maximum. L'attaque d'un mob ou d'un boss se calcule sur la **défense et les PV** du joueur, jamais sur son attaque.
@@ -147,14 +147,14 @@ Noms FRANÇAIS (sans accents) — c'est ce que le joueur tape. Liste tirée du c
 | `/titre [joueur]`, `/titre_actif` | `title_cog` | Titres débloqués / titre affiché |
 | `/inventaire`, `/equipement`, `/equipement_liste` | `player_cog` | Inventaire (consommables + ressources), équipement en image 2 pages, liste des équipements |
 | `/equiper`, `/desequiper <slot\|all>`, `/equiper_panoplie`, `/creer_set`, `/equiper_set`, `/supprimer_set`, `/panoplie` | `player_cog`, `panoplie_cog` | Équipement (placement automatique), panoplies, loadouts |
-| `/forgeron`, `/artisan` | `artisan_cog` | Artisans : fabriquer (commande + attente) et **améliorer** (fusion, +0 → +10) |
+| `/forgeron`, `/artisan` | `artisan_cog` | Artisans : **fusion** de deux copies identiques → rareté suivante |
 | `/marchand` | `shop_cog` | Achat uniquement |
 | `/voyante` | `seer_cog` | Ysaline lit un talent élémentaire caché (prix croissant, 1re offerte) |
 | `/utiliser <consommable>`, `/duel @joueur`, `/bestiaire` | `player_cog`, `bestiaire_cog` | Consommable, duel 1v1 (ladder, sans enjeu), catalogue des monstres |
 | `/boss moi`, `/boss historique`, `/boss list` | `world_boss_cog` | Raid hebdomadaire (contribution, historique, catalogue) |
 | `/payer`, `/echange`, `/brocante annonces\|mes_annonces\|vendre\|acheter\|annuler` | `player_cog`, `trade_cog`, `brocante_cog` | Or, échanges, place de marché (5 %) |
 | `/classement <catégorie>`, `/chad` | `leaderboard_cog`, `chad_cog` | Classements, rôle @chad |
-| (boucle automatique) | `encounter_cog`, `event_cog`, `world_boss_cog`, `artisan_cog`, `admin_bridge_cog` | Spawn d'encounters, événements, raid 21 h, travaux d'artisans, file `admin_commands` |
+| (boucle automatique) | `encounter_cog`, `event_cog`, `world_boss_cog`, `admin_bridge_cog` | Spawn d'encounters, événements, raid 21 h, file `admin_commands` |
 | `/admin give\|set\|remove <ressource>` | `admin_cog` | **Admin** — or, XP, points d'arbre, **points de stats**, PV/mana courants, série daily |
 | `/admin set_level`, `give_item`, `remove_item`, `heal_full`, `set_rank`, `set_kills`, `force_equip`, `force_unequip`, `set_duel_rank`, `reset_player` | `admin_cog` | **Admin** — gestion des joueurs (`target: discord.Member`) |
 | `/admin spawn_encounter [mob] [élément]`, `start_encounter`, `end_encounter`, `/event spawn`, `/boss spawn\|stop` | `admin_cog`, `event_cog`, `world_boss_cog` | **Admin** — tests et débogage |
@@ -190,27 +190,34 @@ Pour un nouveau cog : commandes joueur → hériter du mixin. Admin → groupe d
 
 - `app/shared/formatters.py` : `format_int(value)` — séparateurs d'espaces FR (1500 → "1 500"). Utilisé partout (embeds + use cases). Centralisé pour éviter la duplication.
 
-## Système d'équipement et de craft
+## Système d'équipement (v2, saison 1 — octobre 2026)
 
-- **7 emplacements** définis dans `EquipmentSlot` (`app/shared/enums.py`) — système SIMPLIFIÉ (août 2026, remplace les 12 slots d'avant) :
+Refonte complète, règles FIXES décidées avec l'auteur. Tout l'ancien équipement a été supprimé (migration `9b3e5f7a2c41`) ; plus de fabrication.
+
+- **Une pièce par monstre** : `mob_definitions.gear_item_code` = la pièce qu'il PORTE (arme, armure, casque, bouclier ; sinon un accessoire). 23 pièces, 23 passifs.
+- **Exemplaires, pas d'objets fongibles** : table `player_gear` (une ligne par copie : `rarity`, `forge_level`, `equipped_slot`, `listed`, `source`) — [`GearRepository`](app/infrastructure/db/repositories/gear_repository.py). `EquipmentRepository` n'est plus qu'une VUE des copies portées (même interface qu'avant) ; un index unique partiel `(player_id, equipped_slot)` interdit deux pièces dans un emplacement. Les pièces ne sont JAMAIS dans `player_inventory_items`.
+- **Règles pures** : [`gear_service.py`](app/domain/services/gear_service.py) — 6 raretés (commun → mythique), `PRIMARY_MULTIPLIER` 1/1,5/2/3/4/5,5 sur ATK/DEF/PV %, `SECONDARY_MULTIPLIER` 1/1,25/1,5/2/2,5/3 sur le reste (vitesse tronquée à l'entier), `gear_stats(base, rarité, forge)` = SEULE formule des stats d'une copie (StatsService, rendus, admin). Les stats dans `items.json` sont celles du COMMUN.
+- **Drop** : 0 ou 1 pièce par kill et par survivant, un seul tirage (`roll_drop`, `DROP_RATES_PCT` 6 / 2,5 / 0,8 / 0,2 / 0,03 / 0,004 %) dans `EncounterService._roll_gear_drop` ; ×1,10 avec le passif Trouvaille. Les « Chance Drop » de l'arbre et des titres ne s'y appliquent PAS (ressources uniquement). Un mythique est annoncé dans le salon (`encounter_cog._announce_mythics`). Simulé : 1re épique ≈ J30, tenue légendaire ≈ J180, ~10 % des assidus trouvent un mythique dans l'année.
+- **Fusion** ([`FuseGearUseCase`](app/application/use_cases/fuse_gear.py), écran [`fusion_view.py`](app/bot/views/fusion_view.py)) : 2 copies de la même pièce ET de la même rareté + or (`FUSION_GOLD` 200 / 1 000 / 6 000 / 40 000) + matériaux de la FAMILLE du monstre (`family_drops.json`, `FUSION_MATERIALS` 5 / 15 / 40 / 100) → 1 copie de la rareté suivante. Borak (arme, bouclier, tête, corps) / Elna (accessoires), selon `categories` d'`artisans.json`. Le légendaire ne fusionne pas ; le mythique est drop-only. La nouvelle copie garde la forge la plus haute et l'emplacement porté. Atomique (rollback si les matériaux manquent). La remise de maîtrise ne porte que sur l'or.
+- **Passifs** ([`gear_passives.py`](app/domain/services/gear_passives.py)) : un par pièce, une pièce par passif, actif dès l'ÉPIQUE (`PASSIVE_MIN_RARITY`), n'évolue pas. Appliqués via `CombatPassives.gear` (`resolve_party_passives` / `with_gear_passives`) dans `PartyCombatService` et `DuelCombatService` (tests : [`test_gear_passives_combat.py`](tests/domain/test_gear_passives_combat.py)). Règles : effets sur l'ennemi NON cumulables ; « une fois par combat » une seule fois ; effets croissants plafonnés ; pas de réaction en chaîne (riposte / coup double ne redéclenchent rien) ; économie (Trouvaille, Chasseur d'essences) personnelle et jamais en duel.
+- **Forge sacrée** (événement) : +1 niveau (0 → 10) sur UNE copie choisie, +1 % de ses stats par niveau (`FORGE_BONUS_PER_LEVEL`).
+- **Une pièce, une fois** : une même définition ne se porte qu'une fois (armes et accessoires compris) ; demander une meilleure copie d'une pièce portée la remplace dans son emplacement. **Aucun niveau requis.**
+- **Échanges / brocante** : une pièce se cède en tant qu'exemplaire (`trade_items.gear_id`, `marketplace_listings.gear_id`, référence UI `gear:<id>` — `gear_ref` / `parse_gear_ref`). En vente, la copie est CONSIGNÉE par `player_gear.listed` : elle reste au vendeur mais `list_owned` l'exclut (ni portée, ni fusionnée, ni échangée) ; transférée à l'achat, libérée à l'annulation / l'expiration. Toutes les raretés s'échangent.
+- **Visuels mythiques** ([`mythic_fx.py`](app/bot/rendering/mythic_fx.py)) : cadre animé (GIF, 12 images) sur la carte dans `/equipement_liste` et la grille de `/equipement` — `compose_card_grid_page` / `compose_equipment_grid_page` renvoient alors un `.gif` ; aura sur la bannière `/profil` (`mythic_pieces`).
+- **Joueur de référence** : `GEAR_RARITY_CURVE` dans `reference_player.py` (rareté moyenne attendue par niveau) — restat_mobs / restat_bosses / calibrate_rank_trials en dépendent.
+- **Images** : `assets/items/<code>.png`, prompts dédiés dans `ITEM_IMAGE_PROMPTS` ([`image_gen.py`](webapp/admin/image_gen.py)).
+- **Admin** : `/admin give_item` / `remove_item` (rareté + forge pour une pièce) ; webapp : passif sur la fiche objet, exemplaires sur la fiche joueur (donner, équiper, supprimer).
+
+### Emplacements et placement
+
+- **7 emplacements** définis dans `EquipmentSlot` (`app/shared/enums.py`) :
   - `tete` ×1 · `corps` ×1 · `accessoire_1/2/3` (constante `ACCESSORY_SLOTS`) · `arme_1`, `arme_2` (constante `WEAPON_SLOTS`)
-  - **Plus de main droite / main gauche** : armes ET boucliers partagent les deux emplacements d'arme.
-- **Deux notions distinctes, à ne pas confondre** :
-  - `EquipmentSlot` = l'emplacement PHYSIQUE où une pièce est portée (`accessoire_2`, `arme_1`…) — c'est ce qui est stocké dans `player_equipment.slot` ;
-  - `ItemSlotType` = ce qu'un ITEM déclare (`tete`, `corps`, `accessoire`, `arme`) — stocké dans `item_definitions.equipment_slot`. Le mapping vit dans `SLOTS_FOR_ITEM_TYPE`.
-- **Item fields** (sur `ItemDefinition`) :
-  - `equipment_slot: str | None` — le TYPE d'emplacement, jamais un emplacement numéroté ; `None` = non équipable (ressource, consommable).
-  - `requires_two_hands: bool` — la pièce occupe `arme_1` ET verrouille `arme_2`.
-  - `family: str` — famille de panoplie. Vide = hors panoplie.
-- **Règle des mains** : une pièce 1 main occupe UN emplacement, on peut donc en porter deux (deux armes, deux boucliers, ou un de chaque). Une pièce 2 mains les occupe toutes les deux. Porter deux fois le même item exige **deux exemplaires** en inventaire.
-- **Placement automatique** : le joueur ne choisit pas d'emplacement. La décision vit dans **une seule fonction pure**, `plan_equip(item_def, occupied)` ([`equip_item.py`](app/application/use_cases/equip_item.py)), qui renvoie l'emplacement cible + les emplacements libérés. Le use case l'applique en base, et le **preview de `/equiper` s'en sert pour simuler le diff de stats** — les deux ne doivent JAMAIS refaire ce calcul chacun de leur côté (c'est ce qui avait fait diverger le preview sur le cas 2-mains). Tests : [`test_equip_planner.py`](tests/domain/test_equip_planner.py).
-- **Catégories équipables** : constante `EQUIPABLE_CATEGORIES` (`enums.py`) — source unique. `/inventaire` les EXCLUT (il ne montre que consommables + ressources), `/equipement_liste` ne montre qu'elles. Toute vue qui groupe par catégorie (`shop_view`, `recipe_list_view`, `equipment_list_view`, `inventory_embeds`) doit partir de là ou de `ItemCategory` — surtout pas d'une liste recopiée.
-- **Catégories d'items** (`ItemCategory`, simplifiées de 13 → 7) : `resource`, `consumable`, `arme`, `bouclier`, `tete`, `corps`, `accessoire`. Tables `LEGACY_CATEGORY_MAP` / `LEGACY_SLOT_MAP` conservées pour la migration du contenu ancien.
-- **Anti-power-creep** : on ne gagne pas de stats au craft, uniquement à l'équipement. Bonus de stats volontairement modestes.
-- **Commandes** :
-  - `/forgeron` (armes, boucliers, tête, corps) · `/artisan` (accessoires) — cf. section PNJ
-  - `/equiper <item>` : plus de paramètre de slot — le placement est automatique
-  - `/equipement [target]` : **2 pages** en image PNG (Pillow) — les 7 emplacements en grille 4×2, puis le résumé des stats + panoplies actives. Cf. [`equipment_image.py`](app/bot/rendering/equipment_image.py). Emplacement vide → "VIDE", `arme_2` verrouillée par une 2-mains → "🔒 ARME À 2 MAINS".
+  - Armes ET boucliers partagent les deux emplacements d'arme.
+- **Deux notions distinctes** : `EquipmentSlot` = l'emplacement PHYSIQUE (stocké dans `player_gear.equipped_slot`) ; `ItemSlotType` = ce qu'un ITEM déclare (`item_definitions.equipment_slot`). Mapping : `SLOTS_FOR_ITEM_TYPE`.
+- **Item fields** : `equipment_slot` (type, `None` = non équipable), `requires_two_hands` (occupe `arme_1` ET verrouille `arme_2`), `family` (panoplie), `passive`.
+- **Placement automatique** : une seule fonction pure, `plan_equip(item_def, occupied)` ([`equip_item.py`](app/application/use_cases/equip_item.py)) ; le preview de `/equiper` s'en sert pour simuler le diff — ne JAMAIS refaire ce calcul ailleurs. Tests : [`test_equip_planner.py`](tests/domain/test_equip_planner.py).
+- **Catégories équipables** : constante `EQUIPABLE_CATEGORIES` (`enums.py`) — source unique.
+- **Commandes** : `/equiper <pièce>` (autocomplete `gear:<id>`, copies libres), `/equipement [joueur]` (2 pages image), `/equipement_liste` (une carte par copie : rareté, stats de la copie, passif ✨/🔒, ✅ si portée).
 
 ## Système de panoplies (set bonuses)
 
@@ -228,7 +235,7 @@ Pour un nouveau cog : commandes joueur → hériter du mixin. Admin → groupe d
 
 ## Système de trade entre joueurs
 
-- **Modèle DB** : tables `trades` (initiator/target_player_id, status, or offerts, expires_at) et `trade_items` (offered_by initiator/target, item_definition_id, quantity).
+- **Modèle DB** : tables `trades` (initiator/target_player_id, status, or offerts, expires_at) et `trade_items` (offered_by initiator/target, item_definition_id, quantity, `gear_id` pour une pièce d'équipement — cf. équipement v2).
 - **Statuts** : `pending`, `accepted`, `refused`, `cancelled`, `expired`, `failed` (ressources manquantes à l'accept).
 - **Sécurité atomique** : `AcceptTradeUseCase` revérifie les ressources des **deux** joueurs au moment de l'acceptation, pas seulement à la proposition. Si l'un manque de quoi que ce soit → status `failed`, aucun déplacement.
 - **TTL** : 5 minutes par défaut. Au-delà, status devient `expired` à la prochaine tentative d'acceptation OU à la prochaine itération du cleanup loop côté bot (`TradeCog.expire_loop`, `tasks.loop(minutes=1)` qui appelle `TradeRepository.expire_overdue_pending` — bulk UPDATE WHERE status=pending AND expires_at < now). Idempotent.
@@ -243,26 +250,21 @@ Pour un nouveau cog : commandes joueur → hériter du mixin. Admin → groupe d
 - **Progression séquentielle** : un joueur rang F très puissant n'obtient pas D d'un coup, il doit passer E d'abord.
 - **Échec** ⇒ cooldown (`retry_cooldown_hours`, 6 h par défaut, action_key `rank_trial`). Les PV réels ne sont jamais touchés : l'épreuve est un duel rituel, pas une sortie de farm.
 
-## Système de PNJ : forgeron, artisane, marchand
+## Système de PNJ : forgeron, artisane, marchand, voyante
 
-Refonte d'août 2026 — `/fabriquer`, `/forger`, `/recettes`, `/recettes_forge`, `/boutique` et `/acheter` ont été REMPLACÉS par trois personnages. On ne tape plus de code d'objet : on parle à quelqu'un.
+On ne tape plus de code d'objet : on parle à quelqu'un.
 
 | Commande | PNJ | Rôle |
 |---|---|---|
-| `/forgeron` | **Borak** | Forge `arme`, `bouclier`, `tete`, `corps` |
-| `/artisan` | **Elna** | Confectionne les `accessoire` |
+| `/forgeron` | **Borak** | FUSIONNE `arme`, `bouclier`, `tete`, `corps` |
+| `/artisan` | **Elna** | FUSIONNE les `accessoire` |
 | `/marchand` | **Sorn** | Vend les articles du shop (achat uniquement) |
+| `/voyante` | **Ysaline** | Révèle un talent élémentaire |
 
-- **Répartition des recettes** : déduite de la CATÉGORIE de l'objet produit, via `categories` dans [`artisans.json`](app/infrastructure/content/artisans.json). Les catégories des deux artisans doivent couvrir `EQUIPABLE_CATEGORIES` sans recouvrement — sinon une recette devient inaccessible ou apparaît en double.
-- **Prix et délai dérivent de la PUISSANCE de la pièce** — jamais saisis à la main. `ItemPowerService.marginal_power(stat_bonuses)` mesure ce que l'objet apporte à un joueur de base (les items portent des deltas, et le power score n'est pas linéaire : on compare donc « avec » et « sans »). Puis `ArtisanService` : `or = base + coef × puissance^exposant` (superlinéaire — le haut de gamme coûte disproportionnellement cher, c'est le **premier vrai puits d'or du jeu**) et `durée = base + coef × puissance`, plafonnée.
-- **Maîtrise relationnelle** : `player_artisan_mastery(player_id, artisan_code, orders_completed)`. 4 paliers (Apprenti → Légendaire) qui débloquent un **plafond de puissance**, une remise en or et un délai réduit. Deux joueurs voient donc le même PNJ à des paliers différents. Un travail ANNULÉ ne fait pas monter la maîtrise.
-- **Une commande active par (joueur, artisan)** — tenu par un **index unique PARTIEL** en base (`uq_player_active_work_order`, `WHERE status IN ('in_progress','ready')`), pas seulement par une vérification applicative : deux clics simultanés ne peuvent pas créer deux commandes. Forge et confection tournent en parallèle.
-- **Le paiement est immédiat, la livraison non** : ingrédients + or débités au lancement ; l'objet n'entre en inventaire qu'à la RÉCUPÉRATION. Annuler rend les ingrédients et `cancel_refund_pct` % de l'or (50 par défaut).
-- **Désactiver l'attente** : mettre `duration_pct: 0` sur les paliers → travail instantané, la commande naît déjà `ready`. Aucun code à toucher.
-- **Boucle de complétion** : `ArtisanCog.ready_loop` (1 min) passe les travaux échus en `ready` et prévient dans le salon d'origine. Idempotente (`notified`), survit au redémarrage.
-- **Rendu** : [`npc_panel.py`](app/bot/rendering/npc_panel.py) — portrait + fiche, deux modes (`kind="purchase"` pour le marchand, travail sinon). Portraits sous `assets/npcs/` (générés Cloudflare, DA du jeu).
-- **Achat** : `BuyFromShopUseCase` inchangé, seule la façade a changé. Toujours pas de vente joueur→shop (décision V2).
-- ⚠️ **`/fabriquer_panoplie` et `/forger_panoplie` ont été RETIRÉS** : fabriquer une panoplie entière d'un coup contredit la règle « un travail à la fois ». `PanoplieCraftsUseCase` est conservé mais **non câblé** (même statut que `GatherResourceUseCase`).
+- **Équipement v2** : Borak et Elna ne FABRIQUENT plus (fabrication, commandes, attente, boucle `ready_loop`, `ArtisanWorkUseCase`, `ArtisanView` : supprimés). Ils fusionnent — cf. section équipement. Les catégories des deux artisans (`categories` dans [`artisans.json`](app/infrastructure/content/artisans.json)) doivent couvrir `EQUIPABLE_CATEGORIES` sans recouvrement.
+- **Maîtrise relationnelle** : `player_artisan_mastery(player_id, artisan_code, orders_completed)`, +1 par fusion. 4 paliers (Apprenti → Légendaire) ; la remise en or s'applique à la fusion. Les tables `player_work_orders` et les recettes (`craft_recipes`) existent encore mais ne servent plus (même statut que `GatherResourceUseCase`, comme `PanoplieCraftsUseCase`).
+- **Rendu** : [`npc_panel.py`](app/bot/rendering/npc_panel.py) — portrait + fiche. Portraits sous `assets/npcs/` (générés Cloudflare, DA du jeu).
+- **Achat** : `BuyFromShopUseCase`. Toujours pas de vente joueur→shop (décision V2).
 - Modification d'`artisans.json` ⇒ **restart du bot** (cache module-level du loader).
 
 ## Système d'arbre de compétences

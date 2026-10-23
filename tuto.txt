@@ -241,7 +241,36 @@ LES 7 EMPLACEMENTS
     deux boucliers ou un de chaque. Une pièce à deux mains occupe les deux.
     Tu ne choisis jamais l'emplacement : la pièce va dans le premier
     emplacement libre de son type, sinon elle remplace la première.
-    Porter deux fois le même objet demande d'en posséder deux exemplaires.
+    Une même pièce ne se porte qu'UNE fois (armes et accessoires compris).
+
+D'OÙ VIENNENT LES PIÈCES
+    Chaque monstre porte UNE pièce précise : son arme, son armure, son
+    casque, son bouclier, sinon un accessoire (le /bestiaire la montre). À
+    chaque victoire, il peut la lâcher (environ 9,5 % de chance), dans une
+    seule rareté tirée au sort :
+        ⚪ Commun 6 % · 🟢 Peu commun 2,5 % · 🔵 Rare 0,8 %
+        🟣 Épique 0,2 % · 🟠 Légendaire 0,03 % · 🔴 Mythique 0,004 %
+    Le butin d'équipement est personnel : chaque survivant fait son tirage.
+    Une pièce MYTHIQUE est annoncée dans le salon.
+
+LA RARETÉ
+    Chaque copie a sa rareté. Elle multiplie les stats de la pièce :
+        stat principale (ATK/DEF/PV en %)  ×1 · ×1,5 · ×2 · ×3 · ×4 · ×5,5
+        stats secondaires                  ×1 · ×1,25 · ×1,5 · ×2 · ×2,5 · ×3
+    (du commun au mythique). Une pièce mythique a un cadre animé dans
+    /equipement et /equipement_liste, et une aura entoure ton avatar sur
+    /profil.
+
+LE PASSIF
+    Chaque pièce a son passif, unique (aucune autre pièce ne l'a). Il ne
+    s'active qu'à partir de l'ÉPIQUE et ne change plus ensuite. Règles :
+        • un effet sur l'ennemi ne se cumule pas (deux « Cri affaiblissant »
+          dans un groupe = −5 %, pas −10 %) ;
+        • un effet « une fois par combat » ne se déclenche qu'une fois ;
+        • un effet qui grandit pendant le combat est plafonné ;
+        • une riposte ou un coup double ne déclenche pas d'autre effet ;
+        • les passifs d'économie (butin, essences) sont personnels et ne
+          jouent jamais en duel ; tous les autres jouent aussi en duel.
 
 CE QUE DONNE L'ÉQUIPEMENT
     • ATK / DEF / PV en POURCENTAGE de ton socle (tes points de stats) : une
@@ -252,32 +281,41 @@ CE QUE DONNE L'ÉQUIPEMENT
       s'ADDITIONNENT avant d'être appliqués une seule fois, avec un plafond
       de +300 %.
 
-NIVEAU REQUIS
-    Chaque pièce a un niveau requis : en dessous, impossible de l'équiper.
+Aucun niveau requis : tout est en % de ton socle, une pièce reste utile
+toute l'aventure.
 
-AMÉLIORATION (+0 → +10)
-    Chaque niveau d'amélioration ajoute +10 % des bonus de la pièce : une
-    pièce à +10 vaut le double d'une pièce neuve. Deux façons de monter :
-        • la FUSION chez l'artisan qui fabrique la pièce (voir /forgeron) ;
-        • la FORGE SACRÉE, un événement qui offre un niveau gratuit.
-    Le niveau appartient à l'objet : toutes tes copies de la même pièce le
-    partagent.
+FUSION (rareté suivante)
+    Deux copies de la MÊME pièce, de la MÊME rareté, + de l'or + des
+    matériaux de la famille du monstre = une copie de la rareté suivante.
+    Chez Borak (armes, boucliers, tête, corps) ou Elna (accessoires).
+        vers Peu commun : 200 or + 5 matériaux
+        vers Rare       : 1 000 or + 15 matériaux
+        vers Épique     : 6 000 or + 40 matériaux
+        vers Légendaire : 40 000 or + 100 matériaux
+    Le légendaire ne se fusionne plus ; le mythique ne s'obtient qu'au combat.
 
-/equiper <objet>
-    Équipe un objet de ton inventaire (autocomplété). Si un emplacement est
-    déjà pris, un aperçu du gain ou de la perte de stats s'affiche avant de
-    confirmer.
+FORGE SACRÉE (+0 → +10)
+    Un événement : pendant quelques minutes, chacun peut renforcer UNE de
+    ses pièces d'un niveau. Chaque niveau ajoute +1 % aux stats de cette
+    copie. Une fusion garde le niveau de forge le plus haut des deux copies.
+
+/equiper <pièce>
+    Équipe une de tes pièces (autocomplétée, avec sa rareté). Si un
+    emplacement est déjà pris, un aperçu du gain ou de la perte de stats
+    s'affiche avant de confirmer.
 
 /desequiper <emplacement|all>
     Retire la pièce d'un emplacement, ou tout l'équipement avec « all ».
 
 /equipement [joueur]
-    L'équipement porté, en deux pages d'image : les 7 emplacements (avec le
-    niveau d'amélioration 🔨+N de chaque pièce), puis le résumé des stats
-    apportées et des panoplies actives.
+    L'équipement porté, en deux pages d'image : les 7 emplacements (avec la
+    rareté et le niveau de forge 🔨+N de chaque pièce), puis le résumé des
+    stats apportées et des panoplies actives.
 
 /equipement_liste [joueur]
-    Tous les équipements possédés, portés ou non, par catégorie.
+    Toutes tes pièces, portées (✅) ou non, par catégorie : rareté, stats de
+    la copie, passif (✨ actif, 🔒 dès l'épique). Une pièce en vente à la
+    brocante n'y apparaît pas.
 
 /inventaire [joueur]
     Consommables et ressources (les équipements sont dans /equipement_liste).
@@ -359,7 +397,8 @@ PV ET MANA
         • 60 secondes entre deux défis.
 
 /bestiaire
-    Le catalogue des monstres : stats, élément, récompenses et butin.
+    Le catalogue des monstres : stats, élément, récompenses, butin et la
+    pièce d'équipement que porte chacun (avec son passif).
 
 WORLD BOSS — /boss moi, /boss historique, /boss list
     Un boss apparaît chaque semaine. Inscris-toi avec 🤝 avant 20 h 50 : le
@@ -389,39 +428,23 @@ WORLD BOSS — /boss moi, /boss historique, /boss list
 --------------------------------------------------------------------------------
 
 /forgeron
-    BORAK, le forgeron : armes, boucliers, pièces de tête et de corps.
-    Tu ne tapes aucun code : une catégorie, puis un objet ; la fiche montre
-    ses stats, les ingrédients (✅ / ❌), le prix et le temps de travail.
-
-    FABRIQUER
-        • Les ingrédients ET l'or sont pris au lancement.
-        • Le prix et la durée montent avec la puissance de la pièce.
-        • Une seule commande à la fois chez chaque artisan ; le bot te
-          prévient dans le salon quand c'est prêt. Reviens et « Récupérer ».
-        • Annuler rend les ingrédients et la moitié de l'or.
-
-    AMÉLIORER (bouton « 🔨 Améliorer »)
-        Choisis une pièce que tu possèdes en double : Borak fusionne une
-        copie identique pour la faire monter d'un niveau, immédiatement.
-        • Prix : (niveau visé) × 50 % du prix de fabrication de la pièce.
-        • Tu gardes toujours les pièces que tu portes : porter deux fois la
-          même arme demande une troisième copie pour fusionner.
-        • Maximum +10.
+    BORAK, le forgeron, FUSIONNE tes armes, boucliers, pièces de tête et de
+    corps. Choisis une pièce dont tu as au moins deux copies de même
+    rareté : la fiche montre le coût (or + matériaux de la famille du
+    monstre), les stats avant / après, puis « Fusionner ». Immédiat.
 
     SA MAÎTRISE (Apprenti → Compagnon → Maître → Légendaire)
-        Chaque commande RÉCUPÉRÉE le fait progresser avec toi : il accepte
-        des pièces plus puissantes, fait une remise et travaille plus vite.
-        Une commande annulée ne compte pas.
+        Chaque fusion le fait progresser avec toi : il te fait une remise
+        sur l'or.
 
 /artisan
     ELNA, l'artisane : les ACCESSOIRES. Même fonctionnement, sa propre
-    maîtrise et sa propre file : une forge et une confection peuvent
-    tourner en même temps.
+    maîtrise.
 
 /marchand
     SORN, le marchand : un rayon, un article, la quantité (×1 / ×5 / ×10),
     acheter. Achat uniquement. Le butin des monstres n'est pas chez lui : il
-    sert aux artisans.
+    sert aux fusions.
 
 /voyante
     YSALINE, la voyante, lit ton TALENT caché dans l'élément de ton choix.
@@ -446,9 +469,15 @@ WORLD BOSS — /boss moi, /boss historique, /boss list
           plus ce qu'il proposait, rien ne bouge.
         • Un échange expire au bout de 5 minutes.
         • Un seul échange en attente par paire de joueurs.
+        • Une pièce d'équipement s'échange en tant que COPIE précise (sa
+          rareté, sa forge). Tu ne proposes que des pièces libres ; tu peux
+          demander une pièce que l'autre porte (elle lui est retirée).
 
 /brocante annonces · mes_annonces · vendre · acheter · annuler
-    La place de marché entre joueurs (commission de 5 %).
+    La place de marché entre joueurs (commission de 5 %). Toutes les
+    raretés se vendent, mythiques comprises. Une pièce en vente reste à toi
+    mais ne peut être ni portée, ni fusionnée, ni échangée tant que
+    l'annonce court ; elle te revient si tu annules ou si l'annonce expire.
 
 --------------------------------------------------------------------------------
 1.9 — CLASSEMENTS ET DIVERS
@@ -493,8 +522,11 @@ INTERFACE WEB D'ADMINISTRATION
     Fixe le niveau (XP remise à 0). Ne donne pas les points de ce niveau :
     ajoute-les avec /admin give.
 
-/admin give_item | remove_item <joueur> <objet> <quantité>
-    Ajoute ou retire des objets de l'inventaire.
+/admin give_item | remove_item <joueur> <objet> <quantité> [rareté] [forge]
+    Ajoute ou retire des objets. Pour une pièce d'équipement : crée des
+    copies de la rareté et du niveau de forge choisis (20 max), ou retire
+    les copies les moins précieuses d'abord (celles en vente ne sont pas
+    touchées).
 
 /admin heal_full <joueur>
     PV et mana au maximum.
