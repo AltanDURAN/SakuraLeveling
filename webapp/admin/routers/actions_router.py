@@ -2,7 +2,7 @@
 
 Deux familles d'actions :
 
-1. **Directes** (or, XP, niveau, points de compétence, items, panoplies, PV,
+1. **Directes** (or, XP, niveau, points de compétence, items, PV,
    cooldowns, buffs, reset) : la webapp écrit directement en base, l'effet est
    immédiat.
 2. **Déléguées au bot** (spawn de monstre / boss / événement, arrêt d'un
@@ -14,7 +14,6 @@ Deux familles d'actions :
 from __future__ import annotations
 
 import logging
-from collections import Counter
 from urllib.parse import quote_plus
 
 from fastapi import APIRouter, Depends, Request, HTTPException, status
@@ -36,7 +35,6 @@ from app.infrastructure.db.repositories.player_status_effect_repository import (
     PlayerStatusEffectRepository,
 )
 from app.infrastructure.db.session import get_db_session
-from app.infrastructure.sets.set_loader import list_definitions as list_set_definitions
 from webapp.admin.auth import AdminUser, require_admin
 from webapp.admin._shared import get_templates
 
@@ -105,20 +103,6 @@ async def actions_page(
         for code, cfg in event_config_loader.all_configs().items()
     ]
 
-    # Familles de panoplie = familles distinctes parmi les items ÉQUIPABLES.
-    # Compte les pièces par famille + nom/icône depuis sets.json si dispo.
-    equip_items = [it for it in items if (it.equipment_slot or None) and (it.family or "")]
-    counts = Counter(it.family for it in equip_items)
-    sets_def = list_set_definitions()
-    families = [
-        {
-            "code": code,
-            "name": (sets_def.get(code) or {}).get("name", code),
-            "icon": (sets_def.get(code) or {}).get("icon", "🧩"),
-            "count": n,
-        }
-        for code, n in sorted(counts.items())
-    ]
 
     return get_templates().TemplateResponse(
         request, "admin/actions.html",
@@ -133,7 +117,6 @@ async def actions_page(
                 for p in profiles
             ],
             "items": [{"code": it.code, "name": it.name} for it in items],
-            "families": families,
             "mobs": sorted(mobs, key=lambda m: (m["family"], m["name"])),
             "bosses": bosses,
             "events": events,
@@ -254,54 +237,6 @@ async def give_item(
             inv.add_item(pid, item.id, qty)
             msg = f"{qty} × {item_code} ajouté"
     return RedirectResponse(f"/admin/actions?message={quote_plus(msg)}", status_code=303)
-
-
-@router.post("/panoplie")
-async def panoplie_action(
-    request: Request,
-    user: AdminUser = Depends(require_admin),
-):
-    """Donne OU retire une panoplie complète : 1 exemplaire de CHAQUE pièce
-    équipable de la famille (armures, accessoires, armes, boucliers).
-    `action` = 'give' (ajoute) ou 'take' (retire ce que le joueur possède)."""
-    form = await request.form()
-    target = form.get("target", "")
-    family = (form.get("family", "") or "").strip()
-    action = (form.get("action", "give") or "give").strip()
-    if not family:
-        return RedirectResponse("/admin/actions?error=Panoplie+non+sp%C3%A9cifi%C3%A9e", status_code=303)
-
-    with get_db_session() as session:
-        pid = _resolve_player_id(session, target)
-        if pid is None:
-            return RedirectResponse(f"/admin/actions?error=Joueur+%60{target}%60+introuvable", status_code=303)
-        item_repo = ItemRepository(session)
-        inv_repo = InventoryRepository(session)
-        # Toutes les pièces ÉQUIPABLES de cette famille (1 de chaque).
-        pieces = [
-            it for it in item_repo.list_all()
-            if (it.family or "") == family and (it.equipment_slot or None)
-        ]
-        if not pieces:
-            return RedirectResponse(
-                f"/admin/actions?error=Aucune+pi%C3%A8ce+%C3%A9quipable+pour+la+panoplie+{quote_plus(family)}",
-                status_code=303,
-            )
-        if action == "take":
-            # remove_item renvoie False si le joueur n'a pas la pièce → on
-            # compte celles réellement retirées.
-            count = sum(1 for it in pieces if inv_repo.remove_item(pid, it.id, 1))
-            verb = "retirée"
-        else:
-            for it in pieces:
-                inv_repo.add_item(pid, it.id, 1)
-            count = len(pieces)
-            verb = "donnée"
-
-    _logger.info("Admin %s %s panoplie '%s' (%d pieces) to/from %s",
-                 user.discord_id, action, family, count, target)
-    msg = quote_plus(f"Panoplie {family} {verb} ({count} pièces)")
-    return RedirectResponse(f"/admin/actions?message={msg}", status_code=303)
 
 
 # ---------------------------------------------------------------------------

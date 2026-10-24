@@ -1,177 +1,146 @@
-"""Calcule les bonus de panoplie (set bonus) à partir des items équipés.
+"""Bonus de panoplie — SAISON 1 (octobre 2026), règle décidée avec l'auteur.
 
-Une panoplie est un ensemble d'items partageant la même `family`
-(ex : "iron", "slime"). Plus un joueur équipe d'items de la même
-panoplie, plus le bonus est élevé.
+Plus de familles d'objets : la panoplie, c'est l'HARMONIE des raretés portées.
 
-Le `tiers` est une liste ordonnée : on prend le PLUS HAUT palier dont
-`min_pieces` est ≤ au nombre d'items équipés. Pas d'addition de paliers
-("progressif" = un palier remplace le précédent, pas qu'il s'ajoute).
+  • Paliers à 2 / 4 / 7 pièces (`TIERS`), ×1 / ×1,5 / ×3 du bonus simple.
+  • Comptage CUMULATIF : une pièce compte pour sa rareté ET toutes les raretés
+    en dessous. 5 rares + 1 épique + 1 légendaire = 7 « commun ou mieux »,
+    7 « peu commun ou mieux », 7 « rare ou mieux », 2 « épique ou mieux »,
+    1 « légendaire ». Chaque rareté atteint son propre palier, et les bonus
+    s'additionnent. Améliorer une pièce ne peut donc JAMAIS faire baisser le
+    bonus (avec des groupes stricts, 7 rares → 6 rares + 1 épique le divisait
+    par deux).
+  • Chaque rareté n'apporte que sa MARCHE (`RARITY_STEP`, l'écart entre son
+    multiplicateur de stat principale et celui de la rareté du dessous) : un
+    set d'une seule rareté vaut donc exactement « bonus simple × rareté ×
+    palier » (7 légendaires en attaque : 2 % × 4 × 3 = +24 %).
+  • Une pièce à DEUX MAINS compte pour 2 (une seule pièce à farmer et à
+    fusionner pour deux places) — c'est aussi ce qui permet d'atteindre 7
+    pièces avec elle.
+  • UN SEUL type de bonus, choisi par le joueur (`/panoplie`) : tous les
+    paliers atteints s'additionnent dans ce type.
 
-Exemple — panoplie "iron" avec tiers à 2/4 et bonus +2/+5 def (seuls la
-tête, le corps et les deux mains comptent — les accessoires sont hors
-panoplie) :
-    - 1 pièce équipée → aucun bonus
-    - 2 pièces        → +2 def (palier 2)
-    - 3 pièces        → +2 def (toujours palier 2)
-    - 4 pièces        → +5 def (palier 4, maximum)
-
-Quand le joueur déséquipe et tombe sous un palier, le bonus s'estompe
-automatiquement au calcul suivant — rien à persister, c'est dérivé.
+Dérivé, jamais persisté (seul le TYPE choisi l'est : `players.panoplie_bonus`).
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from app.domain.entities.player_equipment_item import PlayerEquipmentItem
-from app.shared.enums import PANOPLIE_SLOTS, WEAPON_SLOTS
+from app.domain.services.gear_service import RARITY_ORDER, rarity_index
+
+#: (pièces minimum, multiplicateur du bonus simple), du plus haut au plus bas.
+TIERS: tuple[tuple[int, float], ...] = ((7, 3.0), (4, 1.5), (2, 1.0))
+
+#: Marche de chaque rareté (somme cumulée = multiplicateur de stat principale
+#: de la rareté : 1 / 1,5 / 2 / 3 / 4 / 5,5).
+RARITY_STEP: dict[str, float] = {
+    "common": 1.0, "uncommon": 0.5, "rare": 0.5,
+    "epic": 1.0, "legendary": 1.0, "mythic": 1.5,
+}
 
 
-@dataclass
-class ActiveSetBonus:
-    """Détail d'une panoplie active (utile pour l'affichage)."""
+@dataclass(frozen=True)
+class PanoplieType:
+    code: str
+    label: str
+    emoji: str
+    #: Champ de `SetBonuses` alimenté.
+    field: str
+    #: Bonus SIMPLE (palier 2, en commun).
+    base: float
+    #: "%" (ATK/DEF/PV, en % du socle) ou "" (stat plate).
+    unit: str
 
-    family: str
-    family_name: str  # "Acier"
-    family_icon: str  # "🛡️"
-    pieces_equipped: int
-    next_tier_pieces: int | None  # combien manque pour le prochain palier
-    active_bonus_type: str | None  # "defense_flat", etc. — None si < palier 1
-    active_bonus_value: int
+
+#: Ordre = ordre d'affichage. Ni vitesse (+1 = énorme), ni or / XP (économie).
+PANOPLIE_TYPES: dict[str, PanoplieType] = {t.code: t for t in (
+    PanoplieType("attack", "Attaque", "⚔️", "attack_percent", 2.0, "%"),
+    PanoplieType("defense", "Défense", "🛡️", "defense_percent", 2.0, "%"),
+    PanoplieType("max_hp", "PV", "❤️", "max_hp_percent", 2.0, "%"),
+    PanoplieType("crit_chance", "Chance de critique", "🎯", "crit_chance_flat", 1.0, ""),
+    PanoplieType("crit_damage", "Dégâts critiques", "💥", "crit_damage_flat", 4.0, ""),
+    PanoplieType("dodge", "Esquive", "🌀", "dodge_flat", 1.0, ""),
+    PanoplieType("hp_regeneration", "Régénération", "✨", "hp_regeneration_flat", 3.0, ""),
+)}
+DEFAULT_PANOPLIE_TYPE = "attack"
+
+
+def panoplie_type(code: str | None) -> PanoplieType:
+    return PANOPLIE_TYPES.get(code or "", PANOPLIE_TYPES[DEFAULT_PANOPLIE_TYPE])
+
+
+@dataclass(frozen=True)
+class RarityTier:
+    """Une rareté et ce qu'elle apporte (pour l'affichage)."""
+    rarity: str
+    pieces: int                 # pièces de cette rareté OU MIEUX (2 mains = 2)
+    multiplier: float           # 0 si sous le premier palier
+    next_tier: int | None       # pièces nécessaires au palier suivant
+    value: float                # contribution au bonus, dans le type choisi
 
 
 @dataclass
 class SetBonuses:
-    """Agrégation des bonus de toutes les panoplies actives."""
+    """Bonus de panoplie à appliquer (lus par StatsService)."""
 
-    defense_flat: int = 0
     dodge_flat: int = 0
     crit_chance_flat: int = 0
     crit_damage_flat: int = 0
     hp_regeneration_flat: int = 0
-    attack_flat: int = 0
     speed_flat: int = 0
-    max_hp_flat: int = 0
-    # SAISON 1 : comme l'équipement, une panoplie agit en POURCENTAGE du socle
-    # pour les trois stats de base. Les `*_flat` structurels ci-dessus ne sont
-    # plus lus par StatsService — ils subsistent pour le contenu ancien.
     attack_percent: float = 0.0
     defense_percent: float = 0.0
     max_hp_percent: float = 0.0
     mana_max_flat: int = 0
     mana_regeneration_flat: int = 0
-    # Détail par panoplie pour affichage dans /equipement page 3
-    active_sets: list[ActiveSetBonus] = field(default_factory=list)
+    bonus_type: str = DEFAULT_PANOPLIE_TYPE
+    #: Bonus total dans l'unité du type (en % pour ATK/DEF/PV), pour l'affichage.
+    total: float = 0.0
+    tiers: list[RarityTier] = field(default_factory=list)
+
+
+def tier_for(pieces: int) -> tuple[float, int | None]:
+    """(multiplicateur, pièces du palier suivant) pour un nombre de pièces."""
+    reached = next((mult for need, mult in TIERS if pieces >= need), 0.0)
+    nxt = next((need for need, _ in reversed(TIERS) if pieces < need), None)
+    return reached, nxt
+
+
+def piece_weight(item) -> int:
+    return 2 if getattr(item.item_definition, "requires_two_hands", False) else 1
 
 
 class SetBonusService:
-    """Compute set bonuses from equipped items + JSON definitions."""
+    def aggregate(self, equipped_items, bonus_type: str | None = None) -> SetBonuses:
+        kind = panoplie_type(bonus_type)
+        rarities = [
+            (getattr(item, "rarity", "common") or "common", piece_weight(item))
+            for item in equipped_items or []
+        ]
+        bonuses = SetBonuses(bonus_type=kind.code)
+        total = 0.0
+        for rarity in RARITY_ORDER:
+            idx = rarity_index(rarity)
+            pieces = sum(w for r, w in rarities if rarity_index(r) >= idx)
+            if pieces == 0:
+                break
+            mult, nxt = tier_for(pieces)
+            value = kind.base * RARITY_STEP[rarity] * mult
+            total += value
+            bonuses.tiers.append(RarityTier(rarity.value, pieces, mult, nxt, value))
 
-    _SUPPORTED_TYPES = (
-        "defense_flat", "dodge_flat", "crit_chance_flat", "crit_damage_flat",
-        "hp_regeneration_flat", "attack_flat", "speed_flat", "max_hp_flat",
-        "mana_max_flat", "mana_regeneration_flat",
-    )
-
-    def __init__(self, sets_definitions: dict[str, dict]) -> None:
-        self.sets_definitions = sets_definitions
-
-    def aggregate(
-        self, equipped_items: list[PlayerEquipmentItem],
-    ) -> SetBonuses:
-        # Compte les pièces de panoplie par famille.
-        #
-        # ⚠️ SEULS les emplacements de PANOPLIE comptent (tête, corps et les
-        # deux mains) : les accessoires sont volontairement hors panoplie, d'où
-        # des paliers à 2 et 4 pièces.
-        #
-        # Règles pour les mains : on compte les `item_definition_id` UNIQUES
-        # (porter deux fois la même arme ne vaut qu'1 point) ; une 2-mains
-        # occupe les deux emplacements et vaut donc 2 points.
-        weapon_slot_values = {s.value for s in WEAPON_SLOTS}
-        panoplie_slot_values = {s.value for s in PANOPLIE_SLOTS}
-
-        armor_counts: dict[str, int] = {}
-        weapon_unique_ids: dict[str, set[int]] = {}
-        weapon_2h_extras: dict[str, int] = {}
-
-        for item in equipped_items:
-            family = (item.item_definition.family or "").strip()
-            if not family or item.slot not in panoplie_slot_values:
-                continue
-            if item.slot in weapon_slot_values:
-                weapon_unique_ids.setdefault(family, set()).add(
-                    item.item_definition.id,
-                )
-                if item.item_definition.requires_two_hands:
-                    weapon_2h_extras[family] = weapon_2h_extras.get(family, 0) + 1
-            else:
-                armor_counts[family] = armor_counts.get(family, 0) + 1
-
-        counts: dict[str, int] = {}
-        for family in (
-            set(armor_counts) | set(weapon_unique_ids) | set(weapon_2h_extras)
-        ):
-            counts[family] = (
-                armor_counts.get(family, 0)
-                + len(weapon_unique_ids.get(family, set()))
-                + weapon_2h_extras.get(family, 0)
-            )
-
-        bonuses = SetBonuses()
-
-        for family, count in counts.items():
-            set_def = self.sets_definitions.get(family)
-            if set_def is None:
-                continue  # famille définie sur l'item mais pas dans sets.json
-
-            tiers = sorted(
-                set_def.get("tiers", []),
-                key=lambda t: int(t.get("min_pieces", 0)),
-            )
-            if not tiers:
-                continue
-
-            # Palier le plus haut atteint (None si pas de palier 1 atteint)
-            active_tier = None
-            next_tier_pieces = None
-            for tier in tiers:
-                if count >= int(tier["min_pieces"]):
-                    active_tier = tier
-                else:
-                    next_tier_pieces = int(tier["min_pieces"])
-                    break
-
-            active_type = None
-            active_value = 0
-            if active_tier is not None:
-                t_type = active_tier.get("type")
-                t_value = int(active_tier.get("value", 0))
-                if t_type in self._SUPPORTED_TYPES and t_value > 0:
-                    setattr(
-                        bonuses, t_type,
-                        getattr(bonuses, t_type) + t_value,
-                    )
-                    active_type = t_type
-                    active_value = t_value
-
-            bonuses.active_sets.append(
-                ActiveSetBonus(
-                    family=family,
-                    family_name=set_def.get("name", family),
-                    family_icon=set_def.get("icon", "✨"),
-                    pieces_equipped=count,
-                    next_tier_pieces=next_tier_pieces,
-                    active_bonus_type=active_type,
-                    active_bonus_value=active_value,
-                )
-            )
-
-        # Tri stable : panoplies actives (pieces ≥ 2) d'abord, puis par
-        # nombre de pièces décroissant. Pratique pour l'affichage.
-        bonuses.active_sets.sort(
-            key=lambda s: (-(1 if s.active_bonus_type else 0), -s.pieces_equipped),
-        )
-
+        if kind.unit == "%":
+            # StatsService lit des FRACTIONS (0,02 = +2 %), comme l'arbre.
+            total = round(total, 1)
+            setattr(bonuses, kind.field, total / 100.0)
+        else:
+            total = round(total)
+            setattr(bonuses, kind.field, int(total))
+        bonuses.total = total
         return bonuses
+
+
+def format_panoplie_value(kind: PanoplieType, value: float) -> str:
+    v = int(value) if float(value).is_integer() else value
+    return f"+{v}{' %' if kind.unit else ''} {kind.emoji}"

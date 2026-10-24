@@ -205,6 +205,14 @@ class PlayerRepository:
         player_model.updated_at = datetime.now(UTC)
         self.session.commit()
 
+    def set_panoplie_bonus(self, player_id: int, bonus_type: str) -> None:
+        player_model = self.session.get(PlayerModel, player_id)
+        if player_model is None:
+            return
+        player_model.panoplie_bonus = bonus_type
+        player_model.updated_at = datetime.now(UTC)
+        self.session.commit()
+
     def get_combat_tactics(self, player_ids: list[int]) -> dict[int, str]:
         """Tactiques de plusieurs joueurs en une requête (combats de groupe)."""
         if not player_ids:
@@ -310,6 +318,7 @@ class PlayerRepository:
             skill_slot_1=player_model.skill_slot_1,
             skill_slot_2=player_model.skill_slot_2,
             combat_tactic=getattr(player_model, "combat_tactic", None) or "egoiste",
+            panoplie_bonus=getattr(player_model, "panoplie_bonus", None) or "attack",
         )
 
         progression = PlayerProgression(

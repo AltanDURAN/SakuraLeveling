@@ -1,4 +1,4 @@
-"""Loader des PNJ artisans — pattern identique à set_loader / title_loader.
+"""Loader des PNJ artisans — pattern identique à title_loader.
 
 Charge `artisans.json` une fois et le garde en cache module-level. Toute
 modification du fichier demande un redémarrage du bot (comme les zones et les

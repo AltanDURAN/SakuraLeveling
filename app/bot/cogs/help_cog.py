@@ -42,7 +42,7 @@ CATEGORIES: list[tuple[str, str, str, set[str]]] = [
     ("🎒", "Équipement & inventaire",
      "Gère ton stuff, tes panoplies et tes loadouts perso.",
      {"inventaire", "equipement", "equipement_liste", "equiper", "desequiper",
-      "equiper_panoplie", "panoplie", "creer_set", "equiper_set", "supprimer_set"}),
+      "panoplie", "creer_set", "equiper_set", "supprimer_set"}),
     ("🛠️", "Artisans",
      "Fusionne deux copies d'une pièce pour la rendre plus rare.",
      {"forgeron", "artisan"}),

@@ -42,7 +42,7 @@ def resolve_player_stats(
     Charge en interne :
       • skill_bonuses : depuis PlayerSkillAllocationRepository + SkillTreeService
       • title_bonuses : depuis PlayerTitleRepository + title_loader
-      • set_bonuses   : depuis les items équipés + set_loader
+      • set_bonuses   : depuis les raretés portées + le type choisi
 
     Puis appelle StatsService.calculate_player_stats avec les 3 bonus.
     """
@@ -52,7 +52,7 @@ def resolve_player_stats(
     skill_bonuses = SkillTreeService(get_skill_tree_definition()).aggregate_bonuses(allocations)
 
     title_bonuses = resolve_title_bonuses(session, player_id)
-    set_bonuses = resolve_set_bonuses(equipped_items)
+    set_bonuses = resolve_set_bonuses(equipped_items, profile.player.panoplie_bonus)
     status_bonuses = resolve_status_effects(session, player_id)
 
     svc = stats_service or StatsService()
@@ -122,7 +122,7 @@ def resolve_player_stats_bulk(
             skill_bonuses=skill_service.aggregate_bonuses(
                 allocations_by_player.get(pid, {})
             ),
-            set_bonuses=resolve_set_bonuses(equipped),
+            set_bonuses=resolve_set_bonuses(equipped, profile.player.panoplie_bonus),
             title_bonuses=title_service.aggregate(title_defs),
             status_bonuses=status_service.aggregate(status_by_player.get(pid, [])),
         )

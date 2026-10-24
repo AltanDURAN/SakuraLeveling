@@ -156,7 +156,7 @@ class DeleteEquipmentSetUseCase:
 
 
 class EquipSavedSetUseCase:
-    """Applique un set sauvegardé. Comportement aligné sur EquipPanoplie :
+    """Applique un set sauvegardé. Comportement :
     - conserve les pièces déjà équipées (même item_def + même slot)
     - déséquipe les slots tenus par autre chose, équipe la cible
     - si une 2-mains est sélectionnée pour arme_1, arme_2 est vidé

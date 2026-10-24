@@ -120,7 +120,7 @@ class EncounterService:
             )
 
             title_bonuses = resolve_title_bonuses(session, profile.player.id)
-            set_bonuses = resolve_set_bonuses(equipped_items)
+            set_bonuses = resolve_set_bonuses(equipped_items, profile.player.panoplie_bonus)
             status_bonuses = resolve_status_effects(session, profile.player.id)
 
             stats = StatsService().calculate_player_stats(
@@ -257,7 +257,7 @@ class EncounterService:
                 title_bonuses = title_bonus_service.aggregate(title_defs)
                 title_bonuses_by_player[participant.player_id] = title_bonuses
 
-                set_bonuses = resolve_set_bonuses(equipped_items)
+                set_bonuses = resolve_set_bonuses(equipped_items, profile.player.panoplie_bonus)
                 status_bonuses = resolve_status_effects(session, participant.player_id)
 
                 stats = StatsService().calculate_player_stats(

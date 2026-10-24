@@ -59,16 +59,6 @@ ITEM_TYPE_FOR_SLOT: dict[str, str] = {
     for slot in slots
 }
 
-# Panoplies : SEULS ces emplacements comptent (les accessoires en sont exclus),
-# d'où des paliers à 2 et 4 pièces.
-PANOPLIE_SLOTS: list[EquipmentSlot] = [
-    EquipmentSlot.TETE,
-    EquipmentSlot.CORPS,
-    EquipmentSlot.ARME_1,
-    EquipmentSlot.ARME_2,
-]
-PANOPLIE_TIERS: tuple[int, ...] = (2, 4)
-
 # Ordre canonique d'affichage.
 SLOT_ORDER: list[str] = [
     EquipmentSlot.TETE.value,

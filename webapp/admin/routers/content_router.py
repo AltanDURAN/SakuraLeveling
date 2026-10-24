@@ -1,4 +1,4 @@
-"""Routes admin pour le contenu JSON-backed (classes, skill tree, panoplies,
+"""Routes admin pour le contenu JSON-backed (classes, skill tree,
 titres, quêtes, world bosses) + le DB-backed (crafts).
 
 Listings : read complet via filtres + tri.
@@ -41,8 +41,6 @@ _logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin", tags=["admin-content"])
 
 CONTENT_DIR = Path(__file__).resolve().parents[3] / "app" / "infrastructure" / "content"
-
-
 
 
 def _load_json(filename: str):
@@ -288,70 +286,6 @@ async def skill_tree_list(
             {"label": "Coûts", "key": "costs"},
             {"label": "Prérequis", "key": "prereqs"},
             {"label": "Effets", "key": "effects"},
-        ],
-        rows=filtered,
-    )
-
-
-# ============ Panoplies ============
-@router.get("/panoplies", response_class=HTMLResponse)
-async def panoplies_list(
-    request: Request,
-    user: AdminUser = Depends(require_admin),
-    q: str | None = None,
-):
-    data = _load_json("sets.json") or {}
-    # sets.json contient un dict family → {tiers, name, description}
-    # ou parfois une liste de codes. On gère les 2 formats.
-    rows = []
-    if isinstance(data, dict):
-        for family, info in data.items():
-            tiers_str = ""
-            if isinstance(info, dict):
-                tiers = info.get("tiers", {}) or info.get("bonuses", {})
-                if isinstance(tiers, dict):
-                    tiers_str = " | ".join(
-                        f"{k}: {v}" if not isinstance(v, dict)
-                        else f"{k}: " + ", ".join(f"{kk}+{vv}" for kk, vv in v.items())
-                        for k, v in tiers.items()
-                    )
-            rows.append({
-                "family": family,
-                "name": info.get("name", family) if isinstance(info, dict) else family,
-                "tiers": tiers_str or "—",
-                "__edit_url__": f"/admin/panoplies/{family}/edit",
-                "__delete_url__": f"/admin/panoplies/{family}/delete",
-            })
-    elif isinstance(data, list):
-        for family in data:
-            rows.append({
-                "family": family, "name": family, "tiers": "—",
-                "__edit_url__": f"/admin/panoplies/{family}/edit",
-                "__delete_url__": f"/admin/panoplies/{family}/delete",
-            })
-
-    # Compte le nombre d'items par famille
-    with get_db_session() as session:
-        all_items = ItemRepository(session).list_all()
-    item_count_by_family: dict[str, int] = {}
-    for it in all_items:
-        if it.family:
-            item_count_by_family[it.family] = item_count_by_family.get(it.family, 0) + 1
-    for r in rows:
-        r["items_count"] = item_count_by_family.get(r["family"], 0)
-
-    filtered = _filter_rows(rows, q)
-    return _render(
-        request, user,
-        title="Panoplies", icon="🌸",
-        new_url="/admin/panoplies/new", new_label="Nouvelle panoplie",
-        source_label="Définitions : app/infrastructure/content/sets.json — pièces taggées via item.family — ⚠️ restart bot requis",
-        filter_q=q or "",
-        columns=[
-            {"label": "Famille", "key": "family"},
-            {"label": "Nom", "key": "name"},
-            {"label": "Items", "key": "items_count"},
-            {"label": "Paliers / bonus", "key": "tiers"},
         ],
         rows=filtered,
     )
@@ -703,114 +637,6 @@ async def bosses_create(request: Request, user: AdminUser = Depends(require_admi
     }
     append_to_list("boss_definitions.json", entry)
     return RedirectResponse(f"/admin/world-bosses?q={code}", status_code=303)
-
-
-# --- Panoplies ---
-# Types de bonus de set supportés par SetBonusService (libellés FR pour l'UI).
-SET_BONUS_TYPES = {
-    "defense_flat": "Défense (plat)",
-    "dodge_flat": "Esquive (plat)",
-    "crit_chance_flat": "Chance critique (plat)",
-    "crit_damage_flat": "Dégâts critiques (plat)",
-    "hp_regeneration_flat": "Régénération PV (plat)",
-    "attack_flat": "Attaque (plat)",
-    "speed_flat": "Vitesse (plat)",
-    "max_hp_flat": "PV max (plat)",
-    "mana_max_flat": "Mana max (plat)",
-    "mana_regeneration_flat": "Régénération mana (plat)",
-}
-# Panoplies : 4 emplacements comptent (tête, corps, 2 mains) → 2 paliers.
-_TIER_COUNTS = (2, 4)
-
-
-def _build_set_tiers(fd: dict) -> list[dict]:
-    """Construit la liste tiers [{min_pieces, type, value}] au schéma réel de
-    sets.json, depuis les champs tier_{n}_type / tier_{n}_value du formulaire."""
-    tiers = []
-    for n in _TIER_COUNTS:
-        t_type = (fd.get(f"tier_{n}_type", "") or "").strip()
-        t_value = _parse_int(fd.get(f"tier_{n}_value"), 0)
-        if t_type in SET_BONUS_TYPES and t_value:
-            tiers.append({"min_pieces": n, "type": t_type, "value": t_value})
-    return tiers
-
-
-def _set_tiers_to_form(tiers) -> dict:
-    """Inverse : remplit tier_{n}_type / tier_{n}_value pour le pré-remplissage
-    de l'édition. Accepte le format liste réel."""
-    out = {}
-    by_pieces = {}
-    if isinstance(tiers, list):
-        for t in tiers:
-            if isinstance(t, dict) and "min_pieces" in t:
-                by_pieces[int(t["min_pieces"])] = t
-    for n in _TIER_COUNTS:
-        t = by_pieces.get(n, {})
-        out[f"tier_{n}_type"] = t.get("type", "")
-        out[f"tier_{n}_value"] = t.get("value", "")
-    return out
-
-
-def _panoplie_form_ctx(user, form_data, errors, edit_code=None):
-    return {
-        "user": user, "errors": errors, "form_data": form_data,
-        "edit_code": edit_code, "bonus_types": SET_BONUS_TYPES,
-        "tier_counts": _TIER_COUNTS,
-    }
-
-
-@router.get("/panoplies/new", response_class=HTMLResponse)
-async def panoplies_new_form(request: Request, user: AdminUser = Depends(require_admin)):
-    return get_templates().TemplateResponse(
-        request, "admin/panoplies/form.html",
-        context=_panoplie_form_ctx(user, {}, {}),
-    )
-
-
-@router.post("/panoplies")
-async def panoplies_create(request: Request, user: AdminUser = Depends(require_admin)):
-    fd = {k: str(v) for k, v in (await request.form()).items()}
-    errors = {}
-    family = fd.get("family", "").strip().lower()
-    if not family:
-        errors["family"] = "Famille (code) requise."
-    if not fd.get("name", "").strip():
-        errors["name"] = "Nom requis."
-    existing = _writer_load("sets.json", default={}) or {}
-    if isinstance(existing, dict) and family in existing:
-        errors["family"] = f"Famille `{family}` existe déjà."
-    if errors:
-        return get_templates().TemplateResponse(
-            request, "admin/panoplies/form.html",
-            context=_panoplie_form_ctx(user, fd, errors), status_code=400,
-        )
-    entry = {
-        "name": fd.get("name", "").strip() or family.capitalize(),
-        "description": fd.get("description", "").strip(),
-        "icon": fd.get("icon", "").strip(),
-        "color": fd.get("color", "").strip() or "#888888",
-        "tiers": _build_set_tiers(fd),
-    }
-    if not isinstance(existing, dict):  # legacy liste → dict
-        existing = {k: {} for k in (existing or [])}
-    existing[family] = entry
-    from webapp.admin.json_writer import atomic_write_json
-    atomic_write_json("sets.json", existing)
-    git_sync.push_content(["app/infrastructure/content/sets.json"],
-                          f"admin: panoplie {family} créée")
-    return RedirectResponse(f"/admin/panoplies?q={family}", status_code=303)
-
-
-# --- Skill Tree node ---
-# Types d'effets supportés par SkillTreeService (pour l'éditeur d'effets).
-SKILL_EFFECT_TYPES = [
-    "atk_flat", "def_flat", "hp_max_flat",
-    "atk_percent", "def_percent", "hp_max_percent",
-    "crit_chance_flat", "crit_damage_flat", "dodge_flat", "speed_flat",
-    "hp_regeneration_flat", "mana_max_flat", "mana_regeneration_flat",
-    "xp_drop_percent", "gold_drop_percent",
-    "drop_rate_multiplier",
-]
 
 
 @router.get("/skill-tree/new", response_class=HTMLResponse)
@@ -1290,55 +1116,6 @@ async def bosses_update(
     return RedirectResponse(f"/admin/world-bosses?q={code}", status_code=303)
 
 
-# --- Panoplies (dict-keyed) ---
-@router.get("/panoplies/{family}/edit", response_class=HTMLResponse)
-async def panoplies_edit_form(
-    family: str, request: Request, user: AdminUser = Depends(require_admin),
-):
-    data = _writer_load("sets.json", default={}) or {}
-    if not isinstance(data, dict) or family not in data:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Panoplie `{family}` introuvable.")
-    entry = data[family] or {}
-    fd = {
-        "family": family,
-        "name": entry.get("name", "") if isinstance(entry, dict) else "",
-        "description": entry.get("description", "") if isinstance(entry, dict) else "",
-        "icon": entry.get("icon", "") if isinstance(entry, dict) else "",
-        "color": entry.get("color", "") if isinstance(entry, dict) else "",
-    }
-    # Pré-remplit tier_{n}_type / tier_{n}_value depuis la liste réelle.
-    fd.update(_set_tiers_to_form(entry.get("tiers") if isinstance(entry, dict) else None))
-    return get_templates().TemplateResponse(
-        request, "admin/panoplies/form.html",
-        context=_panoplie_form_ctx(user, fd, {}, edit_code=family),
-    )
-
-
-@router.post("/panoplies/{family}")
-async def panoplies_update(
-    family: str, request: Request, user: AdminUser = Depends(require_admin),
-):
-    data = _writer_load("sets.json", default={}) or {}
-    if not isinstance(data, dict) or family not in data:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Panoplie `{family}` introuvable.")
-    fd = {k: str(v) for k, v in (await request.form()).items()}
-    # Conserve icon/color existants si le form ne les renvoie pas vides.
-    old = data[family] if isinstance(data[family], dict) else {}
-    entry = {
-        "name": fd.get("name", "").strip() or family.capitalize(),
-        "description": fd.get("description", "").strip(),
-        "icon": fd.get("icon", "").strip() or old.get("icon", ""),
-        "color": fd.get("color", "").strip() or old.get("color", "#888888"),
-        "tiers": _build_set_tiers(fd),
-    }
-    data[family] = entry
-    from webapp.admin.json_writer import atomic_write_json
-    atomic_write_json("sets.json", data)
-    git_sync.push_content(["app/infrastructure/content/sets.json"],
-                          f"admin: panoplie {family} modifiée")
-    return RedirectResponse(f"/admin/panoplies?q={family}", status_code=303)
-
-
 # --- Skill Tree node ---
 @router.get("/skill-tree/{code}/edit", response_class=HTMLResponse)
 async def skills_edit_form(
@@ -1568,18 +1345,6 @@ async def bosses_delete(code: str, user: AdminUser = Depends(require_admin)):
 async def quests_delete(scope: str, code: str, user: AdminUser = Depends(require_admin)):
     filename = "weekly_quests.json" if scope == "weekly" else "daily_quests.json"
     return _delete_from_list(filename, code, "Quête", f"/admin/quests?scope={scope}")
-
-
-@router.post("/panoplies/{family}/delete")
-async def panoplies_delete(family: str, user: AdminUser = Depends(require_admin)):
-    data = _writer_load("sets.json", default={}) or {}
-    if not isinstance(data, dict) or family not in data:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Panoplie `{family}` introuvable.")
-    del data[family]
-    atomic_write_json("sets.json", data)
-    git_sync.push_content(["app/infrastructure/content/sets.json"],
-                          f"admin: panoplie {family} supprimée")
-    return RedirectResponse("/admin/panoplies", status_code=303)
 
 
 @router.post("/skill-tree/{code}/delete")

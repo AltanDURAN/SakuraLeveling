@@ -72,7 +72,7 @@ def append_to_list(filename: str, entry: dict) -> None:
 
 
 def upsert_to_dict(filename: str, key: str, entry: Any) -> None:
-    """Pour les JSON dict (sets.json par ex)."""
+    """Pour les JSON dict (farm_zones.json par ex)."""
     data = load_json(filename, default={})
     if not isinstance(data, dict):
         raise ValueError(f"{filename} n'est pas un dict JSON")

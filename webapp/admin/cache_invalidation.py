@@ -21,7 +21,6 @@ def invalidate_content_caches() -> None:
     # tree expose reset_cache().
     targets = [
         ("app.infrastructure.skill_tree.skill_tree_loader", "reset_cache"),
-        ("app.infrastructure.sets.set_loader", "clear_cache"),
         ("app.infrastructure.titles.title_loader", "clear_cache"),
         ("app.infrastructure.world_boss.boss_definition_loader", "clear_cache"),
         ("app.infrastructure.elements.element_skill_loader", "clear_cache"),

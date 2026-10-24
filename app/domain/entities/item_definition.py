@@ -26,9 +26,8 @@ class ItemDefinition:
     # Vrai pour les armes/boucliers à 2 mains : ils occupent `arme_1` ET
     # verrouillent `arme_2`.
     requires_two_hands: bool = False
-    # Famille / panoplie de l'item (ex : "iron", "slime", "gobelin"). Vide
-    # pour les items hors panoplie. Sert à calculer les bonus de set
-    # (cf. SetBonusService et `sets.json`).
+    # Ancienne famille de panoplie (saison 1 : les panoplies viennent des
+    # raretés portées, cf. set_bonus_service). Plus lue ; conservée en base.
     family: str = ""
     # Niveau MINIMUM pour équiper la pièce. Les bonus étant des pourcentages du
     # socle, un objet de fin de jeu ne rend déjà pas un débutant surpuissant —

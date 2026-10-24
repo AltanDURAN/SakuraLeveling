@@ -153,7 +153,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 resolve_status_effects,
             )
             title_bonuses = resolve_title_bonuses(session, profile.player.id)
-            set_bonuses = resolve_set_bonuses(equipped_items)
+            set_bonuses = resolve_set_bonuses(equipped_items, profile.player.panoplie_bonus)
             status_bonuses = resolve_status_effects(session, profile.player.id)
             stats = StatsService().calculate_player_stats(
                 profile=profile,
@@ -414,7 +414,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
 
             equipment_repository = EquipmentRepository(session)
             equipment_items = equipment_repository.list_by_player_id(profile.player.id)
-            set_bonuses = resolve_set_bonuses(equipment_items)
+            set_bonuses = resolve_set_bonuses(equipment_items, profile.player.panoplie_bonus)
 
         try:
             view = EquipmentImageView(
@@ -708,65 +708,6 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             if current_lower and current_lower not in entry.slot.lower():
                 continue
             choices.append(app_commands.Choice(name=label, value=entry.slot))
-            if len(choices) >= 25:
-                break
-        return choices
-
-    @app_commands.command(
-        name="equiper_panoplie",
-        description="Équipe en un clic les pièces d'une panoplie (tête, corps, 2 mains)",
-    )
-    @app_commands.describe(nom="Nom de la panoplie (autocomplete)")
-    async def equip_panoplie(
-        self,
-        interaction: discord.Interaction,
-        nom: str,
-    ) -> None:
-        from app.application.use_cases.equip_panoplie import (
-            EquipPanoplieUseCase,
-        )
-
-        await interaction.response.defer()
-        with get_db_session() as session:
-            use_case = EquipPanoplieUseCase(
-                player_repository=PlayerRepository(session),
-                inventory_repository=InventoryRepository(session),
-                equipment_repository=EquipmentRepository(session),
-            )
-            result = use_case.execute(
-                discord_id=interaction.user.id,
-                username=interaction.user.name,
-                display_name=interaction.user.display_name,
-                family=nom,
-            )
-
-        await interaction.followup.send(
-            result.message, ephemeral=not result.success,
-        )
-
-    @equip_panoplie.autocomplete("nom")
-    async def equip_panoplie_autocomplete(
-        self,
-        interaction: discord.Interaction,
-        current: str,
-    ) -> list[app_commands.Choice[str]]:
-        from app.infrastructure.sets.set_loader import (
-            list_definitions as list_set_definitions,
-        )
-
-        sets_def = list_set_definitions()
-        current_lower = current.lower()
-        choices: list[app_commands.Choice[str]] = []
-        for code, set_def in sets_def.items():
-            name = set_def.get("name", code)
-            icon = set_def.get("icon", "✨")
-            if (
-                current_lower in code.lower()
-                or current_lower in name.lower()
-            ):
-                choices.append(
-                    app_commands.Choice(name=f"{icon} {name}", value=code),
-                )
             if len(choices) >= 25:
                 break
         return choices

@@ -82,7 +82,6 @@ async def dashboard(
             "mobs_count": mobs_count,
             "crafts_count": crafts_count,
             "skill_nodes_count": skill_nodes_count,
-            "panoplies_count": _count_json_top_level("sets.json"),
             "titles_count": _count_json_top_level("titles.json"),
             "quests_count": _count_json_top_level("daily_quests.json") + _count_json_top_level("weekly_quests.json"),
             "bosses_count": _count_json_top_level("boss_definitions.json"),

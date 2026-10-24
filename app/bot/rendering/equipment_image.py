@@ -27,11 +27,10 @@ from app.bot.rendering.pillow_utils import (
     try_font,
 )
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
-from app.domain.services.gear_service import RARITY_COLORS, gear_stats
-from app.domain.services.set_bonus_service import SetBonuses
+from app.domain.services.gear_service import RARITY_COLORS, RARITY_EMOJIS, RARITY_LABELS, gear_stats
+from app.domain.services.set_bonus_service import SetBonuses, format_panoplie_value, panoplie_type
 from app.domain.value_objects.stats import Stats
 from app.shared.emoji_mappings import (
-    bonus_emoji,
     format_stat_bonuses_short,
 )
 from app.shared.enums import (
@@ -536,9 +535,6 @@ def compose_equipment_summary_page(
         totals[k] = int(v) if float(v).is_integer() else round(v, 1)
 
     # Ajouter les bonus de panoplie sur le total affiché
-    totals["max_hp"] += set_bonuses.max_hp_flat
-    totals["attack"] += set_bonuses.attack_flat
-    totals["defense"] += set_bonuses.defense_flat
     totals["speed"] += set_bonuses.speed_flat
     totals["crit_chance"] += set_bonuses.crit_chance_flat
     totals["crit_damage"] += set_bonuses.crit_damage_flat
@@ -633,46 +629,38 @@ def compose_equipment_summary_page(
     line_height = 64
     card_h = line_height - 8
 
-    if not set_bonuses.active_sets:
+    kind = panoplie_type(getattr(set_bonuses, "bonus_type", None))
+    reached = [t for t in getattr(set_bonuses, "tiers", []) if t.multiplier > 0]
+    if not reached:
         _draw_text_with_shadow(
             draw, (30, sets_y),
-            "Aucune pièce de panoplie portée.",
+            f"Bonus choisi : {kind.label}. Porte 2 pièces d'une même rareté "
+            "(ou mieux) pour l'activer — /panoplie.",
             _try_font(20),
             fill=_TEXT_MUTED,
         )
     else:
-        for idx, active in enumerate(set_bonuses.active_sets):
+        for idx, tier in enumerate(reached):
             y = sets_y + idx * line_height
             if y + line_height > SUMMARY_HEIGHT - 50:
                 break
-            # Card pour la panoplie
-            _draw_panel(bg, (30, y), (WIDTH - 60, card_h))
-
-            # Icône + nom + count (gauche)
+            _draw_panel(bg, (30, y), (WIDTH - 60, card_h),
+                        accent=(*RARITY_COLORS.get(tier.rarity, (150, 150, 160)), 255))
             head_text = (
-                f"{active.family_icon}  {active.family_name}"
-                f"  ·  {active.pieces_equipped} pièce(s)"
+                f"{RARITY_EMOJIS.get(tier.rarity, '')}  "
+                f"{RARITY_LABELS.get(tier.rarity, tier.rarity)} ou mieux"
+                f"  ·  {tier.pieces} pièce(s)  ·  ×{tier.multiplier:g}"
             )
-            head_font = _try_font(28, bold=True)
             draw_text_with_emojis(
-                bg, (50, y + 14), head_text, head_font,
+                bg, (50, y + 14), head_text, _try_font(26, bold=True),
                 fill=_TEXT_PRIMARY,
             )
-
-            # Bonus actif (droite, gros, en doré). Contient un emoji,
-            # donc on passe par draw_text_with_emojis pour le rendu couleur.
-            right_x = WIDTH - 30 - 18
-            if active.active_bonus_type:
-                bonus_label = _bonus_label_short(
-                    active.active_bonus_type, active.active_bonus_value,
-                )
-                bonus_text = f"+{bonus_label}"
-                bf = _try_font(30, bold=True)
-                tw = measure_text_with_emojis(bonus_text, bf, bf.size)
-                draw_text_with_emojis(
-                    bg, (right_x - tw, y + 13),
-                    bonus_text, bf, fill=_GOLD,
-                )
+            bonus_text = format_panoplie_value(kind, round(tier.value, 1))
+            bf = _try_font(30, bold=True)
+            tw = measure_text_with_emojis(bonus_text, bf, bf.size)
+            draw_text_with_emojis(
+                bg, (WIDTH - 48 - tw, y + 13), bonus_text, bf, fill=_GOLD,
+            )
 
     _draw_page_footer(bg, "Page 2 / 2 — Résumé")
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
@@ -687,9 +675,3 @@ def _signed(n: int) -> str:
         return str(n)
     return "0"
 
-
-def _bonus_label_short(bonus_type: str, value: int) -> str:
-    """Format compact `{value} {emoji}` — l'appelant ajoute le préfixe '+'.
-    L'emoji remplace le label texte ("défense" → 🛡️) pour rester compact
-    et lisible en thumbnail Discord."""
-    return f"{value} {bonus_emoji(bonus_type)}"

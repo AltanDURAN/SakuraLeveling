@@ -11,7 +11,7 @@ Feuilles :
     🎽 Équipements — TOUS les équipements en une feuille filtrable + power live
     👹 Mobs        — power score + rang calculés en direct (formules)
     🧪 Consommables, 📦 Ressources, 🛠️ Recettes, 🏪 Shop,
-    🌳 Skill Tree, 🏷️ Titres, 🌸 Panoplies, 🐉 World Bosses
+    🌳 Skill Tree, 🏷️ Titres, 🐉 World Bosses
 
 XLSX = importable direct dans Google Sheets (Fichier > Importer).
     .venv/bin/python scripts/export_content_spreadsheet.py
@@ -453,31 +453,6 @@ def write_titles_sheet(wb: Workbook) -> None:
     _finalize(ws, freeze="B2")
 
 
-def write_sets_sheet(wb: Workbook) -> None:
-    try:
-        sets_def = _load("sets.json")
-    except FileNotFoundError:
-        return
-    items = _load("items.json")
-    counts: dict[str, int] = {}
-    for it in items:
-        fam = (it.get("family") or "").strip()
-        if fam and it.get("equipment_slot"):
-            counts[fam] = counts.get(fam, 0) + 1
-    ws = wb.create_sheet("🌸 Panoplies")
-    ws.append(["Code famille", "Nom", "Icône", "Items existants", "Description",
-               "Palier 2", "Palier 4", "Palier 8", "Palier 12"])
-    for code, sd in sets_def.items():
-        cells = ["—", "—", "—", "—"]
-        for tier in sd.get("tiers", []):
-            mp = int(tier.get("min_pieces", 0))
-            label = f"{tier.get('type', '?')} +{tier.get('value', 0)}"
-            cells[{2: 0, 4: 1, 8: 2, 12: 3}.get(mp, 0)] = label
-        ws.append([code, sd.get("name", code), sd.get("icon", ""),
-                   counts.get(code, 0), sd.get("description", ""), *cells])
-    _finalize(ws, freeze="B2")
-
-
 def write_world_bosses_sheet(wb: Workbook) -> None:
     try:
         bosses = _load("boss_definitions.json")
@@ -515,7 +490,6 @@ def write_summary_sheet(wb: Workbook) -> None:
         ("🏪 Shop", "Prix d'achat / vente du shop."),
         ("🌳 Skill Tree", "Tous les nœuds de l'arbre."),
         ("🏷️ Titres", "Titres, conditions et effets."),
-        ("🌸 Panoplies", "Familles de set + paliers de bonus."),
         ("🐉 World Bosses", "Bosses + modifiers."),
         ("⚙️ Calibrage", "Constantes du score de puissance. NE PAS supprimer."),
     ]
@@ -563,7 +537,6 @@ def main() -> None:
     write_shop_sheet(wb)
     write_skill_tree_sheet(wb)
     write_titles_sheet(wb)
-    write_sets_sheet(wb)
     write_world_bosses_sheet(wb)
     write_summary_sheet(wb)        # index 0
 

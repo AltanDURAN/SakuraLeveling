@@ -1,13 +1,9 @@
-"""Cog `/panoplie <famille>` : détail d'une panoplie (set).
+"""Cog `/panoplie` : bonus de panoplie du joueur et choix de son TYPE.
 
-Affiche :
-  - en-tête : icône + nom + description
-  - section Paliers : 2 / 4 pièces avec leur bonus respectif
-  - section Pièces de la panoplie : tous les items qui appartiennent à
-    cette famille, regroupés par type d'emplacement
-
-L'autocomplete propose toutes les familles définies dans `sets.json`,
-filtrées par la sous-chaîne tapée.
+Saison 1 : plus de familles d'objets. Le bonus vient des pièces portées de
+même rareté (paliers 2 / 4 / 7, comptage cumulatif — cf. set_bonus_service).
+La commande montre ce que rapporte chaque rareté et propose un menu pour
+choisir le type de bonus (un seul, tous les paliers s'y additionnent).
 """
 
 from __future__ import annotations
@@ -16,195 +12,121 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from app.infrastructure.config.settings import settings
+from app.application.services.set_bonus_resolver import resolve_set_bonuses
+from app.bot.cogs._mixins import BetaChannelOnlyMixin
+from app.domain.services.gear_service import RARITY_EMOJIS, RARITY_LABELS
+from app.domain.services.set_bonus_service import (
+    PANOPLIE_TYPES,
+    TIERS,
+    format_panoplie_value,
+    panoplie_type,
+)
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
-from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
-from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
-from app.infrastructure.sets.set_loader import (
-    get_definition as get_set_definition,
-    list_definitions as list_set_definitions,
-)
-from app.shared.emoji_mappings import (
-    bonus_emoji,
-    format_stat_bonuses_short,
-    item_display_emoji,
-)
-from app.shared.enums import SLOT_ICONS, ItemSlotType
-
-# Types de pièces qui composent une panoplie (les accessoires en sont exclus).
-PANOPLIE_ITEM_TYPES = [
-    ItemSlotType.TETE.value,
-    ItemSlotType.CORPS.value,
-    ItemSlotType.ARME.value,
-]
-from app.bot.cogs._mixins import BetaChannelOnlyMixin
 
 
-def _format_bonus(bonus_type: str, value: int) -> str:
-    """Format compact "+N {emoji}" — l'emoji remplace le label texte."""
-    return f"+{value} {bonus_emoji(bonus_type)}"
+def build_panoplie_embed(set_bonuses) -> discord.Embed:
+    kind = panoplie_type(set_bonuses.bonus_type)
+    embed = discord.Embed(
+        title=f"🌸 Panoplie — {kind.emoji} {kind.label}",
+        color=discord.Color.from_rgb(220, 130, 180),
+        description=(
+            "Porte des pièces de même rareté : à **2**, **4** et **7** pièces, "
+            "chaque rareté donne un bonus (×1 · ×1,5 · ×3). Une pièce compte pour "
+            "sa rareté **et toutes celles en dessous** ; une arme à deux mains "
+            "compte pour 2. Tous les bonus s'ajoutent dans le type choisi."
+        ),
+    )
+    lines = []
+    for tier in set_bonuses.tiers:
+        label = f"{RARITY_EMOJIS.get(tier.rarity, '')} **{RARITY_LABELS.get(tier.rarity, tier.rarity)}** ou mieux · {tier.pieces} pièce(s)"
+        if tier.multiplier:
+            label += f" · ×{tier.multiplier:g} → {format_panoplie_value(kind, round(tier.value, 1))}"
+        if tier.next_tier:
+            label += f" · _palier suivant à {tier.next_tier}_"
+        lines.append(label)
+    embed.add_field(
+        name="Tes pièces portées",
+        value="\n".join(lines) or "_Aucune pièce portée._",
+        inline=False,
+    )
+    embed.add_field(
+        name="Bonus total",
+        value=f"**{format_panoplie_value(kind, set_bonuses.total)}**",
+        inline=False,
+    )
+    simple = ", ".join(
+        f"{t.emoji} {t.label} {format_panoplie_value(t, t.base).split(' ')[0]}"
+        for t in PANOPLIE_TYPES.values()
+    )
+    embed.set_footer(text=f"Bonus simple (2 pièces, commun) : {simple}. "
+                          f"Paliers : {', '.join(f'{n} pièces ×{m:g}' for n, m in reversed(TIERS))}.")
+    return embed
+
+
+class PanoplieTypeView(discord.ui.View):
+    def __init__(self, owner_discord_id: int, current: str) -> None:
+        super().__init__(timeout=300)
+        self.add_item(_TypeSelect(owner_discord_id, current))
+
+
+class _TypeSelect(discord.ui.Select):
+    def __init__(self, owner_discord_id: int, current: str) -> None:
+        options = [
+            discord.SelectOption(
+                label=t.label, value=t.code, emoji=t.emoji,
+                description=f"Bonus simple : {format_panoplie_value(t, t.base).split(' ')[0]}",
+                default=t.code == current,
+            )
+            for t in PANOPLIE_TYPES.values()
+        ]
+        super().__init__(placeholder="Choisis ton type de bonus", options=options)
+        self._owner_id = owner_discord_id
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        if interaction.user.id != self._owner_id:
+            await interaction.response.send_message("Ce menu n'est pas pour toi.", ephemeral=True)
+            return
+        choice = self.values[0]
+        with get_db_session() as session:
+            repo = PlayerRepository(session)
+            profile = repo.get_by_discord_id(interaction.user.id)
+            if profile is None:
+                await interaction.response.send_message("Profil introuvable.", ephemeral=True)
+                return
+            repo.set_panoplie_bonus(profile.player.id, choice)
+            equipped = EquipmentRepository(session).list_by_player_id(profile.player.id)
+        bonuses = resolve_set_bonuses(equipped, choice)
+        await interaction.response.edit_message(
+            embed=build_panoplie_embed(bonuses),
+            view=PanoplieTypeView(interaction.user.id, choice),
+        )
 
 
 class PanoplieCog(BetaChannelOnlyMixin, commands.Cog):
-    """Détail d'une panoplie : paliers + items qui la composent."""
-
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
     @app_commands.command(
         name="panoplie",
-        description="Détail d'une panoplie : paliers, bonus et pièces qui la composent",
+        description="Ton bonus de panoplie (raretés portées) et le choix de son type",
     )
-    @app_commands.describe(nom="Nom de la panoplie (autocomplete)")
-    async def panoplie(
-        self, interaction: discord.Interaction, nom: str,
-    ) -> None:
-        set_def = get_set_definition(nom)
-        if set_def is None:
-            await interaction.response.send_message(
-                f"❌ Panoplie `{nom}` introuvable. Utilise l'autocomplete.",
-                ephemeral=True,
-            )
-            return
-
-        # Récupère aussi inventaire + équipement du viewer pour cocher les
-        # pièces déjà possédées (✅ à droite de chaque ligne).
-        owned_def_ids: set[int] = set()
+    async def panoplie(self, interaction: discord.Interaction) -> None:
         with get_db_session() as session:
-            all_items = ItemRepository(session).list_all()
-            profile = PlayerRepository(session).get_by_discord_id(
-                interaction.user.id,
+            profile = PlayerRepository(session).get_or_create_by_discord_id(
+                discord_id=interaction.user.id,
+                username=interaction.user.name,
+                display_name=interaction.user.display_name,
             )
-            if profile is not None:
-                inv = InventoryRepository(session).list_by_player_id(
-                    profile.player.id,
-                )
-                eq = EquipmentRepository(session).list_by_player_id(
-                    profile.player.id,
-                )
-                owned_def_ids = (
-                    {i.item_definition.id for i in inv}
-                    | {e.item_definition.id for e in eq}
-                )
-
-        items_in_family = [
-            it for it in all_items
-            if (it.family or "").strip() == nom and it.equipment_slot
-        ]
-
-        embed = discord.Embed(
-            title=f"{set_def.get('icon', '✨')}  Panoplie : {set_def.get('name', nom)}",
-            description=set_def.get("description", "—"),
-            color=discord.Color.from_str(set_def.get("color", "#a07040")),
+            equipped = EquipmentRepository(session).list_by_player_id(profile.player.id)
+            current = profile.player.panoplie_bonus
+        bonuses = resolve_set_bonuses(equipped, current)
+        await interaction.response.send_message(
+            embed=build_panoplie_embed(bonuses),
+            view=PanoplieTypeView(interaction.user.id, current),
+            ephemeral=True,
         )
-
-        # ----- Paliers (compact, sur 4 lignes) -----
-        tiers = sorted(
-            set_def.get("tiers", []),
-            key=lambda t: int(t.get("min_pieces", 0)),
-        )
-        if tiers:
-            lines = []
-            for tier in tiers:
-                mp = int(tier.get("min_pieces", 0))
-                bonus_text = _format_bonus(
-                    tier.get("type", ""), int(tier.get("value", 0)),
-                )
-                lines.append(f"**{mp} pièces** → {bonus_text}")
-            embed.add_field(
-                name="📊 Paliers de bonus",
-                value="\n".join(lines),
-                inline=False,
-            )
-
-        # ----- Pièces de la panoplie (1 ligne / pièce, ordre canonique) -----
-        # Le compteur (X/12) est intégré au titre de la rubrique pour ne
-        # pas dupliquer l'info en field séparé.
-        if items_in_family:
-            by_slot: dict[str, list] = {}
-            for it in items_in_family:
-                by_slot.setdefault(it.equipment_slot or "?", []).append(it)
-
-            piece_lines: list[str] = []
-            # Les items déclarent un TYPE d'emplacement (tete, corps,
-            # accessoire, arme) : on liste donc les types, pas les 7
-            # emplacements physiques.
-            for slot in PANOPLIE_ITEM_TYPES:
-                items = by_slot.get(slot)
-                slot_icon = SLOT_ICONS.get(slot, "•")
-                if not items:
-                    # Slot manquant : juste l'icône + tiret. Le label texte
-                    # est redondant avec l'emoji, on l'omet.
-                    piece_lines.append(f"{slot_icon} —")
-                    continue
-                for it in items:
-                    bonuses = format_stat_bonuses_short(it.stat_bonuses)
-                    suffix = f" · {bonuses}" if bonuses else ""
-                    owned_marker = " ✅" if it.id in owned_def_ids else ""
-                    item_icon = item_display_emoji(it)
-                    piece_lines.append(
-                        f"{item_icon} **{it.name}**{suffix}{owned_marker}"
-                    )
-
-            # Découpe en plusieurs fields si > 1000 chars (limite 1024)
-            buf = ""
-            field_count = 1
-            # Compteur owned / catalogue (le total varie par famille — gobelin_plus
-            # n'a pas forcément 16 pièces. Cf. audit B10 : avant on affichait /16 en dur).
-            owned_count = sum(1 for it in items_in_family if it.id in owned_def_ids)
-            base_name = (
-                f"🧩 Pièces de la panoplie "
-                f"({owned_count}/{len(items_in_family)})"
-            )
-            for line in piece_lines:
-                if len(buf) + len(line) + 1 > 1000 and buf:
-                    embed.add_field(
-                        name=(base_name if field_count == 1
-                              else f"🧩 Pièces (suite {field_count})"),
-                        value=buf,
-                        inline=False,
-                    )
-                    buf = ""
-                    field_count += 1
-                buf += ("\n" if buf else "") + line
-            if buf:
-                embed.add_field(
-                    name=(base_name if field_count == 1
-                          else f"🧩 Pièces (suite {field_count})"),
-                    value=buf,
-                    inline=False,
-                )
-        else:
-            embed.add_field(
-                name="🧩 Pièces de la panoplie",
-                value="_Aucun item ne porte encore cette famille._",
-                inline=False,
-            )
-
-        await interaction.response.send_message(embed=embed)
-
-    @panoplie.autocomplete("nom")
-    async def panoplie_autocomplete(
-        self, interaction: discord.Interaction, current: str,
-    ) -> list[app_commands.Choice[str]]:
-        sets_def = list_set_definitions()
-        current_lower = current.lower()
-        choices: list[app_commands.Choice[str]] = []
-        for code, set_def in sets_def.items():
-            name = set_def.get("name", code)
-            icon = set_def.get("icon", "✨")
-            if (
-                current_lower in code.lower()
-                or current_lower in name.lower()
-            ):
-                choices.append(
-                    app_commands.Choice(name=f"{icon} {name}", value=code),
-                )
-            if len(choices) >= 25:
-                break
-        return choices
 
 
 async def setup(bot: commands.Bot) -> None:

@@ -327,17 +327,22 @@ FORGE SACRÉE (+0 → +10)
     Consommables et ressources (les équipements sont dans /equipement_liste).
 
 PANOPLIES
-    Une pièce peut appartenir à une famille de panoplie. Seuls la tête, le
-    corps et les deux armes comptent (pas les accessoires). Paliers à 2 et
-    4 pièces ; le palier le plus haut remplace le précédent. Une pièce à
-    deux mains compte pour 2 ; deux armes identiques comptent pour 1.
+    Plus de familles : ta panoplie, c'est l'harmonie des RARETÉS que tu
+    portes. À 2, 4 et 7 pièces d'une même rareté, tu gagnes un bonus
+    (×1, ×1,5, ×3 du bonus simple).
+        • Une pièce compte pour sa rareté ET toutes celles en dessous :
+          5 rares + 1 épique + 1 légendaire = 7 « commun », 7 « peu commun »,
+          7 « rare » et 2 « épique ». Chaque rareté donne son bonus, et ils
+          s'additionnent. Améliorer une pièce ne fait jamais baisser le bonus.
+        • Une arme à deux mains compte pour 2.
+        • Tu choisis UN type de bonus : Attaque, Défense ou PV (+2 % de base),
+          Chance de critique (+1), Dégâts critiques (+4), Esquive (+1) ou
+          Régénération (+3). Il grandit avec la rareté : 7 pièces légendaires
+          en Attaque = +24 %.
 
-/panoplie <nom>
-    Le détail d'une panoplie : paliers, bonus et pièces qui la composent.
-
-/equiper_panoplie <nom>
-    Équipe en un clic la meilleure configuration possible d'une panoplie
-    (tête, corps, armes) avec ce que tu possèdes.
+/panoplie
+    Ce que rapporte chaque rareté de ce que tu portes, ton bonus total, et
+    un menu pour changer de type de bonus (gratuit, à tout moment).
 
 /creer_set <nom> · /equiper_set <nom> · /supprimer_set <nom>
     Tes tenues sauvegardées : enregistre l'équipement porté sous un nom,

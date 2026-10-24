@@ -273,7 +273,7 @@ class ChallengePlayerUseCase:
         allocations = self.skill_allocation_repository.list_by_player(profile.player.id)
         skill_bonuses = skill_service.aggregate_bonuses(allocations)
         title_bonuses = resolve_title_bonuses(session, profile.player.id)
-        set_bonuses = resolve_set_bonuses(equipped_items)
+        set_bonuses = resolve_set_bonuses(equipped_items, profile.player.panoplie_bonus)
         from app.application.services.status_effect_resolver import (
             resolve_status_effects,
         )

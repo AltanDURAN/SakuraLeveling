@@ -146,7 +146,7 @@ Noms FRANÇAIS (sans accents) — c'est ce que le joueur tape. Liste tirée du c
 | `/daily`, `/quetes`, `/quetes_hebdo` | `player_cog`, `daily_quest_cog`, `weekly_quest_cog` | Récompense quotidienne, 3 quêtes/jour, 3 quêtes/semaine |
 | `/titre [joueur]`, `/titre_actif` | `title_cog` | Titres débloqués / titre affiché |
 | `/inventaire`, `/equipement`, `/equipement_liste` | `player_cog` | Inventaire (consommables + ressources), équipement en image 2 pages, liste des équipements |
-| `/equiper`, `/desequiper <slot\|all>`, `/equiper_panoplie`, `/creer_set`, `/equiper_set`, `/supprimer_set`, `/panoplie` | `player_cog`, `panoplie_cog` | Équipement (placement automatique), panoplies, loadouts |
+| `/equiper`, `/desequiper <slot\|all>`, `/creer_set`, `/equiper_set`, `/supprimer_set`, `/panoplie` | `player_cog`, `panoplie_cog` | Équipement (placement automatique), panoplies (bonus par rareté), loadouts |
 | `/forgeron`, `/artisan` | `artisan_cog` | Artisans : **fusion** de deux copies identiques → rareté suivante |
 | `/marchand` | `shop_cog` | Achat uniquement |
 | `/voyante` | `seer_cog` | Ysaline lit un talent élémentaire caché (prix croissant, 1re offerte) |
@@ -219,19 +219,16 @@ Refonte complète, règles FIXES décidées avec l'auteur. Tout l'ancien équipe
 - **Catégories équipables** : constante `EQUIPABLE_CATEGORIES` (`enums.py`) — source unique.
 - **Commandes** : `/equiper <pièce>` (autocomplete `gear:<id>`, copies libres), `/equipement [joueur]` (2 pages image), `/equipement_liste` (une carte par copie : rareté, stats de la copie, passif ✨/🔒, ✅ si portée).
 
-## Système de panoplies (set bonuses)
+## Système de panoplies (saison 1 — par rareté)
 
-- **Définitions** : [`sets.json`](app/infrastructure/content/sets.json) — chaque famille a **2 paliers : 2 et 4 pièces** (constante `PANOPLIE_TIERS`). Le bonus du palier le plus haut REMPLACE celui du palier inférieur (pas cumulatif).
-- ⚠️ **Seuls 4 emplacements comptent** dans une panoplie : `tete`, `corps`, `arme_1`, `arme_2` (constante `PANOPLIE_SLOTS`). **Les accessoires en sont volontairement exclus** — c'est ce qui fixe le maximum à 4 pièces.
-- **Service** : [`SetBonusService.aggregate(equipped_items)`](app/domain/services/set_bonus_service.py) compte les pièces par famille :
-  - tête / corps : 1 pièce équipée = 1 point ;
-  - emplacements d'arme : on compte les `item_definition_id` UNIQUES → deux fois la même arme = 1 point, deux armes différentes = 2 points ;
-  - une 2-mains vaut 2 points (elle occupe les deux emplacements).
-  Sélectionne le palier max atteint et retourne un `SetBonuses` (flat additif sur defense, dodge, crit_chance, crit_damage, hp_regeneration, attack, speed, max_hp, mana_max, mana_regeneration). Garde `active_sets` pour l'affichage.
-- **Equip groupé** : [`EquipPanoplieUseCase`](app/application/use_cases/equip_panoplie.py) — `/equiper_panoplie <nom>`. **Plus d'option de configuration des mains** : le use case privilégie deux pièces 1 main (4/4), sinon une 2-mains, en conservant les pièces de la bonne famille déjà portées.
-- **Helper** : [`resolve_set_bonuses(equipped_items)`](app/application/services/set_bonus_resolver.py) — wrap simple à appeler partout où on calcule des stats.
-- **Wired dans `StatsService`** : 6e étage (après skill bonuses, après title bonuses, après les caps). Permet aux bonus de set de pousser légèrement au-delà des caps standards. Wired aussi dans tous les call sites : `/profile`, encounter (register + resolve), fight_mob (solo), challenge_player (duel), use_consumable, world_boss, get_player_stats, get_leaderboard, admin_cog (force_hp / heal_full), player_cog (preview /equip).
-- **Pour ajouter une nouvelle panoplie** : ajouter une entrée dans `sets.json` + tagger les items concernés avec leur `family` dans `items.json`. Pas de code à toucher.
+Refonte d'octobre 2026 (idée de l'auteur) : plus de familles d'objets, plus de `sets.json`, plus de `/equiper_panoplie` (`EquipPanoplieUseCase`, `PanoplieCraftsUseCase`, `set_loader` et les pages admin des panoplies ont été supprimés). Le champ `family` des items existe encore mais n'est plus lu.
+
+- **Règle** ([`set_bonus_service.py`](app/domain/services/set_bonus_service.py)) : paliers `TIERS` à 2 / 4 / 7 pièces (×1 / ×1,5 / ×3 du bonus simple), comptés PAR RARETÉ, en **cumulatif** : une pièce compte pour sa rareté et toutes les raretés en dessous ; chaque rareté atteint son palier, les bonus s'additionnent. ⚠️ Avec des groupes stricts, améliorer une pièce pouvait FAIRE BAISSER le bonus (7 rares → 6 rares + 1 épique) ; le cumulatif l'interdit (test `test_ameliorer_une_piece_ne_fait_jamais_baisser_le_bonus`).
+- **Marches** `RARITY_STEP` (1 / 0,5 / 0,5 / 1 / 1 / 1,5) : leur somme cumulée = `PRIMARY_MULTIPLIER` de la rareté ⇒ un set d'une seule rareté vaut bonus simple × rareté × palier (7 légendaires en Attaque : 2 % × 4 × 3 = +24 %).
+- **Deux mains = 2 pièces** (voulu : une seule pièce à farmer et fusionner pour deux places).
+- **Type unique choisi par le joueur** (`PANOPLIE_TYPES` : attaque / défense / PV en %, chance crit, dégâts crit, esquive, régén à plat ; ni vitesse ni économie), stocké dans `players.panoplie_bonus` (migration `4e7a1c9d2b58`), changé librement par `/panoplie` (menu). `resolve_set_bonuses(equipped, profile.player.panoplie_bonus)` dans tous les calculs de stats. Les % sont des FRACTIONS dans `SetBonuses` (comme l'arbre), `total` est en unité d'affichage.
+- **Affichage** : `/panoplie` (embed + menu), page 2 de `/equipement` (une ligne par rareté ayant atteint un palier).
+- Le joueur de référence n'inclut PAS encore ce bonus.
 
 ## Système de trade entre joueurs
 
