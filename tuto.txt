@@ -558,9 +558,8 @@ INTERFACE WEB D'ADMINISTRATION
 /admin reset_player <joueur>
     Remet le joueur à zéro en gardant son identité Discord : niveau, XP,
     points d'arbre et de stats (placés compris), or, inventaire, équipement
-    et niveaux d'amélioration, quêtes, temps de recharge, PV/mana, victoires,
-    titres, place au ladder, affinités et essences, maîtrise et commandes
-    des artisans.
+    (toutes ses pièces), quêtes, temps de recharge, PV/mana, victoires,
+    titres, place au ladder, affinités et essences, maîtrise des artisans.
 
 --------------------------------------------------------------------------------
 2.2 — TESTS ET DÉBOGAGE
@@ -596,7 +595,7 @@ Reset de saison (sur le VPS, de préférence bot arrêté) :
     .venv/bin/python -m scripts.season_reset --confirm "SAISON 1"  # exécute
     La base est sauvegardée avant toute écriture. Tous les joueurs repartent
     de zéro (seule l'identité Discord reste) ; world boss, événements,
-    brocante, échanges et commandes d'artisans sont vidés. Au démarrage
+    brocante et échanges sont vidés. Au démarrage
     suivant, le bot remet tous les rôles de rang au Rang F.
 
 Simulation de la saison :
