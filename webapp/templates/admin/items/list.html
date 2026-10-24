@@ -172,7 +172,7 @@ document.addEventListener('alpine:init', () => {
             <select class="input" name="category" x-model="category">
               {% for c in categories %}<option value="{{ c }}">{{ category_emojis.get(c,'📦') }} {{ category_labels.get(c,c) }}</option>{% endfor %}
             </select></label>
-          <label class="field"><span class="field-label">Rareté</span>
+          <label class="field" x-show="!isEquipable()"><span class="field-label">Rareté</span>
             <select class="input" name="rarity" x-model="rarity">
               {% for r in rarities %}<option value="{{ r }}">{{ rarity_labels.get(r,r) }}</option>{% endfor %}
             </select></label>
@@ -194,11 +194,11 @@ document.addEventListener('alpine:init', () => {
         </div>
         <label class="field" style="flex-direction:row; align-items:center; gap:.5rem;" x-show="isWeaponLike()">
           <input type="checkbox" name="requires_two_hands" x-model="twoHands"><span class="field-label" style="margin:0;">Arme/bouclier à 2 mains <span class="hint" title="Occupe la main droite ET la main gauche.">ⓘ</span></span></label>
-        <label class="field"><span class="field-label">Panoplie <span class="hint" title="Famille de set : plusieurs pièces de la même panoplie donnent des bonus (2/4/8/12). Laisse « Aucune » si l'objet n'appartient à aucune panoplie.">ⓘ</span></span>
-          <select class="input" name="family" x-model="family">
-            <option value="">— Aucune —</option>
-            {% for fam in all_families %}<option value="{{ fam }}">{{ fam }}</option>{% endfor %}
-          </select></label>
+        <!-- Panoplies saison 1 : par rareté portée, plus de famille d'objet (champ conservé tel quel). -->
+        <input type="hidden" name="family" :value="family">
+        <p class="hint-line" x-show="isEquipable()" style="margin:0; color:var(--muted); font-size:.85rem;">
+          ℹ️ Une pièce n'a pas de rareté propre : chaque COPIE a la sienne (drop, fusion). Les stats
+          saisies ci-dessous sont celles du <strong>commun</strong> ; la rareté les multiplie.</p>
         <label class="field" x-show="isEquipable()"><span class="field-label">Passif <span class="hint" title="Effet spécial de la pièce, actif à partir de la rareté ÉPIQUE. Une pièce par passif, un passif par pièce.">ⓘ</span></span>
           <select class="input" name="passive" x-model="passive">
             <option value="">— Aucun —</option>
@@ -311,7 +311,7 @@ document.addEventListener('alpine:init', () => {
             <span class="chip"><span class="rdot" :style="{background: rarColor(rarity)}"></span> <span x-text="rarLabel(rarity)"></span></span>
             <template x-if="isEquipable() && slotLabel(slotOf()) !== catLabel(category)"><span class="chip" x-text="'🎽 '+slotLabel(slotOf())"></span></template>
             <template x-if="twoHands && isWeaponLike()"><span class="chip">✋ 2 mains</span></template>
-            <template x-if="family"><span class="chip" x-text="'🧩 '+family"></span></template>
+
           </div>
           <div style="display:flex; flex-wrap:wrap; gap:.3rem;">
             <template x-for="s in activeStats()" :key="s">

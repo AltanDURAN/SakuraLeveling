@@ -86,7 +86,10 @@ async def _lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="SakuraLeveling — Skill Tree Viewer", lifespan=_lifespan)
+# Pas de /docs, /redoc ni /openapi.json : le site est PUBLIC, et ces pages
+# publiaient la carte des ~110 routes d'administration (audit du 24/10/2026).
+app = FastAPI(title="SakuraLeveling — Skill Tree Viewer", lifespan=_lifespan,
+              docs_url=None, redoc_url=None, openapi_url=None)
 
 # Protection CSRF (vérification d'origine) sur les routes /admin mutantes.
 from webapp.admin.csrf import csrf_origin_middleware

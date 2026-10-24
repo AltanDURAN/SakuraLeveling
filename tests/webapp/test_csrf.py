@@ -38,3 +38,11 @@ def test_post_api_foreign_origin_rejected():
     assert request_origin_is_allowed(
         "POST", "/api/skill/1/invest", "https://evil.example.com", None
     ) is False
+
+
+def test_pas_de_documentation_publique_de_l_api():
+    from fastapi.testclient import TestClient
+    from webapp.main import app
+    c = TestClient(app)
+    for path in ("/docs", "/redoc", "/openapi.json"):
+        assert c.get(path).status_code == 404
