@@ -17,7 +17,6 @@ from app.infrastructure.db.models.item_model import ItemDefinitionModel  # noqa:
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel
 from app.infrastructure.db.models.gear_model import PlayerGearModel
 from app.infrastructure.db.models.mob_model import MobDefinitionModel  # noqa: F401
-from app.infrastructure.db.models.craft_model import CraftRecipeModel, CraftRecipeIngredientModel  # noqa: F401
 from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel
 from app.infrastructure.db.models.quest_model import QuestDefinitionModel, PlayerQuestStateModel  # noqa: F401
 from app.infrastructure.db.models.profession_model import PlayerProfessionModel
@@ -33,7 +32,6 @@ from app.infrastructure.db.models.player_title_model import PlayerTitleModel
 from app.infrastructure.db.models.weekly_quest_model import WeeklyQuestAssignmentModel
 from app.infrastructure.db.models.daily_quest_model import DailyQuestAssignmentModel
 from app.infrastructure.db.models.marketplace_listing_model import MarketplaceListingModel
-from app.infrastructure.db.models.help_subscriber_model import HelpSubscriberModel
 
 
 @pytest.fixture()
@@ -150,9 +148,6 @@ def _seed_full_profile(session, player_id: int, other_player_id: int) -> None:
         completed=False, claimed=False,
         created_at=now, updated_at=now,
     ))
-    session.add(HelpSubscriberModel(
-        player_id=player_id, subscribed_at=now,
-    ))
 
     # World boss participation : besoin d'un boss
     boss = WorldBossModel(
@@ -249,7 +244,6 @@ def test_reset_player_purges_all_player_tables(session):
         PlayerTitleModel,
         WeeklyQuestAssignmentModel,
         DailyQuestAssignmentModel,
-        HelpSubscriberModel,
     ):
         rows = session.execute(
             select(model_cls).where(model_cls.player_id == player_id)

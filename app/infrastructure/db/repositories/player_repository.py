@@ -185,18 +185,6 @@ class PlayerRepository:
         resources.updated_at = datetime.now(UTC)
         self.session.commit()
 
-    def set_skill_slot(self, player_id: int, slot_index: int, skill_code: str | None) -> None:
-        """Équipe une compétence élémentaire dans le slot 1 ou 2."""
-        player_model = self.session.get(PlayerModel, player_id)
-        if player_model is None:
-            return
-        if slot_index == 1:
-            player_model.skill_slot_1 = skill_code
-        elif slot_index == 2:
-            player_model.skill_slot_2 = skill_code
-        player_model.updated_at = datetime.now(UTC)
-        self.session.commit()
-
     def set_combat_tactic(self, player_id: int, tactic: str) -> None:
         player_model = self.session.get(PlayerModel, player_id)
         if player_model is None:

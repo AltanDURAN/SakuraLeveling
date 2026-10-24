@@ -20,7 +20,6 @@ from app.infrastructure.db.models.player_mob_kill_model import PlayerMobKillMode
 from app.infrastructure.db.models.player_skill_allocation_model import (
     PlayerSkillAllocationModel,
 )
-from app.infrastructure.db.models.help_subscriber_model import HelpSubscriberModel
 from app.infrastructure.db.models.marketplace_listing_model import MarketplaceListingModel
 from app.infrastructure.db.models.player_title_model import PlayerTitleModel
 from app.infrastructure.db.models.daily_quest_model import DailyQuestAssignmentModel
@@ -35,10 +34,7 @@ from app.infrastructure.db.models.player_status_effect_model import (
     PlayerStatusEffectModel,
 )
 from app.infrastructure.db.models.event_model import EventParticipationModel
-from app.infrastructure.db.models.work_order_model import (
-    PlayerArtisanMasteryModel,
-    PlayerWorkOrderModel,
-)
+from app.infrastructure.db.models.work_order_model import PlayerArtisanMasteryModel
 
 
 class ResetPlayerUseCase:
@@ -114,11 +110,9 @@ class ResetPlayerUseCase:
             PlayerTitleModel,
             WeeklyQuestAssignmentModel,
             DailyQuestAssignmentModel,
-            HelpSubscriberModel,
             PlayerStatusEffectModel,
             EventParticipationModel,
             PlayerArtisanMasteryModel,
-            PlayerWorkOrderModel,
         ):
             session.execute(delete(model_cls).where(model_cls.player_id == player_id))
 

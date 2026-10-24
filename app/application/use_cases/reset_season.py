@@ -31,7 +31,6 @@ from app.infrastructure.db.models.event_model import (
 from app.infrastructure.db.models.marketplace_listing_model import MarketplaceListingModel
 from app.infrastructure.db.models.player_model import PlayerModel
 from app.infrastructure.db.models.trade_model import TradeItemModel, TradeModel
-from app.infrastructure.db.models.work_order_model import PlayerWorkOrderModel
 from app.infrastructure.db.models.world_boss_model import (
     WorldBossModel,
     WorldBossParticipationModel,
@@ -50,7 +49,6 @@ GLOBAL_TABLES = (
     MarketplaceListingModel,
     TradeItemModel,
     TradeModel,
-    PlayerWorkOrderModel,
 )
 
 

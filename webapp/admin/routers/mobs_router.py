@@ -254,6 +254,7 @@ async def mobs_list(
         state = {
             "code": m.code, "name": m.name, "family": m.family or "",
             "element": m.element or "", "description": m.description or "",
+            "gear_item_code": getattr(m, "gear_item_code", "") or "",
             "image": m.image_name or "",
             "weights": {e["code"]: e["weight"] for e in zone["elements"]},
             "elements": zone["elements"],
@@ -377,6 +378,7 @@ async def mobs_create(
         image_name = form_data.get("image_name", "").strip()
         family = form_data.get("family", "").strip() or "unknown"
         element = form_data.get("element", "").strip()
+        gear_item_code = form_data.get("gear_item_code", "").strip()
         loot_table = _parse_loot_table(form_data.get("loot_table"))
 
         # Upload d'image (optionnel) → écrase image_name par le fichier sauvé.
@@ -396,6 +398,7 @@ async def mobs_create(
             image_name=image_name,
             family=family,
             element=element,
+            gear_item_code=gear_item_code,
             loot_table=loot_table,
             **stats,
         )
@@ -404,7 +407,7 @@ async def mobs_create(
     content_sync.upsert_mob_json(content_sync.build_mob_dict(
         code=code, name=name, family=family, description=description,
         current_hp=stats["max_hp"], image_name=image_name, element=element,
-        loot_table=loot_table, **stats,
+        gear_item_code=gear_item_code, loot_table=loot_table, **stats,
     ))
     push_paths = ["app/infrastructure/content/mobs.json"]
     if asset_path:
@@ -454,6 +457,8 @@ async def mobs_update(
         image_name = form_data.get("image_name", existing.image_name).strip() or existing.image_name
         family = form_data.get("family", existing.family or "").strip() or existing.family
         element = form_data.get("element", existing.element or "").strip()
+        gear_item_code = form_data.get(
+            "gear_item_code", getattr(existing, "gear_item_code", "") or "").strip()
         loot_table = _parse_loot_table(form_data.get("loot_table"))
 
         # Upload d'image (optionnel) → écrase image_name par le fichier sauvé.
@@ -469,6 +474,7 @@ async def mobs_update(
             image_name=image_name,
             family=family,
             element=element,
+            gear_item_code=gear_item_code,
             loot_table=loot_table,
             **stats,
         )
@@ -476,7 +482,8 @@ async def mobs_update(
     # Reseed-safe : réécrit aussi mobs.json.
     content_sync.upsert_mob_json(content_sync.build_mob_dict(
         code=code, name=name, family=family, description=description,
-        image_name=image_name, element=element, loot_table=loot_table, **stats,
+        image_name=image_name, element=element, gear_item_code=gear_item_code,
+        loot_table=loot_table, **stats,
     ))
     push_paths = ["app/infrastructure/content/mobs.json"]
     if asset_path:

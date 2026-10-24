@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 from app.infrastructure.db.models.profession_model import ProfessionDefinitionModel
-from app.infrastructure.db.repositories.craft_repository import CraftRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.repositories.profession_repository import ProfessionRepository
@@ -95,54 +94,6 @@ def seed_mobs() -> None:
                 mob_repository.update_by_code(**payload)
 
     print("Mobs seedés.")
-
-
-def seed_crafts() -> None:
-    crafts = load_json("crafts.json")
-
-    with get_db_session() as session:
-        craft_repository = CraftRepository(session)
-        item_repository = ItemRepository(session)
-
-        for craft_data in crafts:
-            result_item = item_repository.get_by_code(craft_data["result_item_code"])
-            if result_item is None:
-                continue
-
-            ingredients: list[tuple[int, int]] = []
-            valid = True
-
-            for ingredient_data in craft_data["ingredients"]:
-                ingredient_item = item_repository.get_by_code(ingredient_data["item_code"])
-                if ingredient_item is None:
-                    valid = False
-                    break
-
-                ingredients.append((ingredient_item.id, ingredient_data["quantity"]))
-
-            if not valid:
-                continue
-
-            existing = craft_repository.get_by_code(craft_data["code"])
-
-            if existing is None:
-                craft_repository.create(
-                    code=craft_data["code"],
-                    name=craft_data["name"],
-                    result_item_definition_id=result_item.id,
-                    result_quantity=craft_data["result_quantity"],
-                    ingredients=ingredients,
-                )
-            else:
-                craft_repository.update_by_code(
-                    code=craft_data["code"],
-                    name=craft_data["name"],
-                    result_item_definition_id=result_item.id,
-                    result_quantity=craft_data["result_quantity"],
-                    ingredients=ingredients,
-                )
-
-    print("Crafts seedés.")
 
 
 def seed_quests() -> None:
@@ -257,7 +208,6 @@ def seed_shop_items() -> None:
 def main() -> None:
     seed_items()
     seed_mobs()
-    seed_crafts()
     seed_quests()
     seed_professions()
     seed_shop_items()

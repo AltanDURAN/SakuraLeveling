@@ -16,9 +16,6 @@ from app.infrastructure.db.models.item_model import ItemDefinitionModel
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel
 from app.infrastructure.db.models.gear_model import PlayerGearModel
 from app.infrastructure.db.models.shop_item_model import ShopItemModel
-from app.infrastructure.db.models.craft_model import (
-    CraftRecipeModel, CraftRecipeIngredientModel,
-)
 from app.infrastructure.db.models.mob_model import MobDefinitionModel
 from app.infrastructure.db.models.player_mob_kill_model import PlayerMobKillModel
 
@@ -47,7 +44,6 @@ from app.infrastructure.db.models.daily_quest_model import DailyQuestAssignmentM
 from app.infrastructure.db.models.world_boss_model import (  # noqa: F401
     WorldBossModel, WorldBossParticipationModel,
 )
-from app.infrastructure.db.models.help_subscriber_model import HelpSubscriberModel  # noqa: F401
 
 
 @pytest.fixture()
@@ -98,12 +94,6 @@ def test_delete_item_removes_all_references(session):
     session.add(ShopItemModel(item_definition_id=target.id, buy_price=10,
                               max_sell_price=5, min_sell_price=1, stock_threshold=100,
                               current_stock=0, enabled=True, created_at=now, updated_at=now))
-    recipe = CraftRecipeModel(code="iron_sword_recipe", name="Épée",
-                              result_item_definition_id=target.id, result_quantity=1,
-                              created_at=now, updated_at=now)
-    session.add(recipe); session.flush()
-    session.add(CraftRecipeIngredientModel(craft_recipe_id=recipe.id,
-                                           item_definition_id=control.id, quantity=2))
     # control aussi en inventaire (doit rester)
     session.add(PlayerInventoryItemModel(player_id=p.id, item_definition_id=control.id,
                                          quantity=1, created_at=now, updated_at=now))
@@ -121,9 +111,6 @@ def test_delete_item_removes_all_references(session):
         PlayerGearModel.item_definition_id == target.id)).first() is None
     assert session.execute(select(ShopItemModel).where(
         ShopItemModel.item_definition_id == target.id)).first() is None
-    # La recette produisant l'item + ses ingrédients sont parties
-    assert session.execute(select(CraftRecipeModel)).first() is None
-    assert session.execute(select(CraftRecipeIngredientModel)).first() is None
     # Le control survit (item + son inventaire)
     assert session.execute(select(ItemDefinitionModel).where(
         ItemDefinitionModel.code == "gobelin_axe")).scalar_one_or_none() is not None

@@ -13,7 +13,6 @@ from app.infrastructure.db.models.item_model import ItemDefinitionModel
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel
 from app.infrastructure.db.models.gear_model import PlayerGearModel
 from app.infrastructure.db.models.mob_model import MobDefinitionModel
-from app.infrastructure.db.models.craft_model import CraftRecipeModel, CraftRecipeIngredientModel
 from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel
 from app.infrastructure.db.models.quest_model import QuestDefinitionModel, PlayerQuestStateModel
 from app.infrastructure.db.models.profession_model import PlayerProfessionModel

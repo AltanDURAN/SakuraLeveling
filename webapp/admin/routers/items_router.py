@@ -398,8 +398,8 @@ async def items_delete(code: str, user: AdminUser = Depends(require_admin)):
     if not result.deleted:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Item `{code}` introuvable.")
     touched = content_sync.delete_item_json(code)
-    _logger.info("Admin %s a supprimé l'item %s (refs DB: %s, recettes: %s, json: %s)",
-                 user.discord_id, code, result.removed_refs, result.recipes_removed, touched)
+    _logger.info("Admin %s a supprimé l'item %s (refs DB: %s, json: %s)",
+                 user.discord_id, code, result.removed_refs, touched)
     if touched:
         git_sync.push_content([f"app/infrastructure/content/{f}" for f in touched],
                               f"admin: item {code} supprimé (cascade)")

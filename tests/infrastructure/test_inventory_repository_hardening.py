@@ -19,7 +19,6 @@ from app.infrastructure.db.models.resource_model import PlayerResourceModel  # n
 from app.infrastructure.db.models.item_model import ItemDefinitionModel
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel  # noqa: F401
 from app.infrastructure.db.models.mob_model import MobDefinitionModel  # noqa: F401
-from app.infrastructure.db.models.craft_model import CraftRecipeModel, CraftRecipeIngredientModel  # noqa: F401
 from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel  # noqa: F401
 from app.infrastructure.db.models.quest_model import QuestDefinitionModel, PlayerQuestStateModel  # noqa: F401
 from app.infrastructure.db.models.profession_model import PlayerProfessionModel  # noqa: F401

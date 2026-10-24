@@ -34,7 +34,6 @@ from app.infrastructure.db.models.player_mob_kill_model import PlayerMobKillMode
 from app.infrastructure.db.models.mob_model import MobDefinitionModel
 from app.infrastructure.db.models.item_model import ItemDefinitionModel  # noqa: F401
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel  # noqa: F401
-from app.infrastructure.db.models.craft_model import CraftRecipeModel, CraftRecipeIngredientModel  # noqa: F401
 from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel  # noqa: F401
 from app.infrastructure.db.models.quest_model import QuestDefinitionModel, PlayerQuestStateModel  # noqa: F401
 from app.infrastructure.db.models.profession_model import PlayerProfessionModel  # noqa: F401

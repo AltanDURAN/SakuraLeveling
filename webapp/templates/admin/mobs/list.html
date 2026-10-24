@@ -115,7 +115,7 @@ function mobCard(el){
   const d = JSON.parse(el.dataset.card);
   const meta = {}; (d.elements||[]).forEach(e => meta[e.code]=e);
   return {
-    open:false, code:d.code, name:d.name, family:d.family, element:d.element,
+    open:false, code:d.code, name:d.name, family:d.family, element:d.element, gearItem:d.gear_item_code||'',
     description:d.description, imageName:d.image,
     s:d.stats, r:d.rewards, w:d.weights, meta, rows:d.loot||[],
     origSpawn:d.spawn_total||0, spawnBaseline:(d.rewards.spawn_weight||0),
@@ -286,6 +286,12 @@ document.addEventListener('alpine:init', () => {
                   <option value="">— aucun (tirage élémentaire) —</option>
                   {% for e in ['eau','feu','plante','glace','vent','terre','tenebre','lumiere'] %}
                   <option value="{{ e }}">{{ e }}</option>{% endfor %}
+                </select></label>
+              <label class="field"><span class="field-label">Pièce portée <span class="hint" title="La pièce d'équipement que ce monstre peut lâcher (rareté tirée au sort). Une pièce par monstre.">ⓘ</span></span>
+                <select class="input" name="gear_item_code" x-model="gearItem">
+                  <option value="">— aucune —</option>
+                  {% for it in items_catalog if it.category in ['arme','bouclier','tete','corps','accessoire'] %}
+                  <option value="{{ it.code }}">{{ it.name }} ({{ it.category }})</option>{% endfor %}
                 </select></label>
               <label class="field"><span class="field-label">Description</span>
                 <textarea class="input textarea" rows="2" name="description" x-model="description"></textarea></label>

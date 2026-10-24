@@ -23,6 +23,10 @@ fi
 echo "==> 1. Backup DB"
 cp "$DB_FILE" "lita_v2_backup_$(date +%Y%m%d_%H%M%S).db"
 ls -lh lita_v2_backup_*.db | tail -3
+# Rotation : les 10 sauvegardes de déploiement les plus récentes suffisent
+# (la sauvegarde QUOTIDIENNE vit à part, dans ~/sakura-backups, + hors site).
+# Les sauvegardes nommées à la main (ex. lita_v2_backup_saison1_*) sont gardées.
+ls -1t lita_v2_backup_2*.db 2>/dev/null | tail -n +11 | xargs -r rm -f
 
 echo "==> 2. Pull origin/$BRANCH"
 git fetch origin

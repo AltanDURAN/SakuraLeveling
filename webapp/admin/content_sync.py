@@ -52,8 +52,8 @@ def build_item_dict(
 
 def delete_item_json(code: str) -> list[str]:
     """Retire l'item `code` de TOUS les JSON de contenu qui le référencent :
-    items.json, shop_items.json, crafts.json (recettes le produisant + lignes
-    d'ingrédient le citant), mobs.json (loot_table), family_drops.json.
+    items.json, shop_items.json, mobs.json (loot_table et pièce portée),
+    family_drops.json.
     Retourne la liste des fichiers modifiés (pour le git push)."""
     touched: list[str] = []
 
@@ -73,23 +73,6 @@ def delete_item_json(code: str) -> list[str]:
     if len(new_shop) != len(shop):
         _save("shop_items.json", new_shop)
 
-    # crafts.json : retire les recettes produisant l'item + les ingrédients le citant
-    crafts = json_writer.load_json("crafts.json", default=[]) or []
-    new_crafts = []
-    crafts_changed = False
-    for r in crafts:
-        if r.get("result_item_code") == code:
-            crafts_changed = True
-            continue  # recette produisant l'item supprimé → drop
-        ings = r.get("ingredients") or []
-        kept = [i for i in ings if i.get("item_code") != code]
-        if len(kept) != len(ings):
-            r = {**r, "ingredients": kept}
-            crafts_changed = True
-        new_crafts.append(r)
-    if crafts_changed:
-        _save("crafts.json", new_crafts)
-
     # mobs.json : retire l'item des loot_table
     mobs = json_writer.load_json("mobs.json", default=[]) or []
     mobs_changed = False
@@ -98,6 +81,9 @@ def delete_item_json(code: str) -> list[str]:
         kept = [e for e in lt if e.get("item_code") != code]
         if len(kept) != len(lt):
             m["loot_table"] = kept
+            mobs_changed = True
+        if m.get("gear_item_code") == code:
+            m["gear_item_code"] = ""
             mobs_changed = True
     if mobs_changed:
         _save("mobs.json", mobs)
@@ -116,7 +102,7 @@ def delete_item_json(code: str) -> list[str]:
 def build_mob_dict(
     *, code, name, family, description, max_hp, current_hp, attack, defense,
     crit_chance, crit_damage, dodge, hp_regeneration, speed, xp_reward,
-    gold_reward, spawn_weight, loot_table, image_name, element,
+    gold_reward, spawn_weight, loot_table, image_name, element, gear_item_code="",
 ) -> dict:
     """Construit le dict d'un mob au schéma exact de mobs.json (ordre du seed)."""
     return {
@@ -139,6 +125,7 @@ def build_mob_dict(
         "loot_table": loot_table or [],
         "image_name": image_name,
         "element": element or "",
+        "gear_item_code": gear_item_code or "",
     }
 
 
@@ -151,7 +138,9 @@ def upsert_mob_json(mob: dict) -> None:
         code = mob["code"]
         for i, entry in enumerate(data):
             if isinstance(entry, dict) and entry.get("code") == code:
-                data[i] = mob
+                # Fusion : un champ que le formulaire ignore (ex. une capacité
+                # future) n'est pas effacé du JSON — sinon le reseed le perdait.
+                data[i] = {**entry, **mob}
                 break
         else:
             data.append(mob)
