@@ -94,3 +94,17 @@ def test_bonus_de_drop_ne_touche_ni_legendaire_ni_mythique():
 
 def test_un_malus_n_existe_pas():
     assert roll_drop(_FixedRng(0.09), drop_bonus=0.5) == roll_drop(_FixedRng(0.09))
+
+
+def test_trouvaille_seulement_sous_la_rarete_de_sa_piece():
+    m = DROP_RATES_PCT["mythic"] / 100
+    l = DROP_RATES_PCT["legendary"] / 100
+    e = DROP_RATES_PCT["epic"] / 100
+    # Jamais sur le mythique, même avec une Trouvaille mythique.
+    assert roll_drop(_FixedRng(m * 1.05), lucky_find_rarity="mythic") == "legendary"
+    # Mythique ⇒ le légendaire est élargi de 10 %.
+    assert roll_drop(_FixedRng(m + l * 1.05), lucky_find_rarity="mythic") == "legendary"
+    assert roll_drop(_FixedRng(m + l * 1.05), lucky_find_rarity="legendary") == "epic"
+    # Épique ⇒ l'épique n'est PAS élargi.
+    assert roll_drop(_FixedRng(m + l + e * 1.05), lucky_find_rarity="epic") == "rare"
+    assert roll_drop(_FixedRng(m + l + e * 1.05), lucky_find_rarity="legendary") == "epic"

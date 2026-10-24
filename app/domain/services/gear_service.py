@@ -79,6 +79,11 @@ DROP_RATES_PCT: dict[str, float] = {
 GEAR_DROP_BONUS_CAP = 1.5
 GEAR_DROP_BONUS_MAX_RARITY = Rarity.EPIC
 
+#: Passif Trouvaille : +10 % sur les raretés STRICTEMENT INFÉRIEURES à celle de
+#: la pièce qui le porte (épique ⇒ commun → rare ; légendaire ⇒ → épique ;
+#: mythique ⇒ → légendaire). Jamais sur le mythique.
+LUCKY_FIND_BONUS = 1.10
+
 #: Fusion vers cette rareté : or et matériaux de la famille du monstre.
 FUSION_GOLD: dict[str, int] = {
     "uncommon": 200, "rare": 1_000, "epic": 6_000, "legendary": 40_000,
@@ -164,19 +169,25 @@ def gear_stats(base: dict | None, rarity: str, forge_level: int = 0) -> dict[str
 
 
 def roll_drop(rng: random.Random | None = None, drop_rate_multiplier: float = 1.0,
-              drop_bonus: float = 1.0) -> Rarity | None:
+              drop_bonus: float = 1.0, lucky_find_rarity: str | None = None) -> Rarity | None:
     """Tirage à la mort d'un monstre : la rareté lâchée, ou None.
 
-    `drop_rate_multiplier` (passif Trouvaille) multiplie CHAQUE taux : +10 %
-    ⇒ 1 % devient 1,1 %. `drop_bonus` (arbre, titres) est bridé : plafonné à
-    `GEAR_DROP_BONUS_CAP`, appliqué jusqu'à `GEAR_DROP_BONUS_MAX_RARITY`."""
+    `drop_rate_multiplier` multiplie CHAQUE taux (outil générique : +10 % ⇒
+    1 % devient 1,1 %). `drop_bonus` (arbre, titres) est bridé : plafonné à
+    `GEAR_DROP_BONUS_CAP`, appliqué jusqu'à `GEAR_DROP_BONUS_MAX_RARITY`.
+    `lucky_find_rarity` : rareté de la pièce Trouvaille portée (cf.
+    `LUCKY_FIND_BONUS`)."""
     rng = rng or random
     bonus = min(max(1.0, drop_bonus), GEAR_DROP_BONUS_CAP)
     cutoff = rarity_index(GEAR_DROP_BONUS_MAX_RARITY)
+    lucky_below = rarity_index(lucky_find_rarity) if lucky_find_rarity else 0
     roll = rng.random() * 100
     acc = 0.0
     for rarity in reversed(RARITY_ORDER):  # le plus rare d'abord
-        mult = max(0.0, drop_rate_multiplier) * (bonus if rarity_index(rarity) <= cutoff else 1.0)
+        idx = rarity_index(rarity)
+        mult = (max(0.0, drop_rate_multiplier)
+                * (bonus if idx <= cutoff else 1.0)
+                * (LUCKY_FIND_BONUS if idx < lucky_below else 1.0))
         acc += DROP_RATES_PCT[rarity] * mult
         if roll < acc:
             return rarity

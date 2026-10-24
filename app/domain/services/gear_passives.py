@@ -73,7 +73,8 @@ PASSIVES: dict[str, GearPassive] = {p.code: p for p in (
                 "L'attaque de l'ennemi est réduite de 5 %.", "enemy"),
     GearPassive("lucky_find", "Trouvaille",
                 "Tes chances de butin d'équipement sont augmentées de 10 % "
-                "(1 % devient 1,1 %).", "economy"),
+                "(1 % devient 1,1 %), pour les raretés INFÉRIEURES à celle de "
+                "cette pièce — jamais pour le mythique.", "economy"),
     GearPassive("blast_ward", "Pare-souffle",
                 "Les dégâts de zone que tu reçois sont réduits de 50 %.", "defense"),
     GearPassive("elemental_power", "Puissance élémentaire",

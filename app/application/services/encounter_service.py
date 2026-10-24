@@ -338,8 +338,9 @@ class EncounterService:
                         drop_bonus: float = 1.0) -> list[tuple[str, str]]:
         """Tirage de la pièce du monstre pour UN survivant (cf. gear_service).
 
-        Le passif « Trouvaille » (épique et plus) multiplie chaque taux de
-        +10 % ; `drop_bonus` (arbre + titres) est bridé par `roll_drop`.
+        Le passif « Trouvaille » (épique et plus) ajoute +10 % aux raretés
+        inférieures à celle de sa pièce ; `drop_bonus` (arbre + titres) est
+        bridé par `roll_drop`.
         Renvoie [(nom, rareté)] ou [] — au plus une pièce par mort."""
         from app.domain.services.gear_passives import active_passives
         from app.domain.services.gear_service import roll_drop
@@ -350,8 +351,10 @@ class EncounterService:
         if not code:
             return []
         equipped = EquipmentRepository(session).list_by_player_id(player_id)
-        multiplier = 1.10 if "lucky_find" in active_passives(equipped) else 1.0
-        rarity = roll_drop(rng, drop_rate_multiplier=multiplier, drop_bonus=drop_bonus)
+        lucky = next((e.rarity for e in equipped
+                      if e.item_definition.passive == "lucky_find"
+                      and "lucky_find" in active_passives([e])), None)
+        rarity = roll_drop(rng, drop_bonus=drop_bonus, lucky_find_rarity=lucky)
         if rarity is None:
             return []
         item = ItemRepository(session).get_by_code(code)
