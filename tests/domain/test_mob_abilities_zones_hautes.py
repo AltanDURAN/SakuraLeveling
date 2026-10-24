@@ -79,3 +79,19 @@ def test_renvoi_de_degats():
 def test_invocations():
     with_adds = fight({"summon": {"atk_pct": 50, "every": 1, "max": 2}}, turns=20)
     assert tanked(with_adds) > tanked(fight({}, turns=20))
+
+
+def test_la_furie_ne_monte_jamais_la_defense():
+    # Combat soustractif : une DEF qui approche l'ATK des joueurs met chaque
+    # coup au plancher de 1 (l'Archidémon était imbattable même à 4).
+    mob = _mob(hp=1000, attack=1, defense=10)
+    r = fight({"enrage": {"tiers": [[99, 300]]}}, mob=mob, turns=6)
+    hits = [int(a.split("inflige ")[1].split()[0]) for t in r.turn_logs
+            for a in t.player_actions if "inflige" in a]
+    assert set(hits) == {40}            # 50 ATK − 10 DEF, avec ou sans furie
+
+
+def test_la_renaissance_ne_monte_pas_la_defense_de_l_ange():
+    from app.domain.services.mob_ability_service import get_mob_abilities
+    for code in ("ange_dechu", "seraphin_brise"):
+        assert get_mob_abilities(code)["revive"].get("def_pct", 0) == 0

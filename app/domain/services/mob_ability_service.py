@@ -16,7 +16,7 @@ MOB_ABILITIES: dict[str, dict] = {
     "gobelin_runique":   {"death_explosion": {"attack_multiplier": 3}},
     "gobelin_assassin":  {"opening_assassinate": {}},
     "succube":           {"charm": {}},
-    "ange_dechu":        {"revive": {"atk_pct": 100, "def_pct": 100}},
+    "ange_dechu":        {"revive": {"atk_pct": 100, "def_pct": 0}},
     "cerbere":           {"multi_hit": {"hits": 3}},
     # Furie : à ≤75% PV +50% atk/déf, ≤50% +100%, ≤25% +300% (le palier le + bas gagne).
     "archidemon":        {"enrage": {"tiers": [[75, 50], [50, 100], [25, 300]]}},
@@ -49,7 +49,7 @@ MOB_ABILITIES: dict[str, dict] = {
     "devoreur": {"lifesteal": {"pct": 20}},
     "heraut_du_vide": {"summon": {"atk_pct": 35, "every": 3, "max": 3}},
     "kraken_astral": {"multi_hit": {"hits": 3}, "slow": {"pct": 50}},
-    "seraphin_brise": {"revive": {"atk_pct": 50, "def_pct": 50}},
+    "seraphin_brise": {"revive": {"atk_pct": 50, "def_pct": 0}},
     "avatar_du_neant": {"alternating": {"single_multiplier": 3}, "armor_break": {"pct": 10, "max_pct": 30}},
 }
 
@@ -58,9 +58,9 @@ MOB_ABILITY_SUMMARY: dict[str, str] = {
     "gobelin_runique":   "Explosion mortelle : à sa mort, inflige 3× son attaque à chaque joueur (esquivable).",
     "gobelin_assassin":  "Assassinat : frappe d'ouverture prioritaire, toujours critique sur le plus faible, enchaîne sur chaque kill (×2, ×3…).",
     "succube":           "Charme : retourne le joueur le plus puissant contre son équipe ; intouchable tant qu'il vit.",
-    "ange_dechu":        "Résurrection : revient une fois à la vie à 100% PV avec +100% d'attaque et de défense.",
+    "ange_dechu":        "Résurrection : revient une fois à la vie à 100% PV avec +100% d'attaque.",
     "cerbere":           "Trois têtes : chaque attaque frappe 3 fois.",
-    "archidemon":        "Furie : plus ses PV sont bas, plus il frappe fort (+50% / +100% / +300% atk & déf à 75% / 50% / 25% PV).",
+    "archidemon":        "Furie : plus ses PV sont bas, plus il frappe fort (+50% / +100% / +300% d'attaque à 75% / 50% / 25% PV).",
     "gobelin_superieur": "Bouclier : démarre avec un bouclier de 100% des PV max ; il se recharge à chaque joueur tué.",
     "gobelin_geant":     "Frappe de zone : touche tous les joueurs et peut étourdir la cible (40%).",
     "banshee":           "Cri de zone : touche tous les joueurs et peut étourdir la cible (50%).",
@@ -90,7 +90,7 @@ MOB_ABILITY_SUMMARY: dict[str, str] = {
     "devoreur": "Vol de vie : récupère 20 % des dégâts qu'il inflige.",
     "heraut_du_vide": "Invocation : appelle un familier tous les 3 tours (max 3), chacun frappe à 35 % de son attaque.",
     "kraken_astral": "Assaut : chaque attaque frappe 3 fois et ralentit sa cible de 50 %.",
-    "seraphin_brise": "Renaissance : revient une fois à la vie à 100 % PV, avec +50 % d'attaque et de défense.",
+    "seraphin_brise": "Renaissance : revient une fois à la vie à 100 % PV, avec +50 % d'attaque.",
     "avatar_du_neant": "Sorts alternés : alterne zone et mono-cible ; la frappe mono-cible fait ×3. Brise-armure : chaque coup réduit la défense de la cible de 10 % pour le combat (max 30 %).",
 }
 

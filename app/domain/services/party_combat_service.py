@@ -186,7 +186,9 @@ class PartyCombatService:
             d = float(mob.defense) + mob_bonus_def
             if mob_revived:
                 d *= 1 + ab.get("revive", {}).get("def_pct", 0) / 100
-            d *= 1 + _enrage_pct() / 100
+            # La furie ne touche PAS la défense : en combat soustractif, une DEF
+            # qui approche l'ATK des joueurs met chaque coup au plancher de 1
+            # (l'Archidémon était imbattable même à 4, audit du 24/10/2026).
             return int(round(d))
 
         def _escalate() -> None:
@@ -540,7 +542,7 @@ class PartyCombatService:
                 mob_hp = mob_max_hp
                 turn_logs.append(snap(
                     f"👼 {mob.name} renaît à 100% PV, transcendé "
-                    f"(+100% attaque et défense) !"))
+                    f"(+{ab['revive'].get('atk_pct', 0)}% d'attaque) !"))
 
 
         def _tick_dots(p) -> None:
