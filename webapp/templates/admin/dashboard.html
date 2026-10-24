@@ -30,7 +30,7 @@
     <h2 class="dashboard-section">🗺️ Monde</h2>
     <div class="entity-grid">
         {{ card('/admin/mobs', '👹', 'Mobs', 'Monstres : stats, drops, familles, élément, image.', mobs_count ~ ' mob(s)') }}
-        {{ card('/admin/zones', '🗺️', 'Zones de farm', 'Salon, familles, décor, essences par kill.', zones_count ~ ' zone(s)') }}
+        {{ card('/admin/zones', '🗺️', 'Zones de farm', 'Salon, familles, décor, essences par kill.', zones_count ~ ' zone(s) · ' ~ planned_zones_count ~ ' prévue(s)') }}
         {{ card('/admin/familles', '🧬', 'Familles', 'Vue famille → mobs, zone, drop commun (éditable).', families_count ~ ' famille(s)') }}
         {{ card('/admin/world-bosses', '🐉', 'World Bosses', 'Boss hebdo, stats et modifiers.', bosses_count ~ ' boss') }}
         {{ card('/admin/scenes', '🎬', 'Scènes', 'Placement des monstres par zone × élément.', 'composer') }}
@@ -41,13 +41,11 @@
     <div class="entity-grid">
         {{ card('/admin/items', '📦', 'Items', 'Armes, armures, ressources, consommables.', items_count ~ ' item(s)') }}
         {{ card('/admin/shop', '🏪', 'Shop', 'Items en vente + prix.', shop_count ~ ' au shop') }}
-        {{ card('/admin/crafts', '🛠️', 'Recettes', 'Craft & forge : résultat, ingrédients, station.', crafts_count ~ ' recette(s)') }}
     </div>
 
     <h2 class="dashboard-section">📈 Progression</h2>
     <div class="entity-grid">
-        {{ card('/admin/skill-tree', '🌳', 'Arbre', 'Nœuds de compétences : effets, prérequis.', skill_nodes_count ~ ' nœud(s)') }}
-        {{ card('/admin/skill-tree/builder', '🖇️', 'Builder d\'arbre', 'Dessine l\'arbre : formes, types, liens, aide géométrique.', 'éditeur visuel') }}
+        {{ card('/admin/skill-tree/builder', '🌳', 'Arbre de compétences', 'Builder visuel : cases, effets, formes, liens.', skill_nodes_count ~ ' case(s)') }}
         {{ card('/admin/titles', '🏷️', 'Titres', 'Titres exclusifs / déblocables et effets.', titles_count ~ ' titre(s)') }}
         {{ card('/admin/quests', '📜', 'Quêtes', 'Quotidiennes et hebdomadaires.', quests_count ~ ' quête(s)') }}
     </div>

@@ -9,6 +9,7 @@ from app.domain.services.power_score_service import PowerScoreService
 from app.domain.services.stats_service import StatsService
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
+from app.infrastructure.encounters.farm_zone_loader import unreleased_families
 from app.infrastructure.db.repositories.player_duel_rank_repository import (
     PlayerDuelRankRepository,
 )
@@ -79,10 +80,12 @@ class LeaderboardCog(commands.Cog):
             if current_lower in label.lower() or current_lower in code.lower():
                 choices.append(app_commands.Choice(name=label, value=code))
 
+        # Les zones pas encore ouvertes ne se dévoilent pas dans l'autocomplétion.
+        hidden = unreleased_families()
         with get_db_session() as session:
             mob_repository = MobRepository(session)
-            mobs = mob_repository.list_all()
-            families = mob_repository.list_distinct_families()
+            mobs = [m for m in mob_repository.list_all() if m.family not in hidden]
+            families = [f for f in mob_repository.list_distinct_families() if f not in hidden]
 
         for family in families:
             label = f"Tués : famille {family.capitalize()}"

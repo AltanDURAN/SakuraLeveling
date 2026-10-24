@@ -2,21 +2,20 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from app.application.services.set_bonus_resolver import resolve_set_bonuses
 from app.application.services.player_stats_resolver import resolve_player_stats
+from app.application.services.admin_gear import give_gear, is_gear, take_gear
+from app.application.use_cases.equip_item import EquipItemUseCase
 from app.application.use_cases.reset_player import ResetPlayerUseCase
 from app.bot.checks.admin_check import admin_only
 from app.bot.rank_roles import RANK_ORDER, set_rank_role
 from app.infrastructure.config.settings import settings
-from app.shared.enums import ALL_ELEMENTS, ELEMENT_LABELS, EQUIPABLE_CATEGORIES, EquipmentSlot
-from app.domain.services.gear_service import RARITY_LABELS, RARITY_ORDER, gear_label, rarity_index
-from app.infrastructure.db.repositories.gear_repository import GearRepository
+from app.shared.enums import ALL_ELEMENTS, ELEMENT_LABELS, EquipmentSlot
+from app.domain.services.gear_service import RARITY_LABELS, RARITY_ORDER, gear_label
 from app.shared.formatters import format_int as _format_int
 from app.domain.services.progression_service import ProgressionService
 from app.domain.services.shop_pricing_service import ShopPricingService
-from app.domain.services.stats_service import StatsService
-from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
+from app.infrastructure.db.repositories.gear_repository import GearRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
@@ -344,14 +343,8 @@ class AdminCog(commands.Cog):
                 )
                 return
 
-            if item.category in EQUIPABLE_CATEGORIES:
-                # Équipement v2 : une ligne par exemplaire (plafonné, c'est un outil de test).
-                gear_repository = GearRepository(session)
-                quantity = min(quantity, 20)
-                for _ in range(quantity):
-                    gear_repository.add(profile.player.id, item.id, rarity, forge,
-                                        source="admin", commit=False)
-                session.commit()
+            if is_gear(item):
+                quantity = give_gear(session, profile.player.id, item, quantity, rarity, forge)
                 await interaction.followup.send(
                     f"✅ {quantity}× **{gear_label(item.name, rarity, forge)}** "
                     f"donné à {target.mention}.",
@@ -407,25 +400,17 @@ class AdminCog(commands.Cog):
                 )
                 return
 
-            if item.category in EQUIPABLE_CATEGORIES:
-                # On retire les copies les moins précieuses d'abord, les
-                # portées en dernier ; une pièce en vente n'est pas touchée.
-                gear_repository = GearRepository(session)
-                copies = sorted(
-                    (g for g in gear_repository.list_owned(profile.player.id)
-                     if g.item_definition.id == item.id),
-                    key=lambda g: (g.equipped, rarity_index(g.rarity), g.forge_level),
-                )
-                if len(copies) < quantity:
+            if is_gear(item):
+                # Les copies les moins précieuses d'abord, les portées en
+                # dernier ; une pièce en vente n'est pas touchée.
+                removed = take_gear(session, profile.player.id, item, quantity)
+                if removed < quantity:
                     await interaction.followup.send(
-                        f"❌ {target.display_name} n'a que {len(copies)} copie(s) libre(s) "
-                        f"de **{item.name}**.",
+                        f"⚠️ {removed} copie(s) seulement retirée(s) à {target.display_name} "
+                        f"(les pièces en vente ne sont pas touchées).",
                         ephemeral=True,
                     )
                     return
-                for g in copies[:quantity]:
-                    gear_repository.remove(g.id, commit=False)
-                session.commit()
                 await interaction.followup.send(
                     f"✅ {quantity}× **{item.name}** retiré à {target.mention} "
                     "(copies les moins rares d'abord).",
@@ -575,21 +560,24 @@ class AdminCog(commands.Cog):
 
     @admin.command(
         name="force_equip",
-        description="Force l'équipement d'un item sur un slot (bypass des checks de craft/inventaire)",
+        description="Équipe une pièce sur un joueur (crée une copie s'il n'en a pas)",
     )
     @app_commands.describe(
         target="Joueur ciblé",
-        item_code="Code de l'item à équiper",
-        slot="Slot où équiper (par défaut : slot canonique de l'item)",
+        item_code="Code de la pièce à équiper",
+        rarity="Rareté de la copie créée si le joueur n'en possède aucune (commun par défaut)",
     )
+    @app_commands.choices(rarity=_RARITY_CHOICES)
     @admin_only
     async def force_equip(
         self,
         interaction: discord.Interaction,
         target: discord.Member,
         item_code: str,
-        slot: str | None = None,
+        rarity: str = "common",
     ) -> None:
+        """Équipement v2 : on porte une COPIE, placée selon les règles du jeu
+        (emplacement automatique, deux mains, une pièce une fois)."""
         await interaction.response.defer(ephemeral=True)
         with get_db_session() as session:
             profile = PlayerRepository(session).get_by_discord_id(target.id)
@@ -599,26 +587,24 @@ class AdminCog(commands.Cog):
                 )
                 return
             item = ItemRepository(session).get_by_code(item_code)
-            if item is None:
+            if item is None or not is_gear(item):
                 await interaction.followup.send(
-                    f"❌ Item `{item_code}` introuvable.", ephemeral=True
+                    f"❌ `{item_code}` n'est pas une pièce d'équipement.", ephemeral=True
                 )
                 return
-            target_slot = slot or item.equipment_slot
-            if target_slot is None:
-                await interaction.followup.send(
-                    f"❌ `{item.name}` n'a pas de slot canonique. "
-                    f"Précisez `slot` explicitement.",
-                    ephemeral=True,
-                )
-                return
-            EquipmentRepository(session).equip_item(
-                profile.player.id, item.id, target_slot
-            )
-        await interaction.followup.send(
-            f"✅ {target.mention} équipé de **{item.name}** sur `{target_slot}`.",
-            ephemeral=True,
-        )
+            owned = [g for g in GearRepository(session).list_owned(profile.player.id)
+                     if g.item_definition.id == item.id and not g.equipped]
+            if owned:
+                gear_id = owned[0].id
+            else:
+                give_gear(session, profile.player.id, item, 1, rarity)
+                gear_id = next(g.id for g in GearRepository(session).list_owned(profile.player.id)
+                               if g.item_definition.id == item.id and not g.equipped)
+            result = EquipItemUseCase(
+                PlayerRepository(session), InventoryRepository(session),
+                EquipmentRepository(session),
+            ).execute(target.id, target.name, target.display_name, gear_id=gear_id)
+        await interaction.followup.send(result.message, ephemeral=True)
 
     @admin.command(
         name="force_unequip",
@@ -1123,7 +1109,6 @@ class AdminCog(commands.Cog):
                 break
         return choices
 
-    @force_equip.autocomplete("slot")
     @force_unequip.autocomplete("slot")
     async def slot_autocomplete(
         self,

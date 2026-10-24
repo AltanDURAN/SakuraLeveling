@@ -2,7 +2,7 @@
 
 {% set section_titles = {
     'inventory': '🎒 Inventaire', 'equipment': '🛡️ Équipement', 'titles': '🏷️ Titres',
-    'affinities': '✨ Affinités & essences', 'skills': '🔮 Compétences', 'duel': '⚔️ Duel',
+    'affinities': '✨ Affinités & essences', 'skills': '🌳 Build', 'duel': '⚔️ Duel',
     'career': '📈 Carrière'
 } %}
 {% block title %}{{ p.display_name }} — {{ section_titles.get(section, 'Fiche joueur') }}{% endblock %}
@@ -92,7 +92,8 @@
                 <label>Niveau<input type="number" name="level" min="1" value="{{ p.level }}"></label>
                 <label>XP<input type="number" name="xp" min="0" value="{{ p.xp }}"></label>
                 <label>Or<input type="number" name="gold" min="0" value="{{ p.gold }}"></label>
-                <label>Points de comp.<input type="number" name="skill_points" min="0" value="{{ p.skill_points }}"></label>
+                <label>Points d'arbre<input type="number" name="skill_points" min="0" value="{{ p.skill_points }}"></label>
+                <label>Points de stats (réserve)<input type="number" name="stat_points" min="0" value="{{ p.stat_points }}"></label>
                 <label>Daily streak<input type="number" name="daily_streak" min="0" value="{{ p.daily_streak }}"></label>
                 <label>PV courant<input type="number" name="current_hp" min="0" value="{{ bars.hp.cur }}"></label>
                 <label>Mana courant<input type="number" name="current_mana" min="0" value="{{ bars.mana.cur }}"></label>
@@ -128,7 +129,7 @@
             <a href="/admin/players/{{ p.id }}/titles{{ eq }}" class="pcard-link">🏷️ Titres <span class="pill">{{ counts.titles }}</span></a>
             <a href="/admin/players/{{ p.id }}/career{{ eq }}" class="pcard-link">📈 Carrière</a>
             <a href="/admin/players/{{ p.id }}/affinities{{ eq }}" class="pcard-link">✨ Affinités</a>
-            <a href="/admin/players/{{ p.id }}/skills{{ eq }}" class="pcard-link">🔮 Compétences</a>
+            <a href="/admin/players/{{ p.id }}/skills{{ eq }}" class="pcard-link">🌳 Build</a>
             <a href="/admin/players/{{ p.id }}/duel{{ eq }}" class="pcard-link">⚔️ Duel</a>
         </div>
 
@@ -260,25 +261,23 @@
             {% endfor %}</div>
 
         {% elif section == 'skills' %}
-            {% for s in skills %}
-            <div class="pcard-grid" style="margin-bottom:.5rem;">
-                <div class="pfield" style="grid-column: 1 / -1;">
-                    <span>Slot {{ s.slot }}</span>
-                    {% if edit %}
-                    <form method="post" action="/admin/players/{{ p.id }}/skills/set" style="display:flex; gap:.4rem; margin-top:.3rem;">
-                        <input type="hidden" name="slot" value="{{ s.slot }}">
-                        <select name="skill_code" style="flex:1;">
-                            <option value="">— vide —</option>
-                            {% for code in all_skill_codes %}<option value="{{ code }}" {% if code == s.code %}selected{% endif %}>{{ code }}</option>{% endfor %}
-                        </select>
-                        <button class="btn btn-small btn-primary">OK</button>
-                    </form>
-                    {% else %}
-                    <strong>{% if s.code %}{{ s.name }} ({{ s.element }}/{{ s.role }}){% else %}— vide —{% endif %}</strong>
-                    {% endif %}
-                </div>
+            <div class="pcard-grid">
+                <div class="pfield"><span>⚔️ Points en ATK</span><strong>{{ p.points_attack }}</strong></div>
+                <div class="pfield"><span>🛡️ Points en DEF</span><strong>{{ p.points_defense }}</strong></div>
+                <div class="pfield"><span>❤️ Points en PV</span><strong>{{ p.points_max_hp }}</strong></div>
+                <div class="pfield"><span>Points de stats en réserve</span><strong>{{ p.stat_points }}</strong></div>
+                <div class="pfield"><span>Points d'arbre en réserve</span><strong>{{ p.skill_points }}</strong></div>
+                <div class="pfield"><span>🌸 Bonus de panoplie</span><strong>{{ panoplie_label }}</strong></div>
+                <div class="pfield"><span>🎯 Tactique</span><strong>{{ p.combat_tactic }}</strong></div>
             </div>
-            {% endfor %}
+            {% if tree_nodes %}
+            <div class="table-wrapper"><table class="data-table">
+                <thead><tr><th>Case de l'arbre</th><th>Niveau</th></tr></thead>
+                <tbody>{% for n in tree_nodes %}
+                    <tr><td>{{ n.name }} <code>{{ n.code }}</code></td><td>{{ n.level }} / {{ n.max }}</td></tr>
+                {% endfor %}</tbody>
+            </table></div>
+            {% else %}<div class="empty-state"><p>Aucun point investi dans l'arbre.</p></div>{% endif %}
 
         {% elif section == 'duel' %}
             {% if duel %}

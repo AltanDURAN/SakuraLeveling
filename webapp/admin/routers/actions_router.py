@@ -16,13 +16,13 @@ from __future__ import annotations
 import logging
 from urllib.parse import quote_plus
 
-from fastapi import APIRouter, Depends, Request, HTTPException, status
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from app.infrastructure.db.repositories.admin_command_repository import (
     AdminCommandRepository,
 )
-from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
+from app.application.services.admin_gear import give_gear, is_gear, take_gear
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.inventory_repository import (
     InventoryRepository,
@@ -228,6 +228,15 @@ async def give_item(
         item = ItemRepository(session).get_by_code(item_code)
         if item is None:
             return RedirectResponse(f"/admin/actions?error=Item+%60{item_code}%60+introuvable", status_code=303)
+        if is_gear(item):
+            # Équipement v2 : des exemplaires, jamais l'inventaire.
+            if action == "take":
+                n = take_gear(session, pid, item, qty)
+                msg = f"{n} copie(s) de {item_code} retirée(s)"
+            else:
+                n = give_gear(session, pid, item, qty)
+                msg = f"{n} copie(s) commune(s) de {item_code} donnée(s)"
+            return RedirectResponse(f"/admin/actions?message={quote_plus(msg)}", status_code=303)
         inv = InventoryRepository(session)
         if action == "take":
             ok = inv.remove_item(pid, item.id, qty)

@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, Request, status, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from app.application.services.player_stats_resolver import resolve_player_stats
+from app.application.services.admin_gear import give_gear, is_gear
 from app.application.use_cases.equip_item import EquipItemUseCase
 from app.application.use_cases.reset_player import ResetPlayerUseCase
 from app.domain.services.gear_passives import get_passive
@@ -91,6 +92,12 @@ def _player_summary(profile) -> dict:
         "level": profile.progression.level,
         "xp": profile.progression.xp,
         "skill_points": profile.progression.skill_points,
+        "stat_points": profile.progression.stat_points,
+        "points_attack": profile.progression.points_attack,
+        "points_defense": profile.progression.points_defense,
+        "points_max_hp": profile.progression.points_max_hp,
+        "panoplie_bonus": profile.player.panoplie_bonus,
+        "combat_tactic": profile.player.combat_tactic,
         "gold": profile.resources.gold,
         "daily_streak": profile.resources.daily_streak,
         # created_at = arrivée sur le serveur (création du profil, à l'accueil ou
@@ -310,13 +317,26 @@ async def players_affinities(player_id: int, request: Request, edit: int = 0, us
 
 @router.get("/{player_id}/skills", response_class=HTMLResponse)
 async def players_skills(player_id: int, request: Request, edit: int = 0, user: AdminUser = Depends(require_admin)):
+    """Build du joueur : points de stats placés, cases de l'arbre, panoplie, tactique."""
+    from app.domain.services.set_bonus_service import panoplie_type
+    from app.infrastructure.db.repositories.player_skill_allocation_repository import (
+        PlayerSkillAllocationRepository,
+    )
+    from app.infrastructure.skill_tree.skill_tree_loader import get_definition
+
     with get_db_session() as session:
-        ctx, profile = await _base_ctx(session, user, player_id, "skills")
+        ctx, _ = await _base_ctx(session, user, player_id, "skills")
         ctx["edit"] = bool(edit)
-        # Les compétences équipables ont disparu : elles viennent de l'arbre
-        # (lot 3). L'onglet reste pour ne pas casser la navigation.
-        slots = []
-        ctx["all_skill_codes"] = []
+        allocations = PlayerSkillAllocationRepository(session).list_by_player(player_id)
+    tree = get_definition()
+    ctx["tree_nodes"] = sorted(
+        ({"code": code, "name": (tree.get(code).name if tree.get(code) else code),
+          "level": level, "max": (tree.get(code).max_level if tree.get(code) else "?")}
+         for code, level in (allocations or {}).items() if level),
+        key=lambda n: n["name"].lower(),
+    )
+    kind = panoplie_type(ctx["p"]["panoplie_bonus"])
+    ctx["panoplie_label"] = f"{kind.emoji} {kind.label}"
     return get_templates().TemplateResponse(request, "admin/players/card.html", context=ctx)
 
 
@@ -383,11 +403,13 @@ async def players_update(player_id: int, request: Request, user: AdminUser = Dep
         new_level = max(1, _i("level", profile.progression.level))
         new_xp = max(0, _i("xp", profile.progression.xp))
         new_sp = max(0, _i("skill_points", profile.progression.skill_points))
+        new_stat_pts = max(0, _i("stat_points", profile.progression.stat_points))
         new_gold = max(0, _i("gold", profile.resources.gold))
         new_streak = max(0, _i("daily_streak", profile.resources.daily_streak))
 
         repo.apply_progression(
             player_id=player_id, new_level=new_level, new_xp=new_xp, new_skill_points=new_sp,
+            new_stat_points=new_stat_pts,
         )
         repo.set_gold(player_id, new_gold)
         repo.set_daily_streak(player_id, new_streak)
@@ -426,6 +448,10 @@ async def inv_add(player_id: int, request: Request, user: AdminUser = Depends(re
         qty = 1
     with get_db_session() as session:
         item = ItemRepository(session).get_by_code(code)
+        if item and is_gear(item):
+            # Une pièce d'équipement est un exemplaire (onglet Équipement).
+            give_gear(session, player_id, item, qty)
+            return _redir(player_id, "equipment")
         if item:
             InventoryRepository(session).add_item(player_id, item.id, qty)
     return _redir(player_id, "inventory")
@@ -509,19 +535,6 @@ async def eq_unequip(player_id: int, request: Request, user: AdminUser = Depends
         if slot:
             EquipmentRepository(session).unequip_slot(player_id, slot)
     return _redir(player_id, "equipment")
-
-
-@router.post("/{player_id}/skills/set")
-async def sk_set(player_id: int, request: Request, user: AdminUser = Depends(require_admin)):
-    form = await request.form()
-    try:
-        slot_index = int(str(form.get("slot", 1)).strip())
-    except (ValueError, TypeError):
-        slot_index = 1
-    code = str(form.get("skill_code", "")).strip() or None
-    with get_db_session() as session:
-        PlayerRepository(session).set_skill_slot(player_id, slot_index, code)
-    return _redir(player_id, "skills")
 
 
 @router.post("/{player_id}/titles/add")

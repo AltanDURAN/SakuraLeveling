@@ -1,10 +1,8 @@
-"""Routes admin pour le contenu JSON-backed (classes, skill tree,
-titres, quêtes, world bosses) + le DB-backed (crafts).
+"""Routes admin pour le contenu JSON-backed : titres, quêtes, world bosses.
+L'arbre de compétences s'édite dans le builder (`skill_builder_router`).
 
-Listings : read complet via filtres + tri.
-Création : ajout d'une entrée via form, écriture atomique dans le JSON.
-Édition / suppression : non implémentées en V1 (le contenu peut toujours
-être édité à la main dans `app/infrastructure/content/`).
+Listings : read complet via filtres + tri ; création, édition et
+suppression avec écriture atomique dans le JSON.
 
 ⚠️ Les loaders de contenu (skill_tree_loader, title_loader, …) cachent le
 JSON en mémoire au démarrage. Le bot Discord doit être redémarré pour voir
@@ -21,18 +19,13 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, Request, status, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from app.infrastructure.db.repositories.item_repository import ItemRepository
-from app.infrastructure.db.session import get_db_session
 from webapp.admin import git_sync
 from webapp.admin.auth import AdminUser, require_admin
 from webapp.admin._shared import get_templates
 from webapp.admin.json_writer import (
-    add_skill_node,
     append_to_list,
-    atomic_write_json,
     delete_in_list_by_key,
     load_json as _writer_load,
-    upsert_to_dict,
 )
 
 
@@ -83,53 +76,6 @@ def _parse_kv_pairs(raw: str) -> dict[str, int]:
     return out
 
 
-def _parse_csv(raw: str) -> list[str]:
-    """Parse 'a, b , c' → ['a', 'b', 'c']."""
-    if not raw:
-        return []
-    return [x.strip() for x in raw.split(",") if x.strip()]
-
-
-def _parse_int_list(raw: str) -> list[int]:
-    """Parse '1, 2, 3, 5' → [1, 2, 3, 5]."""
-    out = []
-    for x in _parse_csv(raw):
-        try:
-            out.append(int(x))
-        except ValueError:
-            pass
-    return out
-
-
-def _parse_unlock_requirements(raw: str) -> list[dict]:
-    """Parse le champ 'unlock' libre admin → liste de requirements typés.
-
-    Format attendu : 'profession_level:mining:2, level:5'. Avant cette
-    factorisation, classes_create et classes_update faisaient `int(parts[N])`
-    sans try/except → HTTP 500 brut sur faute de frappe (cf. audit B7).
-    Désormais : un chunk mal formé est SILENCIEUSEMENT ignoré (au lieu de
-    crasher la requête), comme les autres parseurs du module.
-    """
-    out: list[dict] = []
-    raw = (raw or "").strip()
-    if not raw:
-        return out
-    for chunk in raw.split(","):
-        parts = [p.strip() for p in chunk.split(":")]
-        try:
-            if parts[0] == "profession_level" and len(parts) == 3:
-                out.append({
-                    "type": "profession_level",
-                    "profession_code": parts[1],
-                    "level": int(parts[2]),
-                })
-            elif parts[0] == "level" and len(parts) == 2:
-                out.append({"type": "level", "level": int(parts[1])})
-        except (ValueError, IndexError):
-            continue
-    return out
-
-
 def _parse_reward_items(raw: str) -> list[list]:
     """Parse 'potion_soin_i:1, gold_coin:5' → [['potion_soin_i', 1], ['gold_coin', 5]]."""
     out = []
@@ -171,124 +117,9 @@ def _render(request: Request, user: AdminUser, **ctx) -> HTMLResponse:
 
 # ============ Classes ============
 # ============ Crafts (DB) ============
-@router.get("/crafts", response_class=HTMLResponse)
-async def crafts_list(
-    request: Request,
-    user: AdminUser = Depends(require_admin),
-    q: str | None = None,
-    station: str | None = None,
-):
-    from app.infrastructure.db.models.craft_model import (
-        CraftRecipeModel,
-        CraftRecipeIngredientModel,
-    )
-    from app.infrastructure.db.models.item_model import ItemDefinitionModel
-    from sqlalchemy import select
-
-    rows = []
-    stations: set[str] = set()
-    with get_db_session() as session:
-        # Charge les items pour le mapping result_id → name
-        items = {it.id: it for it in session.execute(select(ItemDefinitionModel)).scalars().all()}
-        recipes = session.execute(select(CraftRecipeModel)).scalars().all()
-        # Charge tous les ingredients groupés par recipe_id
-        ingredients_by_recipe: dict[int, list[CraftRecipeIngredientModel]] = {}
-        for ing in session.execute(select(CraftRecipeIngredientModel)).scalars().all():
-            ingredients_by_recipe.setdefault(ing.craft_recipe_id, []).append(ing)
-
-        for r in recipes:
-            result_item = items.get(r.result_item_definition_id)
-            result_cat = result_item.category if result_item else ""
-            # Inférer la station à partir de la catégorie du résultat (cohérent
-            # avec FORGE_CATEGORIES). Pas stocké en DB.
-            from app.shared.enums import FORGE_CATEGORIES
-            st = "forge" if result_cat in FORGE_CATEGORIES else "craft"
-            stations.add(st)
-            ings = ingredients_by_recipe.get(r.id, [])
-            ing_str = ", ".join(
-                f"{items.get(i.item_definition_id).name if items.get(i.item_definition_id) else '?'}×{i.quantity}"
-                for i in ings
-            )
-            rows.append({
-                "code": r.code,
-                "name": r.name,
-                "result": result_item.name if result_item else "?",
-                "result_qty": r.result_quantity,
-                "station": st,
-                "ingredients": ing_str,
-                "__edit_url__": f"/admin/crafts/{r.code}/edit",
-                "__delete_url__": f"/admin/crafts/{r.code}/delete",
-            })
-
-    filtered = _filter_rows(rows, q, {"station": station})
-    return _render(
-        request, user,
-        title="Recettes", icon="🛠️",
-        new_url="/admin/crafts/new", new_label="Nouvelle recette",
-        source_label="Stockées en DB (craft_recipes). Édition directe — pas de restart bot.",
-        filter_q=q or "",
-        filter_groups=[{
-            "name": "station",
-            "current": station or "",
-            "placeholder": "Toutes stations",
-            "options": [(s, s) for s in sorted(stations)],
-        }],
-        columns=[
-            {"label": "Code", "key": "code"},
-            {"label": "Nom", "key": "name"},
-            {"label": "Résultat", "key": "result"},
-            {"label": "Qté", "key": "result_qty"},
-            {"label": "Station", "key": "station"},
-            {"label": "Ingrédients", "key": "ingredients"},
-        ],
-        rows=filtered,
-    )
 
 
 # ============ Skill Tree ============
-@router.get("/skill-tree", response_class=HTMLResponse)
-async def skill_tree_list(
-    request: Request,
-    user: AdminUser = Depends(require_admin),
-    q: str | None = None,
-):
-    data = _load_json("skill_tree.json") or {}
-    skills = data.get("skills", {})
-    rows = []
-    for code, node in skills.items():
-        effects_str = ", ".join(
-            f"{e.get('type')}={e.get('values')}"
-            for e in (node.get("effects") or [])
-        )
-        rows.append({
-            "code": code,
-            "name": node.get("name", ""),
-            "icon": node.get("icon", ""),
-            "max_level": node.get("max_level", 1),
-            "costs": ",".join(str(c) for c in (node.get("costs") or [])),
-            "prereqs": ", ".join(node.get("prerequisites") or []) or "—",
-            "effects": effects_str or "—",
-            "__edit_url__": f"/admin/skill-tree/{code}/edit",
-            "__delete_url__": f"/admin/skill-tree/{code}/delete",
-        })
-    filtered = _filter_rows(rows, q)
-    return _render(
-        request, user,
-        title="Skill Tree", icon="🌳",
-        new_url="/admin/skill-tree/new", new_label="Nouveau skill",
-        source_label=f"Définitions : app/infrastructure/content/skill_tree.json (root = {data.get('root', '?')}) — ⚠️ restart bot requis après ajout",
-        filter_q=q or "",
-        columns=[
-            {"label": "Icon", "key": "icon"},
-            {"label": "Code", "key": "code"},
-            {"label": "Nom", "key": "name"},
-            {"label": "Max", "key": "max_level"},
-            {"label": "Coûts", "key": "costs"},
-            {"label": "Prérequis", "key": "prereqs"},
-            {"label": "Effets", "key": "effects"},
-        ],
-        rows=filtered,
-    )
 
 
 # ============ Titres ============
@@ -639,81 +470,6 @@ async def bosses_create(request: Request, user: AdminUser = Depends(require_admi
     return RedirectResponse(f"/admin/world-bosses?q={code}", status_code=303)
 
 
-@router.get("/skill-tree/new", response_class=HTMLResponse)
-async def skills_new_form(request: Request, user: AdminUser = Depends(require_admin)):
-    data = _writer_load("skill_tree.json", default={"skills": {}}) or {"skills": {}}
-    existing_codes = sorted((data.get("skills") or {}).keys())
-    return get_templates().TemplateResponse(
-        request, "admin/skill_tree/form.html",
-        context={
-            "user": user, "errors": {}, "form_data": {},
-            "existing_codes": existing_codes,
-            "effects_json": "[]", "effect_types": SKILL_EFFECT_TYPES,
-        },
-    )
-
-
-@router.post("/skill-tree")
-async def skills_create(request: Request, user: AdminUser = Depends(require_admin)):
-    fd = {k: str(v) for k, v in (await request.form()).items()}
-    errors = {}
-    code = fd.get("code", "").strip()
-    name = fd.get("name", "").strip()
-    if not code:
-        errors["code"] = "Code requis."
-    if not name:
-        errors["name"] = "Nom requis."
-    data = _writer_load("skill_tree.json", default={"skills": {}}) or {"skills": {}}
-    if code in (data.get("skills") or {}):
-        errors["code"] = f"Skill `{code}` existe déjà."
-    if errors:
-        existing_codes = sorted((data.get("skills") or {}).keys())
-        return get_templates().TemplateResponse(
-            request, "admin/skill_tree/form.html",
-            context={
-                "user": user, "errors": errors, "form_data": fd,
-                "existing_codes": existing_codes,
-            },
-            status_code=400,
-        )
-
-    # Effects : "type:val1,val2,val3 / type:val1,val2"
-    effects = []
-    for chunk in fd.get("effects", "").split("/"):
-        chunk = chunk.strip()
-        if not chunk or ":" not in chunk:
-            continue
-        type_, values_str = chunk.split(":", 1)
-        values = []
-        for v in values_str.split(","):
-            v = v.strip()
-            try:
-                values.append(int(v))
-            except ValueError:
-                try:
-                    values.append(float(v))
-                except ValueError:
-                    continue
-        if values:
-            effects.append({"type": type_.strip(), "values": values})
-
-    node = {
-        "name": name,
-        "description": fd.get("description", "").strip(),
-        "icon": fd.get("icon", "").strip() or "✨",
-        "max_level": _parse_int(fd.get("max_level"), 5),
-        "costs": _parse_int_list(fd.get("costs", "1,1,1,1,1")) or [1],
-        "effects": effects,
-        "prerequisites": _parse_csv(fd.get("prerequisites", "")),
-        "position": {
-            "x": _parse_int(fd.get("position_x"), 0),
-            "y": _parse_int(fd.get("position_y"), 0),
-        },
-    }
-    add_skill_node(code, node)
-    return RedirectResponse(f"/admin/skill-tree?q={code}", status_code=303)
-
-
 # --- Crafts (DB + sync JSON) ---
 
 # Labels FR pour les catégories d'items dans le form de craft. L'ordre
@@ -736,147 +492,6 @@ CATEGORY_LABELS_FR: list[tuple[str, str]] = [
 ]
 
 
-def _craft_form_context(items):
-    """Construit items_by_category + labels pour le template."""
-    items_by_cat: dict[str, list[dict]] = {}
-    for it in items:
-        items_by_cat.setdefault(it.category, []).append({
-            "code": it.code, "name": it.name,
-        })
-    # Tri alphabétique des items dans chaque catégorie
-    for cat in items_by_cat:
-        items_by_cat[cat].sort(key=lambda x: x["name"])
-    return {
-        "categories": [
-            {"code": cat, "label": label}
-            for cat, label in CATEGORY_LABELS_FR
-            if cat in items_by_cat
-        ],
-        "items_by_category": items_by_cat,
-        "items": [{"code": it.code, "name": it.name, "category": it.category} for it in items],
-    }
-
-
-@router.get("/crafts/new", response_class=HTMLResponse)
-async def crafts_new_form(request: Request, user: AdminUser = Depends(require_admin)):
-    with get_db_session() as session:
-        items = ItemRepository(session).list_all()
-    return get_templates().TemplateResponse(
-        request, "admin/crafts/form.html",
-        context={
-            "user": user, "errors": {}, "form_data": {},
-            **_craft_form_context(items),
-        },
-    )
-
-
-@router.post("/crafts")
-async def crafts_create(request: Request, user: AdminUser = Depends(require_admin)):
-    from app.infrastructure.db.models.craft_model import (
-        CraftRecipeModel, CraftRecipeIngredientModel,
-    )
-    from sqlalchemy import select
-    from datetime import datetime, UTC
-
-    form = await request.form()
-    # Champs scalaires
-    fd: dict[str, str] = {}
-    for k in ("code", "name", "result_item_code", "result_quantity",
-              "result_category"):
-        fd[k] = str(form.get(k, ""))
-
-    errors = {}
-    code = fd.get("code", "").strip()
-    name = fd.get("name", "").strip()
-    result_code = fd.get("result_item_code", "").strip()
-    result_qty = _parse_int(fd.get("result_quantity"), 1)
-    if not code:
-        errors["code"] = "Code requis."
-    if not name:
-        errors["name"] = "Nom requis."
-    if not result_code:
-        errors["result_item_code"] = "Item résultat requis."
-
-    # Ingrédients : champs répétés ingredient_category[], ingredient_item_code[],
-    # ingredient_quantity[]. On les zippe par index.
-    ing_codes = form.getlist("ingredient_item_code")
-    ing_qtys = form.getlist("ingredient_quantity")
-    ingredients = []
-    for ic, qty in zip(ing_codes, ing_qtys):
-        ic = (ic or "").strip()
-        if not ic:
-            continue
-        try:
-            q = int(qty)
-            if q < 1:
-                continue
-        except (ValueError, TypeError):
-            continue
-        ingredients.append((ic, q))
-
-    if not ingredients:
-        errors["ingredients"] = "Au moins 1 ingrédient requis."
-
-    if errors:
-        with get_db_session() as session:
-            items = ItemRepository(session).list_all()
-        # Reconstruit la liste des rows ingrédients pour re-pré-remplir
-        ingredients_rows = [
-            {"category": c, "item_code": ic, "quantity": q}
-            for c, ic, q in zip(
-                form.getlist("ingredient_category"),
-                ing_codes, ing_qtys,
-            )
-        ]
-        return get_templates().TemplateResponse(
-            request, "admin/crafts/form.html",
-            context={
-                "user": user, "errors": errors, "form_data": fd,
-                "ingredients_rows": ingredients_rows,
-                **_craft_form_context(items),
-            },
-            status_code=400,
-        )
-
-    with get_db_session() as session:
-        repo = ItemRepository(session)
-        result_item = repo.get_by_code(result_code)
-        if result_item is None:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Item résultat `{result_code}` introuvable.")
-        # Verif existence code
-        existing = session.execute(
-            select(CraftRecipeModel).where(CraftRecipeModel.code == code)
-        ).scalar_one_or_none()
-        if existing is not None:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Recette `{code}` existe déjà.")
-        # Insert recipe
-        now = datetime.now(UTC)
-        recipe = CraftRecipeModel(
-            code=code, name=name,
-            result_item_definition_id=result_item.id,
-            result_quantity=result_qty,
-            created_at=now, updated_at=now,
-        )
-        session.add(recipe)
-        session.flush()
-        # Insert ingredients
-        for ing_code, ing_qty in ingredients:
-            ing_item = repo.get_by_code(ing_code)
-            if ing_item is None:
-                raise HTTPException(
-                    status.HTTP_400_BAD_REQUEST,
-                    f"Ingrédient `{ing_code}` introuvable.",
-                )
-            session.add(CraftRecipeIngredientModel(
-                craft_recipe_id=recipe.id,
-                item_definition_id=ing_item.id,
-                quantity=ing_qty,
-            ))
-        session.commit()
-
-    return RedirectResponse(f"/admin/crafts?q={code}", status_code=303)
-
-
 # ============ Edit forms ============
 
 # Helpers de formatage inverse (struct → string compact pour pré-remplir un form)
@@ -886,10 +501,6 @@ def _fmt_kv_pairs(d: dict | None) -> str:
     if not d:
         return ""
     return ", ".join(f"{k}={v}" for k, v in d.items())
-
-
-def _fmt_csv(lst: list | None) -> str:
-    return ", ".join(str(x) for x in (lst or []))
 
 
 def _fmt_reward_items(lst: list | None) -> str:
@@ -907,27 +518,6 @@ def _fmt_title_effects(effects: list | None) -> str:
         target = e.get("target") or ""
         val = e.get("value", "")
         out.append(f"{type_}:{target}:{val}")
-    return ", ".join(out)
-
-
-def _fmt_skill_effects(effects: list | None) -> str:
-    """[{type, values}] → 'type:v1,v2,v3 / type2:v1,v2'"""
-    out = []
-    for e in (effects or []):
-        type_ = e.get("type", "")
-        values = e.get("values", [])
-        out.append(f"{type_}:" + ",".join(str(v) for v in values))
-    return " / ".join(out)
-
-
-def _fmt_unlock_class(reqs: list | None) -> str:
-    """[{type, profession_code?, level}] → 'profession_level:mining:2, level:5'"""
-    out = []
-    for r in (reqs or []):
-        if r.get("type") == "profession_level":
-            out.append(f"profession_level:{r.get('profession_code', '')}:{r.get('level', '')}")
-        elif r.get("type") == "level":
-            out.append(f"level:{r.get('level', '')}")
     return ", ".join(out)
 
 
@@ -1117,203 +707,9 @@ async def bosses_update(
 
 
 # --- Skill Tree node ---
-@router.get("/skill-tree/{code}/edit", response_class=HTMLResponse)
-async def skills_edit_form(
-    code: str, request: Request, user: AdminUser = Depends(require_admin),
-):
-    data = _writer_load("skill_tree.json", default={"skills": {}}) or {"skills": {}}
-    skills = data.get("skills", {})
-    if code not in skills:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Skill `{code}` introuvable.")
-    node = skills[code]
-    pos = node.get("position", {})
-    fd = {
-        "code": code,
-        "name": node.get("name", ""),
-        "description": node.get("description", ""),
-        "icon": node.get("icon", ""),
-        "max_level": node.get("max_level", 5),
-        "costs": _fmt_csv(node.get("costs", [])),
-        "prerequisites": _fmt_csv(node.get("prerequisites", [])),
-        "effects": _fmt_skill_effects(node.get("effects")),
-        "position_x": pos.get("x", 0),
-        "position_y": pos.get("y", 0),
-    }
-    existing_codes = sorted(c for c in skills.keys() if c != code)
-    import json as _json
-    effects_json = _json.dumps(node.get("effects") or [], ensure_ascii=False)
-    return get_templates().TemplateResponse(
-        request, "admin/skill_tree/form.html",
-        context={
-            "user": user, "errors": {}, "form_data": fd,
-            "edit_code": code, "existing_codes": existing_codes,
-            "effects_json": effects_json, "effect_types": SKILL_EFFECT_TYPES,
-        },
-    )
-
-
-@router.post("/skill-tree/{code}")
-async def skills_update(
-    code: str, request: Request, user: AdminUser = Depends(require_admin),
-):
-    from webapp.admin.json_writer import update_skill_node
-    fd = {k: str(v) for k, v in (await request.form()).items()}
-    effects = []
-    for chunk in fd.get("effects", "").split("/"):
-        chunk = chunk.strip()
-        if not chunk or ":" not in chunk:
-            continue
-        type_, values_str = chunk.split(":", 1)
-        values = []
-        for v in values_str.split(","):
-            v = v.strip()
-            try:
-                values.append(int(v))
-            except ValueError:
-                try:
-                    values.append(float(v))
-                except ValueError:
-                    continue
-        if values:
-            effects.append({"type": type_.strip(), "values": values})
-    node = {
-        "name": fd.get("name", "").strip(),
-        "description": fd.get("description", "").strip(),
-        "icon": fd.get("icon", "").strip() or "✨",
-        "max_level": _parse_int(fd.get("max_level"), 5),
-        "costs": _parse_int_list(fd.get("costs", "1")) or [1],
-        "effects": effects,
-        "prerequisites": _parse_csv(fd.get("prerequisites", "")),
-        "position": {
-            "x": _parse_int(fd.get("position_x"), 0),
-            "y": _parse_int(fd.get("position_y"), 0),
-        },
-    }
-    update_skill_node(code, node)
-    return RedirectResponse(f"/admin/skill-tree?q={code}", status_code=303)
 
 
 # --- Crafts edit ---
-@router.get("/crafts/{code}/edit", response_class=HTMLResponse)
-async def crafts_edit_form(
-    code: str, request: Request, user: AdminUser = Depends(require_admin),
-):
-    from app.infrastructure.db.models.craft_model import (
-        CraftRecipeModel, CraftRecipeIngredientModel,
-    )
-    from app.infrastructure.db.models.item_model import ItemDefinitionModel
-    from sqlalchemy import select
-
-    with get_db_session() as session:
-        recipe = session.execute(
-            select(CraftRecipeModel).where(CraftRecipeModel.code == code)
-        ).scalar_one_or_none()
-        if recipe is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, f"Recette `{code}` introuvable.")
-        items = ItemRepository(session).list_all()
-        items_by_id = {it.id: it for it in items}
-        result_item = items_by_id.get(recipe.result_item_definition_id)
-        ingredients_rows = []
-        for ing in session.execute(
-            select(CraftRecipeIngredientModel).where(
-                CraftRecipeIngredientModel.craft_recipe_id == recipe.id
-            )
-        ).scalars().all():
-            it = items_by_id.get(ing.item_definition_id)
-            if it is None:
-                continue
-            ingredients_rows.append({
-                "category": it.category,
-                "item_code": it.code,
-                "quantity": ing.quantity,
-            })
-
-    fd = {
-        "code": code,
-        "name": recipe.name,
-        "result_item_code": result_item.code if result_item else "",
-        "result_category": result_item.category if result_item else "",
-        "result_quantity": recipe.result_quantity,
-    }
-    return get_templates().TemplateResponse(
-        request, "admin/crafts/form.html",
-        context={
-            "user": user, "errors": {}, "form_data": fd,
-            "edit_code": code,
-            "ingredients_rows": ingredients_rows,
-            **_craft_form_context(items),
-        },
-    )
-
-
-@router.post("/crafts/{code}")
-async def crafts_update(
-    code: str, request: Request, user: AdminUser = Depends(require_admin),
-):
-    from app.infrastructure.db.models.craft_model import (
-        CraftRecipeModel, CraftRecipeIngredientModel,
-    )
-    from sqlalchemy import select, delete
-    from datetime import datetime, UTC
-
-    form = await request.form()
-    name = str(form.get("name", "")).strip()
-    result_code = str(form.get("result_item_code", "")).strip()
-    result_qty = _parse_int(str(form.get("result_quantity", "1")), 1)
-
-    ing_codes = form.getlist("ingredient_item_code")
-    ing_qtys = form.getlist("ingredient_quantity")
-    ingredients = []
-    for ic, qty in zip(ing_codes, ing_qtys):
-        ic = (ic or "").strip()
-        if not ic:
-            continue
-        try:
-            q = int(qty)
-            if q < 1:
-                continue
-        except (ValueError, TypeError):
-            continue
-        ingredients.append((ic, q))
-
-    if not ingredients or not name or not result_code:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Champs requis manquants.")
-
-    with get_db_session() as session:
-        recipe = session.execute(
-            select(CraftRecipeModel).where(CraftRecipeModel.code == code)
-        ).scalar_one_or_none()
-        if recipe is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, f"Recette `{code}` introuvable.")
-        repo = ItemRepository(session)
-        result_item = repo.get_by_code(result_code)
-        if result_item is None:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Item résultat `{result_code}` introuvable.")
-        recipe.name = name
-        recipe.result_item_definition_id = result_item.id
-        recipe.result_quantity = result_qty
-        recipe.updated_at = datetime.now(UTC)
-        # Replace ingredients : delete all + reinsert
-        session.execute(
-            delete(CraftRecipeIngredientModel).where(
-                CraftRecipeIngredientModel.craft_recipe_id == recipe.id
-            )
-        )
-        for ic, q in ingredients:
-            ing_item = repo.get_by_code(ic)
-            if ing_item is None:
-                raise HTTPException(
-                    status.HTTP_400_BAD_REQUEST,
-                    f"Ingrédient `{ic}` introuvable.",
-                )
-            session.add(CraftRecipeIngredientModel(
-                craft_recipe_id=recipe.id,
-                item_definition_id=ing_item.id,
-                quantity=q,
-            ))
-        session.commit()
-
-    return RedirectResponse(f"/admin/crafts?q={code}", status_code=303)
 
 
 # ========================= Suppressions (DELETE) =========================
@@ -1347,42 +743,7 @@ async def quests_delete(scope: str, code: str, user: AdminUser = Depends(require
     return _delete_from_list(filename, code, "Quête", f"/admin/quests?scope={scope}")
 
 
-@router.post("/skill-tree/{code}/delete")
-async def skills_delete(code: str, user: AdminUser = Depends(require_admin)):
-    data = _writer_load("skill_tree.json", default={"skills": {}}) or {"skills": {}}
-    skills = data.get("skills") or {}
-    if code not in skills:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Skill `{code}` introuvable.")
-    del skills[code]
-    data["skills"] = skills
-    atomic_write_json("skill_tree.json", data)
-    git_sync.push_content(["app/infrastructure/content/skill_tree.json"],
-                          f"admin: skill {code} supprimé")
-    return RedirectResponse("/admin/skill-tree", status_code=303)
-
-
-@router.post("/crafts/{code}/delete")
-async def crafts_delete(code: str, user: AdminUser = Depends(require_admin)):
-    """Supprime une recette de craft : DB (recette + ingrédients) + crafts.json."""
-    from sqlalchemy import delete as _sa_delete, select as _sa_select
-    from app.infrastructure.db.models.craft_model import (
-        CraftRecipeModel, CraftRecipeIngredientModel,
-    )
-    with get_db_session() as session:
-        recipe = session.execute(
-            _sa_select(CraftRecipeModel).where(CraftRecipeModel.code == code)
-        ).scalar_one_or_none()
-        if recipe is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, f"Recette `{code}` introuvable.")
-        session.execute(_sa_delete(CraftRecipeIngredientModel).where(
-            CraftRecipeIngredientModel.craft_recipe_id == recipe.id))
-        session.delete(recipe)
-        session.commit()
-    # crafts.json
-    crafts = _writer_load("crafts.json", default=[]) or []
-    new_crafts = [r for r in crafts if r.get("code") != code]
-    if len(new_crafts) != len(crafts):
-        atomic_write_json("crafts.json", new_crafts)
-        git_sync.push_content(["app/infrastructure/content/crafts.json"],
-                              f"admin: recette {code} supprimée")
-    return RedirectResponse("/admin/crafts", status_code=303)
+@router.get("/skill-tree", response_class=HTMLResponse)
+async def skill_tree_list(user: AdminUser = Depends(require_admin)):
+    """L'arbre (format v2 : nodes, links, palettes) s'édite dans le builder."""
+    return RedirectResponse("/admin/skill-tree/builder", status_code=303)

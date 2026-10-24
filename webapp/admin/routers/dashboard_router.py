@@ -46,26 +46,23 @@ async def dashboard(
     from app.infrastructure.db.repositories.mob_repository import MobRepository
     from app.infrastructure.db.repositories.player_repository import PlayerRepository
     from app.infrastructure.db.repositories.shop_repository import ShopRepository
-    from app.infrastructure.db.models.craft_model import CraftRecipeModel
     from app.infrastructure.db.session import get_db_session
-    from sqlalchemy import select, func
 
     with get_db_session() as session:
         items_count = len(ItemRepository(session).list_all())
         mobs_count = len(MobRepository(session).list_all())
         players_count = len(PlayerRepository(session).list_all_profiles())
         shop_count = len(ShopRepository(session).list_all(only_enabled=False))
-        crafts_count = session.execute(select(func.count()).select_from(CraftRecipeModel)).scalar() or 0
         families_count = len(MobRepository(session).list_distinct_families())
 
     skill_data = _load_json("skill_tree.json") or {}
-    skill_nodes_count = len(skill_data.get("skills", {})) if isinstance(skill_data, dict) else 0
+    skill_nodes_count = len(skill_data.get("nodes") or skill_data.get("skills") or {})
 
     # Zones de farm (farm_zones.json)
     from app.infrastructure.encounters import farm_zone_loader
     farm_zone_loader.clear_cache()
     zones_count = len(farm_zone_loader.list_zones())
-    competences_count = 0  # les compétences passent dans l'arbre (lot 3)
+    planned_zones_count = len(farm_zone_loader.planned_zones())
 
     # Événements non-combat activés (coffre / petite fille / forge sacrée).
     from app.infrastructure.events import event_config_loader
@@ -80,7 +77,6 @@ async def dashboard(
             "user": user,
             "items_count": items_count,
             "mobs_count": mobs_count,
-            "crafts_count": crafts_count,
             "skill_nodes_count": skill_nodes_count,
             "titles_count": _count_json_top_level("titles.json"),
             "quests_count": _count_json_top_level("daily_quests.json") + _count_json_top_level("weekly_quests.json"),
@@ -89,7 +85,7 @@ async def dashboard(
             "players_count": players_count,
             "zones_count": zones_count,
             "families_count": families_count,
-            "competences_count": competences_count,
+            "planned_zones_count": planned_zones_count,
             "events_count": events_count,
         },
     )
