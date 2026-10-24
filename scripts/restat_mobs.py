@@ -9,7 +9,8 @@ Invariant non négociable : la DÉFENSE d'un mob ne doit jamais approcher
 l'ATTAQUE du joueur. Le combat est soustractif — au-delà, chaque coup tombe au
 plancher de 1 dégât et le mob devient increvable.
 
-Usage : .venv/bin/python -m scripts.restat_mobs [--write]
+Usage : .venv/bin/python -m scripts.restat_mobs [--write] [--zones-v2]
+(--zones-v2 : recalage des familles existantes, à l'ouverture des zones C → S)
 """
 
 from __future__ import annotations
@@ -86,11 +87,65 @@ ASSIGN: dict[str, tuple[int, str]] = {
     "succube":            (78, "brute"),
     "ange_dechu":         (87, "standard"),
     "archidemon":         (97, "blinde"),
+    # --- Sanctuaire primordial (famille primordial)
+    "loup_sacre":            (46, "rapide"),
+    "cerf_esprit":           (48, "standard"),
+    "serpent_des_racines":   (50, "rapide"),
+    "ours_colosse":          (52, "brute"),
+    "golem_de_mousse":       (54, "blinde"),
+    "aigle_tempete":         (56, "rapide"),
+    # --- Éclipse éternelle (famille nocturne)
+    "chauve_souris_geante":  (57, "rapide"),
+    "goule":                 (58, "standard"),
+    "loup_garou":            (60, "brute"),
+    "sorciere_de_sang":      (62, "brute"),
+    "chevalier_de_l_eclipse": (64, "blinde"),
+    "vampire_noble":         (66, "standard"),
+    "comtesse_ecarlate":     (67, "rapide"),
+    # --- Cimes des Wyrms (famille draconique)
+    "kobold":                (68, "standard"),
+    "dragonnet":             (70, "rapide"),
+    "drake_de_braise":       (72, "brute"),
+    "wyverne":               (74, "rapide"),
+    "dragon_de_givre":       (76, "blinde"),
+    "gardien_draconique":    (78, "standard"),
+    "dragon_ancien":         (80, "brute"),
+    # --- Faille du Néant (famille abyssal)
+    "rejeton_du_neant":      (81, "standard"),
+    "oeil_errant":           (84, "rapide"),
+    "devoreur":              (87, "brute"),
+    "heraut_du_vide":        (90, "standard"),
+    "kraken_astral":         (93, "blinde"),
+    "seraphin_brise":        (96, "brute"),
+    "avatar_du_neant":       (100, "standard"),
+}
+
+
+#: RECALAGE des familles existantes dans la plage de leur zone, à appliquer
+#: LE JOUR où les zones C → S ouvrent (`--zones-v2`) — décidé avec l'auteur le
+#: 24/10/2026. Avant ça, les démons couvrent seuls la fin de partie (jusqu'au
+#: niveau 97) : les recaler plus tôt laisserait un joueur de niveau 60 sans
+#: monstre à sa mesure. Rangs atteints par le joueur de référence : F 1–20,
+#: E 21–33, D 34–45, C 46–56, B 57–67, A 68–80, S 81–100.
+ZONES_V2_LEVELS: dict[str, int] = {
+    # Clairière sinistre (F)
+    "slime": 1, "gobelin": 3, "gobelin_combattant": 5, "gobelin_chaman": 8,
+    "gobelin_ballon": 10, "gobelin_geant": 12, "gobelin_runique": 15,
+    "gobelin_assassin": 17, "gobelin_superieur": 20,
+    # Cimetière abandonné (E)
+    "squelette": 21, "zombie": 23, "momie": 25, "fantome": 27,
+    "gargouille": 29, "banshee": 31, "liche_maudite": 33,
+    # Berceau cataclysmique (D)
+    "diablotin": 34, "demon_cornu": 36, "ogre_demoniaque": 38, "cerbere": 40,
+    "succube": 42, "ange_dechu": 44, "archidemon": 45,
 }
 
 
 def main() -> None:
     write = "--write" in sys.argv
+    if "--zones-v2" in sys.argv:
+        for code, level in ZONES_V2_LEVELS.items():
+            ASSIGN[code] = (level, ASSIGN[code][1])
     mobs = json.load(open(P, encoding="utf-8"))
     for m in mobs:
         a = ASSIGN.get(m["code"])

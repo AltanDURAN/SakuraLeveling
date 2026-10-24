@@ -103,6 +103,8 @@ class PartyCombatService:
                 "stunned": False,   # étourdi (gobelin géant / banshee)
                 "slow": 0,          # stacks de ralentissement (momie)
                 "bleeds": [],       # saignements actifs (ogre) : [{dmg, turns}]
+                "poison": None,     # empoisonnement : {dmg, turns} (non cumulable)
+                "armor_break": 0,   # % de DEF brisée pour le combat (plafonné)
                 "absorbed": False,  # englouti par le slime → hors combat
                 "last_stand_used": False,  # Tenace : déjà sauvé une fois
                 "buffed": False,           # Buff de soin déjà reçu (non cumulable)
@@ -319,6 +321,17 @@ class PartyCombatService:
             turn_logs.append(snap("🗿 Égide : bouclier pour tout le groupe — " + " · ".join(shield_lines)))
 
         # ── État des modifiers boss dynamiques (neutres hors world boss) ──
+        # Un MONSTRE peut aussi invoquer ou renvoyer des dégâts (capacités
+        # `summon` / `reflect`, zones C → S) : même mécanique que les boss.
+        if "summon" in ab and not boss_adds:
+            sm = ab["summon"]
+            boss_adds = {
+                "attack": max(1, round(mob.attack * sm.get("atk_pct", 30) / 100)),
+                "summon_turn_interval": sm.get("every", 3),
+                "max_active": sm.get("max", 2),
+            }
+        if "reflect" in ab:
+            boss_reflect_pct = max(boss_reflect_pct, int(ab["reflect"].get("pct", 0)))
         boss_adds = boss_adds or {}
         adds_attack = int(boss_adds.get("attack", 0))
         adds_interval = int(boss_adds.get("summon_turn_interval", 0))
@@ -530,30 +543,38 @@ class PartyCombatService:
                     f"(+100% attaque et défense) !"))
 
 
+        def _tick_dots(p) -> None:
+            """Saignement (ogre) et poison : UNE fois par action de la victime.
+
+            Avant (audit oct. 2026) ils tombaient à chaque TICK de jauge, soit
+            ~10-20 fois par action : un poison « 3 tours » durait 3 ticks, se
+            renouvelait à chaque coup et doublait les dégâts du monstre — et
+            chaque tick comptait comme une action (escalade avancée)."""
+            lines = []
+            pz = p.get("poison")
+            if pz:
+                self._apply_player_damage(p, pz["dmg"], use_shield=False)
+                contributions[p["player_id"]].damage_tanked += pz["dmg"]
+                lines.append(f"☠️ Poison : {p['name']} −{pz['dmg']}")
+                pz["turns"] -= 1
+                if pz["turns"] <= 0:
+                    p["poison"] = None
+            if p["bleeds"] and p["hp"] > 0:
+                total = sum(b["dmg"] for b in p["bleeds"])
+                self._apply_player_damage(p, total, use_shield=False)
+                contributions[p["player_id"]].damage_tanked += total
+                lines.append(f"🩸 Saignement : {p['name']} −{total}")
+                for b in p["bleeds"]:
+                    b["turns"] -= 1
+                p["bleeds"] = [b for b in p["bleeds"] if b["turns"] > 0]
+            if lines:
+                turn_logs.append(snap(" · ".join(lines) + (" 💀" if p["hp"] <= 0 else "")))
+
         while mob_hp > 0 and _party_alive():
             round_count += 1
             if (max_turns and turns >= max_turns) or turns >= HARD_MAX_TURNS:
                 break
             _escalate()
-
-            # Saignement (ogre) : tick de début de round sur les joueurs qui saignent.
-            bled = []
-            for p in alive_party:
-                if p["hp"] <= 0 or p["absorbed"] or not p["bleeds"]:
-                    continue
-                total = sum(s["dmg"] for s in p["bleeds"])
-                if total > 0:
-                    self._apply_player_damage(p, total, use_shield=False)
-                    contributions[p["player_id"]].damage_tanked += total
-                    bled.append(f"{p['name']} −{total}" + (" 💀" if p["hp"] <= 0 else ""))
-                for s in p["bleeds"]:
-                    s["turns"] -= 1
-                p["bleeds"] = [s for s in p["bleeds"] if s["turns"] > 0]
-            if bled:
-                turns += 1
-                turn_logs.append(snap("🩸 Saignement : " + " · ".join(bled)))
-                if not _party_alive():
-                    break
 
             for player in alive_party:
                 if player["hp"] > 0 and not player["absorbed"]:
@@ -567,6 +588,9 @@ class PartyCombatService:
 
             for player in alive_party:
                 while player["gauge"] >= 100 and player["hp"] > 0 and mob_hp > 0:
+                    _tick_dots(player)
+                    if player["hp"] <= 0:
+                        break
                     # Étourdi : le tour est consommé pour dissiper le statut, sans action.
                     if player["stunned"]:
                         player["stunned"] = False
@@ -760,6 +784,19 @@ class PartyCombatService:
                                 target["bleeds"].append(
                                     {"dmg": max(1, round(dmg * bc.get("pct", 10) / 100)),
                                      "turns": bc.get("turns", 3)})
+                        # Poison : (r)empoisonne la cible — non cumulable, la
+                        # durée repart à zéro.
+                        if not dodged and dmg > 0 and "poison" in ab:
+                            pc = ab["poison"]
+                            target["poison"] = {
+                                "dmg": max(1, round(target["max_hp"] * pc.get("pct_max_hp", 2) / 100)),
+                                "turns": pc.get("turns", 4),
+                            }
+                        # Brise-armure : la DEF de la cible baisse pour le combat.
+                        if not dodged and dmg > 0 and "armor_break" in ab:
+                            ac = ab["armor_break"]
+                            target["armor_break"] = min(
+                                ac.get("max_pct", 30), target["armor_break"] + ac.get("pct", 10))
                         # Kill → recharge du bouclier (gobelin supérieur)
                         if target["hp"] <= 0 and ab.get("shield", {}).get("reset_on_kill"):
                             mob_shield = mob_max_hp
@@ -770,6 +807,8 @@ class PartyCombatService:
                             tag += " 💫" if stunned_now else ""
                             tag += " 🐌" if (not aoe and "slow" in ab) else ""
                             tag += " 🩸" if "bleed" in ab else ""
+                            tag += " ☠️" if "poison" in ab else ""
+                            tag += f" 🔨−{target['armor_break']}%" if "armor_break" in ab else ""
                             tag += " 💀" if target["hp"] <= 0 else ""
                             tag += _tags(target)
                             parts.append(f"{target['name']} −{dmg}{tag}")
@@ -827,6 +866,11 @@ class PartyCombatService:
                         add_dmg = max(1, adds_attack - victim["stats"].defense)
                         self._apply_player_damage(victim, add_dmg)
                         contributions[victim["player_id"]].damage_tanked += adds_attack
+                # Régénération (monstres des zones hautes) : % des PV max par action.
+                if "regen" in ab and mob_hp < mob_max_hp:
+                    heal = round(mob_max_hp * ab["regen"].get("pct", 3) / 100)
+                    heal = heal // 2 if anti_heal else heal
+                    mob_hp = min(mob_max_hp, mob_hp + heal)
                 # Auto-soin du boss.
                 if boss_heal_per_turn > 0:
                     heal = boss_heal_per_turn // 2 if anti_heal else boss_heal_per_turn
@@ -922,6 +966,8 @@ class PartyCombatService:
         defense = tstats.defense
         if gear.has("stone_skin") and target.get("stone"):
             defense = round(defense * (1 + min(20, target["stone"]) / 100))
+        if target.get("armor_break"):
+            defense = round(defense * (1 - target["armor_break"] / 100))
         after_defense = max(1, raw_attack - defense)
         if gear.has("stone_skin"):
             target["stone"] = target.get("stone", 0) + 1

@@ -75,6 +75,7 @@ async def zones_list(request: Request, user: AdminUser = Depends(require_admin))
     return get_templates().TemplateResponse(
         request, "admin/zones/list.html",
         context={"user": user, "zones": zones, "defaults": defaults,
+                 "planned": farm_zone_loader.planned_zones(),
                  "element_emojis": ELEMENT_EMOJIS, "element_labels": ELEMENT_LABELS},
     )
 

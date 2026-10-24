@@ -28,6 +28,7 @@ from app.infrastructure.encounters.farm_zone_loader import (
     get_background_for_family,
     get_spawn_channel_for_family,
     list_zone_channels,
+    unreleased_families,
 )
 from app.shared.generated_cleanup import purge_old_files
 from app.shared.paths import (
@@ -156,10 +157,12 @@ class EncounterCog(commands.Cog):
             if forced_code is not None:
                 return repo.get_by_code(forced_code)
             mobs = repo.list_all()
+        hidden = unreleased_families()
         eligible = [
             m
             for m in mobs
             if get_spawn_channel_for_family(m.family) == channel_id and m.spawn_weight > 0
+            and m.family not in hidden
         ]
         if not eligible:
             return None

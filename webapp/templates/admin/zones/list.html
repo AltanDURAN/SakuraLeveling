@@ -78,4 +78,20 @@
     </div>
     {% endif %}
 </section>
+{% if planned %}
+<section class="form-section" style="margin-top:1.5rem">
+    <h2 class="form-section-title">🔒 Zones prévues (pas encore ouvertes)</h2>
+    <p class="form-section-help">Leurs monstres, pièces et drops existent déjà, mais rien n'y
+        spawne et leurs familles sont cachées des bestiaires. Ouvrir une zone = lui donner un
+        salon, ses décors (spots), puis la passer dans les zones actives.</p>
+    <div class="table-wrapper"><table class="data-table">
+        <thead><tr><th>Zone</th><th>Familles</th><th>Éléments</th><th>Essences / kill</th></tr></thead>
+        <tbody>{% for z in planned %}
+            <tr><td><strong>{{ z.name }}</strong></td><td>{{ z.families|join(', ') }}</td>
+                <td>{% for e in z.elements or [] %}{{ element_emojis.get(e, '') }} {{ element_labels.get(e, e) }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
+                <td>{{ z.essences_min }}–{{ z.essences_max }}</td></tr>
+        {% endfor %}</tbody>
+    </table></div>
+</section>
+{% endif %}
 {% endblock %}

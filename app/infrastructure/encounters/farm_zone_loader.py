@@ -110,6 +110,27 @@ def list_zones() -> list[dict]:
     return zones
 
 
+def planned_zones() -> list[dict]:
+    """Zones PRÉVUES mais pas encore ouvertes (`planned_zones` du JSON) : leur
+    contenu (monstres, pièces, drops) existe déjà, mais rien n'y spawne et
+    leurs familles sont cachées des bestiaires. Ouvrir une zone = la déplacer
+    dans `zones` avec son salon."""
+    return [z for z in (_load().get("planned_zones") or []) if isinstance(z, dict)]
+
+
+def unreleased_families() -> set[str]:
+    """Familles des zones prévues qui n'apparaissent dans aucune zone ouverte.
+
+    ⚠️ Une famille absente de toute zone spawnerait dans la zone de BASE
+    (cf. `get_spawn_channel_for_family`) : sans ce filtre, les monstres de la
+    zone S apparaîtraient dans la Clairière."""
+    released = {f for z in list_zones() for f in z["families"]}
+    return {
+        f for z in planned_zones() for f in (z.get("families") or [])
+        if f and f not in released
+    }
+
+
 def _zone_for_family(family: str | None) -> dict | None:
     """Zone (normalisée) qui contient la famille, ou None si non mappée."""
     if not family:

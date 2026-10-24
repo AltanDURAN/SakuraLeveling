@@ -174,5 +174,72 @@
         }
       ]
     }
+  ],
+  "planned_zones": [
+    {
+      "name": "Sanctuaire primordial",
+      "channel_id": 0,
+      "families": [
+        "primordial"
+      ],
+      "background": "",
+      "essences_min": 2,
+      "essences_max": 3,
+      "elements": [
+        "plante",
+        "terre",
+        "eau",
+        "vent"
+      ],
+      "spots": []
+    },
+    {
+      "name": "Éclipse éternelle",
+      "channel_id": 0,
+      "families": [
+        "nocturne"
+      ],
+      "background": "",
+      "essences_min": 2,
+      "essences_max": 4,
+      "elements": [
+        "tenebre",
+        "lumiere",
+        "glace"
+      ],
+      "spots": []
+    },
+    {
+      "name": "Cimes des Wyrms",
+      "channel_id": 0,
+      "families": [
+        "draconique"
+      ],
+      "background": "",
+      "essences_min": 3,
+      "essences_max": 4,
+      "elements": [
+        "feu",
+        "glace",
+        "vent",
+        "terre"
+      ],
+      "spots": []
+    },
+    {
+      "name": "Faille du Néant",
+      "channel_id": 0,
+      "families": [
+        "abyssal"
+      ],
+      "background": "",
+      "essences_min": 3,
+      "essences_max": 5,
+      "elements": [
+        "tenebre",
+        "lumiere"
+      ],
+      "spots": []
+    }
   ]
 }

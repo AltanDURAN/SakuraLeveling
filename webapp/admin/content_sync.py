@@ -306,7 +306,9 @@ def upsert_zone_json(zone: dict, original_channel_id: int | None = None) -> None
     key = original_channel_id if original_channel_id is not None else zone["channel_id"]
     for i, z in enumerate(zones):
         if isinstance(z, dict) and int(z.get("channel_id", 0) or 0) == int(key or 0):
-            zones[i] = zone
+            # Fusion : le formulaire ne connaît pas les SPOTS (décors par
+            # élément) — les remplacer tel quel les effaçait à chaque édition.
+            zones[i] = {**z, **zone}
             break
     else:
         zones.append(zone)

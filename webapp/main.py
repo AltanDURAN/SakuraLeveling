@@ -38,6 +38,7 @@ from app.domain.services.skill_tree_service import SkillTreeService
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
+from app.infrastructure.encounters.farm_zone_loader import unreleased_families
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.player_skill_allocation_repository import (
     PlayerSkillAllocationRepository,
@@ -300,7 +301,8 @@ async def bestiary_page(request: Request):
     reveal = specialties_revealed()
 
     with get_db_session() as session:
-        mobs = MobRepository(session).list_all()
+        hidden = unreleased_families()  # zones pas encore ouvertes
+        mobs = [m for m in MobRepository(session).list_all() if m.family not in hidden]
         # Lookup table code → name pour résoudre les drops en nom lisible.
         items_by_code = {it.code: it.name for it in ItemRepository(session).list_all()}
 
@@ -352,7 +354,8 @@ async def bestiary_page(request: Request):
 async def bestiary_api():
     pss = PowerScoreService()
     with get_db_session() as session:
-        mobs = MobRepository(session).list_all()
+        hidden = unreleased_families()  # zones pas encore ouvertes
+        mobs = [m for m in MobRepository(session).list_all() if m.family not in hidden]
     return {
         "mobs": [
             {

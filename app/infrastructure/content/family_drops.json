@@ -110,5 +110,133 @@
         "max": 5
       }
     }
+  },
+  "primordial": {
+    "item_code": "croc_primordial",
+    "mobs": {
+      "loup_sacre": {
+        "min": 1,
+        "max": 1
+      },
+      "cerf_esprit": {
+        "min": 1,
+        "max": 1
+      },
+      "serpent_des_racines": {
+        "min": 1,
+        "max": 2
+      },
+      "ours_colosse": {
+        "min": 2,
+        "max": 2
+      },
+      "golem_de_mousse": {
+        "min": 2,
+        "max": 3
+      },
+      "aigle_tempete": {
+        "min": 2,
+        "max": 4
+      }
+    }
+  },
+  "nocturne": {
+    "item_code": "sang_lunaire",
+    "mobs": {
+      "chauve_souris_geante": {
+        "min": 1,
+        "max": 1
+      },
+      "goule": {
+        "min": 1,
+        "max": 1
+      },
+      "loup_garou": {
+        "min": 1,
+        "max": 2
+      },
+      "sorciere_de_sang": {
+        "min": 2,
+        "max": 2
+      },
+      "chevalier_de_l_eclipse": {
+        "min": 2,
+        "max": 3
+      },
+      "vampire_noble": {
+        "min": 2,
+        "max": 4
+      },
+      "comtesse_ecarlate": {
+        "min": 3,
+        "max": 5
+      }
+    }
+  },
+  "draconique": {
+    "item_code": "ecaille_de_dragon",
+    "mobs": {
+      "kobold": {
+        "min": 1,
+        "max": 1
+      },
+      "dragonnet": {
+        "min": 1,
+        "max": 1
+      },
+      "drake_de_braise": {
+        "min": 1,
+        "max": 2
+      },
+      "wyverne": {
+        "min": 2,
+        "max": 2
+      },
+      "dragon_de_givre": {
+        "min": 2,
+        "max": 3
+      },
+      "gardien_draconique": {
+        "min": 2,
+        "max": 4
+      },
+      "dragon_ancien": {
+        "min": 3,
+        "max": 5
+      }
+    }
+  },
+  "abyssal": {
+    "item_code": "eclat_du_neant",
+    "mobs": {
+      "rejeton_du_neant": {
+        "min": 1,
+        "max": 1
+      },
+      "oeil_errant": {
+        "min": 1,
+        "max": 1
+      },
+      "devoreur": {
+        "min": 1,
+        "max": 2
+      },
+      "heraut_du_vide": {
+        "min": 2,
+        "max": 2
+      },
+      "kraken_astral": {
+        "min": 2,
+        "max": 3
+      },
+      "seraphin_brise": {
+        "min": 2,
+        "max": 4
+      },
+      "avatar_du_neant": {
+        "min": 3,
+        "max": 5
+      }
+    }
   }
 }

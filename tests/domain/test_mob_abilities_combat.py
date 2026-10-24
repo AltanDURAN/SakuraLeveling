@@ -264,8 +264,9 @@ def test_chaman_heals_once_below_half():
 
 def test_bleed_applies_damage_over_time():
     svc = PartyCombatService()
-    mob = _mob(hp=100000, attack=50, speed=99)   # frappe souvent → pose des saignements
-    party = [_player(1, hp=100000, attack=1, speed=1)]
+    mob = _mob(hp=100000, attack=50, speed=20)   # frappe souvent → pose des saignements
+    # Le saignement tombe à chaque ACTION de la victime (pas à chaque tick).
+    party = [_player(1, hp=100000, attack=1, speed=10)]
     r = svc.fight_party_vs_mob(party=party, mob=mob,
                                mob_abilities={"bleed": {"pct": 10, "turns": 3, "max_stacks": 3}},
                                max_turns=40)

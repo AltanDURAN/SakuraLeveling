@@ -80,8 +80,9 @@ LA PROGRESSION
     les rangs un par un.
 
     Rangs et zones (V1) : F Clairière sinistre · E Cimetière abandonné ·
-    D Berceau cataclysmique · C, B et A à venir. S, SS et SSS se passent en
-    épreuve ; leurs zones viendront après la V1.
+    D Berceau cataclysmique · bientôt : C Sanctuaire primordial, B Éclipse
+    éternelle, A Cimes des Wyrms, S Faille du Néant. SS et SSS se passent en
+    épreuve.
 
 /affinites [joueur]
     Tes 8 affinités élémentaires et ta progression d'essences.

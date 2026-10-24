@@ -13,6 +13,7 @@ from app.domain.services.power_score_service import PowerScoreService
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
+from app.infrastructure.encounters.farm_zone_loader import unreleased_families
 from app.infrastructure.db.session import get_db_session
 from app.bot.cogs._mixins import BetaChannelOnlyMixin
 
@@ -27,7 +28,8 @@ class BestiaireCog(BetaChannelOnlyMixin, commands.Cog):
     )
     async def bestiaire(self, interaction: discord.Interaction) -> None:
         with get_db_session() as session:
-            mobs = MobRepository(session).list_all()
+            hidden = unreleased_families()  # zones pas encore ouvertes
+            mobs = [m for m in MobRepository(session).list_all() if m.family not in hidden]
             items = {i.code: i for i in ItemRepository(session).list_all()}
 
         if not mobs:
