@@ -92,8 +92,6 @@ ITEM_IMAGE_PROMPTS: dict[str, str] = {
     "petite_bombe": "one single round black bomb sphere with one short lit twisted rope fuse and a small spark at the tip, only one bomb, dark charcoal body, nothing else",
     "diamant": "a single brilliant-cut faceted gemstone glowing pale blue and white, sharp geometric facets, one sparkling precious crystal",
     "essence_de_vie": "a single round glass orb sphere holding swirling glowing green life energy and a few tiny floating leaves inside, one orb",
-    "dagues_jumelles": "a pair of two identical curved steel daggers crossed into an X, blue-grey blades with dark cord-wrapped grips",
-    "cape_silencieuse": "a single empty dark blue hooded cloak laid out and spread open, no person inside, one empty cloak garment, just one, nothing else",
     # ---- Équipement v2 (saison 1) : la pièce que porte chaque monstre ----
     "surin_dentele": "one single short dagger knife with a serrated saw-tooth edge, rusty iron blade, rag-wrapped wooden handle, shown diagonally, one knife alone",
     "epee_de_l_ossuaire": "one single sword lying diagonally, its blade made entirely of carved pale white bone, a simple bone crossguard and a brown leather grip, one sword alone",
