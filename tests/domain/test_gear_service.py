@@ -62,3 +62,35 @@ def test_multiplicateur_de_drop():
     n = 200_000
     hits = sum(roll_drop(rng, drop_rate_multiplier=2.0) is not None for _ in range(n))
     assert abs(100 * hits / n - 2 * sum(DROP_RATES_PCT.values())) < 0.4
+
+
+class _FixedRng:
+    def __init__(self, value):
+        self.value = value
+
+    def random(self):
+        return self.value
+
+
+def test_bonus_de_drop_bride_a_un_et_demi():
+    rng = random.Random(3)
+    n = 200_000
+    hits = sum(roll_drop(rng, drop_bonus=4.0) is not None for _ in range(n))
+    boosted = sum(v * (1.5 if k not in ("legendary", "mythic") else 1) for k, v in DROP_RATES_PCT.items())
+    assert abs(100 * hits / n - boosted) < 0.35
+
+
+def test_bonus_de_drop_ne_touche_ni_legendaire_ni_mythique():
+    # Les tranches les plus rares (en tête du tirage) gardent leur largeur.
+    mythic = DROP_RATES_PCT["mythic"] / 100
+    legendary = DROP_RATES_PCT["legendary"] / 100
+    just_after = (mythic + legendary) * 1.0001
+    assert roll_drop(_FixedRng(mythic * 0.99), drop_bonus=1.5) == "mythic"
+    assert roll_drop(_FixedRng(mythic * 1.01), drop_bonus=1.5) == "legendary"
+    assert roll_drop(_FixedRng(just_after), drop_bonus=1.5) == "epic"
+    # Trouvaille, elle, élargit TOUTES les tranches.
+    assert roll_drop(_FixedRng(mythic * 1.05), drop_rate_multiplier=1.10) == "mythic"
+
+
+def test_un_malus_n_existe_pas():
+    assert roll_drop(_FixedRng(0.09), drop_bonus=0.5) == roll_drop(_FixedRng(0.09))

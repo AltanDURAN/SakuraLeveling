@@ -334,11 +334,13 @@ class EncounterService:
                 )
 
     @staticmethod
-    def _roll_gear_drop(session, player_id: int, mob, rng=None) -> list[tuple[str, str]]:
+    def _roll_gear_drop(session, player_id: int, mob, rng=None,
+                        drop_bonus: float = 1.0) -> list[tuple[str, str]]:
         """Tirage de la pièce du monstre pour UN survivant (cf. gear_service).
 
         Le passif « Trouvaille » (épique et plus) multiplie chaque taux de
-        +10 %. Renvoie [(nom, rareté)] ou [] — au plus une pièce par mort."""
+        +10 % ; `drop_bonus` (arbre + titres) est bridé par `roll_drop`.
+        Renvoie [(nom, rareté)] ou [] — au plus une pièce par mort."""
         from app.domain.services.gear_passives import active_passives
         from app.domain.services.gear_service import roll_drop
         from app.infrastructure.db.repositories.gear_repository import GearRepository
@@ -349,7 +351,7 @@ class EncounterService:
             return []
         equipped = EquipmentRepository(session).list_by_player_id(player_id)
         multiplier = 1.10 if "lucky_find" in active_passives(equipped) else 1.0
-        rarity = roll_drop(rng, drop_rate_multiplier=multiplier)
+        rarity = roll_drop(rng, drop_rate_multiplier=multiplier, drop_bonus=drop_bonus)
         if rarity is None:
             return []
         item = ItemRepository(session).get_by_code(code)
@@ -516,7 +518,10 @@ class EncounterService:
                     career_repository.add(participant.player_id, gold_earned=gold)
 
                 # Équipement v2 : 0 ou 1 pièce, celle que porte le monstre.
-                gear_drop = self._roll_gear_drop(session, participant.player_id, mob)
+                gear_drop = self._roll_gear_drop(
+                    session, participant.player_id, mob,
+                    drop_bonus=bonuses.drop_rate_multiplier * chasseur_mult,
+                )
 
                 kill_repository.increment(participant.player_id, mob_code)
 

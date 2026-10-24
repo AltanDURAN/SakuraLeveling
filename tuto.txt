@@ -251,6 +251,10 @@ D'OÙ VIENNENT LES PIÈCES
         ⚪ Commun 6 % · 🟢 Peu commun 2,5 % · 🔵 Rare 0,8 %
         🟣 Épique 0,2 % · 🟠 Légendaire 0,03 % · 🔴 Mythique 0,004 %
     Le butin d'équipement est personnel : chaque survivant fait son tirage.
+    Tes bonus de chance de drop (cases de l'arbre, titres de Chasseur)
+    augmentent aussi ces chances, jusqu'à ×1,5, du commun à l'épique ; le
+    légendaire et le mythique n'en profitent pas (seul le passif Trouvaille,
+    +10 %, les touche).
     Une pièce MYTHIQUE est annoncée dans le salon.
 
 LA RARETÉ

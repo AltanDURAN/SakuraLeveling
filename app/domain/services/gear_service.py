@@ -69,6 +69,16 @@ DROP_RATES_PCT: dict[str, float] = {
     "epic": 0.2, "legendary": 0.03, "mythic": 0.004,
 }
 
+#: Les bonus de chance de drop (arbre « Chance Drop », titres Chasseur
+#: légendaire) comptent pour l'équipement, mais BRIDÉS : plafonnés à ×1,5 et
+#: seulement jusqu'à l'épique. Légendaire et mythique gardent leurs taux (seul
+#: le passif Trouvaille les touche) — simulé : un joueur qui investit gagne ~30 %
+#: de temps en milieu de partie, sans multiplier les mythiques. Non bridés
+#: (×2 de l'arbre sur toutes les raretés), ils doublaient presque les
+#: mythiques (14 % → 25 % des assidus par an).
+GEAR_DROP_BONUS_CAP = 1.5
+GEAR_DROP_BONUS_MAX_RARITY = Rarity.EPIC
+
 #: Fusion vers cette rareté : or et matériaux de la famille du monstre.
 FUSION_GOLD: dict[str, int] = {
     "uncommon": 200, "rare": 1_000, "epic": 6_000, "legendary": 40_000,
@@ -153,16 +163,21 @@ def gear_stats(base: dict | None, rarity: str, forge_level: int = 0) -> dict[str
     return out
 
 
-def roll_drop(rng: random.Random | None = None, drop_rate_multiplier: float = 1.0) -> Rarity | None:
+def roll_drop(rng: random.Random | None = None, drop_rate_multiplier: float = 1.0,
+              drop_bonus: float = 1.0) -> Rarity | None:
     """Tirage à la mort d'un monstre : la rareté lâchée, ou None.
 
-    `drop_rate_multiplier` (passif Perle de gelée, titres…) multiplie CHAQUE
-    taux : +10 % ⇒ 1 % devient 1,1 %."""
+    `drop_rate_multiplier` (passif Trouvaille) multiplie CHAQUE taux : +10 %
+    ⇒ 1 % devient 1,1 %. `drop_bonus` (arbre, titres) est bridé : plafonné à
+    `GEAR_DROP_BONUS_CAP`, appliqué jusqu'à `GEAR_DROP_BONUS_MAX_RARITY`."""
     rng = rng or random
+    bonus = min(max(1.0, drop_bonus), GEAR_DROP_BONUS_CAP)
+    cutoff = rarity_index(GEAR_DROP_BONUS_MAX_RARITY)
     roll = rng.random() * 100
     acc = 0.0
     for rarity in reversed(RARITY_ORDER):  # le plus rare d'abord
-        acc += DROP_RATES_PCT[rarity] * max(0.0, drop_rate_multiplier)
+        mult = max(0.0, drop_rate_multiplier) * (bonus if rarity_index(rarity) <= cutoff else 1.0)
+        acc += DROP_RATES_PCT[rarity] * mult
         if roll < acc:
             return rarity
     return None
