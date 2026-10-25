@@ -111,7 +111,11 @@ def build_combat_log_embed(
             chp = max(0, int(ps.get("current_hp", 0) or 0))
             mhp = int(ps.get("max_hp", 1) or 1)
             status = "💀" if chp <= 0 else "❤️"
-            lines.append(f"{status} **{name}** — {format_int(chp)} / {format_int(mhp)}")
+            line = f"{status} **{name}** — {format_int(chp)} / {format_int(mhp)}"
+            mana_max = int(ps.get("mana_max", 0) or 0)
+            if mana_max > 0:
+                line += f" · 💧 {format_int(max(0, int(ps.get('current_mana', 0) or 0)))} / {format_int(mana_max)}"
+            lines.append(line)
         embed.add_field(
             name="👥 Équipe",
             value="\n".join(lines) or "_aucun_",

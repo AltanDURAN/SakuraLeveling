@@ -11,6 +11,8 @@ from app.domain.entities.mob_definition import MobDefinition
 from app.domain.services.combat_passives import (
     BASE_HEAL_PCT,
     HEAL_BELOW_PCT,
+    MANA_ABILITY_NAMES,
+    MANA_COSTS,
     NO_PASSIVES,
     CombatPassives,
     normalize_tactic,
@@ -80,11 +82,14 @@ class PartyCombatService:
         mob_is_boss: bool = False,
         max_ticks: int = 0,
         escort_ids: set[int] | frozenset[int] | None = None,
+        mana_costs: dict[str, int] | None = None,
     ) -> PartyBattleResult:
         # max_ticks  : limite de TEMPS (ticks de jauge) plutôt que d'actions —
         #              la vitesse compte (épreuve DPS : « 40 s de combat »).
         # escort_ids : le monstre ne vise QUE ces joueurs, et le combat
         #              s'arrête dès que l'un d'eux tombe (épreuve de soutien).
+        # mana_costs : coûts des compétences actives (défaut MANA_COSTS ;
+        #              les outils de mesure passent {} pour compter sans limite).
         title_bonuses_by_player = title_bonuses_by_player or {}
         elemental_mult_by_player = elemental_mult_by_player or {}
         incoming_elemental_mult_by_player = incoming_elemental_mult_by_player or {}
@@ -93,6 +98,7 @@ class PartyCombatService:
         passives_by_player = passives_by_player or {}
         tactics_by_player = tactics_by_player or {}
         self._passives = passives_by_player
+        self._mana_costs = MANA_COSTS if mana_costs is None else mana_costs
         _skill_svc = SkillEffectService()
 
         def P(member) -> CombatPassives:
@@ -114,8 +120,9 @@ class PartyCombatService:
                 "stats": player["stats"],
                 "hp": player["current_hp"],
                 "max_hp": player["max_hp"],
-                "mana": player.get("current_mana", player.get("mana_max", 0)),
-                "mana_max": player.get("mana_max", 0),
+                # Mana courant inconnu ⇒ réserve pleine.
+                "mana": player.get("current_mana", player.get("mana_max", player["stats"].mana_max)),
+                "mana_max": player.get("mana_max", player["stats"].mana_max),
                 "gauge": 0,
                 "shield": 0,        # bouclier (compétences défensives/support)
                 "stunned": False,   # étourdi (gobelin géant / banshee)
@@ -151,9 +158,11 @@ class PartyCombatService:
                 name=member["name"],
                 max_hp=member["max_hp"],
                 final_hp=member["hp"],
+                mana_max=member["mana_max"],
             )
             for member in alive_party
         }
+        self._contribs = contributions
 
         # ── État du charme (succube) ──
         charmed_id: int | None = None
@@ -369,7 +378,16 @@ class PartyCombatService:
             recoil = member.pop("_recoil_dealt", 0)
             if recoil:
                 tag += f" (🔁 {recoil} en contrecoup)"
-            return tag
+            return tag + _dry_note(member)
+
+        def _dry_note(member) -> str:
+            """« à court de mana », une fois par combat et par joueur."""
+            ability = member.pop("_dry", None)
+            return f" — 💧 à court de mana ({ability})" if ability else ""
+
+        def _has_allies(member) -> bool:
+            return any(m is not member and m["hp"] > 0 and not m["absorbed"]
+                       and m["player_id"] != charmed_id for m in alive_party)
 
         # ─── Début du combat : vitesse par allié (Soigneur), boucliers (Égide) ───
         allies_count = max(0, len([m for m in alive_party if m["hp"] > 0]) - 1)
@@ -379,7 +397,7 @@ class PartyCombatService:
         shield_lines = []
         for caster in alive_party:
             pct = P(caster).team_shield_pct
-            if pct <= 0 or caster["hp"] <= 0:
+            if pct <= 0 or caster["hp"] <= 0 or not self._spend(caster, "team_shield"):
                 continue
             amount = int(round(caster["max_hp"] * pct / 100))
             for m in alive_party:
@@ -441,7 +459,8 @@ class PartyCombatService:
                     break
 
         # ─── Défi : le porteur commence en provocation ───
-        guard_holder = next((m for m in alive_party if P(m).has("taunt_guard") and m["hp"] > 0), None)
+        guard_holder = next((m for m in alive_party if P(m).has("taunt_guard") and m["hp"] > 0
+                             and self._spend(m, "taunt_guard")), None)
         if guard_holder is not None:
             taunter_id = guard_holder["player_id"]
             guard_holder["taunt_guard"] = True
@@ -593,21 +612,25 @@ class PartyCombatService:
                 hurt = [m for m in alive_party
                         if m is not player and 0 < m["hp"] < m["max_hp"] and not m["absorbed"]
                         and m["player_id"] != charmed_id]
-                if hurt:
+                amount = actual_damage * mine.ally_heal_on_hit_pct / 100
+                if hurt and round(amount) > 0 and self._spend(player, "ally_heal"):
                     ally = min(hurt, key=lambda m: m["hp"] / max(1, m["max_hp"]))
-                    mended = _heal(player, ally, actual_damage * mine.ally_heal_on_hit_pct / 100,
-                                   allow_buff=False)
+                    mended = _heal(player, ally, amount, allow_buff=False)
                     if mended:
                         action_text += f" ✚ {ally['name']} +{mended}"
 
-            if mine.lifesteal_pct > 0 and actual_damage > 0:  # Vampire
+            if (mine.lifesteal_pct > 0 and round(actual_damage * mine.lifesteal_pct / 100) > 0  # Vampire
+                    and player["hp"] < player["max_hp"] and self._spend(player, "lifesteal")):
                 stolen = _heal(player, player, actual_damage * mine.lifesteal_pct / 100,
                                allow_buff=False)
                 if stolen:
                     action_text += f" 🧛 +{stolen}"
 
-            if mine.taunt_chance_pct > 0 and random.random() < mine.taunt_chance_pct / 100:
-                taunter_id = player["player_id"]  # Vaillant : le dernier l'emporte
+            # Vaillant : le dernier l'emporte. Seulement s'il y a un allié à
+            # protéger et qu'il ne provoque pas déjà (sinon le mana part pour rien).
+            if (mine.taunt_chance_pct > 0 and taunter_id != player["player_id"] and _has_allies(player)
+                    and random.random() < mine.taunt_chance_pct / 100 and self._spend(player, "taunt")):
+                taunter_id = player["player_id"]
                 action_text += " 🫀 provoque"
 
             if boss_reflect_pct > 0 and actual_damage > 0:
@@ -621,6 +644,7 @@ class PartyCombatService:
                 taken = self._apply_player_damage(player, recoil, use_shield=False)
                 action_text += f" (🔁 {taken} en contrecoup" + (" 💀)" if player["hp"] <= 0 else ")")
 
+            action_text += _dry_note(player)
             turn_logs.append(snap(mob_action_text, players=[action_text]))
             _check_mob_thresholds()
 
@@ -737,12 +761,13 @@ class PartyCombatService:
                     # frappait presque jamais).
                     if mine.healer:
                         heal_target = _heal_target(player)
-                        if heal_target is not None:
+                        if heal_target is not None and self._spend(player, "heal_spell"):
                             amount = stats.attack * BASE_HEAL_PCT / 100 * mine.heal_power_multiplier
                             healed = _heal(player, heal_target, amount)
                             who = "se soigne" if heal_target is player else f"soigne {heal_target['name']}"
-                            turn_logs.append(snap(f"{mob.name} observe.",
-                                                  players=[f"💚 {player['name']} {who} : +{healed} PV"]))
+                            turn_logs.append(snap(f"{mob.name} observe.", players=[
+                                f"💚 {player['name']} {who} : +{healed} PV "
+                                f"(💧 {player['mana']}/{player['mana_max']})"]))
                             continue
 
                     # Compétences équipées (mana-gated) — world boss uniquement.
@@ -765,7 +790,8 @@ class PartyCombatService:
 
                     _strike(player, offensive_mult)
                     # Coup double : 10 % de chance d'attaquer une 2e fois (jamais en chaîne).
-                    if mine.has("double_strike") and mob_hp > 0 and random.random() < 0.10:
+                    if (mine.has("double_strike") and mob_hp > 0 and random.random() < 0.10
+                            and self._spend(player, "double_strike")):
                         _strike(player, prefix="⚡ Coup double — ")
 
                     for eff in turn_effects:
@@ -854,7 +880,8 @@ class PartyCombatService:
                         _recoil_to_mob(target)
                         # Riposte : 10 % de chance de contre-attaquer (jamais en chaîne).
                         if (not dodged and target["hp"] > 0 and mob_hp > 0
-                                and P(target).has("counter_attack") and random.random() < 0.10):
+                                and P(target).has("counter_attack") and random.random() < 0.10
+                                and self._spend(target, "counter_attack")):
                             _strike(target, prefix="↩️ Riposte — ")
                         # Étourdissement (gobelin géant / banshee) — non cumulable
                         stunned_now = False
@@ -997,6 +1024,7 @@ class PartyCombatService:
             contribution = contributions[member["player_id"]]
             contribution.final_hp = member["hp"]
             contribution.final_mana = member["mana"]
+            contribution.mana_max = member["mana_max"]
             contribution.survived = member["hp"] > 0
 
         surviving_players = [player["name"] for player in alive_party if player["hp"] > 0]
@@ -1047,8 +1075,9 @@ class PartyCombatService:
         # Garde de l'exil : la première attaque reçue est annulée.
         if gear.has("first_hit_ward") and not target.get("warded"):
             target["warded"] = True
-            target["_ward"] = True
-            return 0, False, False
+            if self._spend(target, "first_hit_ward"):
+                target["_ward"] = True
+                return 0, False, False
 
         raw_attack = mob.attack if attack_override is None else attack_override
         raw_attack = max(1, int(raw_attack * getattr(self, "_mob_atk_mult", 1.0)))  # Cri affaiblissant
@@ -1101,7 +1130,7 @@ class PartyCombatService:
         guard = self._guardian_for(target)
         if guard is not None and mob_damage > 0:
             portion = int(round(mob_damage * self._p(guard).redirect_ally_damage_pct / 100))
-            if portion > 0:
+            if portion > 0 and self._spend(guard, "redirect"):
                 mob_damage -= portion
                 taken = self._apply_player_damage(guard, self._reduced(guard, portion))
                 contributions[guard["player_id"]].damage_tanked += portion
@@ -1114,6 +1143,24 @@ class PartyCombatService:
     # ------------------------------------------------------------ passifs
     def _p(self, member) -> CombatPassives:
         return getattr(self, "_passives", {}).get(member["player_id"], NO_PASSIVES)
+
+    def _spend(self, member, ability: str) -> bool:
+        """Prélève le mana d'une compétence active (cf. MANA_COSTS). Faux si
+        la réserve ne suffit pas : l'effet n'a pas lieu."""
+        cost = getattr(self, "_mana_costs", MANA_COSTS).get(ability, 0)
+        contrib = getattr(self, "_contribs", {}).get(member["player_id"])
+        if member.get("mana", 0) < cost:
+            if contrib is not None:
+                contrib.mana_dry += 1
+            if not member.get("dry_noted"):
+                member["dry_noted"] = True
+                member["_dry"] = MANA_ABILITY_NAMES.get(ability, ability)
+            return False
+        member["mana"] = member.get("mana", 0) - cost
+        if contrib is not None:
+            contrib.mana_spent += cost
+            contrib.mana_uses[ability] = contrib.mana_uses.get(ability, 0) + 1
+        return True
 
     def _reduced(self, member, damage: int) -> int:
         """Réductions des dégâts reçus (Résistant, Titan…), additionnées."""
@@ -1138,13 +1185,14 @@ class PartyCombatService:
             member["shield"] -= absorbed
             damage -= absorbed
         if (damage >= member["hp"] > 0 and self._p(member).last_stand
-                and not member.get("last_stand_used")):
+                and not member.get("last_stand_used") and self._spend(member, "last_stand")):
             member["last_stand_used"] = True
             member["_held"] = True
             damage = member["hp"] - 1
         member["hp"] = max(0, member["hp"] - damage)
         # Revenant : la première mort ramène à 50 % des PV.
-        if member["hp"] <= 0 and self._p(member).has("undying") and not member.get("gear_revived"):
+        if (member["hp"] <= 0 and self._p(member).has("undying") and not member.get("gear_revived")
+                and self._spend(member, "undying")):
             member["gear_revived"] = True
             member["hp"] = max(1, member["max_hp"] // 2)
             member["_revived"] = True

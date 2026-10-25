@@ -467,6 +467,30 @@ PV ET MANA
           s'il te reste peu de PV. Une zone couvre plusieurs niveaux : tous
           ses monstres ne sont pas pour toi tout de suite.
 
+LE MANA DES COMPÉTENCES 💧
+    Les compétences qui AGISSENT en combat puisent dans ton mana, toutes
+    seules, et seulement quand elles servent à quelque chose : un soin quand
+    un allié est blessé, une provocation quand il y a quelqu'un à protéger…
+    Réserve vide ⇒ la compétence ne se déclenche plus (le Soigneur attaque à
+    la place) ; le journal te prévient (« 💧 à court de mana »).
+        Sort de soin (Soigneur)    6 par soin
+        Clerc                      2 par soin
+        Vampire                    1 par vol de vie (rien à PV pleins)
+        Vaillant                   4 par provocation
+        Égide                     15 par combat
+        Rempart                    2 par coup encaissé pour un allié
+        Tenace                    10 par sauvetage
+        Riposte, Coup double       4 chacun
+        Défi                       8 par combat
+        Revenant                  20 par résurrection
+        Garde de l'exil            5 par combat
+    Les simples bonus (dégâts, réductions, critiques, pénétration…) sont
+    gratuits. Une réserve pleine tient environ un combat d'élite à plein
+    régime : enchaîner les élites vide le mana, il faut le laisser remonter.
+    Le mana max et la régénération de mana (cases de l'arbre, équipement)
+    servent donc enfin : plus de réserve, plus de compétences d'affilée.
+    Le mana restant s'affiche dans le journal et dans les détails du combat.
+
 /utiliser <consommable>
     Utilise un consommable de ton inventaire (ex. la potion de soin). Si tes
     PV sont déjà pleins, la potion n'est pas consommée.

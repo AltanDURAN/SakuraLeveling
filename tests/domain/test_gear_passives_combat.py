@@ -21,7 +21,7 @@ NOW = datetime.now(UTC)
 
 def stats(**kw) -> Stats:
     base = dict(max_hp=1000, attack=100, defense=20, speed=10, crit_chance=0,
-                crit_damage=200, dodge=0, hp_regeneration=0, mana_max=0, mana_regeneration=0)
+                crit_damage=200, dodge=0, hp_regeneration=0, mana_max=100_000, mana_regeneration=0)
     base.update(kw)
     return Stats(**base)
 
@@ -40,7 +40,7 @@ def member(pid=1, **kw):
     st = stats(**kw)
     return {"player_id": pid, "user_id": pid, "name": f"J{pid}", "avatar_url": "",
             "stats": st, "current_hp": st.max_hp, "max_hp": st.max_hp,
-            "current_mana": 0, "mana_max": 0}
+            "current_mana": st.mana_max, "mana_max": st.mana_max}   # réserve « illimitée »
 
 
 def gear(*codes, **kw) -> CombatPassives:

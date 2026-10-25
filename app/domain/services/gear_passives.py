@@ -31,6 +31,14 @@ class GearPassive:
     #: non cumulable), "economy" (butin des monstres uniquement).
     kind: str
 
+    @property
+    def full_description(self) -> str:
+        """Description + coût en mana s'il s'agit d'une compétence active."""
+        from app.domain.services.combat_passives import mana_cost_text
+
+        cost = mana_cost_text(self.code)
+        return f"{self.description} ({cost})" if cost else self.description
+
 
 PASSIVES: dict[str, GearPassive] = {p.code: p for p in (
     GearPassive("first_strike_crit", "Frappe d'ouverture",

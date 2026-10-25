@@ -74,7 +74,7 @@ def test_le_clerc_soigne_l_allie_le_plus_blesse_avec_ses_degats():
 
     def member(pid, hp):
         st = Stats(max_hp=1000, attack=100, defense=0, speed=100 if pid == 1 else 1, crit_chance=0,
-                   crit_damage=150, dodge=0, hp_regeneration=0, mana_max=0, mana_regeneration=0)
+                   crit_damage=150, dodge=0, hp_regeneration=0, mana_max=100, mana_regeneration=0)
         return {"player_id": pid, "user_id": pid, "name": f"J{pid}", "avatar_url": "", "stats": st,
                 "current_hp": hp, "max_hp": 1000}
 

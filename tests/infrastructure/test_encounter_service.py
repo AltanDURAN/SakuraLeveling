@@ -45,6 +45,7 @@ from app.infrastructure.db.models.world_boss_model import WorldBossModel, WorldB
 from app.infrastructure.db.models.player_title_model import PlayerTitleModel  # noqa: F401
 from app.infrastructure.db.models.weekly_quest_model import WeeklyQuestAssignmentModel  # noqa: F401
 from app.infrastructure.db.models.daily_quest_model import DailyQuestAssignmentModel  # noqa: F401
+from app.infrastructure.db.models.player_mana_state_model import PlayerManaStateModel  # noqa: F401
 
 
 # --------------------------------------------------------------------------- #
@@ -379,3 +380,24 @@ def test_apply_rewards_defeat_grants_zero_rewards(session, patch_get_db_session)
 
     kill_rows = session.execute(select(PlayerMobKillModel)).scalars().all()
     assert kill_rows == []
+
+
+def test_persist_final_players_hp_sauve_aussi_le_mana(session, patch_get_db_session):
+    """Le mana dépensé en combat de zone est conservé : il remonte ensuite
+    hors combat (ManaRegenerationService), jamais pendant le combat."""
+    from app.domain.value_objects.party_battle_turn_log import PartyBattleTurnLog
+    from app.infrastructure.db.models.player_mana_state_model import PlayerManaStateModel
+
+    pid = _create_player(session, 1, "Alice")
+    state = {"player_id": pid, "current_hp": 42, "max_hp": 100, "current_mana": 13, "mana_max": 100}
+    result = PartyBattleResult(
+        victory=True, turns=1, mob_name="m", mob_image_name="", mob_remaining_hp=0,
+        surviving_players=["Alice"], defeated_players=[], xp_gained=0, gold_gained=0, summary="",
+        turn_logs=[PartyBattleTurnLog(turn_number=1, player_actions=[], mob_action="",
+                                      players_state=[state], mob_state={})],
+    )
+    EncounterService().persist_final_players_hp(result)
+
+    mana = session.execute(select(PlayerManaStateModel).where(PlayerManaStateModel.player_id == pid)).scalar_one()
+    hp = session.execute(select(PlayerHealthStateModel).where(PlayerHealthStateModel.player_id == pid)).scalar_one()
+    assert mana.current_mana == 13 and hp.current_hp == 42

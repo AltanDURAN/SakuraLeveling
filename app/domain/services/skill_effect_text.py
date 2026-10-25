@@ -8,7 +8,7 @@ dans la description, écrite par l'auteur ; on n'y ajoute que la classe.
 
 from __future__ import annotations
 
-from app.domain.services.combat_passives import FEATURES
+from app.domain.services.combat_passives import FEATURES, mana_cost_text
 
 #: type d'effet → gabarit ({v} = valeur au niveau considéré).
 _TEMPLATES: dict[str, str] = {
@@ -74,8 +74,19 @@ def effect_lines(node, level: int | None = None) -> list[str]:
     return lines
 
 
+def mana_lines(node) -> list[str]:
+    """Coût en mana des compétences actives de la case (« 💧 6 mana par soin »)."""
+    out: list[str] = []
+    for effect in node.effects:
+        text = mana_cost_text(effect.type)
+        if text and text not in out:
+            out.append(text)
+    return out
+
+
 def node_summary(node, level: int | None = None) -> str:
-    """Description de l'auteur si elle existe, sinon le texte des effets."""
-    if node.description:
-        return node.description
-    return " · ".join(effect_lines(node, level)) or "—"
+    """Description de l'auteur si elle existe, sinon le texte des effets ;
+    précédée du coût en mana des compétences actives (en tête : le menu de
+    `/arbre` coupe à 100 caractères)."""
+    text = node.description or " · ".join(effect_lines(node, level)) or "—"
+    return " · ".join([*mana_lines(node), text])

@@ -9,6 +9,7 @@ from app.application.services.title_unlock_service import TitleUnlockService
 from app.application.use_cases.daily_quests import DailyQuestProgressService
 from app.application.use_cases.weekly_quests import WeeklyQuestProgressService
 from app.domain.services.health_regeneration_service import HealthRegenerationService
+from app.domain.services.mana_regeneration_service import ManaRegenerationService
 from app.domain.services.title_bonus_service import TitleBonusService
 from app.domain.services.loot_service import LootService
 from app.domain.services.mob_ability_service import (
@@ -46,6 +47,7 @@ from app.infrastructure.db.repositories.player_career_stats_repository import (
 )
 from app.infrastructure.db.repositories.player_health_repository import PlayerHealthRepository
 from app.infrastructure.db.repositories.player_kill_repository import PlayerKillRepository
+from app.infrastructure.db.repositories.player_mana_repository import PlayerManaRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.daily_quest_repository import DailyQuestRepository
 from app.infrastructure.db.repositories.player_skill_allocation_repository import (
@@ -240,6 +242,8 @@ class EncounterService:
 
             party = []
             title_bonuses_by_player: dict = {}
+            mana_repo = PlayerManaRepository(session)
+            now = datetime.now(UTC)
             # Passifs de l'arbre (classes, Tenace, Égide…) et tactique de combat.
             passives_by_player, tactics_by_player = resolve_party_passives(
                 session, [p.player_id for p in encounter.participants.values()],
@@ -295,6 +299,19 @@ class EncounterService:
                         mob_element, mob_aff, aff,
                     )
 
+                # Mana courant (régénéré hors combat jusqu'à MAINTENANT) : les
+                # compétences actives y puisent (cf. combat_passives.MANA_COSTS).
+                # Persisté en fin de combat par `persist_final_players_hp`.
+                mana_state = mana_repo.get_or_create(
+                    participant.player_id, default_current_mana=stats.mana_max)
+                current_mana = ManaRegenerationService().apply_out_of_combat_regeneration(
+                    current_mana=mana_state.current_mana,
+                    mana_max=stats.mana_max,
+                    mana_regeneration=stats.mana_regeneration,
+                    last_updated_at=mana_state.updated_at,
+                    now=now,
+                )
+
                 party.append(
                     {
                         "player_id": participant.player_id,
@@ -303,6 +320,8 @@ class EncounterService:
                         "avatar_url": participant.avatar_url,
                         "current_hp": participant.current_hp,
                         "max_hp": participant.max_hp,
+                        "current_mana": current_mana,
+                        "mana_max": stats.mana_max,
                         "stats": stats,
                     }
                 )
@@ -322,6 +341,7 @@ class EncounterService:
         )
 
     def persist_final_players_hp(self, result) -> None:
+        """PV ET mana de fin de combat : ils remontent ensuite hors combat."""
         if not result.turn_logs:
             return
 
@@ -330,6 +350,7 @@ class EncounterService:
 
         with get_db_session() as session:
             player_health_repository = PlayerHealthRepository(session)
+            mana_repo = PlayerManaRepository(session)
 
             for player_state in final_players_state:
                 player_id = player_state["player_id"]
@@ -338,6 +359,9 @@ class EncounterService:
                     player_id=player_id,
                     current_hp=player_state["current_hp"],
                 )
+                if "current_mana" in player_state:
+                    mana_repo.get_or_create(player_id, default_current_mana=player_state["current_mana"])
+                    mana_repo.update_current_mana(player_id, max(0, int(player_state["current_mana"])))
 
     @staticmethod
     def _roll_gear_drop(session, player_id: int, mob, rng=None,

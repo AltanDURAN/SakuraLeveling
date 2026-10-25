@@ -55,7 +55,7 @@ def _gear_field(mob: MobDefinition, items: dict) -> str | None:
     ]
     passive = get_passive(getattr(item, "passive", ""))
     if passive:
-        lines.append(f"✨ {passive.name} — {passive.description} "
+        lines.append(f"✨ {passive.name} — {passive.full_description} "
                      f"_(dès {RARITY_LABELS[PASSIVE_MIN_RARITY].lower()})_")
     lines.append(f"🎲 {chance} % de chance par victoire, rareté tirée au sort")
     return "\n".join(lines)

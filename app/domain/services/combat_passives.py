@@ -44,6 +44,67 @@ MAX_DAMAGE_REDUCTION = 80
 #: seulement quand il y a infusion.
 MAGE_AFFINITY_TIERS: tuple[tuple[int, float], ...] = ((100, 2.0), (50, 1.5), (25, 1.25))
 
+# ------------------------------------------------------------------ mana --
+#: Coût en mana des compétences ACTIVES (25/10/2026, demande de l'auteur).
+#: Tout ce qui INTERVIENT dans le combat — soin, bouclier, provocation,
+#: riposte, coup supplémentaire, protection d'un allié, sauvetage — puise dans
+#: la réserve, AUTOMATIQUEMENT et seulement quand l'effet sert (soin : un
+#: allié est blessé ; Vampire : il lui manque des PV ; provocation : il y a
+#: quelqu'un à protéger). Réserve vide ⇒ l'effet ne se déclenche pas (le
+#: Soigneur attaque à la place). Les simples modificateurs (bonus de dégâts,
+#: réductions, critiques, pénétration, cumuls…) restent gratuits.
+#: Le mana ne remonte JAMAIS en combat : c'est la régénération hors combat
+#: qui décide combien de combats d'affilée on tient à plein régime.
+MANA_COSTS: dict[str, int] = {
+    "heal_spell": 6,        # Soigneur : sort de soin
+    "ally_heal": 2,         # Clerc : soin de l'allié le plus blessé
+    "lifesteal": 1,         # Vampire
+    "taunt": 4,             # Vaillant : provocation
+    "team_shield": 15,      # Égide : bouclier de groupe (début de combat)
+    "redirect": 2,          # Rempart : encaisse une part du coup d'un allié
+    "last_stand": 10,       # Tenace : tient à 1 PV
+    "counter_attack": 4,    # Riposte
+    "double_strike": 4,     # Coup double
+    "taunt_guard": 8,       # Défi : provocation d'ouverture
+    "undying": 20,          # Revenant
+    "first_hit_ward": 5,    # Garde de l'exil
+}
+
+#: Nom joueur de chaque compétence à mana (journal, aide).
+MANA_ABILITY_NAMES: dict[str, str] = {
+    "heal_spell": "Sort de soin", "ally_heal": "Clerc", "lifesteal": "Vampire",
+    "taunt": "Vaillant", "team_shield": "Égide", "redirect": "Rempart",
+    "last_stand": "Tenace", "counter_attack": "Riposte", "double_strike": "Coup double",
+    "taunt_guard": "Défi", "undying": "Revenant", "first_hit_ward": "Garde de l'exil",
+}
+
+#: Effet de l'arbre (type JSON) ou passif d'équipement (code) → compétence à mana.
+MANA_ABILITY_OF_EFFECT: dict[str, str] = {
+    "healer_spell": "heal_spell", "ally_heal_on_hit_percent": "ally_heal",
+    "lifesteal_percent": "lifesteal", "taunt_chance_percent": "taunt",
+    "team_shield_percent": "team_shield", "redirect_ally_damage_percent": "redirect",
+    "last_stand": "last_stand", "counter_attack": "counter_attack",
+    "double_strike": "double_strike", "taunt_guard": "taunt_guard",
+    "undying": "undying", "first_hit_ward": "first_hit_ward",
+}
+
+
+#: Ce que paie le coût (« 6 mana par soin »).
+_MANA_UNIT: dict[str, str] = {
+    "heal_spell": "soin", "ally_heal": "soin", "lifesteal": "vol de vie",
+    "taunt": "provocation", "team_shield": "combat", "redirect": "coup encaissé",
+    "last_stand": "sauvetage", "counter_attack": "riposte", "double_strike": "coup double",
+    "taunt_guard": "combat", "undying": "résurrection", "first_hit_ward": "combat",
+}
+
+
+def mana_cost_text(effect_or_passive: str) -> str:
+    """« 💧 6 mana par soin » pour un effet de l'arbre ou un passif
+    d'équipement à mana, sinon ""."""
+    ability = MANA_ABILITY_OF_EFFECT.get(effect_or_passive)
+    cost = MANA_COSTS.get(ability, 0) if ability else 0
+    return f"💧 {cost} mana par {_MANA_UNIT.get(ability, 'usage')}" if cost else ""
+
 # ------------------------------------------------------------- tactiques --
 #: Tactique de combat, choisie par le joueur HORS combat (`/tactique`) et figée
 #: pendant le combat. Elle décide aujourd'hui de la cible du sort de soin ;

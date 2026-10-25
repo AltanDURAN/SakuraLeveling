@@ -31,7 +31,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.application.use_cases.get_skill_tree_state import GetSkillTreeStateUseCase
 from app.application.use_cases.invest_skill_point import InvestSkillPointUseCase
-from app.domain.services.skill_effect_text import effect_lines
+from app.domain.services.skill_effect_text import effect_lines, mana_lines
 from app.bot.rendering.skill_tree_renderer import render_to_svg
 from app.domain.services.power_score_service import PowerScoreService
 from app.domain.services.skill_tree_service import SkillTreeService
@@ -196,7 +196,7 @@ def _nodes_payload(state, definition) -> list[dict]:
                 ),
                 "unlock_rule": node.unlock_rule,
                 # Ce que donne la case, lisible (« +1 % d'attaque »).
-                "effects_text": effect_lines(node),
+                "effects_text": effect_lines(node) + mana_lines(node),
                 "state": service.compute_node_state(state.allocations, node.code),
                 "costs": node.costs,
                 "prerequisites": node.prerequisites,
@@ -427,7 +427,7 @@ async def skill_api(discord_id: int):
                 ),
                 "unlock_rule": node.unlock_rule,
                 # Ce que donne la case, lisible (« +1 % d'attaque »).
-                "effects_text": effect_lines(node),
+                "effects_text": effect_lines(node) + mana_lines(node),
                 "state": service.compute_node_state(state.allocations, node.code),
             }
             for node in definition.skills.values()

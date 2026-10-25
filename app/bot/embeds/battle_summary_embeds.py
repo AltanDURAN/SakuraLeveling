@@ -214,6 +214,9 @@ def build_details_page_embed(summary: BattleSummary) -> discord.Embed:
             f"{_percent_of(contribution.hp_healed, team_healed)}",
             f"❤️ PV restants : **{contribution.final_hp}** / {contribution.max_hp}",
         ]
+        if contribution.mana_max > 0:
+            spent = f" (−{contribution.mana_spent} en compétences)" if contribution.mana_spent else ""
+            lines.append(f"💧 Mana restant : **{contribution.final_mana}** / {contribution.mana_max}{spent}")
 
         embed.add_field(
             name=f"{survived_emoji} {escape_markdown(reward.name)}{header_suffix}",
