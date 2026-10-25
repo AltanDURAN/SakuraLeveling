@@ -38,6 +38,13 @@ class SkillNode:
     #:   "all" — toutes doivent être montées au maximum (jonction de classe) ;
     #:   "any" — une seule suffit (deux chemins qui mènent au même nœud).
     unlock_rule: str = "all"
+    #: Groupe EXCLUSIF : une seule case du groupe par joueur (ex. les trois
+    #: spécialisations, « specialisation »). Vide = aucune exclusivité.
+    exclusive_group: str = ""
+    #: Seuil de VOIE : {"voie": <code de la case d'entrée>, "points": N} —
+    #: il faut avoir investi N points dans les cases de cette voie (tout ce qui
+    #: descend de sa case d'entrée, jonctions comprises) pour l'ouvrir.
+    voie_requirement: dict | None = None
 
     def cost_for_level(self, target_level: int) -> int:
         """Coût pour passer au niveau target_level (1-indexed)."""

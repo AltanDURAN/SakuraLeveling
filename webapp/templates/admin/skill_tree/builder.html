@@ -350,6 +350,10 @@ function normalize(t) {
     n.position = n.position || {x: 0, y: 0};
     n.unlock_rule = n.unlock_rule === 'any' ? 'any' : 'all';
     n.start = !!n.start;
+    n.exclusive_group = String(n.exclusive_group || '').trim();
+    const req = n.voie_requirement;
+    n.voie_requirement = req && req.voie && parseInt(req.points, 10) > 0
+      ? {voie: String(req.voie), points: parseInt(req.points, 10)} : null;
   }
   t.links = t.links.filter(l => t.nodes[l.from] && t.nodes[l.to]);
   t.roots = Object.entries(t.nodes).filter(([, n]) => n.start).map(([c]) => c);
@@ -458,11 +462,50 @@ function prereqOk(c) {
   const maxed = ins.map(p => simLevel(p) >= N(p).max_level);
   return N(c).unlock_rule === 'any' ? maxed.some(Boolean) : maxed.every(Boolean);
 }
+// Règles de spécialisation (miroir de SkillTreeService.rule_lock) : groupe
+// exclusif et seuil de points dans une voie (sa case d'entrée et tout ce qui
+// en descend, jonctions comprises).
+function voieCodes(v) {
+  const seen = new Set(), stack = [v];
+  while (stack.length) {
+    const c = stack.pop();
+    if (seen.has(c) || !N(c)) continue;
+    seen.add(c); outgoing(c).forEach(l => stack.push(l.to));
+  }
+  return seen;
+}
+function voiePoints(v, except) {
+  let total = 0;
+  for (const c of voieCodes(v)) {
+    const n = N(c); if (n.start || c === except) continue;
+    const lv = simLevel(c);
+    for (let i = 0; i < lv; i++) total += Number(n.costs[i] || 0);
+  }
+  return total;
+}
+function reqOk(c) {
+  const req = N(c).voie_requirement;
+  return !req || voiePoints(req.voie, c) >= req.points;
+}
+function ruleLock(c) {
+  const n = N(c);
+  if (n.start || simLevel(c) > 0) return null;
+  if (n.exclusive_group) {
+    const other = Object.keys(S.tree.nodes).find(k => k !== c && N(k).exclusive_group === n.exclusive_group && simLevel(k) > 0);
+    if (other) return `tu as déjà ${N(other).name || other} — une seule ${n.exclusive_group} possible`;
+  }
+  const req = n.voie_requirement;
+  if (req) {
+    const have = voiePoints(req.voie, c);
+    if (have < req.points) return `${req.points} points dans la ${(N(req.voie) || {}).name || req.voie} requis (${have}/${req.points})`;
+  }
+  return null;
+}
 function nodeState(c) {
   const n = N(c), lv = simLevel(c);
   if (lv >= n.max_level) return 'maxed';
   if (lv > 0) return 'progress';
-  return prereqOk(c) ? 'available' : 'locked';
+  return prereqOk(c) && !ruleLock(c) ? 'available' : 'locked';
 }
 function spentPoints() {
   let total = 0;
@@ -476,7 +519,7 @@ function spentPoints() {
 function invest(c) {
   const st = nodeState(c);
   if (st === 'maxed') return toast('Déjà au maximum');
-  if (st === 'locked') return toast('Verrouillée — monte d\'abord les cases reliées au maximum', true);
+  if (st === 'locked') return toast(prereqOk(c) && ruleLock(c) ? `Verrouillée — ${ruleLock(c)}` : 'Verrouillée — monte d\'abord les cases reliées au maximum', true);
   S.sim[c] = (S.sim[c] || 0) + 1; saveSim(); render();
 }
 function refund(c) {
@@ -485,7 +528,7 @@ function refund(c) {
   if (!(S.sim[c] > 0)) return;
   S.sim[c] -= 1;
   // Retirer un niveau ne doit casser aucune case déjà investie plus loin.
-  const broken = Object.keys(S.sim).find(k => N(k) && S.sim[k] > 0 && !N(k).start && !prereqOk(k));
+  const broken = Object.keys(S.sim).find(k => N(k) && S.sim[k] > 0 && !N(k).start && (!prereqOk(k) || !reqOk(k)));
   if (broken) { S.sim[c] += 1; return toast(`« ${N(broken).name || broken} » dépend de cette case`, true); }
   if (!S.sim[c]) delete S.sim[c];
   saveSim(); render();
@@ -779,6 +822,14 @@ function renderNodeInspector(box, code) {
     ${ins.length > 1 ? `<label class="bt-f"><span>Déblocage</span><select data-k="unlock_rule">
         <option value="all"${n.unlock_rule === 'all' ? ' selected' : ''}>Toutes les cases reliées au max</option>
         <option value="any"${n.unlock_rule === 'any' ? ' selected' : ''}>Une seule case reliée suffit</option></select></label>` : ''}
+    <h3>Règles de spécialisation</h3>
+    <label class="bt-f"><span>Groupe exclusif (une seule case du groupe par joueur)</span><input type="text" data-k="exclusive_group" value="${esc(n.exclusive_group)}" placeholder="ex. spécialisation — vide = aucun"></label>
+    <div class="bt-row">
+      <label class="bt-f"><span>Seuil : voie</span><select data-k="req_voie"><option value="">— aucun —</option>${
+        S.tree.roots.flatMap(r => outgoing(r).map(l => l.to)).filter((v, i, a) => N(v) && a.indexOf(v) === i)
+          .map(v => `<option value="${esc(v)}"${n.voie_requirement && n.voie_requirement.voie === v ? ' selected' : ''}>${esc(N(v).name || v)}</option>`).join('')}</select></label>
+      <label class="bt-f" style="flex:0 0 90px"><span>Points</span><input type="number" min="0" data-k="req_points" value="${n.voie_requirement ? n.voie_requirement.points : ''}"></label>
+    </div>
     <h3>Niveaux et coûts</h3>
     <div class="bt-row"><label class="bt-f" style="flex:0 0 80px"><span>Niveaux</span><input type="number" min="1" max="20" data-k="max_level" value="${n.max_level}"></label>
       <div class="bt-f"><span>Coût en points, par niveau</span><div class="bt-lv">${n.costs.map((v, j) => `<label>niv. ${j + 1}<input data-cost="${j}" value="${esc(v)}" inputmode="numeric"></label>`).join('')}</div></div></div>
@@ -809,6 +860,11 @@ function wireNodeInspector(box, code) {
         m.costs = fit(m.costs, m.max_level, 1);
         m.effects.forEach(e => { e.values = fit(e.values, m.max_level, 0); });
       } else if (k === 'x' || k === 'y') m.position[k] = parseInt(v, 10) || 0;
+      else if (k === 'req_voie' || k === 'req_points') {
+        const cur = m.voie_requirement || {voie: '', points: 0};
+        if (k === 'req_voie') cur.voie = String(v); else cur.points = Math.max(0, parseInt(v, 10) || 0);
+        m.voie_requirement = cur.voie && cur.points > 0 ? cur : (cur.voie || cur.points ? cur : null);
+      } else if (k === 'exclusive_group') m.exclusive_group = String(v).trim();
       else m[k] = v;
     });
   }));
@@ -907,7 +963,10 @@ function nodeInfoHtml(c, wide) {
     <div class="muted">${esc(typeOf(n).label || n.node_type)} · ${S.mode === 'player' ? label + ' · ' : ''}niveau ${S.mode === 'player' ? lv : n.max_level === 1 ? 1 : '1→' + n.max_level}${S.mode === 'player' ? '/' + n.max_level : ''}</div>
     ${n.description ? `<div style="margin:5px 0">${esc(n.description)}</div>` : ''}
     ${eff}${S.mode === 'player' ? next : ''}
-    ${miss.length ? `<div class="bad">Manque : ${miss.join(', ')}${n.unlock_rule === 'any' ? ' (une seule suffit)' : ''}</div>` : ''}</div>`;
+    ${miss.length ? `<div class="bad">Manque : ${miss.join(', ')}${n.unlock_rule === 'any' ? ' (une seule suffit)' : ''}</div>` : ''}
+    ${st === 'locked' && ruleLock(c) ? `<div class="bad">🔒 ${esc(ruleLock(c))}</div>` : ''}
+    ${!S.mode || S.mode !== 'player' ? [n.exclusive_group ? `<div class="muted">Groupe exclusif : ${esc(n.exclusive_group)}</div>` : '',
+      n.voie_requirement ? `<div class="muted">Seuil : ${n.voie_requirement.points} points dans ${esc((N(n.voie_requirement.voie) || {}).name || n.voie_requirement.voie)}</div>` : ''].join('') : ''}</div>`;
 }
 
 // =====================================================================

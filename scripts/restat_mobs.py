@@ -48,12 +48,12 @@ def standard(L: float) -> tuple[float, float, float]:
 #: que le trio de leur niveau gagne encore à ≥ 90 % sans mort, capacités
 #: comprises — MESURÉ par `--calibrate-elites`, ne pas éditer à la main.
 ELITE_MULT: dict[str, tuple[float, float]] = {
-    "gobelin_superieur": (4, 4),
-    "liche_maudite": (18, 1.5),
-    "aigle_tempete": (12, 1.5),
-    "comtesse_ecarlate": (18, 4),
-    "dragon_ancien": (12, 1.5),
-    "archidemon": (18, 4),
+    "gobelin_superieur": (3, 3),
+    "liche_maudite": (18, 1),
+    "aigle_tempete": (8, 1.5),
+    "comtesse_ecarlate": (18, 3),
+    "dragon_ancien": (26, 0.75),
+    "archidemon": (18, 3),
     "avatar_du_neant": (18, 2),
 }
 

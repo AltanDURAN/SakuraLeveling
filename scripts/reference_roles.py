@@ -4,17 +4,19 @@ Le joueur de référence (`app/domain/services/reference_player.py`) reste LA
 mesure du contenu SOLO : neutre, équilibré, sans classe. Un contenu de groupe
 se juge autrement : un DPS, un tank et un soigneur doivent y faire mieux
 ensemble que trois DPS (décision de l'auteur, 25/10/2026). Ce module construit
-ces trois joueurs à un niveau donné avec les VRAIES règles du jeu (arbre,
-StatsService, rareté d'équipement, passifs, panoplie) ; les scripts de
-calibrage et les tests d'équilibre les font combattre avec le vrai moteur.
+ces trois joueurs — et un GÉNÉRALISTE (G : classes de base et de jonction,
+aucune spécialisation) — à un niveau donné avec les VRAIES règles du jeu
+(arbre, seuil de voie et exclusivité des spécialisations, StatsService,
+rareté d'équipement, passifs, panoplie) ; les scripts de calibrage et les
+tests d'équilibre les font combattre avec le vrai moteur.
 
 Méthode (issue du labo d'équilibrage d'octobre 2026) :
   • points de stats : DPS 60 / 20 / 20 % (ATK / DEF / PV), Tank 15 / 42,5 /
     42,5, Support 45 / 20 / 35 ;
   • arbre : allocation gloutonne selon les priorités du rôle (`WEIGHTS`), en
-    regardant quelques cases plus loin ; un rôle ne prend QUE les classes de
-    sa voie (`CLASS_OK`) — sans ça, à ~70 cases de combat pour 99 points,
-    tout le monde finit avec tout ;
+    regardant quelques cases plus loin, dans les RÈGLES de l'arbre (seuil de
+    voie, une seule spécialisation) ; chaque rôle ne vise que les classes qui
+    lui servent (`CLASS_OK`) ;
   • équipement : 7 pièces de la rareté attendue au niveau (même courbe que le
     joueur de référence), kit de stats du rôle, 4 passifs de rôle dès
     l'épique, panoplie du type du rôle ;
@@ -50,7 +52,7 @@ from app.domain.value_objects.stats import Stats
 
 NOW = datetime.now(UTC)
 
-ROLE_OF = {"D": "dps", "T": "tank", "S": "support"}
+ROLE_OF = {"D": "dps", "T": "tank", "S": "support", "G": "general"}
 
 #: Priorités de chaque rôle dans l'arbre : poids d'un type d'effet.
 WEIGHTS: dict[str, dict[str, float]] = {
@@ -60,23 +62,32 @@ WEIGHTS: dict[str, dict[str, float]] = {
     "tank": {"def_percent": 3, "hp_max_percent": 3, "damage_taken_reduction_percent": 4,
              "redirect_ally_damage_percent": 5, "taunt_chance_percent": 5, "last_stand": 3,
              "dodge_flat": 1, "team_shield_percent": 2, "atk_percent": 0.5, "speed_flat": 0.5,
-             "damage_dealt_percent": 1, "defense_to_attack_percent": 4},
+             "damage_dealt_percent": 1, "defense_to_attack_percent": 4, "threat_percent": 4},
     "support": {"healer_spell": 8, "team_shield_percent": 5, "heal_buff_percent": 4,
                 "heal_received_percent": 2, "speed_per_ally": 1, "hp_max_percent": 1.5,
                 "def_percent": 1, "atk_percent": 1.5, "speed_flat": 1.5, "lifesteal_percent": 0.5,
-                "team_damage_percent": 4},
+                "team_damage_percent": 4, "ally_heal_on_hit_percent": 3},
 }
+#: Le généraliste : un peu de tout, mais ni sort de soin, ni aura, ni
+#: Rempart, ni Assassin (les spécialisations lui sont fermées de toute façon).
+WEIGHTS["general"] = {k: v for role in ("dps", "tank", "support") for k, v in WEIGHTS[role].items()
+                      if k not in ("healer_spell", "team_damage_percent", "redirect_ally_damage_percent",
+                                   "crit_chance_multiplier")}
+WEIGHTS["general"].update({"ally_heal_on_hit_percent": 5, "threat_percent": 3, "damage_dealt_percent": 4})
 
 #: Classes autorisées par rôle (celles de sa voie).
+BASE_CLASSES = {"guerrier", "gardien", "clerc"}
 CLASS_OK: dict[str, set[str]] = {
-    "dps": {"assassin", "combattant", "mage", "vampire", "titan"},
-    "tank": {"rempart", "titan", "paladin", "combattant"},
-    "support": {"soigneur", "egide", "paladin"},
+    "dps": {"assassin", "combattant", "mage", "vampire", "titan"} | BASE_CLASSES,
+    "tank": {"rempart", "titan", "paladin", "combattant"} | BASE_CLASSES,
+    "support": {"soigneur", "egide", "paladin"} | BASE_CLASSES,
+    "general": {"combattant", "titan", "vampire", "mage", "paladin", "egide"} | BASE_CLASSES,
 }
 
 #: Répartition des points de stats (ATK, DEF, PV).
 POINTS: dict[str, tuple[float, float, float]] = {
     "dps": (0.6, 0.2, 0.2), "tank": (0.15, 0.425, 0.425), "support": (0.45, 0.2, 0.35),
+    "general": (1 / 3, 1 / 3, 1 / 3),
 }
 
 #: Stats au COMMUN des 7 pièces portées (grille d'items.json).
@@ -90,13 +101,18 @@ KITS: dict[str, list[dict]] = {
     "support": [{"attack_pct": 8, "mana_max": 15}, {"defense_pct": 6, "max_hp_pct": 4},
                 {"max_hp_pct": 6, "mana_max": 15}, {"defense_pct": 6, "max_hp_pct": 6},
                 {"speed": 1}, {"hp_regeneration": 4}, {"crit_chance": 3}],
+    "general": [{"attack_pct": 8, "crit_chance": 2}, {"defense_pct": 6, "max_hp_pct": 4},
+                {"max_hp_pct": 6, "crit_chance": 2}, {"defense_pct": 6, "max_hp_pct": 6},
+                {"crit_damage": 9}, {"speed": 1}, {"hp_regeneration": 4}],
 }
 GEAR_PASSIVES: dict[str, list[str]] = {
     "dps": ["first_strike_crit", "double_strike", "rising_fury", "executioner"],
     "tank": ["taunt_guard", "stone_skin", "thorns", "undying"],
     "support": ["healing_hands", "weakening_cry", "anti_heal", "blast_ward"],
+    "general": ["double_strike", "stone_skin", "healing_hands", "rising_fury"],
 }
-PANOPLIE: dict[str, str] = {"dps": "attack", "tank": "defense", "support": "max_hp"}
+PANOPLIE: dict[str, str] = {"dps": "attack", "tank": "defense", "support": "max_hp",
+                            "general": "attack"}
 TACTIC: dict[str, str] = {"support": "pragmatique"}
 
 

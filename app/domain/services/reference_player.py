@@ -12,7 +12,7 @@ Hypothèses, volontairement neutres :
     hypothèse qui ne favorise aucun build ;
   • **équipement de son palier** — celui qu'un joueur assidu a réellement à ce
     niveau d'après la simulation de la saison (`GEAR_RARITY_CURVE`), plus
-    l'arbre (`TREE_MAX_PCT`), stat par stat (`expected_percents`).
+    l'arbre (`expected_tree_pct`), stat par stat (`expected_percents`).
     Calibrer sur un joueur nu rendrait tout le contenu trivial dès qu'il
     s'équipe ; calibrer sur un joueur parfaitement optimisé le rendrait
     infranchissable pour tous les autres ;
@@ -47,15 +47,23 @@ GEAR_RARITY_CURVE: tuple[tuple[int, float], ...] = (
 #: tête PV 6, corps DEF 6 / PV 6 — cf. items.json), multiplié par la rareté.
 GEAR_KIT_COMMON_PCT = {"attack": 8.0, "defense": 12.0, "max_hp": 16.0}
 
-#: L'arbre donne au plus +15 % d'ATK, de DEF et de PV (7 cases chacune) ;
-#: on le suppose pris progressivement jusqu'au niveau `TREE_FULL_LEVEL`.
-TREE_MAX_PCT = 15.0
-TREE_FULL_LEVEL = 40
+#: Arbre à trois niveaux de classes (25/10/2026) : une case de combat coûte
+#: 3 points, l'arbre de combat ~200 pour 99 points au niveau 100 — un joueur
+#: n'en a que la MOITIÉ. Mesuré sur le joueur équilibré (le généraliste de
+#: `scripts/reference_roles.py`) : les trois entrées de voie (+5 % chacune,
+#: 1 point) dès le niveau 10, puis ~+4 % de plus jusqu'au niveau 100. Avant,
+#: on supposait +15 % dès le niveau 40 (tout l'arbre était acquis à 70).
+TREE_ENTRY_PCT = 5.0
+TREE_ENTRY_LEVEL = 10
+TREE_DEEP_PCT = 4.0
+TREE_FULL_LEVEL = 100
 
-#: Vitesse de l'arbre : 6 cases à +0,5 (+3 au total), prises au même rythme.
-#: Les monstres la suivent (restat_mobs) : sans ça, un joueur à 8 de vitesse
-#: agissait 1,6 fois plus souvent qu'un monstre calibré à 5.
+#: Vitesse de l'arbre : 6 cases à +0,5 (+3 au total), atteintes vers le
+#: niveau `TREE_SPEED_LEVEL` (mesuré). Les monstres la suivent (restat_mobs) :
+#: sans ça, un joueur à 8 de vitesse agissait 1,6 fois plus souvent qu'un
+#: monstre calibré à 5.
 TREE_SPEED = 3.0
+TREE_SPEED_LEVEL = 60
 
 
 def _gear_rarity_multiplier(level: int) -> float:
@@ -72,8 +80,16 @@ def expected_percents(level: int) -> dict[str, float]:
     """Bonus attendu (fraction, 0,25 = +25 %) sur ATK, DEF et PV à ce niveau :
     équipement de la simulation + arbre."""
     rarity = _gear_rarity_multiplier(level)
-    tree = TREE_MAX_PCT * min(1.0, max(0, level - 1) / (TREE_FULL_LEVEL - 1))
-    return {stat: (pct * rarity + tree) / 100 for stat, pct in GEAR_KIT_COMMON_PCT.items()}
+    return {stat: (pct * rarity + expected_tree_pct(level)) / 100
+            for stat, pct in GEAR_KIT_COMMON_PCT.items()}
+
+
+def expected_tree_pct(level: int) -> float:
+    """% d'ATK / DEF / PV que l'arbre donne au joueur équilibré à ce niveau."""
+    entry = TREE_ENTRY_PCT * min(1.0, max(0, level - 1) / (TREE_ENTRY_LEVEL - 1))
+    deep = TREE_DEEP_PCT * min(1.0, max(0, level - TREE_ENTRY_LEVEL)
+                               / (TREE_FULL_LEVEL - TREE_ENTRY_LEVEL))
+    return entry + deep
 
 
 #: Valeurs de départ des stats secondaires (miroir de StatsService).
@@ -89,7 +105,7 @@ BASE_MANA_REGENERATION = 5
 def expected_speed(level: int) -> int:
     """Vitesse attendue à ce niveau : base + cases de vitesse de l'arbre
     (tronquée, comme StatsService)."""
-    tree = TREE_SPEED * min(1.0, max(0, level - 1) / (TREE_FULL_LEVEL - 1))
+    tree = TREE_SPEED * min(1.0, max(0, level - 1) / (TREE_SPEED_LEVEL - 1))
     return int(BASE_SPEED + tree)
 
 

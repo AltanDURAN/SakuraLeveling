@@ -1,5 +1,7 @@
 """Épreuves de rôle : chaque spécialiste gagne SON épreuve, dans chaque
-variante, à plusieurs niveaux (builds de `scripts/reference_roles.py`).
+variante, une fois spécialisé (builds de `scripts/reference_roles.py`) — les
+spécialisations arrivent vers le niveau 31-41 (arbre à trois niveaux) ;
+avant, seul le Clerc (classe de base) soigne.
 
 Pièges trouvés au calibrage (25/10/2026) : sans ces règles, le Soigneur
 gagnait l'épreuve TANK en se soignant lui-même, et ne marquait presque rien en
@@ -28,7 +30,7 @@ def _score(trial_role: str, build_role: str, level: int, variant) -> int:
                      passives=b.passives, tactic=b.tactic, seed=0).score
 
 
-@pytest.mark.parametrize("level", (30, 60, 100))
+@pytest.mark.parametrize("level", (45, 60, 100))
 @pytest.mark.parametrize("variant", [v for vs in VARIANTS.values() for v in vs],
                          ids=lambda v: f"{v.role}-{v.code}")
 def test_le_specialiste_gagne_son_epreuve(variant, level):
@@ -41,3 +43,10 @@ def test_le_specialiste_gagne_son_epreuve(variant, level):
 def test_un_essai_est_deterministe():
     variant = VARIANTS["dps"][0]
     assert _score("dps", "dps", 60, variant) == _score("dps", "dps", 60, variant)
+
+
+@pytest.mark.parametrize("level", (20, 30))
+def test_avant_les_specialisations_seul_le_clerc_soigne(level):
+    variant = VARIANTS["soutien"][0]
+    scores = {r: _score("soutien", r, level, variant) for r in ("dps", "tank", "support", "general")}
+    assert scores["general"] > 0 and max(scores, key=scores.get) == "general", scores

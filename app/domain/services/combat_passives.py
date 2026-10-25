@@ -80,6 +80,8 @@ class CombatPassives:
     heal_received_pct: float = 0.0         # Paladin : soins reçus +X %
     healer: bool = False                   # Soigneur : le sort de soin remplace l'attaque
     team_damage_pct: float = 0.0           # Soigneur : aura, +X % de dégâts à toute l'équipe
+    threat_pct: float = 0.0                # Gardien : robustesse comptée +X % pour l'aggro
+    ally_heal_on_hit_pct: float = 0.0      # Clerc : X % des dégâts infligés soignent l'allié le plus blessé
     heal_power_multiplier: float = 1.0     # Soigneur : ×2 sur les soins donnés
     heal_buff_pct: float = 0.0             # Buff : un soin donne +X % ATK/DEF (cible + soi)
     speed_per_ally: int = 0                # Soigneur : +1 vitesse par allié présent

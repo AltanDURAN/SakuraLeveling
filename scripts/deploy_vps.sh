@@ -21,7 +21,11 @@ else
 fi
 
 echo "==> 1. Backup DB"
-cp "$DB_FILE" "lita_v2_backup_$(date +%Y%m%d_%H%M%S).db"
+# `.backup` et PAS `cp` : la base est en WAL, les écritures récentes vivent
+# dans lita_v2.db-wal tant qu'elles ne sont pas reportées — un cp du seul .db
+# donnait une sauvegarde périmée (constaté le 25/10/2026 : fichier du 24, WAL
+# de 1,3 Mo). `.backup` prend un instantané cohérent, bot en marche compris.
+sqlite3 "$DB_FILE" ".backup 'lita_v2_backup_$(date +%Y%m%d_%H%M%S).db'"
 ls -lh lita_v2_backup_*.db | tail -3
 # Rotation : les 10 sauvegardes de déploiement les plus récentes suffisent
 # (la sauvegarde QUOTIDIENNE vit à part, dans ~/sakura-backups, + hors site).

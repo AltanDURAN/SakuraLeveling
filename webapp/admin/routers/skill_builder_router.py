@@ -87,6 +87,8 @@ EFFECT_CATALOGUE: list[dict] = [
             {"type": "crit_damage_multiplier", "label": "Dégâts critiques", "unit": "×"},
             {"type": "team_damage_percent", "label": "Aura : dégâts de toute l'équipe (une seule par équipe)", "unit": "%"},
             {"type": "defense_to_attack_percent", "label": "Ajoute sa défense à son attaque", "unit": "%"},
+            {"type": "threat_percent", "label": "Aggro : robustesse comptée en plus", "unit": "%"},
+            {"type": "ally_heal_on_hit_percent", "label": "Ses dégâts soignent l'allié le plus blessé", "unit": "%"},
             {"type": "last_stand", "label": "Survit au 1er coup fatal (1 = oui)", "unit": "drapeau"},
             {"type": "healer_spell", "label": "Sort de soin à la place de l'attaque (1 = oui)", "unit": "drapeau"},
             {"type": "mage_affinity_bonus", "label": "Bonus du Mage selon l'affinité (1 = oui)", "unit": "drapeau"},
@@ -130,6 +132,8 @@ def _serialise(definition) -> dict:
                 "node_type": node.node_type,
                 "start": node.start,
                 "unlock_rule": getattr(node, "unlock_rule", "all"),
+                "exclusive_group": getattr(node, "exclusive_group", ""),
+                "voie_requirement": getattr(node, "voie_requirement", None),
                 "max_level": node.max_level,
                 "costs": node.costs,
                 "effects": [
@@ -346,6 +350,17 @@ def validate(payload: dict) -> list[str]:
                     problems.append(f"« {code} » : fonctionnalité inconnue {unknown[0]!r}")
         if node.get("unlock_rule", "all") not in ("all", "any"):
             problems.append(f"« {code} » : règle de déblocage inconnue")
+        req = node.get("voie_requirement")
+        if req:
+            try:
+                points = int(req.get("points") or 0)
+            except (TypeError, ValueError, AttributeError):
+                points = 0
+            voie = req.get("voie") if isinstance(req, dict) else None
+            if not voie or points <= 0:
+                problems.append(f"« {code} » : seuil de voie incomplet (une voie ET un nombre de points)")
+            elif voie not in nodes:
+                problems.append(f"« {code} » : seuil sur une voie inconnue {voie!r}")
 
     # Un nœud inatteignable est du contenu mort : ni racine, ni relié à rien.
     linked = {link.get("to") for link in links}

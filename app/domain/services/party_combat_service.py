@@ -308,7 +308,8 @@ class PartyCombatService:
                 if forced is not None:
                     return forced
             weights = [
-                (m["stats"].max_hp + m["stats"].defense * THREAT_DEF_WEIGHT) ** THREAT_EXPONENT
+                ((m["stats"].max_hp + m["stats"].defense * THREAT_DEF_WEIGHT)
+                 * (1 + P(m).threat_pct / 100)) ** THREAT_EXPONENT   # Gardien
                 for m in pool
             ]
             return random.choices(pool, weights=weights, k=1)[0]
@@ -587,6 +588,17 @@ class PartyCombatService:
                 action_text = f"{player['name']} : coup ignoré (immunité)"
             elif landed and mob_shield > 0:
                 action_text += " 🛡️"
+
+            if mine.ally_heal_on_hit_pct > 0 and actual_damage > 0:  # Clerc
+                hurt = [m for m in alive_party
+                        if m is not player and 0 < m["hp"] < m["max_hp"] and not m["absorbed"]
+                        and m["player_id"] != charmed_id]
+                if hurt:
+                    ally = min(hurt, key=lambda m: m["hp"] / max(1, m["max_hp"]))
+                    mended = _heal(player, ally, actual_damage * mine.ally_heal_on_hit_pct / 100,
+                                   allow_buff=False)
+                    if mended:
+                        action_text += f" ✚ {ally['name']} +{mended}"
 
             if mine.lifesteal_pct > 0 and actual_damage > 0:  # Vampire
                 stolen = _heal(player, player, actual_damage * mine.lifesteal_pct / 100,

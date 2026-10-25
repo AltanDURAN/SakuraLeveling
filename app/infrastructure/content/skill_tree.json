@@ -196,7 +196,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        2
       ],
       "effects": [
         {
@@ -233,7 +233,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        2
       ],
       "effects": [
         {
@@ -270,7 +270,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        2
       ],
       "effects": [
         {
@@ -431,7 +431,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -456,7 +456,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -481,7 +481,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -506,7 +506,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -531,7 +531,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -556,7 +556,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -581,7 +581,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -606,7 +606,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -631,7 +631,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -656,7 +656,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -681,7 +681,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -706,7 +706,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -731,7 +731,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -756,7 +756,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -781,7 +781,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -806,7 +806,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -831,7 +831,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -856,7 +856,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -881,7 +881,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -906,7 +906,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -931,7 +931,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -956,7 +956,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -981,7 +981,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1006,7 +1006,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1031,7 +1031,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1056,7 +1056,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1081,7 +1081,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1106,7 +1106,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1131,7 +1131,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        2
       ],
       "effects": [
         {
@@ -1162,7 +1162,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1187,7 +1187,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1212,7 +1212,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1237,7 +1237,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1262,7 +1262,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1287,7 +1287,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        2
       ],
       "effects": [
         {
@@ -1318,7 +1318,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1343,7 +1343,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1368,7 +1368,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1393,7 +1393,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1418,7 +1418,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1443,7 +1443,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        2
       ],
       "effects": [
         {
@@ -1480,7 +1480,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1505,7 +1505,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1530,7 +1530,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1555,7 +1555,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1580,7 +1580,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1605,7 +1605,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1622,7 +1622,7 @@
     },
     "passif_16": {
       "name": "Soigneur",
-      "description": "Classe Soigneur : soigne un allié sous 50 % de ses PV à la place de son attaque (cible choisie selon sa tactique, /tactique) — sinon il attaque ; soins donnés doublés, +1 de vitesse par allié présent au combat. Aura : tant qu'il est debout, toute l'équipe inflige +25 % de dégâts (une seule aura par équipe).",
+      "description": "Spécialisation de la Voie du Support : soigne un allié sous 50 % de ses PV à la place de son attaque (cible selon sa tactique, /tactique), soins doublés, +1 de vitesse par allié. Aura : tant qu'il est debout, toute l'équipe inflige +25 % de dégâts (une seule aura par équipe). Demande 27 points dans la voie ; une seule spécialisation possible.",
       "icon": "💚",
       "shape": "hexagone_classe",
       "node_type": "classe",
@@ -1630,7 +1630,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        2
       ],
       "effects": [
         {
@@ -1667,6 +1667,11 @@
       "position": {
         "x": -820,
         "y": 878
+      },
+      "exclusive_group": "spécialisation",
+      "voie_requirement": {
+        "voie": "voie_support",
+        "points": 27
       }
     },
     "passif_17": {
@@ -1679,7 +1684,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1704,7 +1709,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1729,7 +1734,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1754,7 +1759,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1771,7 +1776,7 @@
     },
     "passif_20": {
       "name": "Rempart",
-      "description": "Redirige 50% des dégats que devrait recevoir ses alliés sur lui à la place. Garde offensive : la moitié de sa défense s'ajoute à son attaque.",
+      "description": "Spécialisation de la Voie du Protecteur : encaisse 50 % des coups portés à ses alliés, et 25 % de sa défense s'ajoutent à son attaque (50 % avec le Gardien). Demande 27 points dans la voie ; une seule spécialisation possible.",
       "icon": "🧱",
       "shape": "hexagone_classe",
       "node_type": "classe",
@@ -1779,7 +1784,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        2
       ],
       "effects": [
         {
@@ -1797,13 +1802,18 @@
         {
           "type": "defense_to_attack_percent",
           "values": [
-            50
+            25
           ]
         }
       ],
       "position": {
         "x": 660,
         "y": 878
+      },
+      "exclusive_group": "spécialisation",
+      "voie_requirement": {
+        "voie": "voie_defense",
+        "points": 27
       }
     },
     "passif_21": {
@@ -1816,7 +1826,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1841,7 +1851,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1866,7 +1876,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1891,7 +1901,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1908,7 +1918,7 @@
     },
     "passif_25": {
       "name": "Assassin",
-      "description": "Chances de critique ×1,25 et dégâts critiques ×1,5.",
+      "description": "Spécialisation de la Voie du Guerrier : chances de critique ×1,25 et dégâts critiques ×1,5. Demande 27 points dans la voie ; une seule spécialisation possible.",
       "icon": "🥷",
       "shape": "hexagone_classe",
       "node_type": "classe",
@@ -1916,7 +1926,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        2
       ],
       "effects": [
         {
@@ -1941,6 +1951,11 @@
       "position": {
         "x": -80,
         "y": -405
+      },
+      "exclusive_group": "spécialisation",
+      "voie_requirement": {
+        "voie": "voie_attaque",
+        "points": 27
       }
     },
     "passif_26": {
@@ -1953,7 +1968,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -1978,7 +1993,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -2003,7 +2018,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -2028,7 +2043,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -2053,7 +2068,7 @@
       "unlock_rule": "all",
       "max_level": 1,
       "costs": [
-        1
+        3
       ],
       "effects": [
         {
@@ -2290,6 +2305,111 @@
       "position": {
         "x": 1090,
         "y": 1195
+      }
+    },
+    "base_guerrier": {
+      "name": "Guerrier",
+      "description": "Classe de base de la Voie du Guerrier : +5 % de dégâts infligés. Cumulable avec les autres classes de base.",
+      "icon": "🗡️",
+      "shape": "hexagone_classe",
+      "node_type": "classe",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "grant_class",
+          "values": [
+            "guerrier"
+          ]
+        },
+        {
+          "type": "damage_dealt_percent",
+          "values": [
+            5
+          ]
+        }
+      ],
+      "position": {
+        "x": 24,
+        "y": 320
+      }
+    },
+    "base_gardien": {
+      "name": "Gardien",
+      "description": "Classe de base de la Voie du Protecteur : attire davantage les coups (+50 % d'aggro), −5 % de dégâts reçus, et 25 % de sa défense s'ajoutent à son attaque. Cumulable avec les autres classes de base.",
+      "icon": "🧱",
+      "shape": "hexagone_classe",
+      "node_type": "classe",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "grant_class",
+          "values": [
+            "gardien"
+          ]
+        },
+        {
+          "type": "threat_percent",
+          "values": [
+            50
+          ]
+        },
+        {
+          "type": "damage_taken_reduction_percent",
+          "values": [
+            5
+          ]
+        },
+        {
+          "type": "defense_to_attack_percent",
+          "values": [
+            25
+          ]
+        }
+      ],
+      "position": {
+        "x": -28,
+        "y": 586
+      }
+    },
+    "base_clerc": {
+      "name": "Clerc",
+      "description": "Classe de base de la Voie du Support : 20 % des dégâts infligés soignent l'allié le plus blessé, sans remplacer l'attaque. Cumulable avec les autres classes de base.",
+      "icon": "🕊️",
+      "shape": "hexagone_classe",
+      "node_type": "classe",
+      "start": false,
+      "unlock_rule": "all",
+      "max_level": 1,
+      "costs": [
+        3
+      ],
+      "effects": [
+        {
+          "type": "grant_class",
+          "values": [
+            "clerc"
+          ]
+        },
+        {
+          "type": "ally_heal_on_hit_percent",
+          "values": [
+            20
+          ]
+        }
+      ],
+      "position": {
+        "x": -204,
+        "y": 432
       }
     }
   },
@@ -2818,6 +2938,21 @@
       "from": "axe_confort_1",
       "to": "axe_or_2",
       "type": "majeur"
+    },
+    {
+      "from": "voie_attaque",
+      "to": "base_guerrier",
+      "type": "optionnel"
+    },
+    {
+      "from": "voie_defense",
+      "to": "base_gardien",
+      "type": "optionnel"
+    },
+    {
+      "from": "voie_support",
+      "to": "base_clerc",
+      "type": "optionnel"
     }
   ],
   "root": "racine_combat"

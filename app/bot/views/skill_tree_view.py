@@ -126,12 +126,20 @@ class SkillTreeView(discord.ui.View):
 
         # Limite à 25 = max d'options Discord (plus haute → tronqué silencieusement).
         # Garde cohérent avec ce que le PNG/SVG montre comme débloquable.
-        candidates = SkillTreeService(self.definition).compute_unlockable_skills(
-            state.allocations, limit=25
-        )
+        service = SkillTreeService(self.definition)
+        candidates = service.compute_unlockable_skills(state.allocations, limit=25)
+        # Cases dont les liens sont remplis mais qu'une RÈGLE ferme encore
+        # (seuil de voie, une seule spécialisation) : on dit pourquoi.
+        ruled = [
+            f"🔒 {node.icon} **{node.name}** — {lock}"
+            for node in self.definition
+            if service._prerequisites_satisfied(state.allocations, node)
+            and (lock := service.rule_lock(state.allocations, node)) is not None
+        ]
+        locked_note = ("\n" + "\n".join(ruled[:6])) if ruled else ""
         if not candidates:
             await interaction.response.send_message(
-                "Aucune compétence à débloquer pour le moment.",
+                "Aucune compétence à débloquer pour le moment." + locked_note,
                 ephemeral=True,
             )
             return
@@ -149,7 +157,7 @@ class SkillTreeView(discord.ui.View):
 
         await interaction.response.send_message(
             f"Choisissez une compétence à investir "
-            f"(vous avez **{state.available_points}** point(s) dispo) :",
+            f"(vous avez **{state.available_points}** point(s) dispo) :" + locked_note,
             view=select_view,
             ephemeral=True,
         )

@@ -75,7 +75,19 @@ def _parse_node(code: str, raw: dict) -> SkillNode:
         node_type=str(raw.get("node_type", "stat")),
         start=bool(raw.get("start", False)),
         unlock_rule="any" if raw.get("unlock_rule") == "any" else "all",
+        exclusive_group=str(raw.get("exclusive_group", "") or ""),
+        voie_requirement=_parse_voie_requirement(raw.get("voie_requirement")),
     )
+
+
+def _parse_voie_requirement(raw) -> dict | None:
+    if not isinstance(raw, dict) or not raw.get("voie"):
+        return None
+    try:
+        points = int(raw.get("points", 0))
+    except (TypeError, ValueError):
+        return None
+    return {"voie": str(raw["voie"]), "points": points} if points > 0 else None
 
 
 def parse_definition(raw: dict) -> SkillTreeDefinition:

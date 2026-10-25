@@ -77,6 +77,12 @@
                 tooltipPrereqs.appendChild(line);
             });
         }
+        if (skill.rule_lock) {
+            const lock = document.createElement('p');
+            lock.className = 'tooltip-prereq missing';
+            lock.textContent = `🔒 ${skill.rule_lock}`;
+            tooltipPrereqs.appendChild(lock);
+        }
         fillAction(skill);
     }
 

@@ -47,6 +47,8 @@ _PASSIVE_PCT_FIELDS: dict[str, str] = {
     "heal_buff_percent": "heal_buff_pct",
     "speed_per_ally": "speed_per_ally",
     "team_damage_percent": "team_damage_pct",
+    "threat_percent": "threat_pct",
+    "ally_heal_on_hit_percent": "ally_heal_on_hit_pct",
 }
 _PASSIVE_FLAGS: dict[str, str] = {
     "last_stand": "last_stand",
@@ -291,7 +293,7 @@ class SkillTreeService:
             return "maxed"
         if current_level > 0:
             return "in_progress"
-        if self._prerequisites_satisfied(allocations, node):
+        if self._prerequisites_satisfied(allocations, node) and self.rule_lock(allocations, node) is None:
             return "unlockable"
         return "locked"
 
@@ -324,6 +326,62 @@ class SkillTreeService:
             return any(maxed)
         return all(maxed)
 
+    # ---------- Règles de spécialisation : seuil de voie, exclusivité ----------
+
+    def voie_codes(self, voie: str) -> frozenset[str]:
+        """Cases d'une voie : sa case d'entrée et tout ce qui en descend
+        (jonctions comprises — elles comptent pour les deux voies)."""
+        cache = self.__dict__.setdefault("_voie_cache", {})
+        if voie not in cache:
+            children: dict[str, list[str]] = {}
+            for link in self.definition.links:
+                children.setdefault(link.source, []).append(link.target)
+            seen: set[str] = set()
+            frontier = [voie]
+            while frontier:
+                code = frontier.pop()
+                if code in seen or self.definition.get(code) is None:
+                    continue
+                seen.add(code)
+                frontier.extend(children.get(code, []))
+            cache[voie] = frozenset(seen)
+        return cache[voie]
+
+    def voie_points(self, allocations: dict[str, int], voie: str) -> int:
+        """Points investis dans les cases de la voie."""
+        total = 0
+        for code in self.voie_codes(voie):
+            node = self.definition.get(code)
+            level = allocations.get(code, 0)
+            if node is not None and level > 0 and not getattr(node, "start", False):
+                total += node.cumulative_cost(level)
+        return total
+
+    def rule_lock(self, allocations: dict[str, int], node: SkillNode) -> str | None:
+        """Raison pour laquelle une case pas encore prise reste fermée par une
+        RÈGLE (en plus des liens), ou None. Saison 1, étape 3 de la refonte
+        des rôles (25/10/2026) :
+          • exclusivité — une seule spécialisation (Assassin, Rempart,
+            Soigneur) : en prendre une ferme les deux autres ;
+          • seuil de voie — il faut avoir « tout misé » sur la voie."""
+        if allocations.get(node.code, 0) > 0 or getattr(node, "start", False):
+            return None
+        group = getattr(node, "exclusive_group", "")
+        if group:
+            taken = next((other for other in self.definition
+                          if other.code != node.code and other.exclusive_group == group
+                          and allocations.get(other.code, 0) > 0), None)
+            if taken is not None:
+                return f"tu as déjà {taken.name} — une seule {group} possible"
+        req = getattr(node, "voie_requirement", None)
+        if req:
+            have = self.voie_points(allocations, req["voie"])
+            if have < req["points"]:
+                voie = self.definition.get(req["voie"])
+                label = voie.name if voie is not None else req["voie"]
+                return f"{req['points']} points dans la {label} requis ({have}/{req['points']})"
+        return None
+
     # ---------- Liste des compétences débloquables ----------
 
     def compute_unlockable_skills(
@@ -344,6 +402,8 @@ class SkillTreeService:
             if current_level >= node.max_level:
                 continue
             if not self._prerequisites_satisfied(allocations, node):
+                continue
+            if self.rule_lock(allocations, node) is not None:
                 continue
             candidates.append(node)
 
@@ -424,6 +484,10 @@ class SkillTreeService:
                 f"**{node.name}** est verrouillé : {rule} → {', '.join(missing)}.",
                 0,
             )
+
+        lock = self.rule_lock(allocations, node)
+        if lock is not None:
+            return False, f"**{node.name}** est verrouillé : {lock}.", 0
 
         cost = node.cost_for_level(target_level)
         if available_points < cost:

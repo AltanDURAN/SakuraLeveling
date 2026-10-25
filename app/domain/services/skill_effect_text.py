@@ -44,6 +44,8 @@ _TEMPLATES: dict[str, str] = {
     "crit_damage_multiplier": "dégâts critiques ×{v}",
     "team_damage_percent": "aura : +{v} % de dégâts pour toute l'équipe",
     "defense_to_attack_percent": "ajoute {v} % de sa défense à son attaque",
+    "threat_percent": "attire davantage les coups (+{v} % d'aggro)",
+    "ally_heal_on_hit_percent": "{v} % des dégâts infligés soignent l'allié le plus blessé",
 }
 
 

@@ -173,7 +173,24 @@ LA PROGRESSION
         • Si plusieurs liens arrivent sur une case, il faut en général
           TOUTES les cases reliées au maximum (c'est le cas des classes, aux
           jonctions de deux voies). Certaines cases n'en demandent qu'une.
-        • Chaque niveau d'une case a son propre coût en points.
+        • Chaque niveau d'une case a son propre coût en points : 3 points
+          pour une case de combat, 2 pour une classe, 1 pour l'entrée d'une
+          voie. L'arbre de combat coûte environ 200 points et tu en gagnes 99
+          jusqu'au niveau 100 : tu n'en auras que la MOITIÉ, il faut choisir.
+
+    TROIS NIVEAUX DE CLASSES
+        • Les CLASSES DE BASE, juste après l'entrée de chaque voie (3 points,
+          vers le niveau 5-10) : Guerrier, Gardien, Clerc. Peu puissantes,
+          cumulables : un joueur qui reste GÉNÉRALISTE peut prendre les trois.
+        • Les CLASSES DE JONCTION, entre deux voies : Combattant, Titan,
+          Vampire, Mage, Paladin, Égide. Cumulables.
+        • Les SPÉCIALISATIONS, au bout de chaque voie : Assassin (Guerrier),
+          Rempart (Protecteur), Soigneur (Support). Les plus fortes, réservées
+          à qui a tout misé sur la voie : il faut 27 POINTS investis dans ses
+          cases (vers le niveau 31 en y allant tout droit), et UNE SEULE
+          spécialisation par joueur — en prendre une ferme les deux autres.
+          Pour changer, il faut réinitialiser l'arbre (une fois par semaine).
+          Le menu « Investir » et la page web disent ce qui te manque.
 
     LES COULEURS
         gris = verrouillée · cadre bleu = déblocable · cadre vert = en cours
@@ -205,7 +222,15 @@ LA PROGRESSION
                      plusieurs monstres, à venir)
         Les réductions de dégâts de plusieurs cases s'additionnent.
 
-    LES CLASSES
+    LES CLASSES DE BASE
+        Guerrier     +5 % de dégâts infligés
+        Gardien      attire davantage les coups (+50 % d'aggro), −5 % de
+                     dégâts reçus, et 25 % de sa défense s'ajoutent à son
+                     attaque
+        Clerc        20 % des dégâts infligés soignent l'allié le plus
+                     blessé, sans remplacer l'attaque
+
+    LES CLASSES DE JONCTION ET LES SPÉCIALISATIONS
         Combattant   +5 % de PV max et +5 % d'attaque
         Paladin      soins reçus +50 % et +5 % de défense
         Vampire      se soigne de 5 % des dégâts infligés
@@ -221,8 +246,8 @@ LA PROGRESSION
                      l'équipe inflige +25 % de dégâts (une seule aura par
                      équipe, même avec plusieurs Soigneurs)
         Rempart      encaisse 50 % des coups portés à ses alliés. GARDE
-                     OFFENSIVE : la moitié de sa défense s'ajoute à son
-                     attaque
+                     OFFENSIVE : 25 % de sa défense s'ajoutent à son attaque
+                     (50 % avec le Gardien)
         Assassin     chances de critique ×1,25, dégâts critiques ×1,5
 
 /tactique [choix]

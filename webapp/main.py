@@ -201,6 +201,9 @@ def _nodes_payload(state, definition) -> list[dict]:
                 "costs": node.costs,
                 "prerequisites": node.prerequisites,
                 "prereqs_detail": prereqs_with_state,
+                # Règle de spécialisation qui ferme encore la case (seuil de
+                # voie, exclusivité) — None si aucune.
+                "rule_lock": service.rule_lock(state.allocations, node),
                 "effects": [
                     {"type": e.type, "values": e.values} for e in node.effects
                 ],
