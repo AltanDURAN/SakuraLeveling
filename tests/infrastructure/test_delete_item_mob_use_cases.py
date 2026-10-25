@@ -31,7 +31,7 @@ from app.infrastructure.db.models.marketplace_listing_model import MarketplaceLi
 from app.infrastructure.db.models.equipment_set_model import (  # noqa: F401
     PlayerEquipmentSetModel, PlayerEquipmentSetItemModel,
 )
-from app.infrastructure.db.models.player_duel_rank_model import PlayerDuelRankModel  # noqa: F401
+from app.infrastructure.db.models.role_trial_model import RoleTrialScoreModel  # noqa: F401
 from app.infrastructure.db.models.player_title_model import PlayerTitleModel  # noqa: F401
 from app.infrastructure.db.models.profession_model import (  # noqa: F401
     PlayerProfessionModel, ProfessionDefinitionModel,

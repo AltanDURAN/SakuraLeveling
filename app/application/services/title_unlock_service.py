@@ -1,4 +1,4 @@
-"""Vérifie après un évènement (kill, duel, craft) si un titre doit être
+"""Vérifie après un évènement (kill, esquive, daily) si un titre doit être
 débloqué pour un joueur. Persiste l'unlock via PlayerTitleRepository.
 
 Centralisé pour pouvoir l'appeler depuis EncounterService,

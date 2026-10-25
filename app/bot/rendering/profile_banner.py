@@ -10,7 +10,7 @@ Layout (1024 × 980) :
     │  HEADER (~310 px)                                         │
     │  Avatar (210) │ 🏷 Title • NAME • Niveau X · Classe        │
     │               │ 🟦 XP bar avec %                          │
-    │               │ 💰 or  ·  🔥 Daily Streak  ·  ⚔ Duel  ·  📚│
+    │               │ 💰 or  ·  💪 points  ·  📚  ·  🔥 Daily Streak│
     │                                            ┌────────────┐ │
     │                                            │  RANK BADGE│ │
     │                                            │  ⚡ PWR XXX │ │
@@ -649,9 +649,6 @@ def compose_profile_banner(
     class_name: str | None,
     stats: dict,
     career: dict | None = None,
-    duel_position: int | None = None,
-    duel_wins: int = 0,
-    duel_losses: int = 0,
     daily_streak: int = 0,
     skill_points: int = 0,
     stat_points: int = 0,
@@ -805,7 +802,7 @@ def compose_profile_banner(
         (150, 70, 225), (206, 130, 255), (190, 120, 255),
     )
 
-    # Ligne d'infos compactes (or, daily streak, duel, skill points)
+    # Ligne d'infos compactes (or, points à dépenser, daily streak)
     bottom_info_y = cur_bar_y + 2
     parts: list[tuple[str, tuple[int, int, int, int]]] = [
         (f"💰 {_format_compact(gold)} or", COLORS["gold_color"]),
@@ -818,11 +815,6 @@ def compose_profile_banner(
         parts.append((f"📚 {skill_points} pt(s) d'arbre", (180, 230, 220, 255)))
     if daily_streak > 0:
         parts.append((f"🔥 Daily Streak : {daily_streak}", (255, 170, 90, 255)))
-    if duel_position is not None:
-        parts.append(
-            (f"⚔️ Duel #{duel_position} ({duel_wins}V-{duel_losses}D)",
-             COLORS["text_secondary"]),
-        )
 
     # Wrap automatique sur 2 lignes max — pour ne pas rentrer dans la
     # zone du badge à droite et garder tout lisible.
@@ -837,7 +829,7 @@ def compose_profile_banner(
         # Si ça dépasse la limite à droite, on passe à la 2e ligne.
         if cur_x + next_w > info_max_x:
             if second_line_started:
-                # 3e ligne refusée — on s'arrête (priorité gold > streak > duel > SP)
+                # 3e ligne refusée — on s'arrête (l'ordre de `parts` fait la priorité)
                 break
             cur_x = info_x
             cur_y += line_height

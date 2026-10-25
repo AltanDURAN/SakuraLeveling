@@ -2,13 +2,14 @@
 
 Décision de la saison 1 : on recommence À NEUF. Seule l'identité Discord des
 joueurs est conservée (table `players`) ; tout le reste — progression, or,
-équipement, titres, classement des duels, maîtrise des artisans, affinités et
+équipement, titres, scores des défis, maîtrise des artisans, affinités et
 essences — est effacé.
 
 Effacé aussi, parce que ça n'a plus de sens d'une saison à l'autre : le world
-boss en cours et son historique, les événements, les annonces de brocante et
-les échanges. Le contenu du jeu (objets, monstres, recettes, boutique) n'est
-PAS touché : il vit dans les JSON et se ré-applique au seed.
+boss en cours et son historique, les événements, les annonces de brocante,
+les échanges et l'historique des défis. Le contenu du jeu (objets, monstres,
+recettes, boutique) n'est PAS touché : il vit dans les JSON et se ré-applique
+au seed.
 
 Les rôles de rang Discord sont remis au Rang F par le BOT (file
 `admin_commands`, action `reset_rank_roles`) : la base ne peut pas toucher à
@@ -30,6 +31,7 @@ from app.infrastructure.db.models.event_model import (
 )
 from app.infrastructure.db.models.marketplace_listing_model import MarketplaceListingModel
 from app.infrastructure.db.models.player_model import PlayerModel
+from app.infrastructure.db.models.role_trial_model import RoleTrialScoreModel, RoleTrialWeekModel
 from app.infrastructure.db.models.trade_model import TradeItemModel, TradeModel
 from app.infrastructure.db.models.world_boss_model import (
     WorldBossModel,
@@ -49,6 +51,8 @@ GLOBAL_TABLES = (
     MarketplaceListingModel,
     TradeItemModel,
     TradeModel,
+    RoleTrialScoreModel,
+    RoleTrialWeekModel,
 )
 
 

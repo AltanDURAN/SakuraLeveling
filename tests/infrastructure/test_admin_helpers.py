@@ -3,7 +3,6 @@
 Couvre les méthodes de repository directement testables :
     - PlayerRepository.add_skill_points / set_skill_points / set_daily_streak
     - PlayerKillRepository.set_kill_count
-    - PlayerDuelRankRepository.set_rank_position (avec décalage)
 """
 
 from datetime import UTC, datetime
@@ -30,11 +29,8 @@ from app.infrastructure.db.models.shop_item_model import ShopItemModel  # noqa: 
 from app.infrastructure.db.models.player_career_stats_model import PlayerCareerStatsModel  # noqa: F401
 from app.infrastructure.db.models.player_skill_allocation_model import PlayerSkillAllocationModel  # noqa: F401
 from app.infrastructure.db.models.trade_model import TradeItemModel, TradeModel  # noqa: F401
-from app.infrastructure.db.models.player_duel_rank_model import PlayerDuelRankModel  # noqa: F401
+from app.infrastructure.db.models.role_trial_model import RoleTrialScoreModel  # noqa: F401
 
-from app.infrastructure.db.repositories.player_duel_rank_repository import (
-    PlayerDuelRankRepository,
-)
 from app.infrastructure.db.repositories.player_kill_repository import PlayerKillRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 
@@ -99,50 +95,3 @@ def test_set_kill_count_creates_or_updates(session):
     # Set à 0 supprime la ligne
     kill_repo.set_kill_count(pid, "slime", 0)
     assert kill_repo.get_kills_per_mob(pid) == {}
-
-
-def test_set_rank_position_inserts_and_shifts_others(session):
-    repo = PlayerDuelRankRepository(session)
-    p1 = _create_player(session, 1, "Alice")
-    p2 = _create_player(session, 2, "Bob")
-    p3 = _create_player(session, 3, "Charlie")
-
-    repo.get_or_create(p1)  # #1
-    repo.get_or_create(p2)  # #2
-
-    # Forcer Charlie à #1 → Alice devient #2, Bob #3
-    repo.set_rank_position(p3, 1)
-
-    assert repo.get_by_player_id(p3).rank_position == 1
-    assert repo.get_by_player_id(p1).rank_position == 2
-    assert repo.get_by_player_id(p2).rank_position == 3
-
-
-def test_set_rank_position_idempotent_when_already_at_position(session):
-    repo = PlayerDuelRankRepository(session)
-    p1 = _create_player(session, 1, "Alice")
-    repo.get_or_create(p1)  # #1
-    repo.set_rank_position(p1, 1)
-    assert repo.get_by_player_id(p1).rank_position == 1
-
-
-def test_set_rank_position_moves_existing_player_with_shift(session):
-    """Joueur déjà inscrit à #3, on le replace à #1 → décale les autres."""
-    repo = PlayerDuelRankRepository(session)
-    p1 = _create_player(session, 1, "Alice")
-    p2 = _create_player(session, 2, "Bob")
-    p3 = _create_player(session, 3, "Charlie")
-    repo.get_or_create(p1)  # #1
-    repo.get_or_create(p2)  # #2
-    repo.get_or_create(p3)  # #3
-
-    repo.set_rank_position(p3, 1)
-
-    # Charlie #1, Alice et Bob décalés à 2 et 3 (mais Charlie n'est plus à 3)
-    positions = {
-        repo.get_by_player_id(p1).rank_position,
-        repo.get_by_player_id(p2).rank_position,
-        repo.get_by_player_id(p3).rank_position,
-    }
-    assert positions == {1, 2, 3}
-    assert repo.get_by_player_id(p3).rank_position == 1

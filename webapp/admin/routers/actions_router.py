@@ -124,7 +124,7 @@ async def actions_page(
             "cooldown_keys": [
                 ("", "Tous les cooldowns"),
                 ("daily", "/daily — récompense quotidienne"),
-                ("duel_challenge", "Duel 1v1 (anti-spam 60 s)"),
+                ("rank_trial", "Épreuve de rang (6 h après un échec)"),
                 ("skill_tree_reset", "Reset de l'arbre (7 j)"),
                 ("world_boss_fight", "Combat de world boss (1/jour)"),
             ],
@@ -306,8 +306,8 @@ async def set_hp(request: Request, user: AdminUser = Depends(require_admin)):
 
 @router.post("/reset_cooldowns")
 async def reset_cooldowns(request: Request, user: AdminUser = Depends(require_admin)):
-    """Remet à zéro les cooldowns de commandes d'un joueur (/daily, duel,
-    reset d'arbre, combat de boss…). `action_key` vide = tous."""
+    """Remet à zéro les cooldowns de commandes d'un joueur (/daily, épreuve
+    de rang, reset d'arbre, combat de boss…). `action_key` vide = tous."""
     form = await request.form()
     action_key = (form.get("action_key", "") or "").strip()
     with get_db_session() as session:

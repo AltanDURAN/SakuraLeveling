@@ -22,7 +22,8 @@ class TitleDefinition:
     #   "kills_mob"     : target=mob_code, value=count requis
     #   "dodges_total"  : value=count d'esquives requis (encounters)
     #   "daily_streak"  : value=streak quotidien requis
-    #   "duel_top1"     : exclusif — détenu par le rang 1 du ladder 1v1
+    #   "weekly_role_trial" : exclusif — gagnant de la semaine aux défis
+    #                         (condition_target = dps / tank / soutien / general)
     #   "kills_record"  : exclusif — détenu par le record absolu de kills
     condition_type: str
     condition_target: str = ""

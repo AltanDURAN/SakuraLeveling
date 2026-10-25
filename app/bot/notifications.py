@@ -29,7 +29,6 @@ COOLDOWN_LABELS: dict[str, str] = {
     "world_boss_fight": "👑 Tu peux de nouveau combattre le world boss.",
     "rank_trial": "🎖️ Tu peux retenter l'épreuve de rang (`/epreuve`).",
     "skill_tree_reset": "🌳 Le reset hebdomadaire de ton arbre est disponible (`/arbre`).",
-    "duel_challenge": "⚔️ Tu peux de nouveau défier un joueur en duel (`/duel`).",
 }
 
 

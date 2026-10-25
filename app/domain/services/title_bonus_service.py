@@ -5,7 +5,10 @@ besoin de les "équiper" — l'équipement n'a qu'un rôle cosmétique d'afficha
 Ce service agrège leurs bonus dans une structure unifiée :
     - damage_bonus_vs_family : pct dégâts INFLIGÉS par famille
     - damage_reduction_from_family : pct dégâts REÇUS par famille
-    - champion_all_stats_pct : pct global (titre Champion 1v1)
+    - champion_all_stats_pct : pct global (titre Champion de la semaine)
+    - damage_dealt_pct / damage_taken_reduction_pct / heal_power_pct : effets
+      de COMBAT (titres de la semaine des défis), branchés dans les passifs
+      par `resolve_party_passives`
     - gold_xp_bonus_pct : pct gold/xp en combat (titre Farmer Fou)
 
 Plusieurs titres ciblant la même famille s'additionnent (ex : titre A +10%
@@ -28,9 +31,14 @@ class TitleBonuses:
 
     damage_bonus_vs_family: dict[str, int] = field(default_factory=dict)
     damage_reduction_from_family: dict[str, int] = field(default_factory=dict)
-    # Bonus "global" du titre Champion 1v1 (et autres futurs titres
+    # Bonus "global" du titre Champion de la semaine (et autres futurs titres
     # exclusifs au même format) — pct multiplicatif/additif selon la stat.
     champion_all_stats_pct: int = 0
+    # Effets de COMBAT (titres de la semaine des défis) : dégâts infligés,
+    # dégâts reçus, soins donnés, en %.
+    damage_dealt_pct: int = 0
+    damage_taken_reduction_pct: int = 0
+    heal_power_pct: int = 0
     # Bonus gold/xp en combat (titre Farmer Fou). S'applique uniquement au
     # détenteur, pas aux coéquipiers.
     gold_xp_bonus_pct: int = 0
@@ -69,7 +77,7 @@ class TitleBonuses:
         """Applique tous les bonus passifs des titres à un Stats VO.
 
         Convention demandée :
-        - champion_all_stats_pct (Champion 1v1) :
+        - champion_all_stats_pct (Champion de la semaine) :
             - max_hp / attack / defense : +X% multiplicatif, ceil sur les fractions
             - crit_chance / crit_damage / dodge : +X additif (pcts entiers)
             - speed / hp_regeneration : +X flat
@@ -133,6 +141,12 @@ class TitleBonusService:
                     )
                 elif etype == "champion_all_stats" and value > 0:
                     bonuses.champion_all_stats_pct += value
+                elif etype == "damage_dealt_pct" and value > 0:
+                    bonuses.damage_dealt_pct += value
+                elif etype == "damage_taken_reduction_pct" and value > 0:
+                    bonuses.damage_taken_reduction_pct += value
+                elif etype == "heal_power_pct" and value > 0:
+                    bonuses.heal_power_pct += value
                 elif etype == "gold_xp_bonus_pct" and value > 0:
                     bonuses.gold_xp_bonus_pct += value
                 elif etype == "crit_damage_flat" and value > 0:

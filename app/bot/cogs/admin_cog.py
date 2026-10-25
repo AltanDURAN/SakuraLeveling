@@ -19,9 +19,6 @@ from app.infrastructure.db.repositories.gear_repository import GearRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
-from app.infrastructure.db.repositories.player_duel_rank_repository import (
-    PlayerDuelRankRepository,
-)
 from app.infrastructure.db.repositories.player_health_repository import (
     PlayerHealthRepository,
 )
@@ -636,33 +633,42 @@ class AdminCog(commands.Cog):
                 f"⚠️ Slot `{slot}` était déjà vide.", ephemeral=True
             )
 
-    # -------------------------- Duel rank --------------------------
+    # -------------------------- Défis de rôle --------------------------
 
     @admin.command(
-        name="set_duel_rank",
-        description="Force la position d'un joueur dans le ladder 1v1 (décale les autres)",
+        name="defi_cloture",
+        description="Clôture TOUT DE SUITE la semaine des défis (or du podium, titres, annonce)",
     )
-    @app_commands.describe(target="Joueur ciblé", position="Position cible (1 = meilleur)")
     @admin_only
-    async def set_duel_rank(
-        self,
-        interaction: discord.Interaction,
-        target: discord.Member,
-        position: app_commands.Range[int, 1, 10_000],
-    ) -> None:
+    async def defi_cloture(self, interaction: discord.Interaction) -> None:
+        """Pour tester sans attendre dimanche 20 h. La semaine clôturée ne se
+        rejoue pas (idempotent) : les essais suivants de la même semaine ne
+        seront plus récompensés."""
+        import asyncio
+        from datetime import UTC, datetime
+
+        from app.application.use_cases import role_trials
+        from app.bot.embeds.role_trial_embeds import build_results_embed
+        from app.domain.services import role_trial_service as rts
+
         await interaction.response.defer(ephemeral=True)
-        with get_db_session() as session:
-            profile = PlayerRepository(session).get_by_discord_id(target.id)
-            if profile is None:
-                await interaction.followup.send(
-                    f"❌ {target.display_name} n'a pas encore de profil.", ephemeral=True
-                )
-                return
-            PlayerDuelRankRepository(session).set_rank_position(
-                profile.player.id, position
-            )
+        week = rts.week_start(rts.trial_day(datetime.now(UTC)))
+
+        def _settle():
+            with get_db_session() as session:
+                return role_trials.settle_week(session, week)
+
+        results = await asyncio.to_thread(_settle)
+        if results is None:
+            await interaction.followup.send("ℹ️ Cette semaine est déjà clôturée.", ephemeral=True)
+            return
+        cog = self.bot.get_cog("RoleTrialCog")
+        channel = await cog._channel() if cog is not None else None
+        if channel is not None and any(results.values()):
+            await channel.send(embed=build_results_embed(week, results))
         await interaction.followup.send(
-            f"✅ {target.mention} placé au rang **#{position}** du ladder 1v1.",
+            "✅ Semaine des défis clôturée" + ("" if any(results.values())
+                                              else " (personne n'avait joué)") + ".",
             ephemeral=True,
         )
 

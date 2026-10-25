@@ -11,7 +11,6 @@ from app.domain.services.combat_passives import (
     mage_multiplier,
     outgoing_elemental_multiplier,
 )
-from app.domain.services.duel_combat_service import DuelCombatService
 from app.domain.services.party_combat_service import PartyCombatService
 from app.domain.value_objects.stats import Stats
 from tests.domain.test_party_combat_service import build_mob
@@ -201,19 +200,6 @@ def test_soigneur_gagne_de_la_vitesse_par_allie():
     )
     speed = next(p["speed"] for p in result.turn_logs[-1].players_state if p["player_id"] == 1)
     assert speed == 12
-
-
-# -------------------------------------------------------------- duels --
-def test_duel_applique_titan_reduction_et_tenace(monkeypatch):
-    monkeypatch.setattr("random.random", lambda: 0.99)  # ni crit ni esquive
-    a = _stats(hp=100, atk=150, dfn=0, speed=100)
-    b = _stats(hp=100, atk=1, dfn=0, speed=1)
-    result = DuelCombatService().fight_player_vs_player(
-        a, b, b_passives=CombatPassives(last_stand=True),
-    )
-    # Le premier coup fatal laisse b à 1 PV ; le suivant l'achève.
-    assert result.turn_logs[0].b_hp_after == 1
-    assert result.winner == "a"
 
 
 # --------------------------------------------- agrégation depuis l'arbre --

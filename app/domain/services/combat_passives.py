@@ -3,8 +3,8 @@
 Les cases « passif » et « classe » de l'arbre portent des effets qui ne sont
 pas des stats : ils changent la façon dont un combat se déroule (bouclier
 d'ouverture, provocation, soin à la place de l'attaque…). Ils sont agrégés ici
-en un `CombatPassives` par joueur, que les moteurs de combat (`PartyCombatService`,
-`DuelCombatService`) lisent.
+en un `CombatPassives` par joueur, que le moteur de combat (`PartyCombatService`)
+lit.
 
 Toutes les valeurs sont des POURCENTAGES entiers (10 = 10 %), sauf les drapeaux
 (1 = actif) et `heal_power_multiplier` (×2 = double).
@@ -12,8 +12,8 @@ Toutes les valeurs sont des POURCENTAGES entiers (10 = 10 %), sauf les drapeaux
 Règles décidées avec l'auteur (octobre 2026) :
   • les réductions de dégâts reçus de toutes les cases S'ADDITIONNENT
     (Résistant 10 % + Titan 5 % = 15 %), plafonnées à `MAX_DAMAGE_REDUCTION` ;
-  • tous les passifs s'appliquent PARTOUT (groupe, world boss, épreuves,
-    duels) — ceux qui concernent des alliés n'ont simplement pas d'effet seul.
+  • tous les passifs s'appliquent PARTOUT (groupe, world boss, épreuves de
+    rang, défis) — ceux qui concernent des alliés n'ont pas d'effet seul.
 """
 
 from __future__ import annotations

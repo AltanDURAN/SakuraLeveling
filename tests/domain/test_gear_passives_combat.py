@@ -1,4 +1,4 @@
-"""Un test par passif d'équipement (moteur de combat de groupe et duel).
+"""Un test par passif d'équipement (moteur de combat de groupe).
 
 Chaque test met en place la situation qui déclenche le passif, puis compare au
 même combat sans lui. Les tirages aléatoires sont neutralisés (crit/esquive à
@@ -13,7 +13,6 @@ import pytest
 
 from app.domain.entities.mob_definition import MobDefinition
 from app.domain.services.combat_passives import CombatPassives
-from app.domain.services.duel_combat_service import DuelCombatService
 from app.domain.services.party_combat_service import PartyCombatService
 from app.domain.value_objects.stats import Stats
 
@@ -249,24 +248,3 @@ def test_mains_guerisseuses_frappent_l_ennemi():
     res = fight(party, mob(speed=1), {1: healer}, max_turns=1)
     # Soin de base 50 % de l'ATK, +10 % ⇒ 55 PV ; 10 % frappent le monstre.
     assert dealt(res, 1) == round(55 * 0.10)
-
-
-# ---------------------------------------------------------------- duels --
-def duel(a_codes=(), b_codes=(), seed=0, **b_stats):
-    random.seed(seed)
-    return DuelCombatService().fight_player_vs_player(
-        stats(), stats(**b_stats), a_passives=gear(*a_codes), b_passives=gear(*b_codes))
-
-
-def test_duel_frappe_d_ouverture():
-    first = duel(("first_strike_crit",)).turn_logs[0]
-    assert first.actor == "a" and first.is_crit and first.damage == 200 - 20
-
-
-def test_duel_garde_de_l_exil():
-    assert duel(b_codes=("first_hit_ward",)).turn_logs[0].damage == 0
-
-
-def test_duel_revenant():
-    res = duel(b_codes=("undying",), max_hp=150)
-    assert res.turns > duel(max_hp=150).turns

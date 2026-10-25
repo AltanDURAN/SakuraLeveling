@@ -187,7 +187,7 @@ class RankTrialCog(BetaChannelOnlyMixin, commands.Cog):
 
     def _apply_outcome(self, player_id: int, victory: bool) -> None:
         """Échec ⇒ cooldown. Les PV réels ne sont pas touchés : l'épreuve est
-        un duel rituel, pas une sortie de farm."""
+        un combat rituel, pas une sortie de farm."""
         if victory:
             return
         hours = rank_trial_loader.retry_cooldown_hours()

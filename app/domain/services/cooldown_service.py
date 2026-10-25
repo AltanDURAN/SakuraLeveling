@@ -71,10 +71,3 @@ class CooldownService:
         # Recalcule l'heure de Paris après le saut (changement d'heure possible).
         next_at = next_monday.replace(tzinfo=paris).astimezone(UTC)
         return now, next_at
-
-    def build_next_duel_challenge_cooldown(
-        self, now: datetime, seconds: int = 60
-    ) -> tuple[datetime, datetime]:
-        last_used_at = now
-        next_available_at = now + timedelta(seconds=seconds)
-        return last_used_at, next_available_at

@@ -59,9 +59,9 @@ LA PROGRESSION
 
 /profil [joueur]
     Ton personnage en une image : titre actif, niveau, barres PV / mana / XP,
-    or, points de stats et d'arbre à dépenser, série du /daily, place au
-    ladder des duels, rang et puissance, stats de combat, statistiques de
-    carrière et affinités élémentaires. Avec un joueur : son profil.
+    or, points de stats et d'arbre à dépenser, série du /daily, rang et
+    puissance, stats de combat, statistiques de carrière et affinités
+    élémentaires. Avec un joueur : son profil.
 
     Le RANG affiché sur le profil (F- … SSS+) est calculé à partir de ta
     puissance. Le rang qui ouvre les zones est un rôle Discord, gagné avec
@@ -127,8 +127,13 @@ LA PROGRESSION
     affiché. Quelques exemples :
         🟢 / 👹 Slayer de famille (100 victoires sur une famille) :
             +10 % de dégâts infligés et −10 % subis face à cette famille.
-        👑 Champion en 1vs1 (exclusif : le 1er du ladder des duels) :
-            +1 % sur toutes les stats.
+        Titres de la SEMAINE (exclusifs, remis en jeu chaque dimanche à
+        20 h, cf. /defi) :
+            ⚔️ Fléau de la semaine (1er en DPS) : +2 % de dégâts infligés ;
+            🛡️ Bastion de la semaine (1er en Tank) : −2 % de dégâts reçus ;
+            💚 Ange gardien de la semaine (1er en Soutien) : +2 % de soins ;
+            👑 Champion de la semaine (1er au général) : +1 % sur toutes
+               les stats.
         🌾 Le Farmer Fou (exclusif : le record de victoires) :
             +1 % d'or et d'XP en fin de combat.
         🏆 MVP des World Boss (exclusif : meilleur contributeur du dernier
@@ -219,8 +224,6 @@ LA PROGRESSION
                      OFFENSIVE : la moitié de sa défense s'ajoute à son
                      attaque
         Assassin     chances de critique ×1,25, dégâts critiques ×1,5
-        En duel, les effets qui concernent des alliés (Égide, Rempart, soin)
-        n'agissent pas : le Soigneur y attaque normalement.
 
 /tactique [choix]
     Ta tactique de combat, choisie AVANT le combat et figée pendant. Elle
@@ -233,7 +236,7 @@ LA PROGRESSION
 
 LES CASES « CONFORT » (montées au maximum)
     • Message privé quand un de tes temps de recharge est terminé (/daily,
-      world boss, épreuve, reset de l'arbre, duel).
+      world boss, épreuve, reset de l'arbre).
     • Message privé, avec le lien, quand un événement apparaît.
     • +1 ticket par jour pour la tour solo (à venir). Les tickets ne
       s'accumulent pas : 1 de base, 2 avec la case, renouvelés à minuit UTC.
@@ -284,7 +287,8 @@ LE PASSIF
         • un effet qui grandit pendant le combat est plafonné ;
         • une riposte ou un coup double ne déclenche pas d'autre effet ;
         • les passifs d'économie (butin, essences) sont personnels et ne
-          jouent jamais en duel ; tous les autres jouent aussi en duel.
+          jouent que contre les monstres ; tous les autres jouent partout
+          (épreuves de rang et défis compris).
 
 CE QUE DONNE L'ÉQUIPEMENT
     • ATK / DEF / PV en POURCENTAGE de ton socle (tes points de stats) : une
@@ -389,7 +393,7 @@ LES ÉLÉMENTS
     Un élément mort ne sert jamais en combat.
 
 LA DÉFENSE ET LE CONTRECOUP
-    Une seule règle pour TOUS les combats (monstres, boss, épreuves, duels,
+    Une seule règle pour TOUS les combats (monstres, boss, épreuves, défis,
     charme) : un coup inflige l'attaque moins la défense, mais la défense
     n'absorbe jamais plus de 75 % du coup — au moins 25 % passent toujours.
     La défense en trop ne se perd pas : ce qui dépasse 75 % de l'attaque
@@ -432,12 +436,30 @@ PV ET MANA
     Utilise un consommable de ton inventaire (ex. la potion de soin). Si tes
     PV sont déjà pleins, la potion n'est pas consommée.
 
-/duel @joueur
-    Duel 1v1 pour le ladder des duels, sans rien à gagner ni à perdre : ni
-    or, ni XP, ni PV réels (les deux combattants partent de leurs PV max).
-        • Tu ne peux défier qu'un joueur MIEUX classé que toi.
-        • Si tu gagnes, vous échangez vos places.
-        • 60 secondes entre deux défis.
+/defi [role]
+    Les DÉFIS DE RÔLE du jour (ils remplacent les duels entre joueurs).
+    Trois épreuves, une par rôle, contre le même adversaire pour tout le
+    monde (celui d'un joueur de niveau 50) :
+        ⚔️ DPS      le Mannequin ne riposte pas : un maximum de dégâts en
+                    40 secondes (la vitesse compte) ;
+        🛡️ Tank     le Bourreau frappe fort et s'énerve jusqu'à ce que tu
+                    tombes : un maximum de dégâts encaissés (pas de sort de
+                    soin dans cette épreuve) ;
+        💚 Soutien  le Bourreau ne frappe qu'une recrue : garde-la en vie,
+                    un maximum de PV soignés et de boucliers donnés.
+    • Une VARIANTE par rôle et par jour, la même pour tous (défense très
+      élevée, esquive, renvoi de dégâts, rafales, poison, critiques,
+      saignement…), annoncée à minuit dans le salon général.
+    • Essais illimités, mais même build = même score : pour faire mieux,
+      change d'équipement, d'arbre, de points de stats ou de /tactique.
+      Ton meilleur score du jour est gardé.
+    • La semaine (lundi → dimanche) compte tes 5 meilleurs jours, par rôle.
+      Le classement GÉNÉRAL est la moyenne des trois rôles, chacun ramené à
+      100 = le meilleur de la semaine.
+    • Résultats le DIMANCHE à 20 h (défis fermés jusqu'à minuit) : le podium
+      de chaque classement gagne 100 / 60 / 30 × son niveau en or, et le
+      premier porte le titre de la semaine (voir /titre).
+    Sans rôle : le programme du jour, tes scores et ta place de la semaine.
 
 /bestiaire
     Le catalogue des monstres : stats, élément, récompenses, butin et la
@@ -528,7 +550,8 @@ WORLD BOSS — /boss moi, /boss historique, /boss list
 
 /classement <catégorie>
     Les classements (top 10), avec autocomplétion : puissance, niveau, or,
-    stats, victoires (au total, par monstre, par famille), duels 1v1.
+    stats, victoires (au total, par monstre, par famille), défis de la
+    semaine (DPS, Tank, Soutien, général).
 
 /chad
     Prendre ou retirer le rôle @chad (tagué quand quelqu'un demande de l'aide
@@ -583,8 +606,9 @@ INTERFACE WEB D'ADMINISTRATION
 /admin force_equip <joueur> <objet> [emplacement] · /admin force_unequip
     Équipe ou déséquipe en contournant toutes les vérifications.
 
-/admin set_duel_rank <joueur> <position>
-    Place un joueur dans le ladder des duels (les autres sont décalés).
+/admin defi_cloture
+    Clôture TOUT DE SUITE la semaine des défis : or du podium, titres de la
+    semaine, annonce. Pour tester ; la semaine ne se clôture qu'une fois.
 
 /admin reset_player <joueur>
     Remet le joueur à zéro en gardant son identité Discord : niveau, XP,

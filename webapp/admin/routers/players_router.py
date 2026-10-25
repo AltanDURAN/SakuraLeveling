@@ -2,7 +2,7 @@
 
 Fiche principale d'un joueur (`/{id}/view`) avec navigation précédent/suivant +
 sélecteur, et des sous-cartes focalisées (inventaire, équipement, titres,
-affinités, compétences, duel) accessibles depuis la fiche avec retour arrière.
+affinités, compétences, défis) accessibles depuis la fiche avec retour arrière.
 """
 
 from __future__ import annotations
@@ -34,9 +34,6 @@ from app.infrastructure.db.repositories.inventory_repository import InventoryRep
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_career_stats_repository import (
     PlayerCareerStatsRepository,
-)
-from app.infrastructure.db.repositories.player_duel_rank_repository import (
-    PlayerDuelRankRepository,
 )
 from app.infrastructure.db.repositories.player_kill_repository import PlayerKillRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
@@ -340,15 +337,35 @@ async def players_skills(player_id: int, request: Request, edit: int = 0, user: 
     return get_templates().TemplateResponse(request, "admin/players/card.html", context=ctx)
 
 
-@router.get("/{player_id}/duel", response_class=HTMLResponse)
-async def players_duel(player_id: int, request: Request, edit: int = 0, user: AdminUser = Depends(require_admin)):
+@router.get("/{player_id}/defis", response_class=HTMLResponse)
+async def players_defis(player_id: int, request: Request, edit: int = 0, user: AdminUser = Depends(require_admin)):
+    """Défis de rôle de la semaine en cours : meilleur score de chaque jour,
+    et la place du joueur dans chaque classement."""
+    from datetime import UTC, datetime, timedelta
+
+    from app.application.use_cases import role_trials
+    from app.domain.services import role_trial_service as rts
+    from app.infrastructure.db.repositories.role_trial_repository import RoleTrialRepository
+
     with get_db_session() as session:
-        ctx, _ = await _base_ctx(session, user, player_id, "duel")
+        ctx, _ = await _base_ctx(session, user, player_id, "defis")
         ctx["edit"] = bool(edit)
-        dr = PlayerDuelRankRepository(session).get_by_player_id(player_id)
-        ctx["duel"] = None if dr is None else {
-            "rank_position": dr.rank_position, "wins": dr.wins, "losses": dr.losses,
-        }
+        week = rts.week_start(rts.trial_day(datetime.now(UTC)))
+        repo = RoleTrialRepository(session)
+        rows = []
+        for offset in range(7):
+            day = week + timedelta(days=offset)
+            for role, (score, attempts) in sorted(repo.player_day(player_id, day).items()):
+                rows.append({"day": day.strftime("%a %d/%m"), "role": rts.ROLE_LABELS[role],
+                             "variant": rts.variant_of_day(day, role).name,
+                             "score": score, "attempts": attempts})
+        ctx["trials"] = rows
+        standing = role_trials.player_week(role_trials.week_standings(session, week), player_id)
+        ctx["trial_week"] = [
+            {"label": label, "place": standing[key][0] if standing.get(key) else None,
+             "score": round(standing[key][1], 1) if standing.get(key) else None}
+            for key, label in [*rts.ROLE_LABELS.items(), (rts.GENERAL, rts.GENERAL_LABEL)]
+        ]
     return get_templates().TemplateResponse(request, "admin/players/card.html", context=ctx)
 
 

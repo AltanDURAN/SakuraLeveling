@@ -3,7 +3,7 @@
 Workflow :
     1. Au premier appel `/weekly` de la semaine, chaque joueur reçoit 3 quêtes
        tirées au hasard (mix easy/medium/hard si possible).
-    2. Les évènements de jeu (kill, duel win, craft, gather, gold earned,
+    2. Les évènements de jeu (kill, craft, gather, gold earned,
        boss damage, daily streak) appellent `WeeklyQuestProgressService` qui
        incrémente toutes les quêtes pertinentes du joueur pour la semaine
        courante.

@@ -2,7 +2,7 @@
 
 {% set section_titles = {
     'inventory': '🎒 Inventaire', 'equipment': '🛡️ Équipement', 'titles': '🏷️ Titres',
-    'affinities': '✨ Affinités & essences', 'skills': '🌳 Build', 'duel': '⚔️ Duel',
+    'affinities': '✨ Affinités & essences', 'skills': '🌳 Build', 'defis': '🎯 Défis',
     'career': '📈 Carrière'
 } %}
 {% block title %}{{ p.display_name }} — {{ section_titles.get(section, 'Fiche joueur') }}{% endblock %}
@@ -130,7 +130,7 @@
             <a href="/admin/players/{{ p.id }}/career{{ eq }}" class="pcard-link">📈 Carrière</a>
             <a href="/admin/players/{{ p.id }}/affinities{{ eq }}" class="pcard-link">✨ Affinités</a>
             <a href="/admin/players/{{ p.id }}/skills{{ eq }}" class="pcard-link">🌳 Build</a>
-            <a href="/admin/players/{{ p.id }}/duel{{ eq }}" class="pcard-link">⚔️ Duel</a>
+            <a href="/admin/players/{{ p.id }}/defis{{ eq }}" class="pcard-link">🎯 Défis</a>
         </div>
 
         <!-- Actions -->
@@ -279,14 +279,20 @@
             </table></div>
             {% else %}<div class="empty-state"><p>Aucun point investi dans l'arbre.</p></div>{% endif %}
 
-        {% elif section == 'duel' %}
-            {% if duel %}
+        {% elif section == 'defis' %}
             <div class="pcard-grid">
-                <div class="pfield"><span>Rang ladder</span><strong>#{{ duel.rank_position }}</strong></div>
-                <div class="pfield"><span>Victoires</span><strong>{{ duel.wins }}</strong></div>
-                <div class="pfield"><span>Défaites</span><strong>{{ duel.losses }}</strong></div>
+                {% for w in trial_week %}
+                <div class="pfield"><span>{{ w.label }}</span><strong>{% if w.place %}{{ w.place }}e · {{ w.score }}{% else %}—{% endif %}</strong></div>
+                {% endfor %}
             </div>
-            {% else %}<div class="empty-state"><p>Ce joueur n'a pas encore combattu en duel.</p></div>{% endif %}
+            {% if trials %}
+            <div class="table-wrapper"><table class="data-table">
+                <thead><tr><th>Jour</th><th>Rôle</th><th>Variante</th><th>Meilleur score</th><th>Essais</th></tr></thead>
+                <tbody>{% for t in trials %}
+                    <tr><td>{{ t.day }}</td><td>{{ t.role }}</td><td>{{ t.variant }}</td><td>{{ t.score }}</td><td>{{ t.attempts }}</td></tr>
+                {% endfor %}</tbody>
+            </table></div>
+            {% else %}<div class="empty-state"><p>Aucun défi tenté cette semaine.</p></div>{% endif %}
         {% endif %}
         {% endif %}
     </div>{# .pcard #}

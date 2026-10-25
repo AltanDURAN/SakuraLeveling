@@ -8,8 +8,9 @@ plafond ne se perd pas : il revient à l'attaquant en CONTRECOUP. Décidé avec
 l'auteur (25/10/2026) :
 
   • avant, `max(1, ATK − DEF)` : en saison 1 un build équilibré a ATK ≈ DEF,
-    les coups tombaient au plancher de 1 dégât (duels bloqués au tour max,
-    tank incapable de tuer, monstres blindés increvables) ;
+    les coups tombaient au plancher de 1 dégât (duels JcJ — depuis retirés —
+    bloqués au tour max, tank incapable de tuer, monstres blindés
+    increvables) ;
   • tant que la DEF reste sous 75 % de l'ATK, la formule donne EXACTEMENT
     l'ancien résultat : le calibrage des monstres n'a pas bougé ;
   • le contrecoup n'est PAS une action : il ne compte pas comme un tour, ne

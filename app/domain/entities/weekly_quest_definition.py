@@ -13,7 +13,6 @@ class WeeklyQuestDefinition:
     # Type d'objectif (ce qui incrémente le compteur). V1 supportés :
     #   "kill_family"     : target=family,   value=N kills
     #   "kill_total"      : target="",       value=N kills
-    #   "duel_win"        : target="",       value=N victoires
     #   "craft_any"       : target="",       value=N crafts
     #   "gather_count"    : target="",       value=N récoltes
     #   "gold_earned"     : target="",       value=N or gagnés via combats

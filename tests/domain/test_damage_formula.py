@@ -10,7 +10,6 @@ import pytest
 
 from app.domain.services.combat_passives import CombatPassives
 from app.domain.services.damage_formula import resolve_hit, thorns_recoil
-from app.domain.services.duel_combat_service import DuelCombatService
 from app.domain.services.party_combat_service import PartyCombatService
 from app.domain.value_objects.stats import Stats
 from tests.domain.test_party_combat_service import build_mob
@@ -110,14 +109,6 @@ def test_charme_meme_formule_contrecoup_compris():
     dmg, _, dodged, recoil = svc._pvp_hit(a, b, contributions)
     assert (dmg, dodged, recoil) == (25, False, 125)
     assert a["hp"] == 1000 - 125
-
-
-def test_duel_le_contrecoup_peut_faire_perdre_l_attaquant():
-    random.seed(0)
-    glass = _stats(hp=100, atk=100, dfn=0, speed=100)
-    wall = _stats(hp=10_000, atk=1, dfn=200, speed=1)
-    result = DuelCombatService().fight_player_vs_player(glass, wall)
-    assert result.winner == "b"
 
 
 # ---------------------------------------------------------------- aggro --

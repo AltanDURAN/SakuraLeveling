@@ -25,7 +25,7 @@ from app.infrastructure.db.models.shop_item_model import ShopItemModel  # noqa: 
 from app.infrastructure.db.models.player_career_stats_model import PlayerCareerStatsModel  # noqa: F401
 from app.infrastructure.db.models.player_skill_allocation_model import PlayerSkillAllocationModel  # noqa: F401
 from app.infrastructure.db.models.trade_model import TradeItemModel, TradeModel  # noqa: F401
-from app.infrastructure.db.models.player_duel_rank_model import PlayerDuelRankModel  # noqa: F401
+from app.infrastructure.db.models.role_trial_model import RoleTrialScoreModel  # noqa: F401
 from app.infrastructure.db.models.world_boss_model import WorldBossModel, WorldBossParticipationModel  # noqa: F401
 
 from app.infrastructure.db.repositories.world_boss_repository import WorldBossRepository

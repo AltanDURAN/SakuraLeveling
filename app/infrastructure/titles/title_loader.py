@@ -56,7 +56,7 @@ def get_definition(code: str) -> TitleDefinition | None:
 def list_for_condition(condition_type: str) -> list[TitleDefinition]:
     """Filtre les titres dont la condition correspond au type donné.
     Utilisé pour ne checker que les titres pertinents lors d'un évènement
-    (ex : un kill_family ne doit pas re-vérifier les titres duels)."""
+    (ex : un kill_family ne doit pas re-vérifier les titres de la semaine)."""
     return [d for d in list_definitions() if d.condition_type == condition_type]
 
 

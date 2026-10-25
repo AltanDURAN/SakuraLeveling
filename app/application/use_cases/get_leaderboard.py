@@ -10,9 +10,6 @@ from app.domain.services.power_score_service import PowerScoreService
 from app.domain.services.stats_service import StatsService
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
-from app.infrastructure.db.repositories.player_duel_rank_repository import (
-    PlayerDuelRankRepository,
-)
 from app.infrastructure.db.repositories.player_kill_repository import PlayerKillRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.shared.formatters import format_int as _format_int
@@ -47,7 +44,7 @@ class GetLeaderboardUseCase:
         stats_service: StatsService,
         power_score_service: PowerScoreService,
         leaderboard_service: LeaderboardService,
-        duel_rank_repository: PlayerDuelRankRepository | None = None,
+        role_trial_repository=None,
     ) -> None:
         self.player_repository = player_repository
         self.equipment_repository = equipment_repository
@@ -56,7 +53,7 @@ class GetLeaderboardUseCase:
         self.stats_service = stats_service
         self.power_score_service = power_score_service
         self.leaderboard_service = leaderboard_service
-        self.duel_rank_repository = duel_rank_repository
+        self.role_trial_repository = role_trial_repository
 
     def execute(self, category_code: str, limit: int = 10) -> Leaderboard | None:
         if category_code == "power":
@@ -74,8 +71,8 @@ class GetLeaderboardUseCase:
         if category_code == "kills_total":
             return self._compute_kills_total(limit)
 
-        if category_code == "duel_rank":
-            return self._compute_duel_rank(limit)
+        if category_code.startswith("defi_"):
+            return self._compute_role_trial(category_code.split("_", 1)[1], limit)
 
         if category_code.startswith("kills_mob:"):
             mob_code = category_code.split(":", 1)[1]
@@ -207,35 +204,34 @@ class GetLeaderboardUseCase:
             entries=entries,
         )
 
-    def _compute_duel_rank(self, limit: int) -> Leaderboard | None:
-        """Ladder 1v1 : tri ASC sur rank_position (plus petit = mieux classé).
+    def _compute_role_trial(self, key: str, limit: int) -> Leaderboard | None:
+        """Défis de rôle, semaine EN COURS (5 meilleurs jours) : `dps`,
+        `tank`, `soutien` (score brut) ou `general` (moyenne des trois rôles,
+        chacun ramené à 100 = le meilleur de la semaine)."""
+        from datetime import UTC, datetime, timedelta
 
-        On bypasse `LeaderboardService.rank()` qui trie en DESC et on construit
-        directement les `LeaderboardEntry` depuis le repository qui renvoie
-        déjà la liste triée. Le `value` exposé est la position elle-même
-        (pour cohérence de l'embed). Le `formatted_value` montre "#N (W-L)".
-        """
-        if self.duel_rank_repository is None:
+        from app.domain.services import role_trial_service as rts
+
+        if self.role_trial_repository is None or key not in (*rts.ROLES, rts.GENERAL):
             return None
-
-        ranks = self.duel_rank_repository.list_top(limit=limit)
-        entries: list[LeaderboardEntry] = []
-        for rank in ranks:
-            profile = self.player_repository.get_profile_by_player_id(rank.player_id)
-            display_name = (
-                profile.player.display_name if profile is not None else f"Joueur#{rank.player_id}"
-            )
-            entries.append(
-                LeaderboardEntry(
-                    player_id=rank.player_id,
-                    display_name=display_name,
-                    value=rank.rank_position,
-                    formatted_value=f"#{rank.rank_position} ({rank.wins}V-{rank.losses}D)",
-                )
-            )
+        week = rts.week_start(rts.trial_day(datetime.now(UTC)))
+        weekly = rts.weekly_scores(
+            self.role_trial_repository.week_rows(week, week + timedelta(days=6)))
+        if key == rts.GENERAL:
+            board = rts.ranking(rts.general_scores(weekly))
+            label, fmt = rts.GENERAL_LABEL, (lambda v: f"{v:.1f}".replace(".", ",") + " / 100")
+        else:
+            board = rts.ranking(weekly[key])
+            label, fmt = rts.ROLE_LABELS[key], (lambda v: _format_int(round(v)))
+        entries = []
+        for pid, value in board[:limit]:
+            profile = self.player_repository.get_profile_by_player_id(pid)
+            name = profile.player.display_name if profile is not None else f"Joueur#{pid}"
+            entries.append(LeaderboardEntry(player_id=pid, display_name=name,
+                                            value=round(value), formatted_value=fmt(value)))
         return Leaderboard(
-            category_code="duel_rank",
-            category_label="Classement duels 1v1",
+            category_code=f"defi_{key}",
+            category_label=f"Défis de la semaine — {label}",
             entries=entries,
         )
 

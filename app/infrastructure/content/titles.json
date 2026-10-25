@@ -42,11 +42,57 @@
     ]
   },
   {
-    "code": "champion_1v1",
-    "name": "Champion en 1vs1",
-    "description": "Détenteur du sommet du ladder 1v1. +1% sur toutes vos stats (multiplicatif sur PV/atk/def, additif sur crit/esquive, +1 flat sur vitesse/régen). Perdu dès qu'un autre joueur prend la première place.",
+    "code": "fleau_semaine",
+    "name": "Fléau de la semaine",
+    "description": "Meilleur score DPS de la semaine aux défis (/defi). +2 % de dégâts infligés. Remis en jeu chaque dimanche à 20 h.",
+    "icon": "⚔️",
+    "condition_type": "weekly_role_trial",
+    "condition_target": "dps",
+    "exclusive": true,
+    "effects": [
+      {
+        "type": "damage_dealt_pct",
+        "value": 2
+      }
+    ]
+  },
+  {
+    "code": "bastion_semaine",
+    "name": "Bastion de la semaine",
+    "description": "Meilleur score Tank de la semaine aux défis (/defi). −2 % de dégâts reçus. Remis en jeu chaque dimanche à 20 h.",
+    "icon": "🛡️",
+    "condition_type": "weekly_role_trial",
+    "condition_target": "tank",
+    "exclusive": true,
+    "effects": [
+      {
+        "type": "damage_taken_reduction_pct",
+        "value": 2
+      }
+    ]
+  },
+  {
+    "code": "ange_gardien_semaine",
+    "name": "Ange gardien de la semaine",
+    "description": "Meilleur score Soutien de la semaine aux défis (/defi). +2 % de soins donnés. Remis en jeu chaque dimanche à 20 h.",
+    "icon": "💚",
+    "condition_type": "weekly_role_trial",
+    "condition_target": "soutien",
+    "exclusive": true,
+    "effects": [
+      {
+        "type": "heal_power_pct",
+        "value": 2
+      }
+    ]
+  },
+  {
+    "code": "champion_semaine",
+    "name": "Champion de la semaine",
+    "description": "Meilleur classement général de la semaine aux défis (/defi). +1 % sur toutes vos stats (multiplicatif sur PV/atk/def, additif sur crit/esquive, +1 flat sur vitesse/régen). Remis en jeu chaque dimanche à 20 h.",
     "icon": "👑",
-    "condition_type": "duel_top1",
+    "condition_type": "weekly_role_trial",
+    "condition_target": "general",
     "exclusive": true,
     "effects": [
       {

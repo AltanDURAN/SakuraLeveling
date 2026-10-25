@@ -12,17 +12,11 @@ from app.domain.entities.player_profile import PlayerProfile
 from app.shared.formatters import format_int as _format_int
 from app.application.use_cases.transfer_gold import TransferGoldUseCase
 from app.application.use_cases.claim_daily_reward import ClaimDailyRewardUseCase
-from app.application.use_cases.challenge_player import ChallengePlayerUseCase
 from app.application.use_cases.use_consumable import UseConsumableUseCase
 from app.application.use_cases.get_player_equipment import GetPlayerEquipmentUseCase
 from app.application.use_cases.equip_item import (
     EquipItemUseCase,
     plan_equip,
-)
-from app.bot.embeds.duel_embeds import (
-    build_duel_intro_embed,
-    build_duel_result_embed,
-    build_duel_turn_embed,
 )
 from app.bot.embeds.daily_embeds import (
     build_daily_cooldown_embed,
@@ -33,7 +27,6 @@ from app.bot.views.inventory_view import InventoryView
 from app.bot.embeds.inventory_embeds import build_inventory_embed
 from app.bot.embeds.player_embeds import build_player_profile_embed
 from app.domain.services.cooldown_service import CooldownService
-from app.domain.services.duel_combat_service import DuelCombatService
 from app.domain.services.stats_service import StatsService
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
@@ -43,9 +36,6 @@ from app.infrastructure.db.repositories.element_affinity_repository import (
 )
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
-from app.infrastructure.db.repositories.player_duel_rank_repository import (
-    PlayerDuelRankRepository,
-)
 from app.infrastructure.db.repositories.player_kill_repository import PlayerKillRepository
 from app.infrastructure.db.repositories.player_career_stats_repository import (
     PlayerCareerStatsRepository,
@@ -219,10 +209,6 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             total_kills = kill_repository.get_total_kills(profile.player.id)
             career_stats = career_stats_repository.get_or_create(profile.player.id)
 
-            duel_rank = PlayerDuelRankRepository(session).get_by_player_id(
-                profile.player.id
-            )
-
             from app.infrastructure.db.repositories.player_title_repository import (
                 PlayerTitleRepository,
             )
@@ -314,9 +300,6 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 power_score=formatted_power_score,
                 class_name=class_name,
                 active_title=active_title_name,
-                duel_position=duel_rank.rank_position if duel_rank else None,
-                duel_wins=duel_rank.wins if duel_rank else 0,
-                duel_losses=duel_rank.losses if duel_rank else 0,
                 daily_streak=profile.resources.daily_streak,
                 skill_points=profile.progression.skill_points,
                 stat_points=profile.progression.stat_points,
@@ -366,9 +349,6 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             rank_label=rank_label,
             total_kills=total_kills,
             career_stats=career_stats,
-            duel_rank_position=duel_rank.rank_position if duel_rank else None,
-            duel_wins=duel_rank.wins if duel_rank else 0,
-            duel_losses=duel_rank.losses if duel_rank else 0,
             active_title=active_title_name,
             affinities=affinities,
         )
@@ -841,89 +821,6 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
         return choices
 
     @app_commands.command(
-        name="duel",
-        description="Défier un autre joueur en duel 1v1 (PvP, sans gain ni perte)",
-    )
-    @app_commands.describe(target="Joueur à défier")
-    async def fight(self, interaction: discord.Interaction, target: discord.Member) -> None:
-        if target.bot:
-            await interaction.response.send_message(
-                "❌ Vous ne pouvez pas défier un bot.",
-                ephemeral=True,
-            )
-            return
-        if target.id == interaction.user.id:
-            await interaction.response.send_message(
-                "❌ Vous ne pouvez pas vous défier vous-même.",
-                ephemeral=True,
-            )
-            return
-
-        await interaction.response.defer()
-
-        with get_db_session() as session:
-            use_case = ChallengePlayerUseCase(
-                player_repository=PlayerRepository(session),
-                equipment_repository=EquipmentRepository(session),
-                skill_allocation_repository=PlayerSkillAllocationRepository(session),
-                duel_rank_repository=PlayerDuelRankRepository(session),
-                cooldown_repository=CooldownRepository(session),
-                stats_service=StatsService(),
-                duel_combat_service=DuelCombatService(),
-                cooldown_service=CooldownService(),
-            )
-            outcome = use_case.execute(
-                challenger_discord_id=interaction.user.id,
-                challenger_username=interaction.user.name,
-                challenger_display_name=interaction.user.display_name,
-                target_discord_id=target.id,
-                target_display_name=target.display_name,
-            )
-
-        if not outcome.success or outcome.result is None:
-            await interaction.followup.send(outcome.message, ephemeral=True)
-            return
-
-        challenger_name = outcome.challenger_display_name
-        target_name = outcome.target_display_name
-        result = outcome.result
-
-        intro = build_duel_intro_embed(
-            challenger_name=challenger_name,
-            target_name=target_name,
-            challenger_max_hp=result.a_max_hp,
-            target_max_hp=result.b_max_hp,
-        )
-        message = await interaction.followup.send(
-            content=f"⚔️ {interaction.user.mention} défie {target.mention} !",
-            embed=intro,
-        )
-
-        await asyncio.sleep(1.5)
-        for turn_log in result.turn_logs:
-            embed = build_duel_turn_embed(
-                challenger_name=challenger_name,
-                target_name=target_name,
-                result=result,
-                turn_log=turn_log,
-            )
-            await message.edit(embed=embed)
-            await asyncio.sleep(1.2)
-
-        final_embed = build_duel_result_embed(
-            challenger_name=challenger_name,
-            target_name=target_name,
-            result=result,
-            challenger_won=outcome.challenger_won,
-            swapped=outcome.swapped,
-            challenger_old_position=outcome.challenger_old_position,
-            target_old_position=outcome.target_old_position,
-            challenger_new_position=outcome.challenger_new_position,
-            target_new_position=outcome.target_new_position,
-        )
-        await message.edit(embed=final_embed)
-
-    @app_commands.command(
         name="affinites",
         description="Voir vos affinités élémentaires et votre progression d'essences",
     )
@@ -1138,7 +1035,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             "rank_trial":         "🎖️ Épreuve de rang",
         }
         # Cooldowns trop courts pour être pertinents dans cet affichage.
-        HIDDEN_COOLDOWNS = {"duel_challenge"}
+        HIDDEN_COOLDOWNS: set[str] = set()
 
         with get_db_session() as session:
             profile, target_member = self._resolve_profile(interaction, target, session)

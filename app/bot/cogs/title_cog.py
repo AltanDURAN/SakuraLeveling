@@ -73,19 +73,18 @@ def _build_progress_label(
             "jours de daily streak"
         )
 
-    if title.condition_type == "duel_top1":
-        # Titre exclusif : montrer le détenteur actuel (rang 1 du ladder)
-        # plutôt qu'un compteur 0/0 qui n'a aucun sens.
-        holder_id = excl.current_holder("champion_1v1")
+    if title.condition_type == "weekly_role_trial":
+        # Titre de la semaine (défis) : montrer le détenteur actuel.
+        holder_id = excl.current_holder(title.code)
         if holder_id is None:
-            return "_Personne ne le détient encore. Atteignez la 1re place du ladder duel._"
+            return "_Personne ne le détient cette semaine. Résultats des défis le dimanche à 20 h (/defi)._"
         if holder_id == pid:
-            return "_Vous êtes le détenteur actuel !_"
+            return "_Vous êtes le détenteur de la semaine !_"
         holder_profile = PlayerRepository(session).get_profile_by_player_id(holder_id)
         holder_name = (
             holder_profile.player.display_name if holder_profile else f"#{holder_id}"
         )
-        return f"Détenteur actuel : **{holder_name}** (top 1 du ladder duel)"
+        return f"Détenteur de la semaine : **{holder_name}** (défis, /defi)"
 
     if title.condition_type == "kills_record":
         # Titre exclusif Farmer Fou : afficher record actuel + détenteur
@@ -148,7 +147,7 @@ class TitleCog(BetaChannelOnlyMixin, commands.Cog):
 
             # Progression formatée pour chaque titre encore verrouillé.
             # On reste DANS le `with session` pour pouvoir requêter kill_repo /
-            # career_repo / duel_repo / exclusive_service au besoin.
+            # career_repo / exclusive_service au besoin.
             progress_label_by_code: dict[str, str] = {
                 d.code: _build_progress_label(d, profile=profile, session=session)
                 for d in locked_defs

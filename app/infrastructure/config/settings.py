@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     # Channel des événements non-combat (coffre, petite fille, forge sacrée).
     # Défaut = salon général. Override possible via EVENT_CHANNEL_ID dans .env.
     event_channel_id: int = 1485329709201096796
+    # Salon des défis de rôle (/defi) : programme du jour à minuit, résultats
+    # le dimanche à 20 h. Défaut = salon général (choix de l'auteur, 25/10/2026).
+    # Override possible via ROLE_TRIAL_CHANNEL_ID dans .env ; 0 = pas d'annonce.
+    role_trial_channel_id: int = 1485329709201096796
     # Serveur Discord principal (pour la gestion des rôles via l'admin web).
     # 0 = feature de gestion de rôles désactivée.
     discord_guild_id: int = 0

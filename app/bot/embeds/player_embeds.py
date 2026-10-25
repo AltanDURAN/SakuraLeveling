@@ -126,9 +126,6 @@ def build_player_profile_embed(
     rank_label: str = "F-",
     total_kills: int = 0,
     career_stats: PlayerCareerStats | None = None,
-    duel_rank_position: int | None = None,
-    duel_wins: int = 0,
-    duel_losses: int = 0,
     active_title: str | None = None,
     affinities: dict[str, int] | None = None,
 ) -> discord.Embed:
@@ -149,12 +146,6 @@ def build_player_profile_embed(
         value=_format_int(profile.progression.skill_points),
         inline=True,
     )
-    duel_label = (
-        f"#{duel_rank_position} ({duel_wins}V-{duel_losses}D)"
-        if duel_rank_position is not None
-        else "—"
-    )
-    embed.add_field(name="⚔️ Rang duel 1v1", value=duel_label, inline=True)
 
     # Bloc combat / stats
     embed.add_field(name="❤️ PV", value=f"{current_hp}/{stats.max_hp}", inline=True)

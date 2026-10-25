@@ -2,7 +2,7 @@
 
 Actifs à partir de l'ÉPIQUE (cf. `gear_service.PASSIVE_MIN_RARITY`), identiques
 quelle que soit la rareté. Les effets sont appliqués par le moteur de combat
-(`PartyCombatService` / `DuelCombatService`), l'économie par `EncounterService`.
+(`PartyCombatService`), l'économie par `EncounterService`.
 
 Règles de cumul (décidées avec l'auteur) :
   • effets sur l'ENNEMI (ATK réduite, soins divisés…) : un seul exemplaire actif
@@ -13,8 +13,8 @@ Règles de cumul (décidées avec l'auteur) :
   • effets CROISSANTS en combat : plafonnés ;
   • pas de RÉACTION EN CHAÎNE : une contre-attaque ou une double attaque ne
     déclenche jamais un autre de ces effets ;
-  • ÉCONOMIE (or, XP, drop, essences) : personnelle, jamais en duel.
-  • Duels : tous les passifs s'appliquent, sauf l'économie.
+  • ÉCONOMIE (or, XP, drop, essences) : personnelle, seulement sur les monstres
+    (rien à gagner en épreuve de rang ni en défi).
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ class GearPassive:
     name: str
     description: str
     #: Catégorie : "offense", "defense", "support", "enemy" (effet sur l'ennemi,
-    #: non cumulable), "economy" (jamais en duel).
+    #: non cumulable), "economy" (butin des monstres uniquement).
     kind: str
 
 

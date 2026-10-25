@@ -78,7 +78,13 @@ class PartyCombatService:
         passives_by_player: dict[int, CombatPassives] | None = None,
         tactics_by_player: dict[int, str] | None = None,
         mob_is_boss: bool = False,
+        max_ticks: int = 0,
+        escort_ids: set[int] | frozenset[int] | None = None,
     ) -> PartyBattleResult:
+        # max_ticks  : limite de TEMPS (ticks de jauge) plutôt que d'actions —
+        #              la vitesse compte (épreuve DPS : « 40 s de combat »).
+        # escort_ids : le monstre ne vise QUE ces joueurs, et le combat
+        #              s'arrête dès que l'un d'eux tombe (épreuve de soutien).
         title_bonuses_by_player = title_bonuses_by_player or {}
         elemental_mult_by_player = elemental_mult_by_player or {}
         incoming_elemental_mult_by_player = incoming_elemental_mult_by_player or {}
@@ -160,13 +166,18 @@ class PartyCombatService:
             m = _charmed_member()
             return m is not None and m["hp"] > 0
 
+        escort = frozenset(escort_ids or ())
+
         def _party_alive() -> bool:
+            if escort and any(p["hp"] <= 0 for p in alive_party if p["player_id"] in escort):
+                return False
             return any(p["hp"] > 0 and p["player_id"] != charmed_id and not p["absorbed"]
                        for p in alive_party)
 
         def _mob_targets() -> list:
             return [p for p in alive_party
-                    if p["hp"] > 0 and p["player_id"] != charmed_id and not p["absorbed"]]
+                    if p["hp"] > 0 and p["player_id"] != charmed_id and not p["absorbed"]
+                    and (not escort or p["player_id"] in escort)]
 
         # ── État des capacités du monstre ──
         # Stats effectives (max HP + bonus d'absorption du slime).
@@ -631,7 +642,8 @@ class PartyCombatService:
 
         while mob_hp > 0 and _party_alive():
             round_count += 1
-            if (max_turns and turns >= max_turns) or turns >= HARD_MAX_TURNS:
+            if ((max_turns and turns >= max_turns) or (max_ticks and round_count > max_ticks)
+                    or turns >= HARD_MAX_TURNS):
                 break
             _escalate()
 
@@ -646,7 +658,8 @@ class PartyCombatService:
             acted = False
 
             for player in alive_party:
-                while player["gauge"] >= 100 and player["hp"] > 0 and mob_hp > 0:
+                while (player["gauge"] >= 100 and player["hp"] > 0 and mob_hp > 0
+                       and turns < HARD_MAX_TURNS):
                     _tick_dots(player)
                     if player["hp"] <= 0:
                         break
@@ -772,7 +785,11 @@ class PartyCombatService:
                 mob_gauge = 0  # succube protégée, passive tant que le charmé vit
             _escalate()
             boss_actions = 0
-            while mob_gauge >= 100 and mob_hp > 0 and _party_alive() and not _charmed_alive():
+            # Garde-fou HARD_MAX_TURNS aussi ICI : l'escalade multiplie la
+            # vitesse du monstre, qui pourrait sinon agir des millions de fois
+            # dans un seul tick.
+            while (mob_gauge >= 100 and mob_hp > 0 and _party_alive() and not _charmed_alive()
+                   and turns < HARD_MAX_TURNS):
                 turns += 1
                 acted = True
                 mob_gauge -= 100
