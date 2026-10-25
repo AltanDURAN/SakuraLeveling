@@ -7,10 +7,16 @@ l'ATTAQUE des joueurs, donc chaque coup tombait au plancher de 1 dégât
 « la DEF d'un monstre ne doit JAMAIS approcher l'ATK du joueur ».
 
 Règles de calibrage (un boss = un palier de progression) :
-  • ATK de référence du joueur ≈ 4 × niveau visé (mesuré : niv 31→133, niv 34→92) ;
-  • DEF du boss = 35 % de l'ATK de l'équipe  → les coups portent vraiment ;
-  • ATK du boss = 45 % de l'ATK de référence → mord fort sans balayer d'un coup ;
-  • PV du boss  = dégâts d'un assaut × 6     → tombe vers le 6ᵉ jour du raid.
+  • DEF du boss = 35 % de l'ATK du joueur de référence → les coups portent ;
+  • ATK du boss = 2 × (DEF + 6 % des PV) du joueur de référence → il menace
+    vraiment : sans tank ni soigneur, l'équipe tombe vite (25/10/2026 —
+    mesuré : à ×1, trois DPS + un support faisaient mieux que l'équipe de
+    rôles contre certains boss) ;
+  • PV du boss = dégâts d'un assaut × 6 → tombe vers le 6ᵉ jour du raid,
+    mesurés avec l'équipe de RÔLES (DPS, Tank, Support, DPS —
+    `scripts/reference_roles.py`) : quatre joueurs de référence (sans
+    classes) ne font que 5 à 25 % de ses dégâts, un boss calibré sur eux
+    fondait en un assaut chez des joueurs qui ont investi leur arbre.
 
 Usage : .venv/bin/python -m scripts.restat_bosses [--write]
 """
@@ -52,23 +58,29 @@ MODIFIER_DESIGN: dict[str, dict[str, float]] = {
     "ancient_dragon": {"heal_share": 0.20, "immunity_share": 0.50, "adds_share": 0.60},
 }
 
-PARTY_SIZE = 4                # taille d'équipe de référence
+CALIBRATION_TEAM = "DTSD"     # DPS, Tank, Support, DPS (cf. reference_roles)
+PARTY_SIZE = len(CALIBRATION_TEAM)
 ASSAULTS_TO_KILL = 6          # le raid doit durer ~6 jours
+BOSS_ATK_MULT = 2.0           # × (DEF + 6 % des PV) du joueur de référence
 
 
-def _reference_party(level: int, size: int = PARTY_SIZE) -> list[dict]:
-    """Équipe de référence au niveau visé — définition partagée du joueur type,
-    avec le bonus d'équipe RÉEL du raid (+5 % par participant en plus)."""
-    from app.domain.services.reference_player import reference_stats
+def _calibration_party(level: int) -> tuple[list[dict], dict, dict]:
+    """(équipe, passifs, tactiques) de l'équipe de rôles au niveau visé, avec
+    le bonus d'équipe RÉEL du raid (+5 % par participant en plus)."""
+    import importlib.util
+    import sys as _sys
+
     from app.domain.services.world_boss_scaling_service import WorldBossScalingService
 
-    stats = WorldBossScalingService().apply_team_bonus(reference_stats(level), size)
-    return [
-        {"player_id": i, "user_id": i, "name": f"ref{i}", "avatar_url": "",
-         "stats": stats, "current_hp": stats.max_hp, "max_hp": stats.max_hp,
-         "current_mana": stats.mana_max, "mana_max": stats.mana_max}
-        for i in range(size)
-    ]
+    roles = _sys.modules.get("reference_roles")
+    if roles is None:   # chargé par son chemin (le dossier tests/scripts masque `scripts`)
+        path = Path(__file__).resolve().parent / "reference_roles.py"
+        spec = importlib.util.spec_from_file_location("reference_roles", path)
+        roles = importlib.util.module_from_spec(spec)
+        _sys.modules["reference_roles"] = roles
+        spec.loader.exec_module(roles)
+    bonus = WorldBossScalingService().apply_team_bonus
+    return roles.party(CALIBRATION_TEAM, level, stats_hook=bonus)
 
 
 def _measure_damage_per_assault(level: int, attack: int, defense: int, boss: dict) -> int:
@@ -100,12 +112,14 @@ def _measure_damage_per_assault(level: int, attack: int, defense: int, boss: dic
     totals, actions = [], []
     for seed in range(5):
         random.seed(seed)
+        members, passives, tactics = _calibration_party(level)
         result = PartyCombatService().fight_party_vs_mob(
-            _reference_party(level), mob, max_turns=BOSS_FIGHT_MAX_TURNS,
+            members, mob, max_turns=BOSS_FIGHT_MAX_TURNS,
             damage_immunity_threshold=int(mods.get("damage_immunity_threshold", 0)),
             boss_heal_per_turn=int(mods.get("auto_heal_per_turn", 0)),
             boss_reflect_pct=int(mods.get("reflect_pct", 0)),
             boss_adds=mods.get("adds"),
+            passives_by_player=passives, tactics_by_player=tactics,
         )
         totals.append(max(0, reserve - result.mob_remaining_hp))
         actions.append(result.turns)
@@ -122,10 +136,14 @@ def _scaled_modifiers(boss: dict, level: int, attack: int, defense: int) -> dict
     from app.domain.services.reference_player import reference_stats
     from app.domain.services.world_boss_scaling_service import WorldBossScalingService
 
+    from app.domain.services.damage_formula import resolve_hit
+
     mods = dict(boss.get("modifiers") or {})
     design = MODIFIER_DESIGN.get(boss.get("code", ""), {})
+    # Coup typique d'un joueur de RÉFÉRENCE (pas d'un build de rôle) : le seuil
+    # d'immunité punit le sous-niveau, pas le joueur équilibré.
     player = WorldBossScalingService().apply_team_bonus(reference_stats(level), PARTY_SIZE)
-    typical_hit = max(1, player.attack - defense)
+    typical_hit = resolve_hit(player.attack, defense)[0]
     if "immunity_share" in design:
         mods["damage_immunity_threshold"] = max(1, round(typical_hit * design["immunity_share"]))
     if "adds_share" in design and isinstance(mods.get("adds"), dict):
@@ -136,7 +154,7 @@ def _scaled_modifiers(boss: dict, level: int, attack: int, defense: int) -> dict
             level, attack, defense, {**boss, "modifiers": {**mods, "auto_heal_per_turn": 0}},
         )
         boss_speed = int(boss.get("speed", 8))
-        party_speed = player.speed * PARTY_SIZE
+        party_speed = sum(m["stats"].speed for m in _calibration_party(level)[0])
         boss_turns = max(1.0, _LAST_ACTIONS[0] * boss_speed / (boss_speed + party_speed))
         mods["auto_heal_per_turn"] = max(1, round(design["heal_share"] * raw / boss_turns))
     return mods
@@ -155,7 +173,7 @@ def compute(level: int, boss: dict | None = None) -> dict:
     # maximum. ⚠️ En saison 1 un build équilibré a ATK ≈ DEF (même coût par
     # point) : une attaque exprimée en fraction de l'ATK du joueur passerait
     # donc SOUS sa défense. On la calcule sur la défense et les PV.
-    attack = max(10, round(ref.defense + 0.06 * ref.max_hp))
+    attack = max(10, round((ref.defense + 0.06 * ref.max_hp) * BOSS_ATK_MULT))
     boss = boss or {}
     modifiers = _scaled_modifiers(boss, level, attack, defense) if boss else {}
     measured = _measure_damage_per_assault(level, attack, defense, {**boss, "modifiers": modifiers})

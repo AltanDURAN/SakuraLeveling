@@ -1,6 +1,7 @@
 import random
 
 from app.domain.services.combat_passives import NO_PASSIVES, CombatPassives
+from app.domain.services.damage_formula import resolve_hit, thorns_recoil
 from app.domain.value_objects.duel_result import DuelResult, DuelTurnLog
 from app.domain.value_objects.stats import Stats
 
@@ -88,7 +89,9 @@ class DuelCombatService:
                         )
                     )
                     if finished():
-                        return self._result(actor, turns, fighters, a_stats, b_stats, turn_logs)
+                        # Le contrecoup peut abattre l'attaquant lui-même.
+                        winner = actor if me["hp"] > 0 else foe_key
+                        return self._result(winner, turns, fighters, a_stats, b_stats, turn_logs)
 
         a_ratio = fighters["a"]["hp"] / a_stats.max_hp if a_stats.max_hp > 0 else 0
         b_ratio = fighters["b"]["hp"] / b_stats.max_hp if b_stats.max_hp > 0 else 0
@@ -122,7 +125,8 @@ class DuelCombatService:
             defense = round(defense * (1 + min(20, foe["stone"]) / 100))
         if mine.armor_penetration_pct > 0:
             defense = int(defense * (1 - min(100.0, mine.armor_penetration_pct) / 100))
-        damage = max(1, raw_attack - defense)
+        damage, recoil = resolve_hit(raw_attack, defense)
+        recoil = thorns_recoil(recoil, theirs.has("thorns"))
         if me["mult"] <= 0:
             damage = 0  # le défenseur est immunisé à cet élément
         elif me["mult"] != 1.0:
@@ -157,17 +161,11 @@ class DuelCombatService:
         if mine.has("rising_fury"):
             me["fury"] += 1
 
-        if damage >= foe["hp"] > 0 and theirs.last_stand and not foe["held"]:
-            foe["held"] = True
-            damage = foe["hp"] - 1
-        foe["hp"] = max(0, foe["hp"] - damage)
-        if foe["hp"] <= 0 and theirs.has("undying") and not foe["revived"]:
-            foe["revived"] = True
-            foe["hp"] = max(1, foe["stats"].max_hp // 2)
-
-        # Épines : renvoie 10 % de la DEF de celui qui encaisse.
-        if theirs.has("thorns") and damage > 0 and me["hp"] > 0:
-            me["hp"] = max(0, me["hp"] - max(1, round(foe["stats"].defense * 0.10)))
+        DuelCombatService._hurt(foe, damage)
+        # Contrecoup (Épines compris) : la DEF de l'adversaire en trop revient à
+        # l'attaquant — ni action, ni effet déclenché, pas de retour.
+        if recoil > 0 and me["hp"] > 0:
+            DuelCombatService._hurt(me, recoil)
 
         if mine.lifesteal_pct > 0 and damage > 0 and me["hp"] > 0:
             heal = damage * mine.lifesteal_pct / 100 * (1 + mine.heal_received_pct / 100)
@@ -175,6 +173,19 @@ class DuelCombatService:
                 heal /= 2
             me["hp"] = min(stats.max_hp, me["hp"] + int(round(heal)))
         return damage, is_crit, False
+
+    @staticmethod
+    def _hurt(fighter: dict, damage: int) -> None:
+        """Retire des PV : Tenace laisse à 1 PV le premier coup fatal, Revenant
+        ramène à 50 % à la première mort."""
+        passives: CombatPassives = fighter["passives"]
+        if damage >= fighter["hp"] > 0 and passives.last_stand and not fighter["held"]:
+            fighter["held"] = True
+            damage = fighter["hp"] - 1
+        fighter["hp"] = max(0, fighter["hp"] - damage)
+        if fighter["hp"] <= 0 and passives.has("undying") and not fighter["revived"]:
+            fighter["revived"] = True
+            fighter["hp"] = max(1, fighter["stats"].max_hp // 2)
 
     @staticmethod
     def _result(winner, turns, fighters, a_stats, b_stats, turn_logs) -> DuelResult:

@@ -162,6 +162,15 @@ class StatsService:
         if status_bonuses is not None:
             stats = status_bonuses.apply_to_stats(stats)
 
+        # ---- Garde offensive (classe Rempart) : une part de la défense FINALE
+        # s'ajoute à l'attaque (50 % dans l'arbre). Sans elle, un tank (points
+        # en DEF/PV) ne tuait presque rien seul : son ATK restait sous la DEF
+        # des monstres. À 100 %, son power score dépassait celui du DPS
+        # (67 k contre 41 k au niveau 100) et il passait les rangs bien trop tôt. ----
+        if skill_bonuses is not None and skill_bonuses.defense_to_attack_percent:
+            stats = replace(stats, attack=stats.attack + round(
+                stats.defense * skill_bonuses.defense_to_attack_percent))
+
         return stats
 
     # ------------------------------------------------------------- socle --

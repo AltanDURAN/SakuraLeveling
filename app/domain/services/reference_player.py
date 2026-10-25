@@ -52,6 +52,11 @@ GEAR_KIT_COMMON_PCT = {"attack": 8.0, "defense": 12.0, "max_hp": 16.0}
 TREE_MAX_PCT = 15.0
 TREE_FULL_LEVEL = 40
 
+#: Vitesse de l'arbre : 6 cases à +0,5 (+3 au total), prises au même rythme.
+#: Les monstres la suivent (restat_mobs) : sans ça, un joueur à 8 de vitesse
+#: agissait 1,6 fois plus souvent qu'un monstre calibré à 5.
+TREE_SPEED = 3.0
+
 
 def _gear_rarity_multiplier(level: int) -> float:
     pts = GEAR_RARITY_CURVE
@@ -81,6 +86,13 @@ BASE_MANA_MAX = 100
 BASE_MANA_REGENERATION = 5
 
 
+def expected_speed(level: int) -> int:
+    """Vitesse attendue à ce niveau : base + cases de vitesse de l'arbre
+    (tronquée, comme StatsService)."""
+    tree = TREE_SPEED * min(1.0, max(0, level - 1) / (TREE_FULL_LEVEL - 1))
+    return int(BASE_SPEED + tree)
+
+
 def base_points_at(level: int) -> float:
     """Points de stats investis dans CHAQUE stat, en répartition équilibrée."""
     return max(0, level - 1) / 3.0
@@ -107,7 +119,7 @@ def reference_stats(
         max_hp=max(1, int((START_MAX_HP + MAX_HP_PER_POINT * points) * f["max_hp"])),
         attack=max(1, int((START_ATTACK + ATTACK_PER_POINT * points) * f["attack"])),
         defense=max(1, int((START_DEFENSE + DEFENSE_PER_POINT * points) * f["defense"])),
-        speed=BASE_SPEED,
+        speed=expected_speed(level),
         crit_chance=BASE_CRIT_CHANCE if crit_chance is None else crit_chance,
         crit_damage=BASE_CRIT_DAMAGE,
         dodge=BASE_DODGE if dodge is None else dodge,

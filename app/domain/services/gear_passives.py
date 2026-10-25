@@ -50,7 +50,8 @@ PASSIVES: dict[str, GearPassive] = {p.code: p for p in (
     GearPassive("rising_fury", "Fureur montante",
                 "Chaque attaque augmente ton attaque de 1 % pour le combat (max +20 %).", "offense"),
     GearPassive("thorns", "Épines",
-                "Chaque coup subi renvoie 10 % de ta défense en dégâts à l'attaquant.", "defense"),
+                "Ton contrecoup est augmenté de 10 % (la défense qui dépasse 75 % de "
+                "l'attaque adverse revient à l'attaquant en dégâts).", "defense"),
     GearPassive("stone_skin", "Peau de pierre",
                 "Chaque coup subi augmente ta défense de 1 % pour le combat (max +20 %).", "defense"),
     GearPassive("counter_attack", "Riposte",

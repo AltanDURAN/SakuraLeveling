@@ -42,6 +42,8 @@ _TEMPLATES: dict[str, str] = {
     "speed_per_ally": "+{v} vitesse par allié",
     "crit_chance_multiplier": "chances de critique ×{v}",
     "crit_damage_multiplier": "dégâts critiques ×{v}",
+    "team_damage_percent": "aura : +{v} % de dégâts pour toute l'équipe",
+    "defense_to_attack_percent": "ajoute {v} % de sa défense à son attaque",
 }
 
 

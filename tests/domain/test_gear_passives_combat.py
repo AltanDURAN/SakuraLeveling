@@ -90,8 +90,8 @@ def test_perce_armure_ignore_quinze_pour_cent_de_defense():
 
     merged = with_gear_passives(CombatPassives(), [Item()])
     assert merged.armor_penetration_pct == 15 and merged.has("armor_pierce")
-    res = fight([member()], mob(defense=100), {1: merged}, max_turns=1)
-    assert dealt(res) == 100 - 85
+    res = fight([member()], mob(defense=60), {1: merged}, max_turns=1)
+    assert dealt(res) == 100 - 51
 
 
 def test_executeur_sous_cinquante_pour_cent():
@@ -156,10 +156,13 @@ def test_peau_de_pierre_fait_monter_la_defense():
     assert hits[0] == 200 and hits[1] == 199 and min(hits) == 300 - 120   # DEF +20 % max
 
 
-def test_epines_renvoient_des_degats():
-    res = fight([member(speed=1, defense=200)], mob(speed=100, attack=300),
+def test_epines_augmentent_le_contrecoup_de_dix_pour_cent():
+    # DEF 325 contre ATK 300 : 325 − 75 % × 300 = 100 de contrecoup, 110 avec Épines.
+    plain = fight([member(speed=1, defense=325)], mob(speed=100, attack=300), max_turns=3)
+    assert "🔁 100 en contrecoup" in logs(plain)
+    res = fight([member(speed=1, defense=325)], mob(speed=100, attack=300),
                 {1: gear("thorns")}, max_turns=3)
-    assert "🌵 20 renvoyés" in logs(res) and dealt(res) >= 20
+    assert "🔁 110 en contrecoup" in logs(res) and dealt(res) >= 110
 
 
 def test_riposte_environ_dix_pour_cent():

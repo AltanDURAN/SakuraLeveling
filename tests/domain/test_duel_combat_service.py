@@ -84,8 +84,9 @@ def test_duel_respects_max_turns_cap():
     service = DuelCombatService()
 
     # Hp_regeneration > attack ⇒ aucun ne meurt
-    immortal_a = _stats(max_hp=500, attack=1, defense=100, speed=5, regen=999)
-    immortal_b = _stats(max_hp=500, attack=1, defense=100, speed=5, regen=999)
+    # 1 dégât par coup (plancher) et DEF 0 : pas de contrecoup, personne ne tombe.
+    immortal_a = _stats(max_hp=500, attack=1, defense=0, speed=5, regen=999)
+    immortal_b = _stats(max_hp=500, attack=1, defense=0, speed=5, regen=999)
 
     result = service.fight_player_vs_player(a_stats=immortal_a, b_stats=immortal_b)
 

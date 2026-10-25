@@ -29,7 +29,7 @@ class SkillBonuses:
     crit_chance_flat: int = 0
     crit_damage_flat: int = 0
     dodge_flat: int = 0
-    speed_flat: int = 0
+    speed_flat: float = 0  # 0,5 par case de vitesse : tronquée sur la stat finale
     hp_regeneration_flat: int = 0
     mana_max_flat: int = 0
     mana_regeneration_flat: int = 0
@@ -39,6 +39,9 @@ class SkillBonuses:
     # Multiplicateurs de critique (Assassin) appliqués à la stat FINALE.
     crit_chance_multiplier: float = 1.0
     crit_damage_multiplier: float = 1.0
+    # Garde offensive (classe Rempart) : ajoute X × la DÉFENSE finale à
+    # l'attaque (1.0 = 100 %), appliquée par StatsService en dernier.
+    defense_to_attack_percent: float = 0.0
 
     @classmethod
     def empty(cls) -> "SkillBonuses":
@@ -61,7 +64,7 @@ class SkillBonuses:
         new_crit_chance = stats.crit_chance + self.crit_chance_flat
         new_crit_damage = stats.crit_damage + self.crit_damage_flat
         new_dodge = stats.dodge + self.dodge_flat
-        new_speed = stats.speed + self.speed_flat
+        new_speed = int(stats.speed + self.speed_flat)
         new_hp_regen = stats.hp_regeneration + self.hp_regeneration_flat
         new_mana_max = stats.mana_max + self.mana_max_flat
         new_mana_regen = stats.mana_regeneration + self.mana_regeneration_flat

@@ -10,7 +10,7 @@ Feuilles :
     ⚙️ Calibrage   — constantes du score de puissance (NE PAS supprimer)
     🎽 Équipements — TOUS les équipements en une feuille filtrable + power live
     👹 Mobs        — power score + rang calculés en direct (formules)
-    🧪 Consommables, 📦 Ressources, 🛠️ Recettes, 🏪 Shop,
+    🧪 Consommables, 📦 Ressources, 🏪 Shop,
     🌳 Skill Tree, 🏷️ Titres, 🐉 World Bosses
 
 XLSX = importable direct dans Google Sheets (Fichier > Importer).
@@ -346,25 +346,6 @@ def write_resources_sheet(wb: Workbook) -> None:
 
 
 # ----------------------------------------------------------- autres ----------
-def write_crafts_sheet(wb: Workbook) -> None:
-    crafts = _load("crafts.json")
-    items = {i["code"]: i for i in _load("items.json")}
-    ws = wb.create_sheet("🛠️ Recettes")
-    ws.append(["Code recette", "Nom", "Résultat (item)", "Catégorie résultat",
-               "Slot résultat", "Quantité produite", "Ingrédients"])
-    for r in crafts:
-        result = items.get(r["result_item_code"])
-        ws.append([
-            r["code"], r["name"], r["result_item_code"],
-            (result or {}).get("category", "?"),
-            (result or {}).get("equipment_slot") or "—",
-            r.get("result_quantity", 1),
-            "\n".join(f"{ing['item_code']} ×{ing['quantity']}"
-                      for ing in r.get("ingredients", [])),
-        ])
-    _finalize(ws, freeze="B2")
-
-
 def write_shop_sheet(wb: Workbook) -> None:
     try:
         shop = _load("shop_items.json")
@@ -486,7 +467,6 @@ def write_summary_sheet(wb: Workbook) -> None:
          "porte et son passif. Power calculé au niveau 30."),
         ("👹 Mobs", "Monstres : stats, drops, Power & Rang calculés en direct."),
         ("🧪 Consommables / 📦 Ressources", "Potions et ressources de craft."),
-        ("🛠️ Recettes", "Recettes (vide : la fabrication a été remplacée par la fusion)."),
         ("🏪 Shop", "Prix d'achat / vente du shop."),
         ("🌳 Skill Tree", "Tous les nœuds de l'arbre."),
         ("🏷️ Titres", "Titres, conditions et effets."),
@@ -533,7 +513,6 @@ def main() -> None:
     write_mobs_sheet(wb)
     write_consumables_sheet(wb)
     write_resources_sheet(wb)
-    write_crafts_sheet(wb)
     write_shop_sheet(wb)
     write_skill_tree_sheet(wb)
     write_titles_sheet(wb)

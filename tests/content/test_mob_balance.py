@@ -5,7 +5,9 @@ Invariants de progression (audit d'octobre 2026) :
     il perdait 100 % de ses combats, même contre un slime ;
   • chaque monstre est battu en solo par le joueur de référence de son palier.
     Les « blindés » duraient ~95 actions : l'escalade (action 50) les rendait
-    imbattables, même à leur propre niveau.
+    imbattables, même à leur propre niveau ;
+  • chaque ÉLITE DE GROUPE (25/10/2026) est battue par le trio DPS + Tank +
+    Support de son niveau, capacités comprises, mais pas par un DPS seul.
 """
 
 import json
@@ -16,22 +18,27 @@ from pathlib import Path
 import pytest
 
 from app.domain.entities.mob_definition import MobDefinition
+from app.domain.services.mob_ability_service import GROUP_ELITES, get_mob_abilities, is_group_elite
 from app.domain.services.party_combat_service import PartyCombatService
 from app.domain.services.reference_player import reference_stats
 _ROOT = Path(__file__).resolve().parents[2]
 
 
-def _load_assign() -> dict:
+def _load(name: str):
     # Chargé par son chemin : le dossier tests/scripts masque le paquet `scripts`.
     import importlib.util
 
-    spec = importlib.util.spec_from_file_location("restat_mobs", _ROOT / "scripts/restat_mobs.py")
+    import sys
+
+    spec = importlib.util.spec_from_file_location(name, _ROOT / f"scripts/{name}.py")
     module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module   # requis par les dataclasses du module
     spec.loader.exec_module(module)
-    return module.ASSIGN
+    return module
 
 
-ASSIGN = _load_assign()
+ASSIGN = _load("restat_mobs").ASSIGN
+ROLES = _load("reference_roles")
 
 MOBS = {
     m["code"]: m
@@ -75,9 +82,19 @@ def test_un_compte_neuf_bat_le_premier_monstre():
     assert _win_rate(naked, _mob(first)) >= 0.9
 
 
-@pytest.mark.parametrize("code", sorted(c for c in ASSIGN if c in MOBS))
+@pytest.mark.parametrize("code", sorted(c for c in ASSIGN if c in MOBS and not is_group_elite(c)))
 def test_chaque_monstre_est_battu_a_son_palier(code):
     level, archetype = ASSIGN[code]
     assert _win_rate(reference_stats(level), _mob(code)) >= 0.8, (
         f"{code} ({archetype}, palier {level}) imbattable par le joueur de référence"
     )
+
+
+@pytest.mark.parametrize("code", sorted(GROUP_ELITES))
+def test_chaque_elite_est_battue_par_le_trio_mais_pas_en_solo(code):
+    level, _ = ASSIGN[code]
+    mob, abilities = _mob(code), get_mob_abilities(code)
+    trio = ROLES.fight("DTS", level, mob, abilities, n=10)
+    assert trio["win"] >= 0.9, f"{code} : le trio de son niveau ne gagne que {trio['win']:.0%}"
+    solo = ROLES.fight("D", level, mob, abilities, n=10)
+    assert solo["win"] <= 0.2, f"{code} : un DPS seul gagne {solo['win']:.0%} — ce n'est pas une élite"

@@ -29,7 +29,8 @@ def _boss(speed=10) -> MobDefinition:
 
 
 def _party():
-    stats = Stats(max_hp=10_000, attack=1, defense=1_000, speed=10, crit_chance=0,
+    # DEF 0 : aucun contrecoup ne vient entamer le boss (seul son soin compte).
+    stats = Stats(max_hp=10_000, attack=1, defense=0, speed=10, crit_chance=0,
                   crit_damage=100, dodge=0, hp_regeneration=0, mana_max=0, mana_regeneration=0)
     return [{"player_id": 1, "user_id": 1, "name": "p", "avatar_url": "", "stats": stats,
              "current_hp": stats.max_hp, "max_hp": stats.max_hp,

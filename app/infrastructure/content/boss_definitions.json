@@ -7,8 +7,8 @@
     "tier": "intro",
     "spawn_weight": 100,
     "element": "eau",
-    "max_hp": 5000,
-    "attack": 55,
+    "max_hp": 32000,
+    "attack": 111,
     "defense": 9,
     "speed": 8,
     "crit_chance": 0,
@@ -16,7 +16,7 @@
     "dodge": 0,
     "modifiers": {
       "damage_immunity_threshold": 6,
-      "auto_heal_per_turn": 11
+      "auto_heal_per_turn": 42
     },
     "lore": "Premier obstacle des aventuriers ambitieux. Élément Eau (faible à plante/foudre… ici : plante/terre/glace). Se régénère un peu chaque tour : il faut le tuer assez vite.",
     "loot_table": []
@@ -29,8 +29,8 @@
     "tier": "medium",
     "spawn_weight": 8,
     "element": "feu",
-    "max_hp": 10000,
-    "attack": 113,
+    "max_hp": 30000,
+    "attack": 226,
     "defense": 17,
     "speed": 12,
     "crit_chance": 5,
@@ -40,7 +40,7 @@
       "enrage_below_pct": 30,
       "enrage_attack_multiplier": 1.5,
       "adds": {
-        "attack": 79,
+        "attack": 158,
         "summon_turn_interval": 4,
         "max_active": 3
       }
@@ -56,8 +56,8 @@
     "tier": "medium_hard",
     "spawn_weight": 3,
     "element": "terre",
-    "max_hp": 21000,
-    "attack": 183,
+    "max_hp": 535000,
+    "attack": 366,
     "defense": 25,
     "speed": 5,
     "crit_chance": 0,
@@ -78,8 +78,8 @@
     "tier": "hard",
     "spawn_weight": 2,
     "element": "tenebre",
-    "max_hp": 13000,
-    "attack": 245,
+    "max_hp": 176000,
+    "attack": 490,
     "defense": 32,
     "speed": 18,
     "crit_chance": 10,
@@ -109,8 +109,8 @@
     "tier": "endgame",
     "spawn_weight": 1,
     "element": "lumiere",
-    "max_hp": 15000,
-    "attack": 303,
+    "max_hp": 113000,
+    "attack": 606,
     "defense": 39,
     "speed": 15,
     "crit_chance": 25,
@@ -120,10 +120,10 @@
       "damage_immunity_threshold": 44,
       "enrage_below_pct": 25,
       "enrage_attack_multiplier": 1.8,
-      "auto_heal_per_turn": 19,
+      "auto_heal_per_turn": 177,
       "reflect_pct": 20,
       "adds": {
-        "attack": 182,
+        "attack": 364,
         "summon_turn_interval": 5,
         "max_active": 2
       },

@@ -24,6 +24,11 @@ from dataclasses import dataclass, field
 #: Le Soigneur le double (`heal_power_multiplier`).
 BASE_HEAL_PCT = 50
 
+#: Le sort de soin ne vise qu'un allié sous ce % de ses PV ; sinon le Soigneur
+#: attaque. Avant (25/10/2026), il soignait dès qu'il manquait 1 PV : seul, il
+#: ne frappait presque jamais (0 % de victoires en solo).
+HEAL_BELOW_PCT = 50
+
 #: Plafond technique des réductions de dégâts cumulées. L'auteur veut être
 #: prévenu au-delà de 25 % (alerte du builder) ; au-delà de 80 % un combat
 #: n'aurait plus de sens.
@@ -39,9 +44,9 @@ MAGE_AFFINITY_TIERS: tuple[tuple[int, float], ...] = ((100, 5.0), (50, 2.0), (25
 #: pendant le combat. Elle décide aujourd'hui de la cible du sort de soin ;
 #: d'autres comportements pourront s'y brancher.
 TACTICS: dict[str, tuple[str, str]] = {
-    "egoiste": ("Égoïste", "Se soigne d'abord ; s'il est au maximum, soigne l'allié le plus blessé."),
-    "pragmatique": ("Pragmatique", "Soigne en priorité celui qui encaisse le plus de dégâts."),
-    "all_in": ("All-in", "Soigne en priorité celui qui inflige le plus de dégâts."),
+    "egoiste": ("Égoïste", "Se soigne d'abord s'il est sous 50 % de ses PV ; sinon, l'allié le plus blessé."),
+    "pragmatique": ("Pragmatique", "Parmi les alliés sous 50 % de PV, soigne celui qui encaisse le plus."),
+    "all_in": ("All-in", "Parmi les alliés sous 50 % de PV, soigne celui qui inflige le plus de dégâts."),
 }
 DEFAULT_TACTIC = "egoiste"
 
@@ -74,6 +79,7 @@ class CombatPassives:
     lifesteal_pct: float = 0.0             # Vampire : se soigne de X % des dégâts infligés
     heal_received_pct: float = 0.0         # Paladin : soins reçus +X %
     healer: bool = False                   # Soigneur : le sort de soin remplace l'attaque
+    team_damage_pct: float = 0.0           # Soigneur : aura, +X % de dégâts à toute l'équipe
     heal_power_multiplier: float = 1.0     # Soigneur : ×2 sur les soins donnés
     heal_buff_pct: float = 0.0             # Buff : un soin donne +X % ATK/DEF (cible + soi)
     speed_per_ally: int = 0                # Soigneur : +1 vitesse par allié présent

@@ -73,8 +73,9 @@ def test_enrage_and_phase_stack():
 def test_immunity_threshold_ignores_weak_hits():
     svc = PartyCombatService()
     # joueur tape 90 net ; seuil 100 → coup ignoré, le boss ne perd rien.
+    # DEF 0 : pas de contrecoup (la DEF du joueur dépasserait l'ATK 1 du boss).
     res = svc.fight_party_vs_mob(
-        _party(attack=100), _mob(10_000_000, 1, 10),
+        _party(attack=100, defense=0), _mob(10_000_000, 1, 10),
         damage_immunity_threshold=100, max_turns=50,
     )
     assert res.contributions[0].damage_dealt == 0

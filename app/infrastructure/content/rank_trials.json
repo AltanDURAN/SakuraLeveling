@@ -8,7 +8,7 @@
       "guardian": {
         "name": "Sentinelle Ébréchée",
         "lore": "Une armure vide qui refuse de tomber.",
-        "max_hp": 283,
+        "max_hp": 271,
         "attack": 19,
         "defense": 6,
         "speed": 8,
@@ -20,16 +20,16 @@
         "joueur_ref_atk": 19,
         "joueur_ref_def": 14,
         "joueur_ref_pv": 351,
-        "taux_victoire": 0.672
+        "taux_victoire": 0.652
       }
     },
     {
       "rank": "D",
-      "required_power": 1120,
+      "required_power": 1130,
       "guardian": {
         "name": "Veilleur de Cendres",
         "lore": "Il garde la porte depuis que la cendre est chaude.",
-        "max_hp": 459,
+        "max_hp": 592,
         "attack": 32,
         "defense": 11,
         "speed": 8,
@@ -41,16 +41,16 @@
         "joueur_ref_atk": 32,
         "joueur_ref_def": 27,
         "joueur_ref_pv": 691,
-        "taux_victoire": 0.672
+        "taux_victoire": 0.652
       }
     },
     {
       "rank": "C",
-      "required_power": 2422,
+      "required_power": 2468,
       "guardian": {
         "name": "Colosse d'Ossements",
         "lore": "Chaque os qu'il porte fut un candidat.",
-        "max_hp": 657,
+        "max_hp": 978,
         "attack": 46,
         "defense": 15,
         "speed": 8,
@@ -62,16 +62,16 @@
         "joueur_ref_atk": 45,
         "joueur_ref_def": 41,
         "joueur_ref_pv": 1076,
-        "taux_victoire": 0.672
+        "taux_victoire": 0.655
       }
     },
     {
       "rank": "B",
-      "required_power": 4375,
+      "required_power": 4500,
       "guardian": {
         "name": "Héraut du Silence",
         "lore": "Il ne parle pas. Il n'a jamais eu besoin.",
-        "max_hp": 852,
+        "max_hp": 1401,
         "attack": 61,
         "defense": 20,
         "speed": 8,
@@ -83,16 +83,16 @@
         "joueur_ref_atk": 59,
         "joueur_ref_def": 56,
         "joueur_ref_pv": 1494,
-        "taux_victoire": 0.672
+        "taux_victoire": 0.66
       }
     },
     {
       "rank": "A",
-      "required_power": 7476,
+      "required_power": 7689,
       "guardian": {
         "name": "Juge de Fer",
         "lore": "Il pèse ta force et rend son verdict en coups.",
-        "max_hp": 1069,
+        "max_hp": 1826,
         "attack": 80,
         "defense": 26,
         "speed": 8,
@@ -104,16 +104,16 @@
         "joueur_ref_atk": 75,
         "joueur_ref_def": 75,
         "joueur_ref_pv": 2015,
-        "taux_victoire": 0.672
+        "taux_victoire": 0.66
       }
     },
     {
       "rank": "S",
-      "required_power": 10223,
+      "required_power": 10516,
       "guardian": {
         "name": "Archonte Déchu",
         "lore": "Il a tenu ce rang. Il te fera mériter le tien.",
-        "max_hp": 1245,
+        "max_hp": 2139,
         "attack": 93,
         "defense": 30,
         "speed": 8,
@@ -125,16 +125,16 @@
         "joueur_ref_atk": 87,
         "joueur_ref_def": 88,
         "joueur_ref_pv": 2386,
-        "taux_victoire": 0.672
+        "taux_victoire": 0.66
       }
     },
     {
       "rank": "SS",
-      "required_power": 13506,
+      "required_power": 13892,
       "guardian": {
         "name": "Effigie du Vide",
         "lore": "Ce qui reste quand un rang a été arraché.",
-        "max_hp": 1421,
+        "max_hp": 2480,
         "attack": 107,
         "defense": 34,
         "speed": 8,
@@ -146,16 +146,16 @@
         "joueur_ref_atk": 99,
         "joueur_ref_def": 102,
         "joueur_ref_pv": 2774,
-        "taux_victoire": 0.672
+        "taux_victoire": 0.652
       }
     },
     {
       "rank": "SSS",
-      "required_power": 17086,
+      "required_power": 17574,
       "guardian": {
         "name": "Le Dernier Gardien",
         "lore": "Au-delà, il n'y a plus personne pour t'arrêter.",
-        "max_hp": 1594,
+        "max_hp": 2794,
         "attack": 120,
         "defense": 38,
         "speed": 8,
@@ -167,7 +167,7 @@
         "joueur_ref_atk": 111,
         "joueur_ref_def": 115,
         "joueur_ref_pv": 3132,
-        "taux_victoire": 0.672
+        "taux_victoire": 0.652
       }
     }
   ]

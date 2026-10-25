@@ -48,15 +48,15 @@ def test_mage_sans_infusion_pas_de_bonus():
 
 # ------------------------------------------------------- dégâts et défense --
 def test_titan_et_lethal_augmentent_les_degats():
-    mob = build_mob(current_hp=100_000, max_hp=100_000, attack=0, defense=40, speed=1)
+    mob = build_mob(current_hp=100_000, max_hp=100_000, attack=0, defense=30, speed=1)
     base = PartyCombatService().fight_party_vs_mob([_member(1)], mob, max_turns=3)
     boosted = PartyCombatService().fight_party_vs_mob(
         [_member(1)], mob, max_turns=3,
         passives_by_player={1: CombatPassives(damage_dealt_pct=5, armor_penetration_pct=10)},
     )
-    # Base : 50 − 40 = 10 par coup. Léthal : défense 36 → 14 ; Titan ×1,05 → 15.
-    assert _contrib(base, 1).damage_dealt == 30
-    assert _contrib(boosted, 1).damage_dealt == 45
+    # Base : 50 − 30 = 20 par coup. Léthal : défense 27 → 23 ; Titan ×1,05 → 24.
+    assert _contrib(base, 1).damage_dealt == 60
+    assert _contrib(boosted, 1).damage_dealt == 72
 
 
 def test_reduction_des_degats_recus_s_additionne():
@@ -163,13 +163,13 @@ def test_soigneur_remplace_son_attaque_par_un_soin():
 
 def test_soigneur_egoiste_se_soigne_d_abord():
     mob = build_mob(current_hp=10**9, max_hp=10**9, attack=0, defense=0, speed=1)
-    party = [_member(1, _stats(atk=100, speed=100), hp=600), _member(2, _stats(atk=1, speed=1), hp=100)]
+    party = [_member(1, _stats(atk=100, speed=100), hp=400), _member(2, _stats(atk=1, speed=1), hp=100)]
     result = PartyCombatService().fight_party_vs_mob(
         party, mob, max_turns=1,
         passives_by_player={1: CombatPassives(healer=True, heal_power_multiplier=2)},
         tactics_by_player={1: "egoiste"},
     )
-    assert _contrib(result, 1).final_hp == 700
+    assert _contrib(result, 1).final_hp == 500
     assert _contrib(result, 1).hp_healed == 0  # se soigner ne compte pas
 
 
@@ -290,13 +290,13 @@ def test_reset_de_l_arbre_disponible_lundi_suivant_heure_de_paris():
     assert nxt.astimezone(paris) == datetime(2026, 10, 26, 0, 0, tzinfo=paris)
 
 
-def test_escalade_cumulee_tous_les_dix_tours():
+def test_escalade_cumulee_toutes_les_cinq_actions_du_monstre():
     from app.domain.services.party_combat_service import escalation_multiplier
 
-    assert escalation_multiplier(49) == 1.0
-    assert escalation_multiplier(50) == pytest.approx(1.1)
-    assert escalation_multiplier(60) == pytest.approx(1.1 * 1.2)
-    assert escalation_multiplier(75) == pytest.approx(1.1 * 1.2 * 1.3)
+    assert escalation_multiplier(29) == 1.0
+    assert escalation_multiplier(30) == pytest.approx(1.1)
+    assert escalation_multiplier(35) == pytest.approx(1.1 * 1.2)
+    assert escalation_multiplier(44) == pytest.approx(1.1 * 1.2 * 1.3)
 
 
 def test_le_monstre_se_renforce_et_finit_le_combat_des_soigneurs():

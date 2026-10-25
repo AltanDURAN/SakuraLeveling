@@ -25,6 +25,7 @@ _EFFECT_FIELD_MAP: dict[str, str] = {
     "xp_drop_percent": "xp_drop_percent",
     "gold_drop_percent": "gold_drop_percent",
     "drop_rate_multiplier": "drop_rate_multiplier",
+    "defense_to_attack_percent": "defense_to_attack_percent",
 }
 
 # Plafonds anti-explosion (règle d'équilibrage V2). Les % de stat ne peuvent
@@ -45,6 +46,7 @@ _PASSIVE_PCT_FIELDS: dict[str, str] = {
     "heal_received_percent": "heal_received_pct",
     "heal_buff_percent": "heal_buff_pct",
     "speed_per_ally": "speed_per_ally",
+    "team_damage_percent": "team_damage_pct",
 }
 _PASSIVE_FLAGS: dict[str, str] = {
     "last_stand": "last_stand",
@@ -84,6 +86,7 @@ class SkillTreeService:
         xp_drop_percent = 0.0
         gold_drop_percent = 0.0
         drop_rate_multiplier = 1.0
+        defense_to_attack_percent = 0.0
 
         # Niveaux EFFECTIFS : une case de départ est acquise d'office, ses
         # effets s'appliquent donc sans qu'on y ait investi quoi que ce soit.
@@ -131,7 +134,9 @@ class SkillTreeService:
                     case "dodge_flat":
                         dodge_flat += int(cumulative)
                     case "speed_flat":
-                        speed_flat += int(cumulative)
+                        # Demi-points possibles (0,5 par case) : la vitesse
+                        # FINALE est tronquée par StatsService.
+                        speed_flat += float(cumulative)
                     case "hp_regeneration_flat":
                         hp_regeneration_flat += int(cumulative)
                     case "mana_max_flat":
@@ -147,6 +152,8 @@ class SkillTreeService:
                         # est appliqué de manière multiplicative au taux de base.
                         # +5% de chance = drop_rate_multiplier = 1.05.
                         drop_rate_multiplier += cumulative / 100.0
+                    case "defense_to_attack_percent":
+                        defense_to_attack_percent += cumulative / 100.0
 
         # Multiplicateurs de critique (Assassin) : ils MULTIPLIENT la stat
         # finale (appliqués par StatsService après les caps).
@@ -186,6 +193,7 @@ class SkillTreeService:
             drop_rate_multiplier=drop_rate_multiplier,
             crit_chance_multiplier=crit_chance_multiplier,
             crit_damage_multiplier=crit_damage_multiplier,
+            defense_to_attack_percent=defense_to_attack_percent,
         )
 
     # ---------- Passifs de combat, classes, fonctionnalités ----------

@@ -85,6 +85,8 @@ EFFECT_CATALOGUE: list[dict] = [
             {"type": "speed_per_ally", "label": "Vitesse par allié présent", "unit": "pts"},
             {"type": "crit_chance_multiplier", "label": "Chances de critique", "unit": "×"},
             {"type": "crit_damage_multiplier", "label": "Dégâts critiques", "unit": "×"},
+            {"type": "team_damage_percent", "label": "Aura : dégâts de toute l'équipe (une seule par équipe)", "unit": "%"},
+            {"type": "defense_to_attack_percent", "label": "Ajoute sa défense à son attaque", "unit": "%"},
             {"type": "last_stand", "label": "Survit au 1er coup fatal (1 = oui)", "unit": "drapeau"},
             {"type": "healer_spell", "label": "Sort de soin à la place de l'attaque (1 = oui)", "unit": "drapeau"},
             {"type": "mage_affinity_bonus", "label": "Bonus du Mage selon l'affinité (1 = oui)", "unit": "drapeau"},

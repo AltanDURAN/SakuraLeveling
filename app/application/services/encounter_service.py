@@ -11,7 +11,11 @@ from app.application.use_cases.weekly_quests import WeeklyQuestProgressService
 from app.domain.services.health_regeneration_service import HealthRegenerationService
 from app.domain.services.title_bonus_service import TitleBonusService
 from app.domain.services.loot_service import LootService
-from app.domain.services.mob_ability_service import get_mob_abilities
+from app.domain.services.mob_ability_service import (
+    ELITE_LABEL,
+    get_mob_abilities,
+    is_group_elite,
+)
 from app.infrastructure.loot.family_drop_loader import get_family_drops
 from app.domain.services.party_combat_service import PartyCombatService
 from app.domain.services.power_score_service import PowerScoreService
@@ -193,6 +197,8 @@ class EncounterService:
                 f"⚠️ **Risqué** : {mob.name} est plus puissant que toi "
                 f"({power.format_score(mob_power)} contre {power.format_score(player_power)})."
             )
+        if is_group_elite(getattr(mob, "code", None)):
+            notes.append(ELITE_LABEL)
         if stats.max_hp and current_hp < 0.3 * stats.max_hp:
             notes.append(f"❤️ Attention, il ne te reste que **{current_hp} / {stats.max_hp}** PV.")
         return ("\n" + "\n".join(notes)) if notes else ""

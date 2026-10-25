@@ -9,8 +9,14 @@ Invariant non négociable : la DÉFENSE d'un mob ne doit jamais approcher
 l'ATTAQUE du joueur. Le combat est soustractif — au-delà, chaque coup tombe au
 plancher de 1 dégât et le mob devient increvable.
 
-Usage : .venv/bin/python -m scripts.restat_mobs [--write] [--zones-v2]
-(--zones-v2 : recalage des familles existantes, à l'ouverture des zones C → S)
+ÉLITES DE GROUPE (`GROUP_ELITES`, le plus fort de chaque famille) : stats du
+standard de leur palier × `ELITE_MULT`, MESURÉ sur le trio DPS + Tank +
+Support de leur niveau (`scripts/reference_roles.py`), capacités comprises.
+
+Usage : .venv/bin/python -m scripts.restat_mobs [--write] [--zones-v2] [--calibrate-elites]
+(--zones-v2 : recalage des familles existantes, à l'ouverture des zones C → S ;
+ --calibrate-elites : remesure `ELITE_MULT` — à relancer après tout changement
+ du moteur, de l'arbre ou des niveaux, puis recopier le résultat ici)
 """
 
 from __future__ import annotations
@@ -19,7 +25,7 @@ import json
 import sys
 from pathlib import Path
 
-from app.domain.services.reference_player import reference_stats
+from app.domain.services.reference_player import BASE_SPEED, expected_speed, reference_stats
 
 P = Path(__file__).resolve().parents[1] / "app/infrastructure/content/mobs.json"
 
@@ -38,7 +44,33 @@ def standard(L: float) -> tuple[float, float, float]:
     return mhp, matk, mdef
 
 
-def restat(L: float, arch: str) -> dict:
+#: Élites de groupe : (×PV, ×ATK) sur le monstre de leur palier. Le plus dur
+#: que le trio de leur niveau gagne encore à ≥ 90 % sans mort, capacités
+#: comprises — MESURÉ par `--calibrate-elites`, ne pas éditer à la main.
+ELITE_MULT: dict[str, tuple[float, float]] = {
+    "gobelin_superieur": (4, 4),
+    "liche_maudite": (18, 1.5),
+    "aigle_tempete": (12, 1.5),
+    "comtesse_ecarlate": (18, 4),
+    "dragon_ancien": (12, 1.5),
+    "archidemon": (18, 4),
+    "avatar_du_neant": (18, 2),
+}
+
+#: Une élite rapporte 3× l'XP (à chacun) et l'or (pool partagé) d'un monstre
+#: de son palier : un groupe de 3 y passe environ trois fois plus de temps.
+ELITE_REWARD_MULT = 3
+
+#: Grilles de la calibration des élites, et critère du trio.
+ELITE_HP_GRID = (0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 18, 26)
+ELITE_ATK_GRID = (0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8)
+ELITE_MIN_WIN = 0.95      # marge : le trio de calibrage est un build bien construit
+ELITE_MAX_DEATHS = 0.2
+ELITE_MIN_ACTIONS = 30    # un vrai combat, pas un éclair
+ELITE_MAX_ACTIONS = 90    # ~2 min d'animation (1,5 s par action)
+
+
+def restat(L: float, arch: str, code: str | None = None) -> dict:
     hp, atk, deff = standard(L)
     spd, cc, cd, dodge = 5, 0, 100, 0
     if arch == "brute":          # tape fort, fragile
@@ -52,11 +84,93 @@ def restat(L: float, arch: str) -> dict:
         hp *= 0.9; atk *= 0.7
     elif arch == "rapide":       # agit souvent, bursty, fragile
         atk *= 0.9; deff *= 0.8; hp *= 0.6; spd = 9; cc = 20; cd = 150
+    # La vitesse suit celle attendue des joueurs du palier (cases de l'arbre).
+    spd = round(spd * expected_speed(int(L)) / BASE_SPEED)
+    reward = 1
+    if code in ELITE_MULT:
+        hp_x, atk_x = ELITE_MULT[code]
+        hp *= hp_x; atk *= atk_x
+        reward = ELITE_REWARD_MULT
     return {
         "max_hp": round(hp), "attack": round(atk), "defense": round(deff),
         "speed": spd, "crit_chance": cc, "crit_damage": cd, "dodge": dodge,
-        "xp_reward": round(XP_PER_LEVEL * L), "gold_reward": round(GOLD_PER_LEVEL * L),
+        "xp_reward": round(XP_PER_LEVEL * L * reward),
+        "gold_reward": round(GOLD_PER_LEVEL * L * reward),
     }
+
+
+def as_mob(code: str, stats: dict):
+    """dict de stats → MobDefinition (pour les simulations)."""
+    from datetime import UTC, datetime
+
+    from app.domain.entities.mob_definition import MobDefinition
+
+    now = datetime.now(UTC)
+    return MobDefinition(
+        id=0, code=code, name=code, description="", image_name="", family="",
+        max_hp=stats["max_hp"], current_hp=stats["max_hp"], attack=stats["attack"],
+        defense=stats["defense"], speed=stats["speed"], crit_chance=stats["crit_chance"],
+        crit_damage=stats["crit_damage"], dodge=stats["dodge"], hp_regeneration=0,
+        xp_reward=0, gold_reward=0, spawn_weight=1, loot_table=None,
+        created_at=now, updated_at=now, element="")
+
+
+def _calibrate_one(code: str):
+    """(code, ×PV, ×ATK, ligne de rapport) — le plus dur que le trio gagne encore."""
+    from app.domain.services.mob_ability_service import get_mob_abilities
+    from scripts.reference_roles import fight
+
+    L, arch = ASSIGN[code]
+    base = restat(L, arch)
+    abilities = get_mob_abilities(code)
+
+    def mob_at(hp_x, atk_x):
+        return as_mob(code, {**base, "max_hp": round(base["max_hp"] * hp_x),
+                             "attack": round(base["attack"] * atk_x)})
+
+    # Parmi les réglages que le trio gagne (≥ 95 %, sans mort, 30 à 90
+    # actions), celui où son avance sur trois DPS est la plus grande ; à
+    # égalité, le plus dur. Choisir « le plus dur » seul donnait parfois un
+    # combat éclair gagné par la force brute (ex. frappe de zone ×6 ATK).
+    best = None
+    for atk_x in ELITE_ATK_GRID:
+        for hp_x in ELITE_HP_GRID:
+            mob = mob_at(hp_x, atk_x)
+            v = fight("DTS", L, mob, abilities, n=20)
+            if not (v["win"] >= ELITE_MIN_WIN and v["deaths"] <= ELITE_MAX_DEATHS
+                    and ELITE_MIN_ACTIONS <= v["actions"] <= ELITE_MAX_ACTIONS):
+                continue
+            ddd = fight("DDD", L, mob, abilities, n=20)
+            key = (round(v["win"] - ddd["win"], 2), hp_x * atk_x, atk_x)
+            if best is None or key > best[0]:
+                best = (key, hp_x, atk_x)
+    if best is None:
+        return code, None, None, f"⚠️  {code} : le trio ne gagne même pas à ×0,5 — capacité à revoir"
+    _, hp_x, atk_x = best
+    mob = mob_at(hp_x, atk_x)
+    cells = {c: fight(c, L, mob, abilities, n=30) for c in ("DTS", "DDD", "DDT", "DDS", "DTT", "TTS", "D")}
+    line = " ".join(f"{c} {v['win'] * 100:3.0f}%/{v['deaths']:.1f}m" for c, v in cells.items())
+    line += f" | {cells['DTS']['actions']:.0f} actions"
+    return code, hp_x, atk_x, f"{code:22s} niv {L:>3} ×PV {hp_x:<4} ×ATK {atk_x:<4} | {line}"
+
+
+def calibrate_elites() -> dict[str, tuple[float, float]]:
+    """Pour chaque élite : le (×PV, ×ATK) que le trio DPS + Tank + Support de
+    son niveau gagne à ≥ 95 % sans mort, là où il devance le plus trois DPS."""
+    import multiprocessing
+
+    from app.domain.services.mob_ability_service import GROUP_ELITES
+
+    codes = sorted(GROUP_ELITES, key=lambda c: ASSIGN[c][0])
+    with multiprocessing.Pool(min(len(codes), multiprocessing.cpu_count())) as pool:
+        results = pool.map(_calibrate_one, codes)
+    out: dict[str, tuple[float, float]] = {}
+    print("Victoires / morts moyennes par composition (D = DPS seul) :")
+    for code, hp_x, atk_x, line in results:
+        print(line)
+        if hp_x is not None:
+            out[code] = (hp_x, atk_x)
+    return out
 
 
 # (niveau-palier, archétype) par mob.
@@ -146,13 +260,20 @@ def main() -> None:
     if "--zones-v2" in sys.argv:
         for code, level in ZONES_V2_LEVELS.items():
             ASSIGN[code] = (level, ASSIGN[code][1])
+    if "--calibrate-elites" in sys.argv:
+        mult = calibrate_elites()
+        print("\nELITE_MULT = {")
+        for code, (hp_x, atk_x) in mult.items():
+            print(f'    "{code}": ({hp_x}, {atk_x}),')
+        print("}\n(à recopier dans scripts/restat_mobs.py, puis relancer avec --write)")
+        return
     mobs = json.load(open(P, encoding="utf-8"))
     for m in mobs:
         a = ASSIGN.get(m["code"])
         if not a:
             continue
         L, arch = a
-        s = restat(L, arch)
+        s = restat(L, arch, m["code"])
         m.update(s)
         m["current_hp"] = s["max_hp"]
 

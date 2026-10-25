@@ -95,14 +95,35 @@ MOB_ABILITY_SUMMARY: dict[str, str] = {
 }
 
 
+#: ÉLITES DE GROUPE — le monstre le plus fort de chaque famille. Calibrées sur
+#: le TRIO DPS + Tank + Support de leur niveau, capacités comprises
+#: (`scripts/restat_mobs.py --calibrate-elites`) : seul, on y meurt ; sans
+#: tank ni soigneur, on y souffre. Décidé avec l'auteur le 25/10/2026 : c'est
+#: le contenu qui fait exister les rôles (un monstre qui ne menace personne ne
+#: récompense que les dégâts).
+GROUP_ELITES: frozenset[str] = frozenset({
+    "gobelin_superieur", "liche_maudite", "archidemon",
+    "aigle_tempete", "comtesse_ecarlate", "dragon_ancien", "avatar_du_neant",
+})
+ELITE_LABEL = "👑 Élite de groupe — prévue pour un DPS, un tank et un soigneur."
+
+
+def is_group_elite(mob_code: str | None) -> bool:
+    return (mob_code or "") in GROUP_ELITES
+
+
 def get_mob_abilities(mob_code: str | None) -> dict:
     """Capacités spéciales du monstre (dict vide si aucune)."""
     return dict(MOB_ABILITIES.get(mob_code or "", {}))
 
 
 def get_mob_ability_summary(mob_code: str | None) -> str | None:
-    """Résumé FR de la spécialité du monstre, ou None s'il n'en a pas."""
-    return MOB_ABILITY_SUMMARY.get(mob_code or "")
+    """Résumé FR de la spécialité du monstre (élite de groupe signalée en
+    tête), ou None s'il n'en a pas."""
+    summary = MOB_ABILITY_SUMMARY.get(mob_code or "")
+    if is_group_elite(mob_code):
+        return f"{ELITE_LABEL} {summary}" if summary else ELITE_LABEL
+    return summary
 
 
 def has_special(mob_code: str | None) -> bool:

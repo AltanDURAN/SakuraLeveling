@@ -183,6 +183,8 @@ LA PROGRESSION
         • des PASSIFS de combat et, aux jonctions, des CLASSES ;
         • des cases « Confort » (voir plus bas).
     Le menu « Investir » et la page web disent ce que donne chaque case.
+    Les cases de vitesse donnent +0,5 chacune (la vitesse finale est
+    arrondie à l'entier inférieur).
     Tes classes s'affichent sur ton /profil.
 
     LES PASSIFS (toujours actifs, dans tous les combats)
@@ -207,22 +209,27 @@ LA PROGRESSION
         Égide        au début du combat, bouclier de 10 % de ses PV max pour
                      lui et chaque allié
         Titan        +5 % de dégâts infligés et −5 % de dégâts reçus
-        Soigneur     remplace son attaque par un sort de soin (50 % de son
-                     attaque, doublé : 100 %), +1 vitesse par allié présent ;
-                     s'il n'y a personne à soigner, il attaque
-        Rempart      encaisse 50 % des coups portés à ses alliés
-        Assassin     chances de critique ×2, dégâts critiques ×3
+        Soigneur     soigne un allié tombé sous 50 % de ses PV à la place de
+                     son attaque (50 % de son attaque, doublé : 100 %) ; si
+                     personne n'est sous 50 %, il attaque. +1 vitesse par
+                     allié présent. AURA : tant qu'il est debout, toute
+                     l'équipe inflige +25 % de dégâts (une seule aura par
+                     équipe, même avec plusieurs Soigneurs)
+        Rempart      encaisse 50 % des coups portés à ses alliés. GARDE
+                     OFFENSIVE : la moitié de sa défense s'ajoute à son
+                     attaque
+        Assassin     chances de critique ×1,25, dégâts critiques ×1,5
         En duel, les effets qui concernent des alliés (Égide, Rempart, soin)
         n'agissent pas : le Soigneur y attaque normalement.
 
 /tactique [choix]
     Ta tactique de combat, choisie AVANT le combat et figée pendant. Elle
     décide de la cible de ton sort de soin :
-        Égoïste      toi d'abord ; si tu es au maximum, l'allié le plus
-                     blessé
+        Égoïste      toi d'abord ; sinon, l'allié le plus blessé
         Pragmatique  celui qui a encaissé le plus de dégâts
         All-in       celui qui a infligé le plus de dégâts
-    Personne n'est soigné s'il est déjà au maximum de ses PV.
+    Seuls les alliés sous 50 % de leurs PV sont soignés ; si personne ne
+    l'est, le Soigneur attaque.
 
 LES CASES « CONFORT » (montées au maximum)
     • Message privé quand un de tes temps de recharge est terminé (/daily,
@@ -381,11 +388,35 @@ LES ÉLÉMENTS
     symétrique, et au-delà de 100 % de résistance on est IMMUNISÉ (0 dégât).
     Un élément mort ne sert jamais en combat.
 
+LA DÉFENSE ET LE CONTRECOUP
+    Une seule règle pour TOUS les combats (monstres, boss, épreuves, duels,
+    charme) : un coup inflige l'attaque moins la défense, mais la défense
+    n'absorbe jamais plus de 75 % du coup — au moins 25 % passent toujours.
+    La défense en trop ne se perd pas : ce qui dépasse 75 % de l'attaque
+    adverse revient à l'attaquant en CONTRECOUP. Exemple : ta défense de 100
+    contre un coup de 80 → tu subis 20 (25 %) et le monstre reçoit 40
+    (100 − 60). Le contrecoup n'est pas une action, ne déclenche aucun effet
+    (riposte, vol de vie…) et ne revient jamais : pas de ping-pong. Il marche
+    dans les deux sens : frapper un monstre bien plus blindé que ton attaque
+    te coûte des PV. Le passif d'équipement Épines l'augmente de 10 %.
+
+QUI LE MONSTRE VISE
+    Un monstre frappe de préférence le joueur le plus SOLIDE (PV max + 25 ×
+    défense) : c'est le tank qui prend la plupart des coups. La provocation
+    (Vaillant, Défi) reste prioritaire.
+
+ÉLITES DE GROUPE 👑
+    Le monstre le plus fort de chaque famille est une ÉLITE : prévue pour un
+    DPS, un tank et un soigneur. Seul, on y meurt ; trois DPS y souffrent.
+    Elle rapporte trois fois l'XP (à chacun) et l'or d'un monstre de son
+    niveau. Le bot te prévient quand tu en rejoins une.
+
 COMBATS QUI S'ÉTERNISENT
-    À partir de la 50ᵉ action d'un combat, puis toutes les 10 actions, le
-    monstre se renforce : +10 %, puis +20 % par-dessus, puis +30 %… sur son
-    attaque, sa défense, sa vitesse et ses critiques (pas ses PV). Un combat
-    normal dure une quarantaine d'actions ; au-delà, il vaut mieux conclure.
+    À partir de la 30ᵉ action DU MONSTRE, puis toutes les 5 de ses actions,
+    il se renforce : +10 %, puis +20 % par-dessus, puis +30 %… sur son
+    attaque, sa défense, sa vitesse et ses critiques (pas ses PV). En solo,
+    ça tombe vers la 50ᵉ action du combat ; en groupe, ça ne vient pas plus
+    tôt parce que vous êtes plusieurs.
 
 PV ET MANA
     Les PV et le mana ne remontent PAS pendant un combat : ils se régénèrent
@@ -614,19 +645,24 @@ Simulation de la saison :
     1. attaque brute = attaque ;
     2. coup critique (au hasard selon les chances de critique) :
        attaque brute × dégâts critiques / 100 ;
-    3. dégâts = max(1, attaque brute − défense de la cible) ;
-    4. multiplicateurs : élément (±30 % au plus), titres de famille ;
-    5. esquive de la cible (au hasard) → 0 dégât.
+    3. dégâts = attaque brute − défense, au moins 25 % de l'attaque brute
+       (et au moins 1) ;
+       contrecoup = défense − 75 % de l'attaque brute, s'il est positif,
+       renvoyé à l'attaquant (×1,1 avec Épines) ;
+    4. multiplicateurs : élément, titres de famille, aura du Soigneur
+       (+25 %), Titan… ;
+    5. esquive de la cible (au hasard) → 0 dégât, pas de contrecoup.
   Le critique s'applique AVANT la défense : il garde sa pleine valeur contre
-  une cible très défensive.
+  une cible très défensive, et réduit d'autant le contrecoup.
 
 — XP pour passer le niveau N : 6,25 × N × (8 + 0,547 × N).
-  XP d'un monstre : 6,25 × son niveau ; or : 3 × son niveau.
+  XP d'un monstre : 6,25 × son niveau ; or : 3 × son niveau (×3 pour une
+  élite de groupe).
 
 — Quêtes : le montant écrit dans daily_quests.json / weekly_quests.json est
   la récompense au niveau 20 ; elle suit ensuite le niveau (× niveau / 20).
 
-— Amélioration : bonus d'une pièce × (1 + 0,10 × niveau), de +0 à +10.
+— Forge sacrée : +1 % des stats d'une copie par niveau, de 0 à 10.
 
 ================================================================================
                               FIN DU TUTORIEL

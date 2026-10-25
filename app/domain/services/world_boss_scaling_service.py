@@ -11,6 +11,7 @@ ne sont PAS boostés (ce sont des stats "tactiques" qui n'ont pas vocation
 à scaler avec le nombre de participants).
 """
 
+from dataclasses import replace
 from app.domain.value_objects.stats import Stats
 
 
@@ -27,13 +28,11 @@ class WorldBossScalingService:
 
     def apply_team_bonus(self, base: Stats, num_participants: int) -> Stats:
         mult = self.compute_team_bonus_multiplier(num_participants)
-        return Stats(
+        # `replace` garde toutes les autres stats (mana compris : une
+        # reconstruction Stats(...) les remettait à 0).
+        return replace(
+            base,
             max_hp=round(base.max_hp * mult),
             attack=round(base.attack * mult),
             defense=round(base.defense * mult),
-            speed=base.speed,
-            crit_chance=base.crit_chance,
-            crit_damage=base.crit_damage,
-            dodge=base.dodge,
-            hp_regeneration=base.hp_regeneration,
         )

@@ -60,8 +60,13 @@ def _load(name: str):
 
 
 def _mobs_by_zone() -> dict[str, list[dict]]:
+    from app.domain.services.mob_ability_service import is_group_elite
+
     mobs = _load("mobs.json")
     mobs = mobs if isinstance(mobs, list) else mobs.get("mobs", [])
+    # Les élites de groupe (XP ×3) ne se battent pas seul : le joueur type ne
+    # les farme pas — les compter gonflait l'XP moyenne de la zone.
+    mobs = [m for m in mobs if not is_group_elite(m.get("code"))]
     zones = _load("farm_zones.json")
     zones = zones["zones"] if isinstance(zones, dict) else zones
     out = {}

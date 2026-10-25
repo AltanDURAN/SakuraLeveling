@@ -10,10 +10,12 @@ from app.domain.entities.element_skill import (
 from app.domain.entities.mob_definition import MobDefinition
 from app.domain.services.combat_passives import (
     BASE_HEAL_PCT,
+    HEAL_BELOW_PCT,
     NO_PASSIVES,
     CombatPassives,
     normalize_tactic,
 )
+from app.domain.services.damage_formula import resolve_hit, thorns_recoil
 from app.domain.services.power_score_service import PowerScoreService
 from app.domain.services.skill_effect_service import SkillEffectService
 from app.domain.services.title_bonus_service import TitleBonuses
@@ -23,27 +25,37 @@ from app.domain.value_objects.player_contribution import PlayerContribution
 from app.domain.value_objects.stats import Stats
 
 
-#: Escalade : à partir de l'action 50, puis toutes les 10 actions, le monstre
-#: se renforce de +10 % × palier, PAR-DESSUS les paliers précédents
-#: (action 50 : ×1,1 ; 60 : ×1,1×1,2 ; 70 : ×1,1×1,2×1,3…). Décidé avec
-#: l'auteur : démarrer au tour 10 faisait tomber le joueur de référence de
-#: 100 % à 27 % de victoires en solo (un combat normal dure ~37 actions). Seules ses stats OFFENSIVES montent
-#: (attaque, défense, vitesse, critiques) : augmenter ses PV ou son esquive
-#: rallongerait le combat, l'inverse du but — et les PV d'un world boss sont
-#: conservés d'un jour à l'autre.
-ESCALATION_START = 40    # 1er palier à l'action 50 (40 + 10) : un combat normal en dure ~37
-ESCALATION_EVERY = 10
+#: Escalade : à partir de la 30e action DU MONSTRE, puis toutes les 5, il se
+#: renforce de +10 % × palier, PAR-DESSUS les paliers précédents (30e : ×1,1 ;
+#: 35e : ×1,1×1,2 ; 40e : ×1,1×1,2×1,3…). Comptée en actions du MONSTRE
+#: (25/10/2026) : comptée en actions de tout le monde, elle arrivait 3 fois
+#: plus tôt à 3 joueurs et favorisait ceux qui tuent vite (les DPS). En solo,
+#: c'est le même moment qu'avant (~50 actions au total). Seules ses stats
+#: OFFENSIVES montent (attaque, défense, vitesse, critiques) : augmenter ses
+#: PV ou son esquive rallongerait le combat, l'inverse du but — et les PV d'un
+#: world boss sont conservés d'un jour à l'autre.
+ESCALATION_START = 25    # 1er palier à la 30e action du monstre (25 + 5)
+ESCALATION_EVERY = 5
 ESCALATION_STEP = 0.10
 
 #: Garde-fou absolu du nombre d'actions, en dernier recours si l'escalade ne
 #: suffit pas (ex. Soigneurs qui soignent tout). Atteint ⇒ monstre non vaincu.
 HARD_MAX_TURNS = 500
 
+#: Aggro : un monstre vise de préférence le joueur le plus SOLIDE (PV max +
+#: DEF × 25, la robustesse du power score), poids à la puissance 3 — un tank
+#: deux fois plus robuste qu'un DPS prend 8 fois plus de coups que lui. Avant
+#: (25/10/2026), la cible était tirée au hasard : le tank ne protégeait
+#: personne. La provocation reste prioritaire.
+THREAT_DEF_WEIGHT = 25
+THREAT_EXPONENT = 3
 
-def escalation_multiplier(turns: int) -> float:
-    """Multiplicateur cumulé des stats du monstre après `turns` actions."""
+
+def escalation_multiplier(mob_actions: int) -> float:
+    """Multiplicateur cumulé des stats du monstre après `mob_actions` actions
+    du monstre."""
     mult = 1.0
-    for level in range(1, max(0, turns - ESCALATION_START) // ESCALATION_EVERY + 1):
+    for level in range(1, max(0, mob_actions - ESCALATION_START) // ESCALATION_EVERY + 1):
         mult *= 1 + ESCALATION_STEP * level
     return mult
 
@@ -194,11 +206,11 @@ class PartyCombatService:
         def _escalate() -> None:
             """Applique le palier d'escalade atteint (cf. ESCALATION_EVERY)."""
             nonlocal mob, escalation_level
-            level = max(0, turns - ESCALATION_START) // ESCALATION_EVERY
+            level = max(0, boss_turn_count - ESCALATION_START) // ESCALATION_EVERY
             if level <= escalation_level or mob_hp <= 0:
                 return
             escalation_level = level
-            mult = escalation_multiplier(turns)
+            mult = escalation_multiplier(boss_turn_count)
             mob = replace(
                 base_mob,
                 attack=max(1, round(base_mob.attack * mult)),
@@ -259,10 +271,11 @@ class PartyCombatService:
             return healed
 
         def _heal_target(healer):
-            """Cible du sort de soin selon la tactique (figée pour le combat)."""
+            """Cible du sort de soin selon la tactique (figée pour le combat),
+            parmi les alliés sous `HEAL_BELOW_PCT` % de leurs PV."""
             team = [m for m in alive_party
                     if m["hp"] > 0 and not m["absorbed"] and m["player_id"] != charmed_id]
-            injured = [m for m in team if m["hp"] < m["max_hp"]]
+            injured = [m for m in team if m["hp"] < m["max_hp"] * HEAL_BELOW_PCT / 100]
             if not injured:
                 return None
             tactic = normalize_tactic(tactics_by_player.get(healer["player_id"]))
@@ -278,12 +291,57 @@ class PartyCombatService:
 
         def _single_target(pool):
             """Cible d'une attaque mono-cible : le dernier provocateur s'il peut
-            être frappé (Vaillant), sinon au hasard."""
+            être frappé (Vaillant), sinon selon l'aggro (cf. THREAT_EXPONENT)."""
             if taunter_id is not None:
                 forced = next((m for m in pool if m["player_id"] == taunter_id), None)
                 if forced is not None:
                     return forced
-            return random.choice(pool)
+            weights = [
+                (m["stats"].max_hp + m["stats"].defense * THREAT_DEF_WEIGHT) ** THREAT_EXPONENT
+                for m in pool
+            ]
+            return random.choices(pool, weights=weights, k=1)[0]
+
+        def _aura_pct() -> float:
+            """Aura du Soigneur : +X % de dégâts pour toute l'équipe tant qu'il
+            est debout. UNE seule aura par équipe (la plus forte), même avec
+            plusieurs Soigneurs."""
+            return max(
+                (P(m).team_damage_pct for m in alive_party
+                 if m["hp"] > 0 and not m["absorbed"] and m["player_id"] != charmed_id),
+                default=0.0,
+            )
+
+        def _check_mob_thresholds() -> None:
+            """Seuils de PV du monstre, quelle que soit la source des dégâts
+            (coup, contrecoup) : soin d'urgence du chaman, résurrection."""
+            nonlocal mob_hp, mob_revived, chaman_pending, chaman_done
+            # Chaman : 1ʳᵉ fois sous 50% PV → soin d'urgence au prochain tour.
+            if ("heal_once_below" in ab and not chaman_done and mob_hp > 0
+                    and mob_hp <= mob_max_hp * ab["heal_once_below"].get("hp_pct", 50) / 100):
+                chaman_pending = True
+                chaman_done = True
+            # Résurrection (ange déchu) : 1ʳᵉ mort → revient à 100% PV.
+            if mob_hp <= 0 and "revive" in ab and not mob_revived:
+                mob_revived = True
+                mob_hp = mob_max_hp
+                turn_logs.append(snap(
+                    f"👼 {mob.name} renaît à 100% PV, transcendé "
+                    f"(+{ab['revive'].get('atk_pct', 0)}% d'attaque) !"))
+
+        def _recoil_to_mob(defender) -> None:
+            """Contrecoup : la défense du joueur en trop renvoie des dégâts au
+            monstre (cf. damage_formula). Ni action, ni effet déclenché ; le
+            bouclier du monstre ne l'arrête pas. Compté dans les dégâts infligés."""
+            nonlocal mob_hp
+            recoil = defender.pop("_recoil", 0)
+            if recoil <= 0 or mob_hp <= 0:
+                return
+            dealt = min(mob_hp, recoil)
+            mob_hp -= dealt
+            contributions[defender["player_id"]].damage_dealt += dealt
+            defender["_recoil_dealt"] = dealt
+            _check_mob_thresholds()
 
         def _tags(member) -> str:
             tag = ""
@@ -296,9 +354,9 @@ class PartyCombatService:
                 tag += " — 🛡️ coup annulé !"
             if member.pop("_revived", False):
                 tag += " — 🧟 revient à la vie !"
-            thorn = member.pop("_thorns", 0)
-            if thorn:
-                tag += f" (🌵 {thorn} renvoyés)"
+            recoil = member.pop("_recoil_dealt", 0)
+            if recoil:
+                tag += f" (🔁 {recoil} en contrecoup)"
             return tag
 
         # ─── Début du combat : vitesse par allié (Soigneur), boucliers (Égide) ───
@@ -356,6 +414,7 @@ class PartyCombatService:
                     mob, target, contributions, title_bonuses_by_player,
                     incoming_elemental_mult_by_player, mob_family,
                     extra_multiplier=streak, force_crit=True)
+                _recoil_to_mob(target)
                 turns += 1
                 if dodged:
                     action = f"⚡ {mob.name} fond sur {target['name']} (assassinat) — esquivé !"
@@ -364,8 +423,9 @@ class PartyCombatService:
                     action = f"⚡ {mob.name} assassine {target['name']} : {dmg} dégâts (CRIT{mult})"
                     if target["hp"] <= 0:
                         action += " — 💀 exécuté !"
+                    action += _tags(target)
                 turn_logs.append(snap(action))
-                if dodged or target["hp"] > 0:
+                if dodged or target["hp"] > 0 or mob_hp <= 0:
                     break
 
         # ─── Défi : le porteur commence en provocation ───
@@ -447,7 +507,7 @@ class PartyCombatService:
             mob_def = _mob_defense_now()
             if mine.armor_penetration_pct > 0:  # Léthal
                 mob_def = int(mob_def * (1 - min(100.0, mine.armor_penetration_pct) / 100))
-            damage = max(1, raw_attack - mob_def)
+            damage, recoil = resolve_hit(raw_attack, mob_def)
 
             title_bonus = title_bonuses_by_player.get(player["player_id"])
             if title_bonus is not None and mob_family:
@@ -457,6 +517,9 @@ class PartyCombatService:
             if elem_mult != 1.0:
                 damage = max(1, round(damage * elem_mult))
 
+            aura = _aura_pct()
+            if aura:  # Soigneur dans l'équipe
+                damage = max(1, round(damage * (1 + aura / 100)))
             if mine.damage_dealt_pct:  # Titan
                 damage = max(1, round(damage * (1 + mine.damage_dealt_pct / 100)))
             if mine.has("elemental_power") and elem_mult > 1.0:
@@ -529,20 +592,14 @@ class PartyCombatService:
                 self._apply_player_damage(player, reflected, use_shield=False)
                 action_text += f" (renvoi {reflected})"
 
-            turn_logs.append(snap(mob_action_text, players=[action_text]))
-            # Chaman : 1ʳᵉ fois sous 50% PV → soin d'urgence au prochain tour.
-            if (landed and "heal_once_below" in ab and not chaman_done and mob_hp > 0
-                    and mob_hp <= mob_max_hp * ab["heal_once_below"].get("hp_pct", 50) / 100):
-                chaman_pending = True
-                chaman_done = True
+            # Contrecoup : la DEF du monstre en trop revient au joueur (coup
+            # arrivé sur l'armure, immunité comprise ; pas sur une esquive).
+            if recoil > 0 and (landed or immune):
+                taken = self._apply_player_damage(player, recoil, use_shield=False)
+                action_text += f" (🔁 {taken} en contrecoup" + (" 💀)" if player["hp"] <= 0 else ")")
 
-            # Résurrection (ange déchu) : 1ʳᵉ mort → revient à 100% PV, +100% atk/déf.
-            if mob_hp <= 0 and "revive" in ab and not mob_revived:
-                mob_revived = True
-                mob_hp = mob_max_hp
-                turn_logs.append(snap(
-                    f"👼 {mob.name} renaît à 100% PV, transcendé "
-                    f"(+{ab['revive'].get('atk_pct', 0)}% d'attaque) !"))
+            turn_logs.append(snap(mob_action_text, players=[action_text]))
+            _check_mob_thresholds()
 
 
         def _tick_dots(p) -> None:
@@ -616,12 +673,13 @@ class PartyCombatService:
                         if player["slow"] > 0:
                             player["slow"] -= 1
                         victim = random.choice(prey)
-                        dmg, crit, dodged = self._pvp_hit(player, victim, contributions)
+                        dmg, crit, dodged, recoil = self._pvp_hit(player, victim, contributions)
                         act = (f"😈 {player['name']} (charmé) attaque {victim['name']} — esquive !"
                                if dodged else
                                f"😈 {player['name']} (charmé) frappe {victim['name']} : {dmg} dégâts"
                                + (" CRIT" if crit else "")
-                               + (" 💀" if victim["hp"] <= 0 else ""))
+                               + (" 💀" if victim["hp"] <= 0 else "")
+                               + (f" (🔁 {recoil} en contrecoup)" if recoil else ""))
                         turn_logs.append(snap(act))
                         continue
 
@@ -634,12 +692,13 @@ class PartyCombatService:
                     # Charme : les non-charmés doivent d'abord abattre le charmé.
                     if _charmed_alive():
                         victim = _charmed_member()
-                        dmg, crit, dodged = self._pvp_hit(player, victim, contributions)
+                        dmg, crit, dodged, recoil = self._pvp_hit(player, victim, contributions)
                         freed = victim["hp"] <= 0 and not dodged
                         act = (f"{player['name']} vise {victim['name']} (charmé) — esquive !"
                                if dodged else
                                f"{player['name']} frappe {victim['name']} (charmé) : {dmg} dégâts"
                                + (" CRIT" if crit else "")
+                               + (f" (🔁 {recoil} en contrecoup)" if recoil else "")
                                + (f" — 💔 {victim['name']} est libéré !" if freed else ""))
                         turn_logs.append(snap(act))
                         continue
@@ -647,8 +706,10 @@ class PartyCombatService:
                     stats: Stats = player["stats"]
                     mine = P(player)
 
-                    # Soigneur : le sort de soin REMPLACE l'attaque. Personne à
-                    # soigner (tout le monde au maximum) → il attaque.
+                    # Soigneur : le sort de soin REMPLACE l'attaque quand un
+                    # allié est sous HEAL_BELOW_PCT % de ses PV ; sinon il attaque
+                    # (avant, il soignait dès qu'il manquait 1 PV : seul, il ne
+                    # frappait presque jamais).
                     if mine.healer:
                         heal_target = _heal_target(player)
                         if heal_target is not None:
@@ -743,7 +804,7 @@ class PartyCombatService:
 
                 for _ in range(hits):
                     pool = _mob_targets()
-                    if not pool:
+                    if not pool or mob_hp <= 0:   # un contrecoup a pu l'achever
                         break
                     targets = pool if aoe else [_single_target(pool)]
                     parts = []
@@ -760,12 +821,8 @@ class PartyCombatService:
                                 heal //= 2
                             if heal > 0:
                                 mob_hp = min(mob_max_hp, mob_hp + heal)
-                        # Épines : chaque coup subi renvoie 10 % de la DEF.
-                        if not dodged and P(target).has("thorns") and mob_hp > 0:
-                            thorn = max(1, round(target["stats"].defense * 0.10))
-                            mob_hp = max(0, mob_hp - thorn)
-                            contributions[target["player_id"]].damage_dealt += thorn
-                            target["_thorns"] = thorn
+                        # Contrecoup (Épines compris) : la DEF en trop frappe le monstre.
+                        _recoil_to_mob(target)
                         # Riposte : 10 % de chance de contre-attaquer (jamais en chaîne).
                         if (not dodged and target["hp"] > 0 and mob_hp > 0
                                 and P(target).has("counter_attack") and random.random() < 0.10):
@@ -829,7 +886,7 @@ class PartyCombatService:
                         pool = _mob_targets()
                         if not pool:
                             break
-                        rtargets = pool if aoe else [random.choice(pool)]
+                        rtargets = pool if aoe else [_single_target(pool)]
                         parts = []
                         for target in rtargets:
                             dmg, mob_crit, dodged = self._resolve_mob_hit(
@@ -837,9 +894,11 @@ class PartyCombatService:
                                 incoming_elemental_mult_by_player, mob_family,
                                 extra_multiplier=single_mult, attack_override=atk_now,
                                 is_aoe=aoe)
+                            _recoil_to_mob(target)
                             parts.append(f"{target['name']} esquive" if dodged
                                          else f"{target['name']} −{dmg}"
-                                         + (" 💀" if target["hp"] <= 0 else ""))
+                                         + (" 💀" if target["hp"] <= 0 else "")
+                                         + _tags(target))
                         turns += 1
                         turn_logs.append(snap(f"💥 Réaction en chaîne (réplique {rep}) : "
                                               + " · ".join(parts)))
@@ -865,7 +924,9 @@ class PartyCombatService:
                         if not alive:
                             break
                         victim = random.choice(alive)
-                        add_dmg = max(1, adds_attack - victim["stats"].defense)
+                        # Même formule ; pas de contrecoup : une invocation
+                        # n'a pas de PV à elle.
+                        add_dmg, _ = resolve_hit(adds_attack, victim["stats"].defense)
                         self._apply_player_damage(victim, add_dmg)
                         contributions[victim["player_id"]].damage_tanked += adds_attack
                 # Régénération (monstres des zones hautes) : % des PV max par action.
@@ -893,6 +954,7 @@ class PartyCombatService:
                         mob, target, contributions, title_bonuses_by_player,
                         incoming_elemental_mult_by_player, mob_family,
                         extra_multiplier=mult, is_aoe=True)
+                    target.pop("_recoil", None)  # le monstre est déjà mort
                     if dodged:
                         parts.append(f"{target['name']} esquive")
                     else:
@@ -938,9 +1000,11 @@ class PartyCombatService:
         extra_multiplier: float = 1.0, force_crit: bool = False, can_dodge: bool = True,
         attack_override: int | None = None, is_aoe: bool = False,
     ) -> tuple[int, bool, bool]:
-        """Coup du mob sur un joueur (soustractif : crit AVANT défense, puis
-        bouclier, puis PV). `attack_override` = attaque effective (furie/résurrection).
-        Renvoie (dégâts, crit, esquivé)."""
+        """Coup du mob sur un joueur (`damage_formula` : crit AVANT défense,
+        puis bouclier, puis PV). `attack_override` = attaque effective
+        (furie/résurrection). Renvoie (dégâts, crit, esquivé) ; le contrecoup
+        éventuel est posé dans `target["_recoil"]`, à appliquer au monstre par
+        l'appelant."""
         tstats: Stats = target["stats"]
         gear = self._p(target)
 
@@ -970,7 +1034,8 @@ class PartyCombatService:
             defense = round(defense * (1 + min(20, target["stone"]) / 100))
         if target.get("armor_break"):
             defense = round(defense * (1 - target["armor_break"] / 100))
-        after_defense = max(1, raw_attack - defense)
+        after_defense, recoil = resolve_hit(raw_attack, defense)
+        target["_recoil"] = thorns_recoil(recoil, gear.has("thorns"))
         if gear.has("stone_skin"):
             target["stone"] = target.get("stone", 0) + 1
 
@@ -1056,23 +1121,28 @@ class PartyCombatService:
             member["_revived"] = True
         return damage
 
-    def _pvp_hit(self, attacker, target, contributions) -> tuple[int, bool, bool]:
-        """Coup joueur → joueur (charme) : crit AVANT défense, puis bouclier, puis PV."""
+    def _pvp_hit(self, attacker, target, contributions) -> tuple[int, bool, bool, int]:
+        """Coup joueur → joueur (charme) : même formule (crit AVANT défense,
+        puis bouclier, puis PV), contrecoup compris. Renvoie (dégâts, crit,
+        esquivé, contrecoup subi par l'attaquant)."""
         astats: Stats = attacker["stats"]
         tstats: Stats = target["stats"]
 
         if tstats.dodge > 0 and random.random() < (tstats.dodge / 100):
             contributions[target["player_id"]].dodges += 1
-            return 0, False, True
+            return 0, False, True, 0
 
         raw = astats.attack
         crit = random.random() < (astats.crit_chance / 100)
         if crit:
             raw = int(raw * (astats.crit_damage / 100))
-        dmg = self._reduced(target, max(1, raw - tstats.defense))
+        dmg, recoil = resolve_hit(raw, tstats.defense)
+        dmg = self._reduced(target, dmg)
         dmg = self._apply_player_damage(target, dmg)
         contributions[target["player_id"]].damage_tanked += raw
-        return dmg, crit, False
+        recoil = thorns_recoil(recoil, self._p(target).has("thorns"))
+        taken = self._apply_player_damage(attacker, recoil, use_shield=False) if recoil else 0
+        return dmg, crit, False, taken
 
     def _snapshot(self, turns, player_actions, mob_action, alive_party, mob, mob_hp,
                   mob_shield: int = 0, mob_max_hp: int | None = None) -> PartyBattleTurnLog:
