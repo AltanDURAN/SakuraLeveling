@@ -473,22 +473,28 @@ LE MANA DES COMPÉTENCES 💧
     un allié est blessé, une provocation quand il y a quelqu'un à protéger…
     Réserve vide ⇒ la compétence ne se déclenche plus (le Soigneur attaque à
     la place) ; le journal te prévient (« 💧 à court de mana »).
-        Sort de soin (Soigneur)    6 par soin
+        Sort de soin (Soigneur)    9 par soin
         Clerc                      2 par soin
         Vampire                    1 par vol de vie (rien à PV pleins)
-        Vaillant                   4 par provocation
-        Égide                     15 par combat
+        Vaillant                   4 par provocation (rien si une
+                                   provocation attend déjà le prochain coup)
         Rempart                    2 par coup encaissé pour un allié
-        Tenace                    10 par sauvetage
-        Riposte, Coup double       4 chacun
-        Défi                       8 par combat
-        Revenant                  20 par résurrection
-        Garde de l'exil            5 par combat
-    Les simples bonus (dégâts, réductions, critiques, pénétration…) sont
-    gratuits. Une réserve pleine tient environ un combat d'élite à plein
-    régime : enchaîner les élites vide le mana, il faut le laisser remonter.
-    Le mana max et la régénération de mana (cases de l'arbre, équipement)
-    servent donc enfin : plus de réserve, plus de compétences d'affilée.
+        Riposte                    3
+        Coup double               12
+        Égide                     20 par combat
+        Défi                       6 par combat
+        Garde de l'exil            6 par combat
+        Tenace                    12 par sauvetage
+        Revenant                  25 par résurrection
+    Les prix suivent ce que rapporte chaque compétence (un Coup double vaut
+    à peu près un soin ; un soin du Clerc, un cinquième). Les simples bonus
+    (dégâts, réductions, critiques, pénétration…) sont gratuits.
+    En farm, ça ne coûte presque rien : 3 minutes de repos remboursent un
+    combat. Un combat d'élite, lui, vide l'essentiel de la réserve du
+    soigneur et du tank, et un long world boss l'épuise : plus de mana max
+    (cases de l'arbre, équipement), c'est plus de compétences dans les
+    combats durs ; plus de régénération, c'est revenir plus vite à plein.
+    Les défis (/defi) se jouent sans coût en mana : ils comparent les rôles.
     Le mana restant s'affiche dans le journal et dans les détails du combat.
 
 /utiliser <consommable>
@@ -512,6 +518,8 @@ LE MANA DES COMPÉTENCES 💧
     • Essais illimités, mais même build = même score : pour faire mieux,
       change d'équipement, d'arbre, de points de stats ou de /tactique.
       Ton meilleur score du jour est gardé.
+    • Pas de coût en mana dans les défis : on y compare les rôles, pas les
+      réserves.
     • La semaine (lundi → dimanche) compte tes 5 meilleurs jours, par rôle.
       Le classement GÉNÉRAL est la moyenne des trois rôles, chacun ramené à
       100 = le meilleur de la semaine.

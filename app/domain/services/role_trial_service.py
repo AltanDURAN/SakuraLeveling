@@ -302,10 +302,15 @@ def run_trial(role: str, variant: TrialVariant, *, player_id: int, name: str,
     if seed is not None:
         random.seed(seed)
     try:
+        # Sans coût en mana : avec la réserve, le soigneur la vidait avant la
+        # fin et son score ne mesurait plus que sa taille — identique dans les
+        # cinq variantes du défi soutien (mesuré le 25/10/2026). Un défi
+        # compare les rôles ; la gestion du mana se joue sur le terrain.
         result = PartyCombatService().fight_party_vs_mob(
             party, opponent(variant), mob_abilities=dict(variant.abilities),
             passives_by_player={player_id: passives},
             tactics_by_player={player_id: tactic} if tactic else {},
+            mana_costs={},
             **kwargs,
         )
     finally:

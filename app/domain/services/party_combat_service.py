@@ -626,9 +626,11 @@ class PartyCombatService:
                 if stolen:
                     action_text += f" 🧛 +{stolen}"
 
-            # Vaillant : le dernier l'emporte. Seulement s'il y a un allié à
-            # protéger et qu'il ne provoque pas déjà (sinon le mana part pour rien).
-            if (mine.taunt_chance_pct > 0 and taunter_id != player["player_id"] and _has_allies(player)
+            # Vaillant : seulement s'il y a un allié à protéger et qu'aucune
+            # provocation n'attend déjà le prochain coup du monstre — elle ne
+            # vaut que pour celui-là : la reprendre gaspillait le mana (trois
+            # Vaillant se la volaient en boucle, mesuré le 25/10/2026).
+            if (mine.taunt_chance_pct > 0 and taunter_id is None and _has_allies(player)
                     and random.random() < mine.taunt_chance_pct / 100 and self._spend(player, "taunt")):
                 taunter_id = player["player_id"]
                 action_text += " 🫀 provoque"

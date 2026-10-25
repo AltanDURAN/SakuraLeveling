@@ -55,19 +55,34 @@ MAGE_AFFINITY_TIERS: tuple[tuple[int, float], ...] = ((100, 2.0), (50, 1.5), (25
 #: réductions, critiques, pénétration, cumuls…) restent gratuits.
 #: Le mana ne remonte JAMAIS en combat : c'est la régénération hors combat
 #: qui décide combien de combats d'affilée on tient à plein régime.
+#:
+#: CALIBRÉ le 25/10/2026 (`python -m scripts.measure_mana`, builds de rôle) :
+#:   • prix ∝ ce que rapporte UN déclenchement, mesuré dans les combats
+#:     d'élite — sort de soin ≈ 160-180 PV (ancre : 9), Coup double ≈ 1,1 à
+#:     1,5 soin (≈ 540 dégâts × 0,4 PV par dégât), Clerc ≈ 1/5 de soin,
+#:     Vampire ≈ 1/6, Riposte ≈ 1/4, Rempart ≈ 55 PV DÉPLACÉS vers le tank
+#:     (pas épargnés : compté ~1/5) ;
+#:   • une fois par combat (Égide, Tenace, Revenant, Défi, Garde) : un droit
+#:     d'entrée selon la puissance, jamais plus d'un quart de la réserve de
+#:     base — au prix de leur valeur, Revenant dépasserait la réserve d'un tank ;
+#:   • l'ancre fixe le BUDGET : un combat d'élite vide 66 à 89 % de la réserve
+#:     du soigneur et jusqu'à ~100 % de celle du tank, sans changer l'issue
+#:     (élites gagnées à 100 % réserve pleine) ; le farm coûte ≤ 14 mana par
+#:     combat, moins que 3 min de régénération ; un long world boss épuise le
+#:     soigneur (assauts inchangés, ~6).
 MANA_COSTS: dict[str, int] = {
-    "heal_spell": 6,        # Soigneur : sort de soin
+    "heal_spell": 9,        # Soigneur : sort de soin
     "ally_heal": 2,         # Clerc : soin de l'allié le plus blessé
     "lifesteal": 1,         # Vampire
     "taunt": 4,             # Vaillant : provocation
-    "team_shield": 15,      # Égide : bouclier de groupe (début de combat)
+    "team_shield": 20,      # Égide : bouclier de groupe (début de combat)
     "redirect": 2,          # Rempart : encaisse une part du coup d'un allié
-    "last_stand": 10,       # Tenace : tient à 1 PV
-    "counter_attack": 4,    # Riposte
-    "double_strike": 4,     # Coup double
-    "taunt_guard": 8,       # Défi : provocation d'ouverture
-    "undying": 20,          # Revenant
-    "first_hit_ward": 5,    # Garde de l'exil
+    "last_stand": 12,       # Tenace : tient à 1 PV
+    "counter_attack": 3,    # Riposte
+    "double_strike": 12,    # Coup double
+    "taunt_guard": 6,       # Défi : provocation d'ouverture
+    "undying": 25,          # Revenant
+    "first_hit_ward": 6,    # Garde de l'exil
 }
 
 #: Nom joueur de chaque compétence à mana (journal, aide).
