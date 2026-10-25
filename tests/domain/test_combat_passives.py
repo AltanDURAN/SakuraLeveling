@@ -34,7 +34,7 @@ def _contrib(result, pid):
 
 
 # ------------------------------------------------------------------ Mage --
-@pytest.mark.parametrize("aff, mult", [(0, 1.0), (24, 1.0), (25, 1.5), (50, 2.0), (99, 2.0), (100, 5.0)])
+@pytest.mark.parametrize("aff, mult", [(0, 1.0), (24, 1.0), (25, 1.25), (50, 1.5), (99, 1.5), (100, 2.0)])
 def test_mage_paliers(aff, mult):
     assert mage_multiplier(aff) == mult
 
@@ -42,7 +42,9 @@ def test_mage_paliers(aff, mult):
 def test_mage_sans_infusion_pas_de_bonus():
     mage = CombatPassives(mage=True)
     assert outgoing_elemental_multiplier(1.0, "", {"feu": 100}, mage) == 1.0
-    assert outgoing_elemental_multiplier(1.2, "feu", {"feu": 50}, mage) == pytest.approx(2.4)
+    # Le Mage amplifie le GAIN : 1 + 0,2 × 1,5.
+    assert outgoing_elemental_multiplier(1.2, "feu", {"feu": 50}, mage) == pytest.approx(1.3)
+    assert outgoing_elemental_multiplier(1.6, "feu", {"feu": 100}, mage) == pytest.approx(2.2)
 
 
 # ------------------------------------------------------- dégâts et défense --

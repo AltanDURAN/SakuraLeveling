@@ -76,7 +76,9 @@ class RankTrialCog(BetaChannelOnlyMixin, commands.Cog):
             player_id = profile.player.id
             worn = EquipmentRepository(session).list_by_player_id(player_id)
             stats = resolve_player_stats(session, profile, worn)
-            power = PowerScoreService().calculate_from_stats(stats)
+            from app.application.services.combat_passives_resolver import resolve_player_power
+
+            power = resolve_player_power(session, player_id, stats)
 
             cooldown = CooldownRepository(session).get_by_player_and_action(
                 player_id, COOLDOWN_ACTION,

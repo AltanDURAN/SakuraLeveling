@@ -82,16 +82,10 @@ _STYLE = ("hand-drawn digital illustration, bold uneven black ink outline, flat 
 # fragment spectral, gelée de slime). Item non listé → fallback générique.
 ITEM_IMAGE_PROMPTS: dict[str, str] = {
     "potion_soin": "one single large potion bottle filling most of the frame, a round glass flask with a cork and glowing red healing liquid inside, close-up of just one bottle, only one",
-    "bois": "a small stack of a few chopped firewood logs, warm brown cut wood with visible grain and bark, nothing else, no forest",
-    "silex": "a single sharp shard of grey knapped flint stone, one angular chipped fractured rock, only one stone, nothing else",
-    "morceau_de_tissu": "a single neatly folded stack of coarse beige linen cloth with frayed edges, one folded fabric scrap, nothing else",
     "gel_e": "a single blob of wobbly bright green slime jelly, a rounded translucent goo droplet dripping at the bottom",
     "dent_de_gobelin": "one single plain tooth, a simple smooth cream-white pointed tooth with a short root and a small red blood stain at its base, one lone isolated tooth, no jaw, no skull, no creature",
     "fragment_d_me": "a single jagged translucent pale-blue crystal shard glowing with a faint ghostly spirit inside and thin wisps of blue soul smoke, one shard",
     "c_ur_corrompu": "a single corrupted heart, one dark crimson and purple anatomical heart with black veins and small thorny spikes, dripping dark ooze, only one",
-    "petite_bombe": "one single round black bomb sphere with one short lit twisted rope fuse and a small spark at the tip, only one bomb, dark charcoal body, nothing else",
-    "diamant": "a single brilliant-cut faceted gemstone glowing pale blue and white, sharp geometric facets, one sparkling precious crystal",
-    "essence_de_vie": "a single round glass orb sphere holding swirling glowing green life energy and a few tiny floating leaves inside, one orb",
     # ---- Équipement v2 (saison 1) : la pièce que porte chaque monstre ----
     "surin_dentele": "one single short dagger knife with a serrated saw-tooth edge, rusty iron blade, rag-wrapped wooden handle, shown diagonally, one knife alone",
     "epee_de_l_ossuaire": "one single sword lying diagonally, its blade made entirely of carved pale white bone, a simple bone crossguard and a brown leather grip, one sword alone",

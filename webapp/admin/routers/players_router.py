@@ -163,7 +163,9 @@ async def _base_ctx(session, user, player_id, section: str) -> tuple[dict, objec
     try:
         stats = resolve_player_stats(session, profile, equipped)
         pss = PowerScoreService()
-        score = pss.calculate_from_stats(stats)
+        from app.application.services.combat_passives_resolver import resolve_player_power
+
+        score = resolve_player_power(session, player_id, stats)
         power = pss.format_score(score)
         rank = pss.compute_rank(score)
     except Exception:

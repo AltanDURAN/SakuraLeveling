@@ -6,24 +6,27 @@ from app.domain.value_objects.stats import Stats
 # s'applique tant que le score est STRICTEMENT inférieur à la borne.
 # Au-delà du dernier palier, on retombe sur le rang max "Ω" (Challenger).
 #
-# Les bornes sont DÉRIVÉES de la courbe du joueur de référence (build
-# équilibré sans équipement) : la borne d'un rang = le score du joueur de
-# référence au début du palier suivant. Résultat : un joueur reste à son
-# rang tout au long de son palier de niveau. Niveau ~100 = rang S (l'endgame
-# "actuel"), et SS-/SSS+ couvrent le tail infini au-delà.
+# Les bornes sont DÉRIVÉES de la puissance d'un joueur TYPIQUE — la médiane
+# des quatre profils de `scripts/reference_roles.py` (DPS, Tank, Support,
+# généraliste) — : un sous-rang tous les 5 niveaux, la borne d'un rang = la
+# puissance typique au début du palier suivant. Un joueur typique de niveau
+# 100 affiche S ; S+, SS et SSS couvrent ce qui va au-delà (raretés hautes,
+# mythiques, affinités), Ω au-delà de SSS+. ⚠️ Avant (25/10/2026), les bornes
+# suivaient le joueur de référence, sans classes ni vrai arbre : un joueur
+# investi affichait S+ dès le niveau 70.
 #
-# Si on change la formule `calculate_from_stats` ou la courbe de référence,
-# régénérer ces bornes (script : score de référence à chaque niveau-repère).
+# Si la formule `calculate_from_stats`, l'arbre ou l'équipement attendu
+# changent : `python -m scripts.calibrate_power_ranks --write`.
 _RANK_THRESHOLDS: list[tuple[int, str]] = [
-    (310, "F-"), (525, "F"), (800, "F+"),
-    (1_125, "E-"), (1_510, "E"), (1_950, "E+"),
-    (2_450, "D-"), (3_000, "D"), (3_600, "D+"),
-    (4_300, "C-"), (5_000, "C"), (5_800, "C+"),
-    (6_600, "B-"), (7_500, "B"), (8_500, "B+"),
-    (9_500, "A-"), (10_500, "A"), (11_650, "A+"),
-    (12_600, "S-"), (13_600, "S"), (21_700, "S+"),
-    (36_000, "SS-"), (64_000, "SS"), (130_000, "SS+"),
-    (292_000, "SSS-"), (650_000, "SSS"), (1_400_000, "SSS+"),
+    (206, "F-"), (383, "F"), (686, "F+"),
+    (966, "E-"), (1_352, "E"), (2_259, "E+"),
+    (2_998, "D-"), (3_992, "D"), (4_886, "D+"),
+    (7_610, "C-"), (8_898, "C"), (10_460, "C+"),
+    (14_968, "B-"), (16_978, "B"), (19_589, "B+"),
+    (22_354, "A-"), (24_996, "A"), (28_086, "A+"),
+    (30_905, "S-"), (42_500, "S"), (68_100, "S+"),
+    (113_000, "SS-"), (201_100, "SS"), (408_300, "SS+"),
+    (918_700, "SSS-"), (2_048_700, "SSS"), (4_404_700, "SSS+"),
 ]
 # Rang pinacle (Challenger), tail infini au-delà du dernier palier.
 _RANK_MAX = "Ω"
@@ -41,13 +44,22 @@ _DEF_EFFECTIVE_HITS = 25
 _SCALE = 42
 
 
+#: Le kit de SOUTIEN (sort de soin, soins ×2, aura +25 % pour toute l'équipe)
+#: ne se voit pas dans les stats : sans ce facteur, un Soigneur plafonnait à
+#: 0,67× la puissance d'un DPS au niveau 100 et n'atteignait jamais les seuils
+#: des rangs SS et SSS (mesuré le 25/10/2026, `scripts/reference_roles.py`).
+HEALER_POWER_FACTOR = 1.45
+
+
 class PowerScoreService:
-    def calculate_from_stats(self, stats: Stats) -> int:
+    def calculate_from_stats(self, stats: Stats, passives=None) -> int:
         """Power score = puissance offensive × PV effectifs.
 
         Offensive : attaque, amplifiée par l'espérance de crit et la vitesse.
         PV effectifs : PV + défense convertie en PV-plats (cohérent avec le
         combat soustractif), le tout divisé par le taux de survie à l'esquive.
+        `passives` (CombatPassives) : le kit de soutien compte aussi
+        (`HEALER_POWER_FACTOR`).
         """
         # Espérance de bonus crit : chance × (multiplicateur − neutre).
         # crit_damage est en convention 100 = neutre, 150 = ×1.5, donc le
@@ -63,6 +75,8 @@ class PowerScoreService:
         ) / max(0.01, 1 - stats.dodge / 100)
 
         score = offensive * effective_hp / _SCALE
+        if passives is not None and getattr(passives, "healer", False):
+            score *= HEALER_POWER_FACTOR
         return max(1, int(score))
 
     def calculate_from_mob(self, mob: MobDefinition) -> int:

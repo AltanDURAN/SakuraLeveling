@@ -1,122 +1,159 @@
 [
   {
-    "code": "kill_slime_5",
-    "name": "Glu glu",
-    "description": "Tuer 5 slimes aujourd'hui.",
-    "objective_type": "kill_family",
-    "objective_target": "slime",
-    "objective_quantity": 5,
+    "code": "chasse_du_jour",
+    "name": "Chasse du jour",
+    "description": "Vaincre {n} monstres.",
+    "tier": "easy",
+    "objective_type": "kill_any",
+    "quantity": 5,
     "reward_gold": 150,
-    "reward_xp": 50,
-    "reward_items": [["potion_soin", 1]],
-    "tier": "easy"
+    "reward_xp": 55,
+    "reward_items": [
+      [
+        "potion_soin",
+        1
+      ]
+    ]
   },
   {
-    "code": "kill_gobelin_5",
-    "name": "Patrouille gobeline",
-    "description": "Tuer 5 gobelins aujourd'hui.",
-    "objective_type": "kill_family",
-    "objective_target": "gobelin",
-    "objective_quantity": 5,
-    "reward_gold": 200,
-    "reward_xp": 70,
-    "reward_items": [["potion_soin", 1]],
-    "tier": "easy"
-  },
-  {
-    "code": "kill_mob_gobelin_combattant_5",
-    "name": "Combattants à terre",
-    "description": "Tuer 5 Gobelins Combattants aujourd'hui.",
-    "objective_type": "kill_mob",
-    "objective_target": "gobelin_combattant",
-    "objective_quantity": 5,
-    "reward_gold": 250,
-    "reward_xp": 100,
-    "reward_items": [["potion_soin", 1]],
-    "tier": "medium"
-  },
-  {
-    "code": "kill_mob_slime_5",
-    "name": "Slimes à dissoudre",
-    "description": "Tuer 5 Slimes aujourd'hui.",
-    "objective_type": "kill_mob",
-    "objective_target": "slime",
-    "objective_quantity": 5,
-    "reward_gold": 150,
-    "reward_xp": 50,
-    "reward_items": [["potion_soin", 1]],
-    "tier": "easy"
-  },
-  {
-    "code": "daily_claim_1",
+    "code": "routine_matinale",
     "name": "Routine matinale",
-    "description": "Récupérer votre /daily aujourd'hui.",
+    "description": "Récupérer ton /daily.",
+    "tier": "easy",
     "objective_type": "daily_claim",
-    "objective_target": "",
-    "objective_quantity": 1,
+    "quantity": 1,
     "reward_gold": 100,
-    "reward_xp": 30,
-    "reward_items": [],
-    "tier": "easy"
+    "reward_xp": 40,
+    "reward_items": []
   },
   {
-    "code": "xp_from_kills_200",
-    "name": "Apprenti chasseur",
-    "description": "Gagner 200 points d'XP en tuant des monstres.",
+    "code": "releve_un_defi",
+    "name": "Relever un défi",
+    "description": "Tenter un défi de rôle du jour (/defi).",
+    "tier": "easy",
+    "objective_type": "role_trial",
+    "quantity": 1,
+    "reward_gold": 120,
+    "reward_xp": 45,
+    "reward_items": []
+  },
+  {
+    "code": "traque_de_zone",
+    "name": "Traque : {cible}",
+    "description": "Vaincre {n} {cible}.",
+    "tier": "medium",
+    "objective_type": "kill_family",
+    "target": "zone_family",
+    "quantity": 6,
+    "reward_gold": 200,
+    "reward_xp": 75,
+    "reward_items": [
+      [
+        "potion_soin",
+        1
+      ]
+    ]
+  },
+  {
+    "code": "apprentissage",
+    "name": "Apprentissage",
+    "description": "Gagner {n} points d'XP en combat.",
+    "tier": "medium",
     "objective_type": "xp_earned",
-    "objective_target": "",
-    "objective_quantity": 200,
+    "quantity": 5,
+    "scale": "xp",
     "reward_gold": 200,
-    "reward_xp": 80,
-    "reward_items": [],
-    "tier": "easy"
+    "reward_xp": 75,
+    "reward_items": []
   },
   {
-    "code": "gold_from_kills_500",
-    "name": "Pillage du jour",
-    "description": "Gagner 500 gold en tuant des monstres.",
-    "objective_type": "gold_earned",
-    "objective_target": "",
-    "objective_quantity": 500,
-    "reward_gold": 150,
-    "reward_xp": 60,
-    "reward_items": [],
-    "tier": "easy"
-  },
-  {
-    "code": "items_dropped_10",
-    "name": "Récolteur",
-    "description": "Récupérer 10 items en tuant des monstres.",
+    "code": "recolte",
+    "name": "Récolte",
+    "description": "Ramasser {n} objets sur les monstres.",
+    "tier": "medium",
     "objective_type": "items_dropped",
-    "objective_target": "",
-    "objective_quantity": 10,
+    "quantity": 8,
     "reward_gold": 200,
-    "reward_xp": 80,
-    "reward_items": [["potion_soin", 1]],
-    "tier": "medium"
+    "reward_xp": 75,
+    "reward_items": [
+      [
+        "potion_soin",
+        1
+      ]
+    ]
   },
   {
-    "code": "damage_dealt_1000",
+    "code": "prime_du_jour",
+    "name": "Prime du jour",
+    "description": "Gagner {n} pièces d'or en combat.",
+    "tier": "hard",
+    "objective_type": "gold_earned",
+    "quantity": 6,
+    "scale": "gold",
+    "reward_gold": 250,
+    "reward_xp": 95,
+    "reward_items": []
+  },
+  {
+    "code": "briseur",
     "name": "Briseur de monstres",
-    "description": "Infliger 1000 dégâts à des monstres.",
+    "description": "Infliger {n} dégâts aux monstres.",
+    "tier": "hard",
     "objective_type": "damage_dealt",
-    "objective_target": "",
-    "objective_quantity": 1000,
+    "quantity": 4,
+    "scale": "damage",
+    "roles": [
+      "dps",
+      "general"
+    ],
     "reward_gold": 250,
-    "reward_xp": 100,
-    "reward_items": [],
-    "tier": "medium"
+    "reward_xp": 95,
+    "reward_items": [
+      [
+        "potion_soin",
+        1
+      ]
+    ]
   },
   {
-    "code": "damage_tanked_500",
-    "name": "Mur ambulant",
-    "description": "Tanker 500 dégâts bruts (avant réduction).",
+    "code": "mur_vivant",
+    "name": "Mur vivant",
+    "description": "Encaisser {n} dégâts de monstres.",
+    "tier": "hard",
     "objective_type": "damage_tanked",
-    "objective_target": "",
-    "objective_quantity": 500,
+    "quantity": 4,
+    "scale": "tanked",
+    "roles": [
+      "tank",
+      "general"
+    ],
     "reward_gold": 250,
-    "reward_xp": 100,
-    "reward_items": [["potion_soin", 1]],
-    "tier": "hard"
+    "reward_xp": 95,
+    "reward_items": [
+      [
+        "potion_soin",
+        1
+      ]
+    ]
+  },
+  {
+    "code": "garde_de_la_recrue",
+    "name": "Garde de la recrue",
+    "description": "Relever le défi {cible} (/defi role:soutien).",
+    "tier": "hard",
+    "objective_type": "role_trial",
+    "target": "soutien",
+    "roles": [
+      "soutien"
+    ],
+    "quantity": 1,
+    "reward_gold": 250,
+    "reward_xp": 95,
+    "reward_items": [
+      [
+        "potion_soin",
+        1
+      ]
+    ]
   }
 ]

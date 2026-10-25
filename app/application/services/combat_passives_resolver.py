@@ -64,6 +64,16 @@ def with_title_passives(passives: CombatPassives, titles) -> CombatPassives:
     )
 
 
+def resolve_player_power(session: Session, player_id: int, stats) -> int:
+    """Power score d'un joueur, son kit de combat compris (le soutien compte :
+    cf. `HEALER_POWER_FACTOR`). À utiliser partout où l'on affiche ou compare
+    la puissance d'un JOUEUR (profil, rang, épreuve, classement)."""
+    from app.domain.services.power_score_service import PowerScoreService
+
+    passives, _ = resolve_party_passives(session, [player_id])
+    return PowerScoreService().calculate_from_stats(stats, passives.get(player_id))
+
+
 def resolve_party_passives(
     session: Session, player_ids: list[int],
 ) -> tuple[dict[int, CombatPassives], dict[int, str]]:

@@ -285,3 +285,27 @@ def fight(compo: str, level: int, mob: MobDefinition, abilities: dict | None = N
 
 def with_hp(mob: MobDefinition, hp: int) -> MobDefinition:
     return replace(mob, max_hp=hp, current_hp=hp)
+
+
+def typical_power(level: int) -> int:
+    """Power score d'un joueur TYPIQUE à ce niveau : la médiane des quatre
+    profils (DPS, Tank, Support, généraliste). C'est la courbe des rangs
+    affichés et des seuils d'épreuve — le joueur de référence, sans classes
+    ni vrai arbre, restait ~2 fois plus faible qu'un joueur investi au niveau
+    100 (il affichait S+ dès le niveau 70)."""
+    from app.domain.services.power_score_service import PowerScoreService
+
+    service = PowerScoreService()
+    powers = sorted(service.calculate_from_stats(build(role, level).stats, build(role, level).passives)
+                    for role in ("dps", "tank", "support", "general"))
+    return round((powers[1] + powers[2]) / 2)
+
+
+def gate_power(level: int) -> int:
+    """Seuil des épreuves de rang : la puissance du GÉNÉRALISTE à ce niveau —
+    le profil équilibré. Chacun atteint ainsi chaque rang au niveau prévu ou
+    avant (les spécialistes un peu plus tôt)."""
+    from app.domain.services.power_score_service import PowerScoreService
+
+    b = build("general", level)
+    return PowerScoreService().calculate_from_stats(b.stats, b.passives)

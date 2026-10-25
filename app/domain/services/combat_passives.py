@@ -35,9 +35,14 @@ HEAL_BELOW_PCT = 50
 DAMAGE_REDUCTION_WARNING = 25
 MAX_DAMAGE_REDUCTION = 80
 
-#: Mage : multiplicateur de dégâts selon l'affinité dans l'élément de l'attaque.
-#: Paliers décidés par l'auteur : 25 → ×1,5 · 50 → ×2 · 100 → ×5 (fin de jeu).
-MAGE_AFFINITY_TIERS: tuple[tuple[int, float], ...] = ((100, 5.0), (50, 2.0), (25, 1.5))
+#: Mage : multiplie le GAIN de l'infusion élémentaire selon l'affinité dans
+#: l'élément de l'attaque : 25 → ×1,25 · 50 → ×1,5 · 100 → ×2.
+#: ⚠️ Avant (25/10/2026), il multipliait les DÉGÂTS ENTIERS (×1,5 / ×2 / ×5) :
+#: contre un monstre faible à son élément, à 100 d'affinité, ×1,6 d'infusion
+#: × 5 = ×8 — une élite de groupe tombait en 2 actions, même à trois DPS.
+#: Désormais ×2,2 au lieu de ×1,6 (+37 %, l'ordre de l'Assassin), et
+#: seulement quand il y a infusion.
+MAGE_AFFINITY_TIERS: tuple[tuple[int, float], ...] = ((100, 2.0), (50, 1.5), (25, 1.25))
 
 # ------------------------------------------------------------- tactiques --
 #: Tactique de combat, choisie par le joueur HORS combat (`/tactique`) et figée
@@ -106,7 +111,8 @@ NO_PASSIVES = CombatPassives()
 
 
 def mage_multiplier(affinity: int | float | None) -> float:
-    """Multiplicateur du Mage pour une affinité 0..100 dans l'élément de l'attaque."""
+    """Multiplicateur du GAIN élémentaire du Mage pour une affinité dans
+    l'élément de l'attaque (palier le plus haut atteint)."""
     value = float(affinity or 0)
     for threshold, mult in MAGE_AFFINITY_TIERS:
         if value >= threshold:
@@ -123,9 +129,10 @@ def outgoing_elemental_multiplier(
     """Multiplicateur élémentaire sortant, Mage compris.
 
     Le Mage n'a de bonus que si une infusion a lieu (le monstre a une
-    faiblesse exploitable) : contre un monstre neutre, rien.
+    faiblesse exploitable) : contre un monstre neutre, rien. Il amplifie le
+    GAIN (infusion − 1), jamais les dégâts entiers.
     """
     mult = infusion_multiplier if infusion_element else 1.0
-    if passives is not None and passives.mage and infusion_element:
-        mult *= mage_multiplier((affinities or {}).get(infusion_element, 0))
+    if passives is not None and passives.mage and infusion_element and mult > 1.0:
+        mult = 1.0 + (mult - 1.0) * mage_multiplier((affinities or {}).get(infusion_element, 0))
     return mult

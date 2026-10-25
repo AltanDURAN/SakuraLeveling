@@ -1123,7 +1123,7 @@
     },
     "type_1_6": {
       "name": "Mage",
-      "description": "Classe Mage : dégâts ×1,5 si son affinité dans l'élément de l'attaque atteint 25, ×2 à 50, ×5 à 100.",
+      "description": "Classe Mage : quand ton coup s'infuse d'un élément (le monstre y est faible), le bonus élémentaire est multiplié par 1,25 si ton affinité dans cet élément atteint 25, par 1,5 à 50, par 2 à 100.",
       "icon": "🧙",
       "shape": "hexagone_classe",
       "node_type": "classe",

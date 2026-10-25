@@ -1,63 +1,41 @@
-"""Use cases du système de quêtes quotidiennes.
+"""Quêtes quotidiennes ADAPTÉES à chaque joueur (cf. `quest_engine`).
 
-Workflow :
-    1. Au premier appel `/daily_quest` du jour, le joueur reçoit 3 quêtes
-       tirées au hasard (mix easy/medium/hard).
-    2. Les évènements de jeu progressent les quêtes via
-       `DailyQuestProgressService`.
-    3. `claim_all_completed` réclame d'un coup toutes les quêtes complétées
-       non-claim (utilisé par le bouton du cog).
-
-Convention période :
-    day_start = aujourd'hui 00:00 (Paris), stocké en UTC. Reset à minuit Paris.
+    1. Au premier passage de la période (commande ou action en jeu), le joueur
+       reçoit 3 quêtes tirées pour LUI : cible de sa zone, quantité à son
+       niveau, objectif de son rôle (une par difficulté si possible).
+    2. Les évènements de jeu les font avancer via `DailyQuestProgressService`.
+    3. `ClaimAllDailyUseCase` réclame d'un coup toutes les quêtes terminées.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, UTC, timedelta
+from datetime import UTC, datetime
 
-from app.domain.entities.weekly_quest_definition import WeeklyQuestDefinition
-from app.domain.services.progression_service import ProgressionService
-from app.domain.services.quest_reward_service import scale_reward
-from app.infrastructure.daily_quests.quest_loader import (
-    get_definition,
-    list_for_objective_type,
-    pick_random_assignment,
+from app.application.use_cases.quest_engine import (
+    ClaimAllResult,
+    QuestProgressService,
+    QuestStatus,
+    claim_all,
+    ensure_assigned,
+    statuses,
 )
-from app.infrastructure.db.repositories.daily_quest_repository import DailyQuestRepository
+from app.domain.services.progression_service import ProgressionService
+from app.infrastructure.daily_quests.quest_loader import get_definition, list_definitions
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
+from app.infrastructure.db.repositories.daily_quest_repository import DailyQuestRepository
 
 
 def get_current_day_start(now: datetime | None = None) -> datetime:
-    """Retourne aujourd'hui 00:00 heure de Paris (CEST/CET selon DST),
-    converti en UTC pour le stockage SQLite. Cohérent avec le reset du
-    /daily à minuit Paris."""
+    """Aujourd'hui 00:00 heure de Paris (CEST/CET selon DST), en UTC pour le
+    stockage SQLite. Reset à minuit Paris, comme le /daily."""
     from zoneinfo import ZoneInfo
     paris = ZoneInfo("Europe/Paris")
     now = now or datetime.now(UTC)
     if now.tzinfo is None:
         now = now.replace(tzinfo=UTC)
-    now_paris = now.astimezone(paris)
-    midnight_paris = now_paris.replace(
-        hour=0, minute=0, second=0, microsecond=0,
-    )
-    return midnight_paris.astimezone(UTC)
-
-
-@dataclass
-class QuestStatus:
-    code: str
-    name: str
-    description: str
-    tier: str
-    progress: int
-    objective_quantity: int
-    completed: bool
-    claimed: bool
-    reward_gold: int
-    reward_xp: int
-    reward_items: list
+    midnight = now.astimezone(paris).replace(hour=0, minute=0, second=0, microsecond=0)
+    return midnight.astimezone(UTC)
 
 
 @dataclass
@@ -71,255 +49,47 @@ class DailyQuestState:
 
 
 class GetDailyQuestsUseCase:
-    def __init__(
-        self,
-        player_repository: PlayerRepository,
-        quest_repository: DailyQuestRepository,
-    ) -> None:
+    def __init__(self, player_repository: PlayerRepository,
+                 quest_repository: DailyQuestRepository) -> None:
         self.player_repository = player_repository
         self.quest_repository = quest_repository
 
-    def execute(
-        self,
-        discord_id: int,
-        username: str,
-        display_name: str,
-    ) -> DailyQuestState:
+    def execute(self, discord_id: int, username: str, display_name: str,
+                rank: str | None = None) -> DailyQuestState:
+        """`rank` : rang Discord du joueur (sa zone la plus haute) s'il est connu."""
         profile = self.player_repository.get_or_create_by_discord_id(
-            discord_id=discord_id, username=username, display_name=display_name,
-        )
+            discord_id=discord_id, username=username, display_name=display_name)
         level = profile.progression.level
-        day_start = get_current_day_start()
-
-        if not self.quest_repository.has_assignments_for_day(
-            profile.player.id, day_start
-        ):
-            picks = pick_random_assignment(count=3)
-            self.quest_repository.assign(
-                profile.player.id, day_start, [d.code for d in picks]
-            )
-
-        assignments = self.quest_repository.list_for_player_day(
-            profile.player.id, day_start
-        )
-
-        statuses: list[QuestStatus] = []
-        for a in assignments:
-            d = get_definition(a.quest_code)
-            if d is None:
-                continue
-            statuses.append(
-                QuestStatus(
-                    code=a.quest_code, name=d.name, description=d.description,
-                    tier=d.tier, progress=a.progress,
-                    objective_quantity=d.objective_quantity,
-                    completed=a.completed, claimed=a.claimed,
-                    reward_gold=scale_reward(d.reward_gold, level),
-                    reward_xp=scale_reward(d.reward_xp, level),
-                    reward_items=d.reward_items,
-                )
-            )
-        return DailyQuestState(day_start=day_start, quests=statuses)
-
-
-@dataclass
-class ClaimedReward:
-    quest_code: str
-    name: str
-    gold: int
-    xp: int
-    items: list
-
-
-@dataclass
-class ClaimAllResult:
-    success: bool
-    message: str
-    rewards: list[ClaimedReward] = field(default_factory=list)
-    leveled_up: bool = False
-    new_level: int | None = None
+        start = get_current_day_start()
+        ensure_assigned(self.quest_repository.session, self.quest_repository, list_definitions(),
+                        profile.player.id, start, level, rank=rank)
+        assignments = self.quest_repository.list_for_player(profile.player.id, start)
+        return DailyQuestState(start, statuses(assignments, get_definition, level))
 
 
 class ClaimAllDailyUseCase:
-    """Réclame d'un coup toutes les quêtes complétées non encore claim."""
+    """Réclame d'un coup toutes les quêtes complétées non encore réclamées."""
 
-    def __init__(
-        self,
-        player_repository: PlayerRepository,
-        quest_repository: DailyQuestRepository,
-        item_repository: ItemRepository,
-        inventory_repository: InventoryRepository,
-        progression_service: ProgressionService | None = None,
-    ) -> None:
+    def __init__(self, player_repository: PlayerRepository, quest_repository: DailyQuestRepository,
+                 item_repository: ItemRepository, inventory_repository: InventoryRepository,
+                 progression_service: ProgressionService | None = None) -> None:
         self.player_repository = player_repository
         self.quest_repository = quest_repository
         self.item_repository = item_repository
         self.inventory_repository = inventory_repository
         self.progression_service = progression_service or ProgressionService()
 
-    def execute(
-        self,
-        discord_id: int,
-        username: str,
-        display_name: str,
-    ) -> ClaimAllResult:
+    def execute(self, discord_id: int, username: str, display_name: str) -> ClaimAllResult:
         profile = self.player_repository.get_or_create_by_discord_id(
-            discord_id=discord_id, username=username, display_name=display_name,
-        )
-        day_start = get_current_day_start()
-
-        assignments = self.quest_repository.list_for_player_day(
-            profile.player.id, day_start,
-        )
-        claimable = [a for a in assignments if a.completed and not a.claimed]
-        if not claimable:
-            return ClaimAllResult(
-                success=False,
-                message="⚠️ Aucune récompense à récupérer pour l'instant.",
-            )
-
-        rewards: list[ClaimedReward] = []
-        total_xp = 0
-        total_gold = 0
-        starting_level = profile.progression.level
-
-        for a in claimable:
-            d = get_definition(a.quest_code)
-            if d is None:
-                continue
-            # Montants indexés sur le niveau au moment de la réclamation.
-            gold = scale_reward(d.reward_gold, starting_level)
-            xp = scale_reward(d.reward_xp, starting_level)
-            self.player_repository.add_gold(profile.player.id, gold)
-            total_gold += gold
-            total_xp += xp
-            for item_code, qty in d.reward_items:
-                item = self.item_repository.get_by_code(item_code)
-                if item is not None:
-                    self.inventory_repository.add_item(
-                        player_id=profile.player.id,
-                        item_definition_id=item.id,
-                        quantity=int(qty),
-                    )
-            self.quest_repository.mark_claimed(
-                profile.player.id, day_start, a.quest_code
-            )
-            rewards.append(
-                ClaimedReward(
-                    quest_code=a.quest_code, name=d.name, gold=gold,
-                    xp=xp, items=list(d.reward_items),
-                )
-            )
-
-        # Apply XP cumulé d'un seul coup
-        if total_xp > 0:
-            progression = self.progression_service.apply_level_up(
-                current_level=profile.progression.level,
-                current_xp=profile.progression.xp,
-                gained_xp=total_xp,
-                current_skill_points=profile.progression.skill_points,
-                current_stat_points=profile.progression.stat_points,
-            )
-            self.player_repository.apply_progression(
-                profile.player.id, progression.level, progression.xp,
-                progression.skill_points, progression.stat_points,
-            )
-            leveled = progression.level > starting_level
-            new_level_for_msg = progression.level if leveled else None
-        else:
-            leveled, new_level_for_msg = False, None
-
-        return ClaimAllResult(
-            success=True,
-            message=f"✅ {len(rewards)} récompense(s) récupérée(s).",
-            rewards=rewards, leveled_up=leveled, new_level=new_level_for_msg,
-        )
+            discord_id=discord_id, username=username, display_name=display_name)
+        return claim_all(profile, self.quest_repository, get_definition, get_current_day_start(),
+                         self.player_repository, self.item_repository,
+                         self.inventory_repository, self.progression_service)
 
 
-class DailyQuestProgressService:
-    """Hook événementiel — appelé à chaque évènement de jeu pertinent.
-    Retourne la liste des quêtes nouvellement complétées par cet appel
-    (pour permettre au caller d'afficher une notif côté UI)."""
+class DailyQuestProgressService(QuestProgressService):
+    def period_start(self) -> datetime:
+        return get_current_day_start()
 
-    def __init__(self, quest_repository: DailyQuestRepository) -> None:
-        self.quest_repository = quest_repository
-
-    def _process_event(
-        self,
-        player_id: int,
-        objective_type: str,
-        amount: int,
-        target_filter: str | None = None,
-    ) -> list[WeeklyQuestDefinition]:
-        if amount <= 0:
-            return []
-        day_start = get_current_day_start()
-        # Auto-assign si le joueur n'a pas encore consulté `/daily_quests`
-        # aujourd'hui. Sans ça, ses kills/crafts/etc. ne seraient pas comptés
-        # tant qu'il n'a pas explicitement consulté ses quêtes.
-        if not self.quest_repository.has_assignments_for_day(
-            player_id, day_start,
-        ):
-            picks = pick_random_assignment(count=3)
-            self.quest_repository.assign(
-                player_id, day_start, [d.code for d in picks],
-            )
-
-        candidates = list_for_objective_type(objective_type)
-        if target_filter is not None:
-            candidates = [d for d in candidates if d.objective_target == target_filter]
-
-        newly_completed: list[WeeklyQuestDefinition] = []
-        for d in candidates:
-            _, just_completed = self.quest_repository.add_progress(
-                player_id=player_id, day_start=day_start,
-                quest_code=d.code, amount=amount,
-                objective_quantity=d.objective_quantity,
-            )
-            if just_completed:
-                newly_completed.append(d)
-        return newly_completed
-
-    def on_kill(
-        self, player_id: int, family: str, mob_code: str = "", count: int = 1,
-    ) -> list[WeeklyQuestDefinition]:
-        out: list[WeeklyQuestDefinition] = []
-        if family:
-            out += self._process_event(
-                player_id, "kill_family", count, target_filter=family,
-            )
-        if mob_code:
-            out += self._process_event(
-                player_id, "kill_mob", count, target_filter=mob_code,
-            )
-        return out
-
-    def on_daily_claimed(
-        self, player_id: int, count: int = 1,
-    ) -> list[WeeklyQuestDefinition]:
-        return self._process_event(player_id, "daily_claim", count)
-
-    def on_gold_earned(
-        self, player_id: int, amount: int,
-    ) -> list[WeeklyQuestDefinition]:
-        return self._process_event(player_id, "gold_earned", amount)
-
-    def on_xp_earned(
-        self, player_id: int, amount: int,
-    ) -> list[WeeklyQuestDefinition]:
-        return self._process_event(player_id, "xp_earned", amount)
-
-    def on_items_dropped(
-        self, player_id: int, count: int,
-    ) -> list[WeeklyQuestDefinition]:
-        return self._process_event(player_id, "items_dropped", count)
-
-    def on_damage_dealt(
-        self, player_id: int, amount: int,
-    ) -> list[WeeklyQuestDefinition]:
-        return self._process_event(player_id, "damage_dealt", amount)
-
-    def on_damage_tanked(
-        self, player_id: int, amount: int,
-    ) -> list[WeeklyQuestDefinition]:
-        return self._process_event(player_id, "damage_tanked", amount)
+    def templates(self):
+        return list_definitions()

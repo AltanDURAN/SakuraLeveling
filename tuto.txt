@@ -63,9 +63,12 @@ LA PROGRESSION
     puissance, stats de combat, statistiques de carrière et affinités
     élémentaires. Avec un joueur : son profil.
 
-    Le RANG affiché sur le profil (F- … SSS+) est calculé à partir de ta
-    puissance. Le rang qui ouvre les zones est un rôle Discord, gagné avec
-    /epreuve (ci-dessous).
+    Le RANG affiché sur le profil (F- … SSS+, puis Ω) est calculé à partir de
+    ta puissance : un joueur typique gagne un sous-rang tous les 5 niveaux et
+    affiche S au niveau 100 ; S+, SS et SSS récompensent ce qui va au-delà
+    (raretés hautes, mythiques, affinités). Le kit de soutien (sort de soin,
+    aura) compte dans la puissance. Le rang qui ouvre les zones est un rôle
+    Discord, gagné avec /epreuve (ci-dessous).
 
 /epreuve
     Fait apparaître le GARDIEN du rang au-dessus du tien. Bats-le et tu es
@@ -74,8 +77,11 @@ LA PROGRESSION
         1. ta PUISSANCE atteint le seuil du rang visé (l'écran dit combien
            il en manque) ;
         2. tu BATS le gardien en combat singulier.
-    Les gardiens sont réglés pour être battus environ deux fois sur trois
-    par un joueur qui vient d'atteindre le seuil. En cas d'échec, tu ne
+    Les seuils suivent la puissance d'un joueur équilibré au niveau du rang
+    (E 12, D 25, C 38, B 50, A 63, S 75, SS 88, SSS 100) : un spécialiste
+    bien construit les atteint un peu plus tôt. Les gardiens sont réglés
+    pour être battus environ deux fois sur trois par un joueur qui vient
+    d'atteindre le seuil. En cas d'échec, tu ne
     perds aucun PV réel, mais tu attends 6 h avant de retenter. On passe
     les rangs un par un.
 
@@ -234,8 +240,10 @@ LA PROGRESSION
         Combattant   +5 % de PV max et +5 % d'attaque
         Paladin      soins reçus +50 % et +5 % de défense
         Vampire      se soigne de 5 % des dégâts infligés
-        Mage         dégâts ×1,5 si son affinité dans l'élément de l'attaque
-                     atteint 25, ×2 à 50, ×5 à 100
+        Mage         quand le coup s'infuse d'un élément, son BONUS
+                     élémentaire est multiplié par 1,25 si l'affinité dans
+                     cet élément atteint 25, par 1,5 à 50, par 2 à 100
+                     (ex. +60 % devient +120 %)
         Égide        au début du combat, bouclier de 10 % de ses PV max pour
                      lui et chaque allié
         Titan        +5 % de dégâts infligés et −5 % de dégâts reçus
@@ -362,6 +370,8 @@ FORGE SACRÉE (+0 → +10)
 
 /inventaire [joueur]
     Consommables et ressources (les équipements sont dans /equipement_liste).
+    Les ressources sont les matériaux de FAMILLE (un par famille de monstres,
+    lâché à chaque victoire) : ils servent à la fusion des pièces.
 
 PANOPLIES
     Plus de familles : ta panoplie, c'est l'harmonie des RARETÉS que tu
@@ -504,14 +514,23 @@ WORLD BOSS — /boss moi, /boss historique, /boss list
 --------------------------------------------------------------------------------
 
 /quetes
-    Tes 3 quêtes du jour (tirées au hasard, renouvelées à minuit UTC), avec
-    un bouton pour réclamer les récompenses.
+    Tes 3 quêtes du jour (renouvelées à minuit, heure de Paris), avec un
+    bouton pour réclamer les récompenses.
 
 /quetes_hebdo
-    Tes 3 quêtes de la semaine (tirées le lundi, UTC).
+    Tes 3 quêtes de la semaine (renouvelées le lundi à minuit).
 
-    Les récompenses en or et en XP suivent ton niveau : une quête pèse le
-    même poids à tous les niveaux.
+    Les quêtes sont tirées POUR TOI : une par difficulté (🟢 🟡 🔴), avec
+        • une cible de TA zone (« Vaincre 6 morts-vivants » au cimetière,
+          des démons au berceau — selon ton rang et ton niveau) ;
+        • des quantités à TON niveau (XP, or, dégâts à infliger ou à
+          encaisser, comptés en « victoires à ton niveau ») ;
+        • un objectif de TON rôle (dégâts pour un DPS, dégâts encaissés pour
+          un tank, défi Soutien pour un soigneur — d'après tes classes).
+    Une quête du jour se fait SEUL en une journée (quelques combats, le
+    /daily, un défi). Les quêtes qui demandent un groupe (vaincre à
+    plusieurs, soigner tes alliés) sont dans l'hebdo. Les récompenses en or
+    et en XP suivent ton niveau.
 
 --------------------------------------------------------------------------------
 1.7 — LES ARTISANS ET LE MARCHAND

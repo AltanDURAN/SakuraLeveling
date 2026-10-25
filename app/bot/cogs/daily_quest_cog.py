@@ -21,6 +21,14 @@ from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
 from app.bot.cogs._mixins import BetaChannelOnlyMixin
+from app.shared.formatters import format_int
+
+
+def _player_rank(user) -> str | None:
+    """Rang Discord du joueur (sa zone la plus haute), pour cibler ses quêtes."""
+    from app.bot.rank_roles import current_rank
+
+    return current_rank(user) if isinstance(user, discord.Member) else None
 
 
 def _build_progress_bar(progress: int, total: int, width: int = 10) -> str:
@@ -63,7 +71,7 @@ def build_daily_embed(display_name: str, state: DailyQuestState) -> discord.Embe
         )
         value = (
             f"{q.description}\n"
-            f"{bar} **{q.progress}/{q.objective_quantity}**\n"
+            f"{bar} **{format_int(q.progress)}/{format_int(q.objective_quantity)}**\n"
             f"💰 {q.reward_gold} or | ✨ {q.reward_xp} xp | 🎁 {items_label}"
         )
         embed.add_field(
@@ -96,6 +104,7 @@ class DailyQuestCog(BetaChannelOnlyMixin, commands.Cog):
                 discord_id=interaction.user.id,
                 username=interaction.user.name,
                 display_name=interaction.user.display_name,
+                rank=_player_rank(interaction.user),
             )
 
     def _build_view(

@@ -21,6 +21,14 @@ class WeeklyQuestAssignmentModel(Base):
     )
     week_start: Mapped[datetime] = mapped_column(DateTime, index=True)
     quest_code: Mapped[str] = mapped_column(String(100))
+    # Quête CONCRÈTE tirée pour ce joueur (25/10/2026) : objectif, cible et
+    # quantité adaptés à sa zone, son niveau et son rôle — figés au tirage.
+    name: Mapped[str] = mapped_column(String(120), default="")
+    description: Mapped[str] = mapped_column(String(300), default="")
+    tier: Mapped[str] = mapped_column(String(10), default="easy")
+    objective_type: Mapped[str] = mapped_column(String(40), default="")
+    objective_target: Mapped[str] = mapped_column(String(100), default="")
+    objective_quantity: Mapped[int] = mapped_column(Integer, default=1)
     progress: Mapped[int] = mapped_column(Integer, default=0)
     completed: Mapped[bool] = mapped_column(Boolean, default=False)
     claimed: Mapped[bool] = mapped_column(Boolean, default=False)

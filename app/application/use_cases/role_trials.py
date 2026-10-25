@@ -53,10 +53,28 @@ def run_attempt(session: Session, profile: PlayerProfile, role: str, now: dateti
     )
     repo = RoleTrialRepository(session)
     best, improved, attempts = repo.record(player_id, day, role, variant.code, run.score)
+    if attempts == 1:   # défi RELEVÉ : le premier essai du rôle aujourd'hui
+        _quest_hook(session, player_id, role)
     board = repo.day_scores(day, role)
     rank = next((i + 1 for i, (pid, _) in enumerate(board) if pid == player_id), len(board))
     return AttemptOutcome(role, variant, run.score, best, improved, attempts, rank,
                           len(board), run.actions, run.survived)
+
+
+def _quest_hook(session: Session, player_id: int, role: str) -> None:
+    """Quêtes « relever un défi » (quotidienne et hebdo) — au mieux."""
+    import logging
+
+    try:
+        from app.application.use_cases.daily_quests import DailyQuestProgressService
+        from app.application.use_cases.weekly_quests import WeeklyQuestProgressService
+        from app.infrastructure.db.repositories.daily_quest_repository import DailyQuestRepository
+        from app.infrastructure.db.repositories.weekly_quest_repository import WeeklyQuestRepository
+
+        DailyQuestProgressService(DailyQuestRepository(session)).on_role_trial(player_id, role)
+        WeeklyQuestProgressService(WeeklyQuestRepository(session)).on_role_trial(player_id, role)
+    except Exception:  # noqa: BLE001 — une quête ne doit jamais bloquer un défi
+        logging.getLogger(__name__).warning("quest hook (défi) failed", exc_info=True)
 
 
 @dataclass(frozen=True)

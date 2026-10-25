@@ -1,146 +1,195 @@
 [
   {
-    "code": "kill_slime_30",
-    "name": "Chasse aux gélatines",
-    "description": "Tuer 30 slimes durant la semaine.",
-    "objective_type": "kill_family",
-    "objective_target": "slime",
-    "objective_quantity": 30,
-    "reward_gold": 500,
-    "reward_xp": 200,
-    "reward_items": [["potion_soin", 3]],
-    "tier": "easy"
+    "code": "chasse_de_la_semaine",
+    "name": "Chasse de la semaine",
+    "description": "Vaincre {n} monstres.",
+    "tier": "easy",
+    "objective_type": "kill_any",
+    "quantity": 30,
+    "reward_gold": 1000,
+    "reward_xp": 400,
+    "reward_items": [
+      [
+        "potion_soin",
+        2
+      ]
+    ]
   },
   {
-    "code": "kill_slime_100",
-    "name": "Slime Slayer en herbe",
-    "description": "Tuer 100 slimes durant la semaine.",
-    "objective_type": "kill_family",
-    "objective_target": "slime",
-    "objective_quantity": 100,
-    "reward_gold": 1500,
-    "reward_xp": 600,
-    "reward_items": [["potion_soin", 2]],
-    "tier": "medium"
-  },
-  {
-    "code": "kill_gobelin_30",
-    "name": "Pacifier la horde",
-    "description": "Tuer 30 gobelins durant la semaine.",
-    "objective_type": "kill_family",
-    "objective_target": "gobelin",
-    "objective_quantity": 30,
-    "reward_gold": 600,
-    "reward_xp": 250,
-    "reward_items": [["potion_soin", 3]],
-    "tier": "easy"
-  },
-  {
-    "code": "kill_gobelin_100",
-    "name": "Bourreau gobelin",
-    "description": "Tuer 100 gobelins durant la semaine.",
-    "objective_type": "kill_family",
-    "objective_target": "gobelin",
-    "objective_quantity": 100,
-    "reward_gold": 1800,
-    "reward_xp": 700,
-    "reward_items": [["potion_soin", 2]],
-    "tier": "medium"
-  },
-  {
-    "code": "kill_mob_gobelin_combattant_30",
-    "name": "Combattants en série",
-    "description": "Tuer 30 Gobelins Combattants cette semaine.",
-    "objective_type": "kill_mob",
-    "objective_target": "gobelin_combattant",
-    "objective_quantity": 30,
-    "reward_gold": 1200,
-    "reward_xp": 500,
-    "reward_items": [["potion_soin", 2]],
-    "tier": "medium"
-  },
-  {
-    "code": "kill_mob_slime_30",
-    "name": "Glu glu en série",
-    "description": "Tuer 30 Slimes cette semaine.",
-    "objective_type": "kill_mob",
-    "objective_target": "slime",
-    "objective_quantity": 30,
-    "reward_gold": 800,
-    "reward_xp": 300,
-    "reward_items": [["potion_soin", 5]],
-    "tier": "easy"
-  },
-  {
-    "code": "daily_claim_5",
+    "code": "habitue",
     "name": "Habitué",
-    "description": "Récupérer votre /daily 5 fois cette semaine.",
+    "description": "Récupérer ton /daily {n} fois.",
+    "tier": "easy",
     "objective_type": "daily_claim",
-    "objective_target": "",
-    "objective_quantity": 5,
+    "quantity": 5,
     "reward_gold": 800,
     "reward_xp": 300,
-    "reward_items": [["potion_soin", 5]],
-    "tier": "easy"
+    "reward_items": [
+      [
+        "potion_soin",
+        2
+      ]
+    ]
   },
   {
-    "code": "xp_from_kills_2000",
-    "name": "Chasseur affûté",
-    "description": "Gagner 2000 points d'XP en tuant des monstres.",
+    "code": "assidu_des_defis",
+    "name": "Assidu des défis",
+    "description": "Relever {n} défis de rôle (un par rôle et par jour).",
+    "tier": "easy",
+    "objective_type": "role_trial",
+    "quantity": 5,
+    "reward_gold": 900,
+    "reward_xp": 350,
+    "reward_items": [
+      [
+        "potion_soin",
+        2
+      ]
+    ]
+  },
+  {
+    "code": "fleau_de_zone",
+    "name": "Fléau des {cible}",
+    "description": "Vaincre {n} {cible}.",
+    "tier": "medium",
+    "objective_type": "kill_family",
+    "target": "zone_family",
+    "quantity": 35,
+    "reward_gold": 1400,
+    "reward_xp": 550,
+    "reward_items": [
+      [
+        "potion_soin",
+        2
+      ]
+    ]
+  },
+  {
+    "code": "veteran",
+    "name": "Vétéran",
+    "description": "Gagner {n} points d'XP en combat.",
+    "tier": "medium",
     "objective_type": "xp_earned",
-    "objective_target": "",
-    "objective_quantity": 2000,
-    "reward_gold": 1500,
-    "reward_xp": 600,
-    "reward_items": [["potion_soin", 2]],
-    "tier": "medium"
+    "quantity": 30,
+    "scale": "xp",
+    "reward_gold": 1400,
+    "reward_xp": 550,
+    "reward_items": [
+      [
+        "potion_soin",
+        2
+      ]
+    ]
   },
   {
-    "code": "gold_from_kills_5000",
-    "name": "Mercenaire",
-    "description": "Gagner 5000 gold en tuant des monstres cette semaine.",
-    "objective_type": "gold_earned",
-    "objective_target": "",
-    "objective_quantity": 5000,
-    "reward_gold": 1500,
-    "reward_xp": 600,
-    "reward_items": [["potion_soin", 2]],
-    "tier": "medium"
-  },
-  {
-    "code": "items_dropped_50",
+    "code": "recolteur_acharne",
     "name": "Récolteur acharné",
-    "description": "Récupérer 50 items en tuant des monstres cette semaine.",
+    "description": "Ramasser {n} objets sur les monstres.",
+    "tier": "medium",
     "objective_type": "items_dropped",
-    "objective_target": "",
-    "objective_quantity": 50,
-    "reward_gold": 1500,
-    "reward_xp": 600,
-    "reward_items": [["potion_soin", 2]],
-    "tier": "medium"
+    "quantity": 45,
+    "reward_gold": 1300,
+    "reward_xp": 500,
+    "reward_items": [
+      [
+        "potion_soin",
+        2
+      ]
+    ]
   },
   {
-    "code": "damage_dealt_10000",
-    "name": "Force brute",
-    "description": "Infliger 10 000 dégâts cumulés à des monstres cette semaine.",
-    "objective_type": "damage_dealt",
-    "objective_target": "",
-    "objective_quantity": 10000,
+    "code": "en_bande",
+    "name": "En bande",
+    "description": "Vaincre {n} monstres à plusieurs (2 joueurs ou plus).",
+    "tier": "medium",
+    "objective_type": "group_kill",
+    "quantity": 8,
+    "reward_gold": 1400,
+    "reward_xp": 550,
+    "reward_items": [
+      [
+        "potion_soin",
+        2
+      ]
+    ]
+  },
+  {
+    "code": "mercenaire",
+    "name": "Mercenaire",
+    "description": "Gagner {n} pièces d'or en combat.",
+    "tier": "hard",
+    "objective_type": "gold_earned",
+    "quantity": 35,
+    "scale": "gold",
     "reward_gold": 1800,
     "reward_xp": 700,
-    "reward_items": [["potion_soin", 1]],
-    "tier": "medium"
+    "reward_items": [
+      [
+        "potion_soin",
+        3
+      ]
+    ]
   },
   {
-    "code": "damage_tanked_5000",
+    "code": "force_brute",
+    "name": "Force brute",
+    "description": "Infliger {n} dégâts aux monstres.",
+    "tier": "hard",
+    "objective_type": "damage_dealt",
+    "quantity": 25,
+    "scale": "damage",
+    "roles": [
+      "dps",
+      "general"
+    ],
+    "reward_gold": 1800,
+    "reward_xp": 700,
+    "reward_items": [
+      [
+        "potion_soin",
+        3
+      ]
+    ]
+  },
+  {
+    "code": "forteresse",
     "name": "Forteresse",
-    "description": "Tanker 5000 dégâts bruts (avant réduction) de monstres.",
+    "description": "Encaisser {n} dégâts de monstres.",
+    "tier": "hard",
     "objective_type": "damage_tanked",
-    "objective_target": "",
-    "objective_quantity": 5000,
-    "reward_gold": 2000,
-    "reward_xp": 800,
-    "reward_items": [["potion_soin", 2]],
-    "tier": "hard"
+    "quantity": 25,
+    "scale": "tanked",
+    "roles": [
+      "tank",
+      "general"
+    ],
+    "reward_gold": 1800,
+    "reward_xp": 700,
+    "reward_items": [
+      [
+        "potion_soin",
+        3
+      ]
+    ]
+  },
+  {
+    "code": "ange_secourable",
+    "name": "Ange secourable",
+    "description": "Soigner {n} PV à tes alliés (boucliers compris).",
+    "tier": "hard",
+    "objective_type": "hp_healed",
+    "quantity": 15,
+    "scale": "healed",
+    "roles": [
+      "soutien"
+    ],
+    "reward_gold": 1800,
+    "reward_xp": 700,
+    "reward_items": [
+      [
+        "potion_soin",
+        3
+      ]
+    ]
   }
 ]

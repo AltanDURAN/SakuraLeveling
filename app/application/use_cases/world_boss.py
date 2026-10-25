@@ -703,6 +703,9 @@ class LaunchPartyFightWorldBossUseCase:
                 if contrib.damage_tanked > 0:
                     _wqp.on_damage_tanked(participation.player_id, contrib.damage_tanked)
                     _dqp.on_damage_tanked(participation.player_id, contrib.damage_tanked)
+                if contrib.hp_healed > 0:
+                    _wqp.on_hp_healed(participation.player_id, contrib.hp_healed)
+                    _dqp.on_hp_healed(participation.player_id, contrib.hp_healed)
             except Exception as _e:
                 import logging
                 logging.getLogger(__name__).warning(

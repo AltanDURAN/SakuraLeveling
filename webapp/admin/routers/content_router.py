@@ -178,6 +178,34 @@ async def titles_list(
 
 
 # ============ Quêtes (daily + weekly) ============
+def _quest_entry(fd: dict, code: str, name: str) -> dict:
+    """Modèle de quête (quêtes adaptées, 25/10/2026) depuis le formulaire : la
+    quête concrète — cible de la zone, quantité au niveau du joueur — est
+    tirée pour chaque joueur."""
+    try:
+        quantity = max(0.1, float(str(fd.get("quantity", "1")).replace(",", ".")))
+    except ValueError:
+        quantity = 1.0
+    roles = [r.strip() for r in fd.get("roles", "").split(",") if r.strip()]
+    entry = {
+        "code": code,
+        "name": name,
+        "description": fd.get("description", "").strip(),
+        "tier": fd.get("tier", "easy").strip() or "easy",
+        "objective_type": fd.get("objective_type", "").strip(),
+        "quantity": int(quantity) if quantity.is_integer() else quantity,
+        "scale": fd.get("scale", "count").strip() or "count",
+        "reward_gold": _parse_int(fd.get("reward_gold"), 0),
+        "reward_xp": _parse_int(fd.get("reward_xp"), 0),
+        "reward_items": _parse_reward_items(fd.get("reward_items", "")),
+    }
+    if fd.get("target", "").strip():
+        entry["target"] = fd["target"].strip()
+    if roles:
+        entry["roles"] = roles
+    return entry
+
+
 def _quest_rows(filename: str, scope: str):
     data = _load_json(filename) or []
     rows = []
@@ -190,8 +218,9 @@ def _quest_rows(filename: str, scope: str):
             "name": q.get("name", ""),
             "tier": q.get("tier", "—"),
             "objective_type": q.get("objective_type", "—"),
-            "objective_target": q.get("objective_target", "—") or "—",
-            "objective_quantity": q.get("objective_quantity", 0),
+            "objective_target": q.get("target", q.get("objective_target", "")) or "—",
+            "objective_quantity": (f"{q.get('quantity', q.get('objective_quantity', 0)):g} "
+                                   f"({q.get('scale', 'count')})"),
             "reward_gold": q.get("reward_gold", 0),
             "reward_xp": q.get("reward_xp", 0),
             "reward_items": items_str,
@@ -241,7 +270,7 @@ async def quests_list(
             {"label": "Tier", "key": "tier"},
             {"label": "Objectif", "key": "objective_type"},
             {"label": "Cible", "key": "objective_target"},
-            {"label": "Qté", "key": "objective_quantity"},
+            {"label": "Unités (échelle)", "key": "objective_quantity"},
             {"label": "Or", "key": "reward_gold"},
             {"label": "XP", "key": "reward_xp"},
             {"label": "Items", "key": "reward_items"},
@@ -403,18 +432,7 @@ async def quests_create(request: Request, user: AdminUser = Depends(require_admi
             context={"user": user, "errors": errors, "form_data": fd, "scope": scope},
             status_code=400,
         )
-    entry = {
-        "code": code,
-        "name": name,
-        "description": fd.get("description", "").strip(),
-        "objective_type": fd.get("objective_type", "").strip(),
-        "objective_target": fd.get("objective_target", "").strip() or None,
-        "objective_quantity": _parse_int(fd.get("objective_quantity"), 1),
-        "reward_gold": _parse_int(fd.get("reward_gold"), 0),
-        "reward_xp": _parse_int(fd.get("reward_xp"), 0),
-        "reward_items": _parse_reward_items(fd.get("reward_items", "")),
-        "tier": fd.get("tier", "easy").strip() or "easy",
-    }
+    entry = _quest_entry(fd, code, name)
     append_to_list(filename, entry)
     return RedirectResponse(f"/admin/quests?q={code}&scope={scope}", status_code=303)
 
@@ -603,8 +621,10 @@ async def quests_edit_form(
         "name": entry.get("name", ""),
         "description": entry.get("description", ""),
         "objective_type": entry.get("objective_type", ""),
-        "objective_target": entry.get("objective_target", "") or "",
-        "objective_quantity": entry.get("objective_quantity", 1),
+        "target": entry.get("target", entry.get("objective_target", "")) or "",
+        "quantity": entry.get("quantity", entry.get("objective_quantity", 1)),
+        "scale": entry.get("scale", "count"),
+        "roles": ", ".join(entry.get("roles", []) or []),
         "reward_gold": entry.get("reward_gold", 0),
         "reward_xp": entry.get("reward_xp", 0),
         "reward_items": _fmt_reward_items(entry.get("reward_items")),
@@ -629,18 +649,7 @@ async def quests_update(
     if find_in_list_by_key(filename, code) is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Quête `{code}` introuvable.")
     fd = {k: str(v) for k, v in (await request.form()).items()}
-    entry = {
-        "code": code,
-        "name": fd.get("name", "").strip(),
-        "description": fd.get("description", "").strip(),
-        "objective_type": fd.get("objective_type", "").strip(),
-        "objective_target": fd.get("objective_target", "").strip() or None,
-        "objective_quantity": _parse_int(fd.get("objective_quantity"), 1),
-        "reward_gold": _parse_int(fd.get("reward_gold"), 0),
-        "reward_xp": _parse_int(fd.get("reward_xp"), 0),
-        "reward_items": _parse_reward_items(fd.get("reward_items", "")),
-        "tier": fd.get("tier", "easy").strip() or "easy",
-    }
+    entry = _quest_entry(fd, code, fd.get("name", "").strip())
     update_in_list_by_key(filename, code, entry)
     return RedirectResponse(f"/admin/quests?q={code}&scope={scope}", status_code=303)
 

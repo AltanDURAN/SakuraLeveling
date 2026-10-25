@@ -85,9 +85,21 @@ class GetLeaderboardUseCase:
         return None
 
     def _compute_power(self, limit: int) -> Leaderboard:
-        scored = self._compute_for_each_player(
-            value_fn=lambda stats: self.power_score_service.calculate_from_stats(stats),
-        )
+        # Le kit de soutien compte dans la puissance (HEALER_POWER_FACTOR) :
+        # passifs chargés en lot pour tous les joueurs.
+        from app.application.services.combat_passives_resolver import resolve_party_passives
+
+        session = self.player_repository.session
+        profiles = self.player_repository.list_all_profiles()
+        stats_by_player = resolve_player_stats_bulk(
+            session=session, profiles=profiles, stats_service=self.stats_service)
+        passives, _ = resolve_party_passives(session, list(stats_by_player))
+        scored = [
+            (p.player.id, p.player.display_name,
+             self.power_score_service.calculate_from_stats(
+                 stats_by_player[p.player.id], passives.get(p.player.id)))
+            for p in profiles if p.player.id in stats_by_player
+        ]
         entries = self.leaderboard_service.rank(
             scored,
             limit=limit,

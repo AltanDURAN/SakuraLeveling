@@ -71,7 +71,8 @@
           },
           "ground_y": 0.86
         }
-      ]
+      ],
+      "rank": "F"
     },
     {
       "name": "Cimetière abandonné lumière",
@@ -127,7 +128,8 @@
           },
           "ground_y": 0.875
         }
-      ]
+      ],
+      "rank": "E"
     },
     {
       "name": "Berceau cataclysmique",
@@ -172,7 +174,8 @@
           },
           "ground_y": 0.875
         }
-      ]
+      ],
+      "rank": "D"
     }
   ],
   "planned_zones": [
@@ -191,7 +194,8 @@
         "eau",
         "vent"
       ],
-      "spots": []
+      "spots": [],
+      "rank": "C"
     },
     {
       "name": "Éclipse éternelle",
@@ -207,7 +211,8 @@
         "lumiere",
         "glace"
       ],
-      "spots": []
+      "spots": [],
+      "rank": "B"
     },
     {
       "name": "Cimes des Wyrms",
@@ -224,7 +229,8 @@
         "vent",
         "terre"
       ],
-      "spots": []
+      "spots": [],
+      "rank": "A"
     },
     {
       "name": "Faille du Néant",
@@ -239,7 +245,8 @@
         "tenebre",
         "lumiere"
       ],
-      "spots": []
+      "spots": [],
+      "rank": "S"
     }
   ]
 }

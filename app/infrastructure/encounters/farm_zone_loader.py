@@ -106,8 +106,40 @@ def list_zones() -> list[dict]:
                 "essences_min": lo,
                 "essences_max": hi,
                 "spots": entry.get("spots") or [],
+                "rank": str(entry.get("rank", "") or ""),
             })
     return zones
+
+
+#: Ordre des rangs (miroir de `app.bot.rank_roles.RANK_ORDER`, sans dépendre
+#: de discord) : une zone exige un rang ; un rang ouvre sa zone et celles en
+#: dessous.
+RANK_ORDER: tuple[str, ...] = ("F", "E", "D", "C", "B", "A", "S", "SS", "SSS")
+
+
+def _zone_rank_index(zone: dict, position: int) -> int:
+    rank = zone.get("rank") or ""
+    return RANK_ORDER.index(rank) if rank in RANK_ORDER else position
+
+
+def families_for_rank(rank: str | None) -> list[str]:
+    """Familles des zones OUVERTES accessibles à ce rang (sa zone et celles
+    en dessous). Rang inconnu ⇒ zone de base seulement."""
+    limit = RANK_ORDER.index(rank) if rank in RANK_ORDER else 0
+    out: list[str] = []
+    for position, zone in enumerate(list_zones()):
+        if _zone_rank_index(zone, position) <= limit:
+            out.extend(f for f in zone["families"] if f not in out)
+    return out
+
+
+def rank_for_family(family: str | None) -> str | None:
+    """Rang requis pour la zone où spawne cette famille (None si inconnue)."""
+    for position, zone in enumerate(list_zones()):
+        if family and family in zone["families"]:
+            index = _zone_rank_index(zone, position)
+            return RANK_ORDER[min(index, len(RANK_ORDER) - 1)]
+    return None
 
 
 def planned_zones() -> list[dict]:

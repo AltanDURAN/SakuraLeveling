@@ -4,12 +4,14 @@ Même méthode que `restat_bosses` : on ne devine pas les statistiques, on les
 mesure avec le vrai moteur de combat.
 
 Pour chaque rang visé (E → SSS) :
-  1. on construit le joueur de référence qui vient TOUT JUSTE d'atteindre le
-     seuil de power score de ce rang (recherche dichotomique sur un profil de
-     stats équilibré) ;
-  2. on fixe la DÉFENSE du gardien à 35 % de l'attaque de ce joueur — la
-     règle du projet : la défense d'un adversaire ne doit jamais approcher
-     l'attaque du joueur, sinon les dégâts tombent au plancher de 1 ;
+  1. le SEUIL de power score = la puissance du GÉNÉRALISTE au niveau du rang
+     (`reference_roles.gate_power`, kit de soutien compris) : chacun atteint
+     chaque rang au niveau prévu ou un peu avant. ⚠️ Avant (25/10/2026),
+     c'était le joueur de référence sans classes : un joueur investi passait
+     ses seuils bien trop tôt (le seuil SSS dès le niveau 56-64) ;
+  2. le joueur qui passe l'épreuve = le GÉNÉRALISTE de ce niveau (stats,
+     passifs, tactique) ; la DÉFENSE du gardien vaut 35 % de son attaque —
+     au-delà de 75 %, les coups tombent au plancher et le contrecoup frappe ;
   3. on cherche les PV du gardien qui donnent le TAUX DE VICTOIRE visé.
 
 L'épreuve doit se gagner, mais de justesse : un joueur qui vient de franchir
@@ -27,8 +29,6 @@ from pathlib import Path
 
 from app.domain.entities.mob_definition import MobDefinition
 from app.domain.services.party_combat_service import PartyCombatService
-from app.domain.services.power_score_service import PowerScoreService
-from app.domain.services.reference_player import reference_stats
 from app.domain.value_objects.stats import Stats
 
 CONTENT = (
@@ -65,9 +65,22 @@ SIMULATIONS = 400
 MAX_TURNS = 60
 
 
-def _player_at(level: int) -> Stats:
-    """Joueur de référence du palier — définition partagée du domaine."""
-    return reference_stats(level)
+def _roles():
+    import importlib.util
+
+    module = sys.modules.get("reference_roles")
+    if module is None:
+        spec = importlib.util.spec_from_file_location(
+            "reference_roles", Path(__file__).resolve().parent / "reference_roles.py")
+        module = importlib.util.module_from_spec(spec)
+        sys.modules["reference_roles"] = module
+        spec.loader.exec_module(module)
+    return module
+
+
+def _player_at(level: int):
+    """Le généraliste du palier (stats, passifs, tactique)."""
+    return _roles().build("general", level)
 
 
 def _guardian(name: str, hp: int, attack: int, defense: int) -> MobDefinition:
@@ -83,8 +96,9 @@ def _guardian(name: str, hp: int, attack: int, defense: int) -> MobDefinition:
     )
 
 
-def _win_rate(player: Stats, hp: int, attack: int, defense: int) -> float:
+def _win_rate(build, hp: int, attack: int, defense: int) -> float:
     """Taux de victoire mesuré sur N combats réels contre le gardien."""
+    player: Stats = build.stats
     service = PartyCombatService()
     wins = 0
     for seed in range(SIMULATIONS):
@@ -97,6 +111,8 @@ def _win_rate(player: Stats, hp: int, attack: int, defense: int) -> float:
         }]
         result = service.fight_party_vs_mob(
             party, _guardian("g", hp, attack, defense), max_turns=MAX_TURNS,
+            passives_by_player={1: build.passives},
+            tactics_by_player={1: build.tactic} if build.tactic else {},
         )
         if result.victory:
             wins += 1
@@ -104,7 +120,8 @@ def _win_rate(player: Stats, hp: int, attack: int, defense: int) -> float:
 
 
 def calibrate(rank: str, gate: int, level: int) -> dict:
-    player = _player_at(level)
+    build = _player_at(level)
+    player = build.stats
     defense = max(1, int(player.attack * DEF_RATIO))
     attack = max(player.defense + 5, int(player.attack * ATK_RATIO))
 
@@ -112,12 +129,12 @@ def calibrate(rank: str, gate: int, level: int) -> dict:
     lo, hi = 10, max(200, player.attack * 400)
     for _ in range(18):
         mid = (lo + hi) // 2
-        if _win_rate(player, mid, attack, defense) > TARGET_WIN_RATE:
+        if _win_rate(build, mid, attack, defense) > TARGET_WIN_RATE:
             lo = mid
         else:
             hi = mid
     hp = lo
-    rate = _win_rate(player, hp, attack, defense)
+    rate = _win_rate(build, hp, attack, defense)
     name, lore = GUARDIANS[rank]
     return {
         "rank": rank,
@@ -128,9 +145,9 @@ def calibrate(rank: str, gate: int, level: int) -> dict:
             "speed": 8, "crit_chance": 10, "crit_damage": 150, "dodge": 5,
         },
         "_mesure": {
-            "joueur_ref_atk": player.attack,
-            "joueur_ref_def": player.defense,
-            "joueur_ref_pv": player.max_hp,
+            "joueur_atk": player.attack,
+            "joueur_def": player.defense,
+            "joueur_pv": player.max_hp,
             "taux_victoire": round(rate, 3),
         },
     }
@@ -142,12 +159,12 @@ def main() -> None:
     print(f"{'rang':<5} {'seuil':>8} {'PV gardien':>11} {'ATK':>5} {'DEF':>5} "
           f"{'ATK joueur':>11} {'victoire':>9}")
     for rank, level in RANK_LEVELS.items():
-        gate = PowerScoreService().calculate_from_stats(reference_stats(level))
+        gate = _roles().gate_power(level)
         entry = calibrate(rank, gate, level)
         m = entry["_mesure"]
         g = entry["guardian"]
         print(f"{rank:<5} {gate:>8} {g['max_hp']:>11} {g['attack']:>5} "
-              f"{g['defense']:>5} {m['joueur_ref_atk']:>11} "
+              f"{g['defense']:>5} {m['joueur_atk']:>11} "
               f"{m['taux_victoire']*100:>8.0f}%")
         trials.append(entry)
 

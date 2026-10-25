@@ -48,23 +48,42 @@
         </div>
 
         <div class="form-section">
-            <h2 class="form-section-title">Objectif</h2>
+            <h2 class="form-section-title">Objectif (adapté à chaque joueur au tirage)</h2>
+            <p class="field-help">« {n} » dans la description = la quantité calculée pour le joueur, « {cible} » = la cible (famille de sa zone ou rôle). Une quête quotidienne doit se faire seul en une journée (~6 victoires à son niveau au plus).</p>
             <div class="form-row">
                 <label class="field">
                     <span class="field-label">Type</span>
                     <select name="objective_type" class="input">
-                        {% for t in ['kill_family', 'kill_mob', 'daily_claim', 'xp_earned', 'gold_earned', 'items_dropped', 'damage_dealt', 'damage_tanked'] %}
-                            <option value="{{ t }}" {% if fd.get('objective_type') == t %}selected{% endif %}>{{ t }}</option>
+                        {% for t, label in [('kill_any', 'Vaincre des monstres'), ('kill_family', 'Vaincre une famille'), ('group_kill', 'Vaincre à plusieurs (hebdo)'), ('xp_earned', 'XP gagnée'), ('gold_earned', 'Or gagné'), ('items_dropped', 'Objets ramassés'), ('damage_dealt', 'Dégâts infligés'), ('damage_tanked', 'Dégâts encaissés'), ('hp_healed', 'Soins aux alliés (hebdo)'), ('role_trial', 'Relever un défi'), ('daily_claim', 'Récupérer le /daily')] %}
+                            <option value="{{ t }}" {% if fd.get('objective_type') == t %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
                 </label>
                 <label class="field">
                     <span class="field-label">Cible</span>
-                    <input type="text" name="objective_target" class="input" value="{{ fd.get('objective_target', '') }}" placeholder="ex: slime / gobelin_warrior">
+                    <select name="target" class="input">
+                        {% for t, label in [('', '— aucune —'), ('zone_family', 'Famille de la zone du joueur'), ('dps', 'Défi DPS'), ('tank', 'Défi Tank'), ('soutien', 'Défi Soutien')] %}
+                            <option value="{{ t }}" {% if fd.get('target', '') == t %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            </div>
+            <div class="form-row">
+                <label class="field">
+                    <span class="field-label">Unités</span>
+                    <input type="number" name="quantity" class="input" value="{{ fd.get('quantity', 5) }}" min="0.1" step="0.1" required>
                 </label>
                 <label class="field">
-                    <span class="field-label">Quantité</span>
-                    <input type="number" name="objective_quantity" class="input" value="{{ fd.get('objective_quantity', 5) }}" min="1" required>
+                    <span class="field-label">Échelle</span>
+                    <select name="scale" class="input">
+                        {% for t, label in [('count', 'Nombre tel quel'), ('xp', 'Victoires → XP à son niveau'), ('gold', 'Victoires → or à son niveau'), ('damage', 'Monstres → dégâts à son niveau'), ('tanked', 'Combats → dégâts encaissés'), ('healed', 'Combats → soins donnés')] %}
+                            <option value="{{ t }}" {% if fd.get('scale', 'count') == t %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="field">
+                    <span class="field-label">Rôles (vide = tous)</span>
+                    <input type="text" name="roles" class="input" value="{{ fd.get('roles', '') }}" placeholder="dps, tank, soutien, general">
                 </label>
             </div>
         </div>

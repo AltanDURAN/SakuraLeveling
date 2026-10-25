@@ -599,12 +599,15 @@ class EncounterService:
                 # Progress quêtes hebdo + quotidiennes (best effort)
                 _wqp = WeeklyQuestProgressService(WeeklyQuestRepository(session))
                 _dqp = DailyQuestProgressService(DailyQuestRepository(session))
-                # Kill : family + mob spécifique
+                # Kill : n'importe quel monstre, sa famille, et « à plusieurs »
+                group_size = len(encounter.participants)
                 _wqp.on_kill(
                     participant.player_id, mob.family or "", mob_code, count=1,
+                    group_size=group_size,
                 )
                 _dqp.on_kill(
                     participant.player_id, mob.family or "", mob_code, count=1,
+                    group_size=group_size,
                 )
                 if gold > 0:
                     _wqp.on_gold_earned(participant.player_id, gold)
@@ -627,6 +630,9 @@ class EncounterService:
                     _dqp.on_damage_tanked(
                         participant.player_id, contribution.damage_tanked,
                     )
+                if contribution.hp_healed > 0:   # soins + boucliers aux alliés
+                    _wqp.on_hp_healed(participant.player_id, contribution.hp_healed)
+                    _dqp.on_hp_healed(participant.player_id, contribution.hp_healed)
 
                 items_total = 0
                 item_names: dict[str, str] = {}

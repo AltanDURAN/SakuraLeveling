@@ -155,7 +155,9 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             )
 
             power_score_service = PowerScoreService()
-            raw_power_score = power_score_service.calculate_from_stats(stats)
+            from app.application.services.combat_passives_resolver import resolve_player_power
+
+            raw_power_score = resolve_player_power(session, profile.player.id, stats)
             formatted_power_score = power_score_service.format_score(raw_power_score)
             rank_label = power_score_service.compute_rank(raw_power_score)
 
