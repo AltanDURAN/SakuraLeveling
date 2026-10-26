@@ -64,9 +64,9 @@ class ShopCog(BetaChannelOnlyMixin, commands.Cog):
         )
         await asyncio.to_thread(view.refresh_data)
         view._build_components()
-        embed, file = await view.render()
+        embeds, files = await view.render()
         await interaction.followup.send(
-            embed=embed, file=file, view=view, ephemeral=True,
+            embeds=embeds, files=files, view=view, ephemeral=True,
         )
 
 

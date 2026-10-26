@@ -653,6 +653,9 @@ WORLD BOSS — /boss moi, /boss historique, /boss list
 
     Le parchemin, le jeton, le sablier et chaque cosmétique : un seul à la
     fois (on ne peut pas en racheter tant qu'on en a un).
+    Choisis un cosmétique : un APERÇU montre l'en-tête de TA bannière
+    /profil avec lui, porté avec le reste de ta tenue actuelle — tu sais ce
+    que tu achètes.
 
 /apparence
     Choisis ce que montre ta bannière /profil : le FOND, le CADRE autour de

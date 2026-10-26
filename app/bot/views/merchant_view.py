@@ -3,6 +3,10 @@
 Même grammaire que les artisans — catégorie, puis article — pour que les trois
 PNJ se manipulent de la même façon. La quantité se règle avec des boutons
 plutôt qu'une saisie : c'est plus rapide et ça évite les fautes de frappe.
+
+Un COSMÉTIQUE sélectionné s'accompagne d'un aperçu : l'en-tête de la bannière
+/profil de l'acheteur, ce cosmétique porté avec le reste de sa tenue actuelle
+(demande de l'auteur, 26/10/2026 : savoir ce qu'on achète).
 """
 
 from __future__ import annotations
@@ -47,6 +51,8 @@ class MerchantView(discord.ui.View):
         self._player_gold = 0
         self._player_level = 1
         self._owned = 0
+        #: Aperçu d'un cosmétique sélectionné : {"looks", "title", "name"}.
+        self._preview: dict | None = None
         self._pricing = ShopPricingService()
 
         self._build_components()
@@ -104,9 +110,31 @@ class MerchantView(discord.ui.View):
                         0,
                     )
 
+            self._preview = self._cosmetic_preview(session)
+
         if self.category and self.category not in self._by_category:
             self.category = None
             self.item_code = None
+
+    def _cosmetic_preview(self, session) -> dict | None:
+        """Tenue actuelle du joueur, le cosmétique sélectionné à sa place."""
+        selected = self._selected
+        if selected is None or selected.item_definition.category != "cosmetic":
+            return None
+        look = dict(selected.item_definition.stat_bonuses or {})
+        slot = look.get("cosmetic")
+        if not slot:
+            return None
+        from app.application.services.cosmetic_resolver import worn_cosmetics
+        from app.infrastructure.db.repositories.player_title_repository import PlayerTitleRepository
+        from app.infrastructure.titles.title_loader import get_definition as get_title
+
+        looks = worn_cosmetics(session, self.player_id)
+        looks[slot] = look
+        code = PlayerTitleRepository(session).get_active_title_code(self.player_id)
+        title = get_title(code) if code else None
+        return {"looks": looks, "name": selected.item_definition.name,
+                "title": f"{title.icon} {title.name}" if title else None}
 
     def unit_price(self, shop_item) -> int:
         return self._pricing.unit_buy_price(shop_item, self._player_level)
@@ -186,7 +214,7 @@ class MerchantView(discord.ui.View):
             ("Sa règle", "il vend, il ne rachète rien"),
         ]
 
-    async def render(self) -> tuple[discord.Embed, discord.File]:
+    async def render(self) -> tuple[list[discord.Embed], list[discord.File]]:
         path = panel_path(self.definition.code, self.player_id)
         selection = self._selection_payload()
         await asyncio.to_thread(
@@ -206,14 +234,46 @@ class MerchantView(discord.ui.View):
         filename = path.rsplit("/", 1)[-1]
         embed = discord.Embed(color=discord.Color.from_rgb(*self.definition.accent))
         embed.set_image(url=f"attachment://{filename}")
-        return embed, discord.File(path, filename=filename)
+        embeds, files = [embed], [discord.File(path, filename=filename)]
+        if self._preview is not None:
+            preview = await self._render_preview()
+            if preview is not None:
+                embeds.append(preview[0])
+                files.append(preview[1])
+        return embeds, files
+
+    async def _render_preview(self) -> tuple[discord.Embed, discord.File] | None:
+        from app.bot.rank_roles import current_rank
+        from app.bot.rendering.profile_banner import compose_cosmetic_preview
+        from app.shared.paths import GENERATED_PROFILES_DIR
+
+        GENERATED_PROFILES_DIR.mkdir(parents=True, exist_ok=True)
+        path = GENERATED_PROFILES_DIR / f"apercu_boutique_{self.player_id}.png"
+        avatar = getattr(getattr(self._user, "display_avatar", None), "url", None)
+        rank = current_rank(self._user) if isinstance(self._user, discord.Member) else ""
+        try:
+            await asyncio.to_thread(
+                compose_cosmetic_preview, str(path),
+                display_name=self._user.display_name, avatar_url=avatar,
+                title=self._preview["title"], rank_label=rank, cosmetics=self._preview["looks"],
+            )
+        except Exception:  # noqa: BLE001 — l'aperçu ne doit jamais bloquer l'achat
+            return None
+        embed = discord.Embed(
+            title="🎨 Aperçu sur ta bannière /profil",
+            description=(f"**{self._preview['name']}**, avec le reste de ta tenue actuelle. "
+                         "Une fois acheté, porte-le avec `/apparence`."),
+            color=discord.Color.from_rgb(214, 120, 170),
+        )
+        embed.set_image(url=f"attachment://{path.name}")
+        return embed, discord.File(str(path), filename=path.name)
 
     async def refresh(self, interaction: discord.Interaction) -> None:
         await asyncio.to_thread(self.refresh_data)
         self._build_components()
-        embed, file = await self.render()
+        embeds, files = await self.render()
         await interaction.response.edit_message(
-            embed=embed, attachments=[file], view=self,
+            embeds=embeds, attachments=files, view=self,
         )
 
 
