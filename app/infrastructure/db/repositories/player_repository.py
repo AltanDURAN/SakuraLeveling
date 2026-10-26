@@ -145,7 +145,7 @@ class PlayerRepository:
         progression.updated_at = datetime.now(UTC)
         self.session.commit()
 
-    def add_gold(self, player_id: int, gold: int) -> None:
+    def add_gold(self, player_id: int, gold: int, commit: bool = True) -> None:
         resources = self.session.get(PlayerResourceModel, player_id)
         if resources is None:
             return
@@ -155,7 +155,7 @@ class PlayerRepository:
         # profondeur contre une race ou un appel admin malformé.
         resources.gold = max(0, resources.gold + gold)
         resources.updated_at = datetime.now(UTC)
-        self.session.commit()
+        self.session.commit() if commit else self.session.flush()
 
     def set_gold(self, player_id: int, gold: int) -> None:
         resources = self.session.get(PlayerResourceModel, player_id)

@@ -62,13 +62,13 @@ def build_welcome_embed(display_name: str | None = None) -> discord.Embed:
         name="3️⃣ Équipement 🛠️",
         value=(
             "Chaque monstre peut lâcher **la pièce qu'il porte**, dans une rareté "
-            "tirée au sort (⚪ commun → 🔴 mythique). **`/forgeron`** (armes, "
-            "boucliers, tête, corps) et **`/artisan`** (accessoires) **fusionnent** "
+            "tirée au sort (⚪ commun → 🔴 mythique). **`/forgeron`** **fusionne** "
             "deux copies identiques en une plus rare. Dès l'épique, une pièce "
             "révèle son **passif**.\n"
             "L'équipement donne des **%** de tes stats : il amplifie ce que tu as "
             "construit avec tes points.\n"
-            "**`/marchand`** — potions et articles utiles."
+            "**`/alchimiste`** — potions de soin, de mana et élixirs, avec les "
+            "matériaux des monstres."
         ),
         inline=False,
     )

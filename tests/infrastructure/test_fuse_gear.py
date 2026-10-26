@@ -115,12 +115,13 @@ def test_legendaire_et_mythique_ne_fusionnent_pas(session):
         assert not _use_case(session).fuse(_forgeron(), pid, "surin_dentele", rarity).success
 
 
-def test_l_artisane_ne_fusionne_pas_les_armes(session):
-    pid, sword = _world(session)
-    for _ in range(2):
-        GearRepository(session).add(pid, sword.id, "common")
-    res = _use_case(session).fuse(artisan_loader.get_artisan("artisan"), pid, "surin_dentele", "common")
-    assert not res.success
+def test_borak_fusionne_toutes_les_pieces_accessoires_compris():
+    """Depuis le 26/10/2026, Borak fait toutes les fusions (Elna est alchimiste)."""
+    from app.shared.enums import EQUIPABLE_CATEGORIES
+
+    assert [a.code for a in artisan_loader.list_artisans()] == ["forgeron"]
+    for category in EQUIPABLE_CATEGORIES:
+        assert artisan_loader.artisan_for_category(str(getattr(category, "value", category))).code == "forgeron"
 
 
 def test_la_fusion_fait_monter_la_maitrise(session):

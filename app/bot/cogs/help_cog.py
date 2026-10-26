@@ -44,8 +44,8 @@ CATEGORIES: list[tuple[str, str, str, set[str]]] = [
      {"inventaire", "equipement", "equipement_liste", "equiper", "desequiper",
       "panoplie", "creer_set", "equiper_set", "supprimer_set"}),
     ("🛠️", "Artisans",
-     "Fusionne deux copies d'une pièce pour la rendre plus rare.",
-     {"forgeron", "artisan"}),
+     "Fusionne deux copies d'une pièce pour la rendre plus rare, fais préparer tes potions.",
+     {"forgeron", "alchimiste"}),
     ("💰", "Économie & échanges",
      "Le marchand, la voyante, la monnaie et le commerce entre joueurs.",
      {"marchand", "voyante", "payer", "echange", "brocante"}),
@@ -75,8 +75,8 @@ def _build_intro_embed(total_cmds: int, n_pages: int) -> discord.Embed:
             "**2.** 📈 **Progresse** — chaque niveau donne **1 point de stats** "
             "(`/stats` : attaque, défense ou PV) et **1 point d'arbre** (`/arbre`).\n"
             "**3.** 🛠️ **Équipe-toi** — les monstres lâchent la pièce qu'ils "
-            "portent ; Borak (`/forgeron`) et Elna (`/artisan`) **fusionnent** tes "
-            "copies pour monter leur rareté.\n"
+            "portent ; Borak (`/forgeron`) **fusionne** tes copies pour monter leur "
+            "rareté, Elna (`/alchimiste`) prépare tes **potions** avec leurs matériaux.\n"
             "**4.** 🎖️ **Monte en rang** — `/epreuve` : bats le gardien du rang "
             "suivant pour ouvrir une nouvelle zone.\n"
             "**5.** 🏆 **Brille** — quêtes (`/quetes`, `/quetes_hebdo`), raid du "

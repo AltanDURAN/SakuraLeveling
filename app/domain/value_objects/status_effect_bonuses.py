@@ -9,11 +9,17 @@ from app.domain.value_objects.stats import Stats
 class StatusEffectBonuses:
     """Agrégat des effets temporaires actifs d'un joueur.
 
-    V1 : un unique multiplicateur global appliqué à TOUTES les stats de combat
-    positives (produit des effets actifs). 1.0 = aucun effet.
+    `all_stats_multiplier` : multiplicateur global (événements : petite
+    fille), appliqué à TOUTES les stats de combat positives en fin de chaîne.
+    `*_percent` : élixirs d'Elna (FRACTIONS, 0.10 = +10 %), ajoutés au POOL de
+    pourcentages du socle par `StatsService` comme toute autre source — et
+    seulement là où les élixirs comptent (combats de zone, world boss).
     """
 
     all_stats_multiplier: float = 1.0
+    attack_percent: float = 0.0
+    defense_percent: float = 0.0
+    max_hp_percent: float = 0.0
 
     def apply_to_stats(self, stats: Stats) -> Stats:
         m = self.all_stats_multiplier

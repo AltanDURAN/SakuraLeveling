@@ -144,6 +144,8 @@ def compose_npc_panel(
     tier_progress: float = 1.0,
     orders_completed: int = 0,
     orders_to_next: int = 0,
+    #: Ce que compte la maîtrise (« fusion(s) » chez Borak, « potion(s) » chez Elna).
+    orders_unit: str = "fusion(s)",
     # Fiche du travail sélectionné (None = écran d'accueil)
     selection: dict | None = None,
     #: Lignes « ce qu'il sait faire » de l'accueil : (label, valeur).
@@ -196,7 +198,7 @@ def compose_npc_panel(
         draw_text_with_shadow(draw, (px, my), label, f_small, fill=_MUTED, shadow=_SHADOW)
         _bar(bg, (px, my + 26), (_PORTRAIT, 8), tier_progress, accent)
         hint = (
-            f"{orders_to_next} fusion(s) avant le palier suivant"
+            f"{orders_to_next} {orders_unit} avant le palier suivant"
             if orders_to_next
             else "maîtrise maximale atteinte"
         )

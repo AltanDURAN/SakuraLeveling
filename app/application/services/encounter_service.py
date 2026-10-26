@@ -3,7 +3,10 @@ from datetime import datetime, UTC
 from app.application.services.encounter_participant import EncounterParticipant
 from app.application.services.exclusive_title_service import ExclusiveTitleService
 from app.application.services.set_bonus_resolver import resolve_set_bonuses
-from app.application.services.status_effect_resolver import resolve_status_effects
+from app.application.services.status_effect_resolver import (
+    resolve_regen_boosts,
+    resolve_status_effects,
+)
 from app.application.services.title_bonus_resolver import resolve_title_bonuses
 from app.application.services.title_unlock_service import TitleUnlockService
 from app.application.use_cases.daily_quests import DailyQuestProgressService
@@ -87,6 +90,7 @@ class EncounterService:
                 hp_regeneration=hp_regeneration,
                 last_updated_at=health_state.updated_at,
                 now=now,
+                boosts=resolve_regen_boosts(session, player_id),
             )
 
             if regenerated_current_hp != health_state.current_hp:
@@ -137,6 +141,16 @@ class EncounterService:
                 set_bonuses=set_bonuses,
                 status_bonuses=status_bonuses,
             )
+            # Stats de COMBAT : élixirs d'Elna compris (ils comptent ici). Les
+            # PV stockés restent ceux du socle sans élixir, cf. resolve.
+            combat_stats = StatsService().calculate_player_stats(
+                profile=profile,
+                equipped_items=equipped_items,
+                skill_bonuses=skill_bonuses,
+                title_bonuses=title_bonuses,
+                set_bonuses=set_bonuses,
+                status_bonuses=resolve_status_effects(session, profile.player.id, elixirs=True),
+            )
 
         regenerated_current_hp = self.get_regenerated_player_hp(
             player_id=profile.player.id,
@@ -167,8 +181,17 @@ class EncounterService:
         encounter.participants[user_id] = participant
 
         return True, "Vous avez rejoint le combat." + self._danger_note(
-            encounter, stats, regenerated_current_hp,
+            encounter, combat_stats, self._scaled_hp(regenerated_current_hp, stats.max_hp, combat_stats.max_hp),
         )
+
+    @staticmethod
+    def _scaled_hp(current_hp: int, from_max: int, to_max: int) -> int:
+        """PV ramenés d'un maximum à l'autre en gardant la PROPORTION :
+        l'élixir de vitalité grandit les PV max le temps du combat, les PV
+        stockés restent comptés sur le maximum sans élixir."""
+        if from_max <= 0 or from_max == to_max:
+            return current_hp
+        return max(0, min(to_max, round(current_hp * to_max / from_max)))
 
     @staticmethod
     def _danger_note(encounter, stats: Stats, current_hp: int) -> str:
@@ -268,7 +291,8 @@ class EncounterService:
                 title_bonuses_by_player[participant.player_id] = title_bonuses
 
                 set_bonuses = resolve_set_bonuses(equipped_items, profile.player.panoplie_bonus)
-                status_bonuses = resolve_status_effects(session, participant.player_id)
+                # Élixirs d'Elna compris : un combat de zone est du terrain.
+                status_bonuses = resolve_status_effects(session, participant.player_id, elixirs=True)
 
                 stats = StatsService().calculate_player_stats(
                     profile=profile,
@@ -310,6 +334,7 @@ class EncounterService:
                     mana_regeneration=stats.mana_regeneration,
                     last_updated_at=mana_state.updated_at,
                     now=now,
+                    boosts=resolve_regen_boosts(session, participant.player_id),
                 )
 
                 party.append(
@@ -318,8 +343,8 @@ class EncounterService:
                         "user_id": participant.user_id,
                         "name": participant.display_name,
                         "avatar_url": participant.avatar_url,
-                        "current_hp": participant.current_hp,
-                        "max_hp": participant.max_hp,
+                        "current_hp": self._scaled_hp(participant.current_hp, participant.max_hp, stats.max_hp),
+                        "max_hp": stats.max_hp,
                         "current_mana": current_mana,
                         "mana_max": stats.mana_max,
                         "stats": stats,
@@ -340,10 +365,13 @@ class EncounterService:
             tactics_by_player=tactics_by_player,
         )
 
-    def persist_final_players_hp(self, result) -> None:
-        """PV ET mana de fin de combat : ils remontent ensuite hors combat."""
+    def persist_final_players_hp(self, result, encounter=None) -> None:
+        """PV ET mana de fin de combat : ils remontent ensuite hors combat.
+        Avec `encounter`, les PV sont ramenés au maximum SANS élixir de
+        vitalité (celui des PV stockés), en gardant la proportion."""
         if not result.turn_logs:
             return
+        base_max = {p.player_id: p.max_hp for p in (encounter.participants.values() if encounter else ())}
 
         final_turn = result.turn_logs[-1]
         final_players_state = final_turn.players_state
@@ -355,9 +383,12 @@ class EncounterService:
             for player_state in final_players_state:
                 player_id = player_state["player_id"]
 
+                current_hp = player_state["current_hp"]
+                if player_id in base_max:
+                    current_hp = self._scaled_hp(current_hp, player_state.get("max_hp", 0), base_max[player_id])
                 player_health_repository.update_current_hp(
                     player_id=player_id,
-                    current_hp=player_state["current_hp"],
+                    current_hp=current_hp,
                 )
                 if "current_mana" in player_state:
                     mana_repo.get_or_create(player_id, default_current_mana=player_state["current_mana"])

@@ -498,8 +498,9 @@ LE MANA DES COMPÉTENCES 💧
     Le mana restant s'affiche dans le journal et dans les détails du combat.
 
 /utiliser <consommable>
-    Utilise un consommable de ton inventaire (ex. la potion de soin). Si tes
-    PV sont déjà pleins, la potion n'est pas consommée.
+    Utilise un consommable de ton inventaire (potions et élixirs d'Elna,
+    cf. /alchimiste). Si tes PV (ou ton mana, pour une potion de mana) sont
+    déjà pleins, la potion n'est pas consommée.
 
 /defi [role]
     Les DÉFIS DE RÔLE du jour (ils remplacent les duels entre joueurs).
@@ -569,23 +570,59 @@ WORLD BOSS — /boss moi, /boss historique, /boss list
 --------------------------------------------------------------------------------
 
 /forgeron
-    BORAK, le forgeron, FUSIONNE tes armes, boucliers, pièces de tête et de
-    corps. Choisis une pièce dont tu as au moins deux copies de même
-    rareté : la fiche montre le coût (or + matériaux de la famille du
-    monstre), les stats avant / après, puis « Fusionner ». Immédiat.
+    BORAK, le forgeron, FUSIONNE toutes tes pièces : armes, boucliers,
+    pièces de tête et de corps, accessoires. Choisis une pièce dont tu as au
+    moins deux copies de même rareté : la fiche montre le coût (or +
+    matériaux de la famille du monstre), les stats avant / après, puis
+    « Fusionner ». Immédiat.
 
     SA MAÎTRISE (Apprenti → Compagnon → Maître → Légendaire)
         Chaque fusion le fait progresser avec toi : il te fait une remise
         sur l'or.
 
-/artisan
-    ELNA, l'artisane : les ACCESSOIRES. Même fonctionnement, sa propre
-    maîtrise.
+/alchimiste
+    ELNA, l'alchimiste, prépare tes POTIONS. Tu fournis les ingrédients —
+    les matériaux de famille que lâchent les monstres, les mêmes que pour
+    les fusions : à toi de choisir — et tu paies la confection en or
+    (selon ton niveau). Choisis la potion, puis « Préparer ×1 / ×5 / max ».
+    Immédiat. On boit avec /utiliser, hors combat.
+
+        Potion                      Effet                   Ingrédients          Or
+        Potion de soin              +10 % PV                2 gelées             1 × niv.
+        Potion de soin supérieure   +35 % PV                4 gelées + 2 dents   4 × niv.
+        Potion de mana              +50 % mana              3 fragments d'âme    3 × niv.
+        Élixir de récupération      régén PV et mana ×3,    3 dents +            6 × niv.
+                                    1 h, hors combat        2 fragments d'âme
+        Élixir de force             +10 % ATK, 1 h          3 cœurs corrompus    10 × niv.
+        Élixir de garde             +10 % DEF, 1 h          2 cœurs + 2 fragm.   10 × niv.
+        Élixir de vitalité          +10 % PV max, 1 h       2 cœurs + 2 dents    10 × niv.
+
+    Chaque zone a sa spécialité : les soins viennent de la Clairière (gelée
+    des slimes, dents de gobelin), le mana du Cimetière (fragments d'âme),
+    les élixirs de combat du Berceau (cœurs corrompus). Les potions
+    s'échangent et se vendent à la brocante ; Elna n'en rachète pas.
+
+    LES ÉLIXIRS
+        • Un MÊME élixir ne se cumule jamais : le reboire remet sa durée à
+          1 h. Des élixirs DIFFÉRENTS s'additionnent (force + garde +
+          vitalité).
+        • Force, garde et vitalité ne comptent qu'en COMBAT DE ZONE et au
+          WORLD BOSS. Potions et élixirs sont INTERDITS dans les épreuves
+          de rang et les défis (on y part à PV et mana pleins), et ils ne
+          comptent pas dans le rang affiché.
+        • Vitalité : tes PV max montent le temps du combat, en gardant la
+          même proportion de PV.
+        • /cd affiche tes élixirs actifs et le temps restant.
+
+    SA MAÎTRISE (Apprentie → Compagne → Maîtresse → Légendaire)
+        Elle compte les potions préparées pour toi (30 / 120 / 400) : remise
+        de 5 / 10 / 15 % sur la confection, puis 10 % (Maîtresse) et 20 %
+        (Légendaire) de chance qu'elle t'offre une potion de plus.
 
 /marchand
     SORN, le marchand : un rayon, un article, la quantité (×1 / ×5 / ×10),
-    acheter. Achat uniquement. Le butin des monstres n'est pas chez lui : il
-    sert aux fusions.
+    acheter. Achat uniquement. Il ne vend plus de potions (c'est Elna) ; ses
+    rayons dépendent de ce que l'admin y met.
 
 /voyante
     YSALINE, la voyante, lit ton TALENT caché dans l'élément de ton choix.

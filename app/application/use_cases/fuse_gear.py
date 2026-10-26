@@ -2,7 +2,8 @@
 
 2 copies de la MÊME pièce, de la MÊME rareté + or + matériaux de la famille du
 monstre qui la lâche → 1 copie de la rareté suivante. Borak fusionne les armes,
-boucliers, têtes et corps ; Elna les accessoires (`categories` d'artisans.json).
+boucliers, têtes, corps et accessoires (`categories` d'artisans.json) ; Elna
+est devenue alchimiste le 26/10/2026.
 
   • la nouvelle copie garde le niveau de FORGE SACRÉE le plus haut des deux ;
   • si l'une des copies était portée, la nouvelle prend sa place ;

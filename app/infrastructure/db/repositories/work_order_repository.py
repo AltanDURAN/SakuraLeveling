@@ -37,9 +37,10 @@ class WorkOrderRepository:
         return row.orders_completed if row else 0
 
     def increment_mastery(
-        self, player_id: int, artisan_code: str, gold_spent: int = 0,
+        self, player_id: int, artisan_code: str, gold_spent: int = 0, amount: int = 1,
     ) -> int:
-        """+1 travail terminé (une fusion). Renvoie le nouveau total."""
+        """+`amount` travaux terminés (une fusion, ou une potion chez
+        l'alchimiste). Renvoie le nouveau total."""
         row = self.get_mastery(player_id, artisan_code)
         if row is None:
             row = PlayerArtisanMasteryModel(
@@ -49,7 +50,7 @@ class WorkOrderRepository:
                 gold_spent=0,
             )
             self.session.add(row)
-        row.orders_completed += 1
+        row.orders_completed += max(0, int(amount))
         row.gold_spent += max(0, gold_spent)
         row.updated_at = datetime.now(UTC)
         self.session.flush()

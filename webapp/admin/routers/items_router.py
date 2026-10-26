@@ -364,6 +364,10 @@ async def items_update(
         if errors:
             return RedirectResponse(f"/admin/items?err=invalid#item-{code}", status_code=303)
         fields = _collect_item_fields(form_data, code, fallback_rarity=existing.rarity)
+        # Un consommable porte son EFFET (soin, mana, élixir) dans stat_bonuses,
+        # que le formulaire (stats numériques) ne sait pas éditer : on le garde.
+        if fields["category"] == "consumable" and (existing.stat_bonuses or {}).get("effect"):
+            fields["stat_bonuses"] = existing.stat_bonuses
         repo.update_by_code(**fields)
 
     asset_path, img_err = await _save_item_image(form, code)

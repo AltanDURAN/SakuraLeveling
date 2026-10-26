@@ -1,5 +1,7 @@
 from datetime import datetime, UTC
 
+from app.domain.services.alchemy_service import boosted_seconds
+
 
 class HealthRegenerationService:
     def apply_out_of_combat_regeneration(
@@ -9,7 +11,10 @@ class HealthRegenerationService:
         hp_regeneration: int,
         last_updated_at: datetime,
         now: datetime,
+        boosts=(),
     ) -> int:
+        # boosts : fenêtres (début, fin, ×M) de l'élixir de récupération
+        # d'Elna, cf. alchemy_service.boosted_seconds.
         if max_hp <= 0:
             return 0
 
@@ -26,7 +31,7 @@ class HealthRegenerationService:
         if now.tzinfo is None:
             now = now.replace(tzinfo=UTC)
 
-        elapsed_seconds = (now - last_updated_at).total_seconds()
+        elapsed_seconds = boosted_seconds(last_updated_at, now, boosts)
 
         if elapsed_seconds <= 0:
             return max(0, min(current_hp, max_hp))

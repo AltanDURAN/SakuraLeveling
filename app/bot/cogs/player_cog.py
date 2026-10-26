@@ -167,12 +167,16 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             )
 
             now = datetime.now(UTC)
+            from app.application.services.status_effect_resolver import resolve_regen_boosts
+
+            regen_boosts = resolve_regen_boosts(session, profile.player.id)
             regenerated_current_hp = HealthRegenerationService().apply_out_of_combat_regeneration(
                 current_hp=health_state.current_hp,
                 max_hp=stats.max_hp,
                 hp_regeneration=stats.hp_regeneration,
                 last_updated_at=health_state.updated_at,
                 now=now,
+                boosts=regen_boosts,
             )
 
             # On ne persiste la régénération que pour soi-même : éviter d'écrire
@@ -201,6 +205,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 mana_regeneration=stats.mana_regeneration,
                 last_updated_at=mana_state.updated_at,
                 now=now,
+                boosts=regen_boosts,
             )
             if regenerated_current_mana != mana_state.current_mana and target is None:
                 player_mana_repository.refresh_current_mana(
@@ -912,9 +917,8 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
 
     # ------------------------------------------------------------------
     # Le craft et la forge ont quitté ce cog : ils passent désormais par
-    # les PNJ (`/forgeron`, `/artisan`) — cf. artisan_cog. Fabriquer coûte
-    # maintenant de l'or et prend du temps, ce qu'une commande directe ne
-    # savait pas exprimer.
+    # les PNJ (`/forgeron` fusionne, `/alchimiste` prépare les potions) —
+    # cf. artisan_cog.
     # ------------------------------------------------------------------
 
 
@@ -1051,13 +1055,21 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
             from app.application.use_cases.tower_tickets import TowerTicketsUseCase
 
             tickets = TowerTicketsUseCase(session).status(profile.player.id)
+            from app.application.use_cases.use_consumable import active_elixirs_text
+            from app.infrastructure.db.repositories.player_status_effect_repository import (
+                PlayerStatusEffectRepository,
+            )
+
+            elixirs = PlayerStatusEffectRepository(session).list_active_elixirs(profile.player.id)
+            elixir_line = ("\n🧪 Élixirs actifs : " + active_elixirs_text(elixirs)
+                           + " — combats de zone et world boss seulement") if elixirs else ""
 
         now = datetime.now(UTC)
         ticket_line = (
             f"🎟️ Tour solo : **{tickets.available}/{tickets.allowance}** ticket(s) "
             f"aujourd'hui" + (" (bonus compris)" if tickets.has_bonus else "")
             + " — non cumulables, renouvelés à minuit (heure de Paris)"
-        )
+        ) + elixir_line
         # On garde uniquement les cooldowns encore actifs et non cachés
         active: list[tuple[str, datetime]] = []
         for cd in cooldowns:

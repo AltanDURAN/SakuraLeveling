@@ -1,9 +1,10 @@
-"""Cog des artisans : `/forgeron` et `/artisan`.
+"""Cog des artisans : `/forgeron` et `/alchimiste`.
 
-Chaque commande fait APPARAÎTRE le personnage. Équipement v2 : ils ne
-fabriquent plus, ils FUSIONNENT deux copies identiques en une plus rare
-(cf. `FusionView` / `FuseGearUseCase`) — Borak pour les armes, boucliers,
-têtes et corps, Elna pour les accessoires. Leur maîtrise monte à chaque fusion.
+Chaque commande fait APPARAÎTRE le personnage. Borak FUSIONNE deux copies
+identiques en une plus rare — toutes les pièces, accessoires compris depuis le
+26/10/2026 (cf. `FusionView` / `FuseGearUseCase`). Elna, l'alchimiste, prépare
+les POTIONS (cf. `AlchemyView` / `BrewPotionUseCase`). Leur maîtrise monte à
+chaque fusion / potion.
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from app.bot.cogs._mixins import BetaChannelOnlyMixin
+from app.bot.views.alchemy_view import AlchemyView
 from app.bot.views.fusion_view import FusionView
 from app.domain.services.artisan_service import ArtisanService
 from app.infrastructure.artisans import artisan_loader
@@ -61,17 +63,29 @@ class ArtisanCog(BetaChannelOnlyMixin, commands.Cog):
 
     @app_commands.command(
         name="forgeron",
-        description="Va voir le forgeron : il fusionne tes armes, boucliers, têtes et corps",
+        description="Va voir le forgeron : il fusionne toutes tes pièces, accessoires compris",
     )
     async def forgeron(self, interaction: discord.Interaction) -> None:
         await self._open(interaction, "forgeron")
 
     @app_commands.command(
-        name="artisan",
-        description="Va voir l'artisane : elle fusionne tes accessoires",
+        name="alchimiste",
+        description="Va voir l'alchimiste : elle prépare tes potions avec les matériaux des monstres",
     )
-    async def artisan(self, interaction: discord.Interaction) -> None:
-        await self._open(interaction, "artisan")
+    async def alchimiste(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer(ephemeral=True)
+        with get_db_session() as session:
+            profile = PlayerRepository(session).get_or_create_by_discord_id(
+                discord_id=interaction.user.id,
+                username=interaction.user.name,
+                display_name=interaction.user.display_name,
+            )
+            player_id = profile.player.id
+        view = AlchemyView(player_id, get_db_session)
+        await asyncio.to_thread(view.refresh_data)
+        view.build()
+        embed, file = await view.render()
+        await interaction.followup.send(embed=embed, file=file, view=view, ephemeral=True)
 
 
 async def setup(bot: commands.Bot) -> None:

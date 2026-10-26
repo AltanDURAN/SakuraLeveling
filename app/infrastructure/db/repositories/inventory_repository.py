@@ -24,7 +24,8 @@ class InventoryRepository:
         models = self.session.execute(stmt).scalars().all()
         return [self._to_domain(model) for model in models]
 
-    def add_item(self, player_id: int, item_definition_id: int, quantity: int) -> None:
+    def add_item(self, player_id: int, item_definition_id: int, quantity: int,
+                 commit: bool = True) -> None:
         # Garde défensif : quantité <= 0 = no-op (préviens l'usage négatif
         # qui décrementerait l'inventaire).
         if quantity <= 0:
@@ -51,9 +52,10 @@ class InventoryRepository:
             model.quantity += quantity
             model.updated_at = now
 
-        self.session.commit()
+        self.session.commit() if commit else self.session.flush()
 
-    def remove_item(self, player_id: int, item_definition_id: int, quantity: int) -> bool:
+    def remove_item(self, player_id: int, item_definition_id: int, quantity: int,
+                 commit: bool = True) -> bool:
         # Garde défensif : qty négative ferait un increment via le `-= quantity`.
         # Qty zéro est un no-op qui pourrait simuler un succès faux.
         if quantity <= 0:
@@ -75,7 +77,7 @@ class InventoryRepository:
         if model.quantity == 0:
             self.session.delete(model)
 
-        self.session.commit()
+        self.session.commit() if commit else self.session.flush()
         return True
 
     def _to_domain(self, model: PlayerInventoryItemModel) -> PlayerInventoryItem:

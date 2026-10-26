@@ -1,5 +1,5 @@
 {
-  "_comment": "PNJ artisans. `categories` = catégories d'items que le PNJ traite (doit couvrir toutes les catégories équipables, sans recouvrement). `pricing` : or = base + coef x puissance^exposant ; duree_s = base + coef x puissance, plafonnée. Les paliers de maîtrise montent avec le nombre de commandes terminées ; `max_item_power: 0` = illimité. Mettre `duration_pct: 0` sur tous les paliers rend le travail instantané. `upgrade_gold_pct_per_level` : fusion d'une copie pour passer à +N = N × ce % du prix de fabrication (remise de maîtrise incluse).",
+  "_comment": "PNJ. `artisans` = les forgerons qui FUSIONNENT (Borak fait tout depuis le 26/10/2026) : `categories` doit couvrir toutes les catégories équipables. `alchimiste` = Elna : `recipes` (ingrédients = matériaux de famille, `fee_per_level` = or × niveau du joueur par potion), `tiers` de maîtrise comptés en POTIONS préparées (remise sur la confection, `bonus_pct` = chance d'une potion offerte). Les paliers de maîtrise montent avec le nombre de travaux terminés. `pricing` : vestige de la fabrication (or = base + coef x puissance^exposant).",
   "pricing": {
     "gold_base": 20,
     "gold_coef": 1.6,
@@ -27,7 +27,8 @@
         "arme",
         "bouclier",
         "tete",
-        "corps"
+        "corps",
+        "accessoire"
       ],
       "greeting": "Pose ton minerai sur l'enclume. Je m'occupe du reste.",
       "tiers": [
@@ -72,67 +73,113 @@
           "quote": "Il n'y a plus rien que cette forge ne puisse avaler. Choisis."
         }
       ]
-    },
-    {
-      "code": "artisan",
-      "name": "Elna",
-      "title": "Artisane",
-      "verb": "confectionner",
-      "work_noun": "confection",
-      "image": "artisan.png",
-      "accent": [
-        72,
-        166,
-        158
-      ],
-      "categories": [
-        "accessoire"
-      ],
-      "greeting": "Montre-moi ce que tu as rapporté. Je verrai ce que j'en tire.",
-      "tiers": [
-        {
-          "level": 1,
-          "code": "apprenti",
-          "name": "Apprentie",
-          "orders_required": 0,
-          "max_item_power": 25,
-          "gold_discount_pct": 0,
-          "duration_pct": 100,
-          "quote": "Mes mains apprennent encore. Restons sur des pièces sobres."
-        },
-        {
-          "level": 2,
-          "code": "compagnon",
-          "name": "Compagne",
-          "orders_required": 10,
-          "max_item_power": 220,
-          "gold_discount_pct": 5,
-          "duration_pct": 90,
-          "quote": "Je commence à savoir ce qui te va. Laisse-moi essayer mieux."
-        },
-        {
-          "level": 3,
-          "code": "maitre",
-          "name": "Maîtresse",
-          "orders_required": 30,
-          "max_item_power": 600,
-          "gold_discount_pct": 10,
-          "duration_pct": 80,
-          "quote": "Le fil, la pierre, le métal fin — plus rien ne me résiste vraiment."
-        },
-        {
-          "level": 4,
-          "code": "legendaire",
-          "name": "Légendaire",
-          "orders_required": 75,
-          "max_item_power": 0,
-          "gold_discount_pct": 15,
-          "duration_pct": 65,
-          "quote": "Dis-moi ce que tu veux devenir. Je te fabriquerai la pièce qui va avec."
-        }
-      ]
     }
   ],
+  "alchimiste": {
+    "code": "alchimiste",
+    "name": "Elna",
+    "title": "Alchimiste",
+    "image": "alchimiste.png",
+    "accent": [
+      72,
+      166,
+      158
+    ],
+    "greeting": "Apporte-moi ce que les monstres ont laissé, et un peu d'or pour le feu. Je m'occupe du reste.",
+    "tiers": [
+      {
+        "level": 1,
+        "code": "apprenti",
+        "name": "Apprentie",
+        "orders_required": 0,
+        "gold_discount_pct": 0,
+        "bonus_pct": 0,
+        "quote": "Mes fioles sont encore un peu troubles… mais elles soignent, promis."
+      },
+      {
+        "level": 2,
+        "code": "compagnon",
+        "name": "Compagne",
+        "orders_required": 30,
+        "gold_discount_pct": 5,
+        "bonus_pct": 0,
+        "quote": "Je commence à connaître ton sang. Mes dosages seront plus justes."
+      },
+      {
+        "level": 3,
+        "code": "maitre",
+        "name": "Maîtresse",
+        "orders_required": 120,
+        "gold_discount_pct": 10,
+        "bonus_pct": 10,
+        "quote": "Il me reste souvent une fiole en trop. Elle est pour toi."
+      },
+      {
+        "level": 4,
+        "code": "legendaire",
+        "name": "Légendaire",
+        "orders_required": 400,
+        "gold_discount_pct": 15,
+        "bonus_pct": 20,
+        "quote": "Tu m'as fait distiller tant de choses… Je ne rate plus jamais un mélange."
+      }
+    ],
+    "recipes": [
+      {
+        "item_code": "potion_soin",
+        "ingredients": {
+          "gel_e": 2
+        },
+        "fee_per_level": 1
+      },
+      {
+        "item_code": "potion_soin_superieure",
+        "ingredients": {
+          "gel_e": 4,
+          "dent_de_gobelin": 2
+        },
+        "fee_per_level": 4
+      },
+      {
+        "item_code": "potion_mana",
+        "ingredients": {
+          "fragment_d_me": 3
+        },
+        "fee_per_level": 3
+      },
+      {
+        "item_code": "elixir_recuperation",
+        "ingredients": {
+          "dent_de_gobelin": 3,
+          "fragment_d_me": 2
+        },
+        "fee_per_level": 6
+      },
+      {
+        "item_code": "elixir_force",
+        "ingredients": {
+          "c_ur_corrompu": 3
+        },
+        "fee_per_level": 10
+      },
+      {
+        "item_code": "elixir_garde",
+        "ingredients": {
+          "c_ur_corrompu": 2,
+          "fragment_d_me": 2
+        },
+        "fee_per_level": 10
+      },
+      {
+        "item_code": "elixir_vitalite",
+        "ingredients": {
+          "c_ur_corrompu": 2,
+          "dent_de_gobelin": 2
+        },
+        "fee_per_level": 10
+      }
+    ]
+  },
   "marchand": {
     "code": "marchand",
     "name": "Sorn",

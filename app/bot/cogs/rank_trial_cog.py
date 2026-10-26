@@ -24,6 +24,7 @@ from discord.ext import commands
 from app.bot.cogs._mixins import BetaChannelOnlyMixin
 from app.bot.rank_roles import RANK_ORDER, current_rank, set_rank_role
 from app.application.services.player_stats_resolver import resolve_player_stats
+from app.bot.embeds.role_trial_embeds import NO_POTIONS
 from app.domain.entities.mob_definition import MobDefinition
 from app.domain.services.party_combat_service import PartyCombatService
 from app.domain.services.power_score_service import PowerScoreService
@@ -138,6 +139,7 @@ class RankTrialCog(BetaChannelOnlyMixin, commands.Cog):
             ),
             inline=True,
         )
+        embed.add_field(name="Règle", value=NO_POTIONS, inline=False)
         embed.set_footer(text=f"Rang actuel : {elig.current_rank}")
         if elig.blocked_reason:
             embed.add_field(

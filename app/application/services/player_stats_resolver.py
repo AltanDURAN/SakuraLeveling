@@ -36,8 +36,11 @@ def resolve_player_stats(
     equipped_items: list[PlayerEquipmentItem],
     *,
     stats_service: StatsService | None = None,
+    elixirs: bool = False,
 ) -> Stats:
-    """Calcule les Stats finales d'un joueur, tous bonus appliqués.
+    """Calcule les Stats finales d'un joueur, tous bonus appliqués
+    (`elixirs=True` : élixirs d'Elna compris — combats de zone et world boss
+    seulement).
 
     Charge en interne :
       • skill_bonuses : depuis PlayerSkillAllocationRepository + SkillTreeService
@@ -53,7 +56,7 @@ def resolve_player_stats(
 
     title_bonuses = resolve_title_bonuses(session, player_id)
     set_bonuses = resolve_set_bonuses(equipped_items, profile.player.panoplie_bonus)
-    status_bonuses = resolve_status_effects(session, player_id)
+    status_bonuses = resolve_status_effects(session, player_id, elixirs=elixirs)
 
     svc = stats_service or StatsService()
     return svc.calculate_player_stats(

@@ -25,6 +25,7 @@ from discord import app_commands
 from discord.ext import commands, tasks
 
 from app.application.services.player_stats_resolver import resolve_player_stats
+from app.application.services.status_effect_resolver import resolve_regen_boosts
 from app.bot.checks.admin_check import admin_only
 from app.domain.services.chest_loot_service import ChestLootService
 from app.domain.services.gear_service import FORGE_MAX_LEVEL as MAX_ITEM_LEVEL, gear_label, gear_stats
@@ -569,6 +570,7 @@ class EventCog(commands.Cog):
             hp_regeneration=stats.hp_regeneration,
             last_updated_at=state.updated_at,
             now=datetime.now(UTC),
+            boosts=resolve_regen_boosts(session, profile.player.id),
         )
         health_repo.update_current_hp(profile.player.id, max(1, current // 2))
 

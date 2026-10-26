@@ -178,7 +178,9 @@ class MerchantView(discord.ui.View):
             npc_title=self.definition.title,
             image_name=self.definition.image,
             accent=self.definition.accent,
-            greeting=self.definition.greeting,
+            greeting=(self.definition.greeting if self._by_category else
+                      "Mes caisses sont vides en ce moment. Les potions, c'est Elna "
+                      "qui les prépare : va la voir avec /alchimiste."),
             selection=selection,
             info_rows=self._info_rows() if selection is None else None,
             seed=self.player_id,

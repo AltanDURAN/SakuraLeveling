@@ -127,6 +127,14 @@ class StatsService:
             flat["mana_max"] += set_bonuses.mana_max_flat
             flat["mana_regeneration"] += set_bonuses.mana_regeneration_flat
 
+        # ---- Élixirs d'Elna : une source de % comme les autres (ils
+        # s'additionnent au pool, plafond compris). Présents seulement là où
+        # ils comptent (combats de zone, world boss), cf. resolve_status_effects. ----
+        if status_bonuses is not None:
+            pct["attack"] += status_bonuses.attack_percent
+            pct["defense"] += status_bonuses.defense_percent
+            pct["max_hp"] += status_bonuses.max_hp_percent
+
         # ---- Application du socle ----
         stats = Stats(
             max_hp=max(1, round(base.max_hp * (1 + self._cap(pct["max_hp"])))),

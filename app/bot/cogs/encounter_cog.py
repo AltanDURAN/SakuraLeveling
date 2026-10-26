@@ -456,7 +456,7 @@ class EncounterCog(commands.Cog):
             self._reschedule(channel_id)
             return
 
-        self.encounter_service.persist_final_players_hp(result)
+        self.encounter_service.persist_final_players_hp(result, encounter)
         battle_summary = self.encounter_service.apply_rewards(encounter, result)
 
         current_filename = f"encounter_{encounter.message_id}_current.png"

@@ -1,4 +1,4 @@
-"""Entités des PNJ artisans (forgeron, artisane) et de leurs paliers."""
+"""Entités des PNJ (forgeron, alchimiste, marchand, voyante) et des paliers de maîtrise."""
 
 from __future__ import annotations
 
@@ -22,6 +22,8 @@ class MasteryTier:
     gold_discount_pct: int
     duration_pct: int  # 100 = durée normale, 0 = instantané
     quote: str = ""
+    #: Alchimiste : % de chance d'une potion offerte par potion préparée.
+    bonus_pct: int = 0
 
     def accepts_power(self, power: int) -> bool:
         return self.max_item_power <= 0 or power <= self.max_item_power
@@ -92,3 +94,24 @@ class SeerDefinition:
     @property
     def display_name(self) -> str:
         return f"{self.name}, {self.title.lower()}"
+
+
+@dataclass(frozen=True)
+class AlchemistDefinition:
+    """Elna, l'alchimiste : prépare les potions (cf. alchemy_service)."""
+
+    code: str
+    name: str
+    title: str
+    image: str
+    greeting: str
+    accent: tuple[int, int, int]
+    tiers: tuple[MasteryTier, ...] = field(default_factory=tuple)
+    recipes: tuple = field(default_factory=tuple)   # tuple[Recipe, ...]
+
+    @property
+    def display_name(self) -> str:
+        return f"{self.name}, {self.title.lower()}"
+
+    def recipe(self, item_code: str):
+        return next((r for r in self.recipes if r.item_code == item_code), None)

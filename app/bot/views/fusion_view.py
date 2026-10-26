@@ -1,7 +1,7 @@
 """Écran de fusion chez un artisan (équipement v2).
 
-Borak (armes, boucliers, tête, corps) et Elna (accessoires) ne fabriquent plus :
-ils FUSIONNENT. Le joueur choisit une pièce dont il a au moins deux copies de
+Borak ne fabrique plus : il FUSIONNE toutes les pièces (accessoires compris
+depuis le 26/10/2026 ; Elna est devenue alchimiste). Le joueur choisit une pièce dont il a au moins deux copies de
 même rareté, voit le coût (or + matériaux de la famille du monstre) et les
 stats avant / après, puis fusionne. Même panneau PNJ que le reste du jeu ;
 leur maîtrise monte à chaque fusion et réduit l'or demandé.

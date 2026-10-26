@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 
 from app.domain.entities.artisan import (
+    AlchemistDefinition,
     ArtisanDefinition,
     MasteryTier,
     MerchantDefinition,
@@ -57,6 +58,7 @@ def _tier(data: dict) -> MasteryTier:
         gold_discount_pct=int(data.get("gold_discount_pct", 0)),
         duration_pct=int(data.get("duration_pct", 100)),
         quote=str(data.get("quote", "")),
+        bonus_pct=int(data.get("bonus_pct", 0)),
     )
 
 
@@ -136,4 +138,29 @@ def get_seer() -> SeerDefinition:
         accent=_accent(data.get("accent"), (160, 104, 214)),
         price_story=str(data.get("price_story", "")),
         reading_prices=tuple(max(0, int(v)) for v in data.get("reading_prices") or ()),
+    )
+
+
+def get_alchemist() -> AlchemistDefinition:
+    from app.domain.services.alchemy_service import Recipe
+
+    data = _raw().get("alchimiste") or {}
+    recipes = tuple(
+        Recipe(
+            item_code=str(r.get("item_code", "")),
+            ingredients=tuple((str(code), int(qty)) for code, qty in (r.get("ingredients") or {}).items()),
+            fee_per_level=int(r.get("fee_per_level", 0)),
+        )
+        for r in data.get("recipes") or ()
+        if r.get("item_code")
+    )
+    return AlchemistDefinition(
+        code=str(data.get("code", "alchimiste")),
+        name=str(data.get("name", "Alchimiste")),
+        title=str(data.get("title", "Alchimiste")),
+        image=str(data.get("image", "alchimiste.png")),
+        greeting=str(data.get("greeting", "")),
+        accent=_accent(data.get("accent"), (72, 166, 158)),
+        tiers=tuple(sorted((_tier(t) for t in data.get("tiers", [])), key=lambda t: t.level)),
+        recipes=recipes,
     )

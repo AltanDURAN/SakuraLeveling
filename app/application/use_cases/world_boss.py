@@ -21,6 +21,7 @@ from zoneinfo import ZoneInfo
 
 from app.application.services.set_bonus_resolver import resolve_set_bonuses
 from app.application.services.player_stats_resolver import resolve_player_stats
+from app.application.services.status_effect_resolver import resolve_regen_boosts
 from app.domain.entities.boss_definition import BossDefinition
 from app.domain.entities.mob_definition import MobDefinition
 from app.domain.entities.world_boss import WorldBoss, WorldBossParticipation
@@ -560,11 +561,13 @@ class LaunchPartyFightWorldBossUseCase:
             equipped = self.equipment_repository.list_by_player_id(v.player_id)
             # Chaîne de stats centralisée (skill + classe + sets + TITRES) —
             # corrige l'oubli des bonus de titre dans le combat de boss.
+            # Élixirs d'Elna compris : le world boss est un combat de terrain.
             base_stats = resolve_player_stats(
                 self.world_boss_repository.session,
                 profile,
                 equipped,
                 stats_service=self.stats_service,
+                elixirs=True,
             )
             boosted = self.scaling_service.apply_team_bonus(base_stats, num_joined)
             # Si crit immunity : neutralise crit_chance
@@ -604,6 +607,7 @@ class LaunchPartyFightWorldBossUseCase:
                 mana_regeneration=boosted.mana_regeneration,
                 last_updated_at=mana_state.updated_at,
                 now=now,
+                boosts=resolve_regen_boosts(self.world_boss_repository.session, v.player_id),
             )
 
             eligible.append((v, {

@@ -20,6 +20,9 @@ RULES = ("Essais illimités, mais **même build = même score** : change d'équi
          "d'arbre, de points ou de /tactique pour faire mieux. Le meilleur score du "
          "jour est gardé ; la semaine compte tes 5 meilleurs jours. "
          f"Résultats le dimanche à {rts.RESULTS_HOUR} h.")
+#: Règle explicite (décision de l'auteur, 26/10/2026) : ni potions ni élixirs.
+NO_POTIONS = ("🧪 Potions et élixirs interdits : chacun part à PV et mana pleins, "
+              "et tes élixirs actifs ne comptent pas ici.")
 
 
 def _day_label(day: date) -> str:
@@ -59,6 +62,7 @@ def build_day_embed(day: date, mine: dict | None = None, week: dict | None = Non
                 f"{_place(entry[0])} ({format_int(round(entry[1]))})")
             parts.append(f"{label} {score}")
         embed.add_field(name="Ta semaine", value=" · ".join(parts), inline=False)
+    embed.add_field(name="Règle", value=NO_POTIONS, inline=False)
     embed.set_footer(text=RULES.replace("**", ""))
     return embed
 
@@ -85,7 +89,7 @@ def build_attempt_embed(outcome) -> discord.Embed:
         color=discord.Color.gold() if outcome.improved else discord.Color.blurple(),
     )
     embed.set_footer(text="Même build, même score : change d'équipement, d'arbre, de points "
-                          "ou de /tactique pour faire mieux.")
+                          "ou de /tactique pour faire mieux. " + NO_POTIONS)
     return embed
 
 

@@ -345,6 +345,32 @@ def write_resources_sheet(wb: Workbook) -> None:
     _finalize(ws, freeze="B2")
 
 
+def write_alchemy_sheet(wb: Workbook) -> None:
+    """Recettes d'Elna, l'alchimiste (section `alchimiste` d'artisans.json)."""
+    from app.domain.services.alchemy_service import effect_text
+
+    elna = (_load("artisans.json") or {}).get("alchimiste") or {}
+    recipes = elna.get("recipes") or []
+    if not recipes:
+        return
+    items = {i["code"]: i for i in _load("items.json")}
+    ws = wb.create_sheet("⚗️ Alchimie")
+    ws.append(["Potion", "Code", "Effet", "Ingrédients", "Or × niveau", "Or au niveau 50"])
+    for r in recipes:
+        item = items.get(r["item_code"], {})
+        ingredients = " + ".join(f"{q} × {items.get(c, {}).get('name', c)}"
+                                 for c, q in (r.get("ingredients") or {}).items())
+        fee = int(r.get("fee_per_level", 0))
+        ws.append([item.get("name", r["item_code"]), r["item_code"],
+                   effect_text(item.get("stat_bonuses")), ingredients, fee, fee * 50])
+    ws.append([])
+    ws.append(["Maîtrise", "Potions préparées", "Remise", "Potion offerte"])
+    for t in elna.get("tiers") or []:
+        ws.append([t.get("name"), t.get("orders_required", 0),
+                   f"{t.get('gold_discount_pct', 0)} %", f"{t.get('bonus_pct', 0)} %"])
+    _finalize(ws, freeze="B2")
+
+
 # ----------------------------------------------------------- autres ----------
 def write_shop_sheet(wb: Workbook) -> None:
     try:
@@ -466,7 +492,8 @@ def write_summary_sheet(wb: Workbook) -> None:
         ("🎽 Équipements", "Les 23 pièces (stats du COMMUN), le monstre qui la "
          "porte et son passif. Power calculé au niveau 30."),
         ("👹 Mobs", "Monstres : stats, drops, Power & Rang calculés en direct."),
-        ("🧪 Consommables / 📦 Ressources", "Potions et ressources de craft."),
+        ("🧪 Consommables / 📦 Ressources", "Potions et matériaux de famille."),
+        ("⚗️ Alchimie", "Recettes d'Elna : ingrédients, or de confection, maîtrise."),
         ("🏪 Shop", "Prix d'achat / vente du shop."),
         ("🌳 Skill Tree", "Tous les nœuds de l'arbre."),
         ("🏷️ Titres", "Titres, conditions et effets."),
@@ -512,6 +539,7 @@ def main() -> None:
     write_equipment_sheet(wb)
     write_mobs_sheet(wb)
     write_consumables_sheet(wb)
+    write_alchemy_sheet(wb)
     write_resources_sheet(wb)
     write_shop_sheet(wb)
     write_skill_tree_sheet(wb)
