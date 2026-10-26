@@ -26,8 +26,11 @@ def test_une_zone_ouverte_libere_sa_famille(monkeypatch):
     assert fz.unreleased_families() == set()
 
 
-def test_le_contenu_reel_cache_les_quatre_familles():
+def test_le_contenu_reel_cache_les_familles_des_zones_encore_prevues():
+    """Vrai quel que soit l'état d'ouverture (scripts/open_zones)."""
     fz.clear_cache()
-    assert {"primordial", "nocturne", "draconique", "abyssal"} <= fz.unreleased_families()
+    planned = {f for z in fz.planned_zones() for f in z["families"]}
     released = {f for z in fz.list_zones() for f in z["families"]}
+    assert planned <= fz.unreleased_families()
+    assert not (planned & released)
     assert {"gobelin", "mort-vivant", "demoniaque"} <= released

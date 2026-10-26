@@ -316,15 +316,797 @@
   {
     "code": "gobelin_superieur_chasseur_legendaire",
     "name": "Chasseur Légendaire — Gobelin Supérieur",
-    "description": "50 gobelins supérieurs tués. +5% drop rate sur cette espèce.",
+    "description": "25 gobelins supérieurs vaincus. +5% drop rate sur cette espèce. (élite de groupe : 25 suffisent)",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "gobelin_superieur",
-    "condition_value": 50,
+    "condition_value": 25,
     "effects": [
       {
         "type": "drop_rate_bonus_vs_mob",
         "target": "gobelin_superieur",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "mort_vivant_slayer",
+    "name": "Pourfendeur de morts-vivants",
+    "description": "100 morts-vivants vaincus. +10% dégâts infligés et -10% dégâts subis face aux morts-vivants.",
+    "icon": "💀",
+    "condition_type": "kills_family",
+    "condition_target": "mort-vivant",
+    "condition_value": 100,
+    "effects": [
+      {
+        "type": "damage_bonus_vs_family",
+        "target": "mort-vivant",
+        "value": 10
+      },
+      {
+        "type": "damage_reduction_from_family",
+        "target": "mort-vivant",
+        "value": 10
+      }
+    ]
+  },
+  {
+    "code": "demoniaque_slayer",
+    "name": "Pourfendeur de démons",
+    "description": "100 démons vaincus. +10% dégâts infligés et -10% dégâts subis face aux démons.",
+    "icon": "😈",
+    "condition_type": "kills_family",
+    "condition_target": "demoniaque",
+    "condition_value": 100,
+    "effects": [
+      {
+        "type": "damage_bonus_vs_family",
+        "target": "demoniaque",
+        "value": 10
+      },
+      {
+        "type": "damage_reduction_from_family",
+        "target": "demoniaque",
+        "value": 10
+      }
+    ]
+  },
+  {
+    "code": "primordial_slayer",
+    "name": "Pourfendeur de bêtes primordiales",
+    "description": "100 bêtes primordiales vaincus. +10% dégâts infligés et -10% dégâts subis face aux bêtes primordiales.",
+    "icon": "🐺",
+    "condition_type": "kills_family",
+    "condition_target": "primordial",
+    "condition_value": 100,
+    "effects": [
+      {
+        "type": "damage_bonus_vs_family",
+        "target": "primordial",
+        "value": 10
+      },
+      {
+        "type": "damage_reduction_from_family",
+        "target": "primordial",
+        "value": 10
+      }
+    ]
+  },
+  {
+    "code": "nocturne_slayer",
+    "name": "Pourfendeur des ténèbres",
+    "description": "100 créatures nocturnes vaincus. +10% dégâts infligés et -10% dégâts subis face aux créatures nocturnes.",
+    "icon": "🦇",
+    "condition_type": "kills_family",
+    "condition_target": "nocturne",
+    "condition_value": 100,
+    "effects": [
+      {
+        "type": "damage_bonus_vs_family",
+        "target": "nocturne",
+        "value": 10
+      },
+      {
+        "type": "damage_reduction_from_family",
+        "target": "nocturne",
+        "value": 10
+      }
+    ]
+  },
+  {
+    "code": "draconique_slayer",
+    "name": "Pourfendeur de dragons",
+    "description": "100 dragons vaincus. +10% dégâts infligés et -10% dégâts subis face aux dragons.",
+    "icon": "🐉",
+    "condition_type": "kills_family",
+    "condition_target": "draconique",
+    "condition_value": 100,
+    "effects": [
+      {
+        "type": "damage_bonus_vs_family",
+        "target": "draconique",
+        "value": 10
+      },
+      {
+        "type": "damage_reduction_from_family",
+        "target": "draconique",
+        "value": 10
+      }
+    ]
+  },
+  {
+    "code": "abyssal_slayer",
+    "name": "Pourfendeur du Néant",
+    "description": "100 créatures du Néant vaincus. +10% dégâts infligés et -10% dégâts subis face aux créatures du Néant.",
+    "icon": "🌌",
+    "condition_type": "kills_family",
+    "condition_target": "abyssal",
+    "condition_value": 100,
+    "effects": [
+      {
+        "type": "damage_bonus_vs_family",
+        "target": "abyssal",
+        "value": 10
+      },
+      {
+        "type": "damage_reduction_from_family",
+        "target": "abyssal",
+        "value": 10
+      }
+    ]
+  },
+  {
+    "code": "squelette_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Squelette",
+    "description": "50 × Squelette vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "squelette",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "squelette",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "zombie_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Zombie",
+    "description": "50 × Zombie vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "zombie",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "zombie",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "momie_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Momie",
+    "description": "50 × Momie vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "momie",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "momie",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "fantome_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Fantôme",
+    "description": "50 × Fantôme vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "fantome",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "fantome",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "gargouille_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Gargouille",
+    "description": "50 × Gargouille vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "gargouille",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "gargouille",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "diablotin_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Diablotin",
+    "description": "50 × Diablotin vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "diablotin",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "diablotin",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "banshee_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Banshee",
+    "description": "50 × Banshee vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "banshee",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "banshee",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "loup_sacre_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Loup sacré",
+    "description": "50 × Loup sacré vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "loup_sacre",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "loup_sacre",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "cerf_esprit_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Cerf-esprit",
+    "description": "50 × Cerf-esprit vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "cerf_esprit",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "cerf_esprit",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "serpent_des_racines_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Serpent des racines",
+    "description": "50 × Serpent des racines vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "serpent_des_racines",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "serpent_des_racines",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "demon_cornu_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Démon cornu",
+    "description": "50 × Démon cornu vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "demon_cornu",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "demon_cornu",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "ours_colosse_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Ours colosse",
+    "description": "50 × Ours colosse vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "ours_colosse",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "ours_colosse",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "liche_maudite_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Liche maudite",
+    "description": "25 × Liche maudite vaincus. +5% drop rate sur cette espèce. (élite de groupe : 25 suffisent)",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "liche_maudite",
+    "condition_value": 25,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "liche_maudite",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "golem_de_mousse_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Golem de mousse",
+    "description": "50 × Golem de mousse vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "golem_de_mousse",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "golem_de_mousse",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "aigle_tempete_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Aigle-tempête",
+    "description": "25 × Aigle-tempête vaincus. +5% drop rate sur cette espèce. (élite de groupe : 25 suffisent)",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "aigle_tempete",
+    "condition_value": 25,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "aigle_tempete",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "chauve_souris_geante_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Chauve-souris géante",
+    "description": "50 × Chauve-souris géante vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "chauve_souris_geante",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "chauve_souris_geante",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "goule_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Goule",
+    "description": "50 × Goule vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "goule",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "goule",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "loup_garou_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Loup-garou",
+    "description": "50 × Loup-garou vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "loup_garou",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "loup_garou",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "ogre_demoniaque_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Ogre démoniaque",
+    "description": "50 × Ogre démoniaque vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "ogre_demoniaque",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "ogre_demoniaque",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "sorciere_de_sang_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Sorcière de sang",
+    "description": "50 × Sorcière de sang vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "sorciere_de_sang",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "sorciere_de_sang",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "chevalier_de_l_eclipse_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Chevalier de l'éclipse",
+    "description": "50 × Chevalier de l'éclipse vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "chevalier_de_l_eclipse",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "chevalier_de_l_eclipse",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "vampire_noble_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Vampire noble",
+    "description": "50 × Vampire noble vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "vampire_noble",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "vampire_noble",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "comtesse_ecarlate_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Comtesse écarlate",
+    "description": "25 × Comtesse écarlate vaincus. +5% drop rate sur cette espèce. (élite de groupe : 25 suffisent)",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "comtesse_ecarlate",
+    "condition_value": 25,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "comtesse_ecarlate",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "kobold_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Kobold",
+    "description": "50 × Kobold vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "kobold",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "kobold",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "cerbere_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Cerbère",
+    "description": "50 × Cerbère vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "cerbere",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "cerbere",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "dragonnet_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Dragonnet",
+    "description": "50 × Dragonnet vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "dragonnet",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "dragonnet",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "drake_de_braise_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Drake de braise",
+    "description": "50 × Drake de braise vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "drake_de_braise",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "drake_de_braise",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "wyverne_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Wyverne",
+    "description": "50 × Wyverne vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "wyverne",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "wyverne",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "dragon_de_givre_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Dragon de givre",
+    "description": "50 × Dragon de givre vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "dragon_de_givre",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "dragon_de_givre",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "succube_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Succube",
+    "description": "50 × Succube vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "succube",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "succube",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "gardien_draconique_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Gardien draconique",
+    "description": "50 × Gardien draconique vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "gardien_draconique",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "gardien_draconique",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "dragon_ancien_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Dragon ancien",
+    "description": "25 × Dragon ancien vaincus. +5% drop rate sur cette espèce. (élite de groupe : 25 suffisent)",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "dragon_ancien",
+    "condition_value": 25,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "dragon_ancien",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "rejeton_du_neant_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Rejeton du néant",
+    "description": "50 × Rejeton du néant vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "rejeton_du_neant",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "rejeton_du_neant",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "oeil_errant_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Œil errant",
+    "description": "50 × Œil errant vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "oeil_errant",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "oeil_errant",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "ange_dechu_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Ange déchu",
+    "description": "50 × Ange déchu vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "ange_dechu",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "ange_dechu",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "devoreur_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Dévoreur",
+    "description": "50 × Dévoreur vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "devoreur",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "devoreur",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "heraut_du_vide_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Héraut du vide",
+    "description": "50 × Héraut du vide vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "heraut_du_vide",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "heraut_du_vide",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "kraken_astral_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Kraken astral",
+    "description": "50 × Kraken astral vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "kraken_astral",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "kraken_astral",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "seraphin_brise_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Séraphin brisé",
+    "description": "50 × Séraphin brisé vaincus. +5% drop rate sur cette espèce.",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "seraphin_brise",
+    "condition_value": 50,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "seraphin_brise",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "archidemon_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Archidémon",
+    "description": "25 × Archidémon vaincus. +5% drop rate sur cette espèce. (élite de groupe : 25 suffisent)",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "archidemon",
+    "condition_value": 25,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "archidemon",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "avatar_du_neant_chasseur_legendaire",
+    "name": "Chasseur Légendaire — Avatar du Néant",
+    "description": "25 × Avatar du Néant vaincus. +5% drop rate sur cette espèce. (élite de groupe : 25 suffisent)",
+    "icon": "🏹",
+    "condition_type": "kills_mob",
+    "condition_target": "avatar_du_neant",
+    "condition_value": 25,
+    "effects": [
+      {
+        "type": "drop_rate_bonus_vs_mob",
+        "target": "avatar_du_neant",
         "value": 5
       }
     ]

@@ -138,3 +138,16 @@ def test_vitalite_garde_la_proportion_des_pv():
     assert EncounterService._scaled_hp(500, 1000, 1100) == 550
     assert EncounterService._scaled_hp(550, 1100, 1000) == 500
     assert EncounterService._scaled_hp(1000, 1000, 1000) == 1000
+
+
+def test_un_elixir_superieur_remplace_l_ordinaire_jamais_l_inverse(session):
+    plain = _item(session, "elixir_force", bonuses={"effect": "elixir", "kind": "attack", "value": 10, "minutes": 60})
+    strong = _item(session, "elixir_force_sup", bonuses={"effect": "elixir", "kind": "attack", "value": 20, "minutes": 60})
+    pid = _player(session)
+    InventoryRepository(session).add_item(pid, plain, 1)
+    InventoryRepository(session).add_item(pid, strong, 1)
+    use_case = _build_use_case(session)
+    assert use_case.execute(1, "u", "U", "elixir_force_sup").success
+    weaker = use_case.execute(1, "u", "U", "elixir_force")
+    assert not weaker.success and _qty(session, pid, plain) == 1     # pas bu
+    assert round(resolve_status_effects(session, pid, elixirs=True).attack_percent, 6) == 0.20

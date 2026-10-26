@@ -76,6 +76,8 @@ class ShopRepository:
         min_sell_price: int | None = None,
         stock_threshold: int | None = None,
         enabled: bool | None = None,
+        price_per_level: int | None = None,
+        max_owned: int | None = None,
     ) -> ShopItem | None:
         model = self.session.get(ShopItemModel, shop_item_id)
         if model is None:
@@ -91,6 +93,10 @@ class ShopRepository:
             model.stock_threshold = stock_threshold
         if enabled is not None:
             model.enabled = enabled
+        if price_per_level is not None:
+            model.price_per_level = price_per_level
+        if max_owned is not None:
+            model.max_owned = max_owned
 
         model.updated_at = datetime.now(UTC)
         self.session.commit()

@@ -95,19 +95,24 @@ class PlayerStatusEffectRepository:
 
     def apply_elixir(self, player_id: int, code: str, kind: str, multiplier: float,
                      duration_seconds: int) -> tuple[PlayerStatusEffectModel, bool]:
-        """Un MÊME effet ne se cumule jamais : s'il est actif, sa durée repart
-        de zéro (renouvelé = True) ; sinon un nouvel effet commence."""
+        """Un MÊME effet ne se cumule jamais : s'il est actif à la même force,
+        sa durée repart de zéro (renouvelé = True) ; plus fort, il le remplace
+        (l'ancien s'arrête maintenant : la fenêtre de récupération garde son
+        ancien multiplicateur jusque-là) ; sinon un nouvel effet commence.
+        Un élixir PLUS FAIBLE que l'actif est refusé en amont (UseConsumable)."""
+        now = _now()
         active = self.list_active_elixirs(player_id).get(kind)
-        if active is not None:
-            active.expires_at = _now() + timedelta(seconds=max(1, int(duration_seconds)))
-            active.multiplier = float(multiplier)
+        if active is not None and float(active.multiplier) == float(multiplier):
+            active.expires_at = now + timedelta(seconds=max(1, int(duration_seconds)))
             active.code = code
             self.session.flush()
             return active, True
+        if active is not None:
+            active.expires_at = now
         effect = PlayerStatusEffectModel(
             player_id=player_id, code=code, kind=kind, multiplier=float(multiplier),
-            expires_at=_now() + timedelta(seconds=max(1, int(duration_seconds))),
-            created_at=_now(),
+            expires_at=now + timedelta(seconds=max(1, int(duration_seconds))),
+            created_at=now,
         )
         self.session.add(effect)
         self.session.flush()

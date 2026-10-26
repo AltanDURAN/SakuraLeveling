@@ -188,6 +188,14 @@ def seed_shop_items() -> None:
 
             existing = shop_repository.get_by_item_code(item_code)
             if existing is not None:
+                # Articles « gérés par le contenu » (l'étal de Sorn, calibré) :
+                # prix, plafond et disponibilité suivent shop_items.json — ex. un
+                # cor de chasse s'active quand sa zone ouvre (scripts/open_zones).
+                if entry.get("managed"):
+                    shop_repository.update(
+                        existing.id, buy_price=entry["buy_price"], enabled=entry.get("enabled", True),
+                        price_per_level=entry.get("price_per_level", 0), max_owned=entry.get("max_owned", 0),
+                    )
                 skipped += 1
                 continue
 

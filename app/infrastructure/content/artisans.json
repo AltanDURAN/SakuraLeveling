@@ -177,6 +177,51 @@
           "dent_de_gobelin": 2
         },
         "fee_per_level": 10
+      },
+      {
+        "item_code": "grande_potion_soin",
+        "ingredients": {
+          "croc_primordial": 3
+        },
+        "fee_per_level": 6
+      },
+      {
+        "item_code": "grande_potion_mana",
+        "ingredients": {
+          "sang_lunaire": 3
+        },
+        "fee_per_level": 5
+      },
+      {
+        "item_code": "elixir_recuperation_sup",
+        "ingredients": {
+          "sang_lunaire": 3,
+          "croc_primordial": 2
+        },
+        "fee_per_level": 9
+      },
+      {
+        "item_code": "elixir_force_sup",
+        "ingredients": {
+          "ecaille_de_dragon": 3
+        },
+        "fee_per_level": 15
+      },
+      {
+        "item_code": "elixir_garde_sup",
+        "ingredients": {
+          "ecaille_de_dragon": 2,
+          "sang_lunaire": 2
+        },
+        "fee_per_level": 15
+      },
+      {
+        "item_code": "elixir_vitalite_sup",
+        "ingredients": {
+          "ecaille_de_dragon": 2,
+          "croc_primordial": 2
+        },
+        "fee_per_level": 15
       }
     ]
   },

@@ -148,6 +148,134 @@
     "level_requirement": 1
   },
   {
+    "code": "grande_potion_soin",
+    "name": "Grande potion de soin",
+    "description": "Rend 60 % des PV max (sans dépasser le maximum).",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "heal_percent",
+      "value": 60
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "grande_potion_mana",
+    "name": "Grande potion de mana",
+    "description": "Rend tout le mana.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "mana_percent",
+      "value": 100
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "elixir_recuperation_sup",
+    "name": "Élixir de récupération supérieur",
+    "description": "Pendant 1 h, tes PV et ton mana remontent 5 fois plus vite hors combat. Le reboire renouvelle sa durée ; un élixir plus faible du même type ne le remplace pas.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "elixir",
+      "kind": "regen",
+      "value": 5,
+      "minutes": 60
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "elixir_force_sup",
+    "name": "Élixir de force supérieur",
+    "description": "+20 % d'attaque pendant 1 h, en combat de zone et au world boss (pas en épreuve ni en défi). Le reboire renouvelle sa durée ; un élixir plus faible du même type ne le remplace pas.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "elixir",
+      "kind": "attack",
+      "value": 20,
+      "minutes": 60
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "elixir_garde_sup",
+    "name": "Élixir de garde supérieur",
+    "description": "+20 % de défense pendant 1 h, en combat de zone et au world boss (pas en épreuve ni en défi). Le reboire renouvelle sa durée ; un élixir plus faible du même type ne le remplace pas.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "elixir",
+      "kind": "defense",
+      "value": 20,
+      "minutes": 60
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "elixir_vitalite_sup",
+    "name": "Élixir de vitalité supérieur",
+    "description": "+20 % de PV max pendant 1 h, en combat de zone et au world boss (pas en épreuve ni en défi). Le reboire renouvelle sa durée ; un élixir plus faible du même type ne le remplace pas.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "elixir",
+      "kind": "max_hp",
+      "value": 20,
+      "minutes": 60
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
     "code": "cor_chasse_f",
     "name": "Cor de chasse de la Clairière",
     "description": "Fait apparaître l'élite de la Clairière sinistre (rang F) dans le salon de la zone, à la suite du combat en cours. Il faut avoir accès à la zone ; 1 h d'attente entre deux cors, une seule élite invoquée par zone à la fois.",
@@ -170,7 +298,7 @@
   {
     "code": "cor_chasse_e",
     "name": "Cor de chasse du Cimetière",
-    "description": "Fait apparaître l'élite de le Cimetière abandonné (rang E) dans le salon de la zone, à la suite du combat en cours. Il faut avoir accès à la zone ; 1 h d'attente entre deux cors, une seule élite invoquée par zone à la fois.",
+    "description": "Fait apparaître l'élite du Cimetière abandonné (rang E) dans le salon de la zone, à la suite du combat en cours. Il faut avoir accès à la zone ; 1 h d'attente entre deux cors, une seule élite invoquée par zone à la fois.",
     "category": "consumable",
     "rarity": "common",
     "stackable": true,
@@ -190,7 +318,7 @@
   {
     "code": "cor_chasse_d",
     "name": "Cor de chasse du Berceau",
-    "description": "Fait apparaître l'élite de le Berceau cataclysmique (rang D) dans le salon de la zone, à la suite du combat en cours. Il faut avoir accès à la zone ; 1 h d'attente entre deux cors, une seule élite invoquée par zone à la fois.",
+    "description": "Fait apparaître l'élite du Berceau cataclysmique (rang D) dans le salon de la zone, à la suite du combat en cours. Il faut avoir accès à la zone ; 1 h d'attente entre deux cors, une seule élite invoquée par zone à la fois.",
     "category": "consumable",
     "rarity": "common",
     "stackable": true,
@@ -201,6 +329,66 @@
     "stat_bonuses": {
       "effect": "summon_elite",
       "rank": "D"
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "cor_chasse_c",
+    "name": "Cor de chasse du Sanctuaire",
+    "description": "Fait apparaître l'élite du Sanctuaire primordial (rang C) dans le salon de la zone, à la suite du combat en cours. Il faut avoir accès à la zone ; 1 h d'attente entre deux cors, une seule élite invoquée par zone à la fois.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "summon_elite",
+      "rank": "C"
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "cor_chasse_b",
+    "name": "Cor de chasse de l'Éclipse",
+    "description": "Fait apparaître l'élite de l'Éclipse éternelle (rang B) dans le salon de la zone, à la suite du combat en cours. Il faut avoir accès à la zone ; 1 h d'attente entre deux cors, une seule élite invoquée par zone à la fois.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "summon_elite",
+      "rank": "B"
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "cor_chasse_a",
+    "name": "Cor de chasse des Cimes",
+    "description": "Fait apparaître l'élite des Cimes des Wyrms (rang A) dans le salon de la zone, à la suite du combat en cours. Il faut avoir accès à la zone ; 1 h d'attente entre deux cors, une seule élite invoquée par zone à la fois.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "summon_elite",
+      "rank": "A"
     },
     "equipment_slot": null,
     "requires_two_hands": false,

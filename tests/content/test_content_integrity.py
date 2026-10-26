@@ -101,3 +101,13 @@ def test_l_etal_de_sorn_est_coherent():
     for zone in ZONES["zones"]:
         assert zone["rank"] in horns, f"pas de cor pour la zone {zone['rank']}"
         assert any(mob_family.get(e) in zone["families"] for e in GROUP_ELITES), zone["rank"]
+
+
+def test_chaque_famille_et_chaque_monstre_ont_leur_titre_de_chasse():
+    """Les titres de chasse couvrent TOUTES les zones (avant le 26/10/2026 :
+    seulement la Clairière)."""
+    titles = load("titles.json")
+    families = {t["condition_target"] for t in titles if t["condition_type"] == "kills_family"}
+    hunted = {t["condition_target"] for t in titles if t["condition_type"] == "kills_mob"}
+    assert {m["family"] for m in MOBS} <= families
+    assert {m["code"] for m in MOBS} == hunted

@@ -246,6 +246,11 @@ class UseConsumableUseCase:
     def _drink_elixir(self, session, player_id: int, item) -> UseConsumableResult:
         elixir = elixir_of(item.stat_bonuses)
         repo = PlayerStatusEffectRepository(session)
+        active = repo.list_active_elixirs(player_id).get(elixir.status_kind)
+        if active is not None and float(active.multiplier) > elixir.multiplier:
+            return UseConsumableResult(
+                False, f"🧪 Un élixir plus fort de ce type est déjà actif : **{item.name}** n'a pas été bu.",
+                item.name)
         if not self.inventory_repository.remove_item(player_id, item.id, 1, commit=False):
             return UseConsumableResult(False, f"❌ Vous n'avez pas de **{item.name}** en inventaire.", item.name)
         _, renewed = repo.apply_elixir(player_id, item.code, elixir.status_kind, elixir.multiplier,

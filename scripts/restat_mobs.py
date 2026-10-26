@@ -255,18 +255,27 @@ ZONES_V2_LEVELS: dict[str, int] = {
 }
 
 
-def main() -> None:
-    write = "--write" in sys.argv
-    if "--zones-v2" in sys.argv:
-        for code, level in ZONES_V2_LEVELS.items():
-            ASSIGN[code] = (level, ASSIGN[code][1])
-    if "--calibrate-elites" in sys.argv:
-        mult = calibrate_elites()
-        print("\nELITE_MULT = {")
-        for code, (hp_x, atk_x) in mult.items():
-            print(f'    "{code}": ({hp_x}, {atk_x}),')
-        print("}\n(à recopier dans scripts/restat_mobs.py, puis relancer avec --write)")
-        return
+FARM_ZONES = Path(__file__).resolve().parents[1] / "app/infrastructure/content/farm_zones.json"
+#: Rangs des zones prévues : dès que l'une est OUVERTE, le recalage s'applique.
+NEW_ZONE_RANKS = ("C", "B", "A", "S")
+
+
+def zones_v2_open() -> bool:
+    """Une zone C → S est-elle ouverte (`farm_zones.json` → `zones`) ? Alors
+    les familles existantes sont recalées dans leur tranche (ZONES_V2_LEVELS) :
+    le recalage suit le contenu, sans drapeau à retenir."""
+    zones = json.loads(FARM_ZONES.read_text(encoding="utf-8")).get("zones", [])
+    return any(z.get("rank") in NEW_ZONE_RANKS for z in zones)
+
+
+if zones_v2_open():
+    for _code, _level in ZONES_V2_LEVELS.items():
+        ASSIGN[_code] = (_level, ASSIGN[_code][1])
+
+
+def apply(write: bool) -> list[dict]:
+    """Recalcule les stats de chaque monstre d'après ASSIGN (et ELITE_MULT) ;
+    `write` : les écrit dans mobs.json. Renvoie les monstres (triés par niveau)."""
     mobs = json.load(open(P, encoding="utf-8"))
     for m in mobs:
         a = ASSIGN.get(m["code"])
@@ -282,6 +291,22 @@ def main() -> None:
         with open(P, "w", encoding="utf-8") as f:
             json.dump(mobs, f, ensure_ascii=False, indent=2)
             f.write("\n")
+    return mobs
+
+
+def main() -> None:
+    write = "--write" in sys.argv
+    if "--zones-v2" in sys.argv:
+        for code, level in ZONES_V2_LEVELS.items():
+            ASSIGN[code] = (level, ASSIGN[code][1])
+    if "--calibrate-elites" in sys.argv:
+        mult = calibrate_elites()
+        print("\nELITE_MULT = {")
+        for code, (hp_x, atk_x) in mult.items():
+            print(f'    "{code}": ({hp_x}, {atk_x}),')
+        print("}\n(à recopier dans scripts/restat_mobs.py, puis relancer avec --write)")
+        return
+    mobs = apply(write)
 
     print(f"{'code':22s} {'arch':9s} {'L':>3} {'PV':>5} {'ATK':>4} {'DEF':>4} {'XP':>4} {'gold':>4}")
     for m in mobs:
