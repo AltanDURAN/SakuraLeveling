@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     # le dimanche à 20 h. Défaut = salon général (choix de l'auteur, 25/10/2026).
     # Override possible via ROLE_TRIAL_CHANNEL_ID dans .env ; 0 = pas d'annonce.
     role_trial_channel_id: int = 1485329709201096796
+    # Salon des annonces de PROMOTION de rang (épreuve réussie). Défaut = salon
+    # général (choix de l'auteur, 26/10/2026). Override via
+    # RANK_ANNOUNCE_CHANNEL_ID ; 0 = pas d'annonce.
+    rank_announce_channel_id: int = 1485329709201096796
     # Serveur Discord principal (pour la gestion des rôles via l'admin web).
     # 0 = feature de gestion de rôles désactivée.
     discord_guild_id: int = 0

@@ -185,15 +185,17 @@ def attempt_seed(day: date, role: str, player_id: int) -> int:
 
 
 # ------------------------------------------------------------ adversaire --
-def opponent(variant: TrialVariant, now: datetime | None = None) -> MobDefinition:
-    """L'adversaire de la variante, calibré sur un joueur de niveau TRIAL_LEVEL."""
-    ref = reference_stats(TRIAL_LEVEL)
+def opponent(variant: TrialVariant, now: datetime | None = None, level: int = TRIAL_LEVEL,
+             name: str | None = None) -> MobDefinition:
+    """L'adversaire de la variante, calibré sur un joueur de niveau `level`
+    (TRIAL_LEVEL pour les défis, le niveau du rang pour une épreuve de rang)."""
+    ref = reference_stats(level)
     attack = round(variant.attack_mult * (ref.defense + 0.025 * ref.max_hp))
     # Le Mannequin (épreuve DPS) ne joue jamais : vitesse 0.
-    speed = round(expected_speed(TRIAL_LEVEL) * variant.speed_mult) if attack > 0 else 0
+    speed = round(expected_speed(level) * variant.speed_mult) if attack > 0 else 0
     now = now or datetime.now(UTC)
     return MobDefinition(
-        id=0, code=f"defi_{variant.role}_{variant.code}", name=variant.name,
+        id=0, code=f"defi_{variant.role}_{variant.code}", name=name or variant.name,
         description=variant.description, image_name="", family="defi",
         max_hp=OPPONENT_HP, current_hp=OPPONENT_HP, attack=attack,
         defense=round(variant.defense_mult * ref.attack), xp_reward=0, gold_reward=0,
@@ -203,9 +205,9 @@ def opponent(variant: TrialVariant, now: datetime | None = None) -> MobDefinitio
     )
 
 
-def recruit_stats() -> Stats:
-    """La recrue de l'épreuve de soutien : un joueur de référence de TRIAL_LEVEL."""
-    return reference_stats(TRIAL_LEVEL)
+def recruit_stats(level: int = TRIAL_LEVEL) -> Stats:
+    """La recrue de l'épreuve de soutien : un joueur de référence de ce niveau."""
+    return reference_stats(level)
 
 
 def score_of(role: str, contribution) -> int:
@@ -272,9 +274,12 @@ class TrialRun:
 
 def run_trial(role: str, variant: TrialVariant, *, player_id: int, name: str,
               stats: Stats, passives=None, tactic: str | None = None,
-              seed: int | None = None) -> TrialRun:
+              seed: int | None = None, level: int = TRIAL_LEVEL,
+              opponent_name: str | None = None) -> TrialRun:
     """Joue UN essai avec le vrai moteur. `seed` rend l'essai déterministe ;
-    l'état du hasard global est rétabli ensuite (le bot ne bloque pas)."""
+    l'état du hasard global est rétabli ensuite (le bot ne bloque pas).
+    `level` / `opponent_name` : adversaire et recrue d'un autre niveau (les
+    épreuves de RANG, qui reprennent ces trois épreuves face au gardien)."""
     import random
     from dataclasses import replace
 
@@ -295,7 +300,7 @@ def run_trial(role: str, variant: TrialVariant, *, player_id: int, name: str,
     if role == "dps":
         kwargs["max_ticks"] = DPS_TICKS
     if role == "soutien":
-        party.append(member(RECRUIT_ID, "la recrue", recruit_stats()))
+        party.append(member(RECRUIT_ID, "la recrue", recruit_stats(level)))
         kwargs["escort_ids"] = {RECRUIT_ID}
 
     state = random.getstate()
@@ -307,7 +312,7 @@ def run_trial(role: str, variant: TrialVariant, *, player_id: int, name: str,
         # cinq variantes du défi soutien (mesuré le 25/10/2026). Un défi
         # compare les rôles ; la gestion du mana se joue sur le terrain.
         result = PartyCombatService().fight_party_vs_mob(
-            party, opponent(variant), mob_abilities=dict(variant.abilities),
+            party, opponent(variant, level=level, name=opponent_name), mob_abilities=dict(variant.abilities),
             passives_by_player={player_id: passives},
             tactics_by_player={player_id: tactic} if tactic else {},
             mana_costs={},

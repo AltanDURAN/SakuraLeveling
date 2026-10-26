@@ -1,21 +1,29 @@
-"""Calibre les GARDIENS des épreuves de rang par simulation.
+"""Calibre les épreuves de rang par simulation, avec le vrai moteur.
 
-Même méthode que `restat_bosses` : on ne devine pas les statistiques, on les
-mesure avec le vrai moteur de combat.
+Depuis le 26/10/2026 (décision de l'auteur), l'épreuve reprend les trois
+épreuves des défis (`role_trial_service.run_trial`) face au gardien, au NIVEAU
+du rang : ⚔️ DPS (dégâts en 40 s), 🛡️ Tank (dégâts encaissés avant de tomber,
+sans sort de soin), 💚 Soutien (PV soignés avant la chute de la recrue). Le
+joueur choisit son rôle. ⚠️ Avant, il fallait abattre le gardien en 60
+actions : une course aux dégâts — un pur soutien restait bloqué au rang D, un
+pur tank au rang B (mesuré : 0 % ensuite).
 
 Pour chaque rang visé (E → SSS) :
   1. le SEUIL de power score = la puissance du GÉNÉRALISTE au niveau du rang
-     (`reference_roles.gate_power`, kit de soutien compris) : chacun atteint
-     chaque rang au niveau prévu ou un peu avant. ⚠️ Avant (25/10/2026),
-     c'était le joueur de référence sans classes : un joueur investi passait
-     ses seuils bien trop tôt (le seuil SSS dès le niveau 56-64) ;
-  2. le joueur qui passe l'épreuve = le GÉNÉRALISTE de ce niveau (stats,
-     passifs, tactique) ; la DÉFENSE du gardien vaut 35 % de son attaque —
-     au-delà de 75 %, les coups tombent au plancher et le contrecoup frappe ;
-  3. on cherche les PV du gardien qui donnent le TAUX DE VICTOIRE visé.
+     (`reference_roles.gate_power`, kit de soutien compris) — inchangé ;
+  2. pour chaque rôle, le score requis = le PLUS BAS de ceux qu'atteignent,
+     dans `TARGET_WIN_RATE` de leurs essais, le GÉNÉRALISTE au niveau du rang
+     et le SPÉCIALISTE de ce rôle au niveau où il franchit le seuil. Les deux
+     doivent pouvoir passer : calé sur le spécialiste seul, un généraliste
+     échouait PARTOUT (0 %) ; sur le généraliste seul, un tank qui franchit le
+     seuil dix niveaux plus tôt échouait son propre rôle ;
+  3. un rôle que personne ne sait encore jouer à ce rang (score nul : pas de
+     soin avant le Clerc) n'est pas proposé.
 
-L'épreuve doit se gagner, mais de justesse : un joueur qui vient de franchir
-le seuil doit passer environ deux fois sur trois.
+Mesuré le 26/10/2026 : chaque spécialiste réussit SON rôle (~100 %), le
+généraliste 60-87 % en DPS, 72-85 % en soutien, 100 % en tank ; le soutien des
+rangs E-D (qui ne soigne pas encore) passe par l'épreuve tank. Les scores
+varient peu d'un essai à l'autre : c'est surtout le build qui décide.
 
 Usage : .venv/bin/python -m scripts.calibrate_rank_trials [--write]
 """
@@ -23,25 +31,16 @@ Usage : .venv/bin/python -m scripts.calibrate_rank_trials [--write]
 from __future__ import annotations
 
 import json
-import random
 import sys
 from pathlib import Path
-
-from app.domain.entities.mob_definition import MobDefinition
-from app.domain.services.party_combat_service import PartyCombatService
-from app.domain.value_objects.stats import Stats
 
 CONTENT = (
     Path(__file__).resolve().parents[1]
     / "app/infrastructure/content/rank_trials.json"
 )
 
-# Rang visé → seuil de power score qui ouvre l'épreuve (entrée du palier,
-# c'est-à-dire la variante « - » dans PowerScoreService).
-#: Rang visé → NIVEAU auquel on l'obtient. Les 9 rangs (F → SSS) s'étalent sur
-#: la saison : F au départ, SSS au niveau maximum. Le seuil de power score est
-#: calculé depuis le joueur de référence de ce niveau — comme ça, le rang suit
-#: la progression réelle au lieu d'une table figée.
+#: Rang visé → NIVEAU auquel un joueur équilibré l'obtient (celui du gardien,
+#: de la recrue et du seuil de puissance).
 RANK_LEVELS: dict[str, int] = {
     "E": 12, "D": 25, "C": 38, "B": 50,
     "A": 63, "S": 75, "SS": 88, "SSS": 100,
@@ -58,11 +57,10 @@ GUARDIANS: dict[str, tuple[str, str]] = {
     "SSS": ("Le Dernier Gardien", "Au-delà, il n'y a plus personne pour t'arrêter."),
 }
 
-DEF_RATIO = 0.35          # DEF gardien = 35 % de l'ATK du joueur de référence
-ATK_RATIO = 0.55          # ATK gardien = 55 % de l'ATK du joueur
 TARGET_WIN_RATE = 0.65    # l'épreuve se gagne, mais de justesse
-SIMULATIONS = 400
-MAX_TURNS = 60
+SIMULATIONS = 200
+#: Rôle d'épreuve → build de `reference_roles` qui le joue.
+SPECIALIST: dict[str, str] = {"dps": "dps", "tank": "tank", "soutien": "support"}
 
 
 def _roles():
@@ -78,112 +76,92 @@ def _roles():
     return module
 
 
-def _player_at(level: int):
-    """Le généraliste du palier (stats, passifs, tactique)."""
-    return _roles().build("general", level)
+def _power(build) -> int:
+    from app.domain.services.power_score_service import PowerScoreService
+
+    return PowerScoreService().calculate_from_stats(build.stats, build.passives)
 
 
-def _guardian(name: str, hp: int, attack: int, defense: int) -> MobDefinition:
-    from datetime import datetime, UTC
+def gate_level(build_role: str, gate: int, fallback: int) -> int:
+    """Premier niveau où ce build atteint le seuil de puissance."""
+    roles = _roles()
+    return next((lvl for lvl in range(1, 101) if _power(roles.build(build_role, lvl)) >= gate), fallback)
 
-    now = datetime.now(UTC)
-    return MobDefinition(
-        id=0, code="gardien", name=name, description="", image_name="",
-        family="gardien", max_hp=hp, current_hp=hp, attack=attack,
-        defense=defense, xp_reward=0, gold_reward=0, spawn_weight=0,
-        speed=8, crit_chance=10, crit_damage=150, dodge=5, hp_regeneration=0,
-        loot_table=None, created_at=now, updated_at=now, element="",
+
+def trial_scores(build, role: str, level: int, n: int = SIMULATIONS) -> list[int]:
+    """Scores de `n` essais de ce build à l'épreuve `role` du rang de ce niveau."""
+    from app.domain.services.role_trial_service import VARIANTS, run_trial
+
+    return sorted(
+        run_trial(role, VARIANTS[role][0], player_id=1, name="p", stats=build.stats,
+                  passives=build.passives, tactic=build.tactic, seed=seed, level=level).score
+        for seed in range(n)
     )
 
 
-def _win_rate(build, hp: int, attack: int, defense: int) -> float:
-    """Taux de victoire mesuré sur N combats réels contre le gardien."""
-    player: Stats = build.stats
-    service = PartyCombatService()
-    wins = 0
-    for seed in range(SIMULATIONS):
-        random.seed(seed)
-        party = [{
-            "player_id": 1, "user_id": 1, "name": "ref", "avatar_url": "",
-            "stats": player, "current_hp": player.max_hp,
-            "max_hp": player.max_hp, "current_mana": player.mana_max,
-            "mana_max": player.mana_max,
-        }]
-        result = service.fight_party_vs_mob(
-            party, _guardian("g", hp, attack, defense), max_turns=MAX_TURNS,
-            passives_by_player={1: build.passives},
-            tactics_by_player={1: build.tactic} if build.tactic else {},
-        )
-        if result.victory:
-            wins += 1
-    return wins / SIMULATIONS
+def pass_rate(scores: list[int], threshold: int) -> float:
+    return sum(1 for s in scores if threshold and s >= threshold) / max(1, len(scores))
 
 
-def calibrate(rank: str, gate: int, level: int) -> dict:
-    build = _player_at(level)
-    player = build.stats
-    defense = max(1, int(player.attack * DEF_RATIO))
-    attack = max(player.defense + 5, int(player.attack * ATK_RATIO))
+def _quantile(scores: list[int]) -> int:
+    """Score atteint dans TARGET_WIN_RATE des essais."""
+    return scores[int(len(scores) * (1 - TARGET_WIN_RATE))]
 
-    # Dichotomie sur les PV : plus le gardien en a, moins on gagne souvent.
-    lo, hi = 10, max(200, player.attack * 400)
-    for _ in range(18):
-        mid = (lo + hi) // 2
-        if _win_rate(build, mid, attack, defense) > TARGET_WIN_RATE:
-            lo = mid
-        else:
-            hi = mid
-    hp = lo
-    rate = _win_rate(build, hp, attack, defense)
+
+BUILDS = ("dps", "tank", "support", "general")
+
+
+def calibrate(rank: str, level: int) -> dict:
+    roles = _roles()
+    gate = roles.gate_power(level)
+    at = {b: gate_level(b, gate, level) for b in BUILDS}
+    at["general"] = level
+    thresholds = {}
+    for role, build_role in SPECIALIST.items():
+        candidates = [q for q in (_quantile(trial_scores(roles.build("general", level), role, level)),
+                                  _quantile(trial_scores(roles.build(build_role, at[build_role]), role, level)))
+                      if q > 0]
+        thresholds[role] = min(candidates) if candidates else 0
+    measure = {
+        b: {"niveau": at[b], **{role: round(pass_rate(trial_scores(roles.build(b, at[b]), role, level, 100),
+                                                      thresholds[role]), 2) for role in SPECIALIST}}
+        for b in BUILDS
+    }
     name, lore = GUARDIANS[rank]
     return {
-        "rank": rank,
-        "required_power": gate,
-        "guardian": {
-            "name": name, "lore": lore,
-            "max_hp": hp, "attack": attack, "defense": defense,
-            "speed": 8, "crit_chance": 10, "crit_damage": 150, "dodge": 5,
-        },
-        "_mesure": {
-            "joueur_atk": player.attack,
-            "joueur_def": player.defense,
-            "joueur_pv": player.max_hp,
-            "taux_victoire": round(rate, 3),
-        },
+        "rank": rank, "required_power": gate, "level": level,
+        "guardian": {"name": name, "lore": lore},
+        "thresholds": thresholds, "_mesure": measure,
     }
 
 
 def main() -> None:
     write = "--write" in sys.argv
     trials = []
-    print(f"{'rang':<5} {'seuil':>8} {'PV gardien':>11} {'ATK':>5} {'DEF':>5} "
-          f"{'ATK joueur':>11} {'victoire':>9}")
+    print(f"{'rang':<5} {'seuil':>7} {'niv':>4} | score requis dps / tank / soutien "
+          f"| réussite (dps / tank / soutien) de chaque profil au niveau où il franchit le seuil")
     for rank, level in RANK_LEVELS.items():
-        gate = _roles().gate_power(level)
-        entry = calibrate(rank, gate, level)
-        m = entry["_mesure"]
-        g = entry["guardian"]
-        print(f"{rank:<5} {gate:>8} {g['max_hp']:>11} {g['attack']:>5} "
-              f"{g['defense']:>5} {m['joueur_atk']:>11} "
-              f"{m['taux_victoire']*100:>8.0f}%")
+        entry = calibrate(rank, level)
+        t, m = entry["thresholds"], entry["_mesure"]
+        cells = " | ".join(f"{b} niv {m[b]['niveau']}: " + "/".join(f"{m[b][r]:.0%}" for r in SPECIALIST)
+                           for b in BUILDS)
+        print(f"{rank:<5} {entry['required_power']:>7} {level:>4} | {t['dps']} / {t['tank']} / {t['soutien']} | {cells}")
         trials.append(entry)
 
     if write:
         payload = {
             "_comment": (
-                "Épreuves de rang. `required_power` ouvre l'épreuve ; le gardien "
-                "est calibré par simulation (scripts/calibrate_rank_trials.py) "
-                "pour un taux de victoire d'environ 65 % chez un joueur qui vient "
-                "d'atteindre le seuil. `retry_cooldown_hours` = attente après un "
-                "échec."
+                "Épreuves de rang. `required_power` ouvre l'épreuve ; le joueur choisit "
+                "son rôle et doit atteindre le score `thresholds[rôle]` face au gardien "
+                "(mêmes épreuves que /defi, au niveau `level` du rang). Calibré par "
+                "simulation (scripts/calibrate_rank_trials.py) : le spécialiste qui vient "
+                "d'atteindre le seuil réussit environ deux fois sur trois. "
+                "`retry_cooldown_hours` = attente après un échec."
             ),
             "retry_cooldown_hours": 6,
             "trials": trials,
         }
-        CONTENT.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
-            encoding="utf-8",
-        )
+        CONTENT.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print(f"\n✅ écrit dans {CONTENT}")
     else:
         print("\n(dry-run — relancer avec --write pour appliquer)")

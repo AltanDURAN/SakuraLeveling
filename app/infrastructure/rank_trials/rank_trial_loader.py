@@ -41,14 +41,9 @@ def list_trials() -> list[RankTrial]:
                 guardian=GuardianStats(
                     name=str(g.get("name", "Gardien")),
                     lore=str(g.get("lore", "")),
-                    max_hp=int(g.get("max_hp", 1)),
-                    attack=int(g.get("attack", 1)),
-                    defense=int(g.get("defense", 0)),
-                    speed=int(g.get("speed", 8)),
-                    crit_chance=int(g.get("crit_chance", 10)),
-                    crit_damage=int(g.get("crit_damage", 150)),
-                    dodge=int(g.get("dodge", 5)),
                 ),
+                level=int(entry.get("level", 1)),
+                thresholds={str(k): int(v) for k, v in (entry.get("thresholds") or {}).items()},
             )
         )
     return out

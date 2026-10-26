@@ -19,9 +19,8 @@ def _trial(rank: str, power: int) -> RankTrial:
     return RankTrial(
         rank=rank,
         required_power=power,
-        guardian=GuardianStats(
-            name=f"Gardien {rank}", lore="", max_hp=100, attack=10, defense=5,
-        ),
+        guardian=GuardianStats(name=f"Gardien {rank}", lore=""),
+        thresholds={"dps": 100, "tank": 50},
     )
 
 
@@ -111,13 +110,19 @@ def test_le_contenu_livre_couvre_toute_la_chaine():
     assert trials == set(RANK_ORDER[1:])
 
 
-def test_les_gardiens_laissent_passer_des_degats():
-    """Invariant du projet : la défense d'un adversaire ne doit jamais
-    approcher l'attaque du joueur, sinon les coups tombent au plancher de 1."""
+def test_chaque_rang_propose_au_moins_le_dps_et_le_tank():
+    """Depuis le 26/10/2026, l'épreuve se passe dans SON rôle : chaque rang
+    doit proposer un score requis positif (le soutien peut manquer aux tout
+    premiers rangs, avant de savoir soigner)."""
     from app.infrastructure.rank_trials import rank_trial_loader
 
     for trial in rank_trial_loader.list_trials():
-        # Le gardien est calibré sur un joueur au seuil ; sa défense doit
-        # rester une fraction de l'attaque attendue, jamais l'égaler.
-        assert trial.guardian.defense < trial.guardian.attack, trial.rank
-        assert trial.guardian.max_hp > 0
+        assert {"dps", "tank"} <= set(trial.roles()), trial.rank
+        assert trial.level > 0
+
+
+def test_on_reussit_l_epreuve_de_son_role():
+    trial = _trial("E", 1_000)
+    assert trial.roles() == ["dps", "tank"]          # pas de Soutien à ce rang
+    assert trial.passed("dps", 100) and not trial.passed("dps", 99)
+    assert not trial.passed("soutien", 10 ** 9)

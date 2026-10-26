@@ -6,9 +6,17 @@ rang n'était donc pas un système de jeu mais une tâche manuelle.
 
 Une épreuve se déroule en deux temps :
   1. un SEUIL de power score ouvre l'épreuve du rang suivant ;
-  2. il faut ensuite BATTRE le gardien en combat solo.
+  2. il faut ensuite réussir l'épreuve de SON rôle face au gardien.
 
-Le seuil dit « tu as la puissance », le combat dit « tu sais t'en servir ».
+Le seuil dit « tu as la puissance », l'épreuve dit « tu sais t'en servir ».
+
+Depuis le 26/10/2026 (décision de l'auteur), l'épreuve reprend les trois
+épreuves des défis (`role_trial_service`), face au gardien et au niveau du
+rang : ⚔️ DPS (dégâts infligés en 40 s), 🛡️ Tank (dégâts encaissés avant de
+tomber), 💚 Soutien (PV soignés avant la chute de la recrue). Le joueur choisit
+son rôle ; il est promu si son score atteint celui du rang (`thresholds`).
+Avant, il fallait ABATTRE le gardien en 60 actions : une course aux dégâts —
+mesuré, un pur soutien restait bloqué au rang D et un pur tank au rang B.
 """
 
 from __future__ import annotations
@@ -16,17 +24,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
+#: Ce que chaque rôle doit faire face au gardien (texte joueur).
+ROLE_GOALS: dict[str, str] = {
+    "dps": "inflige {n} dégâts en 40 secondes — il ne riposte pas",
+    "tank": "encaisse {n} dégâts avant de tomber — il frappe fort et s'énerve",
+    "soutien": "soigne {n} PV avant que la recrue ne tombe — il ne frappe qu'elle",
+}
+
+
 @dataclass(frozen=True)
 class GuardianStats:
     name: str
     lore: str
-    max_hp: int
-    attack: int
-    defense: int
-    speed: int = 8
-    crit_chance: int = 10
-    crit_damage: int = 150
-    dodge: int = 5
 
 
 @dataclass(frozen=True)
@@ -34,6 +43,19 @@ class RankTrial:
     rank: str
     required_power: int
     guardian: GuardianStats
+    #: Niveau du rang : celui du gardien et de la recrue.
+    level: int = 1
+    #: Score requis par rôle (« dps », « tank », « soutien ») ; un rôle absent
+    #: ou à 0 n'est pas proposé à ce rang (ex. Soutien avant de savoir soigner).
+    thresholds: dict = None
+
+    def roles(self) -> list[str]:
+        """Rôles proposés à ce rang, dans l'ordre DPS, Tank, Soutien."""
+        return [r for r in ROLE_GOALS if (self.thresholds or {}).get(r, 0) > 0]
+
+    def passed(self, role: str, score: int) -> bool:
+        required = (self.thresholds or {}).get(role, 0)
+        return required > 0 and score >= required
 
 
 @dataclass(frozen=True)

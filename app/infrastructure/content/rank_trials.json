@@ -1,173 +1,325 @@
 {
-  "_comment": "Épreuves de rang. `required_power` ouvre l'épreuve ; le gardien est calibré par simulation (scripts/calibrate_rank_trials.py) pour un taux de victoire d'environ 65 % chez un joueur qui vient d'atteindre le seuil. `retry_cooldown_hours` = attente après un échec.",
+  "_comment": "Épreuves de rang. `required_power` ouvre l'épreuve ; le joueur choisit son rôle et doit atteindre le score `thresholds[rôle]` face au gardien (mêmes épreuves que /defi, au niveau `level` du rang). Calibré par simulation (scripts/calibrate_rank_trials.py) : le spécialiste qui vient d'atteindre le seuil réussit environ deux fois sur trois. `retry_cooldown_hours` = attente après un échec.",
   "retry_cooldown_hours": 6,
   "trials": [
     {
       "rank": "E",
       "required_power": 451,
+      "level": 12,
       "guardian": {
         "name": "Sentinelle Ébréchée",
-        "lore": "Une armure vide qui refuse de tomber.",
-        "max_hp": 419,
-        "attack": 20,
-        "defense": 8,
-        "speed": 8,
-        "crit_chance": 10,
-        "crit_damage": 150,
-        "dodge": 5
+        "lore": "Une armure vide qui refuse de tomber."
+      },
+      "thresholds": {
+        "dps": 398,
+        "tank": 506,
+        "soutien": 81
       },
       "_mesure": {
-        "joueur_atk": 25,
-        "joueur_def": 15,
-        "joueur_pv": 305,
-        "taux_victoire": 0.735
+        "dps": {
+          "niveau": 13,
+          "dps": 1.0,
+          "tank": 0.0,
+          "soutien": 0.0
+        },
+        "tank": {
+          "niveau": 13,
+          "dps": 0.0,
+          "tank": 1.0,
+          "soutien": 0.0
+        },
+        "support": {
+          "niveau": 15,
+          "dps": 0.58,
+          "tank": 1.0,
+          "soutien": 0.0
+        },
+        "general": {
+          "niveau": 12,
+          "dps": 0.92,
+          "tank": 1.0,
+          "soutien": 0.66
+        }
       }
     },
     {
       "rank": "D",
       "required_power": 1370,
+      "level": 25,
       "guardian": {
         "name": "Veilleur de Cendres",
-        "lore": "Il garde la porte depuis que la cendre est chaude.",
-        "max_hp": 810,
-        "attack": 31,
-        "defense": 13,
-        "speed": 8,
-        "crit_chance": 10,
-        "crit_damage": 150,
-        "dodge": 5
+        "lore": "Il garde la porte depuis que la cendre est chaude."
+      },
+      "thresholds": {
+        "dps": 746,
+        "tank": 1032,
+        "soutien": 125
       },
       "_mesure": {
-        "joueur_atk": 39,
-        "joueur_def": 26,
-        "joueur_pv": 650,
-        "taux_victoire": 0.652
+        "dps": {
+          "niveau": 27,
+          "dps": 1.0,
+          "tank": 0.0,
+          "soutien": 0.0
+        },
+        "tank": {
+          "niveau": 26,
+          "dps": 0.0,
+          "tank": 1.0,
+          "soutien": 0.0
+        },
+        "support": {
+          "niveau": 28,
+          "dps": 0.95,
+          "tank": 1.0,
+          "soutien": 0.0
+        },
+        "general": {
+          "niveau": 25,
+          "dps": 0.83,
+          "tank": 1.0,
+          "soutien": 0.7
+        }
       }
     },
     {
       "rank": "C",
       "required_power": 3045,
+      "level": 38,
       "guardian": {
         "name": "Colosse d'Ossements",
-        "lore": "Chaque os qu'il porte fut un candidat.",
-        "max_hp": 1231,
-        "attack": 43,
-        "defense": 19,
-        "speed": 8,
-        "crit_chance": 10,
-        "crit_damage": 150,
-        "dodge": 5
+        "lore": "Chaque os qu'il porte fut un candidat."
+      },
+      "thresholds": {
+        "dps": 1112,
+        "tank": 1677,
+        "soutien": 177
       },
       "_mesure": {
-        "joueur_atk": 56,
-        "joueur_def": 38,
-        "joueur_pv": 1035,
-        "taux_victoire": 0.652
+        "dps": {
+          "niveau": 36,
+          "dps": 1.0,
+          "tank": 0.0,
+          "soutien": 0.0
+        },
+        "tank": {
+          "niveau": 41,
+          "dps": 0.0,
+          "tank": 1.0,
+          "soutien": 0.0
+        },
+        "support": {
+          "niveau": 35,
+          "dps": 0.8,
+          "tank": 0.0,
+          "soutien": 1.0
+        },
+        "general": {
+          "niveau": 38,
+          "dps": 0.86,
+          "tank": 1.0,
+          "soutien": 0.8
+        }
       }
     },
     {
       "rank": "B",
       "required_power": 6076,
+      "level": 50,
       "guardian": {
         "name": "Héraut du Silence",
-        "lore": "Il ne parle pas. Il n'a jamais eu besoin.",
-        "max_hp": 2763,
-        "attack": 58,
-        "defense": 26,
-        "speed": 8,
-        "crit_chance": 10,
-        "crit_damage": 150,
-        "dodge": 5
+        "lore": "Il ne parle pas. Il n'a jamais eu besoin."
+      },
+      "thresholds": {
+        "dps": 3142,
+        "tank": 2301,
+        "soutien": 617
       },
       "_mesure": {
-        "joueur_atk": 76,
-        "joueur_def": 53,
-        "joueur_pv": 1463,
-        "taux_victoire": 0.655
+        "dps": {
+          "niveau": 50,
+          "dps": 1.0,
+          "tank": 0.0,
+          "soutien": 0.0
+        },
+        "tank": {
+          "niveau": 50,
+          "dps": 0.0,
+          "tank": 1.0,
+          "soutien": 0.0
+        },
+        "support": {
+          "niveau": 50,
+          "dps": 0.0,
+          "tank": 0.0,
+          "soutien": 1.0
+        },
+        "general": {
+          "niveau": 50,
+          "dps": 0.74,
+          "tank": 1.0,
+          "soutien": 0.69
+        }
       }
     },
     {
       "rank": "A",
       "required_power": 9207,
+      "level": 63,
       "guardian": {
         "name": "Juge de Fer",
-        "lore": "Il pèse ta force et rend son verdict en coups.",
-        "max_hp": 3473,
-        "attack": 72,
-        "defense": 33,
-        "speed": 8,
-        "crit_chance": 10,
-        "crit_damage": 150,
-        "dodge": 5
+        "lore": "Il pèse ta force et rend son verdict en coups."
+      },
+      "thresholds": {
+        "dps": 3905,
+        "tank": 2618,
+        "soutien": 617
       },
       "_mesure": {
-        "joueur_atk": 95,
-        "joueur_def": 67,
-        "joueur_pv": 1705,
-        "taux_victoire": 0.652
+        "dps": {
+          "niveau": 57,
+          "dps": 1.0,
+          "tank": 0.0,
+          "soutien": 0.0
+        },
+        "tank": {
+          "niveau": 55,
+          "dps": 0.0,
+          "tank": 1.0,
+          "soutien": 0.0
+        },
+        "support": {
+          "niveau": 58,
+          "dps": 0.0,
+          "tank": 0.0,
+          "soutien": 1.0
+        },
+        "general": {
+          "niveau": 63,
+          "dps": 0.74,
+          "tank": 1.0,
+          "soutien": 0.67
+        }
       }
     },
     {
       "rank": "S",
       "required_power": 15299,
+      "level": 75,
       "guardian": {
         "name": "Archonte Déchu",
-        "lore": "Il a tenu ce rang. Il te fera mériter le tien.",
-        "max_hp": 4495,
-        "attack": 90,
-        "defense": 42,
-        "speed": 8,
-        "crit_chance": 10,
-        "crit_damage": 150,
-        "dodge": 5
+        "lore": "Il a tenu ce rang. Il te fera mériter le tien."
+      },
+      "thresholds": {
+        "dps": 5229,
+        "tank": 3679,
+        "soutien": 861
       },
       "_mesure": {
-        "joueur_atk": 120,
-        "joueur_def": 85,
-        "joueur_pv": 2236,
-        "taux_victoire": 0.652
+        "dps": {
+          "niveau": 65,
+          "dps": 1.0,
+          "tank": 0.0,
+          "soutien": 0.0
+        },
+        "tank": {
+          "niveau": 65,
+          "dps": 0.0,
+          "tank": 1.0,
+          "soutien": 0.0
+        },
+        "support": {
+          "niveau": 70,
+          "dps": 0.0,
+          "tank": 0.0,
+          "soutien": 1.0
+        },
+        "general": {
+          "niveau": 75,
+          "dps": 0.75,
+          "tank": 1.0,
+          "soutien": 0.66
+        }
       }
     },
     {
       "rank": "SS",
       "required_power": 20836,
+      "level": 88,
       "guardian": {
         "name": "Effigie du Vide",
-        "lore": "Ce qui reste quand un rang a été arraché.",
-        "max_hp": 5275,
-        "attack": 103,
-        "defense": 47,
-        "speed": 8,
-        "crit_chance": 10,
-        "crit_damage": 150,
-        "dodge": 5
+        "lore": "Ce qui reste quand un rang a été arraché."
+      },
+      "thresholds": {
+        "dps": 6037,
+        "tank": 4620,
+        "soutien": 978
       },
       "_mesure": {
-        "joueur_atk": 136,
-        "joueur_def": 98,
-        "joueur_pv": 2666,
-        "taux_victoire": 0.655
+        "dps": {
+          "niveau": 76,
+          "dps": 1.0,
+          "tank": 0.0,
+          "soutien": 0.0
+        },
+        "tank": {
+          "niveau": 76,
+          "dps": 0.0,
+          "tank": 1.0,
+          "soutien": 0.0
+        },
+        "support": {
+          "niveau": 82,
+          "dps": 0.0,
+          "tank": 0.0,
+          "soutien": 1.0
+        },
+        "general": {
+          "niveau": 88,
+          "dps": 0.75,
+          "tank": 1.0,
+          "soutien": 0.67
+        }
       }
     },
     {
       "rank": "SSS",
       "required_power": 26506,
+      "level": 100,
       "guardian": {
         "name": "Le Dernier Gardien",
-        "lore": "Au-delà, il n'y a plus personne pour t'arrêter.",
-        "max_hp": 6175,
-        "attack": 116,
-        "defense": 53,
-        "speed": 8,
-        "crit_chance": 10,
-        "crit_damage": 150,
-        "dodge": 5
+        "lore": "Au-delà, il n'y a plus personne pour t'arrêter."
+      },
+      "thresholds": {
+        "dps": 7114,
+        "tank": 5968,
+        "soutien": 1155
       },
       "_mesure": {
-        "joueur_atk": 153,
-        "joueur_def": 111,
-        "joueur_pv": 3010,
-        "taux_victoire": 0.652
+        "dps": {
+          "niveau": 85,
+          "dps": 1.0,
+          "tank": 0.0,
+          "soutien": 0.0
+        },
+        "tank": {
+          "niveau": 86,
+          "dps": 0.0,
+          "tank": 1.0,
+          "soutien": 0.0
+        },
+        "support": {
+          "niveau": 93,
+          "dps": 0.0,
+          "tank": 0.0,
+          "soutien": 1.0
+        },
+        "general": {
+          "niveau": 100,
+          "dps": 0.75,
+          "tank": 1.0,
+          "soutien": 0.66
+        }
       }
     }
   ]
