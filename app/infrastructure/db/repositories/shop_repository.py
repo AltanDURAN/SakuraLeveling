@@ -45,6 +45,8 @@ class ShopRepository:
         stock_threshold: int,
         current_stock: int = 0,
         enabled: bool = True,
+        price_per_level: int = 0,
+        max_owned: int = 0,
     ) -> ShopItem:
         now = datetime.now(UTC)
         model = ShopItemModel(
@@ -55,6 +57,8 @@ class ShopRepository:
             stock_threshold=stock_threshold,
             current_stock=current_stock,
             enabled=enabled,
+            price_per_level=max(0, int(price_per_level)),
+            max_owned=max(0, int(max_owned)),
             created_at=now,
             updated_at=now,
         )
@@ -142,6 +146,8 @@ class ShopRepository:
             stock_threshold=model.stock_threshold,
             current_stock=model.current_stock,
             enabled=model.enabled,
+            price_per_level=model.price_per_level or 0,
+            max_owned=model.max_owned or 0,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )

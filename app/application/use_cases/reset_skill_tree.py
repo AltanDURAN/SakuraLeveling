@@ -41,7 +41,10 @@ class ResetSkillTreeUseCase:
         self.cooldown_service = cooldown_service
         self.skill_tree_service = SkillTreeService(skill_tree_definition)
 
-    def execute(self, discord_id: int) -> ResetSkillTreeResult:
+    def execute(self, discord_id: int, use_token: bool = False) -> ResetSkillTreeResult:
+        """`use_token` : reset ACHETÉ (jeton de Sorn), EN PLUS du reset gratuit
+        de la semaine — refusé si ce dernier est disponible (on ne gaspille
+        pas le jeton), et il ne touche pas à son attente."""
         profile = self.player_repository.get_by_discord_id(discord_id)
         if profile is None:
             return ResetSkillTreeResult(success=False, message="Profil introuvable.")
@@ -51,7 +54,13 @@ class ResetSkillTreeUseCase:
             profile.player.id, SKILL_RESET_ACTION_KEY
         )
 
-        if not self.cooldown_service.is_available(cooldown, now):
+        if use_token and self.cooldown_service.is_available(cooldown, now):
+            return ResetSkillTreeResult(
+                success=False,
+                message=("🌳 Ton reset gratuit de la semaine est disponible : utilise-le "
+                         "(`/arbre` → Reset) et garde ton jeton pour plus tard."),
+            )
+        if not use_token and not self.cooldown_service.is_available(cooldown, now):
             assert cooldown is not None and cooldown.next_available_at is not None
             next_at = cooldown.next_available_at
             if next_at.tzinfo is None:
@@ -83,6 +92,12 @@ class ResetSkillTreeUseCase:
             new_xp=profile.progression.xp,
             new_skill_points=profile.progression.skill_points + refunded,
         )
+        if use_token:
+            return ResetSkillTreeResult(
+                success=True,
+                message=f"✨ Arbre réinitialisé avec ton jeton : **{refunded}** points restitués.",
+                refunded_points=refunded,
+            )
         # 3. Prochain reset : lundi prochain, 00h (Paris)
         last_used_at, next_available_at = (
             self.cooldown_service.build_weekly_skill_reset_cooldown(now)

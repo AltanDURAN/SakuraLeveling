@@ -64,7 +64,21 @@ class BuyFromShopUseCase:
                 message=f"`{shop_item.item_definition.name}` est actuellement indisponible à l'achat.",
             )
 
-        total_cost = self.shop_pricing_service.total_buy_cost(shop_item, quantity)
+        if shop_item.max_owned > 0:
+            owned = sum(i.quantity for i in self.inventory_repository.list_by_player_id(profile.player.id)
+                        if i.item_definition.id == shop_item.item_definition.id)
+            if owned + quantity > shop_item.max_owned:
+                return BuyResult(
+                    success=False,
+                    message=(
+                        f"Tu as déjà **{shop_item.item_definition.name}** : on ne peut en avoir "
+                        f"que {shop_item.max_owned} à la fois." if owned else
+                        f"On ne peut en avoir que {shop_item.max_owned} à la fois."
+                    ),
+                )
+
+        total_cost = self.shop_pricing_service.total_buy_cost(
+            shop_item, quantity, profile.progression.level)
         if profile.resources.gold < total_cost:
             return BuyResult(
                 success=False,

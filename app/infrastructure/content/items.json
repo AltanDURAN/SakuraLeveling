@@ -148,6 +148,830 @@
     "level_requirement": 1
   },
   {
+    "code": "cor_chasse_f",
+    "name": "Cor de chasse de la Clairière",
+    "description": "Fait apparaître l'élite de la Clairière sinistre (rang F) dans le salon de la zone, à la suite du combat en cours. Il faut avoir accès à la zone ; 1 h d'attente entre deux cors, une seule élite invoquée par zone à la fois.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "summon_elite",
+      "rank": "F"
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "cor_chasse_e",
+    "name": "Cor de chasse du Cimetière",
+    "description": "Fait apparaître l'élite de le Cimetière abandonné (rang E) dans le salon de la zone, à la suite du combat en cours. Il faut avoir accès à la zone ; 1 h d'attente entre deux cors, une seule élite invoquée par zone à la fois.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "summon_elite",
+      "rank": "E"
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "cor_chasse_d",
+    "name": "Cor de chasse du Berceau",
+    "description": "Fait apparaître l'élite de le Berceau cataclysmique (rang D) dans le salon de la zone, à la suite du combat en cours. Il faut avoir accès à la zone ; 1 h d'attente entre deux cors, une seule élite invoquée par zone à la fois.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "summon_elite",
+      "rank": "D"
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "sceau_souffle_e",
+    "name": "Sceau du second souffle (rang E)",
+    "description": "Efface l'attente après un échec à l'épreuve du rang E : tu peux la retenter tout de suite.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "trial_retry",
+      "rank": "E"
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "sceau_souffle_d",
+    "name": "Sceau du second souffle (rang D)",
+    "description": "Efface l'attente après un échec à l'épreuve du rang D : tu peux la retenter tout de suite.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "trial_retry",
+      "rank": "D"
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "sceau_souffle_c",
+    "name": "Sceau du second souffle (rang C)",
+    "description": "Efface l'attente après un échec à l'épreuve du rang C : tu peux la retenter tout de suite.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "trial_retry",
+      "rank": "C"
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "sceau_souffle_b",
+    "name": "Sceau du second souffle (rang B)",
+    "description": "Efface l'attente après un échec à l'épreuve du rang B : tu peux la retenter tout de suite.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "trial_retry",
+      "rank": "B"
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "sceau_souffle_a",
+    "name": "Sceau du second souffle (rang A)",
+    "description": "Efface l'attente après un échec à l'épreuve du rang A : tu peux la retenter tout de suite.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "trial_retry",
+      "rank": "A"
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "sceau_souffle_s",
+    "name": "Sceau du second souffle (rang S)",
+    "description": "Efface l'attente après un échec à l'épreuve du rang S : tu peux la retenter tout de suite.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "trial_retry",
+      "rank": "S"
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "sceau_souffle_ss",
+    "name": "Sceau du second souffle (rang SS)",
+    "description": "Efface l'attente après un échec à l'épreuve du rang SS : tu peux la retenter tout de suite.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "trial_retry",
+      "rank": "SS"
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "sceau_souffle_sss",
+    "name": "Sceau du second souffle (rang SSS)",
+    "description": "Efface l'attente après un échec à l'épreuve du rang SSS : tu peux la retenter tout de suite.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "trial_retry",
+      "rank": "SSS"
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "parchemin_oubli",
+    "name": "Parchemin d'oubli",
+    "description": "Reprend TOUS tes points de stats (attaque, défense, PV) : replace-les ensuite avec /stats.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "respec_stats"
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "jeton_arbre",
+    "name": "Jeton de réinitialisation d'arbre",
+    "description": "Réinitialise ton arbre de compétences EN PLUS du reset gratuit de la semaine (à garder pour quand il est déjà pris).",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "reset_tree"
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "sablier_fidelite",
+    "name": "Sablier de fidélité",
+    "description": "Le premier jour de /daily manqué, ta série n'est pas divisée par deux. Il agit tout seul ; un seul à la fois.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "daily_guard"
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "fond_aube_rosee",
+    "name": "Fond — Aube rosée",
+    "description": "Cosmétique : change le fond de ta bannière /profil. Aucun effet en combat. À choisir avec /apparence.",
+    "category": "cosmetic",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "cosmetic": "fond",
+      "top": [
+        74,
+        36,
+        58
+      ],
+      "bottom": [
+        24,
+        14,
+        26
+      ],
+      "petals": [
+        [
+          255,
+          190,
+          210,
+          80
+        ],
+        [
+          255,
+          170,
+          195,
+          70
+        ],
+        [
+          255,
+          215,
+          228,
+          65
+        ]
+      ]
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "fond_foret_emeraude",
+    "name": "Fond — Forêt d'émeraude",
+    "description": "Cosmétique : change le fond de ta bannière /profil. Aucun effet en combat. À choisir avec /apparence.",
+    "category": "cosmetic",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "cosmetic": "fond",
+      "top": [
+        18,
+        52,
+        38
+      ],
+      "bottom": [
+        8,
+        20,
+        16
+      ],
+      "petals": [
+        [
+          190,
+          255,
+          210,
+          70
+        ],
+        [
+          150,
+          230,
+          180,
+          60
+        ],
+        [
+          220,
+          255,
+          230,
+          55
+        ]
+      ]
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "fond_ocean_profond",
+    "name": "Fond — Océan profond",
+    "description": "Cosmétique : change le fond de ta bannière /profil. Aucun effet en combat. À choisir avec /apparence.",
+    "category": "cosmetic",
+    "rarity": "rare",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "cosmetic": "fond",
+      "top": [
+        14,
+        40,
+        78
+      ],
+      "bottom": [
+        4,
+        10,
+        26
+      ],
+      "petals": [
+        [
+          160,
+          210,
+          255,
+          70
+        ],
+        [
+          120,
+          190,
+          255,
+          60
+        ],
+        [
+          200,
+          230,
+          255,
+          55
+        ]
+      ]
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "fond_braises",
+    "name": "Fond — Braises du Berceau",
+    "description": "Cosmétique : change le fond de ta bannière /profil. Aucun effet en combat. À choisir avec /apparence.",
+    "category": "cosmetic",
+    "rarity": "rare",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "cosmetic": "fond",
+      "top": [
+        78,
+        22,
+        12
+      ],
+      "bottom": [
+        18,
+        6,
+        6
+      ],
+      "petals": [
+        [
+          255,
+          150,
+          80,
+          80
+        ],
+        [
+          255,
+          110,
+          60,
+          70
+        ],
+        [
+          255,
+          190,
+          120,
+          60
+        ]
+      ]
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "fond_crepuscule_dore",
+    "name": "Fond — Crépuscule doré",
+    "description": "Cosmétique : change le fond de ta bannière /profil. Aucun effet en combat. À choisir avec /apparence.",
+    "category": "cosmetic",
+    "rarity": "epic",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "cosmetic": "fond",
+      "top": [
+        92,
+        54,
+        22
+      ],
+      "bottom": [
+        30,
+        12,
+        38
+      ],
+      "petals": [
+        [
+          255,
+          215,
+          120,
+          85
+        ],
+        [
+          255,
+          190,
+          90,
+          75
+        ],
+        [
+          255,
+          235,
+          170,
+          65
+        ]
+      ]
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "fond_aurore_boreale",
+    "name": "Fond — Aurore boréale",
+    "description": "Cosmétique : change le fond de ta bannière /profil. Aucun effet en combat. À choisir avec /apparence.",
+    "category": "cosmetic",
+    "rarity": "legendary",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "cosmetic": "fond",
+      "top": [
+        16,
+        46,
+        62
+      ],
+      "bottom": [
+        26,
+        10,
+        44
+      ],
+      "petals": [
+        [
+          120,
+          255,
+          220,
+          80
+        ],
+        [
+          170,
+          130,
+          255,
+          80
+        ],
+        [
+          110,
+          220,
+          255,
+          70
+        ]
+      ],
+      "aurora": true
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "cadre_argent",
+    "name": "Cadre — Argent",
+    "description": "Cosmétique : change l'anneau autour de ton avatar sur /profil. Aucun effet en combat. À choisir avec /apparence.",
+    "category": "cosmetic",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "cosmetic": "cadre",
+      "color": [
+        205,
+        210,
+        220
+      ]
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "cadre_jade",
+    "name": "Cadre — Jade",
+    "description": "Cosmétique : change l'anneau autour de ton avatar sur /profil. Aucun effet en combat. À choisir avec /apparence.",
+    "category": "cosmetic",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "cosmetic": "cadre",
+      "color": [
+        80,
+        200,
+        140
+      ]
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "cadre_amethyste",
+    "name": "Cadre — Améthyste",
+    "description": "Cosmétique : change l'anneau autour de ton avatar sur /profil. Aucun effet en combat. À choisir avec /apparence.",
+    "category": "cosmetic",
+    "rarity": "rare",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "cosmetic": "cadre",
+      "color": [
+        170,
+        100,
+        230
+      ]
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "cadre_or_royal",
+    "name": "Cadre — Or royal",
+    "description": "Cosmétique : change l'anneau autour de ton avatar sur /profil. Aucun effet en combat. À choisir avec /apparence.",
+    "category": "cosmetic",
+    "rarity": "epic",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "cosmetic": "cadre",
+      "color": [
+        240,
+        196,
+        92
+      ],
+      "ring2": [
+        255,
+        240,
+        190
+      ]
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "cadre_sakura_eternel",
+    "name": "Cadre — Sakura éternel",
+    "description": "Cosmétique : change l'anneau autour de ton avatar sur /profil. Aucun effet en combat. À choisir avec /apparence.",
+    "category": "cosmetic",
+    "rarity": "legendary",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "cosmetic": "cadre",
+      "color": [
+        255,
+        160,
+        200
+      ],
+      "ring2": [
+        255,
+        230,
+        240
+      ],
+      "glow": true
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "titre_ivoire",
+    "name": "Titre — Ivoire",
+    "description": "Cosmétique : change la couleur de ton titre sur /profil. Aucun effet en combat. À choisir avec /apparence.",
+    "category": "cosmetic",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "cosmetic": "titre",
+      "color": [
+        245,
+        238,
+        220
+      ]
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "titre_azur",
+    "name": "Titre — Azur",
+    "description": "Cosmétique : change la couleur de ton titre sur /profil. Aucun effet en combat. À choisir avec /apparence.",
+    "category": "cosmetic",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "cosmetic": "titre",
+      "color": [
+        120,
+        190,
+        255
+      ]
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "titre_emeraude",
+    "name": "Titre — Émeraude",
+    "description": "Cosmétique : change la couleur de ton titre sur /profil. Aucun effet en combat. À choisir avec /apparence.",
+    "category": "cosmetic",
+    "rarity": "rare",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "cosmetic": "titre",
+      "color": [
+        90,
+        220,
+        150
+      ]
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "titre_rubis",
+    "name": "Titre — Rubis",
+    "description": "Cosmétique : change la couleur de ton titre sur /profil. Aucun effet en combat. À choisir avec /apparence.",
+    "category": "cosmetic",
+    "rarity": "epic",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "cosmetic": "titre",
+      "color": [
+        240,
+        80,
+        100
+      ]
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
+    "code": "titre_or_flamboyant",
+    "name": "Titre — Or flamboyant",
+    "description": "Cosmétique : change la couleur de ton titre sur /profil. Aucun effet en combat. À choisir avec /apparence.",
+    "category": "cosmetic",
+    "rarity": "legendary",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "cosmetic": "titre",
+      "color": [
+        255,
+        204,
+        90
+      ],
+      "glow": true
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
     "code": "dent_de_gobelin",
     "name": "Dent de gobelin",
     "description": "",

@@ -292,6 +292,10 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 for code, t in _talents.items() if code in _revealed
             }
 
+            from app.application.services.cosmetic_resolver import worn_cosmetics
+
+            cosmetics_payload = worn_cosmetics(session, profile.player.id)
+
             # Rendu Pillow sync + download avatar Discord : off-thread pour ne
             # pas bloquer l'event loop (cf. audit B5).
             await asyncio.to_thread(
@@ -330,6 +334,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 mythic_pieces=sum(
                     1 for e in equipped_items if getattr(e, "rarity", "") == "mythic"
                 ),
+                cosmetics=cosmetics_payload,
             )
 
             # /profil = bannière PNG seule (l'embed n'est qu'un conteneur pour
@@ -970,6 +975,14 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
     @app_commands.describe(item_code="Code du consommable (autocomplete sur votre inventaire)")
     async def use(self, interaction: discord.Interaction, item_code: str) -> None:
         await interaction.response.defer(ephemeral=True)
+        from app.application.use_cases.use_consumable import UseContext
+        from app.bot.rank_roles import current_rank
+
+        encounter_cog = self.bot.get_cog("EncounterCog")
+        context = UseContext(
+            player_rank=current_rank(interaction.user) if isinstance(interaction.user, discord.Member) else None,
+            summon_elite=encounter_cog.queue_summoned_elite if encounter_cog is not None else None,
+        )
         with get_db_session() as session:
             use_case = UseConsumableUseCase(
                 player_repository=PlayerRepository(session),
@@ -985,8 +998,16 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 username=interaction.user.name,
                 display_name=interaction.user.display_name,
                 item_code=item_code,
+                context=context,
             )
         await interaction.followup.send(result.message, ephemeral=True)
+        if result.announce and result.announce_channel_id:
+            channel = self.bot.get_channel(result.announce_channel_id)
+            if channel is not None:
+                try:
+                    await channel.send(result.announce)
+                except discord.HTTPException:
+                    pass
 
     @use.autocomplete("item_code")
     async def use_autocomplete(
@@ -1189,6 +1210,7 @@ class PlayerCog(BetaChannelOnlyMixin, commands.Cog):
                 days_missed=result.days_missed,
                 streak_before_absence=result.streak_before_absence,
                 titles_unlocked=result.titles_unlocked,
+                guard_used=result.guard_used,
             )
             await interaction.response.send_message(embed=embed)
         else:

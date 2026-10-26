@@ -16,3 +16,7 @@ class ShopItem:
     enabled: bool
     created_at: datetime
     updated_at: datetime
+    #: > 0 : prix = price_per_level × niveau du joueur (au lieu de buy_price).
+    price_per_level: int = 0
+    #: > 0 : quantité maximale possédée (achat refusé au-delà).
+    max_owned: int = 0

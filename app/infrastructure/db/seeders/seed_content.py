@@ -199,6 +199,8 @@ def seed_shop_items() -> None:
                 stock_threshold=entry.get("stock_threshold", 100),
                 current_stock=0,
                 enabled=entry.get("enabled", True),
+                price_per_level=entry.get("price_per_level", 0),
+                max_owned=entry.get("max_owned", 0),
             )
             created += 1
 

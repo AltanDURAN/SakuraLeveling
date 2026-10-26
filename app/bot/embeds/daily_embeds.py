@@ -13,12 +13,16 @@ def build_daily_success_embed(
     days_missed: int = 0,
     streak_before_absence: int = 0,
     titles_unlocked: list[str] | None = None,
+    guard_used: bool = False,
 ) -> discord.Embed:
     lines = [
         "Vous récupérez :",
         f"**{_format_int(gold_gained)}** 🪙"
         + (f" (dont **+{streak_bonus_pct} %** de série)" if streak_bonus_pct else ""),
     ]
+    if guard_used:
+        lines.append("")
+        lines.append("⏳ Ton **sablier de fidélité** s'est brisé : un jour manqué t'est pardonné.")
     if days_missed:
         lines.append("")
         lines.append(

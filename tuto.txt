@@ -55,7 +55,9 @@ LA PROGRESSION
         +PV   →  +50 PV max
     Départ : 10 attaque, 5 défense, 100 PV. Les points de stats sont la SEULE
     source de puissance brute du jeu : l'équipement et l'arbre donnent des
-    POURCENTAGES de ce socle (voir 1.4). Un point placé ne se reprend pas.
+    POURCENTAGES de ce socle (voir 1.4). Un point placé ne se reprend pas…
+    sauf avec un PARCHEMIN D'OUBLI (Sorn, /marchand) : il rend tous tes
+    points d'un coup.
 
 /profil [joueur]
     Ton personnage en une image : titre actif, niveau, barres PV / mana / XP,
@@ -82,8 +84,9 @@ LA PROGRESSION
     bien construit les atteint un peu plus tôt. Les gardiens sont réglés
     pour être battus environ deux fois sur trois par un joueur qui vient
     d'atteindre le seuil. En cas d'échec, tu ne
-    perds aucun PV réel, mais tu attends 6 h avant de retenter. On passe
-    les rangs un par un.
+    perds aucun PV réel, mais tu attends 6 h avant de retenter (ou tu
+    utilises un SCEAU DU SECOND SOUFFLE de ce rang, chez Sorn). On passe
+    les rangs un par un. Potions et élixirs sont interdits dans l'épreuve.
 
     Rangs et zones (V1) : F Clairière sinistre · E Cimetière abandonné ·
     D Berceau cataclysmique · bientôt : C Sanctuaire primordial, B Éclipse
@@ -124,7 +127,9 @@ LA PROGRESSION
     Ta récompense quotidienne (de nouveau disponible à minuit, heure de Paris).
         • Elle donne 20 × ton niveau en or, +3 % par jour de série (jusqu'à
           +90 % à 30 jours de suite).
-        • Chaque jour manqué DIVISE ta série par deux.
+        • Chaque jour manqué DIVISE ta série par deux — sauf si tu as un
+          SABLIER DE FIDÉLITÉ (Sorn) : il se brise tout seul et pardonne un
+          jour manqué.
         • Paliers de série : un titre à 7, 30 et 100 jours (voir /titre).
 
 /titre [joueur] et /titre_actif
@@ -168,7 +173,9 @@ LA PROGRESSION
           restes connecté 30 jours). On ne peut investir que dans SON arbre ;
         • « Réinitialiser » : rend tous les points investis pour les
           réinvestir. UN reset par semaine : de nouveau disponible chaque
-          lundi à 00h (heure de Paris), non cumulable.
+          lundi à 00h (heure de Paris), non cumulable. Un JETON DE
+          RÉINITIALISATION (Sorn) en donne un de plus quand le gratuit est
+          déjà pris (/utiliser).
     Avec un joueur : son arbre, en lecture seule.
 
     LES RÈGLES
@@ -499,7 +506,7 @@ LE MANA DES COMPÉTENCES 💧
 
 /utiliser <consommable>
     Utilise un consommable de ton inventaire (potions et élixirs d'Elna,
-    cf. /alchimiste). Si tes PV (ou ton mana, pour une potion de mana) sont
+    cf. /alchimiste ; outils de Sorn, cf. /marchand). Si tes PV (ou ton mana, pour une potion de mana) sont
     déjà pleins, la potion n'est pas consommée.
 
 /defi [role]
@@ -621,8 +628,38 @@ WORLD BOSS — /boss moi, /boss historique, /boss list
 
 /marchand
     SORN, le marchand : un rayon, un article, la quantité (×1 / ×5 / ×10),
-    acheter. Achat uniquement. Il ne vend plus de potions (c'est Elna) ; ses
-    rayons dépendent de ce que l'admin y met.
+    acheter. Achat uniquement. Pas de potions (c'est Elna) : il vend des
+    OUTILS — du confort et du temps gagné, jamais de puissance — et des
+    COSMÉTIQUES. Les prix sont les mêmes pour tout le monde, sauf deux
+    objets qui servent davantage à haut niveau.
+
+        Article                         Prix              Effet (/utiliser)
+        Cor de chasse (par zone)        F 1 000 ·         fait apparaître l'élite de la
+                                        E 1 500 ·         zone dans son salon, après le
+                                        D 2 600           combat en cours (rang de la
+                                                          zone requis, 1 h entre deux
+                                                          cors, une élite à la fois)
+        Sceau du second souffle         E 700 · D 1 500 · efface les 6 h d'attente après
+          (par rang)                    C 2 300 · B 3 000 un échec à l'épreuve de CE rang
+                                        A 3 800 · S 4 500
+                                        SS 5 300 · SSS 6 000
+        Parchemin d'oubli               150 × ton niveau  rend tous tes points de stats
+        Jeton de réinitialisation       60 × ton niveau   un reset d'arbre en plus du
+          d'arbre                                         gratuit de la semaine
+        Sablier de fidélité             2 000             pardonne un jour de /daily
+                                                          manqué (tout seul)
+        Cosmétiques (fond, cadre,       2 000 · 10 000 ·  ton apparence sur /profil
+          couleur du titre)             40 000 · 150 000  (commun → légendaire)
+
+    Le parchemin, le jeton, le sablier et chaque cosmétique : un seul à la
+    fois (on ne peut pas en racheter tant qu'on en a un).
+
+/apparence
+    Choisis ce que montre ta bannière /profil : le FOND, le CADRE autour de
+    ton avatar et la COULEUR de ton titre, parmi les cosmétiques que tu
+    possèdes (achetés chez Sorn). Un aperçu se met à jour à chaque choix.
+    « Par défaut » remet l'apparence d'origine. Aucun effet en jeu ; un
+    cosmétique échangé ou vendu n'est plus affiché.
 
 /voyante
     YSALINE, la voyante, lit ton TALENT caché dans l'élément de ton choix.

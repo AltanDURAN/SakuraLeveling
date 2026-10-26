@@ -1,1 +1,302 @@
-[]
+[
+  {
+    "item_code": "cor_chasse_f",
+    "buy_price": 1000,
+    "price_per_level": 0,
+    "max_owned": 0,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "cor_chasse_e",
+    "buy_price": 1500,
+    "price_per_level": 0,
+    "max_owned": 0,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "cor_chasse_d",
+    "buy_price": 2600,
+    "price_per_level": 0,
+    "max_owned": 0,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "sceau_souffle_e",
+    "buy_price": 700,
+    "price_per_level": 0,
+    "max_owned": 0,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "sceau_souffle_d",
+    "buy_price": 1500,
+    "price_per_level": 0,
+    "max_owned": 0,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "sceau_souffle_c",
+    "buy_price": 2300,
+    "price_per_level": 0,
+    "max_owned": 0,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "sceau_souffle_b",
+    "buy_price": 3000,
+    "price_per_level": 0,
+    "max_owned": 0,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "sceau_souffle_a",
+    "buy_price": 3800,
+    "price_per_level": 0,
+    "max_owned": 0,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "sceau_souffle_s",
+    "buy_price": 4500,
+    "price_per_level": 0,
+    "max_owned": 0,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "sceau_souffle_ss",
+    "buy_price": 5300,
+    "price_per_level": 0,
+    "max_owned": 0,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "sceau_souffle_sss",
+    "buy_price": 6000,
+    "price_per_level": 0,
+    "max_owned": 0,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "parchemin_oubli",
+    "buy_price": 0,
+    "price_per_level": 150,
+    "max_owned": 1,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "jeton_arbre",
+    "buy_price": 0,
+    "price_per_level": 60,
+    "max_owned": 1,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "sablier_fidelite",
+    "buy_price": 2000,
+    "price_per_level": 0,
+    "max_owned": 1,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "fond_aube_rosee",
+    "buy_price": 2000,
+    "price_per_level": 0,
+    "max_owned": 1,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "fond_foret_emeraude",
+    "buy_price": 2000,
+    "price_per_level": 0,
+    "max_owned": 1,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "fond_ocean_profond",
+    "buy_price": 10000,
+    "price_per_level": 0,
+    "max_owned": 1,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "fond_braises",
+    "buy_price": 10000,
+    "price_per_level": 0,
+    "max_owned": 1,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "fond_crepuscule_dore",
+    "buy_price": 40000,
+    "price_per_level": 0,
+    "max_owned": 1,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "fond_aurore_boreale",
+    "buy_price": 150000,
+    "price_per_level": 0,
+    "max_owned": 1,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "cadre_argent",
+    "buy_price": 2000,
+    "price_per_level": 0,
+    "max_owned": 1,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "cadre_jade",
+    "buy_price": 2000,
+    "price_per_level": 0,
+    "max_owned": 1,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "cadre_amethyste",
+    "buy_price": 10000,
+    "price_per_level": 0,
+    "max_owned": 1,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "cadre_or_royal",
+    "buy_price": 40000,
+    "price_per_level": 0,
+    "max_owned": 1,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "cadre_sakura_eternel",
+    "buy_price": 150000,
+    "price_per_level": 0,
+    "max_owned": 1,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "titre_ivoire",
+    "buy_price": 2000,
+    "price_per_level": 0,
+    "max_owned": 1,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "titre_azur",
+    "buy_price": 2000,
+    "price_per_level": 0,
+    "max_owned": 1,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "titre_emeraude",
+    "buy_price": 10000,
+    "price_per_level": 0,
+    "max_owned": 1,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "titre_rubis",
+    "buy_price": 40000,
+    "price_per_level": 0,
+    "max_owned": 1,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  },
+  {
+    "item_code": "titre_or_flamboyant",
+    "buy_price": 150000,
+    "price_per_level": 0,
+    "max_owned": 1,
+    "max_sell_price": 0,
+    "min_sell_price": 0,
+    "stock_threshold": 100,
+    "enabled": true
+  }
+]

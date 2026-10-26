@@ -233,6 +233,20 @@ class EncounterCog(commands.Cog):
             f"secondes (salon `{target}`)."
         )
 
+    def queue_summoned_elite(self, mob_code: str, channel_id: int) -> tuple[bool, str]:
+        """Cor de chasse : l'élite apparaîtra dans cette zone, APRÈS le combat
+        en cours (on n'annule jamais le combat des autres). Une seule élite
+        invoquée par zone à la fois."""
+        if channel_id not in set(list_zone_channels()):
+            return False, "Cette zone n'est pas ouverte."
+        if self._zone_forced_mob.get(channel_id):
+            return False, "Un cor a déjà sonné dans cette zone : son élite arrive, attends-la."
+        self._zone_forced_mob[channel_id] = mob_code
+        if channel_id not in self.active_encounters:
+            self._zone_next_spawn[channel_id] = datetime.now(UTC) - timedelta(seconds=1)
+            return True, "arrive dans quelques secondes"
+        return True, "arrivera juste après le combat en cours"
+
     def request_early_resolve(self) -> tuple[bool, str]:
         """Résout immédiatement TOUS les encounters actifs (toutes zones) sans
         attendre les 5 min. Utilisé par /admin start_encounter."""

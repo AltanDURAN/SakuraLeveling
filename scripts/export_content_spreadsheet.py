@@ -379,14 +379,15 @@ def write_shop_sheet(wb: Workbook) -> None:
         return
     items = {i["code"]: i for i in _load("items.json")}
     ws = wb.create_sheet("🏪 Shop")
-    ws.append(["Code item", "Nom", "Catégorie", "Prix achat",
-               "Prix vente max", "Prix vente min", "Seuil stock", "Activé"])
+    ws.append(["Code item", "Nom", "Catégorie", "Rareté", "Prix achat", "Prix × niveau",
+               "Un seul à la fois", "Activé", "Description"])
     for e in shop:
         it = items.get(e["item_code"]) or {}
-        ws.append([e["item_code"], it.get("name", "?"), it.get("category", "?"),
-                   e.get("buy_price", 0), e.get("max_sell_price", 0),
-                   e.get("min_sell_price", 0), e.get("stock_threshold", 0),
-                   "oui" if e.get("enabled", True) else "non"])
+        ws.append([e["item_code"], it.get("name", "?"), it.get("category", "?"), it.get("rarity", "—"),
+                   e.get("buy_price", 0) if not e.get("price_per_level") else "—",
+                   e.get("price_per_level") or "—",
+                   "oui" if e.get("max_owned") == 1 else ("non" if not e.get("max_owned") else e["max_owned"]),
+                   "oui" if e.get("enabled", True) else "non", it.get("description", "")])
     _finalize(ws, freeze="B2")
 
 
@@ -494,7 +495,7 @@ def write_summary_sheet(wb: Workbook) -> None:
         ("👹 Mobs", "Monstres : stats, drops, Power & Rang calculés en direct."),
         ("🧪 Consommables / 📦 Ressources", "Potions et matériaux de famille."),
         ("⚗️ Alchimie", "Recettes d'Elna : ingrédients, or de confection, maîtrise."),
-        ("🏪 Shop", "Prix d'achat / vente du shop."),
+        ("🏪 Shop", "L'étal de Sorn : outils (cor, sceau, parchemin, jeton, sablier) et cosmétiques."),
         ("🌳 Skill Tree", "Tous les nœuds de l'arbre."),
         ("🏷️ Titres", "Titres, conditions et effets."),
         ("🐉 World Bosses", "Bosses + modifiers."),

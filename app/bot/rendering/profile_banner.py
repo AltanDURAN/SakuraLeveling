@@ -171,6 +171,72 @@ def _gradient_background(width: int, height: int) -> Image.Image:
     )
 
 
+# ------------------------------------------------------------ cosmétiques --
+# Les cosmétiques de Sorn (objets `cosmetic`, portés via /apparence) : leur
+# apparence est décrite dans `stat_bonuses` de l'objet — un fond (dégradé +
+# pétales, aurore), un cadre d'avatar (couleur, 2e anneau, halo) ou une
+# couleur de titre (halo). Aucun effet en jeu.
+def _rgba(color, alpha: int = 255) -> tuple[int, int, int, int]:
+    color = list(color or (255, 255, 255))
+    return (int(color[0]), int(color[1]), int(color[2]), int(color[3]) if len(color) > 3 else alpha)
+
+
+def _cosmetic_background(width: int, height: int, look: dict | None, seed: int) -> Image.Image:
+    """Fond de bannière : le dégradé et les pétales du cosmétique, sinon ceux
+    par défaut ; « aurora » ajoute des voiles lumineux."""
+    if not look:
+        bg = _gradient_background(width, height)
+        _draw_sakura_petals(bg, seed=seed)
+        return bg
+    bg = gradient_background(width, height, _rgba(look.get("top")), _rgba(look.get("bottom")))
+    if look.get("aurora"):
+        veil = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+        vd = ImageDraw.Draw(veil)
+        for i, color in enumerate(((90, 255, 200), (150, 110, 255), (90, 200, 255))):
+            y = 60 + i * 70
+            for x in range(-40, width + 40, 8):
+                wave = int(28 * math.sin((x + i * 90) / 95))
+                vd.ellipse([(x - 30, y + wave - 40), (x + 30, y + wave + 40)], fill=(*color, 40))
+        bg.alpha_composite(veil.filter(ImageFilter.GaussianBlur(18)))
+    palette = [_rgba(c) for c in look.get("petals") or []] or None
+    draw_sakura_petals(bg, seed=seed, count=28, palette=palette)
+    return bg
+
+
+def _framed_avatar(avatar_circle: Image.Image, default_color, look: dict | None) -> tuple[Image.Image, int]:
+    """Avatar cerclé : couleur du rang par défaut, ou le cadre porté (2e anneau,
+    halo). Renvoie (image, marge à retirer de la position)."""
+    if not look:
+        return add_outline(avatar_circle, outline_size=7, outline_color=(*default_color[:3], 240)), 7
+    framed = add_outline(avatar_circle, outline_size=7, outline_color=_rgba(look.get("color"), 245))
+    margin = 7
+    if look.get("ring2"):
+        framed = add_outline(framed, outline_size=4, outline_color=_rgba(look.get("ring2"), 235))
+        margin += 4
+    if look.get("glow"):
+        pad = 18
+        size = framed.width + 2 * pad
+        halo = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+        ImageDraw.Draw(halo).ellipse([(pad - 6, pad - 6), (size - pad + 6, size - pad + 6)],
+                                     fill=_rgba(look.get("color"), 150))
+        halo = halo.filter(ImageFilter.GaussianBlur(10))
+        halo.alpha_composite(framed, (pad, pad))
+        framed, margin = halo, margin + pad
+    return framed, margin
+
+
+def _draw_title(bg: Image.Image, xy: tuple[int, int], text: str, font, look: dict | None) -> None:
+    """Titre actif : or par défaut, ou la couleur portée (avec halo)."""
+    color = _rgba(look.get("color")) if look else COLORS["title_color"]
+    if look and look.get("glow"):
+        layer = Image.new("RGBA", bg.size, (0, 0, 0, 0))
+        draw_text_with_emojis(layer, xy, text, font, fill=(*color[:3], 255))
+        glow = layer.filter(ImageFilter.GaussianBlur(7))
+        bg.alpha_composite(glow)
+        bg.alpha_composite(glow)
+    draw_text_with_emojis(bg, xy, text, font, fill=color)
+
+
 def _try_font(size: int, bold: bool = False) -> ImageFont.ImageFont:
     return try_font(size, bold)
 
@@ -660,14 +726,15 @@ def compose_profile_banner(
     affinity_talents: dict[str, dict] | None = None,
     #: Pièces mythiques portées : > 0 ⇒ aura rouge et or autour de l'avatar.
     mythic_pieces: int = 0,
+    #: Cosmétiques portés : {"fond" | "cadre" | "titre": apparence} (cf. /apparence).
+    cosmetics: dict | None = None,
 ) -> None:
+    cosmetics = cosmetics or {}
     height = HEIGHT + (AFFINITY_BLOCK_H if affinities else 0)
-    bg = _gradient_background(WIDTH, height)
-
-    # Pétales de sakura en filigrane — décor "anime" subtil avant tout
+    # Fond + pétales de sakura en filigrane — décor "anime" subtil avant tout
     # ce qui sera dessiné par-dessus. Seed dérivé du nom pour que chaque
     # profil ait sa disposition unique mais stable d'un appel à l'autre.
-    _draw_sakura_petals(bg, seed=hash(display_name) & 0xFFFF)
+    bg = _cosmetic_background(WIDTH, height, cosmetics.get("fond"), seed=hash(display_name) & 0xFFFF)
 
     # Vignette douce dans les 4 coins pour ambiance "vue plongeante",
     # plus pro qu'un fond plat dégradé. On la rend très subtile pour
@@ -715,21 +782,15 @@ def compose_profile_banner(
     # Anneau de la couleur du rang : signal visuel immédiat du tier.
     # Le rang sert deux fois (badge + ring) — cohérent et sympa.
     rc = _rank_color(rank_label)
-    avatar_outlined = add_outline(
-        avatar_circle, outline_size=7,
-        outline_color=(rc[0], rc[1], rc[2], 240),
-    )
-    bg.alpha_composite(avatar_outlined, (avatar_x - 7, avatar_y - 7))
+    avatar_outlined, frame_margin = _framed_avatar(avatar_circle, rc, cosmetics.get("cadre"))
+    bg.alpha_composite(avatar_outlined, (avatar_x - frame_margin, avatar_y - frame_margin))
 
     info_x = avatar_x + avatar_size + 30
     info_y = avatar_y - 6
 
     # Title (emoji éventuel) en or au-dessus du nom
     if active_title:
-        draw_text_with_emojis(
-            bg, (info_x, info_y - 30), active_title, title_font,
-            fill=COLORS["title_color"],
-        )
+        _draw_title(bg, (info_x, info_y - 30), active_title, title_font, cosmetics.get("titre"))
     # Nom
     _draw_text_with_shadow(
         draw, (info_x, info_y), display_name, name_font,
@@ -1042,3 +1103,36 @@ def compose_profile_banner(
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     bg.convert("RGB").save(output_path, "PNG", optimize=True)
+
+
+def compose_cosmetic_preview(
+    output_path: str,
+    *,
+    display_name: str,
+    avatar_url: str | None,
+    title: str | None,
+    rank_label: str = "",
+    cosmetics: dict | None = None,
+) -> None:
+    """Aperçu de l'apparence (/apparence) : le haut de la bannière seulement."""
+    cosmetics = cosmetics or {}
+    width, height = WIDTH, 300
+    bg = _cosmetic_background(width, height, cosmetics.get("fond"), seed=hash(display_name) & 0xFFFF)
+    _add_vignette(bg)
+    draw = ImageDraw.Draw(bg)
+    avatar_size, ax, ay = 210, 34, 45
+    avatar_img = None
+    if avatar_url:
+        try:
+            avatar_img = download_image(avatar_url)
+        except Exception:
+            avatar_img = None
+    if avatar_img is None:
+        avatar_img = Image.new("RGBA", (avatar_size, avatar_size), (60, 60, 80, 255))
+    framed, margin = _framed_avatar(crop_to_circle(avatar_img, avatar_size), _rank_color(rank_label),
+                                    cosmetics.get("cadre"))
+    bg.alpha_composite(framed, (ax - margin, ay - margin))
+    info_x = ax + avatar_size + 36
+    _draw_title(bg, (info_x, 95), title or "Ton titre ici", _try_font(30, bold=True), cosmetics.get("titre"))
+    _draw_text_with_shadow(draw, (info_x, 130), display_name, _try_font(64, bold=True))
+    bg.convert("RGB").save(output_path, format="PNG")

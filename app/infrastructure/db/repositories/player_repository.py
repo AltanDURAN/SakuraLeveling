@@ -253,6 +253,21 @@ class PlayerRepository:
         self.session.commit()
         return True
 
+    def reset_stat_points(self, player_id: int) -> int:
+        """Reprend TOUS les points de stats placés (parchemin d'oubli) : ils
+        reviennent à placer. Renvoie le nombre de points repris."""
+        progression = self.session.get(PlayerProgressionModel, player_id)
+        if progression is None:
+            return 0
+        refunded = (progression.points_attack or 0) + (progression.points_defense or 0) \
+            + (progression.points_max_hp or 0)
+        if refunded:
+            progression.points_attack = progression.points_defense = progression.points_max_hp = 0
+            progression.stat_points = (progression.stat_points or 0) + refunded
+            progression.updated_at = datetime.now(UTC)
+            self.session.commit()
+        return refunded
+
     def apply_progression(
         self,
         player_id: int,

@@ -150,7 +150,8 @@ Noms FRANÇAIS (sans accents) — c'est ce que le joueur tape. Liste tirée du c
 | `/inventaire`, `/equipement`, `/equipement_liste` | `player_cog` | Inventaire (consommables + ressources), équipement en image 2 pages, liste des équipements |
 | `/equiper`, `/desequiper <slot\|all>`, `/creer_set`, `/equiper_set`, `/supprimer_set`, `/panoplie` | `player_cog`, `panoplie_cog` | Équipement (placement automatique), panoplies (bonus par rareté), loadouts |
 | `/forgeron`, `/alchimiste` | `artisan_cog` | Borak : **fusion** de deux copies identiques → rareté suivante (toutes les pièces) · Elna : **potions** (ingrédients + or) |
-| `/marchand` | `shop_cog` | Achat uniquement |
+| `/marchand` | `shop_cog` | Achat uniquement — outils (cor, sceau, parchemin, jeton, sablier) et cosmétiques |
+| `/apparence` | `cosmetic_cog` | Cosmétiques portés sur la bannière `/profil` (fond, cadre, couleur du titre) |
 | `/voyante` | `seer_cog` | Ysaline lit un talent élémentaire caché (prix croissant, 1re offerte) |
 | `/utiliser <consommable>`, `/bestiaire` | `player_cog`, `bestiaire_cog` | Consommable, catalogue des monstres |
 | `/defi [role]` | `role_trial_cog` | Défis de rôle du jour (DPS / Tank / Soutien) — remplacent les duels JcJ |
@@ -260,14 +261,26 @@ On ne tape plus de code d'objet : on parle à quelqu'un.
 |---|---|---|
 | `/forgeron` | **Borak** | FUSIONNE toutes les pièces (`arme`, `bouclier`, `tete`, `corps`, `accessoire`) |
 | `/alchimiste` | **Elna** | Prépare les POTIONS (ingrédients fournis + or de confection) |
-| `/marchand` | **Sorn** | Vend les articles du shop (achat uniquement) — il ne vend PLUS de potions |
+| `/marchand` | **Sorn** | Vend des OUTILS et des COSMÉTIQUES (achat uniquement) — plus de potions |
 | `/voyante` | **Ysaline** | Révèle un talent élémentaire |
 
 - **Équipement v2** : Borak ne FABRIQUE plus (fabrication, commandes, attente, boucle `ready_loop`, `ArtisanWorkUseCase`, `ArtisanView` : supprimés). Il fusionne — cf. section équipement. Ses `categories` ([`artisans.json`](app/infrastructure/content/artisans.json), liste `artisans`) doivent couvrir `EQUIPABLE_CATEGORIES` (test `test_borak_fusionne_toutes_les_pieces_accessoires_compris`). Jusqu'au 26/10/2026, Elna fusionnait les accessoires (doublon, décision de l'auteur) : migration `3a7d5c1f9e64` = sa maîtrise de fusion reportée sur Borak.
 - **Maîtrise relationnelle** : `player_artisan_mastery(player_id, artisan_code, orders_completed)` — +1 par fusion chez Borak (`forgeron`), +1 par POTION chez Elna (`alchimiste`, `increment_mastery(amount=)`). 4 paliers (Apprenti → Légendaire) ; remise en or. Les tables `player_work_orders` et les recettes (`craft_recipes`) existent encore mais ne servent plus (même statut que `GatherResourceUseCase`, comme `PanoplieCraftsUseCase`).
 - **Rendu** : [`npc_panel.py`](app/bot/rendering/npc_panel.py) — portrait + fiche (`orders_unit` : « fusion(s) » / « potion(s) »). Portraits sous `assets/npcs/` (générés Cloudflare, DA du jeu ; `alchimiste.png` = l'ancien portrait d'Elna).
-- **Achat** : `BuyFromShopUseCase`. Toujours pas de vente joueur→shop (décision V2). `shop_items.json` est VIDE depuis le 26/10/2026 (la potion de soin est partie chez Elna, migration `3a7d5c1f9e64`) : Sorn affiche un rayon vide qui renvoie vers `/alchimiste` ; l'admin peut y remettre des articles.
+- **Achat** : `BuyFromShopUseCase`. Toujours pas de vente joueur→shop (décision V2). La potion de soin est partie chez Elna (migration `3a7d5c1f9e64`).
 - Modification d'`artisans.json` ⇒ **restart du bot** (cache module-level du loader).
+
+### L'étal de Sorn (26/10/2026, décisions de l'auteur)
+
+- **Principe** : des OUTILS (confort, temps gagné, jamais de puissance) et des COSMÉTIQUES. ⚠️ Prix FIXES, identiques pour tous (le même objet ne coûte pas plus cher à un autre joueur — décision de l'auteur) ; quand l'effet grandit avec la progression, on vend l'objet PAR RANG / ZONE (cor, sceau). Exceptions validées : parchemin d'oubli et jeton d'arbre suivent le niveau (`shop_items.price_per_level` : prix = valeur × niveau, ils rapportent plus à haut niveau). `shop_items.max_owned` = 1 ⇒ achat refusé si on en a déjà un (parchemin, jeton, sablier, chaque cosmétique). Migration `7b2e9d4a1c58`. `ShopPricingService.unit_buy_price(shop_item, level)`.
+- **Outils** ([`merchant_items.py`](app/domain/services/merchant_items.py), effets de `/utiliser` dans `UseConsumableUseCase._use_tool` ; ce que seul le bot connaît passe par `UseContext` : rang Discord, `summon_elite`) :
+  - **Cor de chasse** (`cor_chasse_f/e/d`, 1 000 / 1 500 / 2 600 ≈ 3 × l'or de l'élite : jamais rentable en or) : `EncounterCog.queue_summoned_elite` — l'élite de la zone (`zone_elite`) apparaît APRÈS le combat en cours (on n'annule jamais celui des autres), une seule élite invoquée par zone, rang de la zone requis, `HORN_COOLDOWN` 1 h par joueur (`hunting_horn`), annonce dans le salon. Les zones C → S auront leur cor à leur ouverture.
+  - **Sceau du second souffle** (`sceau_souffle_<rang>`, E 700 → SSS 6 000) : efface l'attente `rank_trial` après un échec à l'épreuve de CE rang (le prochain rang du joueur).
+  - **Parchemin d'oubli** (150 × niveau) : `PlayerRepository.reset_stat_points` (tous les points reviennent à placer).
+  - **Jeton de réinitialisation d'arbre** (60 × niveau) : `ResetSkillTreeUseCase.execute(use_token=True)` — refusé si le reset gratuit de la semaine est disponible, ne touche pas à son attente.
+  - **Sablier de fidélité** (2 000) : passif, consommé par `ClaimDailyRewardUseCase._apply_daily_guard` — un jour manqué pardonné (`missed_after_guard`).
+- **Cosmétiques** (catégorie `cosmetic`, `ItemCategory.COSMETIC`) : l'APPARENCE est dans `stat_bonuses` de l'objet (`{"cosmetic": "fond"|"cadre"|"titre", …}` : dégradé + pétales + `aurora`, couleur + `ring2` + `glow`, couleur + `glow`) — aucun effet en jeu, l'éditeur admin la préserve. 16 cosmétiques (6 fonds, 5 cadres, 5 titres), 2 000 / 10 000 / 40 000 / 150 000 selon la rareté. Portés : table `player_cosmetics` ([`PlayerCosmeticRepository`](app/infrastructure/db/repositories/player_cosmetic_repository.py)), choisis avec `/apparence` ([`cosmetic_cog.py`](app/bot/cogs/cosmetic_cog.py), aperçu `compose_cosmetic_preview`) ; `worn_cosmetics` n'affiche qu'un cosmétique encore POSSÉDÉ ; rendu dans `compose_profile_banner(cosmetics=)` (`_cosmetic_background`, `_framed_avatar`, `_draw_title`). Purgés par `ResetPlayerUseCase`.
+- Les nouveaux objets n'ont pas encore d'image (`assets/items/<code>.png`) : à générer depuis l'admin.
 
 ### Elna, l'alchimiste (26/10/2026, demande de l'auteur)
 

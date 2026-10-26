@@ -5,12 +5,16 @@ Effets (lus dans `item.stat_bonuses`, cf. `alchemy_service`) :
     sont pleins ; la régénération hors combat écoulée est comptée AVANT ;
   • `mana_percent` : même chose pour le mana ;
   • `elixir` : effet temporaire. Un MÊME effet ne se cumule jamais (le
-    reboire renouvelle sa durée), des effets différents s'additionnent.
+    reboire renouvelle sa durée), des effets différents s'additionnent ;
+  • les OUTILS de Sorn (cor de chasse, sceau, parchemin, jeton, sablier),
+    cf. `merchant_items` : ce qu'ils demandent au bot (rang Discord,
+    invocation d'une élite) passe par `UseContext`.
 
 Sécurité : décrément atomique de l'inventaire ; refus si quantité < 1
 ou si l'item n'est pas marqué `category=consumable`.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -26,6 +30,7 @@ from app.domain.services.alchemy_service import (
 )
 from app.domain.services.health_regeneration_service import HealthRegenerationService
 from app.domain.services.mana_regeneration_service import ManaRegenerationService
+from app.domain.services import merchant_items as tools
 from app.domain.services.stats_service import StatsService
 from app.domain.services.skill_tree_service import SkillTreeService
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
@@ -52,6 +57,15 @@ EFFECT_HEAL_PERCENT = EFFECT_HEAL   # compat
 
 
 @dataclass
+class UseContext:
+    """Ce que seul le bot connaît : le rang porté (rôle Discord) et le moyen
+    de faire apparaître une élite — `summon_elite(code du monstre, salon)`
+    → (succès, message), branché sur l'EncounterCog."""
+    player_rank: str | None = None
+    summon_elite: Callable[[str, int], tuple[bool, str]] | None = None
+
+
+@dataclass
 class UseConsumableResult:
     success: bool
     message: str
@@ -59,6 +73,9 @@ class UseConsumableResult:
     hp_before: int = 0
     hp_after: int = 0
     max_hp: int = 0
+    #: Annonce publique à poster dans ce salon (cor de chasse).
+    announce_channel_id: int | None = None
+    announce: str = ""
 
 
 class UseConsumableUseCase:
@@ -86,6 +103,7 @@ class UseConsumableUseCase:
         username: str,
         display_name: str,
         item_code: str,
+        context: UseContext | None = None,
     ) -> UseConsumableResult:
         item = self.item_repository.get_by_code(item_code)
         if item is None:
@@ -100,7 +118,7 @@ class UseConsumableUseCase:
 
         bonuses = item.stat_bonuses or {}
         effect = bonuses.get("effect")
-        if effect not in (EFFECT_HEAL, EFFECT_MANA, EFFECT_ELIXIR) or (
+        if effect not in (EFFECT_HEAL, EFFECT_MANA, EFFECT_ELIXIR, *tools.TOOL_EFFECTS) or (
                 effect == EFFECT_ELIXIR and elixir_of(bonuses) is None):
             return UseConsumableResult(
                 success=False,
@@ -129,6 +147,8 @@ class UseConsumableUseCase:
         session = self.equipment_repository.session
         if effect == EFFECT_ELIXIR:
             return self._drink_elixir(session, profile.player.id, item)
+        if effect in tools.TOOL_EFFECTS:
+            return self._use_tool(session, profile, item, effect, bonuses, context or UseContext())
 
         equipped = self.equipment_repository.list_by_player_id(profile.player.id)
         stats = resolve_player_stats(
@@ -241,6 +261,95 @@ class UseConsumableUseCase:
         lines.append("Élixirs actifs : " + active_elixirs_text(repo.list_active_elixirs(player_id)))
         return UseConsumableResult(success=True, message="\n".join(lines), item_name=item.name)
 
+    # --------------------------------------------------------- outils de Sorn --
+    def _consume(self, player_id: int, item) -> bool:
+        return self.inventory_repository.remove_item(player_id, item.id, 1)
+
+    def _use_tool(self, session, profile, item, effect: str, bonuses: dict,
+                  context: UseContext) -> UseConsumableResult:
+        from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
+
+        pid = profile.player.id
+        fail = lambda message: UseConsumableResult(False, message, item.name)  # noqa: E731
+        now = datetime.now(UTC)
+
+        if effect == tools.EFFECT_DAILY_GUARD:
+            return fail("⏳ Le sablier agit tout seul : il protégera ta série le premier jour "
+                        "de /daily manqué.")
+
+        if effect == tools.EFFECT_RESPEC:
+            progression = profile.progression
+            placed = (progression.points_attack or 0) + (progression.points_defense or 0) \
+                + (progression.points_max_hp or 0)
+            if not placed:
+                return fail("📜 Tu n'as aucun point de stats placé : le parchemin n'a pas servi.")
+            if not self._consume(pid, item):
+                return fail(f"❌ Vous n'avez pas de **{item.name}** en inventaire.")
+            refunded = self.player_repository.reset_stat_points(pid)
+            return UseConsumableResult(True, f"📜 **{item.name}** : {refunded} points de stats repris. "
+                                             "Replace-les avec `/stats`.", item.name)
+
+        if effect == tools.EFFECT_RESET_TREE:
+            from app.application.use_cases.reset_skill_tree import ResetSkillTreeUseCase
+            from app.domain.services.cooldown_service import CooldownService
+
+            result = ResetSkillTreeUseCase(
+                self.player_repository, self.skill_allocation_repository,
+                CooldownRepository(session), CooldownService(), get_skill_tree_definition(),
+            ).execute(profile.player.discord_id, use_token=True)
+            if not result.success:
+                return fail(result.message)
+            self._consume(pid, item)
+            return UseConsumableResult(True, result.message + " Investis-les avec `/arbre`.", item.name)
+
+        cooldowns = CooldownRepository(session)
+        rank = str(bonuses.get("rank", ""))
+        if effect == tools.EFFECT_TRIAL_RETRY:
+            target = tools.next_rank(context.player_rank)
+            if context.player_rank is None or target is None:
+                return fail("🔱 Aucune épreuve de rang à retenter.")
+            if target != rank:
+                return fail(f"🔱 Ce sceau sert à l'épreuve du rang **{rank}** ; la tienne est celle "
+                            f"du rang **{target}**.")
+            cooldown = cooldowns.get_by_player_and_action(pid, "rank_trial")
+            until = cooldown.next_available_at if cooldown else None
+            if until is not None and until.tzinfo is None:
+                until = until.replace(tzinfo=UTC)
+            if until is None or until <= now:
+                return fail("🔱 Tu peux déjà tenter ton épreuve : garde ton sceau pour un échec.")
+            if not self._consume(pid, item):
+                return fail(f"❌ Vous n'avez pas de **{item.name}** en inventaire.")
+            cooldowns.upsert(pid, "rank_trial", last_used_at=cooldown.last_used_at or now, next_available_at=now)
+            return UseConsumableResult(True, f"🔱 Second souffle ! Tu peux retenter l'épreuve du rang "
+                                             f"**{rank}** tout de suite : `/epreuve`.", item.name)
+
+        # ---- Cor de chasse ----
+        if context.summon_elite is None:
+            return fail("📯 Le cor ne résonne que depuis Discord.")
+        if tools.rank_index(context.player_rank) < tools.rank_index(rank):
+            return fail(f"📯 Il faut le rang **{rank}** pour entrer dans cette zone.")
+        cooldown = cooldowns.get_by_player_and_action(pid, tools.HORN_ACTION_KEY)
+        until = cooldown.next_available_at if cooldown else None
+        if until is not None and until.tzinfo is None:
+            until = until.replace(tzinfo=UTC)
+        if until is not None and until > now:
+            return fail(f"📯 Tu as encore le souffle court : prochain cor <t:{int(until.timestamp())}:R>.")
+        target = zone_elite(session, rank)
+        if target is None:
+            return fail("📯 Cette zone n'est pas ouverte, ou n'a pas d'élite.")
+        mob_code, mob_name, channel_id = target
+        ok, message = context.summon_elite(mob_code, channel_id)
+        if not ok:
+            return fail(f"📯 {message}")
+        self._consume(pid, item)
+        cooldowns.upsert(pid, tools.HORN_ACTION_KEY, last_used_at=now, next_available_at=now + tools.HORN_COOLDOWN)
+        return UseConsumableResult(
+            True, f"📯 Tu sonnes le cor : **{mob_name}** {message} dans <#{channel_id}>.", item.name,
+            announce_channel_id=channel_id,
+            announce=f"📯 **{profile.player.display_name}** a sonné le cor de chasse : "
+                     f"**{mob_name}** {message}. Rassemblez-vous !",
+        )
+
 
 def active_elixirs_text(active: dict) -> str:
     """« 💪 Force (58 min) · 🛡️ Garde (12 min) » — `active` = {kind: effet}."""
@@ -253,3 +362,20 @@ def active_elixirs_text(active: dict) -> str:
         minutes = max(1, int((effect.expires_at - now).total_seconds() // 60))
         parts.append(f"{ELIXIR_LABELS.get(by_kind.get(status_kind, ''), status_kind)} ({minutes} min)")
     return " · ".join(parts) or "aucun"
+
+def zone_elite(session, rank: str) -> tuple[str, str, int] | None:
+    """(code, nom, salon) de l'élite de groupe de la zone OUVERTE de ce rang
+    (la plus forte s'il y en a plusieurs)."""
+    from app.domain.services.mob_ability_service import is_group_elite
+    from app.infrastructure.db.repositories.mob_repository import MobRepository
+    from app.infrastructure.encounters import farm_zone_loader
+
+    zone = next((z for z in farm_zone_loader.list_zones() if z.get("rank") == rank), None)
+    if zone is None or not zone.get("channel_id"):
+        return None
+    elites = [m for m in MobRepository(session).list_all()
+              if m.family in zone["families"] and is_group_elite(m.code)]
+    if not elites:
+        return None
+    elite = max(elites, key=lambda m: m.xp_reward or 0)
+    return elite.code, elite.name, int(zone["channel_id"])

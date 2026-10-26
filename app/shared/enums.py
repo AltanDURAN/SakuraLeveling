@@ -102,6 +102,7 @@ CATEGORY_ICONS: dict[str, str] = {
     "accessoire": "💍",
     "consumable": "🧪",
     "resource":   "🌾",
+    "cosmetic":   "🎨",
 }
 
 
@@ -129,6 +130,8 @@ class ItemCategory(StrEnum):
     TETE = "tete"
     CORPS = "corps"
     ACCESSOIRE = "accessoire"
+    #: Apparence du profil (fond, cadre, couleur du titre) — aucun effet en jeu.
+    COSMETIC = "cosmetic"
 
 
 class ItemRarity(str, Enum):
@@ -144,11 +147,13 @@ ITEM_CATEGORY_LABELS: dict[str, str] = {
     "resource": "Ressource", "consumable": "Consommable", "potion": "Potion",
     "arme": "Arme", "bouclier": "Bouclier",
     "tete": "Tête", "corps": "Corps", "accessoire": "Accessoire",
+    "cosmetic": "Cosmétique",
 }
 ITEM_CATEGORY_EMOJIS: dict[str, str] = {
     "resource": "🪵", "consumable": "🧪", "potion": "🧪",
     "arme": "⚔️", "bouclier": "🛡️",
     "tete": "⛑️", "corps": "👕", "accessoire": "💍",
+    "cosmetic": "🎨",
 }
 ITEM_RARITY_LABELS: dict[str, str] = {
     "common": "Commun", "uncommon": "Peu commun", "rare": "Rare",

@@ -74,3 +74,30 @@ def test_les_titres_visent_des_monstres_et_familles_existants():
             assert t["condition_target"] in mob_codes, t["code"]
         if t.get("condition_type") == "kills_family":
             assert t["condition_target"] in families, t["code"]
+
+
+def test_l_etal_de_sorn_est_coherent():
+    """Chaque article existe ; les outils visent un rang valide ; chaque zone
+    ouverte a son cor de chasse et une élite à invoquer ; chaque cosmétique a
+    un emplacement connu et se vend à l'unité (un seul à la fois)."""
+    from app.domain.services.merchant_items import RANK_ORDER, TOOL_EFFECTS
+    from app.domain.services.mob_ability_service import GROUP_ELITES
+
+    shop = {e["item_code"]: e for e in load("shop_items.json")}
+    for code, entry in shop.items():
+        item = ITEMS.get(code)
+        assert item is not None, code
+        assert entry.get("buy_price", 0) > 0 or entry.get("price_per_level", 0) > 0, code
+        if item["category"] == "cosmetic":
+            assert item["stat_bonuses"].get("cosmetic") in ("fond", "cadre", "titre"), code
+            assert entry.get("max_owned") == 1, code
+        else:
+            effect = item["stat_bonuses"]["effect"]
+            assert effect in TOOL_EFFECTS, code
+            if "rank" in item["stat_bonuses"]:
+                assert item["stat_bonuses"]["rank"] in RANK_ORDER, code
+    mob_family = {m["code"]: m["family"] for m in MOBS}
+    horns = {ITEMS[c]["stat_bonuses"]["rank"] for c in shop if ITEMS[c]["stat_bonuses"].get("effect") == "summon_elite"}
+    for zone in ZONES["zones"]:
+        assert zone["rank"] in horns, f"pas de cor pour la zone {zone['rank']}"
+        assert any(mob_family.get(e) in zone["families"] for e in GROUP_ELITES), zone["rank"]

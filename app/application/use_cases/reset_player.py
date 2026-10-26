@@ -35,6 +35,7 @@ from app.infrastructure.db.models.player_status_effect_model import (
 )
 from app.infrastructure.db.models.event_model import EventParticipationModel
 from app.infrastructure.db.models.work_order_model import PlayerArtisanMasteryModel
+from app.infrastructure.db.models.player_cosmetic_model import PlayerCosmeticModel
 
 
 class ResetPlayerUseCase:
@@ -113,6 +114,7 @@ class ResetPlayerUseCase:
             PlayerStatusEffectModel,
             EventParticipationModel,
             PlayerArtisanMasteryModel,
+            PlayerCosmeticModel,
         ):
             session.execute(delete(model_cls).where(model_cls.player_id == player_id))
 

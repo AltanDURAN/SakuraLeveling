@@ -27,6 +27,8 @@ class DailyClaimResult:
     streak_bonus_pct: int = 0
     # Titres de série débloqués par CE daily (7, 30, 100 jours…).
     titles_unlocked: list[str] = field(default_factory=list)
+    # Sablier de fidélité consommé (un jour manqué pardonné).
+    guard_used: bool = False
 
 
 class ClaimDailyRewardUseCase:
@@ -88,6 +90,8 @@ class ClaimDailyRewardUseCase:
 
         previous_streak = profile.resources.daily_streak
         missed = missed_days(cooldown.next_available_at if cooldown else None, now)
+        # Sablier de fidélité (Sorn) : le premier jour manqué est pardonné.
+        missed, guard_used = self._apply_daily_guard(profile.player.id, missed)
         kept = streak_after_absence(previous_streak, missed)
         new_streak = kept + 1
         self.player_repository.set_daily_streak(profile.player.id, new_streak)
@@ -195,4 +199,23 @@ class ClaimDailyRewardUseCase:
             days_missed=missed,
             streak_bonus_pct=streak_bonus_pct(new_streak),
             titles_unlocked=titles_unlocked,
+            guard_used=guard_used,
         )
+
+    def _apply_daily_guard(self, player_id: int, missed: int) -> tuple[int, bool]:
+        from app.domain.services.merchant_items import DAILY_GUARD_ITEM, missed_after_guard
+        from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
+        from app.infrastructure.db.repositories.item_repository import ItemRepository
+
+        if missed <= 0:
+            return missed, False
+        session = self.player_repository.session
+        guard = ItemRepository(session).get_by_code(DAILY_GUARD_ITEM)
+        inventory = InventoryRepository(session)
+        owned = guard is not None and any(
+            i.item_definition.id == guard.id and i.quantity > 0
+            for i in inventory.list_by_player_id(player_id))
+        missed, used = missed_after_guard(missed, owned)
+        if used and not inventory.remove_item(player_id, guard.id, 1):
+            return missed + 1, False
+        return missed, used

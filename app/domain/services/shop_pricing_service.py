@@ -19,7 +19,14 @@ class ShopPricingService:
         price = shop_item.max_sell_price - ratio * delta
         return max(shop_item.min_sell_price, round(price))
 
-    def total_buy_cost(self, shop_item: ShopItem, quantity: int) -> int:
+    def unit_buy_price(self, shop_item: ShopItem, level: int = 1) -> int:
+        """Prix d'UN exemplaire. Fixe (`buy_price`) — le même pour tous —
+        sauf si l'objet rapporte plus à haut niveau (`price_per_level`)."""
+        if shop_item.price_per_level > 0:
+            return shop_item.price_per_level * max(1, int(level))
+        return shop_item.buy_price
+
+    def total_buy_cost(self, shop_item: ShopItem, quantity: int, level: int = 1) -> int:
         if quantity <= 0:
             return 0
-        return shop_item.buy_price * quantity
+        return self.unit_buy_price(shop_item, level) * quantity

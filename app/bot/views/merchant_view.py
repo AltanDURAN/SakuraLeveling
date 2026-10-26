@@ -13,6 +13,7 @@ import discord
 
 from app.bot.rendering.npc_panel import compose_npc_panel, panel_path
 from app.domain.entities.artisan import MerchantDefinition
+from app.domain.services.shop_pricing_service import ShopPricingService
 from app.shared.enums import CATEGORY_ICONS, ITEM_CATEGORY_LABELS
 from app.shared.formatters import format_int
 
@@ -44,7 +45,9 @@ class MerchantView(discord.ui.View):
         self._by_category: dict[str, list] = {}
         self._selected = None
         self._player_gold = 0
+        self._player_level = 1
         self._owned = 0
+        self._pricing = ShopPricingService()
 
         self._build_components()
 
@@ -73,6 +76,7 @@ class MerchantView(discord.ui.View):
                 self.player_id,
             )
             self._player_gold = profile.resources.gold if profile else 0
+            self._player_level = profile.progression.level if profile else 1
 
 
             self._selected = None
@@ -104,15 +108,25 @@ class MerchantView(discord.ui.View):
             self.category = None
             self.item_code = None
 
+    def unit_price(self, shop_item) -> int:
+        return self._pricing.unit_buy_price(shop_item, self._player_level)
+
     @property
     def total_cost(self) -> int:
         if self._selected is None:
             return 0
-        return self._selected.buy_price * max(1, self.quantity)
+        return self.unit_price(self._selected) * max(1, self.quantity)
+
+    @property
+    def limit_reached(self) -> bool:
+        """Objet limité (un seul à la fois…) et déjà possédé."""
+        s = self._selected
+        return s is not None and s.max_owned > 0 and self._owned + self.quantity > s.max_owned
 
     @property
     def can_buy(self) -> bool:
-        return self._selected is not None and self._player_gold >= self.total_cost
+        return (self._selected is not None and not self.limit_reached
+                and self._player_gold >= self.total_cost)
 
     # -------------------------------------------------------- composition --
     def _build_components(self) -> None:
@@ -125,8 +139,10 @@ class MerchantView(discord.ui.View):
             if entries:
                 self.add_item(_ArticleSelect(self, entries))
         if self._selected is not None:
+            limit = self._selected.max_owned
             for step in _QUANTITY_STEPS:
-                self.add_item(_QuantityButton(self, step))
+                if not limit or step <= limit:
+                    self.add_item(_QuantityButton(self, step))
         self.add_item(_BuyButton(self, enabled=self.can_buy))
         self.add_item(_CloseButton(self))
 
@@ -144,13 +160,15 @@ class MerchantView(discord.ui.View):
             "description": item.description or "",
             "stat_bonuses": item.stat_bonuses or {},
             "quantity": self.quantity,
-            "unit_price": self._selected.buy_price,
+            "unit_price": self.unit_price(self._selected),
             "owned": self._owned,
             "gold_cost": self.total_cost,
             "can_afford": self.can_buy,
             "blocking_reason": (
                 ""
                 if self.can_buy
+                else f"Tu en as déjà : {self._selected.max_owned} à la fois au plus."
+                if self.limit_reached
                 else f"Il te manque {format_int(self.total_cost - self._player_gold)} or."
             ),
         }
@@ -165,7 +183,7 @@ class MerchantView(discord.ui.View):
             ("Son étal", cats),
             ("Articles", f"{total} référence(s)"),
             ("Ta bourse", f"💰 {format_int(self._player_gold)} or"),
-            ("Sa règle", "il achète, il ne reprend rien"),
+            ("Sa règle", "il vend, il ne rachète rien"),
         ]
 
     async def render(self) -> tuple[discord.Embed, discord.File]:
@@ -228,7 +246,11 @@ class _ArticleSelect(discord.ui.Select):
             discord.SelectOption(
                 label=s.item_definition.name[:100],
                 value=s.item_definition.code,
-                description=f"{format_int(s.buy_price)} or l'unité"[:100],
+                description=(
+                    f"{format_int(view.unit_price(s))} or"
+                    + (f" ({s.price_per_level} × ton niveau)" if s.price_per_level else " l'unité")
+                    + (" · un seul à la fois" if s.max_owned == 1 else "")
+                )[:100],
                 default=(s.item_definition.code == view.item_code),
             )
             for s in entries[:25]
