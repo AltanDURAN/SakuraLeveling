@@ -60,6 +60,7 @@ class AdminCog(commands.Cog):
         app_commands.Choice(name="PV courants", value="current_hp"),
         app_commands.Choice(name="Mana courant", value="current_mana"),
         app_commands.Choice(name="Daily streak", value="daily_streak"),
+        app_commands.Choice(name="Étage record de la tour", value="tower_floor"),
     ]
 
     async def _apply_resource(
@@ -192,6 +193,22 @@ class AdminCog(commands.Cog):
                     new = max(0, current - amount)
                 repo.set_daily_streak(profile.player.id, new)
                 label = "Daily streak"
+
+            elif resource == "tower_floor":
+                from app.domain.services.tower_service import TOWER_FLOORS
+                from app.infrastructure.db.repositories.tower_repository import TowerRepository
+
+                tower_repo = TowerRepository(session)
+                current = tower_repo.best_floor(profile.player.id)
+                if action == "set":
+                    new = amount
+                elif action == "give":
+                    new = current + amount
+                else:
+                    new = current - amount
+                new = max(0, min(TOWER_FLOORS, new))
+                tower_repo.set_best_floor(profile.player.id, new)
+                label = "Étage record de la tour"
 
             else:
                 return f"❌ Ressource inconnue : `{resource}`."

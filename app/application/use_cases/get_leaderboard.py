@@ -45,6 +45,7 @@ class GetLeaderboardUseCase:
         power_score_service: PowerScoreService,
         leaderboard_service: LeaderboardService,
         role_trial_repository=None,
+        tower_repository=None,
     ) -> None:
         self.player_repository = player_repository
         self.equipment_repository = equipment_repository
@@ -54,6 +55,7 @@ class GetLeaderboardUseCase:
         self.power_score_service = power_score_service
         self.leaderboard_service = leaderboard_service
         self.role_trial_repository = role_trial_repository
+        self.tower_repository = tower_repository
 
     def execute(self, category_code: str, limit: int = 10) -> Leaderboard | None:
         if category_code == "power":
@@ -70,6 +72,9 @@ class GetLeaderboardUseCase:
 
         if category_code == "kills_total":
             return self._compute_kills_total(limit)
+
+        if category_code == "tour":
+            return self._compute_tower(limit)
 
         if category_code.startswith("defi_"):
             return self._compute_role_trial(category_code.split("_", 1)[1], limit)
@@ -246,6 +251,17 @@ class GetLeaderboardUseCase:
             category_label=f"Défis de la semaine — {label}",
             entries=entries,
         )
+
+    def _compute_tower(self, limit: int) -> Leaderboard | None:
+        """Tour solo : l'étage record (le premier arrivé à égalité)."""
+        if self.tower_repository is None:
+            return None
+        entries = [
+            LeaderboardEntry(player_id=pid, display_name=name, value=floor,
+                             formatted_value=f"étage {floor}")
+            for pid, floor, name in self.tower_repository.leaderboard(limit)
+        ]
+        return Leaderboard(category_code="tour", category_label="Tour — étage record", entries=entries)
 
     def _compute_kills_family(self, family: str, limit: int) -> Leaderboard:
         rows = self.kill_repository.top_kills_for_family(family=family, limit=limit)

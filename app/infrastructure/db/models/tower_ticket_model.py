@@ -1,4 +1,4 @@
-"""Tickets d'entrée de la tour solo (la tour viendra plus tard).
+"""Tickets d'entrée de la tour solo (`/tour`).
 
 Une ligne par joueur : le jour (UTC) et le nombre de tickets utilisés ce
 jour-là. Les tickets ne s'accumulent pas : chaque jour on repart de son quota.

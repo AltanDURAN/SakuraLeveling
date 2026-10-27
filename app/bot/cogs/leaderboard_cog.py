@@ -13,6 +13,7 @@ from app.infrastructure.encounters.farm_zone_loader import unreleased_families
 from app.infrastructure.db.repositories.player_kill_repository import PlayerKillRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.role_trial_repository import RoleTrialRepository
+from app.infrastructure.db.repositories.tower_repository import TowerRepository
 from app.infrastructure.db.session import get_db_session
 
 
@@ -33,6 +34,7 @@ STATIC_CATEGORIES: list[tuple[str, str]] = [
     ("defi_tank", "Défis de la semaine — Tank"),
     ("defi_soutien", "Défis de la semaine — Soutien"),
     ("defi_general", "Défis de la semaine — Général"),
+    ("tour", "Tour — étage record"),
 ]
 
 
@@ -55,6 +57,7 @@ class LeaderboardCog(commands.Cog):
                 power_score_service=PowerScoreService(),
                 leaderboard_service=LeaderboardService(),
                 role_trial_repository=RoleTrialRepository(session),
+                tower_repository=TowerRepository(session),
             )
 
             leaderboard = use_case.execute(category_code=category, limit=10)

@@ -41,6 +41,8 @@ from app.infrastructure.db.models.daily_quest_model import DailyQuestAssignmentM
 from app.infrastructure.db.models.marketplace_listing_model import MarketplaceListingModel
 from app.infrastructure.db.models.player_status_effect_model import PlayerStatusEffectModel  # noqa: F401
 from app.infrastructure.db.models.player_cosmetic_model import PlayerCosmeticModel  # noqa: F401
+from app.infrastructure.db.models.tower_progress_model import PlayerTowerProgressModel  # noqa: F401
+from app.infrastructure.db.models.tower_ticket_model import PlayerTowerTicketModel  # noqa: F401
 from app.infrastructure.db.models.event_model import (  # noqa: F401
     ActiveEventModel,
     EventParticipationModel,

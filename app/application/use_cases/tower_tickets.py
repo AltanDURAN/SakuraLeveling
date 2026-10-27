@@ -1,11 +1,12 @@
-"""Tickets d'entrée de la tour solo (la tour elle-même viendra plus tard).
+"""Tickets d'entrée de la tour solo (`/tour`, cf. `use_cases/tower`).
 
 Chaque jour (minuit heure de Paris, comme tous les resets du jeu), un joueur a un quota de tickets : 1 de base, +1 s'il a monté
 la case « Confort » qui donne le ticket bonus. Les tickets ne s'accumulent
 PAS : un ticket non utilisé est perdu à minuit, le lendemain on repart du
 quota (1 bonus maximum par jour, jamais 2).
 
-La future tour appellera `consume()` avant de lancer une tentative.
+La tour en exige un pour tenter un étage et le consomme sur une DÉFAITE
+(une victoire le garde : on enchaîne).
 """
 
 from __future__ import annotations

@@ -542,6 +542,27 @@ LE MANA DES COMPÉTENCES 💧
       premier porte le titre de la semaine (voir /titre).
     Sans rôle : le programme du jour, tes scores et ta place de la semaine.
 
+/tour
+    La TOUR SOLO : 100 étages, les mêmes pour tout le monde. L'étage N est du
+    niveau N : les premiers se passent dès le début, les derniers sont du jeu
+    de fin. Chaque étage oppose 1 à 4 monstres (de toutes les zones, parfois
+    en combinaisons pensées pour te forcer à adapter ton build), et un BOSS
+    t'attend tous les 10 étages. La commande montre l'étage suivant : ses
+    monstres, leur élément et leurs capacités.
+    • Tu combats SEUL, à PV et mana PLEINS, sans potion ni élixir.
+    • 1 ticket par jour (+1 avec la case « Confort » de l'arbre), remis à
+      minuit. Tant que tu gagnes, tu GARDES ton ticket et tu enchaînes les
+      étages ; une défaite coûte le ticket, jamais un étage : ton record est
+      permanent et tu reprends là où tu en étais.
+    • Premier passage d'un étage : de l'or et de l'XP de son niveau (×3 sur
+      un boss, avec des matériaux de fusion de sa famille).
+    • Récompense du jour (bouton 🎁) : 10 or par étage de ton record et des
+      matériaux de fusion — elle grandit avec ton record, pas avec ton
+      niveau.
+    • Les dégâts de zone (case AOE de l'arbre) touchent les voisins de ta
+      cible ; tu frappes toujours l'ennemi le plus abîmé.
+    Classement : /classement tour.
+
 /bestiaire
     Le catalogue des monstres : stats, élément, récompenses, butin et la
     pièce d'équipement que porte chacun (avec son passif).
