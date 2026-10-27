@@ -21,6 +21,7 @@ import logging
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
+from app.bot.rendering import combat_fx
 from app.bot.rendering.element_visuals import make_element_badge, tint_by_element
 from app.bot.rendering.image_utils import (
     add_outline,
@@ -186,6 +187,8 @@ def render_scene(
     mobs: list[dict] | None = None,
     placements: list[dict | None] | None = None,
     formation: list[dict] | None = None,
+    events: list[dict] | None = None,
+    fx_seed: int = 0,
 ) -> Image.Image:
     """Compose la scène complète et renvoie l'image (RGB). Utilisé par le bot
     ET par l'aperçu de l'éditeur admin → WYSIWYG garanti.
@@ -194,7 +197,9 @@ def render_scene(
     du monstre (scale, offset_x, shadow). Sans eux → rendu automatique.
     Plusieurs monstres (meute, tour) : `mobs` (ordre de la formation),
     `placements` (le placement propre de chacun pour son élément, ou None) et
-    `formation` (un emplacement {x, y, scale} par monstre)."""
+    `formation` (un emplacement {x, y, scale} par monstre). `events` :
+    ce qui s'est passé pendant l'action (chiffres de dégâts, soins, effets —
+    cf. `combat_fx`), dessiné par-dessus tout."""
     players = players or []
     mob = mob or None
     group = list(mobs or [])
@@ -225,6 +230,8 @@ def render_scene(
     except Exception:
         title_font = stat_font = hp_font = ImageFont.load_default()
 
+    anchors: dict[str, combat_fx.Anchor] = {}
+
     # ---- Monstre (le HUD passera par-dessus) ----
     if mob is not None:
         content = mob_content(_load_mob_image(mob.get("image_name")))
@@ -241,10 +248,18 @@ def render_scene(
         if element:
             mob_img = tint_by_element(mob_img, element)
         result.alpha_composite(mob_img, mob_pos)
+        anchors["e0"] = combat_fx.Anchor(
+            mob_pos[0], max(STAGE_TOP, mob_pos[1]), mob_img.width,
+            min(mob_img.height, STAGE_BOTTOM - max(STAGE_TOP, mob_pos[1])),
+            int(mob.get("max_hp", 1) or 1), element, mob.get("code", ""))
 
     if len(group) > 1:
-        _draw_group(result, group, placements or [None] * len(group),
-                    formation or [{"x": 0, "y": 0, "scale": 1}] * len(group), spot)
+        boxes = _draw_group(result, group, placements or [None] * len(group),
+                            formation or [{"x": 0, "y": 0, "scale": 1}] * len(group), spot)
+        for i, data in enumerate(group):
+            x, y, w, h = boxes[i]
+            anchors[f"e{i}"] = combat_fx.Anchor(x, y, w, h, int(data.get("max_hp", 1) or 1),
+                                                data.get("element") or "", data.get("code", ""))
 
     # ---- Bandeau MOB (haut) ----
     _panel(result, TOP_PANEL)
@@ -305,12 +320,18 @@ def render_scene(
             mx = int(player.get("max_hp", 1) or 1)
             avatar = add_outline(crop_to_circle(raw_avatar, av_d), outline_size=3)
             result.alpha_composite(avatar, (cx - avatar.width // 2, av_y))
+            if player.get("player_id") is not None:
+                anchors[f"p{player['player_id']}"] = combat_fx.Anchor(
+                    cx - avatar.width // 2, av_y, avatar.width, avatar.height, mx, player=True)
             bar_y = av_y + avatar.height + 2
             _draw_ratio_bar(result, draw, cx - bar_half, bar_y, cx + bar_half, bar_y + 16, cur, mx)
             name = player.get("name", "")
             if name:
                 draw.text((cx - draw.textlength(name, font=hp_font) / 2, bar_y + 18),
                           name, font=hp_font, fill=(240, 240, 245, 255))
+
+    # Chiffres et effets de l'action, par-dessus tout.
+    combat_fx.draw_combat_fx(result, events, anchors, seed=fx_seed)
 
     # Léger renforcement de netteté (compense la vignette WebP de l'aperçu).
     return result.convert("RGB").filter(
@@ -324,17 +345,26 @@ _GROUP_AUTO_SCALE = 0.50
 
 
 def _draw_group(base: Image.Image, mobs: list[dict], placements: list[dict | None],
-                formation: list[dict], spot: dict | None) -> None:
+                formation: list[dict], spot: dict | None) -> dict[int, tuple[int, int, int, int]]:
     """Plusieurs monstres posés au sol selon la formation : les plus LOIN
     (y le plus petit) d'abord, pour que ceux de devant passent par-dessus.
-    Un monstre vaincu est assombri."""
+    Un monstre vaincu est assombri. Renvoie la boîte (x, y, l, h) de chacun
+    (celle de son emplacement s'il n'a pas encore d'image) — pour y poser
+    les chiffres de combat."""
     ground_y = (spot or {}).get("ground_y", STAGE_BOTTOM / FRAME_H)
     order = sorted(range(len(mobs)), key=lambda i: formation[i]["y"] if i < len(formation) else 0)
+    boxes: dict[int, tuple[int, int, int, int]] = {}
     for i in order:
         data = mobs[i]
-        if not has_mob_image(data.get("image_name")):
-            continue    # pas encore d'image : le bandeau du haut le nomme quand même
         slot = formation[i] if i < len(formation) else {"x": 0, "y": 0, "scale": 1}
+        if not has_mob_image(data.get("image_name")):
+            # Pas encore d'image : le bandeau du haut le nomme quand même.
+            h = int(FRAME_H * _GROUP_AUTO_SCALE * float(slot.get("scale", 1)))
+            w = int(h * 0.7)
+            cx = (0.5 + float(slot.get("x", 0))) * FRAME_W
+            feet = (ground_y + float(slot.get("y", 0))) * FRAME_H
+            boxes[i] = (int(cx - w / 2), int(max(STAGE_TOP, feet - h)), w, int(min(h, feet - STAGE_TOP)))
+            continue
         own = placements[i] if i < len(placements) and placements[i] else {}
         content = mob_content(_load_mob_image(data.get("image_name")))
         placement = {
@@ -352,6 +382,9 @@ def _draw_group(base: Image.Image, mobs: list[dict], placements: list[dict | Non
             alpha = img.getchannel("A").point(lambda a: a * 45 // 100)
             img = Image.merge("RGBA", (*img.convert("RGB").point(lambda v: v // 3).split(), alpha))
         base.alpha_composite(img, pos)
+        top = max(STAGE_TOP, pos[1])
+        boxes[i] = (pos[0], top, img.width, max(1, min(img.height, STAGE_BOTTOM - top)))
+    return boxes
 
 
 def _draw_group_hud(base: Image.Image, draw: ImageDraw.ImageDraw, mobs: list[dict]) -> None:
@@ -410,6 +443,8 @@ def compose_players_banner(
     mobs: list[dict] | None = None,
     placements: list[dict | None] | None = None,
     formation: list[dict] | None = None,
+    events: list[dict] | None = None,
+    fx_seed: int = 0,
 ):
     """Point d'entrée du bot. `spot` (environnement du couple zone×élément) et
     `placement` (placement du monstre) sont résolus par l'appelant (encounter).
@@ -418,7 +453,7 @@ def compose_players_banner(
     image = render_scene(
         mob=mob, players=players, background_path=background_path,
         spot=spot, placement=placement, mobs=mobs, placements=placements,
-        formation=formation,
+        formation=formation, events=events, fx_seed=fx_seed,
     )
     image.save(output_path)
     _logger.debug("Scène de combat générée : %s", output_path)

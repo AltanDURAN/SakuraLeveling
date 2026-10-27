@@ -338,10 +338,11 @@ class EncounterService:
                 if len(states) > 1:
                     definition = replace(definition, max_hp=state.max_hp, current_hp=state.max_hp,
                                          attack=state.attack)
-                outgoing, incoming = elemental_multipliers(
+                outgoing, incoming, infused = elemental_multipliers(
                     session, [m["player_id"] for m in party], state.element or "", passives_by_player)
                 enemies.append(EnemySetup(mob=definition, abilities=get_mob_abilities(definition.code),
-                                          elemental_out=outgoing, elemental_in=incoming))
+                                          elemental_out=outgoing, elemental_in=incoming,
+                                          infusion=infused))
 
         if not party:
             return None

@@ -24,23 +24,25 @@ def elemental_multipliers(
     player_ids: list[int],
     mob_element: str,
     passives_by_player: dict[int, CombatPassives] | None = None,
-) -> tuple[dict[int, float], dict[int, float]]:
+) -> tuple[dict[int, float], dict[int, float], dict[int, str]]:
     """({joueur: multiplicateur de ses dégâts}, {joueur: multiplicateur des
-    dégâts reçus}) contre un ennemi d'élément `mob_element` (vides s'il est
-    neutre)."""
+    dégâts reçus}, {joueur: élément infusé — pour l'affichage}) contre un
+    ennemi d'élément `mob_element` (vides s'il est neutre)."""
     mob_element = (mob_element or "").strip()
     if not mob_element:
-        return {}, {}
+        return {}, {}, {}
     mob_aff = element_service.single_element_affinities(mob_element)
     repo = ElementAffinityRepository(session)
     outgoing: dict[int, float] = {}
     incoming: dict[int, float] = {}
+    infused: dict[int, str] = {}
     for player_id in player_ids:
         aff = repo.get_affinities(player_id)
         infusion = ElementalInfusionService().best_for(aff, mob_aff, repo.dead_elements(player_id))
         if infusion.element:
+            infused[player_id] = infusion.element
             outgoing[player_id] = outgoing_elemental_multiplier(
                 infusion.multiplier, infusion.element, aff, (passives_by_player or {}).get(player_id),
             )
         incoming[player_id] = element_service.damage_multiplier(mob_element, mob_aff, aff)
-    return outgoing, incoming
+    return outgoing, incoming, infused

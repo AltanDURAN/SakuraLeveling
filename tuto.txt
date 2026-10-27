@@ -419,6 +419,11 @@ COMBATS DE GROUPE (automatiques)
     Un second message suit le combat tour par tour ; à la fin, il renvoie
     vers le récapitulatif (deux pages : récompenses, puis détail et part de
     victoire de chacun).
+    Sur l'image du combat, chaque action s'affiche : les dégâts en chiffres
+    (plus le coup est gros, plus le chiffre est grand), les CRITIQUES en or,
+    les soins en vert, les boucliers en bleu, les esquives, poisons,
+    étourdissements… avec l'effet du coup (entaille, griffes, morsure,
+    explosion, magie) à la couleur de l'élément.
 
 RÉCOMPENSES D'UN COMBAT DE GROUPE
     • Or : une somme FIXE par monstre, partagée entre les survivants selon

@@ -415,11 +415,13 @@ class EncounterCog(commands.Cog):
                 "crit_damage": m.crit_damage, "dodge": m.dodge, "hp_regeneration": m.hp_regeneration,
             } for m in encounter.mobs]
         payloads = [self._mob_payload(s, element) for s in states]
+        # Chiffres de dégâts et effets de l'action (cf. combat_fx).
+        fx = {"events": turn_log.events, "fx_seed": turn_log.turn_number} if turn_log is not None else {}
         if len(payloads) == 1:
             payloads[0]["code"] = encounter.mob_state.code
-            return {"mob": payloads[0], "spot": spot, "placement": placement}
+            return {"mob": payloads[0], "spot": spot, "placement": placement, **fx}
         return {
-            "mob": None, "spot": spot, "mobs": payloads,
+            "mob": None, "spot": spot, "mobs": payloads, **fx,
             "placements": [mob_placement_loader.get_placement(p.get("code"), element) for p in payloads],
             "formation": mob_formation_loader.get_formation(str(channel_id), len(payloads)),
         }

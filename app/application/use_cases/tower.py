@@ -137,8 +137,7 @@ def _fight(session: Session, profile: PlayerProfile, floor_data: dict) -> PartyB
     enemies = floor_data["enemies"]
     out, inc = {}, {}
     for i, enemy in enumerate(enemies):
-        o, n = elemental_multipliers(session, [player_id], enemy.get("element", ""), passives)
-        out[i], inc[i] = o, n
+        out[i], inc[i], _ = elemental_multipliers(session, [player_id], enemy.get("element", ""), passives)
     member = {
         "player_id": player_id, "user_id": profile.player.discord_id,
         "name": profile.player.display_name, "avatar_url": "",

@@ -83,6 +83,8 @@ class EnemySetup:
     elemental_out: dict[int, float] = field(default_factory=dict)
     elemental_in: dict[int, float] = field(default_factory=dict)
     is_boss: bool = False
+    #: Élément d'attaque infusé de chaque joueur contre cet ennemi (affichage).
+    infusion: dict[int, str] = field(default_factory=dict)
     immunity_threshold: int = 0
     heal_per_turn: int = 0
     reflect_pct: int = 0
@@ -168,11 +170,21 @@ class PartyCombatService:
         tactics_by_player = tactics_by_player or {}
         self._passives = passives_by_player
         self._mana_costs = MANA_COSTS if mana_costs is None else mana_costs
+        # Événements de l'action en cours (chiffres et effets dessinés sur la
+        # scène) : vidés dans chaque instantané du journal. Pur enregistrement,
+        # aucun tirage — le combat est identique avec ou sans affichage.
+        self._events: list[dict] = []
         _skill_svc = SkillEffectService()
         hard_max = HARD_MAX_TURNS * max(1, len(enemies))
 
         def P(member) -> CombatPassives:
             return passives_by_player.get(member["player_id"], NO_PASSIVES)
+
+        def pk(member) -> str:
+            return f"p{member['player_id']}"
+
+        def ek(E) -> str:
+            return f"e{E['i']}"
         turns = 0
         turn_logs: list[PartyBattleTurnLog] = []
 
@@ -282,6 +294,7 @@ class PartyCombatService:
                 "reflect_pct": reflect, "heal_per_turn": setup.heal_per_turn,
                 "immunity": setup.immunity_threshold, "is_boss": setup.is_boss,
                 "out": setup.elemental_out or {}, "in": setup.elemental_in or {},
+                "infusion": setup.infusion or {},
                 # Effets posés par les joueurs (passifs d'équipement)
                 "taunted_by": None,     # provocation : SA prochaine attaque
                 "stunned": False,       # étourdi / gelé : perd sa prochaine action
@@ -388,13 +401,14 @@ class PartyCombatService:
                 crit_damage=max(100, base.crit_damage * mult),
                 current_hp=E["hp"],
             )
+            self._emit("enrage", ek(E))
             turn_logs.append(snap(
                 f"🔥 Le combat s'éternise : {E['mob'].name} se renforce "
                 f"(+{round(ESCALATION_STEP * level * 100)} %, ×{mult:.2f} au total)", focus=E))
 
         def snap(action, players=None, focus=None):
             return self._snapshot(turns, players or [], action, alive_party, foes,
-                                  focus if focus is not None else _focus())
+                                  focus if focus is not None else _focus(), self._take_events())
 
         def _focus():
             return _player_target() or foes[-1]
@@ -439,10 +453,12 @@ class PartyCombatService:
             before = target["hp"]
             target["hp"] = min(target["max_hp"], target["hp"] + int(round(amount)))
             healed = target["hp"] - before
+            if healed > 0:
+                self._emit("heal", pk(target), healed, source=pk(healer))
             if healer["player_id"] != target["player_id"]:
                 contributions[healer["player_id"]].hp_healed += healed
                 if P(healer).has("healing_hands") and healed > 0 and _foes_alive():
-                    _hurt_foe(_player_target(), max(1, round(healed * 0.10)), healer)
+                    _hurt_foe(_player_target(), max(1, round(healed * 0.10)), healer, style="holy")
             if allow_buff and P(healer).heal_buff_pct > 0:
                 _buff(target, P(healer).heal_buff_pct)
                 _buff(healer, P(healer).heal_buff_pct)
@@ -510,6 +526,7 @@ class PartyCombatService:
             if E["hp"] <= 0 and "revive" in ab and not E["revived"]:
                 E["revived"] = True
                 E["hp"] = E["max_hp"]
+                self._emit("revive", ek(E))
                 turn_logs.append(snap(
                     f"👼 {E['mob'].name} renaît à 100% PV, transcendé "
                     f"(+{ab['revive'].get('atk_pct', 0)}% d'attaque) !", focus=E))
@@ -521,15 +538,18 @@ class PartyCombatService:
             relâchés, charme levé, Festin de chair."""
             nonlocal charmed_id
             E["down"] = True
+            self._emit("ko", ek(E))
             cfg = E["ab"].get("death_explosion")
             victims = [p for p in alive_party if p["hp"] > 0]
             if cfg and victims:
                 mult = int(cfg.get("attack_multiplier", 3))
                 parts = []
                 for target in victims:
+                    shield_before = target["shield"]
                     dmg, crit, dodged = self._resolve_mob_hit(
                         E["mob"], target, contributions, title_bonuses_by_player,
                         E["in"], E["family"], extra_multiplier=mult, is_aoe=True)
+                    _mob_hit_fx(target, E, dmg, crit, dodged, "explosion", shield_before)
                     target.pop("_recoil", None)  # le monstre est déjà mort
                     target.pop("_mirror", None)
                     target.pop("_freeze", None)
@@ -560,7 +580,8 @@ class PartyCombatService:
             if feast:
                 turn_logs.append(snap("🍖 Festin de chair : " + " · ".join(feast), focus=E))
 
-        def _hurt_foe(E, amount: int, member, *, through_shield: bool = True) -> int:
+        def _hurt_foe(E, amount: int, member, *, through_shield: bool = True,
+                      kind: str = "hit", style: str = "magic") -> int:
             """Dégâts DIRECTS à un ennemi (zone, souffle, écho, poison…) : ni
             défense ni esquive ; le bouclier du monstre absorbe d'abord (sauf
             poisons), l'immunité d'un boss ignore les coups trop faibles.
@@ -568,6 +589,7 @@ class PartyCombatService:
             if E is None or E["hp"] <= 0 or amount <= 0:
                 return 0
             if E["immunity"] > 0 and amount < E["immunity"]:
+                self._emit("immune", ek(E))
                 return 0
             if through_shield and E["shield"] > 0:
                 absorbed = min(E["shield"], amount)
@@ -577,6 +599,7 @@ class PartyCombatService:
             E["hp"] -= dealt
             if member is not None:
                 contributions[member["player_id"]].damage_dealt += dealt
+            self._emit(kind, ek(E), dealt, source=pk(member) if member is not None else None, style=style)
             _check_mob_thresholds(E)
             return dealt
 
@@ -594,7 +617,25 @@ class PartyCombatService:
                 E["hp"] -= dealt
                 contributions[defender["player_id"]].damage_dealt += dealt
                 defender[key] = dealt
+                self._emit("recoil" if key == "_recoil_dealt" else "mirror", ek(E), dealt,
+                           source=pk(defender))
                 _check_mob_thresholds(E)
+
+        def _mob_hit_fx(target, E, dmg: int, crit: bool, dodged: bool, style: str,
+                        shield_before: int) -> None:
+            """Événement d'un coup d'ennemi sur un joueur (esquive, coup, part
+            absorbée par le bouclier ou annulée)."""
+            src = ek(E)
+            if dodged:
+                self._emit("dodge", pk(target), source=src)
+                return
+            absorbed = max(0, shield_before - target["shield"])
+            if target.get("_ward"):
+                self._emit("block", pk(target), source=src)
+            elif dmg > 0 or absorbed == 0:
+                self._emit("crit" if crit else "hit", pk(target), dmg, source=src, style=style)
+            if absorbed > 0:
+                self._emit("block", pk(target), absorbed, source=src)
 
         def _tags(member) -> str:
             tag = ""
@@ -647,6 +688,7 @@ class PartyCombatService:
                 if m["hp"] <= 0:
                     continue
                 m["shield"] += amount
+                self._emit("shield", pk(m), amount, source=pk(caster))
                 if m["player_id"] != caster["player_id"]:
                     contributions[caster["player_id"]].hp_healed += amount
             shield_lines.append(f"{caster['name']} ({amount})")
@@ -664,9 +706,11 @@ class PartyCombatService:
                 streak += 1
                 target = min((p for p in alive_party if p["hp"] > 0),
                              key=lambda p: (p["hp"], p["max_hp"]))
+                shield_before = target["shield"]
                 dmg, crit, dodged = self._resolve_mob_hit(
                     E["mob"], target, contributions, title_bonuses_by_player,
                     E["in"], E["family"], extra_multiplier=streak, force_crit=True)
+                _mob_hit_fx(target, E, dmg, crit, dodged, "assassinate", shield_before)
                 target.pop("_freeze", None)
                 _recoil_to_mob(target, E)
                 turns += 1
@@ -742,7 +786,7 @@ class PartyCombatService:
                     f"(+{int(E['bonus_atk'])} atk, +{int(E['bonus_def'])} déf, +{gained_hp} PV) !", focus=E))
 
         def _strike(player, E, offensive_mult: float = 1.0, prefix: str = "",
-                    chained: bool = False) -> int:
+                    chained: bool = False, style: str = "slash") -> int:
             """UNE attaque d'un joueur sur l'ennemi E (toute la chaîne de
             dégâts) + ses effets immédiats. Réutilisée par Coup double,
             Riposte, Piqué et Œil de la tempête ; `chained` = coup issu d'un
@@ -828,13 +872,16 @@ class PartyCombatService:
                              and player["player_id"] not in E["ghost_dodged"])
             if fantome_dodge:
                 E["ghost_dodged"].add(player["player_id"])
+                self._emit("dodge", ek(E), source=pk(player))
                 damage = 0
                 mob_action_text = (f"👻 {mob.name} se dissipe — la première attaque de "
                                    f"{player['name']} est esquivée !")
             elif mob.dodge > 0 and not void_gaze and random.random() < (mob.dodge / 100):
                 damage = 0
+                self._emit("dodge", ek(E), source=pk(player))
                 mob_action_text = f"{mob.name} esquive l'attaque de {player['name']}."
             elif immune:
+                self._emit("immune", ek(E), source=pk(player))
                 mob_action_text = f"{mob.name} ignore le coup (trop faible)."
             else:
                 landed = True
@@ -842,6 +889,8 @@ class PartyCombatService:
                 to_shield = min(E["shield"], damage) if E["shield"] > 0 else 0
                 E["shield"] -= to_shield
                 E["hp"] = max(0, E["hp"] - (damage - to_shield))
+                self._emit("crit" if crit else "hit", ek(E), damage, source=pk(player), style=style,
+                           element=E["infusion"].get(player["player_id"], ""), shield=to_shield)
                 mob_action_text = f"{mob.name} subit l'attaque."
 
             actual_damage = damage if landed else 0
@@ -897,12 +946,14 @@ class PartyCombatService:
             if E["reflect_pct"] > 0 and actual_damage > 0:
                 reflected = max(1, round(actual_damage * E["reflect_pct"] / 100))
                 self._apply_player_damage(player, reflected, use_shield=False)
+                self._emit("hit", pk(player), reflected, source=ek(E), style="reflect")
                 action_text += f" (renvoi {reflected})"
 
             # Contrecoup : la DEF du monstre en trop revient au joueur (coup
             # arrivé sur l'armure, immunité comprise ; pas sur une esquive).
             if recoil > 0 and (landed or immune):
                 taken = self._apply_player_damage(player, recoil, use_shield=False)
+                self._emit("recoil", pk(player), taken, source=ek(E))
                 action_text += f" (🔁 {taken} en contrecoup" + (" 💀)" if player["hp"] <= 0 else ")")
 
             # Effets posés sur l'ennemi (passifs d'équipement, non cumulables
@@ -938,7 +989,7 @@ class PartyCombatService:
                     f"{N['mob'].name} −{dealt}"
                     for N in _neighbours(E)
                     if (dealt := _hurt_foe(N, max(1, round(actual_damage * mine.splash_damage_pct / 100)),
-                                           player))
+                                           player, style="splash"))
                 ]
                 if splashed:
                     action_text += " 🔮 " + ", ".join(splashed)
@@ -947,6 +998,7 @@ class PartyCombatService:
             if (landed and mine.has("ancestral_breath") and 0 < E["hp"] < E["max_hp"] * 0.20
                     and not E["is_boss"] and self._spend(player, "ancestral_breath")):
                 contributions[player["player_id"]].damage_dealt += E["hp"]
+                self._emit("execute", ek(E), E["hp"], source=pk(player))
                 E["hp"] = 0
                 action_text += " 🐉 exécuté !"
 
@@ -966,6 +1018,7 @@ class PartyCombatService:
             pz = p.get("poison")
             if pz:
                 self._apply_player_damage(p, pz["dmg"], use_shield=False)
+                self._emit("dot", pk(p), pz["dmg"], style="poison")
                 contributions[p["player_id"]].damage_tanked += pz["dmg"]
                 lines.append(f"☠️ Poison : {p['name']} −{pz['dmg']}")
                 pz["turns"] -= 1
@@ -974,6 +1027,7 @@ class PartyCombatService:
             if p["bleeds"] and p["hp"] > 0:
                 total = sum(b["dmg"] for b in p["bleeds"])
                 self._apply_player_damage(p, total, use_shield=False)
+                self._emit("dot", pk(p), total, style="bleed")
                 contributions[p["player_id"]].damage_tanked += total
                 lines.append(f"🩸 Saignement : {p['name']} −{total}")
                 for b in p["bleeds"]:
@@ -992,7 +1046,7 @@ class PartyCombatService:
                     or not self._spend(player, "void_echo")):
                 return
             target = _player_target()
-            dealt = _hurt_foe(target, max(1, round(player["stats"].attack * 0.50)), player)
+            dealt = _hurt_foe(target, max(1, round(player["stats"].attack * 0.50)), player, style="void")
             player["void_ward"] = True
             turn_logs.append(snap(f"🌀 Écho du vide de {player['name']} : {target['mob'].name} −{dealt}, "
                                   f"le prochain coup reçu sera absorbé.", focus=target))
@@ -1004,7 +1058,8 @@ class PartyCombatService:
             lines = []
             pz = E["poison"]
             if pz:
-                dealt = _hurt_foe(E, pz["dmg"], _member(pz["by"]), through_shield=False)
+                dealt = _hurt_foe(E, pz["dmg"], _member(pz["by"]), through_shield=False,
+                                  kind="dot", style="poison")
                 lines.append(f"🐍 Sève : −{dealt}")
                 pz["turns"] -= 1
                 if pz["turns"] <= 0:
@@ -1014,7 +1069,8 @@ class PartyCombatService:
                     continue
                 total = 0
                 for dot in E[key]:
-                    total += _hurt_foe(E, dot["dmg"], _member(dot["by"]), through_shield=False)
+                    total += _hurt_foe(E, dot["dmg"], _member(dot["by"]), through_shield=False,
+                                       kind="dot", style="burn" if key == "burns" else "bleed")
                     dot["turns"] -= 1
                 E[key] = [d for d in E[key] if d["turns"] > 0]
                 lines.append(f"{label} : −{total}")
@@ -1082,6 +1138,8 @@ class PartyCombatService:
                             player["slow"] -= 1
                         victim = random.choice(prey)
                         dmg, crit, dodged, recoil = self._pvp_hit(player, victim, contributions)
+                        self._emit("dodge" if dodged else ("crit" if crit else "hit"), pk(victim), dmg,
+                                   source=pk(player), style="charm")
                         act = (f"😈 {player['name']} (charmé) attaque {victim['name']} — esquive !"
                                if dodged else
                                f"😈 {player['name']} (charmé) frappe {victim['name']} : {dmg} dégâts"
@@ -1102,6 +1160,8 @@ class PartyCombatService:
                     if _charmed_alive():
                         victim = _charmed_member()
                         dmg, crit, dodged, recoil = self._pvp_hit(player, victim, contributions)
+                        self._emit("dodge" if dodged else ("crit" if crit else "hit"), pk(victim), dmg,
+                                   source=pk(player), style="slash")
                         freed = victim["hp"] <= 0 and not dodged
                         act = (f"{player['name']} vise {victim['name']} (charmé) — esquive !"
                                if dodged else
@@ -1156,9 +1216,10 @@ class PartyCombatService:
                         player["storm_used"] = True
                         for E in _living_foes():
                             _strike(player, E, offensive_mult, prefix="🌩️ Œil de la tempête — ",
-                                    chained=True)
+                                    chained=True, style="storm")
                             if E["hp"] > 0 and not E["is_boss"] and random.random() < 0.50:
                                 E["stunned"] = True
+                                self._emit("stun", ek(E))
                                 turn_logs.append(snap(f"💫 {E['mob'].name} est étourdi par la tempête.",
                                                       focus=E))
                     # Piqué : la première attaque frappe trois fois, à 60 %.
@@ -1168,19 +1229,20 @@ class PartyCombatService:
                             target = _player_target()
                             if target is None:
                                 break
-                            _strike(player, target, offensive_mult * 0.60, prefix="🦅 Piqué — ")
+                            _strike(player, target, offensive_mult * 0.60, prefix="🦅 Piqué — ", style="dive")
                     else:
                         _strike(player, _player_target(), offensive_mult)
                     player["attacks"] += 1
                     # Coup double : 10 % de chance d'attaquer une 2e fois (jamais en chaîne).
                     if (mine.has("double_strike") and _foes_alive() and random.random() < 0.10
                             and self._spend(player, "double_strike")):
-                        _strike(player, _player_target(), prefix="⚡ Coup double — ", chained=True)
+                        _strike(player, _player_target(), prefix="⚡ Coup double — ", chained=True,
+                                style="double")
                     # Souffle juvénile : toutes les 5 attaques, des flammes
                     # frappent tous les ennemis (30 % de l'ATK, sans défense).
                     if (mine.has("young_breath") and player["attacks"] % 5 == 0 and _foes_alive()
                             and self._spend(player, "young_breath")):
-                        burnt = [f"{E['mob'].name} −{_hurt_foe(E, max(1, round(stats.attack * 0.30)), player)}"
+                        burnt = [f"{E['mob'].name} −{_hurt_foe(E, max(1, round(stats.attack * 0.30)), player, style='fire')}"
                                  for E in _living_foes()]
                         turn_logs.append(snap("🔥 Souffle juvénile de "
                                               f"{player['name']} : " + " · ".join(burnt)))
@@ -1238,6 +1300,7 @@ class PartyCombatService:
                     if E["stunned"]:
                         E["stunned"] = False
                         E["taunted_by"] = None
+                        self._emit("stun", ek(E))
                         turn_logs.append(snap(f"💫 {E['mob'].name} est étourdi et perd son action.",
                                               focus=E))
                         continue
@@ -1245,12 +1308,14 @@ class PartyCombatService:
                     # Chaman : soin d'urgence (remplace l'attaque de ce tour).
                     if E["chaman_pending"]:
                         E["chaman_pending"] = False
+                        before = E["hp"]
                         if anti_heal:
                             E["hp"] += (E["max_hp"] - E["hp"]) // 2
                             turn_logs.append(snap(f"✨ {E['mob'].name} canalise… le soin est entravé (Anti-soin) !",
                                                   focus=E))
                         else:
                             E["hp"] = E["max_hp"]
+                            self._emit("heal", ek(E), E["hp"] - before)
                             turn_logs.append(snap(f"✨ {E['mob'].name} canalise et se soigne à 100% PV !",
                                                   focus=E))
                         continue
@@ -1275,37 +1340,44 @@ class PartyCombatService:
                         targets = pool if aoe else [_single_target(pool, E)]
                         parts = []
                         for target in targets:
+                            shield_before = target["shield"]
                             dmg, mob_crit, dodged = self._resolve_mob_hit(
                                 E["mob"], target, contributions, title_bonuses_by_player,
                                 E["in"], E["family"],
                                 extra_multiplier=single_mult, attack_override=atk_now,
                                 is_aoe=aoe)
+                            _mob_hit_fx(target, E, dmg, mob_crit, dodged, "aoe" if aoe else "melee",
+                                        shield_before)
                             # Vol de vie (gargouille) — divisé par deux par Anti-soin
                             if not dodged and dmg > 0 and "lifesteal" in ab and E["hp"] > 0:
                                 heal = round(dmg * ab["lifesteal"].get("pct", 0) / 100)
                                 if anti_heal:
                                     heal //= 2
                                 if heal > 0:
+                                    before = E["hp"]
                                     E["hp"] = min(E["max_hp"], E["hp"] + heal)
+                                    self._emit("heal", ek(E), E["hp"] - before)
                             # Contrecoup (Épines compris) : la DEF en trop frappe le monstre.
                             _recoil_to_mob(target, E)
                             # Riposte : 10 % de chance de contre-attaquer (jamais en chaîne).
                             if (not dodged and target["hp"] > 0 and E["hp"] > 0
                                     and P(target).has("counter_attack") and random.random() < 0.10
                                     and self._spend(target, "counter_attack")):
-                                _strike(target, E, prefix="↩️ Riposte — ", chained=True)
+                                _strike(target, E, prefix="↩️ Riposte — ", chained=True, style="counter")
                             # Morsure du givre : l'attaquant (hors boss) perd sa prochaine action.
                             frozen_now = False
                             if (target.pop("_freeze", False) and E["hp"] > 0 and not E["is_boss"]
                                     and not E["stunned"] and self._spend(target, "frost_bite")):
                                 E["stunned"] = True
                                 frozen_now = True
+                                self._emit("stun", ek(E), style="freeze")
                             # Étourdissement (gobelin géant / banshee) — non cumulable
                             stunned_now = False
                             if not dodged and "stun" in ab and not target["stunned"]:
                                 if random.random() < ab["stun"].get("chance", 0) / 100:
                                     target["stunned"] = True
                                     stunned_now = True
+                                    self._emit("stun", pk(target), source=ek(E))
                             # Ralentissement (momie, mono-cible) — +1 stack de durée
                             if not dodged and not aoe and "slow" in ab:
                                 target["slow"] += 1
@@ -1364,11 +1436,13 @@ class PartyCombatService:
                             rtargets = pool if aoe else [_single_target(pool, E)]
                             parts = []
                             for target in rtargets:
+                                shield_before = target["shield"]
                                 dmg, mob_crit, dodged = self._resolve_mob_hit(
                                     E["mob"], target, contributions, title_bonuses_by_player,
                                     E["in"], E["family"],
                                     extra_multiplier=single_mult, attack_override=atk_now,
                                     is_aoe=aoe)
+                                _mob_hit_fx(target, E, dmg, mob_crit, dodged, "explosion", shield_before)
                                 target.pop("_freeze", None)
                                 _recoil_to_mob(target, E)
                                 parts.append(f"{target['name']} esquive" if dodged
@@ -1403,17 +1477,22 @@ class PartyCombatService:
                             # Même formule ; pas de contrecoup : une invocation
                             # n'a pas de PV à elle.
                             add_dmg, _ = resolve_hit(E["adds_attack"], victim["stats"].defense)
-                            self._apply_player_damage(victim, add_dmg)
+                            taken = self._apply_player_damage(victim, add_dmg)
+                            self._emit("hit", pk(victim), taken, source=ek(E), style="summon")
                             contributions[victim["player_id"]].damage_tanked += E["adds_attack"]
                     # Régénération (monstres des zones hautes) : % des PV max par action.
                     if "regen" in ab and E["hp"] < E["max_hp"]:
                         heal = round(E["max_hp"] * ab["regen"].get("pct", 3) / 100)
                         heal = heal // 2 if anti_heal else heal
+                        before = E["hp"]
                         E["hp"] = min(E["max_hp"], E["hp"] + heal)
+                        self._emit("heal", ek(E), E["hp"] - before)
                     # Auto-soin du boss.
                     if E["heal_per_turn"] > 0:
                         heal = E["heal_per_turn"] // 2 if anti_heal else E["heal_per_turn"]
+                        before = E["hp"]
                         E["hp"] = min(E["max_hp"], E["hp"] + heal)
+                        self._emit("heal", ek(E), E["hp"] - before)
                 if not _party_alive():
                     break
 
@@ -1552,6 +1631,7 @@ class PartyCombatService:
             if portion > 0 and self._spend(guard, "redirect"):
                 mob_damage -= portion
                 taken = self._apply_player_damage(guard, self._reduced(guard, portion))
+                self._emit("hit", f"p{guard['player_id']}", taken, style="guard")
                 contributions[guard["player_id"]].damage_tanked += portion
                 target["_redirected"] = (guard["name"], taken)
 
@@ -1578,6 +1658,27 @@ class PartyCombatService:
                     and self._p(m).has("guardian_oath")):
                 return 0.90
         return 1.0
+
+    # ------------------------------------------------------------ affichage
+    def _emit(self, kind: str, target: str, amount: int = 0, source: str | None = None,
+              **extra) -> None:
+        """Note un événement de l'action en cours pour l'affichage (chiffres,
+        effets) : `kind` hit / crit / dodge / immune / block / heal / shield /
+        dot / recoil / mirror / stun / ko / revive / hold / execute / enrage ;
+        `target` / `source` = "p<joueur>" ou "e<index de l'ennemi>"."""
+        events = getattr(self, "_events", None)
+        if events is None:
+            return
+        event = {"kind": kind, "target": target, "amount": int(amount)}
+        if source:
+            event["source"] = source
+        event.update({k: v for k, v in extra.items() if v not in (None, "", 0)})
+        events.append(event)
+
+    def _take_events(self) -> list[dict]:
+        events = getattr(self, "_events", None) or []
+        self._events = []
+        return events
 
     # ------------------------------------------------------------ passifs
     def _p(self, member) -> CombatPassives:
@@ -1642,6 +1743,7 @@ class PartyCombatService:
                 and not member.get("last_stand_used") and self._spend(member, "last_stand")):
             member["last_stand_used"] = True
             member["_held"] = True
+            self._emit("hold", f"p{member['player_id']}")
             damage = member["hp"] - 1
         member["hp"] = max(0, member["hp"] - damage)
         # Revenant : la première mort ramène à 50 % des PV.
@@ -1650,6 +1752,7 @@ class PartyCombatService:
             member["gear_revived"] = True
             member["hp"] = max(1, member["max_hp"] // 2)
             member["_revived"] = True
+            self._emit("revive", f"p{member['player_id']}")
         party = getattr(self, "_party", None) or []
         if member["hp"] <= 0 and not member.get("dead_noted"):
             # Grâce brisée : le premier allié qui tombe se relève à 30 % (une
@@ -1664,8 +1767,10 @@ class PartyCombatService:
                 saviour["grace_used"] = True
                 member["hp"] = max(1, round(member["max_hp"] * 0.30))
                 member["_graced"] = saviour["name"]
+                self._emit("revive", f"p{member['player_id']}", source=f"p{saviour['player_id']}")
             else:
                 member["dead_noted"] = True
+                self._emit("ko", f"p{member['player_id']}")
                 # Dévoration : chaque allié qui meurt donne 10 % de son ATK, de
                 # sa DEF et de ses PV max au porteur, pour le combat.
                 for m in party:
@@ -1731,7 +1836,8 @@ class PartyCombatService:
             "hp_regeneration": mob.hp_regeneration,
         }
 
-    def _snapshot(self, turns, player_actions, mob_action, alive_party, foes, focus) -> PartyBattleTurnLog:
+    def _snapshot(self, turns, player_actions, mob_action, alive_party, foes, focus,
+                  events: list[dict] | None = None) -> PartyBattleTurnLog:
         """Construit un PartyBattleTurnLog (état complet équipe + ennemis)
         pour un tour. `mob_state` = l'ennemi concerné par l'action (le seul,
         hors meute) ; `enemies_state` = tous, dans l'ordre de la formation."""
@@ -1763,4 +1869,5 @@ class PartyCombatService:
             ],
             mob_state=self._enemy_state(focus),
             enemies_state=[self._enemy_state(E) for E in foes] if len(foes) > 1 else [],
+            events=events or [],
         )
