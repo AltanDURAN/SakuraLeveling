@@ -45,3 +45,27 @@ def test_une_meute_rapporte_la_somme_reduite_et_compte_chaque_victoire(session, 
     kills = dict(session.execute(select(PlayerMobKillModel.mob_code, PlayerMobKillModel.kill_count)
                                  .where(PlayerMobKillModel.player_id == pid)).all())
     assert kills == {"loup": 1, "ours": 1}
+
+
+def test_la_benediction_d_aurelia_augmente_l_or_des_combats(session, patch_get_db_session):
+    from datetime import UTC, datetime, timedelta
+
+    from app.infrastructure.db.models.offering_model import OfferingStateModel
+
+    now = datetime.now(UTC).replace(tzinfo=None)
+    session.add(OfferingStateModel(id=1, cycle=2, target=27_000, contributed=0, fills=1,
+                                   deity_code="aurelia", blessed_at=now,
+                                   blessing_until=now + timedelta(hours=24)))
+    pid = _create_player(session, discord_id=111, name="Alice")
+    _seed_mob(session, code="loup", gold=100, xp=50)
+    enc = _build_encounter([EncounterParticipant(
+        user_id=111, player_id=pid, display_name="Alice", avatar_url="",
+        current_hp=80, max_hp=100, stats=_make_stats())], mob_code="loup")
+    result = PartyBattleResult(
+        victory=True, turns=5, mob_name="Loup", mob_image_name="", mob_remaining_hp=0,
+        surviving_players=["Alice"], defeated_players=[], xp_gained=0, gold_gained=0, summary="",
+        turn_logs=[], contributions=[PlayerContribution(
+            player_id=pid, user_id=111, name="Alice", damage_dealt=100, survived=True,
+            final_hp=80, max_hp=100)])
+    reward = EncounterService().apply_rewards(enc, result).rewards[0]
+    assert reward.gold == 120 and reward.xp == 50

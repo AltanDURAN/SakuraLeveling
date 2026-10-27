@@ -509,6 +509,15 @@ class EncounterService:
             from app.infrastructure.encounters.farm_zone_loader import (
                 get_essences_range_for_family,
             )
+            # Bénédiction de l'offrande commune (tout le serveur, 24 h).
+            from app.application.use_cases.offering import active_blessing
+            from app.domain.services.offering_service import effect_value
+
+            blessing = active_blessing(session)
+            blessed_gold = 1 + effect_value(blessing, "gold_pct") / 100
+            blessed_xp = 1 + effect_value(blessing, "xp_pct") / 100
+            blessed_gear = 1 + effect_value(blessing, "gear_drop_pct") / 100
+            blessed_essences = int(effect_value(blessing, "essence_bonus"))
 
             for participant in encounter.participants.values():
                 contribution = contributions_by_id.get(participant.player_id)
@@ -534,7 +543,7 @@ class EncounterService:
 
                 base_xp = xp_per_player.get(participant.player_id, 0)
                 xp = round(
-                    base_xp * (1 + bonuses.xp_drop_percent) * (1 + farmer_pct)
+                    base_xp * (1 + bonuses.xp_drop_percent) * (1 + farmer_pct) * blessed_xp
                 )
 
                 # L'XP est gagnée par TOUS les participants, morts inclus
@@ -561,7 +570,7 @@ class EncounterService:
 
                 base_gold = gold_per_player.get(participant.player_id, 0)
                 gold = round(
-                    base_gold * (1 + bonuses.gold_drop_percent) * (1 + farmer_pct)
+                    base_gold * (1 + bonuses.gold_drop_percent) * (1 + farmer_pct) * blessed_gold
                 )
                 if gold > 0:
                     player_repository.add_gold(participant.player_id, gold)
@@ -570,9 +579,9 @@ class EncounterService:
                 _wqp = WeeklyQuestProgressService(WeeklyQuestRepository(session))
                 _dqp = DailyQuestProgressService(DailyQuestRepository(session))
                 group_size = len(encounter.participants)
-                essence_hunter = 1 if "essence_hunter" in active_passives(
+                essence_hunter = blessed_essences + (1 if "essence_hunter" in active_passives(
                     EquipmentRepository(session).list_by_player_id(participant.player_id)
-                ) else 0
+                ) else 0)
 
                 dropped: dict[str, int] = {}
                 gear_drop: list[tuple[str, str]] = []
@@ -595,7 +604,7 @@ class EncounterService:
                         # Équipement v2 : 0 ou 1 pièce, celle que porte le monstre.
                         gear_drop += self._roll_gear_drop(
                             session, participant.player_id, definition,
-                            drop_bonus=bonuses.drop_rate_multiplier * chasseur_mult,
+                            drop_bonus=bonuses.drop_rate_multiplier * chasseur_mult * blessed_gear,
                         )
                         # Essences élémentaires : drop selon la zone (nombre tiré
                         # dans [min, max] pour CE kill) + auto-conversion en

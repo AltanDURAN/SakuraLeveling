@@ -41,6 +41,8 @@ from app.infrastructure.db.repositories.admin_command_repository import (
     AdminCommandRepository,
 )
 
+from app.infrastructure.db.models.offering_model import OfferingContributionModel, OfferingStateModel
+
 #: Tables globales vidées entièrement (dans cet ordre : enfants d'abord).
 GLOBAL_TABLES = (
     WorldBossParticipationModel,
@@ -53,6 +55,8 @@ GLOBAL_TABLES = (
     TradeModel,
     RoleTrialScoreModel,
     RoleTrialWeekModel,
+    OfferingContributionModel,
+    OfferingStateModel,
 )
 from app.infrastructure.db.unit_of_work import commit
 

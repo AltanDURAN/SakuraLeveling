@@ -38,7 +38,7 @@ CATEGORIES: list[tuple[str, str, str, set[str]]] = [
       "cd", "daily", "quetes", "quetes_hebdo", "demarrer", "epreuve"}),
     ("⚔️", "Combat & aventure",
      "Affronte les monstres, les world bosses et les défis de rôle du jour.",
-     {"defi", "tour", "utiliser", "boss", "bestiaire"}),
+     {"defi", "tour", "offrande", "utiliser", "boss", "bestiaire"}),
     ("🎒", "Équipement & inventaire",
      "Gère ton stuff, tes panoplies et tes loadouts perso.",
      {"inventaire", "equipement", "equipement_liste", "equiper", "desequiper",

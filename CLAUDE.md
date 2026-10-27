@@ -156,6 +156,7 @@ Noms FRANÇAIS (sans accents) — c'est ce que le joueur tape. Liste tirée du c
 | `/utiliser <consommable>`, `/bestiaire` | `equipment_cog`, `bestiaire_cog` | Consommable, catalogue des monstres |
 | `/defi [role]` | `role_trial_cog` | Défis de rôle du jour (DPS / Tank / Soutien) — remplacent les duels JcJ |
 | `/tour` | `tower_cog` | Tour solo : 100 étages, record permanent, récompense du jour |
+| `/offrande` | `offering_cog` | Offrande commune : jauge d'or du serveur → une divinité bénit tout le monde 24 h |
 | `/boss moi`, `/boss historique`, `/boss list` | `world_boss_cog` | Raid hebdomadaire (contribution, historique, catalogue) |
 | `/payer`, `/echange`, `/brocante annonces\|mes_annonces\|vendre\|acheter\|annuler` | `economy_cog`, `trade_cog`, `brocante_cog` | Or, échanges, place de marché (5 %) |
 | `/classement <catégorie>`, `/chad` | `leaderboard_cog`, `chad_cog` | Classements, rôle @chad |
@@ -430,6 +431,16 @@ Décisions de l'auteur : un mode solo PERMANENT (pas de semaine), 100 étages co
 - **Persistance** : `player_tower_progress` (record, essais, victoires, récompense du jour prise, `best_at` pour départager), migration `5d2c8e1f4a90`, [`TowerRepository`](app/infrastructure/db/repositories/tower_repository.py). Purgée par `ResetPlayerUseCase` (avec les tickets).
 - **Bot** : [`tower_cog.py`](app/bot/cogs/tower_cog.py) — `/tour` (étage suivant avec ses monstres, élément et capacités, boutons « Tenter l'étage N » et « Récompense du jour »), [`tower_embeds.py`](app/bot/embeds/tower_embeds.py). `/classement tour`. Admin : `/admin set|give|remove tower_floor`.
 - **Tests** : [`test_tower_service.py`](tests/domain/test_tower_service.py), [`test_tower_floors.py`](tests/content/test_tower_floors.py) (intégrité, généraliste au niveau de 9 étages témoins, compte neuf), [`test_tower.py`](tests/infrastructure/test_tower.py) (tickets, record, récompense du jour).
+
+## Offrande commune (`/offrande`) — 27/10/2026
+
+Idée de l'auteur (puits d'or de fin de partie, la simulation montre 1,5 à 2,3 M d'or dormant par joueur au bout d'un an) : une JAUGE d'or commune au serveur ; pleine, elle invoque une DIVINITÉ au hasard qui bénit tout le serveur 24 h.
+
+- **Règles pures** : [`offering_service.py`](app/domain/services/offering_service.py) — prix de départ `BASE_TARGET` 25 000 ; × `GROWTH` 1,08 à chaque remplissage, × `DECAY` 0,95 par jour SANS remplissage (jamais sous la base) : le prix suit ce que le serveur peut payer. Une fois par JOUR (minuit Paris) ; l'or versé reste dans la jauge d'un jour à l'autre ; un don ne prend que ce qui manque. Jamais deux fois la même divinité de suite (`pick_deity`).
+- **Divinités** : [`deities.json`](app/infrastructure/content/deities.json) (LISTE PROPOSÉE le 27/10/2026, à valider par l'auteur), un effet chacune parmi `EFFECTS` : `gold_pct` / `xp_pct` / `gear_drop_pct` / `essence_bonus` (lus par `EncounterService.apply_rewards`, combats de zone ; la pièce reste bridée par `roll_drop`), `regen_mult` (fenêtre ajoutée par `resolve_regen_boosts`, s'additionne à l'élixir), `pack_chance_pct` (`EncounterCog._pack_chance`), `tower_tickets` (`TowerTicketsUseCase.status`). Une nouvelle divinité avec un effet existant = du contenu pur ; un nouvel effet = du code.
+- **Persistance** : `offering_state` (une ligne : cycle, prix, versé, remplissages, divinité, fenêtre de bénédiction) et `offering_contributions` (dons par jauge), migration `9e4a7c2b6d13` ; [`use_cases/offering.py`](app/application/use_cases/offering.py) (`status`, `contribute` atomique, `active_blessing`, `blessing_window`). Vidées au reset de saison ; les dons d'un joueur au reset joueur.
+- **Bot** : [`offering_cog.py`](app/bot/cogs/offering_cog.py) — `/offrande` (jauge, bénédiction en cours, donateurs, divinités ; boutons 1 000 / 10 000 / 100 000 / autre montant) ; l'invocation est annoncée dans le salon de la commande et le salon général (`rank_announce_channel_id`).
+- **Tests** : [`test_offering_service.py`](tests/domain/test_offering_service.py), [`test_offering.py`](tests/infrastructure/test_offering.py), bénédiction d'Aurélia dans [`test_encounter_pack.py`](tests/infrastructure/test_encounter_pack.py).
 
 ## Workflow type pour ajouter une nouvelle stat de combat
 

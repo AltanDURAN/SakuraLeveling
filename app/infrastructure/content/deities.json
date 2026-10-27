@@ -1,0 +1,19 @@
+{
+  "_comment": "Offrande commune (/offrande) : quand la jauge du serveur est remplie, une de ces divinités est invoquée au hasard (jamais deux fois de suite) et bénit TOUT le serveur pendant 24 h. `effect` = un des effets connus du code (offering_service.EFFECTS) ; `value` = son ampleur. Liste PROPOSÉE le 27/10/2026, à valider avec l'auteur.",
+  "deities": [
+    {"code": "aurelia", "name": "Aurélia", "title": "déesse de l'abondance", "emoji": "🌾",
+     "effect": "gold_pct", "value": 20, "blessing": "+20 % d'or gagné en combat de zone"},
+    {"code": "kairos", "name": "Kaïros", "title": "gardien du savoir", "emoji": "📜",
+     "effect": "xp_pct", "value": 20, "blessing": "+20 % d'XP gagnée en combat de zone"},
+    {"code": "lysia", "name": "Lysia", "title": "dame de la fortune", "emoji": "🍀",
+     "effect": "gear_drop_pct", "value": 25, "blessing": "+25 % de chances de pièce d'équipement (commun → épique)"},
+    {"code": "sylve", "name": "Sylve", "title": "mère des sources", "emoji": "🌿",
+     "effect": "regen_mult", "value": 2, "blessing": "régénération des PV et du mana hors combat ×2"},
+    {"code": "eona", "name": "Éona", "title": "tisseuse des éléments", "emoji": "🔮",
+     "effect": "essence_bonus", "value": 1, "blessing": "+1 essence élémentaire par victoire"},
+    {"code": "morrigane", "name": "Morrigane", "title": "reine de la chasse", "emoji": "🐺",
+     "effect": "pack_chance_pct", "value": 25, "blessing": "les meutes surgissent bien plus souvent (25 % des apparitions)"},
+    {"code": "thalos", "name": "Thalos", "title": "veilleur de la tour", "emoji": "🗼",
+     "effect": "tower_tickets", "value": 1, "blessing": "+1 ticket de tour aujourd'hui"}
+  ]
+}

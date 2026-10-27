@@ -174,6 +174,20 @@ class EncounterCog(commands.Cog):
             eligible, weights=[m.spawn_weight for m in eligible], k=1
         )[0]
 
+    @staticmethod
+    def _pack_chance() -> float:
+        """Part des apparitions qui sont des meutes (Morrigane, bénédiction
+        de l'offrande commune, la relève)."""
+        from app.application.use_cases.offering import active_blessing
+        from app.domain.services.offering_service import effect_value
+
+        try:
+            with get_db_session() as session:
+                blessed = effect_value(active_blessing(session), "pack_chance_pct") / 100
+        except Exception:  # noqa: BLE001 — une bénédiction illisible ne bloque pas le spawn
+            blessed = 0.0
+        return max(pack_service.PACK_CHANCE, blessed)
+
     def _pick_companions(self, channel_id: int, leader, size: int) -> list:
         """Compagnons d'une meute de `size` autour de `leader` (cf.
         pack_service) : monstres de la zone, ni élite ni exclus, de puissance
@@ -349,7 +363,7 @@ class EncounterCog(commands.Cog):
         # Meute : de temps en temps (jamais sur un monstre forcé : cor de
         # chasse, test admin), ou forcée par l'admin.
         companions = []
-        if forced_pack or (forced_code is None and random.random() < pack_service.PACK_CHANCE):
+        if forced_pack or (forced_code is None and random.random() < self._pack_chance()):
             size = forced_pack or pack_service.pick_pack_size()
             companions = self._pick_companions(channel_id, mob, size)
 

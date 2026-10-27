@@ -573,6 +573,23 @@ LE MANA DES COMPÉTENCES 💧
       cible ; tu frappes toujours l'ennemi le plus abîmé.
     Classement : /classement tour.
 
+/offrande
+    L'OFFRANDE COMMUNE : tout le serveur verse de l'or dans une même jauge.
+    Quand elle est pleine, une DIVINITÉ tirée au hasard (jamais la même deux
+    fois de suite) bénit TOUT le serveur pendant 24 h :
+        🌾 Aurélia   +20 % d'or en combat de zone
+        📜 Kaïros    +20 % d'XP en combat de zone
+        🍀 Lysia     +25 % de chances de pièce d'équipement (commun → épique)
+        🌿 Sylve     régénération des PV et du mana hors combat ×2
+        🔮 Éona      +1 essence élémentaire par victoire
+        🐺 Morrigane les meutes surgissent bien plus souvent
+        🗼 Thalos    +1 ticket de tour
+    • La jauge ne se remplit qu'UNE fois par jour (elle rouvre à minuit).
+      L'or versé qui ne la remplit pas reste dedans pour le lendemain ; un
+      don ne prend jamais plus que ce qui manque.
+    • Chaque remplissage rend la suivante 8 % plus chère ; chaque jour sans
+      remplissage la fait redescendre de 5 % (jamais sous 25 000 or).
+
 /bestiaire
     Le catalogue des monstres : stats, élément, récompenses, butin et la
     pièce d'équipement que porte chacun (avec son passif).

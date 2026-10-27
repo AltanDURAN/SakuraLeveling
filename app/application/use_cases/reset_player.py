@@ -36,6 +36,7 @@ from app.infrastructure.db.models.player_status_effect_model import (
 from app.infrastructure.db.models.event_model import EventParticipationModel
 from app.infrastructure.db.models.work_order_model import PlayerArtisanMasteryModel
 from app.infrastructure.db.models.player_cosmetic_model import PlayerCosmeticModel
+from app.infrastructure.db.models.offering_model import OfferingContributionModel
 from app.infrastructure.db.models.tower_progress_model import PlayerTowerProgressModel
 from app.infrastructure.db.models.tower_ticket_model import PlayerTowerTicketModel
 from app.infrastructure.db.unit_of_work import commit
@@ -120,6 +121,7 @@ class ResetPlayerUseCase:
             PlayerCosmeticModel,
             PlayerTowerProgressModel,
             PlayerTowerTicketModel,
+            OfferingContributionModel,
         ):
             session.execute(delete(model_cls).where(model_cls.player_id == player_id))
 
