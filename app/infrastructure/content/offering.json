@@ -1,5 +1,12 @@
 {
-  "_comment": "Offrande commune (/offrande) : quand la jauge du serveur est remplie, une de ces divinités est invoquée au hasard (jamais deux fois de suite) et bénit TOUT le serveur pendant 24 h. `effect` = un des effets connus du code (offering_service.EFFECTS) ; `value` = son ampleur. Validé avec l'auteur le 27/10/2026 (pas d'or : l'offrande est un puits d'or).",
+  "_comment": "Offrande commune (/offrande) — réglable depuis l'admin web (Économie › Offrande). `params` : formule du prix (départ, +X or × jauges remplies, +% par remplissage, −% par jour sans remplissage) et durée de la bénédiction. `deities` : divinités invoquées au hasard (jamais deux fois de suite) quand la jauge est pleine ; `effect` = un des effets connus du code (offering_service.EFFECTS), `value` = son ampleur. Pas d'or : l'offrande est un puits d'or (décision de l'auteur). Relu par le bot sans redémarrage.",
+  "params": {
+    "base_target": 1500,
+    "step_per_fill": 75,
+    "growth_pct": 4,
+    "decay_pct": 2,
+    "blessing_hours": 24
+  },
   "deities": [
     {
       "code": "aurelia",

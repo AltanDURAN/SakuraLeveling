@@ -28,6 +28,7 @@ def invalidate_content_caches() -> None:
         ("app.infrastructure.encounters.farm_zone_loader", "clear_cache"),
         ("app.infrastructure.daily_quests.quest_loader", "clear_cache"),
         ("app.infrastructure.weekly_quests.quest_loader", "clear_cache"),
+        ("app.infrastructure.offering.offering_loader", "clear_cache"),
     ]
     import importlib
 

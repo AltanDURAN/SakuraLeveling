@@ -37,7 +37,7 @@ def resolve_regen_boosts(session: Session, player_id: int) -> list:
     windows = list(PlayerStatusEffectRepository(session).regen_windows(player_id))
     from app.application.use_cases.offering import blessing_window
     from app.infrastructure.db.models.offering_model import OfferingStateModel
-    from app.infrastructure.offering.deity_loader import get_deity
+    from app.infrastructure.offering.offering_loader import get_deity
 
     state = session.get(OfferingStateModel, 1)
     deity = get_deity(state.deity_code) if state is not None else None

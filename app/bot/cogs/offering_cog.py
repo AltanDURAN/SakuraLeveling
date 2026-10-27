@@ -21,7 +21,7 @@ from app.domain.services import offering_service as osvc
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
-from app.infrastructure.offering import deity_loader
+from app.infrastructure.offering import offering_loader
 from app.shared.formatters import format_int
 
 _logger = logging.getLogger("sakura.offering")
@@ -62,7 +62,7 @@ def build_offering_embed(state: offering.OfferingStatus) -> discord.Embed:
                         value="\n".join(f"• {name} — {format_int(amount)} or" for name, amount in state.top),
                         inline=False)
     embed.add_field(name="Les divinités",
-                    value="\n".join(f"{d.emoji} **{d.name}** — {d.blessing}" for d in deity_loader.list_deities()),
+                    value="\n".join(f"{d.emoji} **{d.name}** — {d.blessing}" for d in offering_loader.list_deities()),
                     inline=False)
     embed.set_footer(text=f"Ton don dans cette jauge : {format_int(state.mine)} or")
     return embed

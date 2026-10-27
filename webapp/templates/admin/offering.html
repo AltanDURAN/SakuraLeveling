@@ -1,0 +1,109 @@
+{% extends "admin/base.html" %}
+{% block title %}Offrande commune — Sakura Admin{% endblock %}
+{% block content %}
+<section class="form-page"
+  x-data="{
+    base: {{ params.base_target }}, step: {{ params.step_per_fill }},
+    growth: {{ params.growth_pct }}, decay: {{ params.decay_pct }},
+    days: {{ preview_days | list | tojson }},
+    rows(){ let t = +this.base, total = 0, out = {};
+      const last = Math.max(...this.days);
+      for (let d = 1; d <= last; d++) { total += t; if (this.days.includes(d)) out[d] = [Math.round(t), Math.round(total)];
+        t = Math.round((t + (+this.step) * d) * (1 + (+this.growth) / 100)); }
+      return out; },
+    fmt(n){ return Number(n).toLocaleString('fr-FR'); }
+  }">
+  <h1>🙏 Offrande commune</h1>
+  <p style="color:var(--muted); max-width:78ch;">
+    Tout le serveur verse de l'or dans une jauge ; pleine, elle invoque une divinité qui bénit
+    tout le monde. Une fois par jour, rien ne se perd (le dépassement passe à la suivante).
+    Les réglages ci-dessous sont pris en compte par le bot <strong>sans redémarrage</strong>.
+  </p>
+
+  {% if saved %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(80,200,120,.15);border:1px solid rgba(80,200,120,.4);">✅ Enregistré.</div>{% endif %}
+  {% for e in errors %}<div style="margin:.4rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(220,80,100,.12);border:1px solid rgba(220,80,100,.4);">⚠️ {{ e }}</div>{% endfor %}
+
+  <div class="form-section">
+    <h2 class="form-section-title">Jauge en cours</h2>
+    {% if gauge %}
+    <p style="margin:0 0 .6rem;">Jauge n° {{ gauge.fills + 1 }} : <strong>{{ "{:,}".format(gauge.contributed).replace(",", " ") }} / {{ "{:,}".format(gauge.target).replace(",", " ") }}</strong> or versés
+      · {{ gauge.fills }} remplissage{{ 's' if gauge.fills > 1 else '' }} depuis le début
+      {% if gauge.deity %}· dernière divinité : {{ gauge.deity.emoji }} {{ gauge.deity.name }}{% endif %}</p>
+    {% else %}
+    <p style="margin:0 0 .6rem; color:var(--muted);">Personne n'a encore ouvert la jauge : elle démarrera au prix de départ.</p>
+    {% endif %}
+    <form method="post" action="/admin/offering/gauge" style="display:flex; gap:.6rem; align-items:flex-end; flex-wrap:wrap;">
+      <label class="field"><span class="field-label">Prix de la jauge en cours (or)</span>
+        <input class="input" type="number" min="1" name="target" value="{{ gauge.target if gauge else params.base_target }}" required></label>
+      <button type="submit" class="btn btn-primary">Corriger le prix</button>
+    </form>
+    <p class="form-section-help" style="margin:.4rem 0 0;">La formule s'applique ensuite à partir de ce prix.</p>
+  </div>
+
+  <form method="post" action="/admin/offering/params" class="form-section">
+    <h2 class="form-section-title">Formule du prix</h2>
+    <p class="form-section-help" style="margin:0 0 .6rem;">À chaque remplissage : prix suivant = (prix + <em>ajout</em> × jauges remplies depuis le début) × (1 + <em>hausse</em> %). Chaque jour sans remplissage : − <em>baisse</em> %, jamais sous le prix de départ.</p>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:.8rem;">
+      <label class="field"><span class="field-label">Prix de départ (or)</span>
+        <input class="input" type="number" min="1" name="base_target" x-model.number="base" required></label>
+      <label class="field"><span class="field-label">Ajout par jauge remplie (or)</span>
+        <input class="input" type="number" min="0" name="step_per_fill" x-model.number="step" required></label>
+      <label class="field"><span class="field-label">Hausse par remplissage (%)</span>
+        <input class="input" type="number" min="0" max="100" step="0.1" name="growth_pct" x-model.number="growth" required></label>
+      <label class="field"><span class="field-label">Baisse par jour sans (%)</span>
+        <input class="input" type="number" min="0" max="99" step="0.1" name="decay_pct" x-model.number="decay" required></label>
+      <label class="field"><span class="field-label">Durée de la bénédiction (h)</span>
+        <input class="input" type="number" min="1" max="168" name="blessing_hours" value="{{ params.blessing_hours }}" required></label>
+    </div>
+    <div class="table-wrapper" style="margin-top:.8rem;">
+      <table class="data-table">
+        <thead><tr><th>Si le serveur remplit chaque jour…</th>{% for d in preview_days %}<th>J{{ d }}</th>{% endfor %}</tr></thead>
+        <tbody>
+          <tr><td>Prix de la jauge du jour</td>
+            <template x-for="d in days" :key="'t'+d"><td class="num" x-text="fmt(rows()[d][0])"></td></template></tr>
+          <tr><td>Or versé au total</td>
+            <template x-for="d in days" :key="'s'+d"><td class="num" x-text="fmt(rows()[d][1])"></td></template></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="form-section-help" style="margin:.4rem 0 .8rem;">Aperçu en direct. Quand le serveur ne suit plus, l'or reste dans la jauge et le prix baisse chaque jour sans remplissage : il se cale tout seul sur ce que le serveur peut payer.</p>
+    <div class="form-actions"><button type="submit" class="btn btn-primary">Enregistrer la formule</button></div>
+  </form>
+
+  <div class="form-section">
+    <h2 class="form-section-title">Divinités</h2>
+    <p class="form-section-help" style="margin:0 0 .6rem;">Une est tirée au hasard à chaque remplissage, jamais la même deux fois de suite. Aucun effet ne donne d'or : l'offrande est un puits d'or. « X » = l'ampleur.</p>
+    {% for d in deities %}
+    <form method="post" action="/admin/offering/deities/{{ d.code }}"
+          style="display:grid; grid-template-columns:4rem 1fr 1.3fr 1.6fr 5rem; gap:.5rem; align-items:end; padding:.6rem 0; border-top:1px solid var(--border);">
+      <label class="field"><span class="field-label">Emoji</span><input class="input" name="emoji" value="{{ d.emoji }}"></label>
+      <label class="field"><span class="field-label">Nom</span><input class="input" name="name" value="{{ d.name }}" required></label>
+      <label class="field"><span class="field-label">Titre</span><input class="input" name="title" value="{{ d.title }}"></label>
+      <label class="field"><span class="field-label">Effet</span>
+        <select class="input" name="effect">{% for code, label in effects.items() %}<option value="{{ code }}" {% if code == d.effect %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+      <label class="field"><span class="field-label">X</span><input class="input" name="value" value="{{ '%g' % d.value }}" required></label>
+      <label class="field" style="grid-column:1 / 5;"><span class="field-label">Texte de la bénédiction (vu par les joueurs)</span>
+        <input class="input" name="blessing" value="{{ d.blessing }}"></label>
+      <div style="display:flex; gap:.4rem;">
+        <button type="submit" class="btn btn-primary btn-small">Enregistrer</button>
+        <button type="submit" class="btn btn-ghost btn-small" formaction="/admin/offering/deities/{{ d.code }}/delete"
+                onclick="return confirm('Retirer {{ d.name }} ?')">Retirer</button>
+      </div>
+    </form>
+    {% endfor %}
+
+    <form method="post" action="/admin/offering/deities"
+          style="display:grid; grid-template-columns:4rem 1fr 1.3fr 1.6fr 5rem; gap:.5rem; align-items:end; padding:.8rem 0 0; border-top:2px solid var(--border);">
+      <label class="field"><span class="field-label">Emoji</span><input class="input" name="emoji" placeholder="✨"></label>
+      <label class="field"><span class="field-label">Nom</span><input class="input" name="name" placeholder="Nouvelle divinité" required></label>
+      <label class="field"><span class="field-label">Titre</span><input class="input" name="title" placeholder="gardienne de…"></label>
+      <label class="field"><span class="field-label">Effet</span>
+        <select class="input" name="effect">{% for code, label in effects.items() %}<option value="{{ code }}">{{ label }}</option>{% endfor %}</select></label>
+      <label class="field"><span class="field-label">X</span><input class="input" name="value" value="1" required></label>
+      <label class="field" style="grid-column:1 / 5;"><span class="field-label">Texte de la bénédiction (laisser vide : texte de l'effet)</span>
+        <input class="input" name="blessing"></label>
+      <div><button type="submit" class="btn btn-primary btn-small">Ajouter</button></div>
+    </form>
+  </div>
+</section>
+{% endblock %}

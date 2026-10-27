@@ -1,7 +1,7 @@
 """Offrande commune (`/offrande`) : la jauge, un don, la bénédiction active.
 
-Règles pures dans `app/domain/services/offering_service.py`, divinités dans
-`deities.json`. Les effets de la bénédiction sont lus par les systèmes
+Règles pures dans `app/domain/services/offering_service.py`, paramètres et
+divinités dans `offering.json` (réglables depuis l'admin web). Les effets de la bénédiction sont lus par les systèmes
 concernés via `active_blessing` (combats de zone, régénération, meutes,
 tickets de tour).
 """
@@ -21,7 +21,7 @@ from app.infrastructure.db.models.offering_model import OfferingContributionMode
 from app.infrastructure.db.models.player_model import PlayerModel
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.unit_of_work import atomic
-from app.infrastructure.offering import deity_loader
+from app.infrastructure.offering import offering_loader
 
 _PARIS = ZoneInfo("Europe/Paris")
 
@@ -61,8 +61,9 @@ def _state(session: Session, now: datetime | None = None) -> OfferingStateModel:
     """La jauge, prix mis à jour des jours passés sans remplissage."""
     row = session.get(OfferingStateModel, 1)
     today = offering_day(now)
+    params = offering_loader.get_params()
     if row is None:
-        row = OfferingStateModel(id=1, cycle=1, target=osvc.BASE_TARGET, contributed=0, fills=0,
+        row = OfferingStateModel(id=1, cycle=1, target=params.base_target, contributed=0, fills=0,
                                  priced_on=today)
         session.add(row)
         session.flush()
@@ -75,7 +76,7 @@ def _state(session: Session, now: datetime | None = None) -> OfferingStateModel:
         missed = (today - row.priced_on).days
         if row.filled_on == row.priced_on:
             missed -= 1
-        row.target = osvc.decayed(row.target, missed)
+        row.target = osvc.decayed(row.target, missed, params)
         row.priced_on = today
     session.flush()
     return row
@@ -86,7 +87,7 @@ def active_blessing(session: Session, now: datetime | None = None) -> osvc.Deity
     row = session.get(OfferingStateModel, 1)
     if row is None or row.blessing_until is None or row.blessing_until <= _naive(now or datetime.now(UTC)):
         return None
-    return deity_loader.get_deity(row.deity_code)
+    return offering_loader.get_deity(row.deity_code)
 
 
 def blessing_window(session: Session) -> tuple[datetime, datetime] | None:
@@ -133,15 +134,16 @@ def _fill(session: Session, row: OfferingStateModel, now: datetime,
           player_id: int | None) -> osvc.Deity | None:
     """La jauge pleine invoque une divinité ; le dépassement passe dans la
     suivante (crédité à `player_id`, celui qui l'a remplie)."""
-    invoked = osvc.pick_deity(deity_loader.list_deities(), row.deity_code)
+    invoked = osvc.pick_deity(offering_loader.list_deities(), row.deity_code)
     overflow = row.contributed - row.target
     row.deity_code = invoked.code if invoked else None
     row.blessed_at = _naive(now)
-    row.blessing_until = _naive(now + timedelta(hours=osvc.BLESSING_HOURS))
+    params = offering_loader.get_params()
+    row.blessing_until = _naive(now + timedelta(hours=params.blessing_hours))
     row.filled_on = offering_day(now)
     row.filled_by = player_id
     row.fills += 1
-    row.target = osvc.grown(row.target, row.fills)
+    row.target = osvc.grown(row.target, row.fills, params)
     row.cycle += 1
     row.contributed = overflow
     if overflow > 0 and player_id is not None:
