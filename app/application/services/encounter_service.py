@@ -514,8 +514,8 @@ class EncounterService:
             from app.domain.services.offering_service import effect_value
 
             blessing = active_blessing(session)
-            blessed_gold = 1 + effect_value(blessing, "gold_pct") / 100
             blessed_xp = 1 + effect_value(blessing, "xp_pct") / 100
+            blessed_materials = int(effect_value(blessing, "material_bonus"))
             blessed_gear = 1 + effect_value(blessing, "gear_drop_pct") / 100
             blessed_essences = int(effect_value(blessing, "essence_bonus"))
 
@@ -570,7 +570,7 @@ class EncounterService:
 
                 base_gold = gold_per_player.get(participant.player_id, 0)
                 gold = round(
-                    base_gold * (1 + bonuses.gold_drop_percent) * (1 + farmer_pct) * blessed_gold
+                    base_gold * (1 + bonuses.gold_drop_percent) * (1 + farmer_pct)
                 )
                 if gold > 0:
                     player_repository.add_gold(participant.player_id, gold)
@@ -601,6 +601,10 @@ class EncounterService:
                             family_drops=get_family_drops(),
                         ):
                             dropped[item_code] = dropped.get(item_code, 0) + quantity
+                        # Aurélia (offrande commune) : +X matériaux de fusion.
+                        family_item = (get_family_drops().get(definition.family) or {}).get("item_code")
+                        if blessed_materials and family_item:
+                            dropped[family_item] = dropped.get(family_item, 0) + blessed_materials
                         # Équipement v2 : 0 ou 1 pièce, celle que porte le monstre.
                         gear_drop += self._roll_gear_drop(
                             session, participant.player_id, definition,

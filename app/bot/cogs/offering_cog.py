@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 
 import discord
 from discord import app_commands
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 from app.application.use_cases import offering
 from app.bot.cogs._mixins import BetaChannelOnlyMixin
@@ -38,8 +38,9 @@ def build_offering_embed(state: offering.OfferingStatus) -> discord.Embed:
     embed = discord.Embed(
         title="🙏 L'Offrande",
         description=("Tout le serveur verse de l'or dans la jauge. Pleine, elle **invoque une "
-                     "divinité** qui bénit TOUT le monde pendant 24 h. Une fois par jour ; chaque "
-                     "remplissage rend la suivante plus chère, chaque jour sans la fait redescendre."),
+                     "divinité** qui bénit TOUT le monde pendant 24 h. Une fois par jour ; rien ne "
+                     "se perd (le dépassement passe à la suivante). Chaque remplissage rend la "
+                     "suivante plus chère, chaque jour sans la fait redescendre."),
         color=discord.Color.from_rgb(214, 170, 74),
     )
     if state.open:
@@ -47,7 +48,9 @@ def build_offering_embed(state: offering.OfferingStatus) -> discord.Embed:
         gauge = (f"{_bar(state.contributed, state.target)}\n**{format_int(state.contributed)} / "
                  f"{format_int(state.target)}** or ({pct} %)")
     else:
-        gauge = f"✅ Exaucée aujourd'hui — elle rouvre à minuit (prochaine : {format_int(state.target)} or)."
+        gauge = (f"✅ Exaucée aujourd'hui. La suivante s'ouvre à minuit : "
+                 f"**{format_int(state.contributed)} / {format_int(state.target)}** or déjà versés "
+                 "(tu peux la préparer dès maintenant).")
     embed.add_field(name=f"Jauge n° {state.fills + 1}", value=gauge, inline=False)
     if state.blessing is not None and state.blessing_until is not None:
         until = state.blessing_until.astimezone(_PARIS).strftime("%d/%m à %H h %M")
@@ -65,10 +68,12 @@ def build_offering_embed(state: offering.OfferingStatus) -> discord.Embed:
     return embed
 
 
-def build_invocation_embed(deity: osvc.Deity, donor: str) -> discord.Embed:
+def build_invocation_embed(deity: osvc.Deity, donor: str | None) -> discord.Embed:
+    thanks = (f"merci à tous, et à **{donor}** qui l'a complétée" if donor
+              else "les offrandes versées d'avance l'ont remplie dès minuit")
     return discord.Embed(
         title=f"{deity.emoji} {deity.name} répond à l'offrande !",
-        description=(f"La jauge est pleine — merci à tous, et à **{donor}** qui l'a complétée.\n"
+        description=(f"La jauge est pleine — {thanks}.\n"
                      f"**{deity.name}, {deity.title}**, bénit tout le serveur pendant 24 h :\n"
                      f"> {deity.blessing}"),
         color=discord.Color.from_rgb(214, 170, 74),
@@ -115,11 +120,10 @@ class OfferingView(discord.ui.View):
         self.cog = cog
         for amount in _AMOUNTS:
             button = discord.ui.Button(label=f"Offrir {format_int(amount)}", emoji="💰",
-                                       style=discord.ButtonStyle.primary, disabled=not state.open)
+                                       style=discord.ButtonStyle.primary)
             button.callback = self._giver(amount)
             self.add_item(button)
-        other = discord.ui.Button(label="Autre montant…", style=discord.ButtonStyle.secondary,
-                                  disabled=not state.open)
+        other = discord.ui.Button(label="Autre montant…", style=discord.ButtonStyle.secondary)
         other.callback = self._ask
         self.add_item(other)
 
@@ -137,20 +141,42 @@ class OfferingView(discord.ui.View):
         if error:
             await interaction.followup.send(error, ephemeral=True)
             return
-        await interaction.followup.send(f"🙏 Tu offres **{format_int(outcome.given)}** or.", ephemeral=True)
+        note = "" if outcome.status.open or outcome.invoked else " — pour la jauge de demain."
+        await interaction.followup.send(f"🙏 Tu offres **{format_int(outcome.given)}** or{note}", ephemeral=True)
         if outcome.invoked is not None:
-            await self.cog.announce(interaction, outcome.invoked)
+            await self.cog.announce(outcome.invoked, interaction.user.display_name, interaction.channel_id)
         try:
-            for item in self.children:
-                item.disabled = not outcome.status.open
             await interaction.message.edit(embed=build_offering_embed(outcome.status), view=self)
         except discord.HTTPException:
             _logger.warning("rafraîchissement de /offrande échoué", exc_info=True)
 
 
+def _release():
+    with get_db_session() as session:
+        return offering.release(session)
+
+
 class OfferingCog(BetaChannelOnlyMixin, commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
+        self.release_loop.start()
+
+    def cog_unload(self) -> None:
+        self.release_loop.cancel()
+
+    @tasks.loop(minutes=5)
+    async def release_loop(self) -> None:
+        """Une jauge déjà pleine (dépassement, dons d'avance) s'exauce dès minuit."""
+        try:
+            deity = await asyncio.to_thread(_release)
+            if deity is not None:
+                await self.announce(deity, None)
+        except Exception:
+            _logger.exception("déclenchement de l'offrande échoué")
+
+    @release_loop.before_loop
+    async def _before_release(self) -> None:
+        await self.bot.wait_until_ready()
 
     @app_commands.command(name="offrande", description="L'offrande commune : remplis la jauge, invoque une divinité")
     async def offrande(self, interaction: discord.Interaction) -> None:
@@ -158,10 +184,10 @@ class OfferingCog(BetaChannelOnlyMixin, commands.Cog):
         state = await asyncio.to_thread(_status, interaction.user)
         await interaction.followup.send(embed=build_offering_embed(state), view=OfferingView(self, state))
 
-    async def announce(self, interaction: discord.Interaction, deity: osvc.Deity) -> None:
-        """La divinité invoquée : dans le salon de la commande et le salon général."""
-        embed = build_invocation_embed(deity, interaction.user.display_name)
-        targets = {interaction.channel_id}
+    async def announce(self, deity: osvc.Deity, donor: str | None, channel_id: int | None = None) -> None:
+        """La divinité invoquée : dans le salon général (et celui de la commande)."""
+        embed = build_invocation_embed(deity, donor)
+        targets = {channel_id} if channel_id else set()
         if settings.rank_announce_channel_id:
             targets.add(settings.rank_announce_channel_id)
         for channel_id in targets:

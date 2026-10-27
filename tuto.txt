@@ -577,18 +577,19 @@ LE MANA DES COMPÉTENCES 💧
     L'OFFRANDE COMMUNE : tout le serveur verse de l'or dans une même jauge.
     Quand elle est pleine, une DIVINITÉ tirée au hasard (jamais la même deux
     fois de suite) bénit TOUT le serveur pendant 24 h :
-        🌾 Aurélia   +20 % d'or en combat de zone
-        📜 Kaïros    +20 % d'XP en combat de zone
-        🍀 Lysia     +25 % de chances de pièce d'équipement (commun → épique)
-        🌿 Sylve     régénération des PV et du mana hors combat ×2
+        🌾 Aurélia   +1 matériau de fusion par victoire
+        📜 Kaïros    +10 % d'XP en combat de zone
+        🍀 Lysia     +15 % de chances de pièce d'équipement (commun → épique)
+        🌿 Sylve     régénération des PV et du mana hors combat ×5
         🔮 Éona      +1 essence élémentaire par victoire
         🐺 Morrigane les meutes surgissent bien plus souvent
         🗼 Thalos    +1 ticket de tour
-    • La jauge ne se remplit qu'UNE fois par jour (elle rouvre à minuit).
-      L'or versé qui ne la remplit pas reste dedans pour le lendemain ; un
-      don ne prend jamais plus que ce qui manque.
-    • Chaque remplissage rend la suivante 8 % plus chère ; chaque jour sans
-      remplissage la fait redescendre de 5 % (jamais sous 25 000 or).
+    • La jauge ne se remplit qu'UNE fois par jour (minuit). Rien ne se perd :
+      l'or versé reste dedans, ce qui dépasse passe dans la jauge suivante,
+      et tu peux préparer celle de demain : pleine, elle s'exauce dès minuit.
+    • Elle coûte 1 500 or au départ. Chaque remplissage rend la suivante
+      plus chère (+75 or × le nombre de jauges déjà remplies, puis +4 %) ;
+      chaque jour sans remplissage la fait redescendre de 2 %.
 
 /bestiaire
     Le catalogue des monstres : stats, élément, récompenses, butin et la

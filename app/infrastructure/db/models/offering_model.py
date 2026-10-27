@@ -14,7 +14,7 @@ class OfferingStateModel(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     cycle: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
-    target: Mapped[int] = mapped_column(Integer, default=25_000, server_default="25000")
+    target: Mapped[int] = mapped_column(Integer, default=1_500, server_default="1500")
     contributed: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     fills: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     filled_on: Mapped[date | None] = mapped_column(Date, nullable=True)

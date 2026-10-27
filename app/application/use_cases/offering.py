@@ -121,42 +121,69 @@ def status(session: Session, profile: PlayerProfile | None = None,
     )
 
 
+def _credit(session: Session, cycle: int, player_id: int, amount: int) -> None:
+    own = session.get(OfferingContributionModel, (cycle, player_id))
+    if own is None:
+        session.add(OfferingContributionModel(cycle=cycle, player_id=player_id, amount=amount))
+    else:
+        own.amount += amount
+
+
+def _fill(session: Session, row: OfferingStateModel, now: datetime,
+          player_id: int | None) -> osvc.Deity | None:
+    """La jauge pleine invoque une divinité ; le dépassement passe dans la
+    suivante (crédité à `player_id`, celui qui l'a remplie)."""
+    invoked = osvc.pick_deity(deity_loader.list_deities(), row.deity_code)
+    overflow = row.contributed - row.target
+    row.deity_code = invoked.code if invoked else None
+    row.blessed_at = _naive(now)
+    row.blessing_until = _naive(now + timedelta(hours=osvc.BLESSING_HOURS))
+    row.filled_on = offering_day(now)
+    row.filled_by = player_id
+    row.fills += 1
+    row.target = osvc.grown(row.target, row.fills)
+    row.cycle += 1
+    row.contributed = overflow
+    if overflow > 0 and player_id is not None:
+        _credit(session, row.cycle, player_id, overflow)
+    return invoked
+
+
+def release(session: Session, now: datetime | None = None) -> osvc.Deity | None:
+    """Une jauge déjà pleine (dépassement, dons d'avance) se déclenche dès
+    qu'un nouveau jour l'autorise. Appelé par la boucle du cog et avant
+    chaque don. Renvoie la divinité invoquée, ou None."""
+    now = now or datetime.now(UTC)
+    with atomic(session):
+        row = _state(session, now)
+        if row.filled_on == offering_day(now) or row.contributed < row.target:
+            return None
+        invoked = _fill(session, row, now, None)
+        session.flush()
+        return invoked
+
+
 def contribute(session: Session, profile: PlayerProfile, amount: int,
                now: datetime | None = None) -> OfferingOutcome:
-    """Verse `amount` or dans la jauge (au plus ce qu'il manque pour la
-    remplir). Pleine : une divinité est invoquée pour 24 h."""
+    """Verse `amount` or dans la jauge. Pleine (une fois par jour), elle
+    invoque une divinité pour 24 h ; le dépassement passe dans la suivante.
+    Une fois la jauge du jour exaucée, le don prépare la suivante."""
     now = now or datetime.now(UTC)
     player_id = profile.player.id
     with atomic(session):
         row = _state(session, now)
-        if row.filled_on == offering_day(now):
-            raise OfferingError("🙏 L'offrande a déjà été exaucée aujourd'hui : la jauge rouvre à minuit.")
         if amount <= 0:
             raise OfferingError("Le don doit être d'au moins 1 or.")
         players = PlayerRepository(session)
-        gold = players.get_profile_by_player_id(player_id).resources.gold
-        given = min(amount, gold, row.target - row.contributed)
+        given = min(amount, players.get_profile_by_player_id(player_id).resources.gold)
         if given <= 0:
             raise OfferingError("💰 Tu n'as pas d'or à offrir.")
         players.add_gold(player_id, -given)
         row.contributed += given
-        own = session.get(OfferingContributionModel, (row.cycle, player_id))
-        if own is None:
-            session.add(OfferingContributionModel(cycle=row.cycle, player_id=player_id, amount=given))
-        else:
-            own.amount += given
+        _credit(session, row.cycle, player_id, given)
 
         invoked = None
-        if row.contributed >= row.target:
-            invoked = osvc.pick_deity(deity_loader.list_deities(), row.deity_code)
-            row.deity_code = invoked.code if invoked else None
-            row.blessed_at = _naive(now)
-            row.blessing_until = _naive(now + timedelta(hours=osvc.BLESSING_HOURS))
-            row.filled_on = offering_day(now)
-            row.filled_by = player_id
-            row.fills += 1
-            row.cycle += 1
-            row.contributed = 0
-            row.target = osvc.grown(row.target)
+        if row.filled_on != offering_day(now) and row.contributed >= row.target:
+            invoked = _fill(session, row, now, player_id)
         session.flush()
         return OfferingOutcome(given=given, status=status(session, profile, now), invoked=invoked)

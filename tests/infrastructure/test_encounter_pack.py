@@ -47,14 +47,14 @@ def test_une_meute_rapporte_la_somme_reduite_et_compte_chaque_victoire(session, 
     assert kills == {"loup": 1, "ours": 1}
 
 
-def test_la_benediction_d_aurelia_augmente_l_or_des_combats(session, patch_get_db_session):
+def test_la_benediction_de_kairos_augmente_l_xp_des_combats(session, patch_get_db_session):
     from datetime import UTC, datetime, timedelta
 
     from app.infrastructure.db.models.offering_model import OfferingStateModel
 
     now = datetime.now(UTC).replace(tzinfo=None)
     session.add(OfferingStateModel(id=1, cycle=2, target=27_000, contributed=0, fills=1,
-                                   deity_code="aurelia", blessed_at=now,
+                                   deity_code="kairos", blessed_at=now,
                                    blessing_until=now + timedelta(hours=24)))
     pid = _create_player(session, discord_id=111, name="Alice")
     _seed_mob(session, code="loup", gold=100, xp=50)
@@ -68,4 +68,4 @@ def test_la_benediction_d_aurelia_augmente_l_or_des_combats(session, patch_get_d
             player_id=pid, user_id=111, name="Alice", damage_dealt=100, survived=True,
             final_hp=80, max_hp=100)])
     reward = EncounterService().apply_rewards(enc, result).rewards[0]
-    assert reward.gold == 120 and reward.xp == 50
+    assert reward.xp == 55 and reward.gold == 100      # +10 % d'XP, jamais d'or en plus
