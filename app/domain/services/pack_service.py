@@ -22,8 +22,9 @@ from __future__ import annotations
 
 import random
 
+#: Valeurs par défaut : réglables depuis l'admin (Monde › Rythme, `pacing.json`).
 PACK_CHANCE = 0.10
-PACK_SIZE_WEIGHTS: dict[int, int] = {2: 60, 3: 40}
+PACK_SIZE_WEIGHTS: dict[int, float] = {2: 60, 3: 40}
 #: Facteur de PV et d'ATK de chaque monstre d'une meute de n (mesuré le 27/10/2026).
 PACK_SCALE: dict[int, float] = {1: 1.0, 2: 0.87, 3: 0.73}
 PACK_BONUS = 1.25
@@ -49,9 +50,10 @@ def loot_roll(n: int, rng: random.Random | None = None) -> bool:
     return n <= 1 or (rng or random).random() < scale(n)
 
 
-def pick_pack_size(rng: random.Random | None = None) -> int:
-    sizes = sorted(PACK_SIZE_WEIGHTS)
-    return (rng or random).choices(sizes, weights=[PACK_SIZE_WEIGHTS[s] for s in sizes], k=1)[0]
+def pick_pack_size(rng: random.Random | None = None, weights: dict[int, float] | None = None) -> int:
+    weights = {s: w for s, w in (weights or PACK_SIZE_WEIGHTS).items() if w > 0} or PACK_SIZE_WEIGHTS
+    sizes = sorted(weights)
+    return (rng or random).choices(sizes, weights=[weights[s] for s in sizes], k=1)[0]
 
 
 def pick_companions(leader, candidates: list, power_of, size: int,

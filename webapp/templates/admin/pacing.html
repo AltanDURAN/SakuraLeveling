@@ -1,0 +1,111 @@
+{% extends "admin/base.html" %}
+{% block title %}Rythme du jeu — Sakura Admin{% endblock %}
+{% block content %}
+{% set z = pacing.zones %}
+{% set r = pacing.raid %}
+<section class="form-page"
+  x-data="{
+    min: {{ z.respawn_min_minutes }}, max: {{ z.respawn_max_minutes }}, flee: {{ z.flee_respawn_minutes }},
+    join: {{ z.join_window_minutes }}, qs: {{ z.quiet_start_hour }}, qe: {{ z.quiet_end_hour }},
+    pack: {{ z.pack_chance_pct }}, three: {{ z.pack_of_three_pct }}, zones: {{ zones | length }},
+    quietHours(){ const s = +this.qs, e = +this.qe; return s === e ? 0 : (e > s ? e - s : 24 - s + e); },
+    cycle(){ return (+this.join) + 0.5 + ((+this.min) + Math.max(+this.min, +this.max)) / 2; },
+    fleeCycle(){ return (+this.join) + (+this.flee); },
+    perHour(c){ return 60 / Math.max(0.5, c); },
+    perDay(c){ return this.perHour(c) * (24 - this.quietHours()) * this.zones; },
+    fmt(n, d = 1){ return Number(n).toLocaleString('fr-FR', {maximumFractionDigits: d}); }
+  }">
+  <h1>⏱️ Rythme du jeu</h1>
+  <p style="color:var(--muted); max-width:78ch;">
+    Le tempo des apparitions de monstres dans les zones et le rendez-vous du raid.
+    Les réglages sont pris en compte par le bot <strong>sans redémarrage</strong>
+    (le délai s'applique à partir du prochain monstre).
+  </p>
+
+  {% if saved %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(80,200,120,.15);border:1px solid rgba(80,200,120,.4);">✅ Enregistré.</div>{% endif %}
+  {% for e in errors %}<div style="margin:.4rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(220,80,100,.12);border:1px solid rgba(220,80,100,.4);">⚠️ {{ e }}</div>{% endfor %}
+
+  <form method="post" action="/admin/pacing/zones" class="form-section">
+    <h2 class="form-section-title">🗺️ Monstres de zone</h2>
+    <p class="form-section-help" style="margin:0 0 .6rem;">Après un combat, le monstre suivant arrive au bout d'un délai tiré au hasard entre le minimum et le maximum (mêmes valeurs = délai fixe). Les minutes acceptent les décimales (0,5 = 30 s).</p>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:.8rem;">
+      <label class="field"><span class="field-label">Délai entre deux combats — min (min)</span>
+        <input class="input" type="number" min="0.5" step="0.5" name="respawn_min_minutes" x-model.number="min" required></label>
+      <label class="field"><span class="field-label">Délai entre deux combats — max (min)</span>
+        <input class="input" type="number" min="0.5" step="0.5" name="respawn_max_minutes" x-model.number="max" required></label>
+      <label class="field"><span class="field-label">Délai après une fuite (min)</span>
+        <input class="input" type="number" min="0.5" step="0.5" name="flee_respawn_minutes" x-model.number="flee" required></label>
+      <label class="field"><span class="field-label">Temps pour rejoindre (min)</span>
+        <input class="input" type="number" min="1" max="30" step="0.5" name="join_window_minutes" x-model.number="join" required></label>
+      <label class="field"><span class="field-label">Heures calmes : de (h, Paris)</span>
+        <input class="input" type="number" min="0" max="23" name="quiet_start_hour" x-model.number="qs" required></label>
+      <label class="field"><span class="field-label">Heures calmes : à (h, Paris)</span>
+        <input class="input" type="number" min="0" max="23" name="quiet_end_hour" x-model.number="qe" required></label>
+      <label class="field"><span class="field-label">Meutes (% des apparitions)</span>
+        <input class="input" type="number" min="0" max="100" step="0.5" name="pack_chance_pct" x-model.number="pack" required></label>
+      <label class="field"><span class="field-label">Meutes de 3 (% des meutes)</span>
+        <input class="input" type="number" min="0" max="100" step="1" name="pack_of_three_pct" x-model.number="three" required></label>
+    </div>
+    <ul class="form-section-help" style="margin:.7rem 0 .2rem; padding-left:1.2rem; line-height:1.6;">
+      <li><strong>Fuite</strong> : personne n'a rejoint pendant le temps imparti, le monstre s'en va. Un délai plus long évite de remplir un salon vide.</li>
+      <li><strong>Heures calmes</strong> : aucun monstre n'apparaît dans cette plage (même heure de début et de fin = désactivé). Un cor de chasse ou un spawn admin passe quand même.</li>
+      <li><strong>Meutes</strong> : 2 ou 3 monstres réduits (calibrés pour rester aussi faisables qu'un monstre seul). La bénédiction de Morrigane les porte à 25 % si c'est plus.</li>
+    </ul>
+    <div class="table-wrapper" style="margin-top:.6rem;">
+      <table class="data-table">
+        <thead><tr><th>Estimation par zone</th><th>Durée d'un cycle</th><th>Monstres / heure</th><th>Monstres / jour ({{ zones | length }} zones)</th></tr></thead>
+        <tbody>
+          <tr><td>Quelqu'un rejoint (combat ≈ 30 s)</td>
+            <td class="num" x-text="fmt(cycle()) + ' min'"></td><td class="num" x-text="fmt(perHour(cycle()))"></td>
+            <td class="num" x-text="fmt(perDay(cycle()), 0)"></td></tr>
+          <tr><td>Personne ne vient (fuite)</td>
+            <td class="num" x-text="fmt(fleeCycle()) + ' min'"></td><td class="num" x-text="fmt(perHour(fleeCycle()))"></td>
+            <td class="num" x-text="fmt(perDay(fleeCycle()), 0)"></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="form-section-help" style="margin:.4rem 0 .8rem;">Le temps pour rejoindre est un maximum : le groupe peut lancer le combat avant. <span x-show="quietHours() > 0" x-text="'Heures calmes : ' + quietHours() + ' h sans monstre par jour.'"></span></p>
+    <div class="form-actions"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+  </form>
+
+  <div class="form-section">
+    <h2 class="form-section-title">📍 Par zone</h2>
+    <p class="form-section-help" style="margin:0 0 .6rem;">Mettre une zone en pause (plus aucun monstre, le cor de chasse y est refusé) ou lui donner son propre délai. Vide = le délai général ci-dessus.</p>
+    {% for zone in zones %}
+    {% set o = zone.override %}
+    <form method="post" action="/admin/pacing/zones/{{ zone.channel_id }}"
+          style="display:grid; grid-template-columns:minmax(12rem, 2fr) 7rem 1fr 1fr 7rem; gap:.5rem; align-items:end; padding:.6rem 0; border-top:1px solid var(--border);">
+      <div><strong>{{ zone.name or zone.channel_id }}</strong>{% if zone.rank %} <span style="color:var(--muted);">· rang {{ zone.rank }}</span>{% endif %}
+        {% if o.paused %}<div style="color:#e2708a; font-size:.85rem;">⏸️ en pause</div>
+        {% elif o.respawn_min_minutes is not none %}<div style="color:var(--muted); font-size:.85rem;">délai propre</div>{% endif %}</div>
+      <label class="field" style="flex-direction:row; align-items:center; gap:.4rem;">
+        <input type="checkbox" name="paused" {% if o.paused %}checked{% endif %}> <span class="field-label" style="margin:0;">Pause</span></label>
+      <label class="field"><span class="field-label">Délai min (min)</span>
+        <input class="input" type="number" min="0.5" step="0.5" name="respawn_min_minutes" placeholder="{{ '%g' % z.respawn_min_minutes }}"
+               value="{{ '%g' % o.respawn_min_minutes if o.respawn_min_minutes is not none else '' }}"></label>
+      <label class="field"><span class="field-label">Délai max (min)</span>
+        <input class="input" type="number" min="0.5" step="0.5" name="respawn_max_minutes" placeholder="{{ '%g' % z.respawn_max_minutes }}"
+               value="{{ '%g' % o.respawn_max_minutes if o.respawn_max_minutes is not none else '' }}"></label>
+      <div><button type="submit" class="btn btn-primary btn-small">Enregistrer</button></div>
+    </form>
+    {% endfor %}
+  </div>
+
+  <form method="post" action="/admin/pacing/raid" class="form-section">
+    <h2 class="form-section-title">👑 Raid (world boss)</h2>
+    <p class="form-section-help" style="margin:0 0 .6rem;">Un boss par semaine ; chaque jour, tous les inscrits lancent l'assaut ensemble. Actuellement : inscriptions jusqu'à <strong>{{ close_label }}</strong>, assaut à <strong>{{ fight_label }}</strong> (heure de Paris).</p>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:.8rem;">
+      <label class="field"><span class="field-label">Le boss arrive le</span>
+        <select class="input" name="spawn_weekday">{% for d in weekdays %}<option value="{{ loop.index0 }}" {% if loop.index0 == r.spawn_weekday %}selected{% endif %}>{{ d }}</option>{% endfor %}</select></label>
+      <label class="field"><span class="field-label">À partir de (h, Paris)</span>
+        <input class="input" type="number" min="0" max="23" name="spawn_hour" value="{{ r.spawn_hour }}" required></label>
+      <label class="field"><span class="field-label">Assaut quotidien (Paris)</span>
+        <input class="input" type="time" name="fight_time" value="{{ '%02d:%02d' % (r.fight_hour, r.fight_minute) }}" required></label>
+      <label class="field"><span class="field-label">Inscriptions fermées avant (min)</span>
+        <input class="input" type="number" min="0" max="120" name="registration_close_minutes" value="{{ r.registration_close_minutes }}" required></label>
+    </div>
+    <p class="form-section-help" style="margin:.5rem 0 .8rem;">Les inscriptions rouvrent à minuit (un assaut par joueur et par jour). Un assaut manqué parce que le bot redémarrait est rattrapé dans les 15 minutes.</p>
+    <div class="form-actions"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+  </form>
+</section>
+{% endblock %}

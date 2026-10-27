@@ -6,7 +6,7 @@ Séparé du cog pour être testable sans Discord : on lit la DB et on produit un
 
 from __future__ import annotations
 
-from datetime import datetime, time, timedelta, UTC
+from datetime import datetime, UTC
 from zoneinfo import ZoneInfo
 
 from app.bot.rendering.world_boss_banner import Contributor, RaidBannerData
@@ -15,27 +15,28 @@ from app.infrastructure.db.repositories.player_repository import PlayerRepositor
 from app.infrastructure.db.repositories.world_boss_repository import (
     WorldBossRepository,
 )
-from app.domain.services import element_service
+from app.domain.services import element_service, pacing_service
+from app.infrastructure.pacing.pacing_loader import get_pacing
 from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
 
 _PARIS = ZoneInfo("Europe/Paris")
-ASSAULT_HOUR = 21  # heure de l'offensive quotidienne (Paris)
 RAID_DAYS = 7
 
 
-def next_assault_label(now: datetime | None = None) -> str:
-    """« 21h00 (dans 4 h 12) » — le rendez-vous quotidien du raid."""
+def next_assault_label(now: datetime | None = None, raid=None) -> str:
+    """« 21h00 aujourd'hui (dans 4 h 12) » — le rendez-vous quotidien du raid
+    (heure réglable depuis l'admin, Monde › Rythme)."""
+    raid = raid or get_pacing().raid
     now = (now or datetime.now(UTC)).astimezone(_PARIS)
-    target = datetime.combine(now.date(), time(ASSAULT_HOUR, 0), tzinfo=_PARIS)
-    if now >= target:
-        target += timedelta(days=1)
+    target = pacing_service.next_fight_at(raid, now)
     delta = target - now
     hours, rem = divmod(int(delta.total_seconds()), 3600)
     minutes = rem // 60
     when = "aujourd'hui" if target.date() == now.date() else "demain"
+    label = f"{target.hour}h{target.minute:02d}"
     if hours >= 1:
-        return f"{ASSAULT_HOUR}h00 {when} (dans {hours} h {minutes:02d})"
-    return f"{ASSAULT_HOUR}h00 {when} (dans {minutes} min)"
+        return f"{label} {when} (dans {hours} h {minutes:02d})"
+    return f"{label} {when} (dans {minutes} min)"
 
 
 def raid_day_index(spawned_at: datetime, now: datetime | None = None) -> int:

@@ -372,6 +372,18 @@ def test_weekly_spawn_happens_on_monday(session):
     assert decision.boss is not None
 
 
+def test_weekly_spawn_day_and_hour_in_paris_time(session):
+    """Jour et heure réglés dans l'admin, à l'heure de PARIS (Monde › Rythme)."""
+    from zoneinfo import ZoneInfo
+
+    repo = WorldBossRepository(session)
+    auto = SpawnRandomWorldBossUseCase(world_boss_repository=repo, spawn_weekday=4, spawn_hour=18,
+                                       timezone=ZoneInfo("Europe/Paris"))
+    # Vendredi 30/10/2026 (heure d'hiver, UTC+1) : 16 h 30 UTC = 17 h 30 à Paris.
+    assert auto.execute(now=datetime(2026, 10, 30, 16, 30, tzinfo=UTC)).spawned is False
+    assert auto.execute(now=datetime(2026, 10, 30, 17, 0, tzinfo=UTC)).spawned is True
+
+
 def test_weekly_no_second_raid_in_same_week(session):
     """Un boss tué le lundi ne doit PAS en faire réapparaître un aussitôt :
     un seul raid par semaine ISO (garde opposable même en force)."""

@@ -21,12 +21,16 @@ from app.bot.rank_roles import ensure_start_rank_role
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
+from app.domain.services import pacing_service
+from app.infrastructure.pacing.pacing_loader import get_pacing
 
 _logger = logging.getLogger(__name__)
 
 
 def build_welcome_embed(display_name: str | None = None) -> discord.Embed:
     who = f" {display_name}" if display_name else ""
+    raid = get_pacing().raid
+    fight, close = pacing_service.fight_label(raid), pacing_service.close_label(raid)
     embed = discord.Embed(
         title="🌸 Bienvenue dans Sakura Leveling !",
         description=(
@@ -85,8 +89,8 @@ def build_welcome_embed(display_name: str | None = None) -> discord.Embed:
     embed.add_field(
         name="5️⃣ World Boss 👑",
         value=(
-            "Un boss apparaît chaque semaine. **Inscris-toi** (🤝) avant **20h50**, "
-            "le combat collectif se lance **automatiquement à 21h**. Récompenses "
+            f"Un boss apparaît chaque semaine. **Inscris-toi** (🤝) avant **{close}**, "
+            f"le combat collectif se lance **automatiquement à {fight}**. Récompenses "
             "proportionnelles à ta contribution + **loot exclusif** !"
         ),
         inline=False,

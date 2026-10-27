@@ -181,8 +181,9 @@ class SpawnRandomWorldBossUseCase:
         spawn_probability: float = 0.05,
         weekly: bool = True,
         spawn_weekday: int = 0,   # 0 = lundi
-        spawn_hour: int = 12,     # heure d'ouverture du raid (UTC)
+        spawn_hour: int = 12,     # heure d'ouverture du raid (UTC, ou de `timezone`)
         party_attack: int = 0,    # attaque du meilleur joueur (0 = pas de filtre)
+        timezone: ZoneInfo | None = None,
     ) -> None:
         self.world_boss_repository = world_boss_repository
         self.spawn_probability = spawn_probability
@@ -190,6 +191,7 @@ class SpawnRandomWorldBossUseCase:
         self.spawn_weekday = spawn_weekday
         self.spawn_hour = spawn_hour
         self.party_attack = party_attack
+        self.timezone = timezone
 
     def execute(
         self,
@@ -205,8 +207,9 @@ class SpawnRandomWorldBossUseCase:
 
         if self.weekly:
             # `force` saute le RENDEZ-VOUS (pour tester / lancer à la main)…
+            local = now.astimezone(self.timezone) if self.timezone else now
             if not force and (
-                now.weekday() != self.spawn_weekday or now.hour < self.spawn_hour
+                local.weekday() != self.spawn_weekday or local.hour < self.spawn_hour
             ):
                 return AutoSpawnDecision(False, "hors_fenetre_hebdo")
             # …mais JAMAIS la garde anti-double-raid : un seul raid par semaine

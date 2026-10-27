@@ -414,8 +414,10 @@ PANOPLIES
 
 COMBATS DE GROUPE (automatiques)
     Un monstre apparaît dans chaque salon de zone ; le suivant revient
-    environ une minute après la fin du combat. Clique « Rejoindre » : tu as
-    5 minutes pour te joindre au groupe (le combat peut être lancé avant).
+    quelques minutes après la fin du combat (le rythme est réglé par les
+    admins, les nuits peuvent être calmes). Clique « Rejoindre » : le compte
+    à rebours sous le monstre dit quand le combat part (5 minutes par défaut ;
+    le combat peut être lancé avant).
     Quand le combat part, il se joue en VIDÉO dans le message du monstre
     (elle se lance toute seule), puis laisse la place au récapitulatif en
     trois pages : récompenses, détail et part de victoire de chacun, et le
@@ -602,8 +604,10 @@ LE MANA DES COMPÉTENCES 💧
     pièce d'équipement que porte chacun (avec son passif).
 
 WORLD BOSS — /boss moi, /boss historique, /boss list
-    Un boss apparaît chaque semaine. Inscris-toi avec 🤝 avant 20 h 50 : le
-    combat collectif se lance automatiquement à 21 h (heure de Paris). Les
+    Un boss apparaît chaque semaine. Inscris-toi avec 🤝 avant la fermeture
+    des inscriptions : le combat collectif se lance automatiquement chaque
+    jour à l'heure de l'assaut (21 h et 20 h 50 par défaut, heure de Paris —
+    les heures exactes sont sur le message du boss). Les
     récompenses suivent ta part de l'effort (paliers de contribution), avec
     du butin exclusif et le titre de MVP.
     L'assaut se joue en vidéo dans le salon du boss, puis laisse place à son
@@ -797,6 +801,11 @@ INTERFACE WEB D'ADMINISTRATION
     événement.
     ⚠️ Les fichiers de contenu lus au démarrage (arbre, artisans, zones,
     événements) demandent un REDÉMARRAGE du bot après modification.
+    RYTHME (Monde › Rythme, sans redémarrage) : délai entre deux monstres
+    (fixe ou tiré dans une plage), délai après une fuite, temps pour
+    rejoindre, heures calmes la nuit, part des meutes ; une zone peut être
+    mise en pause ou avoir son propre délai ; jour et heure du boss de la
+    semaine, heure de l'assaut quotidien et fermeture des inscriptions.
 
 --------------------------------------------------------------------------------
 2.1 — GESTION DES JOUEURS

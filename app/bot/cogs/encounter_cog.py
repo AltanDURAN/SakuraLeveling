@@ -17,13 +17,14 @@ from app.bot.runtime.active_encounter import ActiveEncounter
 from app.bot.runtime.encounter_mob_state import EncounterMobState
 from app.bot.views.battle_summary_view import BattleSummaryView
 from app.bot.views.encounter_view import EncounterView
-from app.domain.services import pack_service
+from app.domain.services import pack_service, pacing_service
 from app.domain.services.mob_ability_service import is_group_elite
 from app.domain.services.power_score_service import PowerScoreService
 from app.domain.value_objects.battle_summary import BattleSummary
 from app.domain.value_objects.stats import Stats
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.session import get_db_session
+from app.infrastructure.pacing.pacing_loader import get_pacing
 from app.infrastructure.encounters.farm_zone_loader import (
     default_channel_id,
     get_background_for_family,
@@ -187,7 +188,7 @@ class EncounterCog(commands.Cog):
                 blessed = effect_value(active_blessing(session), "pack_chance_pct") / 100
         except Exception:  # noqa: BLE001 — une bénédiction illisible ne bloque pas le spawn
             blessed = 0.0
-        return max(pack_service.PACK_CHANCE, blessed)
+        return max(get_pacing().zones.pack_chance_pct / 100, blessed)
 
     def _pick_companions(self, channel_id: int, leader, size: int) -> list:
         """Compagnons d'une meute de `size` autour de `leader` (cf.
@@ -285,6 +286,8 @@ class EncounterCog(commands.Cog):
             return False, "Cette zone n'est pas ouverte."
         if self._zone_forced_mob.get(channel_id):
             return False, "Un cor a déjà sonné dans cette zone : son élite arrive, attends-la."
+        if get_pacing().override(channel_id).paused:
+            return False, "Cette zone est en pause : aucun monstre n'y apparaît pour l'instant."
         self._zone_forced_mob[channel_id] = mob_code
         if channel_id not in self.active_encounters:
             self._zone_next_spawn[channel_id] = datetime.now(UTC) - timedelta(seconds=1)
@@ -293,7 +296,7 @@ class EncounterCog(commands.Cog):
 
     def request_early_resolve(self) -> tuple[bool, str]:
         """Résout immédiatement TOUS les encounters actifs (toutes zones) sans
-        attendre les 5 min. Utilisé par /admin start_encounter."""
+        attendre la fin de l'attente. Utilisé par /admin start_encounter."""
         if not self.active_encounters:
             return False, "Aucun combat actif à résoudre."
         names: list[str] = []
@@ -344,6 +347,10 @@ class EncounterCog(commands.Cog):
                         seconds=30
                     )
 
+    def _forced_pending(self, channel_id: int) -> bool:
+        """Un monstre est attendu (cor de chasse, spawn forcé par l'admin)."""
+        return channel_id in self._zone_forced_mob or channel_id in self._zone_forced_pack
+
     async def _zone_tick(self, channel_id: int) -> None:
         if channel_id in self.active_encounters:
             return
@@ -351,6 +358,13 @@ class EncounterCog(commands.Cog):
         now = datetime.now(UTC)
         next_at = self._zone_next_spawn.get(channel_id)
         if next_at is not None and now < next_at:
+            return
+
+        # Rythme réglé depuis l'admin : zone en pause, heures calmes (un
+        # monstre attendu — cor, admin — passe quand même).
+        pacing = get_pacing()
+        if not self._forced_pending(channel_id) and (
+                pacing.override(channel_id).paused or pacing_service.in_quiet_hours(pacing.zones, now)):
             return
 
         forced_code = self._zone_forced_mob.pop(channel_id, None)
@@ -365,16 +379,20 @@ class EncounterCog(commands.Cog):
         # chasse, test admin), ou forcée par l'admin.
         companions = []
         if forced_pack or (forced_code is None and random.random() < self._pack_chance()):
-            size = forced_pack or pack_service.pick_pack_size()
+            size = forced_pack or pack_service.pick_pack_size(
+                weights=pacing_service.pack_size_weights(pacing.zones))
             companions = self._pick_companions(channel_id, mob, size)
 
         await self._run_encounter(channel_id, mob, forced_element=forced_element,
                                   companions=companions)
 
-    def _reschedule(self, channel_id: int, minutes: int = 1) -> None:
-        """Libère la zone et pose le prochain spawn."""
+    def _reschedule(self, channel_id: int, fled: bool = False) -> None:
+        """Libère la zone et pose le prochain spawn selon le rythme réglé
+        dans l'admin (délai, délai après une fuite, heures calmes)."""
         self.active_encounters.pop(channel_id, None)
-        self._zone_next_spawn[channel_id] = datetime.now(UTC) + timedelta(minutes=minutes)
+        pacing = get_pacing()
+        self._zone_next_spawn[channel_id] = pacing_service.next_spawn_at(
+            pacing.zones, pacing.override(channel_id), datetime.now(UTC), fled=fled)
 
     def _scene_inputs(self, channel_id: int, encounter) -> tuple[dict | None, dict | None]:
         """(spot, placement) pour le rendu : décor du couple (zone, élément
@@ -430,7 +448,7 @@ class EncounterCog(commands.Cog):
     async def _run_encounter(self, channel_id: int, mob, forced_element: str | None = None,
                              companions: list | None = None) -> None:
         """Cycle de vie complet d'un encounter dans une zone : spawn → fenêtre
-        de recrutement (5 min ou résolution anticipée) → combat animé → récap.
+        de recrutement (réglable, ou résolution anticipée) → combat animé → récap.
         Opère sur un encounter LOCAL indexé par `channel_id` ; ne touche jamais
         l'état des autres zones."""
         channel = self.bot.get_channel(channel_id)
@@ -478,17 +496,19 @@ class EncounterCog(commands.Cog):
             )
 
         mob_state = _state(mob)
+        # Temps pour rejoindre (réglable depuis l'admin, Monde › Rythme).
+        window_s = max(60, round(get_pacing().zones.join_window_minutes * 60))
 
         encounter = ActiveEncounter.create(
             mob_state=mob_state,
             victory_image_name="others/victory.png",
             defeat_image_name="others/defeat.png",
             flee_image_name="others/flee.jpg",
-            duration_minutes=5,
+            duration_minutes=window_s / 60,
         )
         encounter.pack = [_state(m) for m in members[1:]]
 
-        view = EncounterView(self, channel_id, timeout=300)
+        view = EncounterView(self, channel_id, timeout=window_s)
 
         spawn_filename = f"encounter_spawn_{encounter.mob_state.code}.png"
         spawn_output_full = self.generated_dir / spawn_filename
@@ -513,17 +533,20 @@ class EncounterCog(commands.Cog):
         if encounter.pack:
             embed.description = ((embed.description or "") +
                                  f"\n🐺 **Une meute !** {encounter.mob_names}").strip()
+        # Compte à rebours (Discord l'affiche à l'heure de chacun).
+        embed.description = ((embed.description or "") +
+                             f"\n⏳ Le combat part <t:{int(encounter.ends_at.timestamp())}:R>.").strip()
 
         message = await channel.send(embed=embed, view=view, file=file)
         encounter.message_id = message.id
         self.active_encounters[channel_id] = encounter
 
-        # Fenêtre de recrutement / combat : 5 min OU jusqu'à signal
-        # d'/admin start_encounter (early resolve).
+        # Fenêtre de recrutement / combat : le temps pour rejoindre OU
+        # jusqu'au signal d'/admin start_encounter (early resolve).
         event = asyncio.Event()
         self._zone_early_resolve[channel_id] = event
         try:
-            await asyncio.wait_for(event.wait(), timeout=300)
+            await asyncio.wait_for(event.wait(), timeout=window_s)
         except asyncio.TimeoutError:
             pass
         finally:
@@ -548,7 +571,7 @@ class EncounterCog(commands.Cog):
             )
             flee_embed = build_rewards_page_embed(flee_summary)
             await message.edit(embed=flee_embed, attachments=[], view=None)
-            self._reschedule(channel_id)
+            self._reschedule(channel_id, fled=True)
             return
 
         result = self.encounter_service.resolve_active_encounter(encounter)

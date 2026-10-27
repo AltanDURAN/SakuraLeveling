@@ -1,0 +1,20 @@
+{
+  "zones": {
+    "respawn_min_minutes": 1,
+    "respawn_max_minutes": 1,
+    "flee_respawn_minutes": 1,
+    "join_window_minutes": 5,
+    "quiet_start_hour": 0,
+    "quiet_end_hour": 0,
+    "pack_chance_pct": 10,
+    "pack_of_three_pct": 40
+  },
+  "zone_overrides": {},
+  "raid": {
+    "spawn_weekday": 0,
+    "spawn_hour": 13,
+    "fight_hour": 21,
+    "fight_minute": 0,
+    "registration_close_minutes": 10
+  }
+}

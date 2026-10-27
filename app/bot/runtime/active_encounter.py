@@ -36,7 +36,7 @@ class ActiveEncounter:
         victory_image_name: str,
         defeat_image_name: str,
         flee_image_name: str,
-        duration_minutes: int = 5,
+        duration_minutes: float = 5,
     ) -> "ActiveEncounter":
         now = datetime.now(UTC)
         return cls(

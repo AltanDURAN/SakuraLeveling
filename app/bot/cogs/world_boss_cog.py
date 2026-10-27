@@ -20,17 +20,16 @@ Reste à venir (besoin liste user) :
 
 import asyncio
 import logging
-from datetime import datetime, time
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 
-# Combat quotidien : inscription minuit→20h50, lancement auto à 21h (Paris).
+# Combat quotidien : inscription de minuit à la fermeture, lancement auto à
+# l'heure de l'assaut (Paris) — réglables depuis l'admin (Monde › Rythme).
 _PARIS = ZoneInfo("Europe/Paris")
-_DAILY_FIGHT_TIME = time(hour=21, minute=0, tzinfo=_PARIS)
-_REGISTRATION_CLOSE = time(hour=20, minute=50)  # joins fermés 20h50→minuit
 
 from app.application.use_cases.world_boss import (
     CompleteWorldBossUseCase,
@@ -60,6 +59,8 @@ from app.infrastructure.db.repositories.player_skill_allocation_repository impor
 )
 from app.infrastructure.db.repositories.world_boss_repository import WorldBossRepository
 from app.infrastructure.db.session import get_db_session
+from app.infrastructure.pacing.pacing_loader import get_pacing
+from app.domain.services import pacing_service
 from app.infrastructure.world_boss.boss_definition_loader import (
     get_definition as get_boss_definition,
     list_definitions,
@@ -127,6 +128,7 @@ class WorldBossView(discord.ui.View):
     def __init__(self, cog: "WorldBossCog | None" = None) -> None:
         super().__init__(timeout=None)
         self.cog = cog
+        self.vote_button.label = f"Combat auto à {pacing_service.fight_label(get_pacing().raid)}"
 
     def _resolve_cog(self, interaction: discord.Interaction) -> "WorldBossCog | None":
         """Si la view a été restaurée sans cog (pas de référence au reboot),
@@ -152,13 +154,14 @@ class WorldBossView(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
         await interaction.response.defer(ephemeral=True)
-        # Fenêtre d'inscription : minuit → 20h50 (Paris). Fermée ensuite,
-        # jusqu'au combat de 21h puis réouverte le lendemain à minuit.
-        now_paris = datetime.now(_PARIS).timetz()
-        if now_paris.replace(tzinfo=None) >= _REGISTRATION_CLOSE:
+        # Fenêtre d'inscription : de minuit à la fermeture (Paris). Fermée
+        # ensuite, jusqu'à l'assaut puis réouverte le lendemain à minuit.
+        raid = get_pacing().raid
+        if pacing_service.registration_closed(raid, datetime.now(_PARIS)):
+            fight, close = pacing_service.fight_label(raid), pacing_service.close_label(raid)
             await interaction.followup.send(
-                "🚪 Inscriptions **fermées** (20h50→21h). Le combat se lance à "
-                "**21h**. Reviens t'inscrire après minuit pour le combat de demain.",
+                f"🚪 Inscriptions **fermées** depuis {close}. L'assaut du jour part à "
+                f"**{fight}**. Reviens t'inscrire après minuit pour celui de demain.",
                 ephemeral=True,
             )
             return
@@ -214,7 +217,7 @@ class WorldBossView(discord.ui.View):
         count = len(lines)
         bonus = min(50, max(0, (count - 1) * 5))
         embed = discord.Embed(
-            title=f"🛡️ Inscrits pour l'assaut de 21h — {count}",
+            title=f"🛡️ Inscrits pour l'assaut de {pacing_service.fight_label(get_pacing().raid)} — {count}",
             description=(
                 "\n".join(lines) if lines
                 else "Personne pour l'instant. Sois le premier à t'engager !"
@@ -259,11 +262,13 @@ class WorldBossView(discord.ui.View):
     async def vote_button(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
-        # Le vote a été remplacé par un combat quotidien automatique à 21h.
+        # Le vote a été remplacé par un combat quotidien automatique.
         # Ce bouton est désormais purement informatif.
+        raid = get_pacing().raid
+        fight, close = pacing_service.fight_label(raid), pacing_service.close_label(raid)
         await interaction.response.send_message(
-            "⏰ **Combat automatique chaque jour à 21h** (heure de Paris).\n"
-            "Inscris-toi via **🤝 Rejoindre** avant 20h50. À 21h, tous les "
+            f"⏰ **Combat automatique chaque jour à {fight}** (heure de Paris).\n"
+            f"Inscris-toi via **🤝 Rejoindre** avant {close}. À {fight}, tous les "
             "inscrits combattent le boss, puis la liste est remise à zéro.",
             ephemeral=True,
         )
@@ -283,6 +288,8 @@ class WorldBossCog(commands.Cog):
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
+        # Jour (Paris) du dernier assaut quotidien lancé par la boucle.
+        self._last_fight_day = None
         # Enregistre la view persistante : Discord pourra reconnecter les
         # clics (custom_id stables) même si le bot a redémarré.
         self.bot.add_view(WorldBossView(self))
@@ -300,11 +307,18 @@ class WorldBossCog(commands.Cog):
             boss = WorldBossRepository(session).get_active()
         return boss.id if boss else None
 
-    @tasks.loop(time=_DAILY_FIGHT_TIME)
+    @tasks.loop(minutes=1)
     async def daily_fight_loop(self) -> None:
-        """Combat quotidien automatique à 21h (Paris) : tous les inscrits du
-        jour combattent le boss actif, puis la liste est vidée (le use case
-        désinscrit chaque combattant). Sans inscrit, on ne fait rien."""
+        """Combat quotidien automatique à l'heure de l'assaut (Paris, réglable
+        depuis l'admin) : tous les inscrits du jour combattent le boss actif,
+        puis la liste est vidée (le use case désinscrit chaque combattant).
+        Sans inscrit, on ne fait rien. Vérifié chaque minute : un changement
+        d'heure dans l'admin vaut dès le jour même ; un assaut manqué de peu
+        (bot redémarré) est rattrapé."""
+        now = datetime.now(_PARIS)
+        if not pacing_service.fight_due(get_pacing().raid, now, self._last_fight_day):
+            return
+        self._last_fight_day = now.date()
         try:
             boss_id = await self._resolve_active_boss_id()
             if boss_id is None:
@@ -314,7 +328,7 @@ class WorldBossCog(commands.Cog):
             if joined <= 0:
                 return
             logging.getLogger(__name__).info(
-                "Combat quotidien world boss 21h : %s inscrit(s)", joined
+                "Combat quotidien world boss : %s inscrit(s)", joined
             )
             await self.launch_party_fight(boss_id)
         except Exception:
@@ -328,9 +342,13 @@ class WorldBossCog(commands.Cog):
     async def auto_spawn_loop(self) -> None:
         try:
             with get_db_session() as session:
+                raid = get_pacing().raid
                 use_case = SpawnRandomWorldBossUseCase(
                     world_boss_repository=WorldBossRepository(session),
                     party_attack=_server_top_attack(session),
+                    spawn_weekday=raid.spawn_weekday,
+                    spawn_hour=raid.spawn_hour,
+                    timezone=_PARIS,
                 )
                 decision = use_case.execute()
             if decision.spawned and decision.boss is not None:
@@ -540,8 +558,8 @@ class WorldBossCog(commands.Cog):
         if mine is None or mine.fights_count == 0:
             await interaction.followup.send(
                 f"⚔️ **{boss.name}** vous attend — vous n'avez pas encore frappé "
-                "cette semaine.\nRejoignez le raid : chaque jour à **21h**, "
-                "l'équipe lance l'assaut.",
+                "cette semaine.\nRejoignez le raid : chaque jour à "
+                f"**{pacing_service.fight_label(get_pacing().raid)}**, l'équipe lance l'assaut.",
                 ephemeral=True)
             return
 
@@ -739,10 +757,9 @@ class WorldBossCog(commands.Cog):
         rules.add_field(
             name="🤝 Comment participer",
             value=(
-                "**Rejoindre** pour vous inscrire, puis **Voter pour lancer** "
-                "quand vous êtes prêt. Le combat part dès que tous les inscrits "
-                "ont voté — et de toute façon **automatiquement à 21h** chaque "
-                "jour."
+                f"**Rejoindre** pour vous inscrire, avant **{pacing_service.close_label(get_pacing().raid)}**. "
+                f"Chaque jour à **{pacing_service.fight_label(get_pacing().raid)}**, tous les inscrits "
+                "lancent l'assaut ensemble."
             ),
             inline=False,
         )
