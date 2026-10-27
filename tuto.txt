@@ -95,8 +95,8 @@ LA PROGRESSION
     tout le monde part à PV et mana pleins.
 
     Rangs et zones (V1) : F Clairière sinistre · E Cimetière abandonné ·
-    D Berceau cataclysmique · bientôt : C Sanctuaire primordial, B Éclipse
-    éternelle, A Cimes des Wyrms, S Faille du Néant. SS et SSS se passent en
+    D Berceau cataclysmique · C Sanctuaire primordial · B Éclipse éternelle ·
+    A Cimes des Wyrms · bientôt : S Faille du Néant. SS et SSS se passent en
     épreuve.
 
 /affinites [joueur]

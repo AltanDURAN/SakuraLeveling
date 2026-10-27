@@ -1,7 +1,7 @@
 [
   {
     "item_code": "cor_chasse_f",
-    "buy_price": 1000,
+    "buy_price": 550,
     "price_per_level": 0,
     "max_owned": 0,
     "max_sell_price": 0,
@@ -12,7 +12,7 @@
   },
   {
     "item_code": "cor_chasse_e",
-    "buy_price": 1500,
+    "buy_price": 900,
     "price_per_level": 0,
     "max_owned": 0,
     "max_sell_price": 0,
@@ -23,7 +23,7 @@
   },
   {
     "item_code": "cor_chasse_d",
-    "buy_price": 2600,
+    "buy_price": 1200,
     "price_per_level": 0,
     "max_owned": 0,
     "max_sell_price": 0,
@@ -40,7 +40,7 @@
     "max_sell_price": 0,
     "min_sell_price": 0,
     "stock_threshold": 100,
-    "enabled": false,
+    "enabled": true,
     "managed": true
   },
   {
@@ -51,7 +51,7 @@
     "max_sell_price": 0,
     "min_sell_price": 0,
     "stock_threshold": 100,
-    "enabled": false,
+    "enabled": true,
     "managed": true
   },
   {
@@ -62,7 +62,7 @@
     "max_sell_price": 0,
     "min_sell_price": 0,
     "stock_threshold": 100,
-    "enabled": false,
+    "enabled": true,
     "managed": true
   },
   {
