@@ -26,6 +26,47 @@ from app.infrastructure.tower import tower_loader
 _logger = logging.getLogger("sakura.tower")
 
 
+def _floor_image(floor_data: dict | None) -> discord.File | None:
+    """Image de l'étage (ses monstres dans le décor de la famille du premier),
+    rendue une fois par étage puis gardée : elle est la même pour tous."""
+    if not floor_data:
+        return None
+    from app.bot.rendering.fight_scene import compose_players_banner, has_mob_image
+    from app.infrastructure.encounters import (
+        farm_zone_loader,
+        mob_formation_loader,
+        mob_placement_loader,
+    )
+    from app.shared.paths import GENERATED_ENCOUNTERS_DIR, LANDSCAPES_ASSETS_DIR
+
+    if not any(has_mob_image(e.get("image_name")) for e in floor_data["enemies"]):
+        return None     # monstres sans image (zones récentes) : l'embed suffit
+    name = f"tour_etage_{floor_data['floor']}.png"
+    path = GENERATED_ENCOUNTERS_DIR / name
+    try:
+        if not path.exists():
+            enemies = floor_data["enemies"]
+            payloads = [{"code": e["code"], "name": e["name"], "image_name": e.get("image_name", ""),
+                         "element": e.get("element", ""), "current_hp": e["max_hp"], "max_hp": e["max_hp"],
+                         "attack": e["attack"], "defense": e["defense"], "speed": e["speed"]}
+                        for e in enemies]
+            first = enemies[0]
+            channel = farm_zone_loader.get_spawn_channel_for_family(first.get("family"))
+            spot = farm_zone_loader.get_spot(channel, first.get("element", "")) if first.get("element") else None
+            background = farm_zone_loader.get_background_for_family(first.get("family"))
+            placements = [mob_placement_loader.get_placement(e["code"], e.get("element", "")) for e in enemies]
+            kwargs = ({"mob": payloads[0], "placement": placements[0]} if len(payloads) == 1 else
+                      {"mob": None, "mobs": payloads, "placements": placements,
+                       "formation": mob_formation_loader.get_formation(str(channel), len(payloads))})
+            compose_players_banner(players=[], output_path=str(path),
+                                   background_path=str(LANDSCAPES_ASSETS_DIR / background) if background else None,
+                                   spot=spot, **kwargs)
+        return discord.File(path, filename=name)
+    except Exception:  # noqa: BLE001 — l'image est un plus, jamais un blocage
+        _logger.warning("rendu de l'étage %s échoué", floor_data.get("floor"), exc_info=True)
+        return None
+
+
 def _material_names(session) -> dict[str, str]:
     """Noms des matériaux de fusion des étages (pour l'affichage)."""
     codes = {tower_loader.floor_material(f) for f in range(1, tower_loader.floor_count() + 1)}
@@ -72,6 +113,14 @@ def _claim(user):
         return reward, None, best, _material_names(session)
 
 
+async def _status_message(state, name, names) -> tuple[discord.Embed, discord.File | None]:
+    embed = build_status_embed(state, name, names)
+    image = await asyncio.to_thread(_floor_image, state.floor)
+    if image is not None:
+        embed.set_image(url=f"attachment://{image.filename}")
+    return embed, image
+
+
 class TowerView(discord.ui.View):
     """Boutons de `/tour`, réservés à celui qui a ouvert la tour."""
 
@@ -94,8 +143,10 @@ class TowerView(discord.ui.View):
     async def _refresh(self, interaction: discord.Interaction) -> None:
         state, name, names = await asyncio.to_thread(_status, interaction.user)
         self._sync(state)
+        embed, image = await _status_message(state, name, names)
         try:
-            await interaction.message.edit(embed=build_status_embed(state, name, names), view=self)
+            await interaction.message.edit(embed=embed, view=self,
+                                           attachments=[image] if image else [])
         except discord.HTTPException:
             _logger.warning("rafraîchissement de /tour échoué", exc_info=True)
 
@@ -128,8 +179,9 @@ class TowerCog(BetaChannelOnlyMixin, commands.Cog):
     async def tour(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
         state, name, names = await asyncio.to_thread(_status, interaction.user)
-        await interaction.followup.send(embed=build_status_embed(state, name, names),
-                                        view=TowerView(interaction.user.id, state))
+        embed, image = await _status_message(state, name, names)
+        kwargs = {"file": image} if image else {}
+        await interaction.followup.send(embed=embed, view=TowerView(interaction.user.id, state), **kwargs)
 
 
 async def setup(bot: commands.Bot) -> None:

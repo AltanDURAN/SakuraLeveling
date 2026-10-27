@@ -1,5 +1,7 @@
+from dataclasses import replace
 from datetime import datetime, UTC
 
+from app.application.services.elemental_resolver import elemental_multipliers
 from app.application.services.encounter_participant import EncounterParticipant
 from app.application.services.exclusive_title_service import ExclusiveTitleService
 from app.application.services.set_bonus_resolver import resolve_set_bonuses
@@ -21,7 +23,8 @@ from app.domain.services.mob_ability_service import (
     is_group_elite,
 )
 from app.infrastructure.loot.family_drop_loader import get_family_drops
-from app.domain.services.party_combat_service import PartyCombatService
+from app.domain.services import pack_service
+from app.domain.services.party_combat_service import EnemySetup, PartyCombatService
 from app.domain.services.power_score_service import PowerScoreService
 from app.domain.services.progression_service import ProgressionService
 from app.domain.services.reward_distribution_service import RewardDistributionService
@@ -202,24 +205,29 @@ class EncounterService:
         prévu pour le niveau 30. La puissance affichée sur l'image (« 1K ») ne
         lui dit rien — on la compare donc à la sienne."""
         mob = encounter.mob_state
+        mobs = list(getattr(encounter, "mobs", None) or [mob])
         power = PowerScoreService()
-        mob_power = power.calculate_from_stats(Stats(
-            max_hp=mob.max_hp, attack=mob.attack, defense=mob.defense,
-            speed=mob.speed, crit_chance=mob.crit_chance, crit_damage=mob.crit_damage,
-            dodge=mob.dodge, hp_regeneration=0,
-        ))
+        # Une meute : la puissance de ses monstres additionnée (ils frappent
+        # tous en même temps).
+        mob_power = sum(power.calculate_from_stats(Stats(
+            max_hp=m.max_hp, attack=m.attack, defense=m.defense,
+            speed=m.speed, crit_chance=m.crit_chance, crit_damage=m.crit_damage,
+            dodge=m.dodge, hp_regeneration=0,
+        )) for m in mobs)
+        name = mob.name if len(mobs) == 1 else f"la meute ({len(mobs)} monstres)"
+        strong = "puissant" if len(mobs) == 1 else "puissante"
         player_power = power.calculate_from_stats(stats)
         ratio = mob_power / max(1, player_power)
         notes = []
         if ratio >= 2:
             notes.append(
-                f"💀 **Très dangereux** : {mob.name} est environ **{ratio:.0f}×** plus "
-                f"puissant que toi ({power.format_score(mob_power)} contre "
+                f"💀 **Très dangereux** : {name} est environ **{ratio:.0f}×** plus "
+                f"{strong} que toi ({power.format_score(mob_power)} contre "
                 f"{power.format_score(player_power)}). Sans alliés, tu risques le K.O."
             )
         elif ratio >= 1.2:
             notes.append(
-                f"⚠️ **Risqué** : {mob.name} est plus puissant que toi "
+                f"⚠️ **Risqué** : {name} est plus {strong} que toi "
                 f"({power.format_score(mob_power)} contre {power.format_score(player_power)})."
             )
         if is_group_elite(getattr(mob, "code", None)):
@@ -245,23 +253,9 @@ class EncounterService:
             if mob is None:
                 return None
 
-            # Système élémentaire ACTIF en encounter : le monstre spawné a un
-            # élément (encounter.mob_state.element) → avantage ±30% dans les
-            # deux sens selon les affinités du joueur et son élément d'attaque
-            # (compétence offensive équipée, sinon affinité la plus haute).
-            from app.domain.services import element_service
-            from app.domain.services.elemental_infusion_service import (
-                ElementalInfusionService,
-            )
             from app.application.services.combat_passives_resolver import (
                 resolve_party_passives,
             )
-            from app.domain.services.combat_passives import outgoing_elemental_multiplier
-            mob_element = (encounter.mob_state.element or "").strip()
-            mob_aff = element_service.single_element_affinities(mob_element) if mob_element else None
-            affinity_repo = ElementAffinityRepository(session)
-            elemental_out: dict[int, float] = {}
-            elemental_in: dict[int, float] = {}
 
             party = []
             title_bonuses_by_player: dict = {}
@@ -303,26 +297,6 @@ class EncounterService:
                     status_bonuses=status_bonuses,
                 )
 
-                # Multiplicateurs élémentaires (si le mob a un élément).
-                if mob_aff is not None:
-                    aff = affinity_repo.get_affinities(participant.player_id)
-                    # L'ÉLÉMENT EST CHOISI TOUT SEUL : on prend celui qui
-                    # frappe le plus fort cette cible, compte tenu de sa
-                    # faiblesse ET de la maîtrise du joueur. Plus de
-                    # compétence élémentaire à équiper.
-                    infusion = ElementalInfusionService().best_for(
-                        aff, mob_aff, affinity_repo.dead_elements(participant.player_id),
-                    )
-                    if infusion.element:
-                        # Mage : ×1,5 / ×2 / ×5 selon son affinité dans cet élément.
-                        elemental_out[participant.player_id] = outgoing_elemental_multiplier(
-                            infusion.multiplier, infusion.element, aff,
-                            passives_by_player.get(participant.player_id),
-                        )
-                    elemental_in[participant.player_id] = element_service.damage_multiplier(
-                        mob_element, mob_aff, aff,
-                    )
-
                 # Mana courant (régénéré hors combat jusqu'à MAINTENANT) : les
                 # compétences actives y puisent (cf. combat_passives.MANA_COSTS).
                 # Persisté en fin de combat par `persist_final_players_hp`.
@@ -351,16 +325,30 @@ class EncounterService:
                     }
                 )
 
+            # Ennemis : le monstre, ou chaque monstre de la meute (stats déjà
+            # réduites au spawn, cf. pack_service). Système élémentaire ACTIF :
+            # l'élément spawné de chacun contre les affinités de chaque joueur
+            # (l'élément d'attaque est choisi tout seul, cf. elemental_resolver).
+            states = list(getattr(encounter, "mobs", None) or [encounter.mob_state])
+            enemies = []
+            for state in states:
+                definition = mob if state is encounter.mob_state else mob_repository.get_by_code(state.code)
+                if definition is None:
+                    continue
+                if len(states) > 1:
+                    definition = replace(definition, max_hp=state.max_hp, current_hp=state.max_hp,
+                                         attack=state.attack)
+                outgoing, incoming = elemental_multipliers(
+                    session, [m["player_id"] for m in party], state.element or "", passives_by_player)
+                enemies.append(EnemySetup(mob=definition, abilities=get_mob_abilities(definition.code),
+                                          elemental_out=outgoing, elemental_in=incoming))
+
         if not party:
             return None
 
-        return PartyCombatService().fight_party_vs_mob(
-            party=party,
-            mob=mob,
+        return PartyCombatService().fight_party_vs_mobs(
+            party, enemies,
             title_bonuses_by_player=title_bonuses_by_player,
-            elemental_mult_by_player=elemental_out,
-            incoming_elemental_mult_by_player=elemental_in,
-            mob_abilities=get_mob_abilities(mob.code),
             passives_by_player=passives_by_player,
             tactics_by_player=tactics_by_player,
         )
@@ -425,23 +413,28 @@ class EncounterService:
         return [(item.name, rarity.value)]
 
     def apply_rewards(self, encounter, result) -> BattleSummary | None:
+        """Récompenses d'un combat de zone — un monstre ou une MEUTE (cf.
+        pack_service : XP et or de la meute entière, une victoire par monstre,
+        le butin de chacun avec la probabilité du facteur de meute)."""
         if encounter is None:
             return None
 
-        mob_code = encounter.mob_state.code
+        states = list(getattr(encounter, "mobs", None) or [encounter.mob_state])
+        with get_db_session() as session:
+            mob_repository = MobRepository(session)
+            definitions = [mob_repository.get_by_code(s.code) for s in states]
+
+        if any(d is None for d in definitions):
+            return None
+        mob = definitions[0]                      # le chef : nom, image, famille du récap
+        size = len(definitions)
+        mob_name = getattr(encounter, "mob_names", mob.name) if size > 1 else mob.name
+        xp_reward = pack_service.pack_reward([d.xp_reward for d in definitions])
+        gold_reward = pack_service.pack_reward([d.gold_reward for d in definitions])
 
         power_score_service = PowerScoreService()
         reward_distribution_service = RewardDistributionService()
         loot_service = LootService()
-
-        # Une seule transaction : or, objets, kills, titres et quêtes de TOUS
-        # les participants — validés ensemble, ou rien (unit_of_work).
-        with get_db_session(atomic=True) as session:
-            mob_repository = MobRepository(session)
-            mob = mob_repository.get_by_code(mob_code)
-
-        if mob is None:
-            return None
 
         rewards: list[PlayerReward] = []
         contributions_by_id = {c.player_id: c for c in result.contributions}
@@ -472,29 +465,31 @@ class EncounterService:
 
             return BattleSummary(
                 outcome="defeat",
-                mob_name=mob.name,
+                mob_name=mob_name,
                 mob_image_name=mob.image_name,
                 mob_family=mob.family,
                 turns=result.turns,
                 rewards=rewards,
-                base_xp_reward=mob.xp_reward,
-                base_gold_reward=mob.gold_reward,
+                base_xp_reward=xp_reward,
+                base_gold_reward=gold_reward,
             )
 
         contribution_shares = reward_distribution_service.compute_contribution_shares(
             contributions=result.contributions,
         )
         gold_per_player = reward_distribution_service.distribute_gold(
-            mob_gold_reward=mob.gold_reward,
+            mob_gold_reward=gold_reward,
             contributions=result.contributions,
         )
         # XP : même montant plein pour tous, morts inclus (pas de variance).
         xp_per_player = reward_distribution_service.distribute_xp(
-            mob_xp_reward=mob.xp_reward,
+            mob_xp_reward=xp_reward,
             contributions=result.contributions,
         )
 
-        with get_db_session() as session:
+        # Une seule transaction : or, objets, kills, titres et quêtes de TOUS
+        # les participants — validés ensemble, ou rien (unit_of_work).
+        with get_db_session(atomic=True) as session:
             player_repository = PlayerRepository(session)
             kill_repository = PlayerKillRepository(session)
             inventory_repository = InventoryRepository(session)
@@ -514,7 +509,6 @@ class EncounterService:
             from app.infrastructure.encounters.farm_zone_loader import (
                 get_essences_range_for_family,
             )
-            essences_min, essences_max = get_essences_range_for_family(mob.family)
 
             for participant in encounter.participants.values():
                 contribution = contributions_by_id.get(participant.player_id)
@@ -569,57 +563,77 @@ class EncounterService:
                 gold = round(
                     base_gold * (1 + bonuses.gold_drop_percent) * (1 + farmer_pct)
                 )
-
-                # Chasseur Légendaire : multiplicateur drop rate spécifique
-                # à ce mob, multiplicatif (ne casse pas la rareté).
-                chasseur_mult = title_bonuses.drop_rate_multiplier_for_mob(mob.code)
-                dropped_items = loot_service.generate_loot(
-                    mob,
-                    drop_rate_multiplier=bonuses.drop_rate_multiplier * chasseur_mult,
-                    family_drops=get_family_drops(),
-                )
-
                 if gold > 0:
                     player_repository.add_gold(participant.player_id, gold)
                     career_repository.add(participant.player_id, gold_earned=gold)
 
-                # Équipement v2 : 0 ou 1 pièce, celle que porte le monstre.
-                gear_drop = self._roll_gear_drop(
-                    session, participant.player_id, mob,
-                    drop_bonus=bonuses.drop_rate_multiplier * chasseur_mult,
-                )
+                _wqp = WeeklyQuestProgressService(WeeklyQuestRepository(session))
+                _dqp = DailyQuestProgressService(DailyQuestRepository(session))
+                group_size = len(encounter.participants)
+                essence_hunter = 1 if "essence_hunter" in active_passives(
+                    EquipmentRepository(session).list_by_player_id(participant.player_id)
+                ) else 0
 
-                kill_repository.increment(participant.player_id, mob_code)
+                dropped: dict[str, int] = {}
+                gear_drop: list[tuple[str, str]] = []
+                essence_gains: list[EssenceGain] = []
+                # Chaque monstre vaincu : une victoire (kill, titres, quêtes) ;
+                # son butin tombe toujours seul, avec la probabilité du
+                # facteur de meute sinon (pack_service.loot_roll).
+                for state, definition in zip(states, definitions):
+                    kill_repository.increment(participant.player_id, definition.code)
+                    if pack_service.loot_roll(size):
+                        # Chasseur Légendaire : multiplicateur drop rate spécifique
+                        # à ce mob, multiplicatif (ne casse pas la rareté).
+                        chasseur_mult = title_bonuses.drop_rate_multiplier_for_mob(definition.code)
+                        for item_code, quantity in loot_service.generate_loot(
+                            definition,
+                            drop_rate_multiplier=bonuses.drop_rate_multiplier * chasseur_mult,
+                            family_drops=get_family_drops(),
+                        ):
+                            dropped[item_code] = dropped.get(item_code, 0) + quantity
+                        # Équipement v2 : 0 ou 1 pièce, celle que porte le monstre.
+                        gear_drop += self._roll_gear_drop(
+                            session, participant.player_id, definition,
+                            drop_bonus=bonuses.drop_rate_multiplier * chasseur_mult,
+                        )
+                        # Essences élémentaires : drop selon la zone (nombre tiré
+                        # dans [min, max] pour CE kill) + auto-conversion en
+                        # affinité (survivants uniquement, comme le kill).
+                        import random as _random
+                        essences_min, essences_max = get_essences_range_for_family(definition.family)
+                        essence_gains = self._merge_essences(essence_gains, self._award_element_essences(
+                            essence_repository=essence_repository,
+                            affinity_repository=affinity_repository,
+                            progression_service=affinity_progression,
+                            player_id=participant.player_id,
+                            mob=definition,
+                            essences_per_kill=_random.randint(essences_min, essences_max),
+                            element_override=getattr(state, "element", "") or "",
+                            # Chasseur d'essences (pièce épique et plus) : +1 par kill.
+                            bonus_essences=essence_hunter,
+                        ))
 
-                # Essences élémentaires : drop selon la zone (nombre tiré dans
-                # [min, max] pour CE kill) + auto-conversion en affinité
-                # (survivants uniquement, comme le kill).
-                import random as _random
-                essences_per_kill = _random.randint(essences_min, essences_max)
-                essence_gains = self._award_element_essences(
-                    essence_repository=essence_repository,
-                    affinity_repository=affinity_repository,
-                    progression_service=affinity_progression,
-                    player_id=participant.player_id,
-                    mob=mob,
-                    essences_per_kill=essences_per_kill,
-                    element_override=getattr(encounter.mob_state, "element", "") or "",
-                    # Chasseur d'essences (pièce épique et plus) : +1 par kill.
-                    bonus_essences=1 if "essence_hunter" in active_passives(
-                        EquipmentRepository(session).list_by_player_id(participant.player_id)
-                    ) else 0,
-                )
-
-                # Check titres : kills_family / kills_total / kills_mob.
-                # Unlock silencieux côté embed (le joueur découvre via /title).
-                if mob.family:
-                    title_unlock_service.check_kills_family(
-                        participant.player_id, mob.family
+                    # Check titres : kills_family / kills_mob.
+                    # Unlock silencieux côté embed (le joueur découvre via /title).
+                    if definition.family:
+                        title_unlock_service.check_kills_family(
+                            participant.player_id, definition.family
+                        )
+                    title_unlock_service.check_kills_mob(
+                        participant.player_id, definition.code,
+                    )
+                    # Kill : n'importe quel monstre, sa famille, et « à plusieurs »
+                    _wqp.on_kill(
+                        participant.player_id, definition.family or "", definition.code, count=1,
+                        group_size=group_size,
+                    )
+                    _dqp.on_kill(
+                        participant.player_id, definition.family or "", definition.code, count=1,
+                        group_size=group_size,
                     )
                 title_unlock_service.check_kills_total(participant.player_id)
-                title_unlock_service.check_kills_mob(
-                    participant.player_id, mob_code,
-                )
+                dropped_items = list(dropped.items())
 
                 # Check titre Intouchable : esquives totales tracées en
                 # carrière (career_stats.dodges_total). On lit le total
@@ -654,18 +668,6 @@ class EncounterService:
                     )
 
                 # Progress quêtes hebdo + quotidiennes (best effort)
-                _wqp = WeeklyQuestProgressService(WeeklyQuestRepository(session))
-                _dqp = DailyQuestProgressService(DailyQuestRepository(session))
-                # Kill : n'importe quel monstre, sa famille, et « à plusieurs »
-                group_size = len(encounter.participants)
-                _wqp.on_kill(
-                    participant.player_id, mob.family or "", mob_code, count=1,
-                    group_size=group_size,
-                )
-                _dqp.on_kill(
-                    participant.player_id, mob.family or "", mob_code, count=1,
-                    group_size=group_size,
-                )
                 if gold > 0:
                     _wqp.on_gold_earned(participant.player_id, gold)
                     _dqp.on_gold_earned(participant.player_id, gold)
@@ -729,15 +731,30 @@ class EncounterService:
 
         return BattleSummary(
             outcome="victory",
-            mob_name=mob.name,
+            mob_name=mob_name,
             mob_image_name=mob.image_name,
             mob_family=mob.family,
             turns=result.turns,
             rewards=rewards,
-            base_xp_reward=mob.xp_reward,
-            base_gold_reward=mob.gold_reward,
+            base_xp_reward=xp_reward,
+            base_gold_reward=gold_reward,
         )
-    
+
+    @staticmethod
+    def _merge_essences(gains: list[EssenceGain], more: list[EssenceGain]) -> list[EssenceGain]:
+        """Additionne les gains d'essences de plusieurs monstres (meute) : un
+        gain par élément, affinité de départ du premier, d'arrivée du dernier."""
+        by_element = {g.element: g for g in gains}
+        for g in more:
+            prev = by_element.get(g.element)
+            by_element[g.element] = g if prev is None else EssenceGain(
+                element=g.element,
+                essences_gained=prev.essences_gained + g.essences_gained,
+                affinity_before=prev.affinity_before,
+                affinity_after=g.affinity_after,
+            )
+        return list(by_element.values())
+
     @staticmethod
     def _award_element_essences(
         essence_repository: ElementEssenceRepository,

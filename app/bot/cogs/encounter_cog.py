@@ -18,6 +18,8 @@ from app.bot.runtime.active_encounter import ActiveEncounter
 from app.bot.runtime.encounter_mob_state import EncounterMobState
 from app.bot.views.battle_summary_view import BattleSummaryView
 from app.bot.views.encounter_view import EncounterView
+from app.domain.services import pack_service
+from app.domain.services.mob_ability_service import is_group_elite
 from app.domain.services.power_score_service import PowerScoreService
 from app.domain.value_objects.battle_summary import BattleSummary
 from app.domain.value_objects.stats import Stats
@@ -76,6 +78,8 @@ class EncounterCog(commands.Cog):
         self._zone_forced_mob: dict[int, str] = {}
         # Élément forcé au prochain spawn de la zone (/admin spawn_encounter).
         self._zone_forced_element: dict[int, str] = {}
+        # Taille de meute forcée au prochain spawn (/admin spawn_encounter meute:).
+        self._zone_forced_pack: dict[int, int] = {}
         # Event de résolution anticipée (/admin start_encounter) par zone.
         self._zone_early_resolve: dict[int, asyncio.Event] = {}
         # Tâche asyncio de chaque zone.
@@ -170,11 +174,30 @@ class EncounterCog(commands.Cog):
             eligible, weights=[m.spawn_weight for m in eligible], k=1
         )[0]
 
+    def _pick_companions(self, channel_id: int, leader, size: int) -> list:
+        """Compagnons d'une meute de `size` autour de `leader` (cf.
+        pack_service) : monstres de la zone, ni élite ni exclus, de puissance
+        voisine. [] si le chef ne mène pas de meute."""
+        if size < 2 or is_group_elite(leader.code) or leader.code in pack_service.EXCLUDED:
+            return []
+        with get_db_session() as session:
+            mobs = MobRepository(session).list_all()
+        hidden = unreleased_families()
+        candidates = [
+            m for m in mobs
+            if get_spawn_channel_for_family(m.family) == channel_id and m.spawn_weight > 0
+            and m.family not in hidden and not is_group_elite(m.code)
+            and m.code not in pack_service.EXCLUDED
+        ]
+        return pack_service.pick_companions(
+            leader, candidates, self.power_score_service.calculate_from_mob, size)
+
     def trigger_immediate_spawn(
         self,
         mob_code: str | None = None,
         element: str | None = None,
         channel_id: int | None = None,
+        pack: int = 0,
     ) -> tuple[bool, str]:
         """Force le spawn immédiat d'un encounter.
 
@@ -219,6 +242,10 @@ class EncounterCog(commands.Cog):
             self._zone_forced_element[target] = element
         else:
             self._zone_forced_element.pop(target, None)
+        if pack >= 2:
+            self._zone_forced_pack[target] = pack
+        else:
+            self._zone_forced_pack.pop(target, None)
         self._zone_next_spawn[target] = datetime.now(UTC) - timedelta(seconds=1)
 
         parts = []
@@ -226,6 +253,8 @@ class EncounterCog(commands.Cog):
             parts.append(mob_code)
         if element:
             parts.append(f"élément {element}")
+        if pack >= 2:
+            parts.append(f"meute de {pack}")
         suffix = f" ({', '.join(parts)})" if parts else ""
         prefix = "Combat précédent annulé. " if cancelled_existing else ""
         return True, (
@@ -311,12 +340,21 @@ class EncounterCog(commands.Cog):
 
         forced_code = self._zone_forced_mob.pop(channel_id, None)
         forced_element = self._zone_forced_element.pop(channel_id, None)
+        forced_pack = self._zone_forced_pack.pop(channel_id, 0)
         mob = self._pick_mob_for_zone(channel_id, forced_code)
         if mob is None:
             self._zone_next_spawn[channel_id] = now + timedelta(minutes=1)
             return
 
-        await self._run_encounter(channel_id, mob, forced_element=forced_element)
+        # Meute : de temps en temps (jamais sur un monstre forcé : cor de
+        # chasse, test admin), ou forcée par l'admin.
+        companions = []
+        if forced_pack or (forced_code is None and random.random() < pack_service.PACK_CHANCE):
+            size = forced_pack or pack_service.pick_pack_size()
+            companions = self._pick_companions(channel_id, mob, size)
+
+        await self._run_encounter(channel_id, mob, forced_element=forced_element,
+                                  companions=companions)
 
     def _reschedule(self, channel_id: int, minutes: int = 1) -> None:
         """Libère la zone et pose le prochain spawn."""
@@ -332,7 +370,48 @@ class EncounterCog(commands.Cog):
         placement = mob_placement_loader.get_placement(encounter.mob_state.code, element)
         return spot, placement
 
-    async def _run_encounter(self, channel_id: int, mob, forced_element: str | None = None) -> None:
+    def _mob_payload(self, state: dict, element: str) -> dict:
+        """Monstre à dessiner (état d'un tour ou du spawn) + élément + puissance."""
+        payload = dict(state)
+        payload["element"] = element
+        payload["power_score"] = self.power_score_service.format_score(
+            self.power_score_service.calculate_from_stats(Stats(
+                max_hp=payload["max_hp"], attack=payload["attack"], defense=payload["defense"],
+                crit_chance=payload.get("crit_chance", 0), crit_damage=payload.get("crit_damage", 100),
+                dodge=payload.get("dodge", 0), hp_regeneration=payload.get("hp_regeneration", 0),
+                speed=payload.get("speed", 1),
+            )))
+        return payload
+
+    def _render_kwargs(self, channel_id: int, encounter, turn_log=None) -> dict:
+        """Arguments de rendu de la scène : un monstre (`mob`, `placement`) ou
+        une meute (`mobs`, `placements`, `formation` de la zone). `turn_log` :
+        l'état d'un tour du combat, sinon celui du spawn."""
+        from app.infrastructure.encounters import mob_formation_loader, mob_placement_loader
+
+        element = encounter.mob_state.element
+        spot, placement = self._scene_inputs(channel_id, encounter)
+        if turn_log is not None:
+            states = turn_log.enemies_state or [turn_log.mob_state]
+        else:
+            states = [{
+                "code": m.code, "name": m.name, "image_name": m.image_name,
+                "current_hp": m.current_hp, "max_hp": m.max_hp, "attack": m.attack,
+                "defense": m.defense, "speed": m.speed, "crit_chance": m.crit_chance,
+                "crit_damage": m.crit_damage, "dodge": m.dodge, "hp_regeneration": m.hp_regeneration,
+            } for m in encounter.mobs]
+        payloads = [self._mob_payload(s, element) for s in states]
+        if len(payloads) == 1:
+            payloads[0]["code"] = encounter.mob_state.code
+            return {"mob": payloads[0], "spot": spot, "placement": placement}
+        return {
+            "mob": None, "spot": spot, "mobs": payloads,
+            "placements": [mob_placement_loader.get_placement(p.get("code"), element) for p in payloads],
+            "formation": mob_formation_loader.get_formation(str(channel_id), len(payloads)),
+        }
+
+    async def _run_encounter(self, channel_id: int, mob, forced_element: str | None = None,
+                             companions: list | None = None) -> None:
         """Cycle de vie complet d'un encounter dans une zone : spawn → fenêtre
         de recrutement (5 min ou résolution anticipée) → combat animé → récap.
         Opère sur un encounter LOCAL indexé par `channel_id` ; ne touche jamais
@@ -359,21 +438,29 @@ class EncounterCog(commands.Cog):
             resolved, _ = resolve_spawn(channel_id, mob.code)
             spawn_element = resolved or _random.choice([e.value for e in ALL_ELEMENTS])
 
-        mob_state = EncounterMobState(
-            code=mob.code,
-            name=mob.name,
-            image_name=mob.image_name,
-            current_hp=mob.current_hp,
-            max_hp=mob.max_hp,
-            attack=mob.attack,
-            defense=mob.defense,
-            speed=mob.speed,
-            crit_chance=mob.crit_chance,
-            crit_damage=mob.crit_damage,
-            dodge=mob.dodge,
-            hp_regeneration=mob.hp_regeneration,
-            element=spawn_element,
-        )
+        # Meute : PV et ATK de chacun × le facteur de sa taille (pack_service).
+        members = [mob, *(companions or [])]
+        factor = pack_service.scale(len(members))
+
+        def _state(m) -> EncounterMobState:
+            hp = max(1, round(m.max_hp * factor))
+            return EncounterMobState(
+                code=m.code,
+                name=m.name,
+                image_name=m.image_name,
+                current_hp=hp if len(members) > 1 else m.current_hp,
+                max_hp=hp,
+                attack=max(1, round(m.attack * factor)),
+                defense=m.defense,
+                speed=m.speed,
+                crit_chance=m.crit_chance,
+                crit_damage=m.crit_damage,
+                dodge=m.dodge,
+                hp_regeneration=m.hp_regeneration,
+                element=spawn_element,
+            )
+
+        mob_state = _state(mob)
 
         encounter = ActiveEncounter.create(
             mob_state=mob_state,
@@ -382,6 +469,7 @@ class EncounterCog(commands.Cog):
             flee_image_name="others/flee.jpg",
             duration_minutes=5,
         )
+        encounter.pack = [_state(m) for m in members[1:]]
 
         view = EncounterView(self, channel_id, timeout=300)
 
@@ -389,44 +477,25 @@ class EncounterCog(commands.Cog):
         spawn_output_full = self.generated_dir / spawn_filename
         spawn_output_relative = f"generated_encounters/{spawn_filename}"
 
-        mob_score = self.power_score_service.calculate_and_format_from_mob(mob)
-
-        spawn_mob_payload = {
-            "code": encounter.mob_state.code,
-            "name": encounter.mob_state.name,
-            "image_name": encounter.mob_state.image_name,
-            "current_hp": encounter.mob_state.current_hp,
-            "max_hp": encounter.mob_state.max_hp,
-            "attack": encounter.mob_state.attack,
-            "defense": encounter.mob_state.defense,
-            "speed": encounter.mob_state.speed,
-            "crit_chance": encounter.mob_state.crit_chance,
-            "crit_damage": encounter.mob_state.crit_damage,
-            "dodge": encounter.mob_state.dodge,
-            "hp_regeneration": encounter.mob_state.hp_regeneration,
-            "element": encounter.mob_state.element,
-            "power_score": mob_score,
-        }
-
         # Rendu Pillow + téléchargement d'avatars : sync et CPU/IO-bound.
         # Sans to_thread, ça bloque tout l'event loop pendant le rendu (~1-2s
         # + jusqu'à 15s par avatar lent) → heartbeat Discord et autres
         # interactions gelés. Cf. audit Phase 1 finding B5.
-        _spot, _placement = self._scene_inputs(channel_id, encounter)
         await asyncio.to_thread(
             compose_players_banner,
             players=[],
-            mob=spawn_mob_payload,
             output_path=str(spawn_output_full),
             background_path=str(background_path),
             players_power_score="",
-            spot=_spot,
-            placement=_placement,
+            **self._render_kwargs(channel_id, encounter),
         )
 
         embed, file = build_encounter_embed(
             image_name=spawn_output_relative,
         )
+        if encounter.pack:
+            embed.description = ((embed.description or "") +
+                                 f"\n🐺 **Une meute !** {encounter.mob_names}").strip()
 
         message = await channel.send(embed=embed, view=view, file=file)
         encounter.message_id = message.id
@@ -455,7 +524,7 @@ class EncounterCog(commands.Cog):
         if not encounter.participants:
             flee_summary = BattleSummary(
                 outcome="flee",
-                mob_name=encounter.mob_state.name,
+                mob_name=encounter.mob_names,
                 mob_image_name=encounter.mob_state.image_name,
                 mob_family="",
                 turns=0,
@@ -479,7 +548,7 @@ class EncounterCog(commands.Cog):
 
         # Message dédié au journal de combat tour par tour. Indépendant du
         # message de spawn (qui garde l'image et finira sur le BattleSummary).
-        mob_name = encounter.mob_state.name
+        mob_name = encounter.mob_names
         mob_max_hp = encounter.mob_state.max_hp
         action_lines: list[str] = []
         initial_log_embed = build_combat_log_embed(
@@ -489,6 +558,7 @@ class EncounterCog(commands.Cog):
             mob_max_hp=mob_max_hp,
             players_state=None,
             finished=False,
+            enemies_state=result.turn_logs[0].enemies_state if result.turn_logs else None,
         )
         try:
             combat_log_message = await channel.send(embed=initial_log_embed)
@@ -516,36 +586,15 @@ class EncounterCog(commands.Cog):
                 players_stats_for_score
             )
 
-            mob_payload = dict(turn_log.mob_state)
-            # L'élément est fixe pour tout l'encounter → on l'injecte depuis la
-            # source unique (mob_state), la teinte/badge persiste pendant le combat.
-            mob_payload["code"] = encounter.mob_state.code
-            mob_payload["element"] = encounter.mob_state.element
-            mob_payload["power_score"] = self.power_score_service.format_score(
-                self.power_score_service.calculate_from_stats(
-                    Stats(
-                        max_hp=mob_payload["max_hp"],
-                        attack=mob_payload["attack"],
-                        defense=mob_payload["defense"],
-                        crit_chance=mob_payload.get("crit_chance", 0),
-                        crit_damage=mob_payload.get("crit_damage", 100),
-                        dodge=mob_payload.get("dodge", 0),
-                        hp_regeneration=mob_payload.get("hp_regeneration", 0),
-                        speed=mob_payload.get("speed", 1),
-                    )
-                )
-            )
-
-            _spot, _placement = self._scene_inputs(channel_id, encounter)
+            # L'élément est fixe pour tout l'encounter → injecté depuis la source
+            # unique (mob_state), la teinte/badge persiste pendant le combat.
             await asyncio.to_thread(
                 compose_players_banner,
                 players=turn_log.players_state,
-                mob=mob_payload,
                 output_path=str(current_output_full),
                 background_path=str(background_path),
                 players_power_score=players_power_score,
-                spot=_spot,
-                placement=_placement,
+                **self._render_kwargs(channel_id, encounter, turn_log),
             )
 
             turn_embed, file = build_encounter_embed(
@@ -564,6 +613,7 @@ class EncounterCog(commands.Cog):
                     mob_max_hp=mob_max_hp,
                     players_state=turn_log.players_state,
                     finished=False,
+                    enemies_state=turn_log.enemies_state,
                 )
                 try:
                     await combat_log_message.edit(embed=log_embed)
@@ -598,6 +648,7 @@ class EncounterCog(commands.Cog):
                 players_state=None,
                 finished=True,
                 redirect_url=redirect_url,
+                enemies_state=result.turn_logs[-1].enemies_state if result.turn_logs else None,
             )
             try:
                 await combat_log_message.edit(embed=final_log_embed)
@@ -667,38 +718,6 @@ class EncounterCog(commands.Cog):
             channel_id, str(LANDSCAPES_ASSETS_DIR / "clairiere_sinistre.png")
         )
 
-        mob_score = self.power_score_service.format_score(
-            self.power_score_service.calculate_from_stats(
-                Stats(
-                    max_hp=encounter.mob_state.max_hp,
-                    attack=encounter.mob_state.attack,
-                    defense=encounter.mob_state.defense,
-                    crit_chance=encounter.mob_state.crit_chance,
-                    crit_damage=encounter.mob_state.crit_damage,
-                    dodge=encounter.mob_state.dodge,
-                    hp_regeneration=encounter.mob_state.hp_regeneration,
-                    speed=encounter.mob_state.speed,
-                )
-            )
-        )
-
-        mob_payload = {
-            "code": encounter.mob_state.code,
-            "name": encounter.mob_state.name,
-            "image_name": encounter.mob_state.image_name,
-            "current_hp": encounter.mob_state.current_hp,
-            "max_hp": encounter.mob_state.max_hp,
-            "attack": encounter.mob_state.attack,
-            "defense": encounter.mob_state.defense,
-            "speed": encounter.mob_state.speed,
-            "crit_chance": encounter.mob_state.crit_chance,
-            "crit_damage": encounter.mob_state.crit_damage,
-            "dodge": encounter.mob_state.dodge,
-            "hp_regeneration": encounter.mob_state.hp_regeneration,
-            "element": encounter.mob_state.element,
-            "power_score": mob_score,
-        }
-
         players_stats_for_score = [
             Stats(
                 max_hp=player["max_hp"],
@@ -717,16 +736,13 @@ class EncounterCog(commands.Cog):
             players_stats_for_score
         ) if players_stats_for_score else "0"
 
-        _spot, _placement = self._scene_inputs(channel_id, encounter)
         await asyncio.to_thread(
             compose_players_banner,
             players=players,
-            mob=mob_payload,
             output_path=str(output_full),
             background_path=str(background_path),
             players_power_score=players_power_score,
-            spot=_spot,
-            placement=_placement,
+            **self._render_kwargs(channel_id, encounter),
         )
 
         embed, file = build_encounter_embed(

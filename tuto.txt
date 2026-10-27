@@ -463,6 +463,16 @@ QUI LE MONSTRE VISE
     Elle rapporte trois fois l'XP (à chacun) et l'or d'un monstre de son
     niveau. Le bot te prévient quand tu en rejoins une.
 
+MEUTES 🐺
+    De temps en temps (environ 1 apparition sur 10), ce n'est pas un monstre
+    mais une MEUTE de 2 ou 3 monstres de la zone qui surgit. Chacun est un
+    peu moins solide qu'un monstre seul (PV et attaque ×0,87 à deux, ×0,73 à
+    trois), mais ils frappent tous. Tu frappes toujours le plus abîmé ; les
+    dégâts de zone (case AOE de l'arbre) touchent les voisins de ta cible.
+    Une meute rapporte l'XP et l'or de tous ses monstres (réduits comme
+    leurs stats, +25 %), chaque monstre compte comme une victoire (quêtes,
+    titres), et le butin de chacun tombe avec la même chance réduite.
+
 COMBATS QUI S'ÉTERNISENT
     À partir de la 30ᵉ action DU MONSTRE, puis toutes les 5 de ses actions,
     il se renforce : +10 %, puis +20 % par-dessus, puis +30 %… sur son

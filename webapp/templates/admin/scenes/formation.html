@@ -1,0 +1,48 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ zone.name }} · {{ n }} monstres — formation — Sakura Admin{% endblock %}
+{% block content %}
+<section class="form-page"
+  x-data="{
+    slots: {{ slots | tojson }},
+    url: '', timer: null,
+    refresh(){ const p = new URLSearchParams({t: Date.now()});
+      this.slots.forEach((s, i) => { p.set('x'+i, (+s.x).toFixed(3)); p.set('y'+i, (+s.y).toFixed(3)); p.set('s'+i, (+s.scale).toFixed(3)); });
+      this.url = '/admin/scenes/formations/{{ key }}/{{ n }}/preview.png?' + p.toString(); },
+    later(){ clearTimeout(this.timer); this.timer = setTimeout(() => this.refresh(), 300); }
+  }" x-init="refresh()">
+
+  <a href="/admin/scenes/formations" class="breadcrumb">← Formations</a>
+  <h1>🐺 {{ zone.name }} — {{ n }} monstres</h1>
+  <div style="display:flex; gap:.35rem; margin:.4rem 0 1rem;">
+    {% for s in sizes %}<a href="/admin/scenes/formations/{{ key }}/{{ s }}" class="btn {{ 'btn-primary' if s == n else 'btn-ghost' }}" style="padding:.3rem .6rem;">{{ s }} monstres</a>{% endfor %}
+  </div>
+  {% if saved %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(80,200,120,.15);border:1px solid rgba(80,200,120,.4);">✅ Formation enregistrée.</div>{% endif %}
+  <p style="color:var(--muted); margin:.2rem 0 1rem;">Aperçu avec {{ samples | join(', ') }} (premier décor de la zone).
+     {% if not custom %}<strong>Formation par défaut</strong> : enregistre pour la personnaliser.{% endif %}</p>
+
+  <div style="display:flex; gap:1.6rem; flex-wrap:wrap; align-items:flex-start;">
+    <div style="flex:0 0 auto;">
+      <img :src="url" style="width:432px; border-radius:14px; border:1px solid var(--border); background:#20222e;">
+    </div>
+    <form method="post" action="/admin/scenes/formations/{{ key }}/{{ n }}"
+          style="flex:1 1 300px; min-width:280px; display:flex; flex-direction:column; gap:1rem;">
+      <template x-for="(s, i) in slots" :key="i">
+        <div class="form-section">
+          <h2 class="form-section-title" x-text="'Emplacement ' + (i + 1)"></h2>
+          <label class="field"><span class="field-label">Horizontal — <span x-text="Math.round(s.x*100)"></span></span>
+            <input type="range" min="-0.5" max="0.5" step="0.01" x-model.number="s.x" :name="'x'+i" x-on:input="later()"></label>
+          <label class="field"><span class="field-label">Profondeur — <span x-text="Math.round(s.y*100)"></span> (négatif = plus loin, derrière)</span>
+            <input type="range" min="-0.3" max="0.2" step="0.01" x-model.number="s.y" :name="'y'+i" x-on:input="later()"></label>
+          <label class="field"><span class="field-label">Taille — <span x-text="Math.round(s.scale*100)+'%'"></span></span>
+            <input type="range" min="0.3" max="1.5" step="0.01" x-model.number="s.scale" :name="'s'+i" x-on:input="later()"></label>
+        </div>
+      </template>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+        {% if custom %}<button type="submit" name="reset" value="1" class="btn btn-ghost"
+            onclick="return confirm('Revenir à la formation par défaut ?')">Rétablir par défaut</button>{% endif %}
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

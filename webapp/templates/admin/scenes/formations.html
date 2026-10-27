@@ -1,0 +1,25 @@
+{% extends "admin/base.html" %}
+{% block title %}Formations des meutes — Sakura Admin{% endblock %}
+{% block content %}
+<section class="form-page">
+    <a href="/admin/scenes" class="breadcrumb">← Scènes</a>
+    <h1>🐺 Formations des meutes</h1>
+    <p style="color:var(--muted); max-width:74ch;">
+        Quand plusieurs monstres apparaissent ensemble (une <strong>meute</strong> de 2 ou 3, et
+        jusqu'à 4 plus tard), chacun prend un <strong>emplacement</strong> de la formation de sa zone :
+        position, profondeur (les plus loin sont dessinés derrière) et taille (× la taille propre du
+        monstre). Sans réglage, la formation par défaut s'applique.
+    </p>
+    <div class="form-section">
+        {% for z in zones %}
+        <div style="display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; margin:.4rem 0;">
+            <strong style="min-width:16rem;">{{ z.name }} {% if z.rank %}<span style="color:var(--muted);">(rang {{ z.rank }})</span>{% endif %}</strong>
+            {% for s in z.sizes %}
+            <a href="/admin/scenes/formations/{{ z.key }}/{{ s.n }}" class="btn btn-ghost" style="padding:.3rem .6rem;">
+                {{ s.n }} monstres {% if s.custom %}✅{% else %}<span style="color:var(--muted);">(défaut)</span>{% endif %}</a>
+            {% endfor %}
+        </div>
+        {% else %}<span style="color:var(--muted);">Aucune zone ouverte.</span>{% endfor %}
+    </div>
+</section>
+{% endblock %}

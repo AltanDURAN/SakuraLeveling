@@ -163,6 +163,10 @@ def _draw_ratio_bar(base, draw, x1, y1, x2, y2, current, maximum) -> None:
         base.alpha_composite(fill, (x1 + 3, y1 + 3))
 
 
+def has_mob_image(image_name: str | None) -> bool:
+    return bool(image_name) and (MOBS_ASSETS_DIR / image_name).exists()
+
+
 def _load_mob_image(image_name: str | None) -> Image.Image:
     if image_name:
         try:
@@ -179,14 +183,23 @@ def render_scene(
     background_path: str | None = None,
     spot: dict | None = None,
     placement: dict | None = None,
+    mobs: list[dict] | None = None,
+    placements: list[dict | None] | None = None,
+    formation: list[dict] | None = None,
 ) -> Image.Image:
     """Compose la scène complète et renvoie l'image (RGB). Utilisé par le bot
     ET par l'aperçu de l'éditeur admin → WYSIWYG garanti.
 
     `spot` = environnement (background, crop, ground_y). `placement` = placement
-    du monstre (scale, offset_x, shadow). Sans eux → rendu automatique."""
+    du monstre (scale, offset_x, shadow). Sans eux → rendu automatique.
+    Plusieurs monstres (meute, tour) : `mobs` (ordre de la formation),
+    `placements` (le placement propre de chacun pour son élément, ou None) et
+    `formation` (un emplacement {x, y, scale} par monstre)."""
     players = players or []
     mob = mob or None
+    group = list(mobs or [])
+    if len(group) > 1:
+        mob = None
 
     # ---- Décor (vient du spot) ----
     bg_path = background_path
@@ -229,8 +242,14 @@ def render_scene(
             mob_img = tint_by_element(mob_img, element)
         result.alpha_composite(mob_img, mob_pos)
 
+    if len(group) > 1:
+        _draw_group(result, group, placements or [None] * len(group),
+                    formation or [{"x": 0, "y": 0, "scale": 1}] * len(group), spot)
+
     # ---- Bandeau MOB (haut) ----
     _panel(result, TOP_PANEL)
+    if len(group) > 1:
+        _draw_group_hud(result, draw, group)
     if mob is not None:
         pl, pt, pr, pb = TOP_PANEL
         badge_d = _FONTS["badge"]
@@ -299,6 +318,87 @@ def render_scene(
     )
 
 
+#: Taille automatique d'un monstre de groupe sans placement propre (fraction
+#: de la hauteur du cadre, avant le multiplicateur de son emplacement).
+_GROUP_AUTO_SCALE = 0.50
+
+
+def _draw_group(base: Image.Image, mobs: list[dict], placements: list[dict | None],
+                formation: list[dict], spot: dict | None) -> None:
+    """Plusieurs monstres posés au sol selon la formation : les plus LOIN
+    (y le plus petit) d'abord, pour que ceux de devant passent par-dessus.
+    Un monstre vaincu est assombri."""
+    ground_y = (spot or {}).get("ground_y", STAGE_BOTTOM / FRAME_H)
+    order = sorted(range(len(mobs)), key=lambda i: formation[i]["y"] if i < len(formation) else 0)
+    for i in order:
+        data = mobs[i]
+        if not has_mob_image(data.get("image_name")):
+            continue    # pas encore d'image : le bandeau du haut le nomme quand même
+        slot = formation[i] if i < len(formation) else {"x": 0, "y": 0, "scale": 1}
+        own = placements[i] if i < len(placements) and placements[i] else {}
+        content = mob_content(_load_mob_image(data.get("image_name")))
+        placement = {
+            "scale": float(own.get("scale", _GROUP_AUTO_SCALE)) * float(slot.get("scale", 1)),
+            "offset_x": float(slot.get("x", 0)),
+            "offset_y": float(own.get("offset_y", 0)) + float(slot.get("y", 0)),
+        }
+        img, pos = place_mob(content, placement, ground_y)
+        if own.get("shadow", True):
+            draw_contact_shadow(base, pos, img.size)
+        element = data.get("element") or ""
+        if element:
+            img = tint_by_element(img, element)
+        if int(data.get("current_hp", 1) or 0) <= 0:
+            alpha = img.getchannel("A").point(lambda a: a * 45 // 100)
+            img = Image.merge("RGBA", (*img.convert("RGB").point(lambda v: v // 3).split(), alpha))
+        base.alpha_composite(img, pos)
+
+
+def _draw_group_hud(base: Image.Image, draw: ImageDraw.ImageDraw, mobs: list[dict]) -> None:
+    """Bandeau du haut d'un groupe : par monstre, pastille d'élément, nom et
+    barre de PV — une colonne chacun jusqu'à 3, une grille 2 × 2 à 4."""
+    two_rows = len(mobs) > 3
+    try:
+        name_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 20 if two_rows else 24)
+        hp_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 15 if two_rows else 17)
+    except Exception:
+        name_font = hp_font = ImageFont.load_default()
+    pl, pt, pr, pb = TOP_PANEL
+    cols = 2 if two_rows else len(mobs)
+    rows = 2 if two_rows else 1
+    col_w = (pr - pl - 24) / cols
+    row_h = (pb - pt - 16) / rows
+    badge_d = 34 if two_rows else 48
+    bar_h = 18 if two_rows else 26
+    for i, data in enumerate(mobs[:4]):
+        col, row = i % cols, i // cols
+        x1 = int(pl + 12 + col * col_w) + 6
+        x2 = int(pl + 12 + (col + 1) * col_w) - 8
+        top = int(pt + 8 + row * row_h)
+        y_mid = int(top + row_h / 2)
+        x = x1
+        element = data.get("element") or ""
+        badge = make_element_badge(element, diameter=badge_d) if element else None
+        if badge is not None:
+            base.alpha_composite(badge, (x, y_mid - badge_d // 2))
+            x += badge_d + 8
+        name = str(data.get("name", "Monstre"))
+        while len(name) > 3 and draw.textlength(name, font=name_font) > x2 - x:
+            name = name[:-2] + "…"
+        name_h = name_font.size + 4
+        block = name_h + bar_h
+        y0 = y_mid - block // 2
+        draw.text((x, y0 - 2), name, font=name_font, fill=(255, 255, 255, 255))
+        cur = int(data.get("current_hp", 0) or 0)
+        mx = int(data.get("max_hp", 0) or 0)
+        bar = (x, y0 + name_h, x2, y0 + name_h + bar_h)
+        _draw_ratio_bar(base, draw, *bar, cur, mx)
+        hp_txt = f"{cur} / {mx}" if cur > 0 else "Vaincu"
+        draw.text(((bar[0] + bar[2]) / 2 - draw.textlength(hp_txt, font=hp_font) / 2,
+                   (bar[1] + bar[3]) / 2 - hp_font.size / 2 - 1), hp_txt, font=hp_font,
+                  fill=(255, 255, 255, 255))
+
+
 def compose_players_banner(
     players: list[dict],
     output_path: str = "result.png",
@@ -307,13 +407,18 @@ def compose_players_banner(
     players_power_score: str = "",
     spot: dict | None = None,
     placement: dict | None = None,
+    mobs: list[dict] | None = None,
+    placements: list[dict | None] | None = None,
+    formation: list[dict] | None = None,
 ):
     """Point d'entrée du bot. `spot` (environnement du couple zone×élément) et
     `placement` (placement du monstre) sont résolus par l'appelant (encounter).
-    Sans eux → rendu automatique (fallback)."""
+    Sans eux → rendu automatique (fallback). Meute : `mobs`, `placements`,
+    `formation` (cf. `render_scene`)."""
     image = render_scene(
         mob=mob, players=players, background_path=background_path,
-        spot=spot, placement=placement,
+        spot=spot, placement=placement, mobs=mobs, placements=placements,
+        formation=formation,
     )
     image.save(output_path)
     _logger.debug("Scène de combat générée : %s", output_path)

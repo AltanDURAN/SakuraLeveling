@@ -216,3 +216,117 @@ async def mob_delete(code: str, element: str, user: AdminUser = Depends(require_
         mob_placement_loader.reload_cache()
         _logger.info("Admin %s a retiré %s/%s", user.discord_id, code, element)
     return RedirectResponse(f"/admin/scenes/mob/{code}", status_code=303)
+
+
+# ------------------------------------------------------------------ FORMATIONS
+# Combats contre plusieurs monstres (meutes de zone) : où se tient chacun.
+_FORMATIONS_FILE = "mob_formations.json"
+_FORMATIONS_COMMENT = (
+    "Formations des combats contre plusieurs monstres (meutes), par zone : "
+    "formations[salon de la zone][n] = [{x, y, scale}, …] pour n = 2, 3, 4. x = décalage "
+    "horizontal depuis le centre, y = décalage vertical (< 0 = plus loin, dessiné derrière), "
+    "scale = multiplicateur de la taille propre du monstre. Édité dans Scènes › Formations."
+)
+
+
+def _formation_zones() -> list[dict]:
+    farm_zone_loader.clear_cache()
+    return [z for z in farm_zone_loader.list_zones() if z.get("channel_id")]
+
+
+def _sample_mobs(zone: dict, n: int) -> list:
+    """n monstres d'exemple de la zone (les plus courants d'abord, sans élite)."""
+    from app.domain.services.mob_ability_service import is_group_elite
+
+    with get_db_session() as session:
+        mobs = [m for m in MobRepository(session).list_all()
+                if m.family in zone.get("families", []) and not is_group_elite(m.code)]
+    mobs.sort(key=lambda m: -m.spawn_weight)
+    if not mobs:
+        return []
+    return [mobs[i % len(mobs)] for i in range(n)]
+
+
+@router.get("/formations")
+async def formations_home(request: Request, user: AdminUser = Depends(require_admin)):
+    from app.infrastructure.encounters import mob_formation_loader as fl
+
+    fl.reload_cache()
+    rows = [{"key": str(z["channel_id"]), "name": z.get("name", "?"), "rank": z.get("rank", ""),
+             "sizes": [{"n": n, "custom": fl.is_custom(str(z["channel_id"]), n)} for n in fl.SIZES]}
+            for z in _formation_zones()]
+    return get_templates().TemplateResponse(
+        request, "admin/scenes/formations.html", context={"user": user, "zones": rows})
+
+
+@router.get("/formations/{key}/{n}")
+async def formation_editor(key: str, n: int, request: Request, saved: int = 0,
+                           user: AdminUser = Depends(require_admin)):
+    from app.infrastructure.encounters import mob_formation_loader as fl
+
+    zone = next((z for z in _formation_zones() if str(z["channel_id"]) == key), None)
+    if zone is None or n not in fl.SIZES:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Zone ou taille inconnue.")
+    fl.reload_cache()
+    return get_templates().TemplateResponse(
+        request, "admin/scenes/formation.html",
+        context={"user": user, "key": key, "n": n, "zone": zone, "sizes": fl.SIZES,
+                 "slots": fl.get_formation(key, n), "custom": fl.is_custom(key, n),
+                 "samples": [m.name for m in _sample_mobs(zone, n)], "saved": saved})
+
+
+def _slots_from(params, n: int) -> list[dict]:
+    return [{"x": round(scene_helpers.fnum(params, f"x{i}", 0.0), 4),
+             "y": round(scene_helpers.fnum(params, f"y{i}", 0.0), 4),
+             "scale": round(max(0.1, scene_helpers.fnum(params, f"s{i}", 1.0)), 4)}
+            for i in range(n)]
+
+
+@router.get("/formations/{key}/{n}/preview.png")
+async def formation_preview(key: str, n: int, request: Request,
+                            user: AdminUser = Depends(require_admin)):
+    """Aperçu RÉEL (même rendu que le bot) avec des monstres de la zone."""
+    from app.infrastructure.encounters import mob_formation_loader as fl
+    from app.shared.paths import LANDSCAPES_ASSETS_DIR
+
+    zone = next((z for z in _formation_zones() if str(z["channel_id"]) == key), None)
+    if zone is None or n not in fl.SIZES:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Zone ou taille inconnue.")
+    spots = farm_zone_loader.get_spots(int(key))
+    spot = spots[0] if spots else None
+    element = (spot or {}).get("element", "") or ""
+    mobs = _sample_mobs(zone, n)
+    payloads = [{"code": m.code, "name": m.name, "image_name": m.image_name, "element": element,
+                 "current_hp": max(1, int(m.max_hp * (0.4 + 0.15 * i))), "max_hp": m.max_hp}
+                for i, m in enumerate(mobs)]
+    placements = [mob_placement_loader.get_placement(m.code, element) for m in mobs]
+    background = farm_zone_loader.get_background_for_family((zone.get("families") or [""])[0])
+    image = fight_scene.render_scene(
+        mob=None, mobs=payloads, placements=placements, formation=_slots_from(request.query_params, n),
+        players=scene_helpers.demo_players(), spot=spot,
+        background_path=str(LANDSCAPES_ASSETS_DIR / background) if background else None,
+    )
+    buf = io.BytesIO(); image.save(buf, "PNG")
+    return Response(buf.getvalue(), media_type="image/png", headers={"Cache-Control": "no-store"})
+
+
+@router.post("/formations/{key}/{n}")
+async def formation_save(key: str, n: int, request: Request,
+                         user: AdminUser = Depends(require_admin)):
+    from app.infrastructure.encounters import mob_formation_loader as fl
+
+    if not any(str(z["channel_id"]) == key for z in _formation_zones()) or n not in fl.SIZES:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Zone ou taille inconnue.")
+    form = await request.form()
+    data = json_writer.load_json(_FORMATIONS_FILE, {"formations": {}}) or {"formations": {}}
+    formations = data.get("formations") if isinstance(data.get("formations"), dict) else {}
+    if form.get("reset"):
+        (formations.get(key) or {}).pop(str(n), None)
+        if key in formations and not formations[key]:
+            del formations[key]
+    else:
+        formations.setdefault(key, {})[str(n)] = _slots_from(form, n)
+    json_writer.atomic_write_json(_FORMATIONS_FILE, {"_comment": _FORMATIONS_COMMENT, "formations": formations})
+    fl.reload_cache()
+    _logger.info("Admin %s a réglé la formation %s/%s", user.discord_id, key, n)
+    return RedirectResponse(f"/admin/scenes/formations/{key}/{n}?saved=1", status_code=303)

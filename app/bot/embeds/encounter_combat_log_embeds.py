@@ -72,7 +72,9 @@ def build_combat_log_embed(
     players_state: list[dict] | None,
     finished: bool = False,
     redirect_url: str | None = None,
+    enemies_state: list[dict] | None = None,
 ) -> discord.Embed:
+    """`enemies_state` (meute) : une ligne de PV par monstre au lieu d'une seule."""
     color = discord.Color.dark_green() if finished else discord.Color.orange()
     title = (
         f"✅ Combat terminé — {mob_name}"
@@ -97,11 +99,22 @@ def build_combat_log_embed(
     )
 
     # PV du mob — toujours utile pendant le combat
-    embed.add_field(
-        name=f"👹 {mob_name}",
-        value=f"❤️ **{format_int(max(0, mob_current_hp))} / {format_int(mob_max_hp)}** PV",
-        inline=False,
-    )
+    if enemies_state:
+        embed.add_field(
+            name="🐺 Meute",
+            value="\n".join(
+                f"{'💀' if int(e.get('current_hp', 0) or 0) <= 0 else '❤️'} **{e.get('name', '?')}** — "
+                f"{format_int(max(0, int(e.get('current_hp', 0) or 0)))} / {format_int(int(e.get('max_hp', 0) or 0))}"
+                for e in enemies_state
+            ),
+            inline=False,
+        )
+    else:
+        embed.add_field(
+            name=f"👹 {mob_name}",
+            value=f"❤️ **{format_int(max(0, mob_current_hp))} / {format_int(mob_max_hp)}** PV",
+            inline=False,
+        )
 
     # PV des joueurs — uniquement pendant le combat (au récap on a la page Détails)
     if not finished and players_state:

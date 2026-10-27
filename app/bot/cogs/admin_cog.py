@@ -761,17 +761,19 @@ class AdminCog(commands.Cog):
 
     @admin.command(
         name="spawn_encounter",
-        description="Force le spawn immédiat d'un encounter (mob + élément optionnels)",
+        description="Force le spawn immédiat d'un encounter (mob, élément, meute optionnels)",
     )
     @app_commands.describe(
         mob_code="Code du mob à faire spawn (optionnel : random sinon)",
         element="Élément forcé (optionnel : aléatoire pondéré sinon)",
+        meute="Fait apparaître une meute de 2 ou 3 monstres (le mob choisi en tête)",
     )
     @app_commands.choices(
         element=[
             app_commands.Choice(name=ELEMENT_LABELS[e.value], value=e.value)
             for e in ALL_ELEMENTS
-        ]
+        ],
+        meute=[app_commands.Choice(name=f"Meute de {n}", value=n) for n in (2, 3)],
     )
     @admin_only
     async def spawn_encounter(
@@ -779,6 +781,7 @@ class AdminCog(commands.Cog):
         interaction: discord.Interaction,
         mob_code: str | None = None,
         element: app_commands.Choice[str] | None = None,
+        meute: app_commands.Choice[int] | None = None,
     ) -> None:
         encounter_cog = self.bot.get_cog("EncounterCog")
         if encounter_cog is None:
@@ -794,6 +797,7 @@ class AdminCog(commands.Cog):
             mob_code=mob_code,
             element=element.value if element else None,
             channel_id=interaction.channel_id,
+            pack=meute.value if meute else 0,
         )
         await interaction.response.send_message(
             f"{'✅' if success else '⚠️'} {message}",
