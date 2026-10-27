@@ -7,7 +7,7 @@ ses événements) : on le rejoue en images. Pour chaque action :
   • les barres de PV descendent en douceur vers leur nouvelle valeur ;
   • l'effet du coup apparaît en grossissant puis s'estompe ;
   • le chiffre jaillit (un peu plus gros), se pose, puis monte en s'effaçant ;
-  • le monstre touché flashe ; un critique fait trembler l'image ;
+  • le monstre touché flashe ; un critique le fait trembler ;
   • un monstre vaincu s'assombrit après le coup qui l'achève.
 
 Format : GIF (le seul que Discord lance tout seul, sur ordinateur et mobile)
@@ -110,6 +110,19 @@ def _flash_sprites(scene: Scene, events: list[dict]) -> list:
 _TRANSPARENT = 255
 
 
+def _shaken_static(scene: Scene, dead: frozenset, shaken: set, offset: tuple[int, int]) -> Image.Image:
+    """Le décor figé, les monstres de `shaken` décalés de `offset`."""
+    img = scene.bg.copy()
+    for sprite in scene.sprites:
+        x, y = sprite.pos
+        if sprite.key in shaken:
+            x, y = x + offset[0], y + offset[1]
+        img.alpha_composite(sprite.dimmed() if (scene.dim_dead and sprite.key in dead) else sprite.img,
+                            (max(0, x), max(0, y)))
+    img.alpha_composite(scene.overlay)
+    return img
+
+
 def _palette(sample: Image.Image) -> tuple[Image.Image, list[int]]:
     """Palette commune à toute la vidéo : le décor + les couleurs des effets
     (255 couleurs, la 256e est la transparence) — une palette par image ferait
@@ -143,9 +156,7 @@ def animate_fight(scene: Scene, start_enemies: dict, start_players: dict, logs: 
     frames: list[Image.Image] = []
     durations: list[int] = []
 
-    def push(img: Image.Image, ms: int = step_ms, shake: tuple[int, int] = (0, 0)) -> None:
-        if shake != (0, 0):
-            img = ImageChops.offset(img, *shake)
+    def push(img: Image.Image, ms: int = step_ms) -> None:
         frames.append(img.convert("RGB").resize((width, height), Image.BILINEAR))
         durations.append(ms)
 
@@ -166,6 +177,9 @@ def animate_fight(scene: Scene, start_enemies: dict, start_players: dict, logs: 
                 push(img, ms)
         items = combat_fx.collect_fx(events, scene.anchors, (FRAME_W, FRAME_H), seed=log.turn_number)
         crit = any(e["kind"] in ("crit", "execute") for e in events)
+        # Le monstre frappé d'un critique tremble (lui seul : faire trembler
+        # toute l'image réécrivait le décor entier dans le GIF, mesuré ×2).
+        shaken = {e["target"] for e in events if e["kind"] in ("crit", "execute") and e["target"].startswith("e")}
         flashes = _flash_sprites(scene, events)
         if not items and not events:
             n = 1 if frames_per_action < FRAMES_PER_ACTION else QUIET_FRAMES
@@ -173,13 +187,19 @@ def animate_fight(scene: Scene, start_enemies: dict, start_players: dict, logs: 
             n = frames_per_action + (CRIT_EXTRA_FRAMES if crit and frames_per_action >= FRAMES_PER_ACTION else 0)
         for k in range(n):
             t_bar = min(1.0, (k + 1) / 3)
-            frame = scene.static(dead if k < 2 else new_dead).copy()
+            if shaken and k < 2:
+                frame = _shaken_static(scene, dead, shaken,
+                                       (SHAKE_PX, -SHAKE_PX // 2) if k == 0 else (-SHAKE_PX // 2, SHAKE_PX // 3))
+            else:
+                frame = scene.static(dead if k < 2 else new_dead).copy()
             if k == 0:
                 for img, pos in flashes:
                     frame.alpha_composite(img, pos)
             scene.draw_bars(frame, _lerp_values(enemies, target_enemies, t_bar),
                             _lerp_values(players, target_players, t_bar))
-            fade = 1.0 if k < 2 else max(0.0, 1 - (k - 1) / max(1, n - 1))
+            # L'effet est un ÉCLAT bref (2 images, une 3e en fondu) : son fondu
+            # lent sur un décor détaillé doublait le poids du GIF (mesuré).
+            fade = 1.0 if k < 2 else (0.45 if k == 2 else 0.0)
             for item in items:
                 if item.role == "effect":
                     _paste(frame, item, 0.85 if k == 0 else 1.0, fade)
@@ -187,9 +207,7 @@ def animate_fight(scene: Scene, start_enemies: dict, start_players: dict, logs: 
                     scale = 1.35 if k == 0 else (1.1 if k == 1 else 1.0)
                     alpha = 1.0 if k < n - 1 else 0.55
                     _paste(frame, item, scale, alpha, dy=-9 * max(0, k - 1))
-            shake = ((SHAKE_PX, -SHAKE_PX // 2) if k == 0 else (-SHAKE_PX // 2, SHAKE_PX // 3)) \
-                if crit and k < 2 else (0, 0)
-            push(frame, shake=shake)
+            push(frame)
         enemies, players, dead = target_enemies, target_players, new_dead
 
     if durations:
