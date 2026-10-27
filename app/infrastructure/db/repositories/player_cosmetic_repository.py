@@ -7,6 +7,7 @@ from datetime import datetime, UTC
 from sqlalchemy.orm import Session
 
 from app.infrastructure.db.models.player_cosmetic_model import PlayerCosmeticModel
+from app.infrastructure.db.unit_of_work import commit
 
 #: Emplacements d'apparence (colonnes de `player_cosmetics`).
 COSMETIC_SLOTS: tuple[str, ...] = ("fond", "cadre", "titre")
@@ -32,4 +33,4 @@ class PlayerCosmeticRepository:
             self.session.add(row)
         setattr(row, slot, code or None)
         row.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit(self.session)

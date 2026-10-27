@@ -9,6 +9,7 @@ from app.infrastructure.db.repositories.inventory_repository import InventoryRep
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.trade_repository import TradeRepository
+from app.infrastructure.db.unit_of_work import transactional
 
 
 @dataclass
@@ -47,6 +48,7 @@ class AcceptTradeUseCase:
         self.item_repository = item_repository
         self.trade_repository = trade_repository
 
+    @transactional
     def execute(
         self,
         trade_id: int,
@@ -109,13 +111,9 @@ class AcceptTradeUseCase:
         try:
             self._execute_swap(initiator_profile, target_profile, trade)
         except Exception:
-            # Si quoi que ce soit échoue dans le swap, on rollback la transaction
-            # active SQLAlchemy. add_gold/add_item/remove_item commitent chacun
-            # à leur tour donc une erreur entre deux peut laisser un état
-            # partiel — pour la robustesse, on revérifie ET on tente une
-            # compensation par revert. Ici on s'appuie sur la revérif préalable
-            # et le fait que les opérations sont simples (très peu de risques
-            # d'échec transitoire).
+            # Tout `execute` est atomique (@transactional, unit_of_work) : les
+            # dépôts n'ont rien validé, le rollback annule TOUT l'échange ;
+            # seul le statut FAILED ci-dessous est enregistré.
             self.session.rollback()
             self.trade_repository.update_status(trade.id, TradeStatus.FAILED)
             return AcceptTradeResult(

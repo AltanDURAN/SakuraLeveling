@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.infrastructure.db.models.mob_model import MobDefinitionModel
 from app.infrastructure.db.models.player_mob_kill_model import PlayerMobKillModel
 from app.infrastructure.db.models.player_model import PlayerModel
+from app.infrastructure.db.unit_of_work import commit
 
 
 class PlayerKillRepository:
@@ -25,7 +26,7 @@ class PlayerKillRepository:
         if count <= 0:
             if model is not None:
                 self.session.delete(model)
-                self.session.commit()
+                commit(self.session)
             return
 
         if model is None:
@@ -40,7 +41,7 @@ class PlayerKillRepository:
         else:
             model.kill_count = count
             model.updated_at = now
-        self.session.commit()
+        commit(self.session)
 
     def increment(self, player_id: int, mob_code: str, amount: int = 1) -> None:
         stmt = select(PlayerMobKillModel).where(
@@ -64,7 +65,7 @@ class PlayerKillRepository:
             model.kill_count += amount
             model.updated_at = now
 
-        self.session.commit()
+        commit(self.session)
 
     def get_total_kills(self, player_id: int) -> int:
         stmt = select(func.coalesce(func.sum(PlayerMobKillModel.kill_count), 0)).where(

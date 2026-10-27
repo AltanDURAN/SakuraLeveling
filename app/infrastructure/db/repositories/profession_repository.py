@@ -7,6 +7,7 @@ from app.infrastructure.db.models.profession_model import (
     ProfessionDefinitionModel,
     PlayerProfessionModel,
 )
+from app.infrastructure.db.unit_of_work import commit
 
 
 class ProfessionRepository:
@@ -63,7 +64,7 @@ class ProfessionRepository:
                 updated_at=now,
             )
             self.session.add(model)
-            self.session.commit()
+            commit(self.session)
             self.session.refresh(model)
 
         return PlayerProfession(
@@ -86,7 +87,7 @@ class ProfessionRepository:
         model.level = level
         model.xp = xp
         model.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit(self.session)
         
     def list_player_professions_with_definitions(
         self,

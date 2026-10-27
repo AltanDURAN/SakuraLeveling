@@ -8,6 +8,7 @@ from app.infrastructure.db.models.gear_model import PlayerGearModel
 from app.infrastructure.db.models.item_model import ItemDefinitionModel
 from app.infrastructure.db.models.player_model import PlayerModel
 from app.infrastructure.db.models.trade_model import TradeItemModel, TradeModel
+from app.infrastructure.db.unit_of_work import commit
 
 
 class TradeRepository:
@@ -50,7 +51,7 @@ class TradeRepository:
                     created_at=now,
                 )
             )
-        self.session.commit()
+        commit(self.session)
         return self.get_by_id(trade.id)
 
     # ---------- lecture ----------
@@ -99,7 +100,7 @@ class TradeRepository:
             .values(status=TradeStatus.EXPIRED.value, updated_at=now)
         )
         result = self.session.execute(stmt)
-        self.session.commit()
+        commit(self.session)
         return result.rowcount or 0
 
     def update_status(
@@ -113,7 +114,7 @@ class TradeRepository:
         trade.updated_at = now
         if completed:
             trade.completed_at = now
-        self.session.commit()
+        commit(self.session)
 
     # ---------- conversion en domain ----------
 

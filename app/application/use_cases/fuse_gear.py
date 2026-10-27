@@ -30,6 +30,8 @@ from app.infrastructure.db.repositories.inventory_repository import InventoryRep
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.work_order_repository import WorkOrderRepository
+from app.infrastructure.db.unit_of_work import commit
+from app.infrastructure.db.unit_of_work import transactional
 
 
 @dataclass(frozen=True)
@@ -156,6 +158,7 @@ class FuseGearUseCase:
         )
 
     # --------------------------------------------------------- écriture --
+    @transactional
     def fuse(self, definition: ArtisanDefinition, player_id: int,
              item_code: str, rarity: str) -> FusionResult:
         # Tout est revérifié ici : l'aperçu a pu être affiché il y a des minutes.
@@ -193,7 +196,7 @@ class FuseGearUseCase:
         if preview.gold_cost:
             self.players.add_gold(player_id, -preview.gold_cost)
         self.orders.increment_mastery(player_id, definition.code)
-        self.session.commit()
+        commit(self.session)
         label = RARITY_LABELS[preview.target_rarity].lower()
         return FusionResult(
             True,

@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
+from app.infrastructure.db.unit_of_work import commit
 
 
 class QuestAssignmentRepository:
@@ -42,7 +43,7 @@ class QuestAssignmentRepository:
                 objective_target=quest.target, objective_quantity=quest.quantity,
                 progress=0, completed=False, claimed=False, created_at=now, updated_at=now,
             ))
-        self.session.commit()
+        commit(self.session)
 
     def add_progress_for(self, player_id: int, period_start: datetime, objective_type: str,
                          amount: int, target: str | None = None) -> list:
@@ -62,7 +63,7 @@ class QuestAssignmentRepository:
                 model.completed = True
                 done.append(model)
             model.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit(self.session)
         return done
 
     def mark_claimed(self, player_id: int, period_start: datetime, quest_code: str) -> bool:
@@ -70,10 +71,10 @@ class QuestAssignmentRepository:
             if model.quest_code == quest_code and model.completed and not model.claimed:
                 model.claimed = True
                 model.updated_at = datetime.now(UTC)
-                self.session.commit()
+                commit(self.session)
                 return True
         return False
 
     def delete_for_player(self, player_id: int) -> None:
         self.session.execute(delete(self.model).where(self.model.player_id == player_id))
-        self.session.commit()
+        commit(self.session)

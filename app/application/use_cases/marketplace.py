@@ -51,6 +51,7 @@ from app.infrastructure.db.repositories.marketplace_repository import (
     MarketplaceRepository,
 )
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
+from app.infrastructure.db.unit_of_work import transactional
 
 
 MARKETPLACE_COMMISSION_PCT = 5  # 5% prélevé sur les ventes
@@ -87,6 +88,7 @@ class ListItemForSaleUseCase:
         self.marketplace_repository = marketplace_repository
         self.gear_repository = gear_repository or GearRepository(marketplace_repository.session)
 
+    @transactional
     def execute(
         self,
         seller_discord_id: int,
@@ -233,6 +235,7 @@ class BuyMarketplaceListingUseCase:
         self.marketplace_repository = marketplace_repository
         self.gear_repository = gear_repository or GearRepository(marketplace_repository.session)
 
+    @transactional
     def execute(
         self,
         buyer_discord_id: int,
@@ -328,6 +331,7 @@ class CancelMarketplaceListingUseCase:
         self.marketplace_repository = marketplace_repository
         self.gear_repository = gear_repository or GearRepository(marketplace_repository.session)
 
+    @transactional
     def execute(
         self,
         seller_discord_id: int,
@@ -380,6 +384,7 @@ class ExpireMarketplaceListingsUseCase:
         self.marketplace_repository = marketplace_repository
         self.gear_repository = gear_repository or GearRepository(marketplace_repository.session)
 
+    @transactional
     def execute(self) -> ExpireResult:
         expired = self.marketplace_repository.expire_overdue()
         items_returned: list[tuple[int, int, int]] = []

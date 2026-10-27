@@ -54,6 +54,7 @@ GLOBAL_TABLES = (
     RoleTrialScoreModel,
     RoleTrialWeekModel,
 )
+from app.infrastructure.db.unit_of_work import commit
 
 
 @dataclass
@@ -90,5 +91,5 @@ def reset_season(session: Session, queue_role_reset: bool = True) -> SeasonReset
     if queue_role_reset:
         AdminCommandRepository(session).enqueue("reset_rank_roles")
         report.roles_queued = True
-    session.commit()
+    commit(session)
     return report

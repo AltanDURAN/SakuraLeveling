@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.domain.entities.player_quest_state import PlayerQuestState
 from app.domain.entities.quest_definition import QuestDefinition
 from app.infrastructure.db.models.quest_model import PlayerQuestStateModel, QuestDefinitionModel
+from app.infrastructure.db.unit_of_work import commit
 
 
 class QuestRepository:
@@ -51,7 +52,7 @@ class QuestRepository:
         )
 
         self.session.add(model)
-        self.session.commit()
+        commit(self.session)
         self.session.refresh(model)
 
         return self._to_definition_domain(model)
@@ -79,7 +80,7 @@ class QuestRepository:
                 updated_at=now,
             )
             self.session.add(model)
-            self.session.commit()
+            commit(self.session)
             self.session.refresh(model)
 
         return self._to_state_domain(model)
@@ -109,7 +110,7 @@ class QuestRepository:
         model.progress_quantity = progress_quantity
         model.is_completed = is_completed
         model.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit(self.session)
 
     def mark_claimed(self, player_id: int, quest_definition_id: int) -> None:
         stmt = select(PlayerQuestStateModel).where(
@@ -122,7 +123,7 @@ class QuestRepository:
 
         model.is_claimed = True
         model.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit(self.session)
 
     def _to_definition_domain(self, model: QuestDefinitionModel) -> QuestDefinition:
         return QuestDefinition(
@@ -179,7 +180,7 @@ class QuestRepository:
         model.reward_items = reward_items
         model.updated_at = datetime.now(UTC)
 
-        self.session.commit()
+        commit(self.session)
         self.session.refresh(model)
 
         return self._to_definition_domain(model)

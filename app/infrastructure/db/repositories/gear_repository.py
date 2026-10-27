@@ -11,6 +11,7 @@ from app.domain.entities.player_gear import PlayerGear
 from app.domain.services.gear_service import Rarity, clamp_forge, rarity_index
 from app.infrastructure.db.models.gear_model import PlayerGearModel
 from app.infrastructure.db.repositories._mappers import map_item_definition
+from app.infrastructure.db.unit_of_work import commit as commit_session
 
 
 class GearRepository:
@@ -59,7 +60,7 @@ class GearRepository:
         )
         self.session.add(model)
         if commit:
-            self.session.commit()
+            commit_session(self.session)
         else:
             self.session.flush()
         self.session.refresh(model)
@@ -71,7 +72,7 @@ class GearRepository:
             return False
         self.session.delete(model)
         if commit:
-            self.session.commit()
+            commit_session(self.session)
         return True
 
     def transfer(self, gear_id: int, new_player_id: int, commit: bool = True) -> bool:
@@ -85,7 +86,7 @@ class GearRepository:
         model.source = "trade"
         model.updated_at = datetime.now(UTC)
         if commit:
-            self.session.commit()
+            commit_session(self.session)
         return True
 
     def set_slot(self, gear_id: int, slot: str | None, commit: bool = True) -> None:
@@ -95,7 +96,7 @@ class GearRepository:
         model.equipped_slot = slot
         model.updated_at = datetime.now(UTC)
         if commit:
-            self.session.commit()
+            commit_session(self.session)
 
     def set_listed(self, gear_id: int, listed: bool, commit: bool = True) -> None:
         model = self.session.get(PlayerGearModel, gear_id)
@@ -104,7 +105,7 @@ class GearRepository:
         model.listed = listed
         model.updated_at = datetime.now(UTC)
         if commit:
-            self.session.commit()
+            commit_session(self.session)
 
     def increment_forge(self, gear_id: int, amount: int = 1) -> int:
         model = self.session.get(PlayerGearModel, gear_id)
@@ -112,7 +113,7 @@ class GearRepository:
             return 0
         model.forge_level = clamp_forge(model.forge_level + amount)
         model.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit_session(self.session)
         return model.forge_level
 
     def _to_domain(self, model: PlayerGearModel) -> PlayerGear:

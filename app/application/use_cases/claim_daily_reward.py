@@ -10,6 +10,7 @@ from app.infrastructure.db.repositories.player_career_stats_repository import (
 )
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.shared.enums import CooldownAction
+from app.infrastructure.db.unit_of_work import transactional
 
 
 @dataclass
@@ -52,6 +53,7 @@ class ClaimDailyRewardUseCase:
         self.cooldown_service = cooldown_service
         self.career_stats_repository = career_stats_repository
 
+    @transactional
     def execute(
         self,
         discord_id: int,

@@ -12,6 +12,7 @@ from __future__ import annotations
 from app.domain.services.gear_service import rarity_index
 from app.infrastructure.db.repositories.gear_repository import GearRepository
 from app.shared.enums import EQUIPABLE_CATEGORIES
+from app.infrastructure.db.unit_of_work import commit
 
 #: Garde-fou : c'est un outil de test, pas une usine.
 MAX_COPIES_PER_GIFT = 20
@@ -28,7 +29,7 @@ def give_gear(session, player_id: int, item, quantity: int,
     quantity = max(0, min(quantity, MAX_COPIES_PER_GIFT))
     for _ in range(quantity):
         repo.add(player_id, item.id, rarity, forge_level, source="admin", commit=False)
-    session.commit()
+    commit(session)
     return quantity
 
 
@@ -43,5 +44,5 @@ def take_gear(session, player_id: int, item, quantity: int) -> int:
     )[:max(0, quantity)]
     for g in copies:
         repo.remove(g.id, commit=False)
-    session.commit()
+    commit(session)
     return len(copies)

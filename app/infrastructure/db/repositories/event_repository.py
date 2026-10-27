@@ -18,6 +18,7 @@ from app.infrastructure.db.models.event_model import (
     EventParticipationModel,
     EventSchedulerStateModel,
 )
+from app.infrastructure.db.unit_of_work import commit
 
 GLOBAL_KEY = "__global__"
 
@@ -110,7 +111,7 @@ class EventRepository:
             )
             .values(winner_player_id=player_id, status="resolved")
         )
-        self.session.commit()
+        commit(self.session)
         return (result.rowcount or 0) == 1
 
     # ---------- participations ----------

@@ -16,7 +16,7 @@ import json
 import logging
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from app.domain.services.combat_passives import DAMAGE_REDUCTION_WARNING, FEATURES
 from app.infrastructure.skill_tree import skill_tree_loader
@@ -405,3 +405,9 @@ def find_cycle(nodes: dict, links: list) -> list[str] | None:
             if found:
                 return found
     return None
+
+
+@router.get("", response_class=HTMLResponse)
+async def skill_tree_list(user: AdminUser = Depends(require_admin)):
+    """Ancienne liste de l'arbre : l'arbre (format v2) s'édite dans le builder."""
+    return RedirectResponse("/admin/skill-tree/builder", status_code=303)

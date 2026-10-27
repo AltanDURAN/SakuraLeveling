@@ -38,6 +38,7 @@ _REF_MODELS = (
     MarketplaceListingModel,
     ShopItemModel,
 )
+from app.infrastructure.db.unit_of_work import commit
 
 
 class DeleteItemUseCase:
@@ -58,7 +59,7 @@ class DeleteItemUseCase:
                 removed[model.__tablename__] = res.rowcount
 
         session.delete(item)
-        session.commit()
+        commit(session)
         return DeleteItemResult(
             deleted=True, code=code, removed_refs=removed,
         )

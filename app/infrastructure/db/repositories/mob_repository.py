@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.domain.entities.mob_definition import MobDefinition
 from app.infrastructure.db.models.mob_model import MobDefinitionModel
+from app.infrastructure.db.unit_of_work import commit
 
 
 class MobRepository:
@@ -83,7 +84,7 @@ class MobRepository:
         )
 
         self.session.add(model)
-        self.session.commit()
+        commit(self.session)
         self.session.refresh(model)
 
         return self._to_domain(model)
@@ -96,7 +97,7 @@ class MobRepository:
             return
 
         model.current_hp = max(0, min(current_hp, model.max_hp))
-        self.session.commit()
+        commit(self.session)
 
     def reset_current_hp(self, code: str) -> None:
         stmt = select(MobDefinitionModel).where(MobDefinitionModel.code == code)
@@ -106,7 +107,7 @@ class MobRepository:
             return
 
         model.current_hp = model.max_hp
-        self.session.commit()
+        commit(self.session)
 
     def list_distinct_families(self) -> list[str]:
         stmt = select(MobDefinitionModel.family).distinct().order_by(MobDefinitionModel.family)
@@ -199,7 +200,7 @@ class MobRepository:
         model.loot_table_json = loot_table
         model.updated_at = datetime.now(UTC)
 
-        self.session.commit()
+        commit(self.session)
         self.session.refresh(model)
 
         return self._to_domain(model)

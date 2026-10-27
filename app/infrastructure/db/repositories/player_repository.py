@@ -13,6 +13,7 @@ from app.infrastructure.db.models.resource_model import PlayerResourceModel
 from app.infrastructure.db.repositories.element_affinity_repository import (
     ElementAffinityRepository,
 )
+from app.infrastructure.db.unit_of_work import commit as commit_session
 
 
 class PlayerRepository:
@@ -78,7 +79,7 @@ class PlayerRepository:
         player_model.resources = resource_model
 
         self.session.add(player_model)
-        self.session.commit()
+        commit_session(self.session)
         self.session.refresh(player_model)
 
         self._ensure_elemental_setup(player_model.id)
@@ -113,7 +114,7 @@ class PlayerRepository:
             changed = True
         if changed:
             player_model.updated_at = datetime.now(UTC)
-            self.session.commit()
+            commit_session(self.session)
 
     def get_or_create_by_discord_id(
         self,
@@ -143,7 +144,7 @@ class PlayerRepository:
         # un solde négatif si un admin passe un amount<0 par erreur.
         progression.xp = max(0, progression.xp + amount)
         progression.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit_session(self.session)
 
     def add_gold(self, player_id: int, gold: int, commit: bool = True) -> None:
         resources = self.session.get(PlayerResourceModel, player_id)
@@ -155,7 +156,7 @@ class PlayerRepository:
         # profondeur contre une race ou un appel admin malformé.
         resources.gold = max(0, resources.gold + gold)
         resources.updated_at = datetime.now(UTC)
-        self.session.commit() if commit else self.session.flush()
+        commit_session(self.session) if commit else self.session.flush()
 
     def set_gold(self, player_id: int, gold: int) -> None:
         resources = self.session.get(PlayerResourceModel, player_id)
@@ -164,7 +165,7 @@ class PlayerRepository:
 
         resources.gold = max(0, gold)
         resources.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit_session(self.session)
 
     def increment_daily_streak(self, player_id: int) -> int:
         """Incrémente la série /daily du joueur de 1 et renvoie la nouvelle valeur."""
@@ -174,7 +175,7 @@ class PlayerRepository:
 
         resources.daily_streak += 1
         resources.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit_session(self.session)
         return resources.daily_streak
 
     def set_daily_streak(self, player_id: int, streak: int) -> None:
@@ -183,7 +184,7 @@ class PlayerRepository:
             return
         resources.daily_streak = max(0, streak)
         resources.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit_session(self.session)
 
     def set_combat_tactic(self, player_id: int, tactic: str) -> None:
         player_model = self.session.get(PlayerModel, player_id)
@@ -191,7 +192,7 @@ class PlayerRepository:
             return
         player_model.combat_tactic = tactic
         player_model.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit_session(self.session)
 
     def set_panoplie_bonus(self, player_id: int, bonus_type: str) -> None:
         player_model = self.session.get(PlayerModel, player_id)
@@ -199,7 +200,7 @@ class PlayerRepository:
             return
         player_model.panoplie_bonus = bonus_type
         player_model.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit_session(self.session)
 
     def get_combat_tactics(self, player_ids: list[int]) -> dict[int, str]:
         """Tactiques de plusieurs joueurs en une requête (combats de groupe)."""
@@ -216,7 +217,7 @@ class PlayerRepository:
             return
         progression.skill_points = max(0, progression.skill_points + amount)
         progression.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit_session(self.session)
 
     def set_skill_points(self, player_id: int, amount: int) -> None:
         progression = self.session.get(PlayerProgressionModel, player_id)
@@ -224,7 +225,7 @@ class PlayerRepository:
             return
         progression.skill_points = max(0, amount)
         progression.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit_session(self.session)
 
     def allocate_stat_point(
         self, player_id: int, target: str, amount: int = 1,
@@ -250,7 +251,7 @@ class PlayerRepository:
         setattr(progression, column, getattr(progression, column) + amount)
         progression.stat_points -= amount
         progression.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit_session(self.session)
         return True
 
     def reset_stat_points(self, player_id: int) -> int:
@@ -265,7 +266,7 @@ class PlayerRepository:
             progression.points_attack = progression.points_defense = progression.points_max_hp = 0
             progression.stat_points = (progression.stat_points or 0) + refunded
             progression.updated_at = datetime.now(UTC)
-            self.session.commit()
+            commit_session(self.session)
         return refunded
 
     def apply_progression(
@@ -287,7 +288,7 @@ class PlayerRepository:
         progression.skill_points = new_skill_points
         progression.updated_at = datetime.now(UTC)
 
-        self.session.commit()
+        commit_session(self.session)
 
     def _update_identity_metadata(self, player_id: int, username: str, display_name: str) -> None:
         player_model = self.session.get(PlayerModel, player_id)
@@ -299,7 +300,7 @@ class PlayerRepository:
         player_model.last_seen_at = datetime.now(UTC)
         player_model.updated_at = datetime.now(UTC)
 
-        self.session.commit()
+        commit_session(self.session)
 
     def list_all_profiles(self) -> list[PlayerProfile]:
         stmt = select(PlayerModel).options(

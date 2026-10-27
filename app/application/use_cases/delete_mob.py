@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.infrastructure.db.models.mob_model import MobDefinitionModel
 from app.infrastructure.db.models.player_mob_kill_model import PlayerMobKillModel
+from app.infrastructure.db.unit_of_work import commit
 
 
 @dataclass
@@ -34,5 +35,5 @@ class DeleteMobUseCase:
             delete(PlayerMobKillModel).where(PlayerMobKillModel.mob_code == code)
         )
         session.delete(mob)
-        session.commit()
+        commit(session)
         return DeleteMobResult(deleted=True, code=code, kills_removed=res.rowcount or 0)

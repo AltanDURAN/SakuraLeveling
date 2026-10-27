@@ -41,7 +41,7 @@ SessionLocal = sessionmaker(
 
 
 @contextmanager
-def get_db_session():
+def get_db_session(atomic: bool = False):
     """Session DB avec frontière transactionnelle de DÉFENSE EN PROFONDEUR.
 
     Les repos commitent toujours leurs propres opérations (sémantique inchangée
@@ -49,10 +49,20 @@ def get_db_session():
     d'exception remontant ici, on rollback explicitement les changements
     non-commités avant de fermer. Avant : la session se fermait sans rollback
     et la prochaine session pouvait hériter d'un état zombie (cf. audit A1).
+
+    `atomic=True` : tout le bloc est UNE transaction — validée à la fin, ou
+    annulée en entier sur exception (cf. `unit_of_work.atomic`).
     """
     session = SessionLocal()
     try:
-        yield session
+        if atomic:
+            # Tout le bloc est une seule transaction (cf. unit_of_work).
+            from app.infrastructure.db.unit_of_work import atomic as _atomic
+
+            with _atomic(session):
+                yield session
+        else:
+            yield session
     except Exception:
         # Rollback explicite : un session.close() seul n'annule pas une
         # transaction en cours d'écriture côté SQLAlchemy.

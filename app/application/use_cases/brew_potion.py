@@ -19,6 +19,8 @@ from app.infrastructure.db.repositories.inventory_repository import InventoryRep
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.work_order_repository import WorkOrderRepository
+from app.infrastructure.db.unit_of_work import commit
+from app.infrastructure.db.unit_of_work import transactional
 
 #: Lot maximal en une fois (garde-fou de l'interface).
 MAX_BATCH = 50
@@ -108,6 +110,7 @@ class BrewPotionUseCase:
         return AlchemyStatus(level, gold, orders, tier, tuple(recipes))
 
     # ---------------------------------------------------------- écriture --
+    @transactional
     def brew(self, player_id: int, item_code: str, quantity: int) -> BrewResult:
         # Tout est revérifié ici : l'écran a pu être affiché il y a des minutes.
         quantity = max(1, min(MAX_BATCH, int(quantity)))
@@ -139,7 +142,7 @@ class BrewPotionUseCase:
         if fee:
             self.players.add_gold(player_id, -fee, commit=False)
         self.orders.increment_mastery(player_id, self.definition.code, gold_spent=fee, amount=quantity)
-        self.session.commit()
+        commit(self.session)
 
         message = f"🧪 {quantity} × **{line.item_name}** préparée(s) pour {fee} or."
         if bonus:

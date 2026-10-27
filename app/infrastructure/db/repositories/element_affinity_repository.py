@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.domain.services.element_talent_service import ElementTalent, roll_talents
 from app.infrastructure.db.models.element_affinity_model import PlayerElementAffinityModel
 from app.shared.enums import ALL_ELEMENTS
+from app.infrastructure.db.unit_of_work import commit
 
 
 class ElementAffinityRepository:
@@ -67,7 +68,7 @@ class ElementAffinityRepository:
             ElementEssenceRepository,
         )
         ElementEssenceRepository(self.session).reset_for_player(player_id)
-        self.session.commit()
+        commit(self.session)
 
     def _rows(self, player_id: int) -> dict:
         stmt = select(PlayerElementAffinityModel).where(
@@ -138,7 +139,7 @@ class ElementAffinityRepository:
         else:
             row.value = value
             row.updated_at = now
-        self.session.commit()
+        commit(self.session)
 
     def add_affinity(self, player_id: int, element: str, delta: int) -> int:
         """Incrémente (item d'affinité / admin). Renvoie la nouvelle valeur."""
@@ -152,4 +153,4 @@ class ElementAffinityRepository:
                 PlayerElementAffinityModel.player_id == player_id,
             )
         )
-        self.session.commit()
+        commit(self.session)

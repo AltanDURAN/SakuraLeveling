@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.domain.entities.player_career_stats import PlayerCareerStats
 from app.infrastructure.db.models.player_career_stats_model import PlayerCareerStatsModel
+from app.infrastructure.db.unit_of_work import commit
 
 
 class PlayerCareerStatsRepository:
@@ -28,7 +29,7 @@ class PlayerCareerStatsRepository:
                 updated_at=now,
             )
             self.session.add(model)
-            self.session.commit()
+            commit(self.session)
             self.session.refresh(model)
         return self._to_domain(model)
 
@@ -83,14 +84,14 @@ class PlayerCareerStatsRepository:
             model.combats_lost = (model.combats_lost or 0) + combats_lost
 
         model.updated_at = now
-        self.session.commit()
+        commit(self.session)
 
     def reset_for_player(self, player_id: int) -> None:
         model = self.session.get(PlayerCareerStatsModel, player_id)
         if model is None:
             return
         self.session.delete(model)
-        self.session.commit()
+        commit(self.session)
 
     def _to_domain(self, model: PlayerCareerStatsModel) -> PlayerCareerStats:
         return PlayerCareerStats(

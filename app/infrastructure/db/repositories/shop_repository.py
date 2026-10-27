@@ -7,6 +7,7 @@ from app.domain.entities.shop_item import ShopItem
 from app.infrastructure.db.models.item_model import ItemDefinitionModel
 from app.infrastructure.db.models.shop_item_model import ShopItemModel
 from app.infrastructure.db.repositories._mappers import map_item_definition
+from app.infrastructure.db.unit_of_work import commit
 
 
 class ShopRepository:
@@ -63,7 +64,7 @@ class ShopRepository:
             updated_at=now,
         )
         self.session.add(model)
-        self.session.commit()
+        commit(self.session)
         self.session.refresh(model)
         return self._to_domain(model)
 
@@ -99,7 +100,7 @@ class ShopRepository:
             model.max_owned = max_owned
 
         model.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit(self.session)
         self.session.refresh(model)
         return self._to_domain(model)
 
@@ -108,7 +109,7 @@ class ShopRepository:
         if model is None:
             return False
         self.session.delete(model)
-        self.session.commit()
+        commit(self.session)
         return True
 
     def add_to_stock(self, shop_item_id: int, quantity: int) -> ShopItem | None:
@@ -117,7 +118,7 @@ class ShopRepository:
             return None
         model.current_stock = max(0, model.current_stock + quantity)
         model.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit(self.session)
         self.session.refresh(model)
         return self._to_domain(model)
 
@@ -127,7 +128,7 @@ class ShopRepository:
             return None
         model.current_stock = max(0, stock)
         model.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit(self.session)
         self.session.refresh(model)
         return self._to_domain(model)
 

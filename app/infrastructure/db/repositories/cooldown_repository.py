@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.domain.value_objects.cooldown import Cooldown
 from app.infrastructure.db.models.cooldown_model import PlayerCooldownModel
+from app.infrastructure.db.unit_of_work import commit
 
 
 class CooldownRepository:
@@ -62,7 +63,7 @@ class CooldownRepository:
             model.next_available_at = next_available_at
             model.updated_at = now
 
-        self.session.commit()
+        commit(self.session)
 
     def _to_domain(self, model: PlayerCooldownModel) -> Cooldown:
         return Cooldown(

@@ -16,6 +16,7 @@ from app.infrastructure.db.repositories.element_affinity_repository import (
 )
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.shared.enums import ALL_ELEMENTS
+from app.infrastructure.db.unit_of_work import commit
 
 
 @dataclass(frozen=True)
@@ -74,5 +75,5 @@ class RevealElementTalentUseCase:
         if price:
             self.players.add_gold(player_id, -price)  # commit (révélation comprise)
         else:
-            self.session.commit()
+            commit(self.session)
         return RevealResult(True, "", element, talent, price)

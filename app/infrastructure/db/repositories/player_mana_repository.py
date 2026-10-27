@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.domain.entities.player_mana_state import PlayerManaState
 from app.infrastructure.db.models.player_mana_state_model import PlayerManaStateModel
+from app.infrastructure.db.unit_of_work import commit
 
 
 class PlayerManaRepository:
@@ -36,7 +37,7 @@ class PlayerManaRepository:
         )
 
         self.session.add(model)
-        self.session.commit()
+        commit(self.session)
         self.session.refresh(model)
 
         return PlayerManaState(
@@ -63,7 +64,7 @@ class PlayerManaRepository:
 
         model.current_mana = current_mana
         model.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit(self.session)
 
     def refresh_current_mana(
         self,
@@ -80,7 +81,7 @@ class PlayerManaRepository:
 
         model.current_mana = new_current_mana
         model.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit(self.session)
         self.session.refresh(model)
 
         return PlayerManaState(

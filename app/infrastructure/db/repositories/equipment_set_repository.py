@@ -14,6 +14,7 @@ from app.infrastructure.db.models.equipment_set_model import (
 )
 from app.domain.entities.item_definition import ItemDefinition
 from app.infrastructure.db.repositories._mappers import map_item_definition
+from app.infrastructure.db.unit_of_work import commit
 
 
 @dataclass
@@ -84,7 +85,7 @@ class EquipmentSetRepository:
                 slot=slot,
                 item_definition_id=item_def_id,
             ))
-        self.session.commit()
+        commit(self.session)
         # Recharge avec les relations
         return self.get_by_name(player_id, name)  # type: ignore[return-value]
 
@@ -97,7 +98,7 @@ class EquipmentSetRepository:
         if m is None:
             return False
         self.session.delete(m)
-        self.session.commit()
+        commit(self.session)
         return True
 
     def delete_for_player(self, player_id: int) -> int:
@@ -110,7 +111,7 @@ class EquipmentSetRepository:
         for m in models:
             self.session.delete(m)
             count += 1
-        self.session.commit()
+        commit(self.session)
         return count
 
     def _to_domain(

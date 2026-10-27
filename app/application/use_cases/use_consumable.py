@@ -50,6 +50,8 @@ from app.infrastructure.db.repositories.player_status_effect_repository import (
 from app.infrastructure.skill_tree.skill_tree_loader import (
     get_definition as get_skill_tree_definition,
 )
+from app.infrastructure.db.unit_of_work import commit
+from app.infrastructure.db.unit_of_work import transactional
 
 
 CONSUMABLE_CATEGORY = "consumable"
@@ -97,6 +99,7 @@ class UseConsumableUseCase:
         self.health_repository = health_repository
         self.stats_service = stats_service
 
+    @transactional
     def execute(
         self,
         discord_id: int,
@@ -255,7 +258,7 @@ class UseConsumableUseCase:
             return UseConsumableResult(False, f"❌ Vous n'avez pas de **{item.name}** en inventaire.", item.name)
         _, renewed = repo.apply_elixir(player_id, item.code, elixir.status_kind, elixir.multiplier,
                                        elixir.minutes * 60)
-        session.commit()
+        commit(session)
         lines = [
             f"🧪 **{item.name}** : {effect_text(item.stat_bonuses)}."
             + (" Il était déjà actif : sa durée repart à zéro (un même effet ne se cumule pas)."

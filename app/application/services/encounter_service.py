@@ -376,7 +376,7 @@ class EncounterService:
         final_turn = result.turn_logs[-1]
         final_players_state = final_turn.players_state
 
-        with get_db_session() as session:
+        with get_db_session(atomic=True) as session:
             player_health_repository = PlayerHealthRepository(session)
             mana_repo = PlayerManaRepository(session)
 
@@ -434,7 +434,9 @@ class EncounterService:
         reward_distribution_service = RewardDistributionService()
         loot_service = LootService()
 
-        with get_db_session() as session:
+        # Une seule transaction : or, objets, kills, titres et quêtes de TOUS
+        # les participants — validés ensemble, ou rien (unit_of_work).
+        with get_db_session(atomic=True) as session:
             mob_repository = MobRepository(session)
             mob = mob_repository.get_by_code(mob_code)
 

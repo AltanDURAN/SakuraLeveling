@@ -6,6 +6,7 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from app.infrastructure.db.models.player_title_model import PlayerTitleModel
+from app.infrastructure.db.unit_of_work import commit
 
 
 class PlayerTitleRepository:
@@ -50,7 +51,7 @@ class PlayerTitleRepository:
                 is_active=False,
             )
         )
-        self.session.commit()
+        commit(self.session)
         return True
 
     def remove_title(self, player_id: int, title_code: str) -> bool:
@@ -61,7 +62,7 @@ class PlayerTitleRepository:
                 PlayerTitleModel.title_code == title_code,
             )
         )
-        self.session.commit()
+        commit(self.session)
         return result.rowcount > 0
 
     def get_active_title_code(self, player_id: int) -> str | None:
@@ -82,7 +83,7 @@ class PlayerTitleRepository:
         )
 
         if title_code is None:
-            self.session.commit()
+            commit(self.session)
             return True
 
         # 2. Activer le code demandé (refus si pas débloqué)
@@ -95,7 +96,7 @@ class PlayerTitleRepository:
             self.session.rollback()
             return False
         model.is_active = True
-        self.session.commit()
+        commit(self.session)
         return True
 
     def delete_for_player(self, player_id: int) -> None:
@@ -104,4 +105,4 @@ class PlayerTitleRepository:
         self.session.execute(
             delete(PlayerTitleModel).where(PlayerTitleModel.player_id == player_id)
         )
-        self.session.commit()
+        commit(self.session)

@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from app.application.services.combat_passives_resolver import resolve_party_passives
 from app.application.services.exclusive_title_service import ExclusiveTitleService
 from app.application.services.player_stats_resolver import resolve_player_stats
+from app.infrastructure.db.unit_of_work import atomic
 from app.domain.entities.player_profile import PlayerProfile
 from app.domain.services import role_trial_service as rts
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
@@ -107,38 +108,40 @@ def settle_week(session: Session, week: date) -> dict | None:
     """Clôture la semaine : or du podium de chaque classement et titres de la
     semaine. Idempotent — None si déjà clôturée. Renvoie les résultats
     {clé: [{player_id, name, score, gold}]} pour l'annonce."""
-    repo = RoleTrialRepository(session)
-    if repo.is_settled(week):
-        return None
-    standings = week_standings(session, week)
-    players = PlayerRepository(session)
-    career = PlayerCareerStatsRepository(session)
+    # Or du podium et titres : tout ou rien (unit_of_work).
+    with atomic(session):
+        repo = RoleTrialRepository(session)
+        if repo.is_settled(week):
+            return None
+        standings = week_standings(session, week)
+        players = PlayerRepository(session)
+        career = PlayerCareerStatsRepository(session)
 
-    results: dict[str, list[dict]] = {}
-    payouts: list[tuple[int, int]] = []
-    for key, board in [*standings.roles.items(), (rts.GENERAL, standings.general)]:
-        podium = []
-        for place, (pid, score) in enumerate(board[:len(rts.REWARD_GOLD_PER_LEVEL)]):
-            profile = players.get_profile_by_player_id(pid)
-            if profile is None:
-                continue
-            gold = rts.reward_gold(place, profile.progression.level)
-            payouts.append((pid, gold))
-            podium.append({"player_id": pid, "discord_id": profile.player.discord_id,
-                           "name": profile.player.display_name, "score": score, "gold": gold})
-        results[key] = podium
+        results: dict[str, list[dict]] = {}
+        payouts: list[tuple[int, int]] = []
+        for key, board in [*standings.roles.items(), (rts.GENERAL, standings.general)]:
+            podium = []
+            for place, (pid, score) in enumerate(board[:len(rts.REWARD_GOLD_PER_LEVEL)]):
+                profile = players.get_profile_by_player_id(pid)
+                if profile is None:
+                    continue
+                gold = rts.reward_gold(place, profile.progression.level)
+                payouts.append((pid, gold))
+                podium.append({"player_id": pid, "discord_id": profile.player.discord_id,
+                               "name": profile.player.display_name, "score": score, "gold": gold})
+            results[key] = podium
 
-    repo.mark_settled(week, results)
-    for pid, gold in payouts:
-        if gold > 0:
-            players.add_gold(pid, gold)
-            career.add(pid, gold_earned=gold)
+        repo.mark_settled(week, results)
+        for pid, gold in payouts:
+            if gold > 0:
+                players.add_gold(pid, gold)
+                career.add(pid, gold_earned=gold)
 
-    titles = ExclusiveTitleService(session)
-    for key, code in rts.WEEKLY_TITLES.items():
-        podium = results.get(key) or []
-        if podium:
-            titles.award_to(code, podium[0]["player_id"])
-        else:
-            titles.revoke(code)   # personne cette semaine : le titre retombe
-    return results
+        titles = ExclusiveTitleService(session)
+        for key, code in rts.WEEKLY_TITLES.items():
+            podium = results.get(key) or []
+            if podium:
+                titles.award_to(code, podium[0]["player_id"])
+            else:
+                titles.revoke(code)   # personne cette semaine : le titre retombe
+        return results

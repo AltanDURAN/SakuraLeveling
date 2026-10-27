@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.infrastructure.db.models.player_skill_allocation_model import (
     PlayerSkillAllocationModel,
 )
+from app.infrastructure.db.unit_of_work import commit
 
 
 class PlayerSkillAllocationRepository:
@@ -56,7 +57,7 @@ class PlayerSkillAllocationRepository:
             model.level = level
             model.updated_at = now
 
-        self.session.commit()
+        commit(self.session)
 
     def delete_for_player(self, player_id: int) -> None:
         self.session.execute(
@@ -64,7 +65,7 @@ class PlayerSkillAllocationRepository:
                 PlayerSkillAllocationModel.player_id == player_id
             )
         )
-        self.session.commit()
+        commit(self.session)
 
     def player_ids_with_levels(self, min_levels: dict[str, int]) -> set[int]:
         """Joueurs ayant au moins une des cases `code` au niveau `min_level`

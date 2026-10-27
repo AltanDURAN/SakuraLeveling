@@ -19,6 +19,7 @@ from app.domain.entities.marketplace_listing import (
 from app.infrastructure.db.models.marketplace_listing_model import (
     MarketplaceListingModel,
 )
+from app.infrastructure.db.unit_of_work import commit as commit_session
 
 
 class MarketplaceRepository:
@@ -51,7 +52,7 @@ class MarketplaceRepository:
         )
         self.session.add(model)
         if commit:
-            self.session.commit()
+            commit_session(self.session)
         else:
             self.session.flush()
         return self._to_domain(model)
@@ -109,7 +110,7 @@ class MarketplaceRepository:
         model.status = ListingStatus.SOLD.value
         model.last_buyer_player_id = buyer_player_id
         model.closed_at = datetime.now(UTC)
-        self.session.commit()
+        commit_session(self.session)
         return self._to_domain(model)
 
     def mark_cancelled(self, listing_id: int) -> MarketplaceListing | None:
@@ -118,7 +119,7 @@ class MarketplaceRepository:
             return None
         model.status = ListingStatus.CANCELLED.value
         model.closed_at = datetime.now(UTC)
-        self.session.commit()
+        commit_session(self.session)
         return self._to_domain(model)
 
     def expire_overdue(self) -> list[MarketplaceListing]:
@@ -134,7 +135,7 @@ class MarketplaceRepository:
         for m in models:
             m.status = ListingStatus.EXPIRED.value
             m.closed_at = now
-        self.session.commit()
+        commit_session(self.session)
         return [self._to_domain(m) for m in models]
 
     # ---------- conversion ----------

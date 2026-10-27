@@ -22,6 +22,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.infrastructure.db.models.player_title_model import PlayerTitleModel
+from app.infrastructure.db.unit_of_work import commit
 
 
 class ExclusiveTitleService:
@@ -78,7 +79,7 @@ class ExclusiveTitleService:
                 )
             )
 
-        self.session.commit()
+        commit(self.session)
         return True
 
     def revoke(self, title_code: str) -> bool:
@@ -87,5 +88,5 @@ class ExclusiveTitleService:
         result = self.session.execute(
             delete(PlayerTitleModel).where(PlayerTitleModel.title_code == title_code)
         )
-        self.session.commit()
+        commit(self.session)
         return (result.rowcount or 0) > 0

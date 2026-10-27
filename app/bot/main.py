@@ -24,7 +24,9 @@ _logger = logging.getLogger("sakura.bot")
 
 
 _COG_MODULES = [
-    "app.bot.cogs.player_cog",
+    "app.bot.cogs.profile_cog",
+    "app.bot.cogs.equipment_cog",
+    "app.bot.cogs.economy_cog",
     "app.bot.cogs.encounter_cog",
     "app.bot.cogs.leaderboard_cog",
     "app.bot.cogs.admin_cog",

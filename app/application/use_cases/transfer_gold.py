@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
+from app.infrastructure.db.unit_of_work import transactional
 
 
 @dataclass
@@ -31,6 +32,7 @@ class TransferGoldUseCase:
     def __init__(self, player_repository: PlayerRepository):
         self.player_repository = player_repository
 
+    @transactional
     def execute(
         self,
         sender_discord_id: int,

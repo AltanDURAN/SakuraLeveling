@@ -21,6 +21,7 @@ from zoneinfo import ZoneInfo
 
 from app.application.services.set_bonus_resolver import resolve_set_bonuses
 from app.application.services.player_stats_resolver import resolve_player_stats
+from app.infrastructure.db.unit_of_work import transactional
 from app.application.services.status_effect_resolver import resolve_regen_boosts
 from app.domain.entities.boss_definition import BossDefinition
 from app.domain.entities.mob_definition import MobDefinition
@@ -484,6 +485,7 @@ class LaunchPartyFightWorldBossUseCase:
         self.cooldown_service = cooldown_service
         self.modifier_service = modifier_service or BossModifierService()
 
+    @transactional
     def execute(self, boss_id: int) -> PartyFightBossResult:
         from app.domain.services.party_combat_service import PartyCombatService
         from app.domain.services import element_service
@@ -822,6 +824,7 @@ class CompleteWorldBossUseCase:
         self.inventory_repository = inventory_repository
         self.progression_service = progression_service or ProgressionService()
 
+    @transactional
     def execute(self, boss_id: int) -> CompleteBossResult:
         boss = self.world_boss_repository.get_by_id(boss_id)
         if boss is None:

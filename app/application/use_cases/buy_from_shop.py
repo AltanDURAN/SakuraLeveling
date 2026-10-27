@@ -4,6 +4,7 @@ from app.domain.services.shop_pricing_service import ShopPricingService
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.shop_repository import ShopRepository
+from app.infrastructure.db.unit_of_work import transactional
 
 
 @dataclass
@@ -34,6 +35,7 @@ class BuyFromShopUseCase:
         self.shop_repository = shop_repository
         self.shop_pricing_service = shop_pricing_service
 
+    @transactional
     def execute(
         self,
         discord_id: int,

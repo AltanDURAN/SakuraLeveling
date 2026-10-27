@@ -9,6 +9,9 @@ from __future__ import annotations
 
 import discord
 
+from app.domain.entities.player_profile import PlayerProfile
+from app.infrastructure.db.repositories.player_repository import PlayerRepository
+
 
 class BetaChannelOnlyMixin:
     """Restreint les slash commands d'un cog au canal beta configuré.
@@ -38,3 +41,46 @@ class BetaChannelOnlyMixin:
         else:
             await interaction.response.send_message(message, ephemeral=True)
         return False
+
+
+class PlayerLookupMixin:
+    """`joueur` optionnel des commandes consultatives : soi par défaut
+    (profil créé au besoin), sinon lecture seule ; message si le joueur visé
+    n'a jamais joué. Partagé par ProfileCog, EquipmentCog, EconomyCog."""
+
+    def _resolve_profile(
+        self,
+        interaction: discord.Interaction,
+        target: discord.Member | None,
+        session,
+    ) -> tuple[PlayerProfile | None, discord.abc.User]:
+        """Renvoie (profile, target_member). Si target est None, get_or_create
+        le profil de l'auteur. Si target est spécifié, lookup pur (pas de
+        création). Le profil est None si target n'a jamais joué."""
+        repo = PlayerRepository(session)
+
+        if target is None:
+            target_member = interaction.user
+            profile = repo.get_or_create_by_discord_id(
+                discord_id=target_member.id,
+                username=target_member.name,
+                display_name=target_member.display_name,
+            )
+        else:
+            target_member = target
+            profile = repo.get_by_discord_id(target_member.id)
+
+        return profile, target_member
+
+    async def _send_no_profile_error(
+        self,
+        interaction: discord.Interaction,
+        target_member,
+    ) -> None:
+        message = (
+            f"❌ {target_member.display_name} n'a pas encore de profil joueur."
+        )
+        if interaction.response.is_done():
+            await interaction.followup.send(message, ephemeral=True)
+        else:
+            await interaction.response.send_message(message, ephemeral=True)

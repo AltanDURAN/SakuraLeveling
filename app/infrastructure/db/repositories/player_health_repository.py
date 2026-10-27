@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.domain.entities.player_health_state import PlayerHealthState
 from app.infrastructure.db.models.player_health_state_model import PlayerHealthStateModel
+from app.infrastructure.db.unit_of_work import commit
 
 
 class PlayerHealthRepository:
@@ -34,7 +35,7 @@ class PlayerHealthRepository:
         )
 
         self.session.add(model)
-        self.session.commit()
+        commit(self.session)
         self.session.refresh(model)
 
         return PlayerHealthState(
@@ -61,7 +62,7 @@ class PlayerHealthRepository:
 
         model.current_hp = current_hp
         model.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit(self.session)
         
     def refresh_current_hp(
         self,
@@ -78,7 +79,7 @@ class PlayerHealthRepository:
 
         model.current_hp = new_current_hp
         model.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit(self.session)
         self.session.refresh(model)
 
         return PlayerHealthState(

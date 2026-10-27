@@ -78,8 +78,14 @@ def patch_get_db_session(monkeypatch, session):
     """
 
     @contextmanager
-    def fake_get_db_session():
-        yield session
+    def fake_get_db_session(atomic: bool = False):
+        if atomic:
+            from app.infrastructure.db.unit_of_work import atomic as _atomic
+
+            with _atomic(session):
+                yield session
+        else:
+            yield session
 
     monkeypatch.setattr(
         encounter_service_module,

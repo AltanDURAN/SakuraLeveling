@@ -7,6 +7,7 @@ from app.domain.entities.player_inventory_item import PlayerInventoryItem
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel
 from app.infrastructure.db.models.item_model import ItemDefinitionModel
 from app.infrastructure.db.repositories._mappers import map_item_definition
+from app.infrastructure.db.unit_of_work import commit as commit_session
 
 
 class InventoryRepository:
@@ -52,7 +53,7 @@ class InventoryRepository:
             model.quantity += quantity
             model.updated_at = now
 
-        self.session.commit() if commit else self.session.flush()
+        commit_session(self.session) if commit else self.session.flush()
 
     def remove_item(self, player_id: int, item_definition_id: int, quantity: int,
                  commit: bool = True) -> bool:
@@ -77,7 +78,7 @@ class InventoryRepository:
         if model.quantity == 0:
             self.session.delete(model)
 
-        self.session.commit() if commit else self.session.flush()
+        commit_session(self.session) if commit else self.session.flush()
         return True
 
     def _to_domain(self, model: PlayerInventoryItemModel) -> PlayerInventoryItem:

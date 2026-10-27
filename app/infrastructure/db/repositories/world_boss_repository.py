@@ -20,6 +20,7 @@ from app.infrastructure.db.models.world_boss_model import (
     WorldBossModel,
     WorldBossParticipationModel,
 )
+from app.infrastructure.db.unit_of_work import commit
 
 
 class WorldBossRepository:
@@ -87,7 +88,7 @@ class WorldBossRepository:
             spawned_at=now,
         )
         self.session.add(model)
-        self.session.commit()
+        commit(self.session)
         return self._to_domain(model)
 
     def apply_damage(self, boss_id: int, damage: int) -> int:
@@ -96,7 +97,7 @@ class WorldBossRepository:
         if model is None:
             return 0
         model.current_hp = max(0, model.current_hp - damage)
-        self.session.commit()
+        commit(self.session)
         return model.current_hp
 
     def mark_defeated(self, boss_id: int) -> None:
@@ -106,14 +107,14 @@ class WorldBossRepository:
         model.status = WorldBossStatus.DEFEATED.value
         model.defeated_at = datetime.now(UTC)
         model.current_hp = 0
-        self.session.commit()
+        commit(self.session)
 
     def set_message_id(self, boss_id: int, message_id: int) -> None:
         model = self.session.get(WorldBossModel, boss_id)
         if model is None:
             return
         model.channel_message_id = message_id
-        self.session.commit()
+        commit(self.session)
 
     def set_element(self, boss_id: int, element: str) -> None:
         """Change l'élément du boss (admin, à chaud)."""
@@ -121,7 +122,7 @@ class WorldBossRepository:
         if model is None:
             return
         model.element = element or ""
-        self.session.commit()
+        commit(self.session)
 
     def set_current_hp(self, boss_id: int, current_hp: int) -> int:
         """Définit les PV courants du boss (admin). Borné [0, max_hp]."""
@@ -129,7 +130,7 @@ class WorldBossRepository:
         if model is None:
             return 0
         model.current_hp = max(0, min(current_hp, model.max_hp))
-        self.session.commit()
+        commit(self.session)
         return model.current_hp
 
     def heal(self, boss_id: int, amount: int) -> int:
@@ -138,7 +139,7 @@ class WorldBossRepository:
         if model is None:
             return 0
         model.current_hp = min(model.max_hp, model.current_hp + max(0, amount))
-        self.session.commit()
+        commit(self.session)
         return model.current_hp
 
     # ---------- participations ----------
@@ -180,7 +181,7 @@ class WorldBossRepository:
             existing.joined = joined
             existing.updated_at = now
             model = existing
-        self.session.commit()
+        commit(self.session)
         return self._participation_to_domain(model)
 
     def add_combat_metrics(
@@ -217,7 +218,7 @@ class WorldBossRepository:
             existing.hp_healed += hp_healed
             existing.fights_count += 1
             existing.updated_at = now
-        self.session.commit()
+        commit(self.session)
 
     def list_joined_participants(self, boss_id: int) -> list[WorldBossParticipation]:
         stmt = select(WorldBossParticipationModel).where(
@@ -249,7 +250,7 @@ class WorldBossRepository:
             return None
         existing.voted_to_start = voted
         existing.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit(self.session)
         return self._participation_to_domain(existing)
 
     def count_voted(self, boss_id: int) -> int:
@@ -282,7 +283,7 @@ class WorldBossRepository:
             .where(WorldBossParticipationModel.boss_id == boss_id)
             .values(voted_to_start=False)
         )
-        self.session.commit()
+        commit(self.session)
 
     def list_participations_with_metrics(
         self, boss_id: int

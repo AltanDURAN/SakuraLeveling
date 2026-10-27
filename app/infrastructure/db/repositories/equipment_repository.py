@@ -18,6 +18,7 @@ from app.domain.entities.player_equipment_item import PlayerEquipmentItem
 from app.domain.services.gear_service import rarity_index
 from app.infrastructure.db.models.gear_model import PlayerGearModel
 from app.infrastructure.db.repositories._mappers import map_item_definition
+from app.infrastructure.db.unit_of_work import commit
 
 
 class EquipmentRepository:
@@ -69,7 +70,7 @@ class EquipmentRepository:
             self.session.flush()
         model.equipped_slot = slot
         model.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit(self.session)
         return True
 
     def equip_item(self, player_id: int, item_definition_id: int, slot: str) -> bool:
@@ -95,7 +96,7 @@ class EquipmentRepository:
             return False
         model.equipped_slot = None
         model.updated_at = datetime.now(UTC)
-        self.session.commit()
+        commit(self.session)
         return True
 
     def get_slot(self, player_id: int, slot: str) -> PlayerEquipmentItem | None:

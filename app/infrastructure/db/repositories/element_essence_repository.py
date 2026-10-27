@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.infrastructure.db.models.element_essence_model import PlayerElementEssenceModel
 from app.shared.enums import ALL_ELEMENTS
+from app.infrastructure.db.unit_of_work import commit
 
 
 class ElementEssenceRepository:
@@ -49,7 +50,7 @@ class ElementEssenceRepository:
         else:
             row.count = count
             row.updated_at = now
-        self.session.commit()
+        commit(self.session)
 
     def reset_for_player(self, player_id: int) -> None:
         self.session.execute(
@@ -57,4 +58,4 @@ class ElementEssenceRepository:
                 PlayerElementEssenceModel.player_id == player_id,
             )
         )
-        self.session.commit()
+        commit(self.session)
