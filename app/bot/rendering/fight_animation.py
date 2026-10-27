@@ -40,6 +40,8 @@ OUTRO_MS = 1800
 MAX_SECONDS = 40
 MIN_FRAMES_PER_ACTION = 3
 SHAKE_PX = 9
+#: Taille maximale d'une vidéo (envoi Discord sans boost : 10 Mo).
+MAX_UPLOAD_BYTES = 9_500_000
 
 #: Couleurs réservées dans la palette du GIF (effets et chiffres).
 _FX_COLORS = [
@@ -141,11 +143,12 @@ def _palette(sample: Image.Image) -> tuple[Image.Image, list[int]]:
 def animate_fight(scene: Scene, start_enemies: dict, start_players: dict, logs: list,
                   out_path: str | Path, *, fps: int = FPS, width: int = WIDTH,
                   fmt: str = "gif", frames_per_action: int = FRAMES_PER_ACTION,
-                  interlude=None) -> Animation:
+                  interlude=None, outro=None) -> Animation:
     """Rejoue les `logs` du combat en vidéo. `start_*` : les PV avant la
     première action ({clé: (PV, max[, bouclier])}). `interlude(log)` peut
     renvoyer des images plein cadre à intercaler (bascule de phase d'un
-    boss…). Renvoie le chemin, la durée et la taille."""
+    boss…), `outro(dernière image)` celles de la fin. Renvoie le chemin, la
+    durée et la taille."""
     out_path = Path(out_path)
     step_ms = int(1000 / fps)
     shown = sum(1 for log in logs if log.events)
@@ -210,10 +213,21 @@ def animate_fight(scene: Scene, start_enemies: dict, start_players: dict, logs: 
             push(frame)
         enemies, players, dead = target_enemies, target_players, new_dead
 
-    if durations:
+    closing = list(outro(_final(scene, dead, enemies, players)) or ()) if outro is not None else []
+    if closing:
+        for img, ms in closing:
+            push(img, ms)
+    elif durations:
         durations[-1] = OUTRO_MS
     _save(frames, durations, out_path, fmt)
     return Animation(out_path, sum(durations) / 1000, len(frames), out_path.stat().st_size)
+
+
+def _final(scene: Scene, dead: frozenset, enemies: dict, players: dict) -> Image.Image:
+    """La dernière image, sans effet ni chiffre."""
+    img = scene.static(dead).copy()
+    scene.draw_bars(img, enemies, players)
+    return img
 
 
 def _save(frames: list[Image.Image], durations: list[int], out_path: Path, fmt: str) -> None:

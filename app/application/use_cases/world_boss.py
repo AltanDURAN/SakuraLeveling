@@ -9,8 +9,9 @@ Use cases regroupés pour cohérence :
        collectif (vote puis bataille de groupe) + application des modifiers
     6. CompleteWorldBossUseCase — récompenses à la défaite
 
-Convention HP/résultat : on réutilise `PartyCombatService.fight_party_vs_mob`
-en wrappant le boss dans une `MobDefinition` éphémère.
+Convention HP/résultat : l'assaut passe par `PartyCombatService.fight_party_vs_mobs`
+avec le boss, ses gardes, ses phases et son ultime (cf. `boss_assault`) ; les
+PV du boss sont conservés d'un assaut à l'autre.
 """
 
 import random
@@ -24,7 +25,6 @@ from app.application.services.player_stats_resolver import resolve_player_stats
 from app.infrastructure.db.unit_of_work import transactional
 from app.application.services.status_effect_resolver import resolve_regen_boosts
 from app.domain.entities.boss_definition import BossDefinition
-from app.domain.entities.mob_definition import MobDefinition
 from app.domain.entities.world_boss import WorldBoss, WorldBossParticipation
 from app.domain.services.boss_modifier_service import BossModifierService
 from app.domain.services.cooldown_service import CooldownService
@@ -82,40 +82,6 @@ def _normalize_utc(dt: datetime) -> datetime:
     if dt.tzinfo is None:
         return dt.replace(tzinfo=UTC)
     return dt
-
-
-def _boss_to_mob_definition(
-    boss: WorldBoss,
-    overridden_attack: int | None = None,
-) -> MobDefinition:
-    """Wrappe un WorldBoss en MobDefinition pour réutiliser CombatService.
-
-    `overridden_attack` permet d'injecter une attack ajustée par les
-    modifiers (ex : enrage). Si None, on utilise la valeur native du boss.
-    """
-    return MobDefinition(
-        id=-1,  # sentinel : pas en DB en tant que mob
-        code=boss.code,
-        name=boss.name,
-        description="",
-        image_name=boss.image_name,
-        family="world_boss",
-        max_hp=boss.max_hp,
-        current_hp=boss.current_hp,
-        attack=overridden_attack if overridden_attack is not None else boss.attack,
-        defense=boss.defense,
-        speed=boss.speed,
-        crit_chance=boss.crit_chance,
-        crit_damage=boss.crit_damage,
-        dodge=boss.dodge,
-        hp_regeneration=0,  # un boss ne regagne jamais de PV
-        xp_reward=0,
-        gold_reward=0,
-        spawn_weight=0,
-        loot_table=None,
-        created_at=boss.spawned_at,
-        updated_at=boss.spawned_at,
-    )
 
 
 def _create_boss_from_definition(
@@ -448,6 +414,14 @@ class PartyFightBossResult:
     boss_defeated: bool = False
     voter_count: int = 0
     skipped_cooldown: int = 0
+    # Pour la vidéo de l'assaut (cf. `boss_fight_video`) : le combat, les
+    # ennemis dans l'ordre de la formation, le boss parmi eux, ses PV avant
+    # l'assaut et les combattants (player_id, discord_id, name).
+    battle: object | None = None
+    enemies: list = field(default_factory=list)
+    boss_index: int = 0
+    boss_hp_before: int = 0
+    fighters: list[dict] = field(default_factory=list)
 
 
 class LaunchPartyFightWorldBossUseCase:
@@ -457,7 +431,7 @@ class LaunchPartyFightWorldBossUseCase:
     1. Liste les voteurs (joined=True ET voted_to_start=True)
     2. Filtre ceux qui ne sont plus en cooldown daily
     3. Pour chaque voteur : calcule stats (boost team + bonus skill + sets)
-    4. Lance PartyCombatService.fight_party_vs_mob
+    4. Lance l'assaut (boss + gardes, cf. boss_assault)
     5. Distribue les métriques : damage_dealt/tanked/hp_healed per voteur
     6. Apply damage agrégé au boss + cooldown daily + joined=False par voteur
     7. Si boss tué → mark_defeated (le caller s'occupe de complete_boss)
@@ -523,6 +497,8 @@ class LaunchPartyFightWorldBossUseCase:
         # Neutres (vides) si le boss n'a pas d'élément.
         elemental_out: dict[int, float] = {}
         elemental_in: dict[int, float] = {}
+        infused: dict[int, str] = {}
+        fighters: list[dict] = []
         skill_loadouts: dict[int, list] = {}
         boss_aff = (
             element_service.single_element_affinities(boss.element)
@@ -589,6 +565,7 @@ class LaunchPartyFightWorldBossUseCase:
                     aff, boss_aff, affinity_repo.dead_elements(v.player_id),
                 )
                 if infusion.element:
+                    infused[v.player_id] = infusion.element
                     elemental_out[v.player_id] = outgoing_elemental_multiplier(
                         infusion.multiplier, infusion.element, aff,
                         passives_by_player.get(v.player_id),
@@ -612,6 +589,8 @@ class LaunchPartyFightWorldBossUseCase:
                 boosts=resolve_regen_boosts(self.world_boss_repository.session, v.player_id),
             )
 
+            fighters.append({"player_id": v.player_id, "discord_id": profile.player.discord_id,
+                             "name": profile.player.display_name})
             eligible.append((v, {
                 "player_id": v.player_id,
                 "user_id": v.player_id,  # fallback
@@ -634,26 +613,30 @@ class LaunchPartyFightWorldBossUseCase:
                 skipped_cooldown=skipped,
             )
 
-        # Combat collectif
-        boss_as_mob = _boss_to_mob_definition(
-            boss, overridden_attack=adjustments.boss_attack,
-        )
+        # Combat collectif : le boss, ses gardes, ses phases et son ultime
+        # (cf. boss_assault — la même préparation que le calibrage).
+        from app.domain.services.boss_assault import assault_enemies, boss_as_mob
+
         party = [payload for _, payload in eligible]
-        battle_result = PartyCombatService().fight_party_vs_mob(
-            party=party, mob=boss_as_mob,
-            elemental_mult_by_player=elemental_out,
-            incoming_elemental_mult_by_player=elemental_in,
+        enemies, boss_index = assault_enemies(
+            boss_as_mob(boss, attack=adjustments.boss_attack),
+            phases=boss_def.phases if boss_def is not None else [],
+            ultimate=(boss_def.ultimate or None) if boss_def is not None else None,
+            guards=boss_def.guards if boss_def is not None else [],
+            # Modifiers boss dynamiques (le seuil d'immunité est appliqué par
+            # coup dans la simulation, pas sur le total).
+            immunity=adjustments.damage_immunity_threshold,
+            heal_per_turn=int(modifiers.get("auto_heal_per_turn", 0)),
+            reflect_pct=int(modifiers.get("reflect_pct", 0)),
+            adds=modifiers.get("adds"),
+            elemental_out=elemental_out, elemental_in=elemental_in, infusion=infused,
+        )
+        battle_result = PartyCombatService().fight_party_vs_mobs(
+            party, enemies,
             skill_loadouts_by_player=skill_loadouts,
-            # Modifiers boss dynamiques (le seuil d'immunité est désormais
-            # appliqué par coup dans la simulation, pas sur le total).
-            damage_immunity_threshold=adjustments.damage_immunity_threshold,
-            boss_heal_per_turn=int(modifiers.get("auto_heal_per_turn", 0)),
-            boss_reflect_pct=int(modifiers.get("reflect_pct", 0)),
-            boss_adds=modifiers.get("adds"),
             max_turns=BOSS_FIGHT_MAX_TURNS,
             passives_by_player=passives_by_player,
             tactics_by_player=tactics_by_player,
-            mob_is_boss=True,
         )
 
         # Les PV restants du boss = résultat réel de la simulation (intègre
@@ -662,10 +645,9 @@ class LaunchPartyFightWorldBossUseCase:
         contribs_by_id = {
             c.player_id: c for c in battle_result.contributions
         }
-        damage_total = max(0, boss.current_hp - battle_result.mob_remaining_hp)
-        self.world_boss_repository.set_current_hp(
-            boss_id, battle_result.mob_remaining_hp,
-        )
+        boss_remaining = battle_result.enemies[boss_index]["remaining_hp"]
+        damage_total = max(0, boss.current_hp - boss_remaining)
+        self.world_boss_repository.set_current_hp(boss_id, boss_remaining)
         total_tanked = 0
         # Distribution des métriques par voteur
         for participation, _ in eligible:
@@ -755,6 +737,11 @@ class LaunchPartyFightWorldBossUseCase:
             boss_defeated=defeated,
             voter_count=len(eligible),
             skipped_cooldown=skipped,
+            battle=battle_result,
+            enemies=enemies,
+            boss_index=boss_index,
+            boss_hp_before=boss.current_hp,
+            fighters=fighters,
         )
 
 

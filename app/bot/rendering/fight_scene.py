@@ -201,6 +201,8 @@ class _Bar:
     box: tuple[int, int, int, int]
     font: ImageFont.ImageFont | None = None
     shield_box: tuple[int, int, int, int] | None = None
+    #: Repères sur la barre (fractions des PV) : les phases d'un boss.
+    ticks: tuple[float, ...] = ()
 
 
 @dataclass
@@ -237,6 +239,10 @@ class Scene:
             cur, mx, shield = max(0, int(round(cur))), int(round(mx)), int(round(shield))
             x1, y1, x2, y2 = bar.box
             _draw_ratio_bar(img, draw, x1, y1, x2, y2, cur, mx)
+            for tick in bar.ticks:
+                tx = int(x1 + (x2 - x1) * tick)
+                draw.line([(tx, y1 - 5), (tx, y2 + 5)], fill=(24, 10, 18, 255), width=6)
+                draw.line([(tx, y1 - 4), (tx, y2 + 4)], fill=(255, 236, 200, 255), width=2)
             if bar.font is not None:
                 hp_txt = f"{cur} / {mx}" if cur > 0 else "Vaincu"
                 draw.text(((x1 + x2) / 2 - draw.textlength(hp_txt, font=bar.font) / 2,
@@ -278,9 +284,14 @@ def build_scene(
     mobs: list[dict] | None = None,
     placements: list[dict | None] | None = None,
     formation: list[dict] | None = None,
+    boss_index: int | None = None,
+    phase_ticks: tuple[float, ...] = (),
 ) -> Scene:
     """Prépare la scène (cf. `Scene`) : décor du spot, monstre(s), bandeaux.
-    Les PV des monstres et des joueurs ne servent qu'au rendu des barres."""
+    Les PV des monstres et des joueurs ne servent qu'au rendu des barres.
+    `boss_index` : le boss d'un groupe (world boss et ses gardes) — le
+    bandeau du haut est à lui seul, une barre géante marquée de ses phases
+    (`phase_ticks`), et ses gardes ont une barre au-dessus de la tête."""
     players = players or []
     group = list(mobs or [])
     if len(group) > 1:
@@ -336,6 +347,7 @@ def build_scene(
             min(mob_img.height, STAGE_BOTTOM - max(STAGE_TOP, mob_pos[1])),
             int(mob.get("max_hp", 1) or 1), element, mob.get("code", ""))
 
+    boxes: dict[int, tuple[int, int, int, int]] = {}
     if len(group) > 1:
         group_sprites, boxes = _place_group(bg, group, placements or [None] * len(group),
                                             formation or [{"x": 0, "y": 0, "scale": 1}] * len(group), spot)
@@ -349,7 +361,10 @@ def build_scene(
     overlay = Image.new("RGBA", (FRAME_W, FRAME_H), (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
     _panel(overlay, TOP_PANEL)
-    if len(group) > 1:
+    if len(group) > 1 and boss_index is not None:
+        enemy_bars.update(_boss_hud(overlay, draw, group, boss_index, boxes, title_font, stat_font,
+                                    hp_font, phase_ticks))
+    elif len(group) > 1:
         enemy_bars.update(_group_hud(overlay, draw, group))
     if mob is not None:
         pl, pt, pr, pb = TOP_PANEL
@@ -371,7 +386,8 @@ def build_scene(
         bar_y2, bar_y1 = pb - 14, pb - 50
         # Barre de BOUCLIER (bleu) par-dessus les PV — s'épuise avant les PV.
         enemy_bars["e0"] = _Bar((name_x, bar_y1, pr - 16, bar_y2), hp_font,
-                                shield_box=(name_x, bar_y1 - 13, pr - 16, bar_y1 - 3))
+                                shield_box=(name_x, bar_y1 - 13, pr - 16, bar_y1 - 3),
+                                ticks=tuple(phase_ticks))
 
     # ---- Bandeau JOUEURS (bas) ----
     _panel(overlay, BOTTOM_PANEL)
@@ -399,7 +415,10 @@ def build_scene(
             bar_y = av_y + avatar.height + 2
             player_bars[key] = _Bar((cx - bar_half, bar_y, cx + bar_half, bar_y + 16))
             name = player.get("name", "")
-            if name:
+            # Un raid à 10+ joueurs : le nom tient dans sa colonne ou disparaît.
+            while len(name) > 3 and draw.textlength(name, font=hp_font) > step - 6:
+                name = name[:-2] + "…"
+            if name and draw.textlength(name, font=hp_font) <= step - 6:
                 draw.text((cx - draw.textlength(name, font=hp_font) / 2, bar_y + 18),
                           name, font=hp_font, fill=(240, 240, 245, 255))
 
@@ -538,6 +557,38 @@ def _group_hud(base: Image.Image, draw: ImageDraw.ImageDraw, mobs: list[dict]) -
         y0 = y_mid - block // 2
         draw.text((x, y0 - 2), name, font=name_font, fill=(255, 255, 255, 255))
         bars[f"e{i}"] = _Bar((x, y0 + name_h, x2, y0 + name_h + bar_h), hp_font)
+    return bars
+
+
+def _boss_hud(base: Image.Image, draw: ImageDraw.ImageDraw, mobs: list[dict], boss_index: int,
+              boxes: dict[int, tuple[int, int, int, int]], title_font, stat_font, hp_font,
+              ticks: tuple[float, ...]) -> dict[str, _Bar]:
+    """Bandeau du haut d'un world boss : pastille, nom, barre géante marquée
+    de ses phases ; une petite barre flottante au-dessus de chaque garde."""
+    pl, pt, pr, pb = TOP_PANEL
+    boss = mobs[boss_index]
+    badge_d = _FONTS["badge"]
+    name_x = pl + 30
+    element = boss.get("element") or ""
+    badge = make_element_badge(element, diameter=badge_d) if element else None
+    if badge is not None:
+        base.alpha_composite(badge, (pl + 18, pt + (pb - pt - badge_d) // 2))
+        name_x = pl + 18 + badge_d + 18
+    draw.text((name_x, pt + 12), str(boss.get("name", "Boss")), font=title_font, fill=(255, 226, 150, 255))
+    guards = len(mobs) - 1
+    if guards:
+        tag = f"{guards} garde{'s' if guards > 1 else ''}"
+        draw.text((pr - 16 - draw.textlength(tag, font=stat_font), pt + 20), tag, font=stat_font,
+                  fill=(235, 226, 236, 255))
+    bars = {f"e{boss_index}": _Bar((name_x, pb - 50, pr - 16, pb - 14), hp_font, ticks=tuple(ticks))}
+    for i, data in enumerate(mobs):
+        if i == boss_index or i not in boxes:
+            continue
+        x, y, w, h = boxes[i]
+        half = max(60, min(130, w // 3))
+        cx = x + w // 2
+        top = max(STAGE_TOP + 10, y - 30)
+        bars[f"e{i}"] = _Bar((cx - half, top, cx + half, top + 18))
     return bars
 
 

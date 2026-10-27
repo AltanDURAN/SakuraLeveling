@@ -48,8 +48,7 @@ _GENERATED_FILES_TTL_SECONDS = 7 * 24 * 3600
 
 _logger = logging.getLogger(__name__)
 
-#: Taille maximale d'une vidéo de combat (envoi Discord sans boost : 10 Mo).
-_VIDEO_MAX_BYTES = 9_500_000
+from app.bot.rendering.fight_animation import MAX_UPLOAD_BYTES as _VIDEO_MAX_BYTES  # noqa: E402
 
 
 class EncounterCog(commands.Cog):

@@ -123,6 +123,13 @@ async def bosses_create(request: Request, user: AdminUser = Depends(require_admi
     return RedirectResponse(f"/admin/world-bosses?q={code}", status_code=303)
 
 
+def _scalar_modifiers(modifiers: dict | None) -> dict:
+    """Les modifiers éditables en `clé=valeur` (un booléen devient 1 / 0) ;
+    les invocations (dict) restent dans le JSON, conservées à l'édition."""
+    return {k: int(v) if isinstance(v, bool) else v for k, v in (modifiers or {}).items()
+            if not isinstance(v, (dict, list))}
+
+
 @router.get("/world-bosses/{code}/edit", response_class=HTMLResponse)
 async def bosses_edit_form(
     code: str, request: Request, user: AdminUser = Depends(require_admin),
@@ -145,7 +152,7 @@ async def bosses_edit_form(
         "crit_chance": entry.get("crit_chance", 0),
         "crit_damage": entry.get("crit_damage", 100),
         "dodge": entry.get("dodge", 0),
-        "modifiers": _fmt_kv_pairs(entry.get("modifiers")),
+        "modifiers": _fmt_kv_pairs(_scalar_modifiers(entry.get("modifiers"))),
         "lore": entry.get("lore", ""),
     }
     return get_templates().TemplateResponse(
@@ -159,10 +166,15 @@ async def bosses_update(
     code: str, request: Request, user: AdminUser = Depends(require_admin),
 ):
     from webapp.admin.json_writer import find_in_list_by_key, update_in_list_by_key
-    if find_in_list_by_key("boss_definitions.json", code) is None:
+    existing = find_in_list_by_key("boss_definitions.json", code)
+    if existing is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Boss `{code}` introuvable.")
     fd = {k: str(v) for k, v in (await request.form()).items()}
+    # Ce que le formulaire ne montre pas (élément, butin, phases, ultime,
+    # gardes, invocations…) est conservé : avant, éditer un boss l'effaçait.
+    nested = {k: v for k, v in (existing.get("modifiers") or {}).items() if isinstance(v, (dict, list))}
     entry = {
+        **existing,
         "code": code,
         "name": fd.get("name", "").strip(),
         "description": fd.get("description", "").strip(),
@@ -176,7 +188,7 @@ async def bosses_update(
         "crit_chance": _parse_int(fd.get("crit_chance"), 0),
         "crit_damage": _parse_int(fd.get("crit_damage"), 100),
         "dodge": _parse_int(fd.get("dodge"), 0),
-        "modifiers": _parse_kv_pairs(fd.get("modifiers", "")),
+        "modifiers": {**nested, **_parse_kv_pairs(fd.get("modifiers", ""))},
         "lore": fd.get("lore", "").strip(),
     }
     update_in_list_by_key("boss_definitions.json", code, entry)

@@ -82,6 +82,21 @@ def test_cycle_complet_d_une_quete(client, content, scope, filename):
     assert "quete_test" not in _codes(content, filename)
 
 
+def test_editer_un_boss_garde_ce_que_le_formulaire_ne_montre_pas(client, content):
+    before = next(b for b in _load(content, "boss_definitions.json") if b["code"] == "ancient_dragon")
+    r = client.get("/admin/world-bosses/ancient_dragon/edit")
+    assert r.status_code == 200 and "adds=" not in r.text
+    r = client.post("/admin/world-bosses/ancient_dragon", data={
+        "name": "Dragon renommé", "max_hp": str(before["max_hp"]),
+        "modifiers": "damage_immunity_threshold=50, reflect_pct=20"}, follow_redirects=False)
+    assert r.status_code == 303
+    boss = next(b for b in _load(content, "boss_definitions.json") if b["code"] == "ancient_dragon")
+    assert boss["name"] == "Dragon renommé" and boss["modifiers"]["damage_immunity_threshold"] == 50
+    for key in ("element", "loot_table", "phases", "ultimate", "guards"):
+        assert boss[key] == before[key]
+    assert boss["modifiers"]["adds"] == before["modifiers"]["adds"]
+
+
 def test_cycle_complet_d_un_world_boss(client, content):
     r = client.post("/admin/world-bosses", data={
         "code": "boss_test", "name": "Boss test", "max_hp": "5000", "attack": "40",

@@ -44,6 +44,9 @@ def _load() -> list[BossDefinition]:
             dodge=int(item.get("dodge", 0)),
             element=item.get("element", "") or "",
             modifiers=item.get("modifiers", {}) or {},
+            phases=item.get("phases", []) or [],
+            ultimate=item.get("ultimate", {}) or {},
+            guards=item.get("guards", []) or [],
             loot_table=item.get("loot_table", []) or [],
             lore=item.get("lore", ""),
         )

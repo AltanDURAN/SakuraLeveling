@@ -606,9 +606,18 @@ WORLD BOSS — /boss moi, /boss historique, /boss list
     combat collectif se lance automatiquement à 21 h (heure de Paris). Les
     récompenses suivent ta part de l'effort (paliers de contribution), avec
     du butin exclusif et le titre de MVP.
+    L'assaut se joue en vidéo dans le salon du boss, puis laisse place à son
+    bilan. Ce qui t'attend :
+      • ses GARDES (2) : on les abat d'abord — tant qu'il en reste un, le boss
+        ne prend que la moitié des dégâts. Ils reviennent à chaque assaut ;
+      • ses PHASES : sous 75 %, 50 % et 25 % de ses PV, il change (poison,
+        saignements, étourdissements, coups doublés, attaque en hausse…) ;
+      • son ATTAQUE ULTIME : il la CHARGE une action à l'avance, puis frappe
+        tout le groupe. Un joueur en provocation (tank) l'intercepte seul
+        (plus fort, mais sur lui seul).
         /boss moi        : ton rang, ta part, tes dégâts / encaissé / soins.
         /boss historique : les raids des semaines passées.
-        /boss list       : le catalogue des boss.
+        /boss list       : le catalogue des boss (phases, ultime, gardes).
 
 --------------------------------------------------------------------------------
 1.6 — QUÊTES

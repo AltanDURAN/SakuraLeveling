@@ -60,7 +60,10 @@ from app.infrastructure.db.repositories.player_skill_allocation_repository impor
 )
 from app.infrastructure.db.repositories.world_boss_repository import WorldBossRepository
 from app.infrastructure.db.session import get_db_session
-from app.infrastructure.world_boss.boss_definition_loader import list_definitions
+from app.infrastructure.world_boss.boss_definition_loader import (
+    get_definition as get_boss_definition,
+    list_definitions,
+)
 from app.shared.formatters import format_int
 from discord.utils import escape_markdown
 
@@ -413,12 +416,22 @@ class WorldBossCog(commands.Cog):
         lines: list[str] = []
         for d in defs:
             mod_keys = ", ".join(d.modifiers.keys()) if d.modifiers else "—"
+            mechanics = []
+            if d.phases:
+                mechanics.append("phases " + " · ".join(f"{ph.get('name', '?')} ({ph.get('below_pct')} %)"
+                                                       for ph in d.phases))
+            if d.ultimate:
+                mechanics.append(f"ultime {d.ultimate.get('name', '?')} (toutes les "
+                                 f"{d.ultimate.get('every', '?')} actions)")
+            if d.guards:
+                mechanics.append(f"{len(d.guards)} gardes ({d.guards[0].get('name', '?')})")
             lines.append(
                 f"**[{d.tier}] {d.name}** (`{d.code}`)\n"
                 f"  ❤️ {format_int(d.max_hp)} PV | ⚔️ {d.attack} atk | 🛡️ {d.defense} def | "
                 f"💨 {d.speed} spd | poids {d.spawn_weight}\n"
                 f"  Particularités : {mod_keys}\n"
-                f"  _{d.lore or d.description}_"
+                + (f"  Mécaniques : {' — '.join(mechanics)}\n" if mechanics else "")
+                + f"  _{d.lore or d.description}_"
             )
         embed = discord.Embed(
             title="📜 Catalogue des World Bosses",
@@ -870,10 +883,13 @@ class WorldBossCog(commands.Cog):
 
             channel = _get_boss_channel(self.bot)
             if channel is not None:
-                await channel.send(result.message)
-                milestone = self._phase_milestone(hp_before, result.boss_remaining_hp, max_hp)
-                if milestone and not result.boss_defeated:
-                    await channel.send(milestone)
+                boss_def = get_boss_definition(boss_before.code) if boss_before else None
+                milestone = None
+                if not result.boss_defeated:
+                    milestone = self._phase_milestone(hp_before, result.boss_remaining_hp, max_hp,
+                                                      boss_def.phases if boss_def else None,
+                                                      boss_before.name if boss_before else "")
+                await self._play_assault(channel, boss_before, boss_def, result, milestone)
             await self.refresh_boss_message(boss_id)
             if result.boss_defeated:
                 await self.complete_boss(boss_id)
@@ -881,15 +897,101 @@ class WorldBossCog(commands.Cog):
             import logging
             logging.getLogger(__name__).exception("launch_party_fight failed")
 
+    async def _play_assault(self, channel, boss, boss_def, result, milestone: str | None) -> None:
+        """L'assaut en vidéo dans un message dédié (cf. `boss_fight_video`),
+        remplacé par son récapitulatif une fois la vidéo finie. Sans vidéo
+        (rendu impossible), le récapitulatif s'affiche tout de suite."""
+        text = result.message + (f"\n\n{milestone}" if milestone else "")
+        if not result.success or result.battle is None or boss is None:
+            await channel.send(text)
+            return
+        try:
+            message = await channel.send(embed=discord.Embed(
+                title=f"⚔️ Assaut contre {boss.name}", description="_Le combat s'engage…_",
+                color=discord.Color.dark_red()))
+        except discord.HTTPException:
+            await channel.send(text)
+            return
+        avatars = {}
+        for fighter in result.fighters:
+            user = channel.guild.get_member(fighter["discord_id"]) if channel.guild else None
+            user = user or self.bot.get_user(fighter["discord_id"])
+            if user is not None:
+                avatars[fighter["player_id"]] = user.display_avatar.replace(size=128).url
+        anim = None
+        try:
+            anim = await asyncio.to_thread(self._render_assault_video, boss, boss_def, result, avatars)
+        except Exception:
+            logging.getLogger(__name__).exception("vidéo de l'assaut échouée")
+        try:
+            if anim is not None:
+                embed = discord.Embed(title=f"⚔️ Assaut contre {boss.name}", color=discord.Color.dark_red())
+                embed.set_image(url=f"attachment://{anim.path.name}")
+                await message.edit(embed=embed, attachments=[discord.File(anim.path, filename=anim.path.name)])
+                await asyncio.sleep(anim.duration_s + 1.0)
+            await message.edit(embed=discord.Embed(
+                title=f"⚔️ Assaut contre {boss.name} — terminé", description=text,
+                color=discord.Color.gold() if result.boss_defeated else discord.Color.dark_red()),
+                attachments=[])
+        except discord.HTTPException:
+            logging.getLogger(__name__).warning("message de l'assaut non mis à jour", exc_info=True)
+            await channel.send(text)
+        finally:
+            if anim is not None:
+                anim.path.unlink(missing_ok=True)   # Discord garde sa copie
+
     @staticmethod
-    def _phase_milestone(hp_before: int, hp_after: int, max_hp: int) -> str | None:
+    def _render_assault_video(boss, boss_def, result, avatars: dict[int, str]):
+        """Le GIF de l'assaut, ou None s'il dépasse la taille d'un envoi même réduit."""
+        from app.bot.rendering.boss_fight_video import arena_path, render_boss_video
+        from app.bot.rendering.fight_animation import MAX_UPLOAD_BYTES, WIDTH
+        from app.shared.paths import GENERATED_ENCOUNTERS_DIR
+
+        battle = result.battle
+        if not battle.turn_logs:
+            return None
+        names = {f["player_id"]: f["name"] for f in result.fighters}
+        players = [{"player_id": p["player_id"], "name": names.get(p["player_id"], p.get("name", "")),
+                    "avatar_url": avatars.get(p["player_id"], ""), "max_hp": p["max_hp"],
+                    "current_hp": p["max_hp"]}
+                   for p in battle.turn_logs[0].players_state if p.get("player_id") is not None]
+        mobs = [{"name": e.mob.name, "image_name": e.mob.image_name, "element": e.mob.element,
+                 "max_hp": e.mob.max_hp, "code": e.mob.code} for e in result.enemies]
+        index = result.boss_index
+        out = GENERATED_ENCOUNTERS_DIR / f"world_boss_{boss.id}_assault.gif"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        for width in (WIDTH, 440):
+            anim = render_boss_video(
+                boss=mobs[index], guards=mobs[:index] + mobs[index + 1:], boss_index=index,
+                players=players, logs=battle.turn_logs, boss_hp_before=result.boss_hp_before,
+                phases=boss_def.phases if boss_def else [], out_path=out,
+                background_path=arena_path(boss.code, boss.element or ""), width=width)
+            if anim.size_bytes <= MAX_UPLOAD_BYTES:
+                return anim
+        out.unlink(missing_ok=True)
+        return None
+
+    @staticmethod
+    def _phase_milestone(hp_before: int, hp_after: int, max_hp: int,
+                         phases: list[dict] | None = None, boss_name: str = "") -> str | None:
         """Annonce quand le raid fait basculer le boss dans une nouvelle phase.
 
         Ces paliers sont le rythme dramatique de la semaine : ils récompensent
         l'effort collectif par un événement visible de tous, et rappellent au
-        serveur que le combat progresse."""
+        serveur que le combat progresse. Avec ses `phases` (boss_definitions),
+        l'annonce dit ce qui change vraiment."""
         if max_hp <= 0 or hp_after >= hp_before:
             return None
+        if phases:
+            from app.bot.rendering.boss_fight_video import phase_number
+
+            before, after = hp_before / max_hp * 100, hp_after / max_hp * 100
+            crossed = [ph for ph in sorted(phases, key=lambda ph: -float(ph.get("below_pct", 0)))
+                       if before > float(ph.get("below_pct", 0)) >= after]
+            lines = [f"⚡ **{boss_name} entre en phase {phase_number(ph.get('name', ''), phases)} — "
+                     f"« {ph.get('name', '')} »** (sous {ph.get('below_pct')} % de ses PV) : {ph.get('text', '')}"
+                     .rstrip(" :") for ph in crossed]
+            return "\n".join(lines) or None
         from app.bot.rendering.world_boss_banner import PHASES
 
         before = hp_before / max_hp

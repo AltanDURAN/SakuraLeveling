@@ -7,7 +7,7 @@
     "tier": "intro",
     "spawn_weight": 100,
     "element": "eau",
-    "max_hp": 13000,
+    "max_hp": 5000,
     "attack": 110,
     "defense": 9,
     "speed": 8,
@@ -16,10 +16,73 @@
     "dodge": 0,
     "modifiers": {
       "damage_immunity_threshold": 5,
-      "auto_heal_per_turn": 32
+      "auto_heal_per_turn": 30
     },
-    "lore": "Premier obstacle des aventuriers ambitieux. Élément Eau (faible à plante/foudre… ici : plante/terre/glace). Se régénère un peu chaque tour : il faut le tuer assez vite.",
-    "loot_table": []
+    "lore": "Premier obstacle des aventuriers ambitieux. Sa masse absorbe les coups les plus faibles et se régénère à chaque tour. Deux gelées vivantes le protègent : abattez-les d'abord, il encaisse deux fois moins tant qu'elles tiennent. Blessé, il empoisonne, ralentit puis frappe de toutes ses forces. Il annonce son Raz-de-marée une action à l'avance : un tank en provocation l'encaisse seul.",
+    "loot_table": [],
+    "phases": [
+      {
+        "below_pct": 75,
+        "name": "Débordement",
+        "text": "chaque coup empoisonne.",
+        "abilities": {
+          "poison": {
+            "pct_max_hp": 2,
+            "turns": 3
+          }
+        }
+      },
+      {
+        "below_pct": 50,
+        "name": "Marée montante",
+        "text": "ses coups ralentissent sa cible.",
+        "abilities": {
+          "slow": {
+            "pct": 50
+          }
+        }
+      },
+      {
+        "below_pct": 25,
+        "name": "Agonie",
+        "text": "acculé, il frappe de toutes ses forces.",
+        "attack_pct": 25
+      }
+    ],
+    "ultimate": {
+      "name": "le Raz-de-marée",
+      "every": 7,
+      "multiplier": 1.8,
+      "charge": "Il aspire toute l'eau autour de lui…"
+    },
+    "guards": [
+      {
+        "code": "slime",
+        "name": "Gelée vivante",
+        "image_name": "slime.png",
+        "family": "slime",
+        "max_hp": 153,
+        "attack": 38,
+        "defense": 5,
+        "speed": 8,
+        "crit_chance": 0,
+        "crit_damage": 150,
+        "dodge": 0
+      },
+      {
+        "code": "slime",
+        "name": "Gelée vivante",
+        "image_name": "slime.png",
+        "family": "slime",
+        "max_hp": 153,
+        "attack": 38,
+        "defense": 5,
+        "speed": 8,
+        "crit_chance": 0,
+        "crit_damage": 150,
+        "dodge": 0
+      }
+    ]
   },
   {
     "code": "gobelin_warlord",
@@ -29,7 +92,7 @@
     "tier": "medium",
     "spawn_weight": 8,
     "element": "feu",
-    "max_hp": 16000,
+    "max_hp": 9000,
     "attack": 212,
     "defense": 16,
     "speed": 12,
@@ -37,16 +100,79 @@
     "crit_damage": 130,
     "dodge": 5,
     "modifiers": {
-      "enrage_below_pct": 30,
-      "enrage_attack_multiplier": 1.5,
       "adds": {
         "attack": 148,
         "summon_turn_interval": 4,
         "max_active": 3
       }
     },
-    "lore": "Élément Feu (faible à eau/vent/terre). À 30% PV sa rage le fait frapper 50% plus fort. Invoque des gobelins toutes les 4 manches (max 3) qui tapent l'équipe.",
-    "loot_table": []
+    "lore": "Le chef d'une horde sanguinaire, escorté de sa garde d'élite, qui appelle des renforts au fil du combat. Blessé, il pousse son cri de guerre (saignements), entre en frénésie (deux coups par action) puis tient son dernier carré. Sa Charge du seigneur de guerre fauche tout le groupe, sauf si un tank la provoque.",
+    "loot_table": [],
+    "phases": [
+      {
+        "below_pct": 75,
+        "name": "Cri de guerre",
+        "text": "ses coups font saigner.",
+        "abilities": {
+          "bleed": {
+            "pct": 10,
+            "turns": 3,
+            "max_stacks": 3
+          }
+        }
+      },
+      {
+        "below_pct": 50,
+        "name": "Frénésie",
+        "text": "il frappe deux fois, moins fort.",
+        "attack_pct": -35,
+        "abilities": {
+          "multi_hit": {
+            "hits": 2
+          }
+        }
+      },
+      {
+        "below_pct": 25,
+        "name": "Dernier carré",
+        "text": "il n'a plus rien à perdre.",
+        "attack_pct": 25
+      }
+    ],
+    "ultimate": {
+      "name": "la Charge du seigneur de guerre",
+      "every": 6,
+      "multiplier": 2.0,
+      "charge": "Il frappe son bouclier et baisse la tête…"
+    },
+    "guards": [
+      {
+        "code": "gobelin_combattant",
+        "name": "Garde d'élite",
+        "image_name": "gobelin_combattant.png",
+        "family": "gobelin",
+        "max_hp": 208,
+        "attack": 74,
+        "defense": 10,
+        "speed": 12,
+        "crit_chance": 0,
+        "crit_damage": 150,
+        "dodge": 0
+      },
+      {
+        "code": "gobelin_combattant",
+        "name": "Garde d'élite",
+        "image_name": "gobelin_combattant.png",
+        "family": "gobelin",
+        "max_hp": 208,
+        "attack": 74,
+        "defense": 10,
+        "speed": 12,
+        "crit_chance": 0,
+        "crit_damage": 150,
+        "dodge": 0
+      }
+    ]
   },
   {
     "code": "stone_colossus",
@@ -56,7 +182,7 @@
     "tier": "medium_hard",
     "spawn_weight": 3,
     "element": "terre",
-    "max_hp": 209000,
+    "max_hp": 148000,
     "attack": 350,
     "defense": 23,
     "speed": 5,
@@ -67,8 +193,71 @@
       "damage_immunity_threshold": 27,
       "reflect_pct": 15
     },
-    "lore": "Élément Terre (faible à plante/glace/vent). Sa carapace runique ignore les dégâts < 50 et renvoie 15% des coups reçus. Frapper fort, ou souffrir du retour.",
-    "loot_table": []
+    "lore": "Une statue runique animée par d'antiques magies, flanquée de deux sentinelles de pierre. Sa carapace ignore les frappes faibles et renvoie une part des coups. Blessé, ses coups fissurent l'armure, l'Avalanche étourdit, puis son cœur de lave s'embrase. Le Séisme frappe tout le groupe, sauf si un tank le provoque.",
+    "loot_table": [],
+    "phases": [
+      {
+        "below_pct": 75,
+        "name": "Fissures",
+        "text": "chaque coup brise l'armure de sa cible.",
+        "abilities": {
+          "armor_break": {
+            "pct": 8,
+            "max_pct": 24
+          }
+        }
+      },
+      {
+        "below_pct": 50,
+        "name": "Avalanche",
+        "text": "ses coups peuvent étourdir.",
+        "abilities": {
+          "stun": {
+            "chance": 20
+          }
+        }
+      },
+      {
+        "below_pct": 25,
+        "name": "Cœur de lave",
+        "text": "la roche se fend, le feu jaillit.",
+        "attack_pct": 25
+      }
+    ],
+    "ultimate": {
+      "name": "le Séisme",
+      "every": 7,
+      "multiplier": 2.2,
+      "charge": "Le sol se met à trembler…"
+    },
+    "guards": [
+      {
+        "code": "gargouille",
+        "name": "Sentinelle de pierre",
+        "image_name": "gargouille.png",
+        "family": "mort-vivant",
+        "max_hp": 3253,
+        "attack": 122,
+        "defense": 14,
+        "speed": 5,
+        "crit_chance": 0,
+        "crit_damage": 150,
+        "dodge": 0
+      },
+      {
+        "code": "gargouille",
+        "name": "Sentinelle de pierre",
+        "image_name": "gargouille.png",
+        "family": "mort-vivant",
+        "max_hp": 3253,
+        "attack": 122,
+        "defense": 14,
+        "speed": 5,
+        "crit_chance": 0,
+        "crit_damage": 150,
+        "dodge": 0
+      }
+    ]
   },
   {
     "code": "shadow_wraith",
@@ -78,7 +267,7 @@
     "tier": "hard",
     "spawn_weight": 2,
     "element": "tenebre",
-    "max_hp": 186000,
+    "max_hp": 82000,
     "attack": 473,
     "defense": 30,
     "speed": 18,
@@ -86,20 +275,78 @@
     "crit_damage": 150,
     "dodge": 30,
     "modifiers": {
-      "crit_immunity": true,
-      "phases": [
-        {
-          "below_pct": 50,
-          "attack_multiplier": 1.3
-        },
-        {
-          "below_pct": 20,
-          "attack_multiplier": 1.6
-        }
-      ]
+      "crit_immunity": true
     },
-    "lore": "Élément Ténèbre (faible à lumière). Les crits sont annulés. À 50% PV il frappe +30%, à 20% PV +60%. Sa vitesse rend ses esquives redoutables.",
-    "loot_table": []
+    "lore": "Une entité incorporelle qui glisse entre les coups : les critiques traversent sa forme éthérée. Deux âmes captives la servent. Blessée, elle draine la vie, possède ses proies (étourdissement) puis ouvre l'Abîme. La Nuit sans fin s'abat sur tout le groupe, sauf si un tank la provoque.",
+    "loot_table": [],
+    "phases": [
+      {
+        "below_pct": 75,
+        "name": "Nuit tombante",
+        "text": "il se nourrit de vos blessures.",
+        "abilities": {
+          "lifesteal": {
+            "pct": 15
+          }
+        }
+      },
+      {
+        "below_pct": 50,
+        "name": "Possession",
+        "text": "ses coups peuvent étourdir.",
+        "abilities": {
+          "stun": {
+            "chance": 25
+          }
+        }
+      },
+      {
+        "below_pct": 25,
+        "name": "Abîme",
+        "text": "les ténèbres le rendent fou.",
+        "attack_pct": 25
+      }
+    ],
+    "ultimate": {
+      "name": "la Nuit sans fin",
+      "every": 7,
+      "multiplier": 1.8,
+      "charge": "Les ténèbres engloutissent la lumière…"
+    },
+    "guards": [
+      {
+        "code": "fantome",
+        "name": "Âme captive",
+        "image_name": "fantome.png",
+        "family": "mort-vivant",
+        "abilities": {
+          "first_hit_dodge": {}
+        },
+        "max_hp": 2525,
+        "attack": 166,
+        "defense": 18,
+        "speed": 18,
+        "crit_chance": 0,
+        "crit_damage": 150,
+        "dodge": 0
+      },
+      {
+        "code": "fantome",
+        "name": "Âme captive",
+        "image_name": "fantome.png",
+        "family": "mort-vivant",
+        "abilities": {
+          "first_hit_dodge": {}
+        },
+        "max_hp": 2525,
+        "attack": 166,
+        "defense": 18,
+        "speed": 18,
+        "crit_chance": 0,
+        "crit_damage": 150,
+        "dodge": 0
+      }
+    ]
   },
   {
     "code": "ancient_dragon",
@@ -109,7 +356,7 @@
     "tier": "endgame",
     "spawn_weight": 1,
     "element": "lumiere",
-    "max_hp": 111000,
+    "max_hp": 66000,
     "attack": 585,
     "defense": 37,
     "speed": 15,
@@ -118,23 +365,79 @@
     "dodge": 10,
     "modifiers": {
       "damage_immunity_threshold": 43,
-      "enrage_below_pct": 25,
-      "enrage_attack_multiplier": 1.8,
-      "auto_heal_per_turn": 179,
+      "auto_heal_per_turn": 174,
       "reflect_pct": 20,
       "adds": {
         "attack": 351,
         "summon_turn_interval": 5,
         "max_active": 2
-      },
-      "phases": [
-        {
-          "below_pct": 50,
-          "attack_multiplier": 1.25
-        }
-      ]
+      }
     },
-    "lore": "Élément Lumière (faible à ténèbre). Le boss définitif : armure dragon (ignore <100 dmg), renvoie 20% des coups, régénère 2000 PV/tour, invoque des drakelings, phase à 50% PV, rage finale à 25% PV (+80% atk). Raid massif obligatoire.",
-    "loot_table": []
+    "lore": "Le sommet de l'évolution, gardé par les gardiens de sa couvée. Armure de dragon, coups renvoyés, régénération et drakelings invoqués. Blessé, il déploie ses ailes (deux coups par action), crache un souffle brûlant puis cède à sa colère ancestrale. Son Souffle ancestral frappe tout le groupe, sauf si un tank le provoque. Raid massif obligatoire.",
+    "loot_table": [],
+    "phases": [
+      {
+        "below_pct": 75,
+        "name": "Ailes déployées",
+        "text": "il frappe deux fois, moins fort.",
+        "attack_pct": -35,
+        "abilities": {
+          "multi_hit": {
+            "hits": 2
+          }
+        }
+      },
+      {
+        "below_pct": 50,
+        "name": "Souffle brûlant",
+        "text": "ses flammes brûlent.",
+        "abilities": {
+          "poison": {
+            "pct_max_hp": 2,
+            "turns": 3
+          }
+        }
+      },
+      {
+        "below_pct": 25,
+        "name": "Colère ancestrale",
+        "text": "le plus vieux des dragons ne pardonne pas.",
+        "attack_pct": 30
+      }
+    ],
+    "ultimate": {
+      "name": "le Souffle ancestral",
+      "every": 6,
+      "multiplier": 2.0,
+      "charge": "Sa gorge s'illumine d'un feu blanc…"
+    },
+    "guards": [
+      {
+        "code": "dragonnet",
+        "name": "Gardien de la couvée",
+        "image_name": "dragonnet.png",
+        "family": "draconique",
+        "max_hp": 1792,
+        "attack": 205,
+        "defense": 22,
+        "speed": 15,
+        "crit_chance": 0,
+        "crit_damage": 150,
+        "dodge": 0
+      },
+      {
+        "code": "dragonnet",
+        "name": "Gardien de la couvée",
+        "image_name": "dragonnet.png",
+        "family": "draconique",
+        "max_hp": 1792,
+        "attack": 205,
+        "defense": 22,
+        "speed": 15,
+        "crit_chance": 0,
+        "crit_damage": 150,
+        "dodge": 0
+      }
+    ]
   }
 ]

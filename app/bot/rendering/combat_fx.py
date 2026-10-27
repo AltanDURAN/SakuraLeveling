@@ -74,8 +74,9 @@ _PLAYER_STYLES = {
     "slash": "slash", "counter": "slash", "double": "double", "dive": "pierce", "storm": "lightning",
     "splash": "explosion", "fire": "flame", "void": "magic", "holy": "magic", "charm": "magic",
     "reflect": "spark", "guard": "blunt", "summon": "claw", "assassinate": "pierce",
-    "explosion": "explosion", "aoe": "shockwave",
+    "explosion": "explosion", "aoe": "shockwave", "ultimate": "ultimate",
 }
+ULTIMATE_COLOR = (255, 70, 40)
 
 
 @dataclass
@@ -386,6 +387,46 @@ def _fx_shockwave(base, a: Anchor, color, rng, scale: float = 1.0) -> None:
     _finish(base, glow, core, a.cx, a.cy, max(4, span / 30))
 
 
+def _fx_charge(base, a: Anchor, rng) -> None:
+    """Le boss rassemble ses forces : un anneau d'énergie rouge qui se
+    resserre sur lui (avant son attaque ultime)."""
+    span = max(a.w, a.h) * 0.95
+    size = int(span * 1.2) + 40
+    c = size / 2
+    glow, gd = _glow_layer(size)
+    core, cd = _glow_layer(size)
+    gd.ellipse([c - span * 0.5, c - span * 0.5, c + span * 0.5, c + span * 0.5],
+               outline=(*ULTIMATE_COLOR, 210), width=int(span * 0.06))
+    cd.ellipse([c - span * 0.46, c - span * 0.46, c + span * 0.46, c + span * 0.46],
+               outline=(255, 220, 160, 230), width=max(3, int(span * 0.012)))
+    for i in range(10):
+        ang = 2 * math.pi * i / 10 + rng.uniform(-0.15, 0.15)
+        r1, r2 = span * 0.52, span * 0.30
+        cd.line([(c + math.cos(ang) * r1, c + math.sin(ang) * r1),
+                 (c + math.cos(ang) * r2, c + math.sin(ang) * r2)],
+                fill=(255, 200, 140, 230), width=max(3, int(span * 0.014)))
+    _finish(base, glow, core, a.cx, a.cy, max(6, span / 22))
+
+
+def _fx_ultimate(base, a: Anchor, rng, scale: float = 1.0) -> None:
+    """L'attaque ultime d'un boss : explosion rouge et onde de choc."""
+    _fx_explosion(base, a, ULTIMATE_COLOR, rng, scale=scale * 1.25)
+    _fx_shockwave(base, a, ULTIMATE_COLOR, rng, scale=scale)
+
+
+def _fx_phase(base, a: Anchor, rng) -> None:
+    """Bascule de phase : une aura rouge qui enveloppe le boss."""
+    span = max(a.w, a.h) * 1.05
+    size = int(span * 1.3) + 40
+    c = size / 2
+    glow, gd = _glow_layer(size)
+    core, cd = _glow_layer(size)
+    gd.ellipse([c - span * 0.5, c - span * 0.55, c + span * 0.5, c + span * 0.55], fill=(200, 30, 40, 70))
+    gd.ellipse([c - span * 0.5, c - span * 0.55, c + span * 0.5, c + span * 0.55],
+               outline=(255, 60, 50, 200), width=int(span * 0.05))
+    _finish(base, glow, core, a.cx, a.cy, max(10, span / 12))
+
+
 def _sparkle(draw, x, y, r, color) -> None:
     draw.polygon([(x, y - r), (x + r * 0.25, y - r * 0.25), (x + r, y), (x + r * 0.25, y + r * 0.25),
                   (x, y + r), (x - r * 0.25, y + r * 0.25), (x - r, y), (x - r * 0.25, y - r * 0.25)],
@@ -587,6 +628,8 @@ def _draw_effect(base, kind: str, event: dict, target: Anchor, anchors, rng) -> 
             _fx_explosion(base, target, color, rng, scale=scale)
         elif effect == "shockwave":
             _fx_shockwave(base, target, color, rng)
+        elif effect == "ultimate":
+            _fx_ultimate(base, target, rng, scale=scale)
         elif effect == "spark":
             _fx_blunt(base, target, VIOLET, rng, scale=scale * 0.6, spikes=8)
     elif kind == "heal":
@@ -611,6 +654,10 @@ def _draw_effect(base, kind: str, event: dict, target: Anchor, anchors, rng) -> 
         _fx_magic(base, target, GOLD, rng, scale=scale * 1.2)
     elif kind == "enrage":
         _fx_flames(base, target, RED, rng, scale=scale)
+    elif kind == "charge":
+        _fx_charge(base, target, rng)
+    elif kind == "phase":
+        _fx_phase(base, target, rng)
 
 
 def _label(event: dict, target: Anchor) -> tuple[str, int, tuple, dict] | None:
@@ -628,6 +675,9 @@ def _label(event: dict, target: Anchor) -> tuple[str, int, tuple, dict] | None:
             return f"{amount}", size, GOLD, {"gradient": ((255, 245, 140), (255, 90, 40)),
                                              "stroke": (110, 10, 20), "label": "CRITIQUE !",
                                              "label_color": (255, 210, 90)}
+        if event.get("style") == "ultimate":
+            return f"{amount}", max(size, int(MIN_SIZE * 1.1 * (PLAYER_SCALE if target.player else 1))), \
+                ULTIMATE_COLOR, {"stroke": (70, 0, 10), "label": "ULTIME", "label_color": (255, 190, 120)}
         return f"{amount}", size, color, {}
     if kind == "heal":
         return f"+{amount}", size, GREEN, {"stroke": (10, 60, 20)}
@@ -645,6 +695,10 @@ def _label(event: dict, target: Anchor) -> tuple[str, int, tuple, dict] | None:
         "ko": ("K.O.", RED), "revive": ("RELEVÉ !", GOLD), "hold": ("TIENT BON !", GOLD),
         "execute": ("EXÉCUTÉ !", RED), "enrage": ("FURIE", (255, 120, 60)),
     }
+    if kind == "charge":
+        return "CHARGE…", int(MIN_SIZE * 1.1), (255, 150, 90), {
+            "stroke": (70, 0, 10), "label": (event.get("style") or "ATTAQUE ULTIME").upper()[:40],
+            "label_color": (255, 220, 170)}
     if kind in words:
         text, color = words[kind]
         if kind == "stun" and event.get("style") == "freeze":
@@ -662,6 +716,10 @@ def draw_combat_fx(base, events: list[dict] | None, anchors: dict[str, Anchor],
     rng = random.Random(seed)
     placed: dict[str, float] = {}
     labels = []
+    # Le boss qui déchaîne son ultime s'embrase (une fois par action).
+    for source in dict.fromkeys(e.get("source") for e in events if e.get("style") == "ultimate"):
+        if source in anchors:
+            _fx_phase(base, anchors[source], rng)
     for event in events:
         target = anchors.get(event.get("target", ""))
         if target is None:

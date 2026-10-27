@@ -311,10 +311,12 @@ async def spot_save(
     form = await request.form()
     background = scene_helpers.safe(str(form.get("background", "")))
     upload = form.get("background_file")
+    uploaded = False
     if upload is not None and getattr(upload, "filename", ""):
         try:
             background = uploads.save_asset_bytes(
                 await upload.read(), upload.filename, LANDSCAPES_ASSETS_DIR)
+            uploaded = True
         except uploads.UploadError as exc:
             _logger.warning("Upload décor refusé : %s", exc)
     new_spot = {
@@ -335,6 +337,10 @@ async def spot_save(
         spots.append(new_spot)
 
     _write_spots(channel_id, _mut)
+    if uploaded:
+        # L'image elle-même doit partir sur git (le JSON seul y partait : six
+        # décors n'existaient que sur le serveur, retrouvés le 27/10/2026).
+        git_sync.push_content([f"assets/landscapes/{background}"], f"admin: décor {background}")
     _logger.info("Admin %s a composé le spot %s/%s", user.discord_id, channel_id, element)
     return RedirectResponse(f"/admin/zones/{channel_id}/spot/{element}?saved=1", status_code=303)
 

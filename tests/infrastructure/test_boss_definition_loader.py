@@ -60,15 +60,22 @@ def test_modifiers_loaded_correctly():
     assert titan.modifiers.get("auto_heal_per_turn", 0) > 0
 
     warlord = get_definition("gobelin_warlord")
-    assert warlord.modifiers.get("enrage_below_pct") == 30
-    assert warlord.modifiers.get("enrage_attack_multiplier") == 1.5
+    assert "adds" in warlord.modifiers
 
     dragon = get_definition("ancient_dragon")
     assert "damage_immunity_threshold" in dragon.modifiers
-    assert "enrage_below_pct" in dragon.modifiers
-    # nouveaux modifiers (politis : ignorés par le moteur tant que non câblés)
-    assert "phases" in dragon.modifiers
-    assert "adds" in dragon.modifiers
+    # Phases, ultime et gardes (27/10/2026) : des champs à part, plus des modifiers.
+    assert "phases" not in dragon.modifiers and "enrage_below_pct" not in dragon.modifiers
+
+
+def test_phases_ultime_et_gardes_charges():
+    clear_cache()
+    for code in ("slime_titan", "gobelin_warlord", "stone_colossus", "shadow_wraith", "ancient_dragon"):
+        boss = get_definition(code)
+        assert [ph["below_pct"] for ph in boss.phases] == [75, 50, 25]
+        assert all(ph.get("name") for ph in boss.phases)
+        assert boss.ultimate.get("name") and boss.ultimate.get("every", 0) >= 2
+        assert len(boss.guards) == 2 and all(g["max_hp"] > 0 and g["attack"] > 0 for g in boss.guards)
 
 
 def test_each_boss_has_an_element():

@@ -40,6 +40,11 @@ class BossDefinition:
     #   adds (dict)                     : invocations {attack, summon_turn_interval, max_active}
     #   phases (list)                   : [{below_pct, attack_multiplier, element?}]
     modifiers: dict = field(default_factory=dict)
+    # Mécaniques de l'assaut (27/10/2026, cf. `boss_assault`) : phases sous
+    # 75 / 50 / 25 % des PV, attaque ultime annoncée, gardes qui le protègent.
+    phases: list = field(default_factory=list)
+    ultimate: dict = field(default_factory=dict)
+    guards: list = field(default_factory=list)
 
     # Loot exclusif : roll indépendant par participant survivant. Liste de
     # {item_code, drop_rate (0..1), min_quantity, max_quantity}.

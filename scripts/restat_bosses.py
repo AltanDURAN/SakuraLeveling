@@ -59,6 +59,14 @@ MODIFIER_DESIGN: dict[str, dict[str, float]] = {
 }
 
 CALIBRATION_TEAM = "DTSD"     # DPS, Tank, Support, DPS (cf. reference_roles)
+#: Gardes (27/10/2026) : chacun « coûte » cette part des dégâts d'un assaut
+#: sans gardes ; son attaque est une part de celle du boss.
+GUARD_HP_SHARE = 0.12
+GUARD_ATK_SHARE = 0.35
+GUARD_DEF_SHARE = 0.6
+#: Le raid traverse les quatre phases (PV du boss conservés) : on mesure un
+#: assaut à ces parts de PV et on en fait la moyenne.
+PHASE_RATIOS = (0.88, 0.62, 0.38, 0.12)
 PARTY_SIZE = len(CALIBRATION_TEAM)
 ASSAULTS_TO_KILL = 6          # le raid doit durer ~6 jours
 BOSS_ATK_MULT = 2.0           # × (DEF + 6 % des PV) du joueur de référence
@@ -84,47 +92,65 @@ def _calibration_party(level: int) -> tuple[list[dict], dict, dict]:
 
 
 def _measure_damage_per_assault(level: int, attack: int, defense: int, boss: dict) -> int:
-    """Rejoue un assaut RÉEL (moteur de combat, escalade comprise) et mesure les
-    dégâts NETS : soins du boss déduits, immunité, renvoi et invocations
-    appliqués — exactement comme `LaunchPartyFightWorldBossUseCase`.
+    """Rejoue des assauts RÉELS (moteur de combat, `boss_assault` : gardes,
+    phases, ultime, escalade comprise) et mesure les dégâts NETS portés au
+    boss : soins déduits, immunité, renvoi et invocations appliqués —
+    exactement comme `LaunchPartyFightWorldBossUseCase`. Moyenne sur les
+    quatre phases du raid (`PHASE_RATIOS`).
 
-    Avant, la mesure se faisait contre un boss SANS ses capacités : le Titan
-    (soin 50 PV/tour) ou le Dragon (immunité < 100) étaient bien plus durs que
-    prévu, et le raid de la semaine devenait ingagnable."""
+    Avant l'audit d'octobre 2026, la mesure se faisait contre un boss SANS
+    ses capacités : le Titan et le Dragon devenaient ingagnables."""
     from datetime import datetime, UTC
 
     from app.domain.entities.mob_definition import MobDefinition
+    from app.domain.services.boss_assault import assault_enemies
     from app.domain.services.party_combat_service import PartyCombatService
 
     now = datetime.now(UTC)
-    # Le boss d'un raid en cours est déjà entamé : ses soins ne sont jamais
-    # plafonnés par ses PV max. On le simule donc à mi-vie d'une réserve énorme.
+    # Une réserve énorme : le boss ne meurt jamais pendant la mesure, et ses
+    # soins ne sont pas plafonnés par ses PV max.
     reserve = 10 ** 9
-    mob = MobDefinition(
-        id=1, code="calib", name="calib", description="", image_name="", family="",
-        max_hp=2 * reserve, current_hp=reserve, attack=attack, defense=defense,
-        speed=int(boss.get("speed", 8)), crit_chance=int(boss.get("crit_chance", 0)),
-        crit_damage=int(boss.get("crit_damage", 150)), dodge=int(boss.get("dodge", 0)),
-        hp_regeneration=0, xp_reward=0, gold_reward=0, spawn_weight=1, loot_table=[],
-        created_at=now, updated_at=now, element="",
-    )
     mods = boss.get("modifiers") or {}
     totals, actions = [], []
-    for seed in range(5):
-        random.seed(seed)
-        members, passives, tactics = _calibration_party(level)
-        result = PartyCombatService().fight_party_vs_mob(
-            members, mob, max_turns=BOSS_FIGHT_MAX_TURNS,
-            damage_immunity_threshold=int(mods.get("damage_immunity_threshold", 0)),
-            boss_heal_per_turn=int(mods.get("auto_heal_per_turn", 0)),
-            boss_reflect_pct=int(mods.get("reflect_pct", 0)),
-            boss_adds=mods.get("adds"),
-            passives_by_player=passives, tactics_by_player=tactics,
-        )
-        totals.append(max(0, reserve - result.mob_remaining_hp))
-        actions.append(result.turns)
+    for ratio in PHASE_RATIOS:
+        current = int(2 * reserve * ratio)
+        for seed in range(3):
+            random.seed(seed)
+            mob = MobDefinition(
+                id=1, code="calib", name="calib", description="", image_name="", family="",
+                max_hp=2 * reserve, current_hp=current, attack=attack, defense=defense,
+                speed=int(boss.get("speed", 8)), crit_chance=int(boss.get("crit_chance", 0)),
+                crit_damage=int(boss.get("crit_damage", 150)), dodge=int(boss.get("dodge", 0)),
+                hp_regeneration=0, xp_reward=0, gold_reward=0, spawn_weight=1, loot_table=[],
+                created_at=now, updated_at=now, element="",
+            )
+            enemies, index = assault_enemies(
+                mob, phases=boss.get("phases"), ultimate=boss.get("ultimate") or None,
+                guards=boss.get("guards"), immunity=int(mods.get("damage_immunity_threshold", 0)),
+                heal_per_turn=int(mods.get("auto_heal_per_turn", 0)),
+                reflect_pct=int(mods.get("reflect_pct", 0)), adds=mods.get("adds"))
+            members, passives, tactics = _calibration_party(level)
+            result = PartyCombatService().fight_party_vs_mobs(
+                members, enemies, max_turns=BOSS_FIGHT_MAX_TURNS,
+                passives_by_player=passives, tactics_by_player=tactics,
+            )
+            totals.append(max(0, current - result.enemies[index]["remaining_hp"]))
+            actions.append(result.turns)
     _LAST_ACTIONS[0] = sum(actions) / len(actions)
     return int(sum(totals) / len(totals))
+
+
+def _guards(boss: dict, level: int, attack: int, defense: int, modifiers: dict) -> list[dict]:
+    """Stats des gardes : selon les dégâts d'un assaut SANS eux."""
+    if not boss.get("guards"):
+        return []
+    raw = _measure_damage_per_assault(level, attack, defense,
+                                      {**boss, "modifiers": modifiers, "guards": []})
+    hp = max(50, round(raw * GUARD_HP_SHARE))
+    return [{**g, "max_hp": hp, "attack": max(1, round(attack * GUARD_ATK_SHARE)),
+             "defense": round(defense * GUARD_DEF_SHARE), "speed": int(boss.get("speed", 8)),
+             "crit_chance": 0, "crit_damage": 150, "dodge": 0}
+            for g in boss["guards"]]
 
 
 #: Nombre moyen d'actions du dernier assaut mesuré (sert au soin par tour).
@@ -151,7 +177,7 @@ def _scaled_modifiers(boss: dict, level: int, attack: int, defense: int) -> dict
     if "heal_share" in design:
         # Dégâts BRUTS du raid par tour du boss (sans soin), puis la part soignée.
         raw = _measure_damage_per_assault(
-            level, attack, defense, {**boss, "modifiers": {**mods, "auto_heal_per_turn": 0}},
+            level, attack, defense, {**boss, "modifiers": {**mods, "auto_heal_per_turn": 0}, "guards": []},
         )
         boss_speed = int(boss.get("speed", 8))
         party_speed = sum(m["stats"].speed for m in _calibration_party(level)[0])
@@ -176,10 +202,12 @@ def compute(level: int, boss: dict | None = None) -> dict:
     attack = max(10, round((ref.defense + 0.06 * ref.max_hp) * BOSS_ATK_MULT))
     boss = boss or {}
     modifiers = _scaled_modifiers(boss, level, attack, defense) if boss else {}
-    measured = _measure_damage_per_assault(level, attack, defense, {**boss, "modifiers": modifiers})
+    guards = _guards(boss, level, attack, defense, modifiers)
+    measured = _measure_damage_per_assault(level, attack, defense,
+                                           {**boss, "modifiers": modifiers, "guards": guards})
     max_hp = max(1000, int(round(measured * ASSAULTS_TO_KILL / 1000.0) * 1000))
     return {"max_hp": max_hp, "attack": attack, "defense": defense,
-            "ref_atk": ref_atk, "measured": measured, "modifiers": modifiers}
+            "ref_atk": ref_atk, "measured": measured, "modifiers": modifiers, "guards": guards}
 
 
 def main() -> None:
@@ -199,6 +227,10 @@ def main() -> None:
               f"   niv {level} · {c['measured']:,} dégâts/assaut mesurés"
               .replace(",", " "))
         b["max_hp"], b["attack"], b["defense"] = c["max_hp"], c["attack"], c["defense"]
+        if c["guards"]:
+            print(f"{'':26}gardes : {len(c['guards'])} × {c['guards'][0]['max_hp']} PV, "
+                  f"{c['guards'][0]['attack']} ATK · {c['measured'] and _LAST_ACTIONS[0]:.0f} actions/assaut")
+            b["guards"] = c["guards"]
         if c["modifiers"] != (b.get("modifiers") or {}):
             print(f"{'':26}capacités : {b.get('modifiers')} → {c['modifiers']}")
             b["modifiers"] = c["modifiers"]

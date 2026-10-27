@@ -89,6 +89,24 @@ class EnemySetup:
     heal_per_turn: int = 0
     reflect_pct: int = 0
     adds: dict | None = None
+    # --- World boss (27/10/2026, mécaniques A, B et C validées par l'auteur)
+    #: Le combat s'arrête quand CET ennemi tombe (le boss), gardes ou non.
+    decisive: bool = False
+    #: Garde du boss : les joueurs le visent d'abord ; tant qu'un garde est
+    #: debout, le boss subit `guarded_reduction_pct` % de dégâts en moins.
+    guard: bool = False
+    guarded_reduction_pct: int = 0
+    #: Phases : [{below_pct, name, text, attack_pct, abilities}] — sous ce
+    #: seuil de PV, l'ennemi gagne ces capacités (annoncé en combat).
+    phases: list[dict] = field(default_factory=list)
+    #: Attaque ultime : {name, every, multiplier, charge} — une action de
+    #: charge annoncée, puis un coup énorme sur tout le groupe… sauf si un
+    #: joueur le provoque : il l'encaisse seul (×1,5).
+    ultimate: dict | None = None
+
+
+#: L'ultime intercepté par une provocation frappe ce provocateur seul, plus fort.
+ULTIMATE_SINGLE_MULT = 1.5
 
 
 class PartyCombatService:
@@ -305,6 +323,13 @@ class PartyCombatService:
                 "bleeds": [],           # Valse sanglante : [{dmg, turns, by}]
                 "atk_down": 0,          # Braise persistante : actions à −20 % d'ATK
                 "down": False,          # sa mort a été traitée
+                # World boss : phases, ultime, gardes
+                "decisive": setup.decisive, "guard": setup.guard,
+                "guarded_pct": setup.guarded_reduction_pct,
+                "phases": sorted((dict(ph) for ph in setup.phases or []),
+                                 key=lambda ph: -float(ph.get("below_pct", 0))),
+                "phase_atk_pct": 0.0, "phase_name": "",
+                "ultimate": setup.ultimate, "ult_counter": 0, "ult_charging": False,
             }
 
         foes = [_foe(i, setup) for i, setup in enumerate(enemies)]
@@ -313,15 +338,48 @@ class PartyCombatService:
         def _living_foes() -> list:
             return [E for E in foes if E["hp"] > 0]
 
+        decisive_foes = [E for E in foes if E["decisive"]]
+
         def _foes_alive() -> bool:
-            return any(E["hp"] > 0 for E in foes)
+            """Le combat continue tant qu'un ennemi décisif (le boss) ou, à
+            défaut, un ennemi quelconque est debout."""
+            return any(E["hp"] > 0 for E in (decisive_foes or foes))
+
+        def _guards_up() -> bool:
+            return any(E["guard"] and E["hp"] > 0 for E in foes)
 
         def _player_target():
-            """L'ennemi le plus ABÎMÉ (part de PV la plus basse) : on se concentre."""
+            """L'ennemi le plus ABÎMÉ (part de PV la plus basse) : on se
+            concentre. Les gardes d'un boss passent avant lui."""
             living = _living_foes()
             if not living:
                 return None
+            if _guards_up():
+                living = [E for E in living if E["guard"]]
             return min(living, key=lambda E: (E["hp"] / max(1, E["max_hp"]), E["i"]))
+
+        def _guarded(E, damage: int) -> int:
+            """Dégâts sur un boss protégé par ses gardes."""
+            if E["guarded_pct"] > 0 and damage > 0 and _guards_up():
+                return max(1, round(damage * (1 - E["guarded_pct"] / 100)))
+            return damage
+
+        def _activate_phase(E, phase: dict, announce: bool = True) -> None:
+            """Sous un seuil de PV, l'ennemi change de comportement."""
+            phase["active"] = True
+            E["phase_name"] = phase.get("name", "")
+            E["phase_atk_pct"] += float(phase.get("attack_pct", 0))
+            for key, cfg in (phase.get("abilities") or {}).items():
+                if key == "summon":
+                    E["adds_attack"] = max(1, round(E["base"].attack * cfg.get("atk_pct", 30) / 100))
+                    E["adds_interval"] = int(cfg.get("every", 3))
+                    E["adds_max"] = int(cfg.get("max", 2))
+                else:
+                    E["ab"][key] = cfg
+            if announce:
+                self._emit("phase", ek(E), style=E["phase_name"])
+                turn_logs.append(snap(f"⚡ {E['mob'].name} entre en phase « {E['phase_name']} »"
+                                      + (f" : {phase['text']}" if phase.get("text") else ""), focus=E))
 
         def _neighbours(E) -> list:
             """Ennemis voisins de E dans la formation (dégâts de zone)."""
@@ -371,6 +429,8 @@ class PartyCombatService:
             a *= 1 + _enrage_pct(E) / 100
             if E["atk_down"]:   # Braise persistante (non cumulable)
                 a *= 0.80
+            if E["phase_atk_pct"]:
+                a *= 1 + E["phase_atk_pct"] / 100
             return max(1, int(round(a)))
 
         def _mob_defense_now(E) -> int:
@@ -532,6 +592,12 @@ class PartyCombatService:
                     f"(+{ab['revive'].get('atk_pct', 0)}% d'attaque) !", focus=E))
             if E["hp"] <= 0 and not E["down"]:
                 _foe_down(E)
+            # Phases : chaque seuil de PV franchi change son comportement.
+            if E["hp"] > 0 and E["phases"]:
+                ratio = E["hp"] / max(1, E["max_hp"]) * 100
+                for phase in E["phases"]:
+                    if not phase.get("active") and ratio <= float(phase.get("below_pct", 0)):
+                        _activate_phase(E, phase)
 
         def _foe_down(E) -> None:
             """Mort d'un ennemi : explosion (kamikaze), joueurs engloutis
@@ -588,6 +654,7 @@ class PartyCombatService:
             Comptés dans les dégâts infligés de `member`."""
             if E is None or E["hp"] <= 0 or amount <= 0:
                 return 0
+            amount = _guarded(E, amount)
             if E["immunity"] > 0 and amount < E["immunity"]:
                 self._emit("immune", ek(E))
                 return 0
@@ -672,6 +739,13 @@ class PartyCombatService:
         def _has_allies(member) -> bool:
             return any(m is not member and m["hp"] > 0 and not m["absorbed"]
                        and m["player_id"] != charmed_id for m in alive_party)
+
+        # ─── Phases déjà franchies (PV d'un boss conservés d'un assaut à l'autre)
+        for E in foes:
+            ratio = E["hp"] / max(1, E["max_hp"]) * 100
+            for phase in E["phases"]:
+                if ratio <= float(phase.get("below_pct", 0)):
+                    _activate_phase(E, phase, announce=False)
 
         # ─── Début du combat : vitesse par allié (Soigneur), boucliers (Égide) ───
         allies_count = max(0, len([m for m in alive_party if m["hp"] > 0]) - 1)
@@ -861,6 +935,7 @@ class PartyCombatService:
                 damage = max(1, round(damage * 1.10))
                 player["shadow"] = False
 
+            damage = _guarded(E, damage)     # boss protégé par ses gardes
             immune = False
             if E["immunity"] > 0 and damage < E["immunity"]:
                 damage = 0
@@ -1304,6 +1379,43 @@ class PartyCombatService:
                         turn_logs.append(snap(f"💫 {E['mob'].name} est étourdi et perd son action.",
                                               focus=E))
                         continue
+
+                    # Attaque ultime : une action de charge annoncée, puis le coup.
+                    ult = E["ultimate"]
+                    if ult:
+                        if E["ult_charging"]:
+                            E["ult_charging"] = False
+                            pool = _mob_targets()
+                            taunter = next((m for m in pool if m["player_id"] == E["taunted_by"]), None)
+                            targets = [taunter] if taunter is not None else pool
+                            mult = float(ult.get("multiplier", 2)) * (ULTIMATE_SINGLE_MULT if taunter else 1)
+                            parts = []
+                            for target in targets:
+                                shield_before = target["shield"]
+                                dmg, crit_u, dodged = self._resolve_mob_hit(
+                                    E["mob"], target, contributions, title_bonuses_by_player,
+                                    E["in"], E["family"], extra_multiplier=mult,
+                                    attack_override=_mob_attack_now(E), is_aoe=taunter is None)
+                                _mob_hit_fx(target, E, dmg, crit_u, dodged, "ultimate", shield_before)
+                                target.pop("_freeze", None)
+                                _recoil_to_mob(target, E)
+                                parts.append(f"{target['name']} esquive" if dodged else
+                                             f"{target['name']} −{dmg}" + (" 💀" if target["hp"] <= 0 else "")
+                                             + _tags(target))
+                            intercept = f" — 🛡️ {taunter['name']} l'intercepte seul !" if taunter else ""
+                            turn_logs.append(snap(f"💥 ULTIME — {E['mob'].name} déchaîne {ult.get('name', 'son attaque ultime')}"
+                                                  f"{intercept} : " + " · ".join(parts), focus=E))
+                            E["taunted_by"] = None
+                            if not _party_alive():
+                                break
+                            continue
+                        E["ult_counter"] += 1
+                        if E["ult_counter"] % max(2, int(ult.get("every", 6))) == 0:
+                            E["ult_charging"] = True
+                            self._emit("charge", ek(E), style=ult.get("name", ""))
+                            turn_logs.append(snap(f"⚠️ {E['mob'].name} prépare {ult.get('name', 'son attaque ultime')}… "
+                                                  + (ult.get("charge") or "Protégez-vous !"), focus=E))
+                            continue
 
                     # Chaman : soin d'urgence (remplace l'attaque de ce tour).
                     if E["chaman_pending"]:

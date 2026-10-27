@@ -69,7 +69,8 @@
             <h2 class="form-section-title">Modifiers (optionnel)</h2>
             <p class="form-section-help">
                 Format <code>key=value</code> séparé par virgules.<br>
-                Modifiers supportés : <code>damage_immunity_threshold</code> (int), <code>enrage_below_pct</code> + <code>enrage_attack_multiplier</code>, <code>crit_immunity</code> (mettre 1 ou 0).
+                Modifiers supportés : <code>damage_immunity_threshold</code> (int), <code>auto_heal_per_turn</code>, <code>reflect_pct</code>, <code>crit_immunity</code> (mettre 1 ou 0), <code>enrage_below_pct</code> + <code>enrage_attack_multiplier</code>.<br>
+                Les phases, l'attaque ultime, les gardes et les invocations sont dans <code>boss_definitions.json</code>, conservés à l'enregistrement ; leurs chiffres sont calculés par <code>scripts/restat_bosses.py</code>.
             </p>
             <label class="field">
                 <input type="text" name="modifiers" class="input" value="{{ fd.get('modifiers', '') }}"
