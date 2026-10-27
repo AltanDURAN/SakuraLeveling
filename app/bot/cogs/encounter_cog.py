@@ -9,7 +9,6 @@ from discord.ext import commands, tasks
 from app.application.services.encounter_service import EncounterService
 from app.bot.embeds.battle_summary_embeds import build_rewards_page_embed
 from app.bot.embeds.encounter_combat_log_embeds import (
-    build_combat_log_embed,
     format_turn_action,
 )
 from app.bot.embeds.encounter_embeds import build_encounter_embed
@@ -48,6 +47,9 @@ from app.shared.paths import (
 _GENERATED_FILES_TTL_SECONDS = 7 * 24 * 3600
 
 _logger = logging.getLogger(__name__)
+
+#: Taille maximale d'une vidéo de combat (envoi Discord sans boost : 10 Mo).
+_VIDEO_MAX_BYTES = 9_500_000
 
 
 class EncounterCog(commands.Cog):
@@ -558,87 +560,14 @@ class EncounterCog(commands.Cog):
         self.encounter_service.persist_final_players_hp(result, encounter)
         battle_summary = self.encounter_service.apply_rewards(encounter, result)
 
-        current_filename = f"encounter_{encounter.message_id}_current.png"
-        current_output_full = self.generated_dir / current_filename
-        current_output_relative = f"generated_encounters/{current_filename}"
+        if battle_summary is not None:
+            battle_summary.journal = [format_turn_action(log) for log in result.turn_logs]
 
-        # Message dédié au journal de combat tour par tour. Indépendant du
-        # message de spawn (qui garde l'image et finira sur le BattleSummary).
-        mob_name = encounter.mob_names
-        mob_max_hp = encounter.mob_state.max_hp
-        action_lines: list[str] = []
-        initial_log_embed = build_combat_log_embed(
-            mob_name=mob_name,
-            actions=action_lines,
-            mob_current_hp=mob_max_hp,
-            mob_max_hp=mob_max_hp,
-            players_state=None,
-            finished=False,
-            enemies_state=result.turn_logs[0].enemies_state if result.turn_logs else None,
-        )
-        try:
-            combat_log_message = await channel.send(embed=initial_log_embed)
-        except discord.HTTPException:
-            combat_log_message = None
-
-        for turn_log in result.turn_logs:
-            players_stats_for_score: list[Stats] = []
-
-            for player_state in turn_log.players_state:
-                players_stats_for_score.append(
-                    Stats(
-                        max_hp=player_state["max_hp"],
-                        attack=player_state.get("attack", 1),
-                        defense=player_state.get("defense", 0),
-                        crit_chance=player_state.get("crit_chance", 0),
-                        crit_damage=player_state.get("crit_damage", 100),
-                        dodge=player_state.get("dodge", 0),
-                        hp_regeneration=player_state.get("hp_regeneration", 0),
-                        speed=player_state.get("speed", 1),
-                    )
-                )
-
-            players_power_score = self.power_score_service.calculate_and_format_party_score(
-                players_stats_for_score
-            )
-
-            # L'élément est fixe pour tout l'encounter → injecté depuis la source
-            # unique (mob_state), la teinte/badge persiste pendant le combat.
-            await asyncio.to_thread(
-                compose_players_banner,
-                players=turn_log.players_state,
-                output_path=str(current_output_full),
-                background_path=str(background_path),
-                players_power_score=players_power_score,
-                **self._render_kwargs(channel_id, encounter, turn_log),
-            )
-
-            turn_embed, file = build_encounter_embed(
-                image_name=current_output_relative,
-            )
-
-            await message.edit(embed=turn_embed, attachments=[file], view=view)
-
-            # Met à jour le journal de combat séparé : ligne du tour + PV.
-            if combat_log_message is not None:
-                action_lines.append(format_turn_action(turn_log))
-                log_embed = build_combat_log_embed(
-                    mob_name=mob_name,
-                    actions=action_lines,
-                    mob_current_hp=int(turn_log.mob_state.get("current_hp", 0) or 0),
-                    mob_max_hp=mob_max_hp,
-                    players_state=turn_log.players_state,
-                    finished=False,
-                    enemies_state=turn_log.enemies_state,
-                )
-                try:
-                    await combat_log_message.edit(embed=log_embed)
-                except discord.HTTPException:
-                    # On garde la suite du combat même si une édition échoue
-                    # (rate limit, message supprimé).
-                    combat_log_message = None
-
-            await asyncio.sleep(1.5)
+        # Le combat en VIDÉO (27/10/2026) : un GIF qui se lance tout seul et ne
+        # boucle pas, puis le message passe au récapitulatif. Il remplace les
+        # images toutes les 1,5 s et le message « combat en cours » (le
+        # déroulé est la 3e page du récapitulatif).
+        await self._play_fight_video(channel_id, encounter, message, result, background_path)
 
         if battle_summary is None:
             self._reschedule(channel_id)
@@ -651,28 +580,72 @@ class EncounterCog(commands.Cog):
             view=summary_view,
         )
 
-        # Édition finale du journal de combat : lien vers le message de spawn.
-        if combat_log_message is not None:
-            redirect_url = getattr(message, "jump_url", None)
-            final_log_embed = build_combat_log_embed(
-                mob_name=mob_name,
-                actions=action_lines,
-                mob_current_hp=0
-                if battle_summary.outcome == "victory"
-                else max(0, result.mob_remaining_hp),
-                mob_max_hp=mob_max_hp,
-                players_state=None,
-                finished=True,
-                redirect_url=redirect_url,
-                enemies_state=result.turn_logs[-1].enemies_state if result.turn_logs else None,
-            )
-            try:
-                await combat_log_message.edit(embed=final_log_embed)
-            except discord.HTTPException:
-                pass
-
         await self._announce_mythics(channel, battle_summary, getattr(message, "jump_url", None))
         self._reschedule(channel_id)
+
+    def _render_fight_video(self, channel_id: int, encounter, result, background_path):
+        """Le GIF du combat (cf. `fight_animation`), ou None si le rendu
+        échoue ou dépasse la taille d'un envoi Discord même réduit."""
+        from app.application.services.encounter_service import EncounterService
+        from app.bot.rendering.fight_animation import WIDTH, animate_fight
+        from app.bot.rendering.fight_scene import build_scene
+
+        if not result.turn_logs:
+            return None
+        first = result.turn_logs[0]
+        players = [dict(p) for p in first.players_state]
+        by_user = {p.user_id: p for p in encounter.participants.values()}
+        start_players = {}
+        for p in players:
+            part = by_user.get(p.get("user_id"))
+            start = (EncounterService._scaled_hp(part.current_hp, part.max_hp, p["max_hp"])
+                     if part is not None else p["current_hp"])
+            start_players[f"p{p['player_id']}"] = (start, p["max_hp"])
+        kwargs = self._render_kwargs(channel_id, encounter)
+        scene = build_scene(players=players, background_path=str(background_path),
+                            **{k: v for k, v in kwargs.items() if k in (
+                                "mob", "spot", "placement", "mobs", "placements", "formation")})
+        first_enemies = first.enemies_state or [first.mob_state]
+        start_enemies = {
+            f"e{i}": (m.current_hp, m.max_hp, int((first_enemies[i] if i < len(first_enemies) else {})
+                                                   .get("shield", 0) or 0))
+            for i, m in enumerate(encounter.mobs)
+        }
+        out = self.generated_dir / f"encounter_{encounter.message_id}_combat.gif"
+        for width in (WIDTH, 440):
+            anim = animate_fight(scene, start_enemies, start_players, result.turn_logs, out, width=width)
+            if anim.size_bytes <= _VIDEO_MAX_BYTES:
+                return anim
+        out.unlink(missing_ok=True)
+        return None
+
+    async def _play_fight_video(self, channel_id: int, encounter, message, result, background_path) -> None:
+        """Joue la vidéo du combat dans le message du monstre, le temps qu'elle
+        dure (best effort : sans vidéo, on passe directement au récapitulatif)."""
+        try:
+            await message.edit(embed=discord.Embed(
+                title=f"⚔️ Le combat s'engage — {encounter.mob_names}",
+                description="_Les coups pleuvent…_", color=discord.Color.orange()), view=None)
+        except discord.HTTPException:
+            pass
+        try:
+            anim = await asyncio.to_thread(self._render_fight_video, channel_id, encounter, result,
+                                           background_path)
+        except Exception:
+            _logger.exception("vidéo du combat échouée")
+            return
+        if anim is None:
+            return
+        embed = discord.Embed(title=f"⚔️ {encounter.mob_names}", color=discord.Color.orange())
+        embed.set_image(url=f"attachment://{anim.path.name}")
+        try:
+            await message.edit(embed=embed, attachments=[discord.File(anim.path, filename=anim.path.name)],
+                               view=None)
+            await asyncio.sleep(anim.duration_s + 1.0)
+        except discord.HTTPException:
+            _logger.warning("envoi de la vidéo du combat échoué", exc_info=True)
+        finally:
+            anim.path.unlink(missing_ok=True)   # Discord garde sa copie
 
     @staticmethod
     async def _announce_mythics(channel, summary, jump_url: str | None) -> None:

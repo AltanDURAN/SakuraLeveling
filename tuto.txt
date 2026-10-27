@@ -416,10 +416,11 @@ COMBATS DE GROUPE (automatiques)
     Un monstre apparaît dans chaque salon de zone ; le suivant revient
     environ une minute après la fin du combat. Clique « Rejoindre » : tu as
     5 minutes pour te joindre au groupe (le combat peut être lancé avant).
-    Un second message suit le combat tour par tour ; à la fin, il renvoie
-    vers le récapitulatif (deux pages : récompenses, puis détail et part de
-    victoire de chacun).
-    Sur l'image du combat, chaque action s'affiche : les dégâts en chiffres
+    Quand le combat part, il se joue en VIDÉO dans le message du monstre
+    (elle se lance toute seule), puis laisse la place au récapitulatif en
+    trois pages : récompenses, détail et part de victoire de chacun, et le
+    journal du combat.
+    Dans la vidéo, chaque action s'affiche : les dégâts en chiffres
     (plus le coup est gros, plus le chiffre est grand), les CRITIQUES en or,
     les soins en vert, les boucliers en bleu, les esquives, poisons,
     étourdissements… avec l'effet du coup (entaille, griffes, morsure,

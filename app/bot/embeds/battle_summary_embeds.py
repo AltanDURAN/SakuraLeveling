@@ -233,7 +233,36 @@ def build_details_page_embed(summary: BattleSummary) -> discord.Embed:
     return embed
 
 
+#: Lignes du journal qui méritent d'être gardées quand tout ne tient pas :
+#: critiques, chutes, exécutions, résurrections, renforcements…
+_KEY_MARKERS = ("CRIT", "💀", "exécuté", "renaît", "revient", "relevé", "engloutit", "charme",
+                "explose", "s'éternise", "libéré", "Égide", "tient bon")
+_JOURNAL_BUDGET = 3900
+
+
+def build_journal_page_embed(summary: BattleSummary) -> discord.Embed:
+    """Le déroulé du combat : tout s'il tient, sinon les moments clés."""
+    embed = discord.Embed(title=f"📜 Journal du combat — {summary.mob_name}", color=_outcome_color(summary))
+    lines = list(summary.journal)
+    if not lines:
+        embed.description = "_Aucune action enregistrée._"
+        return embed
+    if sum(len(line) + 1 for line in lines) > _JOURNAL_BUDGET:
+        key = [line for line in lines if any(m in line for m in _KEY_MARKERS)]
+        header = f"_Moments clés — {len(lines)} actions en tout._"
+        kept, total = [], len(header) + 1
+        for line in key + [lines[-1]] if lines[-1] not in key else key:
+            if total + len(line) + 1 > _JOURNAL_BUDGET:
+                break
+            kept.append(line)
+            total += len(line) + 1
+        lines = [header, *kept]
+    embed.description = "\n".join(lines)
+    return embed
+
+
 PAGES = [
     ("🎁 Récompenses", build_rewards_page_embed),
     ("📊 Détails du combat", build_details_page_embed),
+    ("📜 Journal", build_journal_page_embed),
 ]

@@ -19,6 +19,9 @@ class BattleSummary:
     rewards: list[PlayerReward] = field(default_factory=list)
     base_xp_reward: int = 0
     base_gold_reward: int = 0
+    #: Le déroulé du combat, une ligne par action (3e page du récapitulatif :
+    #: la vidéo a remplacé le message « combat en cours »).
+    journal: list[str] = field(default_factory=list)
 
     @property
     def is_victory(self) -> bool:

@@ -175,9 +175,39 @@ def _text_layer(text: str, size: int, fill, *, gradient: tuple | None = None,
     return layer
 
 
-def _paste_center(base: Image.Image, layer: Image.Image, cx: float, cy: float, angle: float = 0) -> None:
+@dataclass
+class FxItem:
+    """Un calque d'effet ou de chiffre, centré en (cx, cy) — pour l'animation."""
+    layer: Image.Image
+    cx: float
+    cy: float
+    role: str          # "effect" ou "label"
+
+
+class FxCollector:
+    """Remplace l'image de destination : collecte les calques au lieu de les
+    coller (l'animation les transforme ensuite image par image)."""
+
+    def __init__(self, width: int, height: int) -> None:
+        self.width, self.height = width, height
+        self.items: list[FxItem] = []
+        self.role = "effect"
+
+
+def collect_fx(events: list[dict] | None, anchors: dict[str, "Anchor"], size: tuple[int, int],
+               seed: int = 0) -> list[FxItem]:
+    """Les calques des événements d'une action, sans les coller."""
+    collector = FxCollector(*size)
+    draw_combat_fx(collector, events, anchors, seed=seed)
+    return collector.items
+
+
+def _paste_center(base, layer: Image.Image, cx: float, cy: float, angle: float = 0) -> None:
     if angle:
         layer = layer.rotate(angle, resample=Image.BICUBIC, expand=True)
+    if isinstance(base, FxCollector):
+        base.items.append(FxItem(layer, cx, cy, base.role))
+        return
     x = int(round(cx - layer.width / 2))
     y = int(round(cy - layer.height / 2))
     # Un calque qui déborde du cadre est rogné (Pillow refuse une position négative).
@@ -623,7 +653,7 @@ def _label(event: dict, target: Anchor) -> tuple[str, int, tuple, dict] | None:
     return None
 
 
-def draw_combat_fx(base: Image.Image, events: list[dict] | None, anchors: dict[str, Anchor],
+def draw_combat_fx(base, events: list[dict] | None, anchors: dict[str, Anchor],
                    seed: int = 0) -> None:
     """Dessine les effets puis les chiffres des événements de l'action, sur
     leurs cibles. Un événement dont la cible n'est pas à l'image est ignoré."""
@@ -641,6 +671,8 @@ def draw_combat_fx(base: Image.Image, events: list[dict] | None, anchors: dict[s
         if label is not None:
             labels.append((event, target, label))
     # Les chiffres par-dessus tous les effets, empilés par cible.
+    if isinstance(base, FxCollector):
+        base.role = "label"
     for event, target, (text, size, color, opts) in labels:
         key = event["target"]
         stacked = placed.get(key, 0.0)      # hauteur déjà occupée sur cette cible

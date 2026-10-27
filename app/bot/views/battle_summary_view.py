@@ -5,7 +5,7 @@ from app.domain.value_objects.battle_summary import BattleSummary
 
 
 class BattleSummaryView(discord.ui.View):
-    """Vue paginée d'un résumé de combat (récompenses ↔ détails)."""
+    """Vue paginée d'un résumé de combat (récompenses, détails, journal)."""
 
     def __init__(self, summary: BattleSummary, timeout: float = 600.0) -> None:
         super().__init__(timeout=timeout)
@@ -39,7 +39,7 @@ class BattleSummaryView(discord.ui.View):
             self._refresh_buttons()
         await interaction.response.edit_message(embed=self.current_embed, view=self)
 
-    @discord.ui.button(label="1 / 2", style=discord.ButtonStyle.primary, disabled=True)
+    @discord.ui.button(label="1 / 3", style=discord.ButtonStyle.primary, disabled=True)
     async def indicator(
         self,
         interaction: discord.Interaction,

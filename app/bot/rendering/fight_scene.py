@@ -18,6 +18,7 @@ mini-barre de vie + nom). Barres mob et joueurs : même règle couleur.
 """
 
 import logging
+from dataclasses import dataclass, field
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
@@ -177,6 +178,247 @@ def _load_mob_image(image_name: str | None) -> Image.Image:
     return Image.new("RGBA", (600, 600), (120, 120, 120, 255))
 
 
+@dataclass
+class _Sprite:
+    """Un monstre posé dans la scène (teinté par son élément) ; `dim` : sa
+    version vaincue (assombrie), calculée au besoin."""
+    key: str
+    img: Image.Image
+    pos: tuple[int, int]
+    dim: Image.Image | None = None
+
+    def dimmed(self) -> Image.Image:
+        if self.dim is None:
+            alpha = self.img.getchannel("A").point(lambda a: a * 45 // 100)
+            self.dim = Image.merge("RGBA", (*self.img.convert("RGB").point(lambda v: v // 3).split(), alpha))
+        return self.dim
+
+
+@dataclass
+class _Bar:
+    """Une barre de PV du HUD (position, police du texte, texte affiché ou
+    non, barre de bouclier au-dessus pour le monstre seul)."""
+    box: tuple[int, int, int, int]
+    font: ImageFont.ImageFont | None = None
+    shield_box: tuple[int, int, int, int] | None = None
+
+
+@dataclass
+class Scene:
+    """Une scène de combat découpée en couches : `bg` (décor + ombres), les
+    monstres (`sprites`, dans l'ordre de dessin), `overlay` (bandeaux, noms,
+    badges, avatars) — figés — puis les barres de PV et les effets, redessinés
+    à chaque image. Le rendu fixe est mis en cache par ensemble de vaincus :
+    une animation ne recompose le décor qu'à la chute d'un monstre."""
+    bg: Image.Image
+    sprites: list[_Sprite]
+    overlay: Image.Image
+    enemy_bars: dict[str, _Bar]
+    player_bars: dict[str, _Bar]
+    anchors: dict[str, combat_fx.Anchor]
+    dim_dead: bool = True
+    _cache: dict = field(default_factory=dict)
+
+    def static(self, dead: frozenset = frozenset()) -> Image.Image:
+        key = dead if self.dim_dead else frozenset()
+        if key not in self._cache:
+            img = self.bg.copy()
+            for sprite in self.sprites:
+                img.alpha_composite(sprite.dimmed() if sprite.key in key else sprite.img, sprite.pos)
+            img.alpha_composite(self.overlay)
+            self._cache[key] = img
+        return self._cache[key]
+
+    def draw_bars(self, img: Image.Image, enemies: dict[str, tuple], players: dict[str, tuple]) -> None:
+        """`enemies` : {clé: (PV, PV max, bouclier)} ; `players` : {clé: (PV, PV max)}."""
+        draw = ImageDraw.Draw(img)
+        for key, bar in self.enemy_bars.items():
+            cur, mx, shield = enemies.get(key, (0, 1, 0))
+            cur, mx, shield = max(0, int(round(cur))), int(round(mx)), int(round(shield))
+            x1, y1, x2, y2 = bar.box
+            _draw_ratio_bar(img, draw, x1, y1, x2, y2, cur, mx)
+            if bar.font is not None:
+                hp_txt = f"{cur} / {mx}" if cur > 0 else "Vaincu"
+                draw.text(((x1 + x2) / 2 - draw.textlength(hp_txt, font=bar.font) / 2,
+                           (y1 + y2) / 2 - bar.font.size / 2 - 1), hp_txt, font=bar.font,
+                          fill=(255, 255, 255, 255))
+            if bar.shield_box is not None and shield > 0 and mx > 0:
+                sx1, sy1, sx2, sy2 = bar.shield_box
+                draw.rounded_rectangle([sx1, sy1, sx2, sy2], radius=5, fill=(18, 22, 40, 190))
+                fill_w = int((sx2 - sx1) * max(0.0, min(1.0, shield / mx)))
+                if fill_w > 4:
+                    draw.rounded_rectangle([sx1, sy1, sx1 + fill_w, sy2], radius=5, fill=(74, 150, 255, 240))
+                draw.text((sx1 + 6, sy1 - 1), f"Bouclier {int(shield)}", font=bar.font,
+                          fill=(190, 218, 255, 255))
+        for key, bar in self.player_bars.items():
+            cur, mx = players.get(key, (0, 1))
+            _draw_ratio_bar(img, draw, *bar.box, max(0, int(round(cur))), int(round(mx)))
+
+    def render(self, enemies: dict[str, tuple], players: dict[str, tuple],
+               dead: frozenset = frozenset(), events: list[dict] | None = None,
+               fx_seed: int = 0) -> Image.Image:
+        """Une image complète (RGBA) : décor figé, barres, effets."""
+        img = self.static(dead).copy()
+        self.draw_bars(img, enemies, players)
+        combat_fx.draw_combat_fx(img, events, self.anchors, seed=fx_seed)
+        return img
+
+
+def _player_key(player: dict, index: int) -> str:
+    return f"p{player['player_id']}" if player.get("player_id") is not None else f"slot{index}"
+
+
+def build_scene(
+    *,
+    mob: dict | None,
+    players: list[dict] | None = None,
+    background_path: str | None = None,
+    spot: dict | None = None,
+    placement: dict | None = None,
+    mobs: list[dict] | None = None,
+    placements: list[dict | None] | None = None,
+    formation: list[dict] | None = None,
+) -> Scene:
+    """Prépare la scène (cf. `Scene`) : décor du spot, monstre(s), bandeaux.
+    Les PV des monstres et des joueurs ne servent qu'au rendu des barres."""
+    players = players or []
+    group = list(mobs or [])
+    if len(group) > 1:
+        mob = None
+
+    # ---- Décor (vient du spot) ----
+    bg_path = background_path
+    if spot and spot.get("background"):
+        bg_path = str(LANDSCAPES_ASSETS_DIR / spot["background"])
+    raw_bg = load_background(bg_path, size=(FRAME_W, FRAME_H))
+    if spot and spot.get("crop"):
+        bg = crop_background(raw_bg, spot["crop"])
+    else:
+        zoomed = raw_bg
+        if _AUTO_DECOR_ZOOM > 1.0:
+            cw = int(raw_bg.width / _AUTO_DECOR_ZOOM)
+            ch = int(raw_bg.height / _AUTO_DECOR_ZOOM)
+            zoomed = raw_bg.crop(((raw_bg.width - cw) // 2, (raw_bg.height - ch) // 2,
+                                  (raw_bg.width - cw) // 2 + cw, (raw_bg.height - ch) // 2 + ch))
+        bg = _cover_fit(zoomed, FRAME_W, FRAME_H)
+    bg = bg.convert("RGBA")
+
+    try:
+        title_font = ImageFont.truetype("DejaVuSans-Bold.ttf", _FONTS["title"])
+        stat_font = ImageFont.truetype("DejaVuSans-Bold.ttf", _FONTS["stat"])
+        hp_font = ImageFont.truetype("DejaVuSans-Bold.ttf", _FONTS["hp"])
+    except Exception:
+        title_font = stat_font = hp_font = ImageFont.load_default()
+
+    anchors: dict[str, combat_fx.Anchor] = {}
+    sprites: list[_Sprite] = []
+    enemy_bars: dict[str, _Bar] = {}
+    player_bars: dict[str, _Bar] = {}
+
+    # ---- Monstre (le HUD passera par-dessus) ----
+    if mob is not None:
+        content = mob_content(_load_mob_image(mob.get("image_name")))
+        if placement:
+            ground_y = (spot or {}).get("ground_y", 0.86)
+            mob_img, mob_pos = place_mob(content, placement, ground_y)
+            shadow = placement.get("shadow", True)
+        else:
+            mob_img, mob_pos = _auto_place_mob(content)
+            shadow = True
+        if shadow:
+            draw_contact_shadow(bg, mob_pos, mob_img.size)
+        element = mob.get("element") or ""
+        if element:
+            mob_img = tint_by_element(mob_img, element)
+        sprites.append(_Sprite("e0", mob_img, mob_pos))
+        anchors["e0"] = combat_fx.Anchor(
+            mob_pos[0], max(STAGE_TOP, mob_pos[1]), mob_img.width,
+            min(mob_img.height, STAGE_BOTTOM - max(STAGE_TOP, mob_pos[1])),
+            int(mob.get("max_hp", 1) or 1), element, mob.get("code", ""))
+
+    if len(group) > 1:
+        group_sprites, boxes = _place_group(bg, group, placements or [None] * len(group),
+                                            formation or [{"x": 0, "y": 0, "scale": 1}] * len(group), spot)
+        sprites.extend(group_sprites)
+        for i, data in enumerate(group):
+            x, y, w, h = boxes[i]
+            anchors[f"e{i}"] = combat_fx.Anchor(x, y, w, h, int(data.get("max_hp", 1) or 1),
+                                                data.get("element") or "", data.get("code", ""))
+
+    # ---- Bandeaux et textes figés (calque au-dessus des monstres) ----
+    overlay = Image.new("RGBA", (FRAME_W, FRAME_H), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(overlay)
+    _panel(overlay, TOP_PANEL)
+    if len(group) > 1:
+        enemy_bars.update(_group_hud(overlay, draw, group))
+    if mob is not None:
+        pl, pt, pr, pb = TOP_PANEL
+        badge_d = _FONTS["badge"]
+        name_x = pl + 30
+        element = mob.get("element") or ""
+        if element:
+            badge = make_element_badge(element, diameter=badge_d)
+            if badge is not None:
+                overlay.alpha_composite(badge, (pl + 18, pt + (pb - pt - badge_d) // 2))
+                name_x = pl + 18 + badge_d + 18
+        draw.text((name_x, pt + 12), mob.get("name", "Monstre"), font=title_font,
+                  fill=(255, 255, 255, 255))
+        power = mob.get("power_score", "")
+        if power:
+            ptxt = f"[ {power} ]"
+            draw.text((pr - 16 - draw.textlength(ptxt, font=stat_font), pt + 20),
+                      ptxt, font=stat_font, fill=(235, 226, 236, 255))
+        bar_y2, bar_y1 = pb - 14, pb - 50
+        # Barre de BOUCLIER (bleu) par-dessus les PV — s'épuise avant les PV.
+        enemy_bars["e0"] = _Bar((name_x, bar_y1, pr - 16, bar_y2), hp_font,
+                                shield_box=(name_x, bar_y1 - 13, pr - 16, bar_y1 - 3))
+
+    # ---- Bandeau JOUEURS (bas) ----
+    _panel(overlay, BOTTOM_PANEL)
+    if players:
+        bl, bt, br, bb = BOTTOM_PANEL
+        count = len(players)
+        slot_x1, slot_x2 = bl + 24, br - 24
+        step = (slot_x2 - slot_x1) / max(1, count)
+        av_d = max(44, min(_FONTS["av_d"], int(step) - 8))
+        bar_half = int(av_d * 0.58)
+        av_y = bt + 8
+        for i, player in enumerate(players):
+            cx = int(slot_x1 + step * (i + 0.5))
+            try:
+                raw_avatar = download_image(player["avatar_url"])
+            except Exception:
+                raw_avatar = Image.new("RGBA", (av_d, av_d), (120, 120, 120, 255))
+            mx = int(player.get("max_hp", 1) or 1)
+            avatar = add_outline(crop_to_circle(raw_avatar, av_d), outline_size=3)
+            overlay.alpha_composite(avatar, (cx - avatar.width // 2, av_y))
+            key = _player_key(player, i)
+            if player.get("player_id") is not None:
+                anchors[key] = combat_fx.Anchor(
+                    cx - avatar.width // 2, av_y, avatar.width, avatar.height, mx, player=True)
+            bar_y = av_y + avatar.height + 2
+            player_bars[key] = _Bar((cx - bar_half, bar_y, cx + bar_half, bar_y + 16))
+            name = player.get("name", "")
+            if name:
+                draw.text((cx - draw.textlength(name, font=hp_font) / 2, bar_y + 18),
+                          name, font=hp_font, fill=(240, 240, 245, 255))
+
+    return Scene(bg, sprites, overlay, enemy_bars, player_bars, anchors, dim_dead=len(group) > 1)
+
+
+def scene_values(mob: dict | None, mobs: list[dict] | None,
+                 players: list[dict] | None) -> tuple[dict, dict, frozenset]:
+    """(PV des monstres, PV des joueurs, vaincus) tirés des données de la scène."""
+    group = list(mobs or [])
+    enemy_list = group if len(group) > 1 else ([mob] if mob is not None else [])
+    enemies = {f"e{i}": (int(m.get("current_hp", 0) or 0), int(m.get("max_hp", 0) or 0),
+                         int(m.get("shield", 0) or 0)) for i, m in enumerate(enemy_list)}
+    dead = frozenset(k for k, (cur, _, _) in enemies.items() if cur <= 0)
+    pl = {_player_key(p, i): (int(p.get("current_hp", 0) or 0), int(p.get("max_hp", 1) or 1))
+          for i, p in enumerate(players or [])}
+    return enemies, pl, dead
+
+
 def render_scene(
     *,
     mob: dict | None,
@@ -199,140 +441,12 @@ def render_scene(
     `placements` (le placement propre de chacun pour son élément, ou None) et
     `formation` (un emplacement {x, y, scale} par monstre). `events` :
     ce qui s'est passé pendant l'action (chiffres de dégâts, soins, effets —
-    cf. `combat_fx`), dessiné par-dessus tout."""
-    players = players or []
-    mob = mob or None
-    group = list(mobs or [])
-    if len(group) > 1:
-        mob = None
-
-    # ---- Décor (vient du spot) ----
-    bg_path = background_path
-    if spot and spot.get("background"):
-        bg_path = str(LANDSCAPES_ASSETS_DIR / spot["background"])
-    raw_bg = load_background(bg_path, size=(FRAME_W, FRAME_H))
-    if spot and spot.get("crop"):
-        result = crop_background(raw_bg, spot["crop"])
-    else:
-        zoomed = raw_bg
-        if _AUTO_DECOR_ZOOM > 1.0:
-            cw = int(raw_bg.width / _AUTO_DECOR_ZOOM)
-            ch = int(raw_bg.height / _AUTO_DECOR_ZOOM)
-            zoomed = raw_bg.crop(((raw_bg.width - cw) // 2, (raw_bg.height - ch) // 2,
-                                  (raw_bg.width - cw) // 2 + cw, (raw_bg.height - ch) // 2 + ch))
-        result = _cover_fit(zoomed, FRAME_W, FRAME_H)
-
-    draw = ImageDraw.Draw(result)
-    try:
-        title_font = ImageFont.truetype("DejaVuSans-Bold.ttf", _FONTS["title"])
-        stat_font = ImageFont.truetype("DejaVuSans-Bold.ttf", _FONTS["stat"])
-        hp_font = ImageFont.truetype("DejaVuSans-Bold.ttf", _FONTS["hp"])
-    except Exception:
-        title_font = stat_font = hp_font = ImageFont.load_default()
-
-    anchors: dict[str, combat_fx.Anchor] = {}
-
-    # ---- Monstre (le HUD passera par-dessus) ----
-    if mob is not None:
-        content = mob_content(_load_mob_image(mob.get("image_name")))
-        if placement:
-            ground_y = (spot or {}).get("ground_y", 0.86)
-            mob_img, mob_pos = place_mob(content, placement, ground_y)
-            shadow = placement.get("shadow", True)
-        else:
-            mob_img, mob_pos = _auto_place_mob(content)
-            shadow = True
-        if shadow:
-            draw_contact_shadow(result, mob_pos, mob_img.size)
-        element = mob.get("element") or ""
-        if element:
-            mob_img = tint_by_element(mob_img, element)
-        result.alpha_composite(mob_img, mob_pos)
-        anchors["e0"] = combat_fx.Anchor(
-            mob_pos[0], max(STAGE_TOP, mob_pos[1]), mob_img.width,
-            min(mob_img.height, STAGE_BOTTOM - max(STAGE_TOP, mob_pos[1])),
-            int(mob.get("max_hp", 1) or 1), element, mob.get("code", ""))
-
-    if len(group) > 1:
-        boxes = _draw_group(result, group, placements or [None] * len(group),
-                            formation or [{"x": 0, "y": 0, "scale": 1}] * len(group), spot)
-        for i, data in enumerate(group):
-            x, y, w, h = boxes[i]
-            anchors[f"e{i}"] = combat_fx.Anchor(x, y, w, h, int(data.get("max_hp", 1) or 1),
-                                                data.get("element") or "", data.get("code", ""))
-
-    # ---- Bandeau MOB (haut) ----
-    _panel(result, TOP_PANEL)
-    if len(group) > 1:
-        _draw_group_hud(result, draw, group)
-    if mob is not None:
-        pl, pt, pr, pb = TOP_PANEL
-        badge_d = _FONTS["badge"]
-        name_x = pl + 30
-        element = mob.get("element") or ""
-        if element:
-            badge = make_element_badge(element, diameter=badge_d)
-            if badge is not None:
-                result.alpha_composite(badge, (pl + 18, pt + (pb - pt - badge_d) // 2))
-                name_x = pl + 18 + badge_d + 18
-        draw.text((name_x, pt + 12), mob.get("name", "Monstre"), font=title_font,
-                  fill=(255, 255, 255, 255))
-        power = mob.get("power_score", "")
-        if power:
-            ptxt = f"[ {power} ]"
-            draw.text((pr - 16 - draw.textlength(ptxt, font=stat_font), pt + 20),
-                      ptxt, font=stat_font, fill=(235, 226, 236, 255))
-        cur = int(mob.get("current_hp", 0) or 0)
-        mx = int(mob.get("max_hp", 0) or 0)
-        bar_y2, bar_y1 = pb - 14, pb - 50
-        _draw_ratio_bar(result, draw, name_x, bar_y1, pr - 16, bar_y2, cur, mx)
-        hp_txt = f"{cur} / {mx}" if cur > 0 else "Vaincu"
-        draw.text(((name_x + pr - 16) / 2 - draw.textlength(hp_txt, font=hp_font) / 2,
-                   bar_y1 + 5), hp_txt, font=hp_font, fill=(255, 255, 255, 255))
-        # Barre de BOUCLIER (bleu) par-dessus les PV — s'épuise avant les PV.
-        shield = int(mob.get("shield", 0) or 0)
-        if shield > 0 and mx > 0:
-            sratio = max(0.0, min(1.0, shield / mx))
-            sx1, sx2, sy1, sy2 = name_x, pr - 16, bar_y1 - 13, bar_y1 - 3
-            draw.rounded_rectangle([sx1, sy1, sx2, sy2], radius=5, fill=(18, 22, 40, 190))
-            fill_w = int((sx2 - sx1) * sratio)
-            if fill_w > 4:
-                draw.rounded_rectangle([sx1, sy1, sx1 + fill_w, sy2], radius=5, fill=(74, 150, 255, 240))
-            draw.text((sx1 + 6, sy1 - 1), f"Bouclier {shield}", font=hp_font, fill=(190, 218, 255, 255))
-
-    # ---- Bandeau JOUEURS (bas) ----
-    _panel(result, BOTTOM_PANEL)
-    if players:
-        bl, bt, br, bb = BOTTOM_PANEL
-        count = len(players)
-        slot_x1, slot_x2 = bl + 24, br - 24
-        step = (slot_x2 - slot_x1) / max(1, count)
-        av_d = max(44, min(_FONTS["av_d"], int(step) - 8))
-        bar_half = int(av_d * 0.58)
-        av_y = bt + 8
-        for i, player in enumerate(players):
-            cx = int(slot_x1 + step * (i + 0.5))
-            try:
-                raw_avatar = download_image(player["avatar_url"])
-            except Exception:
-                raw_avatar = Image.new("RGBA", (av_d, av_d), (120, 120, 120, 255))
-            cur = int(player.get("current_hp", 0) or 0)
-            mx = int(player.get("max_hp", 1) or 1)
-            avatar = add_outline(crop_to_circle(raw_avatar, av_d), outline_size=3)
-            result.alpha_composite(avatar, (cx - avatar.width // 2, av_y))
-            if player.get("player_id") is not None:
-                anchors[f"p{player['player_id']}"] = combat_fx.Anchor(
-                    cx - avatar.width // 2, av_y, avatar.width, avatar.height, mx, player=True)
-            bar_y = av_y + avatar.height + 2
-            _draw_ratio_bar(result, draw, cx - bar_half, bar_y, cx + bar_half, bar_y + 16, cur, mx)
-            name = player.get("name", "")
-            if name:
-                draw.text((cx - draw.textlength(name, font=hp_font) / 2, bar_y + 18),
-                          name, font=hp_font, fill=(240, 240, 245, 255))
-
-    # Chiffres et effets de l'action, par-dessus tout.
-    combat_fx.draw_combat_fx(result, events, anchors, seed=fx_seed)
-
+    cf. `combat_fx`), dessiné par-dessus tout. Une animation passe plutôt par
+    `build_scene` (décor préparé une fois) — cf. `fight_animation`."""
+    scene = build_scene(mob=mob, players=players, background_path=background_path, spot=spot,
+                        placement=placement, mobs=mobs, placements=placements, formation=formation)
+    enemies, pl, dead = scene_values(mob, mobs, players)
+    result = scene.render(enemies, pl, dead, events, fx_seed)
     # Léger renforcement de netteté (compense la vignette WebP de l'aperçu).
     return result.convert("RGB").filter(
         ImageFilter.UnsharpMask(radius=2, percent=95, threshold=2)
@@ -344,16 +458,18 @@ def render_scene(
 _GROUP_AUTO_SCALE = 0.50
 
 
-def _draw_group(base: Image.Image, mobs: list[dict], placements: list[dict | None],
-                formation: list[dict], spot: dict | None) -> dict[int, tuple[int, int, int, int]]:
+def _place_group(bg: Image.Image, mobs: list[dict], placements: list[dict | None],
+                 formation: list[dict], spot: dict | None
+                 ) -> tuple[list[_Sprite], dict[int, tuple[int, int, int, int]]]:
     """Plusieurs monstres posés au sol selon la formation : les plus LOIN
-    (y le plus petit) d'abord, pour que ceux de devant passent par-dessus.
-    Un monstre vaincu est assombri. Renvoie la boîte (x, y, l, h) de chacun
-    (celle de son emplacement s'il n'a pas encore d'image) — pour y poser
-    les chiffres de combat."""
+    (y le plus petit) d'abord, pour que ceux de devant passent par-dessus
+    (ordre des `sprites`). Les ombres sont dessinées dans le décor. Renvoie
+    aussi la boîte (x, y, l, h) de chacun (celle de son emplacement s'il n'a
+    pas encore d'image) — pour y poser les chiffres de combat."""
     ground_y = (spot or {}).get("ground_y", STAGE_BOTTOM / FRAME_H)
     order = sorted(range(len(mobs)), key=lambda i: formation[i]["y"] if i < len(formation) else 0)
     boxes: dict[int, tuple[int, int, int, int]] = {}
+    sprites: list[_Sprite] = []
     for i in order:
         data = mobs[i]
         slot = formation[i] if i < len(formation) else {"x": 0, "y": 0, "scale": 1}
@@ -374,22 +490,20 @@ def _draw_group(base: Image.Image, mobs: list[dict], placements: list[dict | Non
         }
         img, pos = place_mob(content, placement, ground_y)
         if own.get("shadow", True):
-            draw_contact_shadow(base, pos, img.size)
+            draw_contact_shadow(bg, pos, img.size)
         element = data.get("element") or ""
         if element:
             img = tint_by_element(img, element)
-        if int(data.get("current_hp", 1) or 0) <= 0:
-            alpha = img.getchannel("A").point(lambda a: a * 45 // 100)
-            img = Image.merge("RGBA", (*img.convert("RGB").point(lambda v: v // 3).split(), alpha))
-        base.alpha_composite(img, pos)
+        sprites.append(_Sprite(f"e{i}", img, pos))
         top = max(STAGE_TOP, pos[1])
         boxes[i] = (pos[0], top, img.width, max(1, min(img.height, STAGE_BOTTOM - top)))
-    return boxes
+    return sprites, boxes
 
 
-def _draw_group_hud(base: Image.Image, draw: ImageDraw.ImageDraw, mobs: list[dict]) -> None:
-    """Bandeau du haut d'un groupe : par monstre, pastille d'élément, nom et
-    barre de PV — une colonne chacun jusqu'à 3, une grille 2 × 2 à 4."""
+def _group_hud(base: Image.Image, draw: ImageDraw.ImageDraw, mobs: list[dict]) -> dict[str, _Bar]:
+    """Bandeau du haut d'un groupe : par monstre, pastille d'élément et nom
+    (figés) ; renvoie la place de chaque barre de PV — une colonne chacun
+    jusqu'à 3, une grille 2 × 2 à 4."""
     two_rows = len(mobs) > 3
     try:
         name_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 20 if two_rows else 24)
@@ -403,6 +517,7 @@ def _draw_group_hud(base: Image.Image, draw: ImageDraw.ImageDraw, mobs: list[dic
     row_h = (pb - pt - 16) / rows
     badge_d = 34 if two_rows else 48
     bar_h = 18 if two_rows else 26
+    bars: dict[str, _Bar] = {}
     for i, data in enumerate(mobs[:4]):
         col, row = i % cols, i // cols
         x1 = int(pl + 12 + col * col_w) + 6
@@ -422,14 +537,8 @@ def _draw_group_hud(base: Image.Image, draw: ImageDraw.ImageDraw, mobs: list[dic
         block = name_h + bar_h
         y0 = y_mid - block // 2
         draw.text((x, y0 - 2), name, font=name_font, fill=(255, 255, 255, 255))
-        cur = int(data.get("current_hp", 0) or 0)
-        mx = int(data.get("max_hp", 0) or 0)
-        bar = (x, y0 + name_h, x2, y0 + name_h + bar_h)
-        _draw_ratio_bar(base, draw, *bar, cur, mx)
-        hp_txt = f"{cur} / {mx}" if cur > 0 else "Vaincu"
-        draw.text(((bar[0] + bar[2]) / 2 - draw.textlength(hp_txt, font=hp_font) / 2,
-                   (bar[1] + bar[3]) / 2 - hp_font.size / 2 - 1), hp_txt, font=hp_font,
-                  fill=(255, 255, 255, 255))
+        bars[f"e{i}"] = _Bar((x, y0 + name_h, x2, y0 + name_h + bar_h), hp_font)
+    return bars
 
 
 def compose_players_banner(
