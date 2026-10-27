@@ -1739,7 +1739,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "pack_instinct"
   },
   {
     "code": "ramure_d_esprit",
@@ -1760,7 +1760,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "kind_antlers"
   },
   {
     "code": "ecaille_racine",
@@ -1780,7 +1780,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "root_venom"
   },
   {
     "code": "pelisse_du_colosse",
@@ -1801,7 +1801,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "crushing_paw"
   },
   {
     "code": "coeur_de_mousse",
@@ -1821,7 +1821,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "verdant_moss"
   },
   {
     "code": "plume_d_orage",
@@ -1841,7 +1841,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "storm_eye"
   },
   {
     "code": "sang_lunaire",
@@ -1878,7 +1878,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "night_flight"
   },
   {
     "code": "griffes_de_goule",
@@ -1899,7 +1899,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "flesh_feast"
   },
   {
     "code": "fourrure_de_pleine_lune",
@@ -1920,7 +1920,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "lunar_rage"
   },
   {
     "code": "capuche_de_sang",
@@ -1941,7 +1941,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "blood_pact"
   },
   {
     "code": "ecu_de_l_eclipse",
@@ -1962,7 +1962,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "eclipse_mirror"
   },
   {
     "code": "rapiere_ecarlate",
@@ -1983,7 +1983,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "scarlet_thirst"
   },
   {
     "code": "bague_de_la_comtesse",
@@ -2003,7 +2003,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "bloody_waltz"
   },
   {
     "code": "ecaille_de_dragon",
@@ -2041,7 +2041,7 @@
     "requires_two_hands": true,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "ambush"
   },
   {
     "code": "flammeche_captive",
@@ -2061,7 +2061,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "young_breath"
   },
   {
     "code": "coeur_de_braise",
@@ -2081,7 +2081,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "lingering_ember"
   },
   {
     "code": "heaume_crete_de_wyverne",
@@ -2102,7 +2102,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "dive"
   },
   {
     "code": "egide_de_givre",
@@ -2123,7 +2123,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "frost_bite"
   },
   {
     "code": "sceau_du_gardien_draconique",
@@ -2143,7 +2143,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "guardian_oath"
   },
   {
     "code": "coeur_du_dragon_ancien",
@@ -2163,7 +2163,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "ancestral_breath"
   },
   {
     "code": "eclat_du_neant",
@@ -2200,7 +2200,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "abyssal_reserve"
   },
   {
     "code": "oeil_de_verre_noir",
@@ -2220,7 +2220,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "void_gaze"
   },
   {
     "code": "machoire_du_devoreur",
@@ -2240,7 +2240,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "devour"
   },
   {
     "code": "couronne_du_heraut",
@@ -2261,7 +2261,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "void_echo"
   },
   {
     "code": "tentacule_astral",
@@ -2281,7 +2281,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "astral_grip"
   },
   {
     "code": "aureole_brisee",
@@ -2301,7 +2301,7 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "broken_grace"
   },
   {
     "code": "coeur_du_neant",
@@ -2321,6 +2321,6 @@
     "requires_two_hands": false,
     "family": "",
     "level_requirement": 1,
-    "passive": ""
+    "passive": "devouring_void"
   }
 ]

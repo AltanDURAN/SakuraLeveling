@@ -18,3 +18,6 @@ class PartyBattleResult:
     summary: str
     turn_logs: list[PartyBattleTurnLog]
     contributions: list[PlayerContribution] = field(default_factory=list)
+    #: Un résultat par ennemi, dans l'ordre de la formation :
+    #: {code, name, max_hp, remaining_hp, defeated}.
+    enemies: list[dict] = field(default_factory=list)

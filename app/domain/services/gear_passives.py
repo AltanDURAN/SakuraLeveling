@@ -94,6 +94,79 @@ PASSIVES: dict[str, GearPassive] = {p.code: p for p in (
                 "Le premier coup mortel que tu reçois te laisse à 1 PV.", "defense"),
     GearPassive("iron_will", "Volonté de fer",
                 "Tu es immunisé au charme.", "defense"),
+    # --- Zones C → S (27/10/2026, validés avec l'auteur) : plus le monstre est
+    # fort, plus son passif reprend SA mécanique ; l'élite a une signature.
+    # Sanctuaire primordial (C)
+    GearPassive("pack_instinct", "Instinct de meute",
+                "+3 % de dégâts par allié encore debout (max +9 %).", "offense"),
+    GearPassive("kind_antlers", "Ramure bienveillante",
+                "Tout le groupe reçoit 15 % de soins en plus (une seule ramure par groupe).", "support"),
+    GearPassive("root_venom", "Sève vénéneuse",
+                "Tes coups empoisonnent l'ennemi : 1 % de ses PV max à chacune de ses "
+                "actions pendant 3 actions, au plus 25 % de ton attaque (non cumulable).", "enemy"),
+    GearPassive("crushing_paw", "Coup de patte brisant",
+                "Chaque coup réduit la défense de l'ennemi de 3 % pour le combat (max −15 %, "
+                "non cumulable).", "enemy"),
+    GearPassive("verdant_moss", "Mousse vivace",
+                "La première fois que tu passes sous 30 % de PV, tu récupères 10 % de tes "
+                "PV max à chacune de tes 7 actions suivantes.", "defense"),
+    GearPassive("storm_eye", "Œil de la tempête",
+                "Ta première action frappe TOUS les ennemis, avec 50 % de chance d'étourdir "
+                "chacun (pas les boss).", "offense"),
+    # Éclipse éternelle (B)
+    GearPassive("night_flight", "Vol nocturne",
+                "+5 % d'esquive tant que tu es au-dessus de 50 % de tes PV.", "defense"),
+    GearPassive("flesh_feast", "Festin de chair",
+                "Chaque ennemi vaincu te rend 25 % de tes PV max.", "defense"),
+    GearPassive("lunar_rage", "Rage lunaire",
+                "Sous 50 % de PV : +15 % d'attaque et de vitesse.", "offense"),
+    GearPassive("blood_pact", "Pacte de sang",
+                "À court de mana, tes compétences se paient en PV : 5 % de tes PV max, et "
+                "l'érosion réduit tes PV max de 5 % pour le reste du combat.", "support"),
+    GearPassive("eclipse_mirror", "Miroir d'éclipse",
+                "15 % des dégâts que tu reçois sont renvoyés à l'attaquant.", "defense"),
+    GearPassive("scarlet_thirst", "Soif écarlate",
+                "Tes coups critiques te soignent de 20 % des dégâts infligés.", "offense"),
+    GearPassive("bloody_waltz", "Valse sanglante",
+                "Après chaque esquive, ton coup suivant est un critique qui fait saigner "
+                "(10 % des dégâts à chaque action de l'ennemi, 3 actions, jusqu'à 3 fois).", "offense"),
+    # Cimes des Wyrms (A)
+    GearPassive("ambush", "Embuscade",
+                "+25 % de dégâts contre un ennemi qui n'a pas encore agi.", "offense"),
+    GearPassive("young_breath", "Souffle juvénile",
+                "Toutes les 5 attaques, des flammes frappent tous les ennemis (30 % de ton "
+                "attaque, sans défense).", "offense"),
+    GearPassive("lingering_ember", "Braise persistante",
+                "Tes critiques enflamment l'ennemi : −20 % d'attaque pendant 2 actions (non "
+                "cumulable) et 10 % des dégâts du coup à chacune de ses 2 actions suivantes "
+                "(cumulable).", "enemy"),
+    GearPassive("dive", "Piqué",
+                "Ta première attaque frappe 3 fois, à 60 % chacune.", "offense"),
+    GearPassive("frost_bite", "Morsure du givre",
+                "15 % de chance de geler l'ennemi qui te frappe : il perd sa prochaine action "
+                "(pas les boss).", "defense"),
+    GearPassive("guardian_oath", "Serment du gardien",
+                "Tant que tu provoques : −20 % de dégâts reçus pour toi, −10 % pour tes alliés.", "defense"),
+    GearPassive("ancestral_breath", "Souffle ancestral",
+                "Exécute la cible de ton attaque si elle passe sous 20 % de ses PV (les boss "
+                "y sont immunisés).", "offense"),
+    # Faille du Néant (S)
+    GearPassive("abyssal_reserve", "Réserve abyssale",
+                "Tes compétences coûtent 20 % de mana en moins.", "support"),
+    GearPassive("void_gaze", "Regard du vide",
+                "L'ennemi ne peut pas esquiver tes coups.", "offense"),
+    GearPassive("devour", "Dévoration",
+                "Quand un allié meurt, tu gagnes 10 % de son attaque, de sa défense et de ses "
+                "PV max pour le reste du combat.", "offense"),
+    GearPassive("void_echo", "Échos du vide",
+                "Toutes les 8 actions, un écho frappe la cible (50 % de ton attaque, sans "
+                "défense) et absorbe le prochain coup que tu reçois.", "offense"),
+    GearPassive("astral_grip", "Étreinte astrale",
+                "Tes coups ralentissent l'ennemi de 5 % (max −25 %, non cumulable).", "enemy"),
+    GearPassive("broken_grace", "Grâce brisée",
+                "Le premier allié qui tombe se relève avec 30 % de ses PV (une fois par combat).", "support"),
+    GearPassive("devouring_void", "Néant dévorant",
+                "Un coup sur deux ignore 50 % de la défense ennemie.", "offense"),
 )}
 
 

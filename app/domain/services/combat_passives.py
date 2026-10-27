@@ -83,6 +83,17 @@ MANA_COSTS: dict[str, int] = {
     "taunt_guard": 6,       # Défi : provocation d'ouverture
     "undying": 25,          # Revenant
     "first_hit_ward": 6,    # Garde de l'exil
+    # Pièces des zones C → S (27/10/2026) — même barème : une fois par combat
+    # = droit d'entrée, à l'usage = ∝ ce que rapporte un déclenchement.
+    "verdant_moss": 15,     # Mousse vivace : jusqu'à 70 % des PV max, une fois
+    "storm_eye": 10,        # Œil de la tempête : une fois par combat
+    "flesh_feast": 6,       # Festin de chair : 25 % des PV max par ennemi vaincu
+    "scarlet_thirst": 2,    # Soif écarlate : soin sur critique
+    "young_breath": 5,      # Souffle juvénile : flammes sur tous les ennemis
+    "frost_bite": 3,        # Morsure du givre : gel
+    "ancestral_breath": 8,  # Souffle ancestral : exécution
+    "void_echo": 5,         # Échos du vide : écho + absorption
+    "broken_grace": 25,     # Grâce brisée : relève un allié, une fois
 }
 
 #: Nom joueur de chaque compétence à mana (journal, aide).
@@ -91,6 +102,11 @@ MANA_ABILITY_NAMES: dict[str, str] = {
     "taunt": "Vaillant", "team_shield": "Égide", "redirect": "Rempart",
     "last_stand": "Tenace", "counter_attack": "Riposte", "double_strike": "Coup double",
     "taunt_guard": "Défi", "undying": "Revenant", "first_hit_ward": "Garde de l'exil",
+    "verdant_moss": "Mousse vivace", "storm_eye": "Œil de la tempête",
+    "flesh_feast": "Festin de chair", "scarlet_thirst": "Soif écarlate",
+    "young_breath": "Souffle juvénile", "frost_bite": "Morsure du givre",
+    "ancestral_breath": "Souffle ancestral", "void_echo": "Échos du vide",
+    "broken_grace": "Grâce brisée",
 }
 
 #: Effet de l'arbre (type JSON) ou passif d'équipement (code) → compétence à mana.
@@ -101,6 +117,10 @@ MANA_ABILITY_OF_EFFECT: dict[str, str] = {
     "last_stand": "last_stand", "counter_attack": "counter_attack",
     "double_strike": "double_strike", "taunt_guard": "taunt_guard",
     "undying": "undying", "first_hit_ward": "first_hit_ward",
+    **{code: code for code in (
+        "verdant_moss", "storm_eye", "flesh_feast", "scarlet_thirst", "young_breath",
+        "frost_bite", "ancestral_breath", "void_echo", "broken_grace",
+    )},
 }
 
 
@@ -110,6 +130,9 @@ _MANA_UNIT: dict[str, str] = {
     "taunt": "provocation", "team_shield": "combat", "redirect": "coup encaissé",
     "last_stand": "sauvetage", "counter_attack": "riposte", "double_strike": "coup double",
     "taunt_guard": "combat", "undying": "résurrection", "first_hit_ward": "combat",
+    "verdant_moss": "combat", "storm_eye": "combat", "flesh_feast": "festin",
+    "scarlet_thirst": "soin", "young_breath": "souffle", "frost_bite": "gel",
+    "ancestral_breath": "exécution", "void_echo": "écho", "broken_grace": "résurrection",
 }
 
 
