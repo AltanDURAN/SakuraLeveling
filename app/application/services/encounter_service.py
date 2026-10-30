@@ -14,6 +14,7 @@ from app.application.services.title_unlock_service import TitleUnlockService
 from app.application.use_cases.daily_quests import DailyQuestProgressService
 from app.application.use_cases.weekly_quests import WeeklyQuestProgressService
 from app.domain.services.health_regeneration_service import HealthRegenerationService
+from app.domain.services.lunar_service import effects_text as lunar_effects_text
 from app.domain.services.mana_regeneration_service import ManaRegenerationService
 from app.domain.services.title_bonus_service import TitleBonusService
 from app.domain.services.loot_service import LootService
@@ -385,7 +386,7 @@ class EncounterService:
 
     @staticmethod
     def _roll_gear_drop(session, player_id: int, mob, rng=None,
-                        drop_bonus: float = 1.0) -> list[tuple[str, str]]:
+                        drop_bonus: float = 1.0, drop_rate_multiplier: float = 1.0) -> list[tuple[str, str]]:
         """Tirage de la pièce du monstre pour UN survivant (cf. gear_service).
 
         Le passif « Trouvaille » (épique et plus) ajoute +10 % aux raretés
@@ -404,7 +405,8 @@ class EncounterService:
         lucky = next((e.rarity for e in equipped
                       if e.item_definition.passive == "lucky_find"
                       and "lucky_find" in active_passives([e])), None)
-        rarity = roll_drop(rng, drop_bonus=drop_bonus, lucky_find_rarity=lucky)
+        rarity = roll_drop(rng, drop_rate_multiplier=drop_rate_multiplier, drop_bonus=drop_bonus,
+                           lucky_find_rarity=lucky)
         if rarity is None:
             return []
         item = ItemRepository(session).get_by_code(code)
@@ -430,8 +432,14 @@ class EncounterService:
         mob = definitions[0]                      # le chef : nom, image, famille du récap
         size = len(definitions)
         mob_name = getattr(encounter, "mob_names", mob.name) if size > 1 else mob.name
-        xp_reward = pack_service.pack_reward([d.xp_reward for d in definitions])
-        gold_reward = pack_service.pack_reward([d.gold_reward for d in definitions])
+        # Événement lunaire (pleine lune, lune de sang, éclipse…) : XP, or et
+        # chances de butin multipliés ; les essences ont leur propre facteur.
+        lunar = getattr(encounter, "lunar", None)
+        lunar_rewards = lunar.rule.rewards if lunar is not None else 1.0
+        lunar_essences = lunar.rule.essences if lunar is not None else 1.0
+        lunar_note = (f"{lunar.label} — {lunar_effects_text(lunar.rule)}" if lunar is not None else "")
+        xp_reward = round(pack_service.pack_reward([d.xp_reward for d in definitions]) * lunar_rewards)
+        gold_reward = round(pack_service.pack_reward([d.gold_reward for d in definitions]) * lunar_rewards)
 
         power_score_service = PowerScoreService()
         reward_distribution_service = RewardDistributionService()
@@ -473,6 +481,7 @@ class EncounterService:
                 rewards=rewards,
                 base_xp_reward=xp_reward,
                 base_gold_reward=gold_reward,
+                lunar_note=lunar_note,
             )
 
         contribution_shares = reward_distribution_service.compute_contribution_shares(
@@ -598,7 +607,7 @@ class EncounterService:
                         chasseur_mult = title_bonuses.drop_rate_multiplier_for_mob(definition.code)
                         for item_code, quantity in loot_service.generate_loot(
                             definition,
-                            drop_rate_multiplier=bonuses.drop_rate_multiplier * chasseur_mult,
+                            drop_rate_multiplier=bonuses.drop_rate_multiplier * chasseur_mult * lunar_rewards,
                             family_drops=get_family_drops(),
                         ):
                             dropped[item_code] = dropped.get(item_code, 0) + quantity
@@ -610,6 +619,7 @@ class EncounterService:
                         gear_drop += self._roll_gear_drop(
                             session, participant.player_id, definition,
                             drop_bonus=bonuses.drop_rate_multiplier * chasseur_mult * blessed_gear,
+                            drop_rate_multiplier=lunar_rewards,
                         )
                         # Essences élémentaires : drop selon la zone (nombre tiré
                         # dans [min, max] pour CE kill) + auto-conversion en
@@ -622,7 +632,7 @@ class EncounterService:
                             progression_service=affinity_progression,
                             player_id=participant.player_id,
                             mob=definition,
-                            essences_per_kill=_random.randint(essences_min, essences_max),
+                            essences_per_kill=round(_random.randint(essences_min, essences_max) * lunar_essences),
                             element_override=getattr(state, "element", "") or "",
                             # Chasseur d'essences (pièce épique et plus) : +1 par kill.
                             bonus_essences=essence_hunter,
@@ -752,6 +762,7 @@ class EncounterService:
             rewards=rewards,
             base_xp_reward=xp_reward,
             base_gold_reward=gold_reward,
+            lunar_note=lunar_note,
         )
 
     @staticmethod

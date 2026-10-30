@@ -66,6 +66,8 @@ def build_rewards_page_embed(summary: BattleSummary) -> discord.Embed:
             f"Le groupe a tenu **{summary.turns} actions** mais a été vaincu. "
             "Aucune récompense n'est distribuée."
         )
+    if summary.lunar_note:
+        embed.description = "\n".join(filter(None, [summary.lunar_note, embed.description]))
 
     for reward in rewards_sorted:
         contribution = reward.contribution

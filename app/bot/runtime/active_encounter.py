@@ -18,6 +18,9 @@ class ActiveEncounter:
     #: Meute (27/10/2026) : les compagnons du monstre `mob_state` (le chef),
     #: dans l'ordre de la formation. Vide pour un monstre seul.
     pack: list[EncounterMobState] = field(default_factory=list)
+    #: Événement lunaire en cours à l'apparition (cf. `lunar_service`) :
+    #: monstres renforcés, gains multipliés. None hors événement.
+    lunar: object | None = None
 
     @property
     def mobs(self) -> list[EncounterMobState]:

@@ -16,5 +16,42 @@
     "fight_hour": 21,
     "fight_minute": 0,
     "registration_close_minutes": 10
+  },
+  "lunar": {
+    "pleine_lune": {
+      "enabled": true,
+      "strength": 2,
+      "rewards": 3,
+      "essences": 1,
+      "spawn_rate": 1
+    },
+    "lune_de_sang": {
+      "enabled": true,
+      "strength": 3,
+      "rewards": 5,
+      "essences": 1,
+      "spawn_rate": 2
+    },
+    "nouvelle_lune": {
+      "enabled": true,
+      "strength": 1,
+      "rewards": 1,
+      "essences": 3,
+      "spawn_rate": 1
+    },
+    "eclipse_lunaire": {
+      "enabled": true,
+      "strength": 3,
+      "rewards": 6,
+      "essences": 2,
+      "spawn_rate": 2
+    },
+    "eclipse_solaire": {
+      "enabled": true,
+      "strength": 2,
+      "rewards": 4,
+      "essences": 2,
+      "spawn_rate": 2
+    }
   }
 }

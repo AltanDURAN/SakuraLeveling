@@ -51,6 +51,7 @@ _COG_MODULES = [
     "app.bot.cogs.role_trial_cog",
     "app.bot.cogs.tower_cog",
     "app.bot.cogs.offering_cog",
+    "app.bot.cogs.lunar_cog",
     "app.bot.cogs.stats_cog",
     "app.bot.cogs.notification_cog",
     "app.bot.cogs.cosmetic_cog",

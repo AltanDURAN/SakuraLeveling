@@ -65,3 +65,18 @@ def test_regler_le_raid(client, pacing_copy):
     assert client.post("/admin/pacing/raid", data={**form, "fight_time": "00:05"}).status_code == 400
     assert client.post("/admin/pacing/raid", data={**form, "fight_time": "vingt"}).status_code == 400
     assert _saved(pacing_copy)["raid"]["fight_minute"] == 30
+
+
+def test_regler_les_evenements_lunaires(client, pacing_copy):
+    r = client.get("/admin/pacing")
+    assert "Lune de sang" in r.text and "Prochains événements" in r.text
+    form = {}
+    for code in ("pleine_lune", "lune_de_sang", "nouvelle_lune", "eclipse_lunaire", "eclipse_solaire"):
+        form.update({f"{code}_enabled": "on", f"{code}_strength": "2", f"{code}_rewards": "3",
+                     f"{code}_essences": "1", f"{code}_spawn_rate": "1"})
+    form.pop("nouvelle_lune_enabled")
+    form["lune_de_sang_strength"] = "2,5"
+    assert client.post("/admin/pacing/lunar", data=form, follow_redirects=False).status_code == 303
+    lunar = pacing_loader.get_pacing().lunar
+    assert lunar["lune_de_sang"].strength == 2.5 and not lunar["nouvelle_lune"].enabled
+    assert client.post("/admin/pacing/lunar", data={**form, "pleine_lune_rewards": "0"}).status_code == 400

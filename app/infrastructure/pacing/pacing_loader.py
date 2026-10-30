@@ -10,6 +10,8 @@ import json
 from dataclasses import fields
 from pathlib import Path
 
+from app.domain.services.lunar_service import DEFAULT_RULES as DEFAULT_LUNAR_RULES
+from app.domain.services.lunar_service import LunarRule
 from app.domain.services.pacing_service import DEFAULT, Pacing, RaidPacing, ZoneOverride, ZonePacing
 
 CONTENT_PATH = Path(__file__).resolve().parents[1] / "content" / "pacing.json"
@@ -40,9 +42,13 @@ def parse(data: dict) -> Pacing:
             respawn_max_minutes=None if raw.get("respawn_max_minutes") is None
             else float(raw["respawn_max_minutes"]),
         )
+    raw_lunar = data.get("lunar") or {}
+    lunar = {code: _build(LunarRule, raw_lunar.get(code) or {}, default)
+             for code, default in DEFAULT_LUNAR_RULES.items()}
     return Pacing(zones=_build(ZonePacing, data.get("zones") or {}, DEFAULT.zones),
                   overrides=overrides,
-                  raid=_build(RaidPacing, data.get("raid") or {}, DEFAULT.raid))
+                  raid=_build(RaidPacing, data.get("raid") or {}, DEFAULT.raid),
+                  lunar=lunar)
 
 
 def get_pacing() -> Pacing:

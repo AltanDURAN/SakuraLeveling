@@ -14,6 +14,9 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from datetime import UTC, datetime
+
+from app.domain.services import lunar_service as lsvc
 from app.domain.services import pacing_service as psvc
 from app.infrastructure.encounters.farm_zone_loader import list_zones
 from app.infrastructure.pacing import pacing_loader
@@ -33,6 +36,7 @@ def _data() -> dict:
     data.setdefault("zones", {})
     data.setdefault("zone_overrides", {})
     data.setdefault("raid", {})
+    data.setdefault("lunar", {})
     return data
 
 
@@ -47,9 +51,15 @@ def _render(request: Request, user: AdminUser, *, errors: list[str] | None = Non
             saved: str = "", code: int = 200):
     pacing = pacing_loader.get_pacing()
     zones = [{**z, "override": pacing.override(z["channel_id"])} for z in list_zones() if z["channel_id"]]
+    now = datetime.now(UTC)
+    upcoming = [e for e in lsvc.upcoming(now, pacing.lunar, days=120)][:8]
+    eclipses = [e for e in lsvc.upcoming(now, pacing.lunar, days=3 * 365) if e.code.startswith("eclipse")][:4]
     return get_templates().TemplateResponse(
         request, "admin/pacing.html", status_code=code,
         context={"user": user, "pacing": pacing, "zones": zones, "weekdays": psvc.WEEKDAYS,
+                 "lunar_kinds": sorted(lsvc.KINDS.values(), key=lambda k: -k.priority),
+                 "lunar_upcoming": upcoming, "lunar_eclipses": eclipses,
+                 "lunar_effects": lsvc.effects_text, "paris": psvc.PARIS,
                  "fight_label": psvc.fight_label(pacing.raid), "close_label": psvc.close_label(pacing.raid),
                  "errors": errors or [], "saved": saved},
     )
@@ -112,6 +122,22 @@ async def save_zone_override(channel_id: int, request: Request, user: AdminUser 
     else:
         data["zone_overrides"][str(channel_id)] = entry
     return _save(request, user, data, "zone", f"zone {channel_id} {entry}")
+
+
+@router.post("/lunar")
+async def save_lunar(request: Request, user: AdminUser = Depends(require_admin)):
+    form = await request.form()
+    values = {}
+    for code in lsvc.KINDS:
+        entry = {"enabled": form.get(f"{code}_enabled") in ("on", "1", "true")}
+        for key in ("strength", "rewards", "essences", "spawn_rate"):
+            entry[key] = _num(form, f"{code}_{key}")
+            if entry[key] is None:
+                return _render(request, user, errors=["Les effets lunaires sont des nombres."], code=400)
+        values[code] = entry
+    data = _data()
+    data["lunar"] = values
+    return _save(request, user, data, "lunar", f"lune {values}")
 
 
 @router.post("/raid")

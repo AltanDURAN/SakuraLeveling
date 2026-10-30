@@ -22,6 +22,8 @@ class BattleSummary:
     #: Le déroulé du combat, une ligne par action (3e page du récapitulatif :
     #: la vidéo a remplacé le message « combat en cours »).
     journal: list[str] = field(default_factory=list)
+    #: Événement lunaire du combat (« 🌕 Pleine lune — … »), vide sinon.
+    lunar_note: str = ""
 
     @property
     def is_victory(self) -> bool:

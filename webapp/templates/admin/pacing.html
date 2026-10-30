@@ -91,6 +91,31 @@
     {% endfor %}
   </div>
 
+  <form method="post" action="/admin/pacing/lunar" class="form-section">
+    <h2 class="form-section-title">🌙 Événements lunaires</h2>
+    <p class="form-section-help" style="margin:0 0 .6rem;">Calculés sur le vrai ciel de Paris (pleines lunes, nouvelles lunes, coucher et lever du soleil, éclipses visibles). Ils ne touchent que les monstres des ZONES : force = PV et attaque (jamais la défense), gains = XP, or et chances de butin et de pièce, apparitions = délai divisé. Une pleine lune sur 3 est une lune de sang. Pendant un événement, les heures calmes ne s'appliquent pas.</p>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead><tr><th>Événement</th><th>Actif</th><th>Force ×</th><th>Gains ×</th><th>Essences ×</th><th>Apparitions ×</th></tr></thead>
+        <tbody>
+        {% for kind in lunar_kinds %}{% set rule = pacing.lunar[kind.code] %}
+          <tr><td><strong>{{ kind.emoji }} {{ kind.name }}</strong><div style="color:var(--muted); font-size:.85rem;">{{ kind.story }}</div></td>
+            <td><input type="checkbox" name="{{ kind.code }}_enabled" {% if rule.enabled %}checked{% endif %}></td>
+            {% for key in ('strength', 'rewards', 'essences', 'spawn_rate') %}
+            <td><input class="input" style="width:5.5rem;" type="number" min="1" step="0.1" name="{{ kind.code }}_{{ key }}" value="{{ '%g' % rule[key] }}" required></td>
+            {% endfor %}</tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="form-actions" style="margin-top:.6rem;"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+    <h3 style="margin:1rem 0 .4rem; font-size:1rem;">Prochains événements (heure de Paris)</h3>
+    <ul style="margin:0; padding-left:1.2rem; line-height:1.7;">
+      {% for e in lunar_upcoming %}<li>{{ e.label }} — {{ e.start.astimezone(paris).strftime('%d/%m/%Y %H:%M') }} → {{ e.end.astimezone(paris).strftime('%d/%m %H:%M') }}{% if e.detail %} ({{ e.detail }}){% endif %} · <span style="color:var(--muted);">{{ lunar_effects(e.rule) }}</span></li>{% else %}<li style="color:var(--muted);">Aucun événement actif dans les 4 prochains mois.</li>{% endfor %}
+    </ul>
+    {% if lunar_eclipses %}<p class="form-section-help" style="margin:.6rem 0 0;">Éclipses visibles de Paris : {% for e in lunar_eclipses %}{{ e.label }} le {{ e.start.astimezone(paris).strftime('%d/%m/%Y') }} ({{ e.detail }}){% if not loop.last %} · {% endif %}{% endfor %}</p>{% endif %}
+  </form>
+
   <form method="post" action="/admin/pacing/raid" class="form-section">
     <h2 class="form-section-title">👑 Raid (world boss)</h2>
     <p class="form-section-help" style="margin:0 0 .6rem;">Un boss par semaine ; chaque jour, tous les inscrits lancent l'assaut ensemble. Actuellement : inscriptions jusqu'à <strong>{{ close_label }}</strong>, assaut à <strong>{{ fight_label }}</strong> (heure de Paris).</p>

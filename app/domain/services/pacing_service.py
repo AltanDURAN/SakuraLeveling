@@ -28,6 +28,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
+from app.domain.services.lunar_service import DEFAULT_RULES as DEFAULT_LUNAR_RULES
+from app.domain.services.lunar_service import validate as validate_lunar
+
 PARIS = ZoneInfo("Europe/Paris")
 WEEKDAYS = ("lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche")
 #: Un assaut manqué (bot redémarré pile à l'heure) est rattrapé dans ce délai.
@@ -68,6 +71,8 @@ class Pacing:
     zones: ZonePacing = field(default_factory=ZonePacing)
     overrides: dict[int, ZoneOverride] = field(default_factory=dict)
     raid: RaidPacing = field(default_factory=RaidPacing)
+    #: Événements lunaires (cf. `lunar_service`) : effet de chacun sur les zones.
+    lunar: dict = field(default_factory=lambda: dict(DEFAULT_LUNAR_RULES))
 
     def override(self, channel_id: int) -> ZoneOverride:
         return self.overrides.get(int(channel_id), ZoneOverride())
@@ -96,16 +101,17 @@ def in_quiet_hours(zones: ZonePacing, when: datetime) -> bool:
 
 
 def next_spawn_at(zones: ZonePacing, override: ZoneOverride | None, now: datetime, *,
-                  fled: bool = False, rng: random.Random | None = None) -> datetime:
+                  fled: bool = False, rate: float = 1.0, rng: random.Random | None = None) -> datetime:
     """Date du prochain monstre : après le délai de fuite, ou un délai tiré
-    dans la plage de la zone. (Les heures calmes et la pause sont vérifiées
-    au moment de l'apparition : un changement dans l'admin vaut tout de suite.)"""
+    dans la plage de la zone, divisé par `rate` (lune de sang, éclipse). (Les
+    heures calmes et la pause sont vérifiées au moment de l'apparition : un
+    changement dans l'admin vaut tout de suite.)"""
     if fled:
         minutes = zones.flee_respawn_minutes
     else:
         low, high = respawn_range(zones, override)
         minutes = (rng or random).uniform(low, high)
-    return now + timedelta(minutes=minutes)
+    return now + timedelta(minutes=minutes / max(1.0, rate))
 
 
 def pack_size_weights(zones: ZonePacing) -> dict[int, float]:
@@ -200,4 +206,4 @@ def validate(pacing: Pacing) -> list[str]:
         errors.append("Les inscriptions ferment entre 0 et 120 minutes avant l'assaut.")
     elif r.fight_hour * 60 + r.fight_minute < r.registration_close_minutes:
         errors.append("La fermeture des inscriptions doit tomber le même jour que l'assaut.")
-    return errors
+    return errors + validate_lunar(pacing.lunar)

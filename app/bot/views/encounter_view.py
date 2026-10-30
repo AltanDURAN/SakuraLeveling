@@ -56,6 +56,13 @@ class EncounterView(discord.ui.View):
             except discord.DiscordException:
                 pass
 
+        if success:
+            # L'heure du combat : le joueur sait quand revenir le regarder
+            # (il sera aussi mentionné au lancement).
+            encounter = self.cog.active_encounters.get(self.channel_id)
+            if encounter is not None:
+                message += (f"\n⏳ Le combat se lance <t:{int(encounter.ends_at.timestamp())}:R> — "
+                            "tu seras mentionné pour le suivre en direct.")
         await interaction.followup.send(message, ephemeral=True)
 
     @discord.ui.button(label="Quitter", style=discord.ButtonStyle.secondary, emoji="🚪", row=0)

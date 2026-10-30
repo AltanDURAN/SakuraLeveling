@@ -17,7 +17,7 @@ from app.bot.runtime.active_encounter import ActiveEncounter
 from app.bot.runtime.encounter_mob_state import EncounterMobState
 from app.bot.views.battle_summary_view import BattleSummaryView
 from app.bot.views.encounter_view import EncounterView
-from app.domain.services import pack_service, pacing_service
+from app.domain.services import lunar_service, pack_service, pacing_service
 from app.domain.services.mob_ability_service import is_group_elite
 from app.domain.services.power_score_service import PowerScoreService
 from app.domain.value_objects.battle_summary import BattleSummary
@@ -347,6 +347,33 @@ class EncounterCog(commands.Cog):
                         seconds=30
                     )
 
+    @staticmethod
+    def _current_lunar():
+        """L'événement lunaire en cours (pleine lune, lune de sang…), ou None."""
+        try:
+            return lunar_service.active_event(datetime.now(UTC), get_pacing().lunar)
+        except Exception:  # noqa: BLE001 — le ciel ne bloque jamais une apparition
+            _logger.exception("calcul de l'événement lunaire impossible")
+            return None
+
+    @staticmethod
+    def _spawn_description(encounter) -> str:
+        """Texte sous le monstre : meute, événement lunaire, et l'heure du
+        combat (ou de la fuite s'il n'a pas encore de combattant)."""
+        lines = []
+        if encounter.pack:
+            lines.append(f"🐺 **Une meute !** {encounter.mob_names}")
+        event = getattr(encounter, "lunar", None)
+        if event is not None:
+            lines.append(f"{event.label} — {lunar_service.effects_text(event.rule)}")
+        ts = int(encounter.ends_at.timestamp())
+        if encounter.participants:
+            count = len(encounter.participants)
+            lines.append(f"⚔️ Le combat se lance <t:{ts}:R> — {count} combattant{'s' if count > 1 else ''}.")
+        else:
+            lines.append(f"⏳ Sans combattant, le monstre s'enfuit <t:{ts}:R>.")
+        return "\n".join(lines)
+
     def _forced_pending(self, channel_id: int) -> bool:
         """Un monstre est attendu (cor de chasse, spawn forcé par l'admin)."""
         return channel_id in self._zone_forced_mob or channel_id in self._zone_forced_pack
@@ -362,9 +389,12 @@ class EncounterCog(commands.Cog):
 
         # Rythme réglé depuis l'admin : zone en pause, heures calmes (un
         # monstre attendu — cor, admin — passe quand même).
+        # Les heures calmes s'effacent devant un événement lunaire (ils ont
+        # lieu la nuit : sinon on ne les verrait jamais).
         pacing = get_pacing()
         if not self._forced_pending(channel_id) and (
-                pacing.override(channel_id).paused or pacing_service.in_quiet_hours(pacing.zones, now)):
+                pacing.override(channel_id).paused
+                or (pacing_service.in_quiet_hours(pacing.zones, now) and self._current_lunar() is None)):
             return
 
         forced_code = self._zone_forced_mob.pop(channel_id, None)
@@ -391,8 +421,10 @@ class EncounterCog(commands.Cog):
         dans l'admin (délai, délai après une fuite, heures calmes)."""
         self.active_encounters.pop(channel_id, None)
         pacing = get_pacing()
+        event = self._current_lunar()
         self._zone_next_spawn[channel_id] = pacing_service.next_spawn_at(
-            pacing.zones, pacing.override(channel_id), datetime.now(UTC), fled=fled)
+            pacing.zones, pacing.override(channel_id), datetime.now(UTC), fled=fled,
+            rate=event.rule.spawn_rate if event is not None else 1.0)
 
     def _scene_inputs(self, channel_id: int, encounter) -> tuple[dict | None, dict | None]:
         """(spot, placement) pour le rendu : décor du couple (zone, élément
@@ -473,9 +505,11 @@ class EncounterCog(commands.Cog):
             resolved, _ = resolve_spawn(channel_id, mob.code)
             spawn_element = resolved or _random.choice([e.value for e in ALL_ELEMENTS])
 
-        # Meute : PV et ATK de chacun × le facteur de sa taille (pack_service).
+        # Meute : PV et ATK de chacun × le facteur de sa taille (pack_service) ;
+        # événement lunaire : × sa force (jamais la DÉFENSE, cf. lunar_service).
         members = [mob, *(companions or [])]
-        factor = pack_service.scale(len(members))
+        lunar = self._current_lunar()
+        factor = pack_service.scale(len(members)) * (lunar.rule.strength if lunar is not None else 1.0)
 
         def _state(m) -> EncounterMobState:
             hp = max(1, round(m.max_hp * factor))
@@ -483,7 +517,7 @@ class EncounterCog(commands.Cog):
                 code=m.code,
                 name=m.name,
                 image_name=m.image_name,
-                current_hp=hp if len(members) > 1 else m.current_hp,
+                current_hp=hp if factor != 1 else m.current_hp,
                 max_hp=hp,
                 attack=max(1, round(m.attack * factor)),
                 defense=m.defense,
@@ -507,6 +541,7 @@ class EncounterCog(commands.Cog):
             duration_minutes=window_s / 60,
         )
         encounter.pack = [_state(m) for m in members[1:]]
+        encounter.lunar = lunar
 
         view = EncounterView(self, channel_id, timeout=window_s)
 
@@ -530,12 +565,7 @@ class EncounterCog(commands.Cog):
         embed, file = build_encounter_embed(
             image_name=spawn_output_relative,
         )
-        if encounter.pack:
-            embed.description = ((embed.description or "") +
-                                 f"\n🐺 **Une meute !** {encounter.mob_names}").strip()
-        # Compte à rebours (Discord l'affiche à l'heure de chacun).
-        embed.description = ((embed.description or "") +
-                             f"\n⏳ Le combat part <t:{int(encounter.ends_at.timestamp())}:R>.").strip()
+        embed.description = self._spawn_description(encounter)
 
         message = await channel.send(embed=embed, view=view, file=file)
         encounter.message_id = message.id
@@ -560,6 +590,17 @@ class EncounterCog(commands.Cog):
         # annulé a déjà posé le prochain spawn).
         if self.active_encounters.get(channel_id) is not encounter:
             return
+
+        # Les combattants sont prévenus : le combat se joue en direct ici.
+        if encounter.participants:
+            mentions = " ".join(f"<@{p.user_id}>" for p in encounter.participants.values())
+            try:
+                await channel.send(
+                    f"⚔️ **Le combat contre {encounter.mob_names} commence !** {mentions}\n"
+                    f"Il se joue en direct : {message.jump_url}",
+                    allowed_mentions=discord.AllowedMentions(users=True, everyone=False, roles=False))
+            except discord.HTTPException:
+                _logger.warning("annonce du début du combat impossible", exc_info=True)
 
         if not encounter.participants:
             flee_summary = BattleSummary(
@@ -759,6 +800,7 @@ class EncounterCog(commands.Cog):
         embed, file = build_encounter_embed(
             image_name=output_relative,
         )
+        embed.description = self._spawn_description(encounter)
 
         await message.edit(embed=embed, attachments=[file])
 
