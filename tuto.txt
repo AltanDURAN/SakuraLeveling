@@ -415,9 +415,10 @@ PANOPLIES
 COMBATS DE GROUPE (automatiques)
     Un monstre apparaît dans chaque salon de zone ; le suivant revient
     quelques minutes après la fin du combat (le rythme est réglé par les
-    admins, les nuits peuvent être calmes). Clique « Rejoindre » : le compte
+    admins, les nuits peuvent être calmes). Clique « Combattre » : le compte
     à rebours sous le monstre dit quand le combat part (5 minutes par défaut ;
-    le combat peut être lancé avant).
+    le combat peut être lancé avant). Au lancement, le bot MENTIONNE tous
+    les combattants : tu peux venir regarder le combat en direct.
     Quand le combat part, il se joue en VIDÉO dans le message du monstre
     (elle se lance toute seule), puis laisse la place au récapitulatif en
     trois pages : récompenses, détail et part de victoire de chacun, et le
@@ -580,6 +581,24 @@ LE MANA DES COMPÉTENCES 💧
     • Les dégâts de zone (case AOE de l'arbre) touchent les voisins de ta
       cible ; tu frappes toujours l'ennemi le plus abîmé.
     Classement : /classement tour.
+
+/lune
+    LE CIEL DE PARIS — le vrai : phase de la lune, prochains événements,
+    éclipses visibles. Ils changent les monstres qui apparaissent dans les
+    ZONES (pas la tour, les défis ni le boss) :
+        🌕 Pleine lune   la nuit de la pleine lune (coucher → lever du
+                         soleil) : monstres ×2 plus forts, XP, or et
+                         chances de butin ×3.
+        🩸 Lune de sang  une pleine lune sur trois : monstres ×3 plus forts,
+                         gains ×5, et ils apparaissent 2× plus souvent.
+        🌑 Nuit noire    la nuit de la nouvelle lune : essences ×3.
+        🌘 Lune dévorée  une éclipse de Lune visible de Paris, le temps
+                         qu'elle dure : ×3 plus forts, gains ×6, essences ×2.
+        🌞 Soleil noir   une éclipse de Soleil visible de Paris : ×2 plus
+                         forts, gains ×4, essences ×2.
+    Le bot prévient quelques heures avant et au lever de l'événement. À
+    plusieurs, c'est le moment de farmer : seul, un monstre de pleine lune
+    est souvent trop fort. (Les effets exacts sont réglés par les admins.)
 
 /offrande
     L'OFFRANDE COMMUNE : tout le serveur verse de l'or dans une même jauge.
