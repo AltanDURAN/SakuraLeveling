@@ -93,17 +93,19 @@
 
   <form method="post" action="/admin/pacing/lunar" class="form-section">
     <h2 class="form-section-title">🌙 Événements lunaires</h2>
-    <p class="form-section-help" style="margin:0 0 .6rem;">Calculés sur le vrai ciel de Paris (pleines lunes, nouvelles lunes, coucher et lever du soleil, éclipses visibles). Ils ne touchent que les monstres des ZONES : force = PV et attaque (jamais la défense), gains = XP, or et chances de butin et de pièce, apparitions = délai divisé. Une pleine lune sur 3 est une lune de sang. Pendant un événement, les heures calmes ne s'appliquent pas.</p>
+    <p class="form-section-help" style="margin:0 0 .6rem;">Calculés sur le vrai ciel de Paris (pleines lunes, nouvelles lunes, coucher et lever du soleil, éclipses visibles). Ils ne touchent que les monstres des ZONES : force = PV et attaque, défense à part (au-delà de 75 % de l'attaque d'un joueur, elle lui renvoie la différence en contrecoup à chaque coup : à manier avec prudence), élément favorisé = ce type de monstre apparaît plus souvent, gains = XP, or et chances de butin et de pièce, apparitions = délai divisé. Une pleine lune sur 3 est une lune de sang. Pendant un événement, les heures calmes ne s'appliquent pas.</p>
     <div class="table-wrapper">
       <table class="data-table">
-        <thead><tr><th>Événement</th><th>Actif</th><th>Force ×</th><th>Gains ×</th><th>Essences ×</th><th>Apparitions ×</th></tr></thead>
+        <thead><tr><th>Événement</th><th>Actif</th><th>Force ×<br><small>PV, ATK</small></th><th>Défense ×</th><th>Gains ×</th><th>Essences ×</th><th>Apparitions ×</th><th>Élément favorisé</th><th>Cet élément ×</th></tr></thead>
         <tbody>
         {% for kind in lunar_kinds %}{% set rule = pacing.lunar[kind.code] %}
           <tr><td><strong>{{ kind.emoji }} {{ kind.name }}</strong><div style="color:var(--muted); font-size:.85rem;">{{ kind.story }}</div></td>
             <td><input type="checkbox" name="{{ kind.code }}_enabled" {% if rule.enabled %}checked{% endif %}></td>
-            {% for key in ('strength', 'rewards', 'essences', 'spawn_rate') %}
+            {% for key in ('strength', 'defense', 'rewards', 'essences', 'spawn_rate') %}
             <td><input class="input" style="width:5.5rem;" type="number" min="1" step="0.1" name="{{ kind.code }}_{{ key }}" value="{{ '%g' % rule[key] }}" required></td>
-            {% endfor %}</tr>
+            {% endfor %}
+            <td><select class="input" name="{{ kind.code }}_element"><option value="">—</option>{% for code, label in elements.items() %}<option value="{{ code }}" {% if code == rule.element %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></td>
+            <td><input class="input" style="width:5.5rem;" type="number" min="1" step="0.1" name="{{ kind.code }}_element_weight" value="{{ '%g' % rule.element_weight }}" required></td></tr>
         {% endfor %}
         </tbody>
       </table>

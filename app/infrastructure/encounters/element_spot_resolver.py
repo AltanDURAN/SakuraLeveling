@@ -47,9 +47,11 @@ def resolve_spawn(
     mob_code: str | None,
     rng=None,
     now: datetime | None = None,
+    element_boost: dict[str, float] | None = None,
 ) -> tuple[str | None, dict | None]:
     """Renvoie (element, spot) ou (None, None) si la zone n'a pas de spot
-    exploitable (→ fallback appelant)."""
+    exploitable (→ fallback appelant). `element_boost` multiplie le poids
+    d'un élément (nouvelle lune : ténèbre ×2)."""
     import random as _random
 
     spots = farm_zone_loader.get_spots(channel_id)
@@ -73,7 +75,7 @@ def resolve_spawn(
             # Monstre sans poids défini : tirage uniforme sur les éléments de la zone.
             w = 1
         candidates.append(elem)
-        weights.append(w)
+        weights.append(w * (element_boost or {}).get(elem, 1.0))
 
     if not candidates:
         return None, None

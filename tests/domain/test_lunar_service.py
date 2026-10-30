@@ -38,3 +38,28 @@ def test_effets_par_defaut():
     assert ls.effects_text(ls.DEFAULT_RULES["pleine_lune"]) == "monstres ×2 plus forts · XP, or et butin ×3"
     assert ls.validate({"pleine_lune": LunarRule(strength=0.5)})
     assert ls.validate(dict(ls.DEFAULT_RULES)) == []
+
+
+def test_valeurs_de_l_auteur_et_tenebre_favorise_a_la_nouvelle_lune():
+    assert ls.KINDS["nouvelle_lune"].name == "Nouvelle lune"
+    assert ls.KINDS["eclipse_lunaire"].name == "Éclipse lunaire"
+    assert ls.KINDS["eclipse_solaire"].name == "Éclipse solaire"
+    assert ls.DEFAULT_RULES["eclipse_lunaire"] == LunarRule(strength=4, rewards=6, essences=5, spawn_rate=2)
+    assert ls.DEFAULT_RULES["eclipse_solaire"] == LunarRule(strength=5, rewards=10, essences=10, spawn_rate=3)
+    new = ls.DEFAULT_RULES["nouvelle_lune"]
+    assert (new.strength, new.rewards, new.essences) == (1, 1, 3)
+    assert ls.element_boost(new) == {"tenebre": 2}
+
+
+def test_l_element_favorise_double_ses_apparitions(monkeypatch):
+    import random
+
+    from app.infrastructure.encounters import element_spot_resolver as r
+
+    monkeypatch.setattr(r.farm_zone_loader, "get_spots", lambda ch: [
+        {"element": "tenebre", "time": "always"}, {"element": "feu", "time": "always"}])
+    monkeypatch.setattr(r.farm_zone_loader, "get_spot", lambda ch, el: {"element": el})
+    monkeypatch.setattr(r.mob_element_weight_loader, "get_weights", lambda code: {})
+    rng = random.Random(3)
+    picks = [r.resolve_spawn(1, "m", rng=rng, element_boost={"tenebre": 2.0})[0] for _ in range(3000)]
+    assert 0.62 < picks.count("tenebre") / len(picks) < 0.71      # 2/3 au lieu de 1/2

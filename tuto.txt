@@ -591,11 +591,14 @@ LE MANA DES COMPÉTENCES 💧
                          chances de butin ×3.
         🩸 Lune de sang  une pleine lune sur trois : monstres ×3 plus forts,
                          gains ×5, et ils apparaissent 2× plus souvent.
-        🌑 Nuit noire    la nuit de la nouvelle lune : essences ×3.
-        🌘 Lune dévorée  une éclipse de Lune visible de Paris, le temps
-                         qu'elle dure : ×3 plus forts, gains ×6, essences ×2.
-        🌞 Soleil noir   une éclipse de Soleil visible de Paris : ×2 plus
-                         forts, gains ×4, essences ×2.
+        🌑 Nouvelle lune la nuit de la nouvelle lune : monstres normaux,
+                         mais ceux de type TÉNÈBRE apparaissent 2× plus
+                         souvent, et essences ×3.
+        🌘 Éclipse lunaire  une éclipse de Lune visible de Paris, le temps
+                         qu'elle dure : ×4 plus forts, gains ×6, essences
+                         ×5, apparitions ×2.
+        🌞 Éclipse solaire  une éclipse de Soleil visible de Paris : ×5
+                         plus forts, gains ×10, essences ×10, apparitions ×3.
     Le bot prévient quelques heures avant et au lever de l'événement. À
     plusieurs, c'est le moment de farmer : seul, un monstre de pleine lune
     est souvent trop fort. (Les effets exacts sont réglés par les admins.)

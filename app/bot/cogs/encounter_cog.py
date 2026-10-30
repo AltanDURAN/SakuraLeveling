@@ -500,16 +500,21 @@ class EncounterCog(commands.Cog):
 
         from app.infrastructure.encounters.element_spot_resolver import resolve_spawn
         from app.shared.enums import ALL_ELEMENTS
+        # Événement lunaire : il peut favoriser un élément (nouvelle lune : ténèbre).
+        lunar = self._current_lunar()
+        boost = lunar_service.element_boost(lunar.rule) if lunar is not None else {}
         spawn_element = (forced_element or "").strip() or (getattr(mob, "element", "") or "").strip()
         if not spawn_element:
-            resolved, _ = resolve_spawn(channel_id, mob.code)
-            spawn_element = resolved or _random.choice([e.value for e in ALL_ELEMENTS])
+            resolved, _ = resolve_spawn(channel_id, mob.code, element_boost=boost)
+            elements = [e.value for e in ALL_ELEMENTS]
+            spawn_element = resolved or _random.choices(
+                elements, weights=[boost.get(e, 1.0) for e in elements], k=1)[0]
 
         # Meute : PV et ATK de chacun × le facteur de sa taille (pack_service) ;
-        # événement lunaire : × sa force (jamais la DÉFENSE, cf. lunar_service).
+        # événement lunaire : × sa force, et sa DÉFENSE × son propre réglage.
         members = [mob, *(companions or [])]
-        lunar = self._current_lunar()
         factor = pack_service.scale(len(members)) * (lunar.rule.strength if lunar is not None else 1.0)
+        defense_factor = lunar.rule.defense if lunar is not None else 1.0
 
         def _state(m) -> EncounterMobState:
             hp = max(1, round(m.max_hp * factor))
@@ -520,7 +525,7 @@ class EncounterCog(commands.Cog):
                 current_hp=hp if factor != 1 else m.current_hp,
                 max_hp=hp,
                 attack=max(1, round(m.attack * factor)),
-                defense=m.defense,
+                defense=round(m.defense * defense_factor),
                 speed=m.speed,
                 crit_chance=m.crit_chance,
                 crit_damage=m.crit_damage,

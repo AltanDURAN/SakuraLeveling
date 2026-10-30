@@ -23,35 +23,50 @@
       "strength": 2,
       "rewards": 3,
       "essences": 1,
-      "spawn_rate": 1
+      "spawn_rate": 1,
+      "defense": 1,
+      "element": "",
+      "element_weight": 1
     },
     "lune_de_sang": {
       "enabled": true,
       "strength": 3,
       "rewards": 5,
       "essences": 1,
-      "spawn_rate": 2
+      "spawn_rate": 2,
+      "defense": 1,
+      "element": "",
+      "element_weight": 1
     },
     "nouvelle_lune": {
       "enabled": true,
       "strength": 1,
       "rewards": 1,
       "essences": 3,
-      "spawn_rate": 1
+      "spawn_rate": 1,
+      "defense": 1,
+      "element": "tenebre",
+      "element_weight": 2
     },
     "eclipse_lunaire": {
       "enabled": true,
-      "strength": 3,
+      "strength": 4,
       "rewards": 6,
-      "essences": 2,
-      "spawn_rate": 2
+      "essences": 5,
+      "spawn_rate": 2,
+      "defense": 1,
+      "element": "",
+      "element_weight": 1
     },
     "eclipse_solaire": {
       "enabled": true,
-      "strength": 2,
-      "rewards": 4,
-      "essences": 2,
-      "spawn_rate": 2
+      "strength": 5,
+      "rewards": 10,
+      "essences": 10,
+      "spawn_rate": 3,
+      "defense": 1,
+      "element": "",
+      "element_weight": 1
     }
   }
 }

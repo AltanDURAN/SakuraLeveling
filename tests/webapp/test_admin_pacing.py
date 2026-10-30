@@ -73,10 +73,14 @@ def test_regler_les_evenements_lunaires(client, pacing_copy):
     form = {}
     for code in ("pleine_lune", "lune_de_sang", "nouvelle_lune", "eclipse_lunaire", "eclipse_solaire"):
         form.update({f"{code}_enabled": "on", f"{code}_strength": "2", f"{code}_rewards": "3",
-                     f"{code}_essences": "1", f"{code}_spawn_rate": "1"})
+                     f"{code}_essences": "1", f"{code}_spawn_rate": "1", f"{code}_defense": "1",
+                     f"{code}_element": "", f"{code}_element_weight": "1"})
+    form.update(nouvelle_lune_element="tenebre", nouvelle_lune_element_weight="2")
     form.pop("nouvelle_lune_enabled")
     form["lune_de_sang_strength"] = "2,5"
     assert client.post("/admin/pacing/lunar", data=form, follow_redirects=False).status_code == 303
     lunar = pacing_loader.get_pacing().lunar
     assert lunar["lune_de_sang"].strength == 2.5 and not lunar["nouvelle_lune"].enabled
+    assert (lunar["nouvelle_lune"].element, lunar["nouvelle_lune"].element_weight) == ("tenebre", 2)
+    assert client.post("/admin/pacing/lunar", data={**form, "pleine_lune_element": "lave"}).status_code == 400
     assert client.post("/admin/pacing/lunar", data={**form, "pleine_lune_rewards": "0"}).status_code == 400
