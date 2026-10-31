@@ -1,6 +1,9 @@
 """Cog d'accueil des nouveaux joueurs — `/demarrer`.
 
 Guide de démarrage clair (profil, combat, éléments/compétences, world boss).
+À l'ARRIVÉE sur le serveur : carte de bienvenue illustrée (`welcome_card`) et
+message court qui donne envie, avec des boutons vers le tutoriel et la
+première zone (31/10/2026, demande de l'auteur).
 
 NOTE : l'accueil AUTOMATIQUE à l'arrivée d'un membre (`on_member_join`)
 nécessite l'intent privilégié **SERVER MEMBERS** (Discord Dev Portal +
@@ -10,14 +13,18 @@ commande `/demarrer`. Le listener ci-dessous est prêt mais dormant sans intent.
 
 from __future__ import annotations
 
+import asyncio
+import io
+import logging
+
 import discord
 from discord import app_commands
 from discord.ext import commands
 
-import logging
-
 from app.bot.cogs._mixins import BetaChannelOnlyMixin
 from app.bot.rank_roles import ensure_start_rank_role
+from app.bot.rendering.welcome_card import compose_welcome_card
+from app.infrastructure.encounters.farm_zone_loader import list_zones
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
@@ -99,6 +106,51 @@ def build_welcome_embed(display_name: str | None = None) -> discord.Embed:
     return embed
 
 
+WELCOME_COLOR = discord.Color.from_rgb(255, 150, 195)
+WELCOME_IMAGE = "bienvenue.png"
+
+
+def build_join_embed(member_mention: str) -> discord.Embed:
+    """Le message d'ARRIVÉE (la première chose qu'on voit sur le serveur) :
+    court, RP, qui donne envie — le guide complet reste dans `/demarrer`."""
+    tuto = f"<#{settings.tutorial_channel_id}>" if settings.tutorial_channel_id else "`/tuto`"
+    embed = discord.Embed(
+        title="🌸 Les pétales annoncent un nouvel aventurier !",
+        description=(
+            f"{member_mention}, le vent du Grand Cerisier t'a porté jusqu'à nous.\n"
+            "Des monstres sortent des terres sauvages, et la guilde cherche des héros. "
+            "Ton nom est déjà inscrit au registre, au **Rang F**.\n\n"
+            "⚔️ **Des combats en groupe**, filmés en vidéo, qu'on rejoint d'un clic\n"
+            "🎒 **Un butin unique** sur chaque monstre, du commun au **mythique**\n"
+            "🌳 **Trois voies** : frapper, protéger ou soigner\n"
+            "✨ **Huit éléments** et des talents cachés que seule la voyante sait lire\n"
+            "👑 **Un boss chaque semaine**, et le vrai ciel de Paris qui réveille les monstres\n\n"
+            f"**Ton aventure commence ici :** Hana t'attend dans {tuto} pour te guider. "
+            "Au bout, **3 Potions du Grand Cerisier** 🧪 t'attendent."
+        ),
+        color=WELCOME_COLOR,
+    )
+    embed.set_image(url=f"attachment://{WELCOME_IMAGE}")
+    embed.set_footer(text="Rang F débloqué · /help pour toutes les commandes · bonne chasse ! 🌸")
+    return embed
+
+
+def build_join_view(guild_id: int) -> discord.ui.View:
+    """Boutons-liens (aucun état à garder : ils marchent aussi en MP et après
+    un redémarrage)."""
+    view = discord.ui.View(timeout=None)
+    if settings.tutorial_channel_id:
+        view.add_item(discord.ui.Button(
+            label="Commencer le tutoriel", emoji="🌸", style=discord.ButtonStyle.link,
+            url=f"https://discord.com/channels/{guild_id}/{settings.tutorial_channel_id}"))
+    zone = next((z for z in list_zones() if z.get("channel_id")), None)
+    if zone:
+        view.add_item(discord.ui.Button(
+            label=f"Foncer : {zone['name']}", emoji="⚔️", style=discord.ButtonStyle.link,
+            url=f"https://discord.com/channels/{guild_id}/{zone['channel_id']}"))
+    return view
+
+
 class OnboardingCog(BetaChannelOnlyMixin, commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
@@ -165,11 +217,28 @@ class OnboardingCog(BetaChannelOnlyMixin, commands.Cog):
         # 2b. Rang F (accès à la première zone de farm) — best-effort.
         await ensure_start_rank_role(member)
 
-        embed = build_welcome_embed(member.display_name)
-
-        # 3a. DM de bienvenue (best-effort — peut être bloqué par le membre).
+        # 3. Carte de bienvenue (avatar, numéro d'aventurier) + message RP.
         try:
-            await member.send(embed=embed)
+            card = await asyncio.to_thread(
+                compose_welcome_card, member.display_name, member.display_avatar.url,
+                member.guild.member_count)
+        except Exception:
+            _logger.warning("Onboarding: échec de la carte de bienvenue %s", member.id, exc_info=True)
+            card = None
+
+        def message() -> dict:
+            embed = build_join_embed(member.mention)
+            kwargs = {"embed": embed, "view": build_join_view(member.guild.id)}
+            if card is not None:
+                kwargs["file"] = discord.File(io.BytesIO(card), filename=WELCOME_IMAGE)
+            else:
+                embed.set_image(url=None)
+                embed.set_thumbnail(url=member.display_avatar.url)
+            return kwargs
+
+        # 3a. MP de bienvenue (best-effort — peut être bloqué par le membre).
+        try:
+            await member.send(**message())
         except discord.DiscordException:
             pass
 
@@ -179,7 +248,7 @@ class OnboardingCog(BetaChannelOnlyMixin, commands.Cog):
             channel = member.guild.get_channel(channel_id)
             if channel is not None:
                 try:
-                    await channel.send(content=member.mention, embed=embed)
+                    await channel.send(content=member.mention, **message())
                 except discord.DiscordException:
                     pass
 
