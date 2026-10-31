@@ -821,23 +821,10 @@ class WorldBossCog(commands.Cog):
                 boss = repo.get_by_id(boss_id)
                 if boss is None or boss.channel_message_id is None:
                     return
-                participants = repo.list_joined_participants(boss_id)
-                num = len(participants)
-                votes = repo.count_voted(boss_id)
-                fought = sum(
-                    1
-                    for p in repo.list_participations_with_metrics(boss_id)
-                    if p.fights_count > 0
-                )
                 from app.bot.runtime.raid_banner_builder import (
                     build_raid_banner_data,
                 )
                 banner_data = build_raid_banner_data(session, boss)
-
-            scaling = WorldBossScalingService()
-            bonus_pct = int(
-                (scaling.compute_team_bonus_multiplier(num) - 1) * 100
-            )
 
             channel = _get_boss_channel(self.bot)
             if channel is None:

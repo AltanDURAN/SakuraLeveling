@@ -22,6 +22,6 @@ class PlayerCosmeticModel(Base):
     fond: Mapped[str | None] = mapped_column(String(60), nullable=True)
     cadre: Mapped[str | None] = mapped_column(String(60), nullable=True)
     titre: Mapped[str | None] = mapped_column(String(60), nullable=True)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(UTC)
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=True, default=lambda: datetime.now(UTC)
     )

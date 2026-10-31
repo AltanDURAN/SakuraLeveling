@@ -38,13 +38,15 @@ git checkout "$BRANCH"
 git pull origin "$BRANCH"
 echo "    HEAD : $(git rev-parse --short HEAD) — $(git log -1 --pretty=%s)"
 
-echo "==> 2.5. Sync deps (pyproject.toml → .venv)"
-# Garde le .venv synchro avec les deps déclarées dans pyproject.toml.
-# `pip install -e .` re-résout l'arbre de deps à chaque déploiement et
-# n'installe que ce qui manque (idempotent et rapide si rien n'a changé).
-# Évite le piège du "ModuleNotFoundError" après ajout d'une dep sur main.
-.venv/bin/pip install -e . --quiet 2>&1 | tail -5 || \
-    { echo "    pip install KO, on continue quand même"; }
+echo "==> 2.5. Sync deps (requirements.lock → .venv)"
+# Versions EXACTES, testées sous le Python du VPS (3.12) : `pip install -e .`
+# seul ne met jamais à jour un paquet déjà installé (`>=` dans pyproject), la
+# prod avait dérivé (Pillow, aiohttp… 88 failles connues fin octobre 2026).
+# Mettre à jour : cf. « Dépendances » dans CLAUDE.md. Un échec ARRÊTE le
+# déploiement avant le redémarrage : le bot garde son ancien processus.
+.venv/bin/pip install --quiet -r requirements.lock
+.venv/bin/pip install --quiet --no-deps -e .
+.venv/bin/pip check
 
 echo "==> 3. Alembic upgrade head"
 .venv/bin/alembic current

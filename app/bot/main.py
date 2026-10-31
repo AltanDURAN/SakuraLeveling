@@ -98,6 +98,19 @@ async def _on_app_command_error(
 ) -> None:
     """Filet de sécurité global : un user n'a jamais d'erreur opaque, et la
     stack trace part dans les logs (cf. audit A4)."""
+    if isinstance(error, app_commands.CheckFailure):
+        # Refus ATTENDU (mauvais salon, commande admin) : la vérification a
+        # déjà répondu au joueur. Avant le 31/10/2026, il recevait en plus
+        # « Une erreur est survenue » et le journal une fausse trace d'erreur.
+        _logger.info("Commande /%s refusée (user=%s, salon=%s)",
+                     getattr(interaction.command, "qualified_name", "?"),
+                     interaction.user.id, interaction.channel_id)
+        if not interaction.response.is_done():
+            try:
+                await interaction.response.send_message("🚧 Cette commande n'est pas disponible ici.", ephemeral=True)
+            except discord.HTTPException:
+                pass
+        return
     _logger.exception(
         "Erreur slash command /%s (user=%s) : %s",
         getattr(interaction.command, "qualified_name", "?"),

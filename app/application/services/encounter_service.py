@@ -441,7 +441,6 @@ class EncounterService:
         xp_reward = round(pack_service.pack_reward([d.xp_reward for d in definitions]) * lunar_rewards)
         gold_reward = round(pack_service.pack_reward([d.gold_reward for d in definitions]) * lunar_rewards)
 
-        power_score_service = PowerScoreService()
         reward_distribution_service = RewardDistributionService()
         loot_service = LootService()
 

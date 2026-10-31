@@ -11,7 +11,7 @@ Schéma :
 
 from datetime import datetime, UTC
 
-from sqlalchemy import ForeignKey, String, UniqueConstraint
+from sqlalchemy import ForeignKey, Index, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.db.base import Base
@@ -45,16 +45,18 @@ class PlayerEquipmentSetItemModel(Base):
         UniqueConstraint(
             "equipment_set_id", "slot", name="uq_set_slot",
         ),
+        # Noms posés par la migration a3e9c7b218fa (pas ceux de `index=True`).
+        Index("ix_player_equipment_set_items_set_id", "equipment_set_id"),
+        Index("ix_player_equipment_set_items_item_id", "item_definition_id"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     equipment_set_id: Mapped[int] = mapped_column(
         ForeignKey("player_equipment_sets.id", ondelete="CASCADE"),
-        index=True,
     )
     slot: Mapped[str] = mapped_column(String(50))
     item_definition_id: Mapped[int] = mapped_column(
-        ForeignKey("item_definitions.id"), index=True,
+        ForeignKey("item_definitions.id"),
     )
 
     equipment_set = relationship(

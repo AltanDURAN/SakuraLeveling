@@ -32,10 +32,11 @@ class BetaChannelOnlyMixin:
         if interaction.channel_id in settings.command_channel_ids:
             return True
 
-        message = (
-            "🚧 Cette commande n'est pas autorisée ici.\n"
-            "Utilisez le salon **général** (ou une zone de farm) pour les commandes."
-        )
+        message = "🚧 Cette commande n'est pas autorisée ici."
+        allowed = settings.command_channel_ids
+        if allowed:
+            listed = " · ".join(f"<#{cid}>" for cid in allowed[:5])
+            message += f"\nTape-la dans : {listed}"
         if interaction.response.is_done():
             await interaction.followup.send(message, ephemeral=True)
         else:

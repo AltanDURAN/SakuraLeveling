@@ -495,6 +495,20 @@ Demande de l'auteur : un tutoriel RP pour démarrer l'aventure, dans le salon tu
 9. Mettre à jour les tests dans `tests/domain/`
 10. `pytest tests/domain` puis smoke test sur Discord beta
 
+## Dépendances (`requirements.lock`)
+
+`pyproject.toml` ne donne que des minimums (`>=`) ; les versions EXACTES sont dans [`requirements.lock`](requirements.lock), installé tel quel par `deploy_vps.sh` (un échec arrête le déploiement avant le redémarrage). Avant (jusqu'au 31/10/2026), `pip install -e .` ne mettait jamais à jour un paquet déjà installé : la prod avait dérivé (Python 3.12 + SQLAlchemy 2.0 contre 3.14 + 2.1 en local, 88 failles connues dont 64 dans Pillow). ⚠️ Le VPS tourne sous **Python 3.12** (Ubuntu 24.04), le poste de dev sous 3.14 : le lock se génère SUR LE VPS.
+
+Mettre à jour :
+```bash
+# 1. en local : pip install -U <paquets>, puis pytest (avec -W error::DeprecationWarning)
+# 2. sur le VPS, dans un venv JETABLE (le bot n'est pas touché) :
+python3 -m venv /tmp/sakura-venv-test && /tmp/sakura-venv-test/bin/pip install <mêmes versions>
+cd ~/SakuraLeveling && /tmp/sakura-venv-test/bin/python -m pytest -q -p no:cacheprovider
+/tmp/sakura-venv-test/bin/pip freeze --exclude pip > requirements.lock   # à rapatrier dans le dépôt
+# 3. failles connues : pip install pip-audit && pip-audit -r requirements.lock
+```
+
 ## Sécurité
 
 - Le token Discord est dans `.env` (gitignored). **Ne jamais le committer ni l'exposer.**

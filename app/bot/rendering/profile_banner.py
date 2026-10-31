@@ -492,7 +492,6 @@ def _draw_rank_badge(
     faire ressortir la lettre. Halo coloré autour pour l'effet "néon".
     """
     import math
-    rc = _rank_color(rank_label)
 
     # Pas de halo lumineux autour du badge (retiré sur retour utilisateur).
     # Petite marge quand même pour les pétales qui débordent du `size`.
@@ -967,7 +966,6 @@ def compose_profile_banner(
     career = career or {}
     fought = int(career.get("combats_fought", 0))
     won = int(career.get("combats_won", 0))
-    lost = int(career.get("combats_lost", 0))
     # Le %W est volontairement omis — la card V/D voisine montre
     # déjà "87V / 20D" donc le ratio est calculable d'un coup d'œil.
 

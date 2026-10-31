@@ -232,7 +232,6 @@ def compose_raid_banner(output_path: str, data: RaidBannerData) -> str:
         phase_color = C_GOLD
 
     f_kicker = try_font(24, bold=True)
-    f_title = try_font(58, bold=True)
     f_cta = try_font(40, bold=True)
     f_phase = try_font(30, bold=True)
     f_hp = try_font(36, bold=True)

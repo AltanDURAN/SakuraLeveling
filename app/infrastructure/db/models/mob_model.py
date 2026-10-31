@@ -6,14 +6,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.infrastructure.db.base import Base
 
 
-from datetime import datetime
-
-from sqlalchemy import Integer, String, JSON
-from sqlalchemy.orm import Mapped, mapped_column
-
-from app.infrastructure.db.base import Base
-
-
 class MobDefinitionModel(Base):
     __tablename__ = "mob_definitions"
 

@@ -182,7 +182,6 @@ def _draw_card(img: Image.Image, xy: tuple[int, int], size: tuple[int, int],
     f_name = try_font(26, bold=True)
     f_big = try_font(34, bold=True)
     f_small = try_font(17)
-    f_label = try_font(14, bold=True)
 
     # Nom + relation « bat »
     tx = bx + badge_d + 18

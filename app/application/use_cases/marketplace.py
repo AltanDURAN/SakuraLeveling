@@ -354,7 +354,7 @@ class CancelMarketplaceListingUseCase:
         _release(listing, self.inventory_repository, self.gear_repository)
         return CancelResult(
             success=True,
-            message=f"✅ Annonce annulée. Items restitués à votre inventaire.",
+            message="✅ Annonce annulée. Items restitués à votre inventaire.",
         )
 
 
