@@ -20,6 +20,26 @@
     "level_requirement": 1
   },
   {
+    "code": "potion_soin_totale",
+    "name": "Potion du Grand Cerisier",
+    "description": "Rend 100 % des PV max. Offerte par Hana à la fin du tutoriel (/tuto).",
+    "category": "consumable",
+    "rarity": "rare",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "heal_percent",
+      "value": 100
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1
+  },
+  {
     "code": "potion_soin_superieure",
     "name": "Potion de soin supérieure",
     "description": "Rend 35 % des PV max (sans dépasser le maximum).",

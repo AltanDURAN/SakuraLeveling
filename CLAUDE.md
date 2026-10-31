@@ -141,6 +141,7 @@ Noms FRANÇAIS (sans accents) — c'est ce que le joueur tape. Liste tirée du c
 | Commande | Cog | Rôle |
 |---|---|---|
 | `/demarrer`, `/help [commande]`, `/ping` | `onboarding_cog`, `help_cog`, `profile_cog` | Guide débutant (crée le profil + rôle Rang F), aide paginée par catégorie (`CATEGORIES` dans `help_cog`), ping |
+| `/tuto` | `tutorial_cog` | Tutoriel RP de Hana (salon tutoriel + salons de commandes) : suivre ou passer, actions vérifiées, 3 potions 100 % PV à la fin |
 | `/profil [joueur]`, `/or [joueur]`, `/cd [joueur]`, `/affinites [joueur]` | `profile_cog` | Consultatives — `joueur` optionnel (défaut : soi). `/profil` = bannière PNG |
 | `/stats` | `stats_cog` | **Saison 1** — feuille de perso, placer les points de stats (+2 ATK / +2 DEF / +50 PV) |
 | `/arbre [joueur]` | `skill_cog` | Arbre de compétences (image + Investir / Vue web / Reset 7 j) |
@@ -470,6 +471,15 @@ Idée de l'auteur : le VRAI ciel de Paris change les monstres des ZONES (pas la 
 - **Effets** : FORCE = PV et ATK des monstres à l'apparition (`EncounterCog._run_encounter`, comme le facteur de meute) ; DÉFENSE = réglage à part, ×1 par défaut (25 % de l'ATK passe toujours, mais une DEF au-delà de 75 % de l'ATK d'un joueur lui renvoie la différence en CONTRECOUP à chaque coup) ; GAINS = XP, or, chances de butin (`LootService`) et de pièce (`roll_drop(drop_rate_multiplier=)`, non bridé) dans `EncounterService.apply_rewards` via `ActiveEncounter.lunar` ; ESSENCES par kill ; APPARITIONS = délai divisé (`next_spawn_at(rate=)`). Les heures calmes ne s'appliquent pas pendant un événement. Affiché sous le monstre et en tête du récapitulatif (`BattleSummary.lunar_note`).
 - **Bot** : [`lunar_cog.py`](app/bot/cogs/lunar_cog.py) — `/lune` (phase, éclairement, événement en cours, à venir, éclipses des 3 prochaines années) ; `sky_loop` (chaque minute) annonce dans le salon général un rappel 3 h avant (sauf nuit noire), le lever (général + salons de zone) et la fin.
 - **Tests** : [`test_astronomy.py`](tests/domain/test_astronomy.py), [`test_lunar_service.py`](tests/domain/test_lunar_service.py), pleine lune dans [`test_encounter_pack.py`](tests/infrastructure/test_encounter_pack.py), [`test_admin_pacing.py`](tests/webapp/test_admin_pacing.py).
+
+## Tutoriel (`/tuto`) — 31/10/2026
+
+Demande de l'auteur : un tutoriel RP pour démarrer l'aventure, dans le salon tutoriel (`settings.tutorial_channel_id`, 1485370580881375343).
+
+- **Contenu** : [`tutorial_service.py`](app/domain/services/tutorial_service.py) — guide **Hana, gardienne du Grand Cerisier** ; 10 étapes (`STEPS` : arrivée, solde `/daily`, `/stats`, premier combat dans la zone F, butin et fusion, arbre et rôles, éléments et voyante, quêtes / défis / tour, la ville, rangs / raid / lune), chacune avec son récit, ses actions (`{zone}` = salon de la 1re zone) et une VÉRIFICATION optionnelle (`check`). Portrait facultatif : `assets/npcs/hana.png` (affiché s'il existe).
+- **Progression** : table `player_tutorials` (statut `en_cours` / `passe` / `termine`, étape, `rewarded_at`), migration `c4e8a2d6f913`, [`use_cases/tutorial.py`](app/application/use_cases/tutorial.py) — `go_to` (on reprend où on en était), `skip`, `finish` (atomique : 3 × `potion_soin_totale`, « Potion du Grand Cerisier », 100 % des PV, UNE fois par joueur), `check` : `/daily` réclamé (cooldown `daily`), point de stats placé (ou aucun à placer), un combat de zone (`combats_fought`), un talent lu par la voyante (`revealed`). Purgée par `ResetPlayerUseCase`.
+- **Bot** : [`tutorial_cog.py`](app/bot/cogs/tutorial_cog.py) — `/tuto` (salon tutoriel ou salons de commandes) et un PANNEAU permanent posté dans le salon tutoriel s'il n'y est pas (`TutorialPanelView`, `custom_id` stable). Premier écran : « Suivre le tutoriel » ou « Passer et commencer l'aventure » (rôle Rang F, rappel que les potions attendent au bout) ; retour : reprendre / depuis le début / commencer. Étapes : Précédent, C'est fait (vérifie, sinon un indice) / Passer l'étape, ou Suivant ; à la fin, « Commencer l'aventure » donne les potions. Tout en éphémère.
+- **Tests** : [`test_tutorial.py`](tests/infrastructure/test_tutorial.py), [`test_tutorial_cog.py`](tests/bot/test_tutorial_cog.py).
 
 ## Workflow type pour ajouter une nouvelle stat de combat
 

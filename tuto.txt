@@ -582,6 +582,14 @@ LE MANA DES COMPÉTENCES 💧
       cible ; tu frappes toujours l'ennemi le plus abîmé.
     Classement : /classement tour.
 
+/tuto
+    LE TUTORIEL de Hana, la gardienne du Grand Cerisier (aussi par le bouton
+    du salon tutoriel). Tu peux le suivre ou le passer pour commencer tout
+    de suite. Il raconte le jeu étape par étape avec des choses à faire pour
+    de vrai (ta solde, tes stats, ton premier combat, la voyante…) ; tu
+    reprends où tu t'étais arrêté. Au bout : 3 Potions du Grand Cerisier,
+    qui rendent 100 % des PV (une seule fois).
+
 /lune
     LE CIEL DE PARIS — le vrai : phase de la lune, prochains événements,
     éclipses visibles. Ils changent les monstres qui apparaissent dans les

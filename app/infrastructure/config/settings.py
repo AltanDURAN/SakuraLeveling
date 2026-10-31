@@ -38,6 +38,8 @@ class Settings(BaseSettings):
     # Salon d'accueil des nouveaux membres (on_member_join, nécessite l'intent
     # SERVER MEMBERS). 0 = désactivé.
     welcome_channel_id: int = 0
+    # Salon du tutoriel (/tuto + panneau « Commencer le tutoriel »).
+    tutorial_channel_id: int = 1485370580881375343
     # Rôle attribué automatiquement à chaque nouveau membre (ex : "Sakura
     # Leveling"). 0 = pas d'attribution auto. Le bot doit avoir "Gérer les
     # rôles" et être au-dessus de ce rôle dans la hiérarchie.

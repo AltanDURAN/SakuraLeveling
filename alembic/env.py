@@ -44,6 +44,7 @@ from app.infrastructure.db.models.player_cosmetic_model import PlayerCosmeticMod
 from app.infrastructure.db.models.tower_progress_model import PlayerTowerProgressModel  # noqa: F401
 from app.infrastructure.db.models.tower_ticket_model import PlayerTowerTicketModel  # noqa: F401
 from app.infrastructure.db.models.offering_model import OfferingContributionModel, OfferingStateModel  # noqa: F401
+from app.infrastructure.db.models.tutorial_model import PlayerTutorialModel  # noqa: F401
 from app.infrastructure.db.models.event_model import (  # noqa: F401
     ActiveEventModel,
     EventParticipationModel,

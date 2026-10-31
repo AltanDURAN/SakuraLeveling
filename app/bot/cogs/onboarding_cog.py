@@ -95,7 +95,7 @@ def build_welcome_embed(display_name: str | None = None) -> discord.Embed:
         ),
         inline=False,
     )
-    embed.set_footer(text="Tape /help pour la liste complète des commandes. Bon jeu ! 🌸")
+    embed.set_footer(text="Nouveau ? /tuto : Hana te guide pas à pas (3 potions à la clé). /help pour tout le reste. 🌸")
     return embed
 
 

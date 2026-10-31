@@ -35,7 +35,7 @@ CATEGORIES: list[tuple[str, str, str, set[str]]] = [
     ("👤", "Profil & progression",
      "Ton personnage, ses points de stats, son arbre, ses titres et ta routine quotidienne.",
      {"profil", "or", "stats", "tactique", "arbre", "affinites", "titre", "titre_actif",
-      "cd", "daily", "quetes", "quetes_hebdo", "demarrer", "epreuve"}),
+      "cd", "daily", "quetes", "quetes_hebdo", "demarrer", "tuto", "epreuve"}),
     ("⚔️", "Combat & aventure",
      "Affronte les monstres, les world bosses et les défis de rôle du jour.",
      {"defi", "tour", "offrande", "lune", "utiliser", "boss", "bestiaire"}),
