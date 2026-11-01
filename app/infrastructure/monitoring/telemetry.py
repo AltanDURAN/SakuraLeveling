@@ -107,6 +107,13 @@ class InteractionBuffer:
     def __len__(self) -> int:
         return len(self._pending)
 
+    def clear(self) -> int:
+        """Oublie ce qui attend (reset de saison : rien d'avant ne doit
+        atterrir dans le nouveau journal)."""
+        with self._lock:
+            dropped, self._pending = len(self._pending), []
+        return dropped
+
     def flush(self, session: Session) -> int:
         """Écrit le tampon (un seul commit) et renvoie le nombre d'événements."""
         with self._lock:

@@ -100,3 +100,17 @@ def test_mettre_une_alerte_en_sourdine(client, journal):
         row = s.get(MonitoringAlertModel, "unspent_points:all")
         assert row is not None and row.muted_until is not None
     assert "en sourdine" in client.get("/admin/monitoring/alerts").text
+
+
+def test_apres_un_lancement_de_saison_tout_repart_de_la(client, journal):
+    """Le repère `season` : rien d'avant n'est compté, le bandeau l'annonce."""
+    from app.infrastructure.db.session import get_db_session
+    from app.infrastructure.monitoring.telemetry import record
+
+    with get_db_session() as s:
+        record(s, "season", ref="saison 1", qty=1)
+        s.commit()
+    dataset.clear_cache()
+    page = client.get("/admin/monitoring").text
+    assert "La <b>saison 1</b> a commencé" in page
+    assert "Slime" not in client.get("/admin/monitoring/combat").text, "les combats d'avant la saison sont ignorés"

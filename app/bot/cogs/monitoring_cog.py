@@ -21,7 +21,7 @@ from datetime import UTC, datetime
 
 import discord
 from discord.ext import commands, tasks
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.bot.notifications import send_dm
 from app.bot.rank_roles import current_rank
@@ -124,11 +124,15 @@ class MonitoringCog(commands.Cog):
         with get_db_session() as session:
             return take_snapshots(session, ranks)
 
+    async def take_snapshots_now(self) -> int:
+        """Une photo de chaque joueur, tout de suite (aussi au lancement d'une
+        saison : le point de départ de chacun)."""
+        return await asyncio.to_thread(self._snapshot, self._ranks())
+
     @tasks.loop(minutes=30)
     async def snapshot_loop(self) -> None:
         try:
-            ranks = self._ranks()
-            count = await asyncio.to_thread(self._snapshot, ranks)
+            count = await self.take_snapshots_now()
             _logger.info("Surveillance : %d photos de joueurs", count)
         except Exception:  # noqa: BLE001
             _logger.exception("snapshot_loop failed")
@@ -185,7 +189,7 @@ class MonitoringCog(commands.Cog):
 
     @staticmethod
     def _report_text(week: str) -> str | None:
-        from app.application.monitoring import report
+        from app.application.monitoring import dataset, report
 
         with get_db_session() as session:
             sent = session.execute(select(GameEventModel.id).where(
@@ -195,6 +199,10 @@ class MonitoringCog(commands.Cog):
             data = report.weekly(session, weeks_ago=1)
             telemetry.record(session, "report", ref=week)
             session.commit()
+            season_at = session.execute(select(func.max(GameEventModel.at)).where(
+                GameEventModel.kind == kinds.SEASON_START)).scalar()
+        if season_at is not None and dataset.to_local(season_at).date() > data["sunday"]:
+            return None               # la semaine écoulée est d'avant la saison : rien à raconter
         lines = [f"📰 **Rapport de la semaine du {data['monday'].strftime('%d/%m')} au {data['sunday'].strftime('%d/%m')}**"]
         lines += [f"{icon} {text}" for icon, text in data["highlights"]] or ["Semaine calme."]
         lines.append(f"👉 {settings.webapp_base_url.rstrip('/')}/admin/monitoring/report?week=1")

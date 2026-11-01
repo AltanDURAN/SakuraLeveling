@@ -35,6 +35,7 @@ RESPEC = "respec"             # ref = stats|arbre
 TUTORIAL = "tutorial"         # ref = passe|termine
 MEMBER_JOIN = "member_join"   # discord_id
 ERROR = "error"               # ref = commande en erreur
+SEASON_START = "season"       # qty = numéro de la saison (reset de saison : le journal repart de là)
 
 #: Ce qui compte comme « le joueur joue » (temps de jeu, heures actives).
 ACTIVITY_KINDS = frozenset({

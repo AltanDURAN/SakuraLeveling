@@ -760,6 +760,43 @@ class AdminCog(commands.Cog):
         )
 
     @admin.command(
+        name="lancer_saison",
+        description="Lance officiellement une saison : TOUT le monde repart de zéro (aperçu puis confirmation)",
+    )
+    @app_commands.describe(
+        numero="Numéro de la saison qui commence",
+        annonce="Annonce dans le salon général (avec @everyone par défaut)",
+    )
+    @app_commands.choices(annonce=[
+        app_commands.Choice(name="Annonce avec @everyone", value="everyone"),
+        app_commands.Choice(name="Annonce avec @here", value="here"),
+        app_commands.Choice(name="Annonce sans mention", value="none"),
+        app_commands.Choice(name="Pas d'annonce", value="off"),
+    ])
+    @admin_only
+    async def lancer_saison(
+        self,
+        interaction: discord.Interaction,
+        numero: app_commands.Range[int, 1, 99] = 1,
+        annonce: app_commands.Choice[str] | None = None,
+    ) -> None:
+        """Rien n'est effacé ici : l'aperçu propose un bouton, puis il faut
+        taper « SAISON N » (cf. `season_launch`)."""
+        import asyncio
+
+        from app.bot import season_launch
+        from app.bot.views.season_launch_view import SeasonLaunchView, build_preview_embed
+
+        await interaction.response.defer(ephemeral=True)
+        ping = annonce.value if annonce else "everyone"
+        preview = await asyncio.to_thread(season_launch.preview, self.bot)
+        await interaction.followup.send(
+            embed=build_preview_embed(preview, numero, ping),
+            view=SeasonLaunchView(interaction, numero, ping),
+            ephemeral=True,
+        )
+
+    @admin.command(
         name="spawn_encounter",
         description="Force le spawn immédiat d'un encounter (mob, élément, meute optionnels)",
     )

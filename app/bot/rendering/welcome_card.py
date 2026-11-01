@@ -134,3 +134,62 @@ def compose_welcome_card(display_name: str, avatar_url: str | None,
     out = io.BytesIO()
     img.convert("RGB").save(out, format="PNG", optimize=True)
     return out.getvalue()
+
+
+def _blossom(img: Image.Image, center: tuple[int, int], radius: int) -> None:
+    """Une grande fleur de cerisier (cinq pétales en cœur, cœur doré,
+    étamines) et son halo."""
+    cx, cy = center
+    glow = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    ImageDraw.Draw(glow).ellipse((cx - radius * 1.5, cy - radius * 1.5, cx + radius * 1.5, cy + radius * 1.5),
+                                 fill=(*_PINK, 170))
+    img.alpha_composite(glow.filter(ImageFilter.GaussianBlur(radius // 2)))
+    # Chaque pétale : deux lobes (l'échancrure vient seule) et une pointe
+    # vers le cœur ; posés un par un, contour rose puis pétale clair, pour
+    # qu'ils se chevauchent comme une vraie fleur.
+    lobe = radius * 0.3
+    for i in range(5):
+        a = math.radians(-90 + i * 72)
+        ux, uy = math.cos(a), math.sin(a)
+        shape = Image.new("L", img.size, 0)
+        ds = ImageDraw.Draw(shape)
+        for side in (-1, 1):
+            px = cx + radius * 0.66 * ux - side * radius * 0.15 * uy
+            py = cy + radius * 0.66 * uy + side * radius * 0.15 * ux
+            ds.ellipse((px - lobe, py - lobe, px + lobe, py + lobe), fill=255)
+        w = radius * 0.4
+        ds.polygon([(cx + radius * 0.08 * ux, cy + radius * 0.08 * uy),
+                    (cx + radius * 0.6 * ux - w * uy, cy + radius * 0.6 * uy + w * ux),
+                    (cx + radius * 0.6 * ux + w * uy, cy + radius * 0.6 * uy - w * ux)], fill=255)
+        img.paste((214, 92, 150, 255), (0, 0), shape.filter(ImageFilter.MaxFilter(5)))
+        img.paste((255, 200, 224, 255), (0, 0), shape)
+    d = ImageDraw.Draw(img)
+    for i in range(5):     # nervure claire au milieu de chaque pétale
+        a = math.radians(-90 + i * 72)
+        d.line((cx + radius * 0.3 * math.cos(a), cy + radius * 0.3 * math.sin(a),
+                cx + radius * 0.78 * math.cos(a), cy + radius * 0.78 * math.sin(a)), fill=(255, 228, 240, 255), width=3)
+    core = radius * 0.2
+    for i in range(10):    # étamines
+        a = math.radians(i * 36 + 18)
+        x2, y2 = cx + radius * 0.42 * math.cos(a), cy + radius * 0.42 * math.sin(a)
+        d.line((cx, cy, x2, y2), fill=(214, 92, 150, 255), width=2)
+        d.ellipse((x2 - 4, y2 - 4, x2 + 4, y2 + 4), fill=(*_GOLD, 255))
+    d.ellipse((cx - core, cy - core, cx + core, cy + core), fill=(*_GOLD, 255), outline=(214, 150, 60, 255), width=2)
+
+
+def compose_season_card(season: int, subtitle: str = "Le Grand Cerisier refleurit") -> bytes:
+    """PNG de l'annonce d'une nouvelle saison (`/admin lancer_saison`)."""
+    img = _background()
+    draw_sakura_petals(img, seed=season * 7919, count=34, size_range=(24, 62),
+                       palette=[(255, 196, 220, 120), (255, 170, 205, 105), (255, 226, 236, 100)])
+    _blossom(img, (WIDTH // 2, 150), 92)
+
+    y = 266
+    y += _glow_text(img, WIDTH // 2, y, f"SAISON {season}", _bangers(132), (*_GOLD, 255), (255, 120, 170), 16) + 26
+    y += _glow_text(img, WIDTH // 2, y, subtitle, try_font(44, bold=True), _TEXT, (190, 80, 150), 8) + 20
+    _glow_text(img, WIDTH // 2, y, "Tout le monde repart du Rang F — la course recommence",
+               try_font(28), _MUTED, (90, 30, 90), 6)
+
+    out = io.BytesIO()
+    img.convert("RGB").save(out, format="PNG", optimize=True)
+    return out.getvalue()

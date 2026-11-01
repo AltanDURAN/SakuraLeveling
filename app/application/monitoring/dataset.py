@@ -88,6 +88,9 @@ class PlayerInfo:
     stat_points: int = 0
     skill_points: int = 0
     points: tuple[int, int, int] = (0, 0, 0)
+    #: Début de SON aventure : son arrivée, ou le début de la saison s'il
+    #: était déjà inscrit (au reset de saison, tout le monde repart de là).
+    started_at: datetime | None = None
 
 
 @dataclass
@@ -109,6 +112,10 @@ class Dataset:
     #: Premier événement du journal (UTC naïf) : avant, aucune activité n'est
     #: connue — un joueur arrivé avant ne peut pas compter dans la rétention.
     journal_start: datetime | None = None
+    #: Saison en cours (repère `season` posé par le reset de saison) et son
+    #: début (UTC naïf) : rien d'antérieur n'est chargé.
+    season: int = 0
+    season_start: datetime | None = None
     _cache: dict = field(default_factory=dict, repr=False)
 
     # ------------------------------------------------------------ bornes
@@ -227,10 +234,11 @@ class Dataset:
     def arrivals(self) -> dict[int, date]:
         """Jour d'arrivée des joueurs arrivés DEPUIS le début du journal (les
         autres n'ont pas d'activité connue avant : ils fausseraient la
-        rétention)."""
+        rétention). Au lancement d'une saison, tous les inscrits « arrivent »
+        ce jour-là."""
         start = self.journal_start
-        return {pid: to_local(p.created_at).date() for pid, p in self.players.items()
-                if p.created_at and start is not None and p.created_at >= start - timedelta(hours=1)}
+        return {pid: to_local(p.started_at).date() for pid, p in self.players.items()
+                if p.started_at and start is not None and p.started_at >= start - timedelta(hours=1)}
 
     def name(self, pid: int | None) -> str:
         return self.players[pid].name if pid in self.players else f"#{pid}"
@@ -255,6 +263,13 @@ def load(session: Session, days: int = 30, include_admins: bool = False,
     reach = max(days, history_days or 0) + 1
     lo = utc_naive(now) - timedelta(days=reach)
 
+    season_row = session.execute(
+        select(GameEventModel.at, GameEventModel.qty).where(GameEventModel.kind == kinds.SEASON_START)
+        .order_by(GameEventModel.at.desc()).limit(1)).first()
+    season_start = season_row.at if season_row else None
+    if season_start is not None:
+        lo = max(lo, season_start)
+
     admins = _admin_ids()
     players: dict[int, PlayerInfo] = {}
     rows = session.execute(
@@ -272,6 +287,7 @@ def load(session: Session, days: int = 30, include_admins: bool = False,
             level=prog.level if prog else 1, xp=prog.xp if prog else 0, gold=res.gold if res else 0,
             stat_points=prog.stat_points if prog else 0, skill_points=prog.skill_points if prog else 0,
             points=(prog.points_attack, prog.points_defense, prog.points_max_hp) if prog else (0, 0, 0),
+            started_at=(max(p.created_at, season_start) if p.created_at and season_start else p.created_at),
         )
 
     events = []
@@ -297,11 +313,13 @@ def load(session: Session, days: int = 30, include_admins: bool = False,
         flees[(zone or "", datetime.strptime(h, "%Y-%m-%d %H:%M:%S"))] = int(n)
     last_event_id = session.execute(select(func.max(GameEventModel.id))).scalar() or 0
     journal_start = session.execute(select(func.min(GameEventModel.at))).scalar()
+    if season_start is not None and (journal_start is None or journal_start < season_start):
+        journal_start = season_start
 
     snap_lo = to_local(now).date() - timedelta(days=reach)
     snapshots = []
     for s in session.execute(select(PlayerDailySnapshotModel).where(PlayerDailySnapshotModel.day >= snap_lo)).scalars():
-        if s.player_id not in players:
+        if s.player_id not in players or (season_start is not None and s.taken_at < season_start):
             continue
         try:
             data = json.loads(s.data) if s.data else {}
@@ -318,7 +336,8 @@ def load(session: Session, days: int = 30, include_admins: bool = False,
         items[it.code] = it.name
         items_by_id[it.id] = (it.code, it.name)
     return Dataset(now, days, include_admins, players, events, snapshots, zones, mobs, items, items_by_id,
-                   flees=flees, last_event_id=last_event_id, journal_start=journal_start)
+                   flees=flees, last_event_id=last_event_id, journal_start=journal_start,
+                   season=int(season_row.qty or 0) if season_row else 0, season_start=season_start)
 
 
 _CACHE: dict[tuple, tuple[float, Dataset]] = {}

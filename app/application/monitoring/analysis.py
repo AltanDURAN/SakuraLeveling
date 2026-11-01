@@ -195,6 +195,7 @@ def overview(ds: Dataset) -> dict:
                 good_up=False, hint="Or créé moins or détruit : ce qui gonfle la masse d'or."),
         ],
         "journal_start": to_local(ds.journal_start) if ds.journal_start else None,
+        "season": ds.season,
         "journal_young": ds.journal_start is None or (ds.now_naive - ds.journal_start).days < 7,
         "hero": {"value": active_24, "label": "joueurs actifs ces dernières 24 h",
                  "sub": f"{len(ds.players)} joueurs inscrits · {active_7} actifs cette semaine"},
@@ -566,8 +567,8 @@ def zone_times(ds: Dataset, session: Session) -> list[dict]:
         done, ongoing, fights = [], [], []
         for pid, info in ds.players.items():
             start = first[pid].get(rank)
-            if rank == open_ranks[0] and info.created_at is not None:
-                start = min(filter(None, (start, info.created_at)))
+            if rank == open_ranks[0] and info.started_at is not None:
+                start = min(filter(None, (start, info.started_at)))
             if start is None:
                 continue
             ends = [t for t in (first[pid].get(nxt) if nxt else None, promoted[pid].get(nxt) if nxt else None) if t]
@@ -598,9 +599,9 @@ def progression_page(ds: Dataset, session: Session) -> dict:
     # Courbes : niveau selon les jours depuis l'arrivée, contre le design.
     curves = []
     for pid, info in ds.players.items():
-        if info.created_at is None:
+        if info.started_at is None:
             continue
-        start = to_local(info.created_at).date()
+        start = to_local(info.started_at).date()
         pts = [((s.day - start).days, s.level) for s in ds.snapshots_by_player.get(pid, ())]
         pts.append(((ds.today - start).days, info.level))
         pts = sorted({d: lv for d, lv in pts if d >= 0}.items())

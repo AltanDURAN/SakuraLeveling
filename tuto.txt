@@ -907,13 +907,31 @@ INTERFACE WEB D'ADMINISTRATION
 2.4 — SAISON : RESET ET SIMULATION
 --------------------------------------------------------------------------------
 
-Reset de saison (sur le VPS, de préférence bot arrêté) :
+/admin lancer_saison [numéro] [annonce]
+    Lance officiellement une saison. Affiche d'abord ce qui sera effacé
+    (joueurs, or, pièces, boss, brocante, défis, offrande, surveillance du
+    site), puis un bouton « Lancer la saison » qui demande de TAPER
+    « SAISON 1 » (le numéro choisi) : un clic de trop n'efface rien.
+    Au lancement, dans l'ordre :
+      • les commandes des joueurs sont fermées quelques secondes (« le Grand
+        Cerisier se prépare… ») ;
+      • la base est sauvegardée à côté d'elle (lita_v2_avant_saison_1_<date>.db)
+        — si la sauvegarde échoue, rien n'est touché ;
+      • combats de zone annulés, world boss arrêté, événements retirés ;
+      • tous les joueurs repartent de zéro (seule l'identité Discord reste,
+        nouveaux talents élémentaires), boss, événements, brocante, échanges,
+        défis et offrande vidés, et la SURVEILLANCE du site admin repart du
+        lancement (ses réglages sont gardés) ;
+      • tout le monde redescend au Rang F, les commandes rouvrent ;
+      • l'annonce part dans le salon général, avec sa carte « SAISON 1 » et
+        les boutons vers le tutoriel et la première zone (option annonce :
+        @everyone par défaut, @here, sans mention, ou pas d'annonce).
+
+Reset de saison sans le bot (recours, sur le VPS) :
     .venv/bin/python -m scripts.season_reset                       # aperçu
     .venv/bin/python -m scripts.season_reset --confirm "SAISON 1"  # exécute
-    La base est sauvegardée avant toute écriture. Tous les joueurs repartent
-    de zéro (seule l'identité Discord reste) ; world boss, événements,
-    brocante et échanges sont vidés. Au démarrage
-    suivant, le bot remet tous les rôles de rang au Rang F.
+    Même reset et même sauvegarde, sans annonce ; au démarrage suivant, le
+    bot remet tous les rôles de rang au Rang F.
 
 Simulation de la saison :
     .venv/bin/python -m scripts.simulate_season [--minutes 30] [--cycle 3]

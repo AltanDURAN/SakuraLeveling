@@ -89,8 +89,8 @@ def _pace(ds: Dataset, pid: int) -> float:
         rows = ds.snapshots_by_player.get(pid) or []
         if rows:
             start_total, start_at = rows[0].xp_total, rows[0].taken_at
-        elif info.created_at is not None:
-            start_total, start_at = 0, info.created_at
+        elif info.started_at is not None:
+            start_total, start_at = 0, info.started_at
         else:
             return 0.0
     if start_at.tzinfo is not None:

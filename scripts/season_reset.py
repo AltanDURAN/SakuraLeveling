@@ -1,12 +1,16 @@
 """Reset de saison — tout le monde repart de zéro (seule l'identité Discord reste).
 
+Depuis Discord, c'est `/admin lancer_saison` (aperçu, confirmation, annonce) ;
+ce script est le recours si le bot ne tourne pas.
+
 Usage (sur le VPS, bot ARRÊTÉ de préférence) :
 
     .venv/bin/python -m scripts.season_reset                       # aperçu, rien n'est modifié
     .venv/bin/python -m scripts.season_reset --confirm "SAISON 1"  # exécute
+    .venv/bin/python -m scripts.season_reset --saison 2 --confirm "SAISON 2"
 
 Avant toute écriture, la base est sauvegardée (API de sauvegarde SQLite,
-cohérente même en mode WAL) dans `lita_v2_avant_reset_<date>.db`. Les rôles de
+cohérente même en mode WAL) dans `lita_v2_avant_saison_<N>_<date>.db`. Les rôles de
 rang Discord sont remis au Rang F par le bot au démarrage suivant (action
 `reset_rank_roles` mise en file) — il doit donc tourner après le reset.
 """
@@ -14,16 +18,15 @@ rang Discord sont remis au Rang F par le bot au démarrage suivant (action
 from __future__ import annotations
 
 import argparse
-import sqlite3
 import sys
-from datetime import datetime
-from pathlib import Path
 
 from app.application.use_cases.reset_season import preview_season_reset, reset_season
-from app.infrastructure.config.settings import settings
+from app.infrastructure.db.backup import BackupError, backup_sqlite
 from app.infrastructure.db.session import get_db_session
 
-CONFIRMATION = "SAISON 1"
+
+def confirmation(season: int) -> str:
+    return f"SAISON {season}"
 
 
 def _import_all_models() -> None:
@@ -41,22 +44,6 @@ def _import_all_models() -> None:
         importlib.import_module(f"{models_pkg.__name__}.{module.name}")
 
 
-def _sqlite_path() -> Path | None:
-    url = settings.database_url
-    prefix = "sqlite:///"
-    return Path(url[len(prefix):]) if url.startswith(prefix) else None
-
-
-def _backup() -> Path:
-    src = _sqlite_path()
-    if src is None or not src.exists():
-        sys.exit(f"❌ Base SQLite introuvable ({settings.database_url}) : sauvegarde impossible, arrêt.")
-    dst = src.with_name(f"{src.stem}_avant_reset_{datetime.now():%Y%m%d_%H%M%S}{src.suffix}")
-    with sqlite3.connect(src) as source, sqlite3.connect(dst) as target:
-        source.backup(target)
-    return dst
-
-
 def _print_report(title: str, report) -> None:
     print(title)
     print(f"  joueurs remis à zéro : {report.players}")
@@ -66,21 +53,26 @@ def _print_report(title: str, report) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n", 1)[0])
-    parser.add_argument("--confirm", default="", help=f'taper exactement "{CONFIRMATION}"')
+    parser.add_argument("--saison", type=int, default=1, help="numéro de la saison qui commence")
+    parser.add_argument("--confirm", default="", help='taper exactement "SAISON <numéro>"')
     args = parser.parse_args()
     _import_all_models()
+    expected = confirmation(args.saison)
 
     with get_db_session() as session:
         preview = preview_season_reset(session)
-    if args.confirm != CONFIRMATION:
+    if args.confirm != expected:
         _print_report("APERÇU — rien n'a été modifié :", preview)
-        print(f'\nPour exécuter : --confirm "{CONFIRMATION}"')
+        print(f'\nPour exécuter : --confirm "{expected}"')
         return
 
-    backup = _backup()
+    try:
+        backup = backup_sqlite(f"avant_saison_{args.saison}")
+    except BackupError as exc:
+        sys.exit(f"❌ {exc} Arrêt.")
     print(f"💾 Sauvegarde : {backup}")
     with get_db_session() as session:
-        report = reset_season(session)
+        report = reset_season(session, season=args.saison)
     _print_report("✅ Saison remise à zéro :", report)
     if report.roles_queued:
         print("🎭 Rôles de rang : remise au Rang F en file, exécutée par le bot (≤ 5 s une fois lancé).")

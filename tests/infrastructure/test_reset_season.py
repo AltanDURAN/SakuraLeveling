@@ -12,6 +12,7 @@ from app.infrastructure.db.models.progression_model import PlayerProgressionMode
 from app.infrastructure.db.models.resource_model import PlayerResourceModel
 from app.infrastructure.db.models.work_order_model import PlayerArtisanMasteryModel
 from app.infrastructure.db.models.world_boss_model import WorldBossModel
+from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from tests.infrastructure.test_reset_player_use_case import (  # noqa: F401
     _create_player,
     session,
@@ -78,3 +79,89 @@ def test_la_saison_repart_a_zero_mais_garde_les_joueurs(session):
         assert session.get(PlayerResourceModel, pid).gold == 0
     pending = session.execute(select(AdminCommandModel.action)).scalars().all()
     assert pending == ["reset_rank_roles"]
+
+
+def test_la_surveillance_repart_du_lancement_de_la_saison(session):
+    """Journal, photos et alertes vidés — y compris les lignes sans joueur —
+    puis le repère « saison 1 » : le site admin compte depuis là, et chaque
+    joueur déjà inscrit « arrive » au lancement."""
+    from datetime import timedelta
+
+    from app.application.monitoring import dataset
+    from app.application.monitoring.snapshots import take_snapshots
+    from app.infrastructure.db.models.monitoring_model import (
+        GameEventModel,
+        MonitoringAlertModel,
+        PlayerDailySnapshotModel,
+    )
+    from app.infrastructure.monitoring.telemetry import record
+
+    a = _create_player(session, 1, "Alice")
+    session.get(PlayerModel, a).created_at = datetime.now(UTC) - timedelta(days=40)
+    PlayerRepository(session).add_gold(a, 500, source="combat")
+    record(session, "flee", zone="123", ref="slime")                       # sans joueur
+    now = datetime.now(UTC).replace(tzinfo=None)
+    session.add(MonitoringAlertModel(key="dau_drop:all", code="dau_drop", severity="serieux", title="t",
+                                     first_seen=now, last_seen=now))
+    session.commit()
+    take_snapshots(session)
+    assert preview_season_reset(session).cleared["game_events"] == 2
+
+    reset_season(session, season=1)
+
+    rows = session.execute(select(GameEventModel.kind, GameEventModel.qty)).all()
+    assert rows == [("season", 1)]
+    assert _count(session, PlayerDailySnapshotModel) == 0 and _count(session, MonitoringAlertModel) == 0
+    # Une ligne d'avant le lancement arrivée en retard (tampon vidé pendant le reset) : ignorée.
+    record(session, "interaction", player_id=a, ref="profil", at=now - timedelta(hours=2))
+    session.commit()
+    ds = dataset.load(session, days=30)
+    assert ds.season == 1 and ds.journal_start == ds.season_start
+    assert [e.kind for e in ds.events] == ["season"]
+    assert ds.players[a].started_at == ds.season_start
+    assert set(ds.arrivals()) == {a}
+
+
+def test_le_reset_de_saison_est_tout_ou_rien(session, monkeypatch):
+    a = _create_player(session, 1, "Alice")
+    _create_player(session, 2, "Bob")
+    _boss(session)
+    calls = []
+
+    def flaky(self, s, player_id):
+        calls.append(player_id)
+        if len(calls) == 2:
+            raise RuntimeError("panne au 2e joueur")
+        original(self, s, player_id)
+
+    original = ResetPlayerUseCase.execute
+    monkeypatch.setattr(ResetPlayerUseCase, "execute", flaky)
+    try:
+        reset_season(session)
+    except RuntimeError:
+        pass
+    session.expire_all()
+    assert session.get(PlayerProgressionModel, a).level == 5, "le 1er joueur n'est pas remis à zéro seul"
+    assert _count(session, WorldBossModel) == 1
+
+
+def test_sauvegarde_de_la_base(tmp_path):
+    import sqlite3
+
+    import pytest
+
+    from app.infrastructure.db.backup import BackupError, backup_sqlite
+
+    db = tmp_path / "jeu.db"
+    with sqlite3.connect(db) as c:
+        c.execute("PRAGMA journal_mode=WAL")
+        c.execute("CREATE TABLE t (v INTEGER)")
+        c.execute("INSERT INTO t VALUES (42)")
+    copy = backup_sqlite("avant_saison_1", url=f"sqlite:///{db}")
+    assert copy.parent == tmp_path and copy.name.startswith("jeu_avant_saison_1_")
+    with sqlite3.connect(copy) as c:
+        assert c.execute("SELECT v FROM t").fetchall() == [(42,)]
+    with pytest.raises(BackupError):
+        backup_sqlite("x", url="postgresql://ailleurs/jeu")
+    with pytest.raises(BackupError):
+        backup_sqlite("x", url=f"sqlite:///{tmp_path / 'absente.db'}")

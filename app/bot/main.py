@@ -61,13 +61,21 @@ _COG_MODULES = [
 ]
 
 
+class SakuraTree(app_commands.CommandTree):
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        # Pendant le lancement d'une saison, seuls les admins passent.
+        from app.bot import season_launch
+
+        return await season_launch.allow(interaction)
+
+
 class SakuraBot(commands.Bot):
     def __init__(self) -> None:
         intents = discord.Intents.default()
         # Intent privilégié SERVER MEMBERS (activé dans le Dev Portal) : requis
         # pour l'event on_member_join (accueil des nouveaux joueurs).
         intents.members = True
-        super().__init__(command_prefix="!", intents=intents)
+        super().__init__(command_prefix="!", intents=intents, tree_cls=SakuraTree)
 
     async def setup_hook(self) -> None:
         # Tolérance par cog : si l'un plante au load, on logge et on continue

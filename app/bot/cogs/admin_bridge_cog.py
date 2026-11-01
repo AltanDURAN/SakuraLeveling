@@ -107,11 +107,11 @@ class AdminBridgeCog(commands.Cog):
             return True, f"Événement « {event_type} » lancé."
 
         if action == "reset_rank_roles":
-            return await self._reset_rank_roles()
+            return await self.reset_rank_roles()
 
         return False, f"Action non gérée : {action}"
 
-    async def _reset_rank_roles(self) -> tuple[bool, str]:
+    async def reset_rank_roles(self) -> tuple[bool, str]:
         """Reset de saison : chaque porteur d'un rang supérieur redescend au
         Rang F (les rôles ouvrent les salons de zone)."""
         from app.bot.rank_roles import START_RANK, set_rank_role
