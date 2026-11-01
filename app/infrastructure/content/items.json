@@ -1954,7 +1954,6 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "max_hp_pct": 6,
       "mana_max": 15
     },
     "equipment_slot": "tete",
