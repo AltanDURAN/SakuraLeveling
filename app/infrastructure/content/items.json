@@ -2115,7 +2115,6 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "max_hp_pct": 6,
       "speed": 1
     },
     "equipment_slot": "tete",
