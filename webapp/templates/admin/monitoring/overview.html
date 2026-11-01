@@ -3,6 +3,10 @@
 {% block page_title %}Vue d'ensemble{% endblock %}
 {% block mon_sub %}L'état du jeu en un coup d'œil — {{ f.days }} derniers jours{% if not f.admins %}, comptes admin exclus{% endif %}.{% endblock %}
 {% block body %}
+{% if d.journal_young %}
+<div class="note-box">🌱 Le journal de surveillance {% if d.journal_start %}a commencé le <b>{{ d.journal_start.strftime('%d/%m/%Y à %Hh%M') }}</b>{% else %}n'a encore rien enregistré{% endif %} :
+    les courbes, la rétention et les projections se remplissent au fil des jours (une photo des joueurs toutes les 30 min, chaque action au fil de l'eau).</div>
+{% endif %}
 
 <div class="hero">
     <span class="hero-value">{{ d.hero.value }}</span>

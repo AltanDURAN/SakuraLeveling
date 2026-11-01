@@ -120,3 +120,18 @@ def test_le_reset_d_un_joueur_purge_son_journal(session):
     session.commit()
     assert not _events(session, "gold")
     assert session.execute(select(PlayerDailySnapshotModel)).first() is None
+
+
+def test_les_joueurs_arrives_avant_le_journal_ne_faussent_pas_la_retention(session):
+    from datetime import UTC, datetime, timedelta
+
+    from app.infrastructure.db.models.player_model import PlayerModel
+
+    old = _new(session, discord_id=1)
+    session.get(PlayerModel, old).created_at = datetime.now(UTC).replace(tzinfo=None) - timedelta(days=60)
+    session.commit()
+    record(session, "interaction", player_id=old, ref="profil")    # le journal commence aujourd'hui
+    new = _new(session, discord_id=2)
+    session.commit()
+    ds = dataset.load(session, days=30)
+    assert set(ds.arrivals()) == {new}

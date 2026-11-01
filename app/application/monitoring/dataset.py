@@ -106,6 +106,9 @@ class Dataset:
     #: UTC) : des dizaines de milliers de lignes qu'il est inutile de charger.
     flees: dict[tuple[str, datetime], int] = field(default_factory=dict)
     last_event_id: int = 0
+    #: Premier événement du journal (UTC naïf) : avant, aucune activité n'est
+    #: connue — un joueur arrivé avant ne peut pas compter dans la rétention.
+    journal_start: datetime | None = None
     _cache: dict = field(default_factory=dict, repr=False)
 
     # ------------------------------------------------------------ bornes
@@ -221,6 +224,14 @@ class Dataset:
             return self.items_by_id[int(code)][1]
         return self.items.get(code or "", code or "?")
 
+    def arrivals(self) -> dict[int, date]:
+        """Jour d'arrivée des joueurs arrivés DEPUIS le début du journal (les
+        autres n'ont pas d'activité connue avant : ils fausseraient la
+        rétention)."""
+        start = self.journal_start
+        return {pid: to_local(p.created_at).date() for pid, p in self.players.items()
+                if p.created_at and start is not None and p.created_at >= start - timedelta(hours=1)}
+
     def name(self, pid: int | None) -> str:
         return self.players[pid].name if pid in self.players else f"#{pid}"
 
@@ -285,6 +296,7 @@ def load(session: Session, days: int = 30, include_admins: bool = False,
             .group_by(GameEventModel.zone, hour)).all():
         flees[(zone or "", datetime.strptime(h, "%Y-%m-%d %H:%M:%S"))] = int(n)
     last_event_id = session.execute(select(func.max(GameEventModel.id))).scalar() or 0
+    journal_start = session.execute(select(func.min(GameEventModel.at))).scalar()
 
     snap_lo = to_local(now).date() - timedelta(days=reach)
     snapshots = []
@@ -306,7 +318,7 @@ def load(session: Session, days: int = 30, include_admins: bool = False,
         items[it.code] = it.name
         items_by_id[it.id] = (it.code, it.name)
     return Dataset(now, days, include_admins, players, events, snapshots, zones, mobs, items, items_by_id,
-                   flees=flees, last_event_id=last_event_id)
+                   flees=flees, last_event_id=last_event_id, journal_start=journal_start)
 
 
 _CACHE: dict[tuple, tuple[float, Dataset]] = {}

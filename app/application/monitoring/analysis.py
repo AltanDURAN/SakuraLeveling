@@ -194,6 +194,8 @@ def overview(ds: Dataset) -> dict:
             kpi("Or créé net (7 j)", sum(net[-7:]), sum(net[-14:-7]) if len(net) >= 14 else None,
                 good_up=False, hint="Or créé moins or détruit : ce qui gonfle la masse d'or."),
         ],
+        "journal_start": to_local(ds.journal_start) if ds.journal_start else None,
+        "journal_young": ds.journal_start is None or (ds.now_naive - ds.journal_start).days < 7,
         "hero": {"value": active_24, "label": "joueurs actifs ces dernières 24 h",
                  "sub": f"{len(ds.players)} joueurs inscrits · {active_7} actifs cette semaine"},
         "dau": dau,
@@ -246,8 +248,7 @@ def activity_page(ds: Dataset) -> dict:
     bins = [(0, 15), (15, 30), (30, 60), (60, 120), (120, 240), (240, 10_000)]
     hist = [sum(1 for v in per_player if lo <= v < hi) for lo, hi in bins]
     sessions = [s for pid in ds.players for s in ds.sessions(pid) if s.end >= ds.start]
-    first_day = {pid: to_local(p.created_at).date() for pid, p in ds.players.items() if p.created_at}
-    cohorts = activity.retention(first_day, active_map, ds.today)
+    cohorts = activity.retention(ds.arrivals(), active_map, ds.today)
     suggestions = _suggestions(busy, quiet, spawn_fill, by_weekday)
     return {
         "days": days_, "dau": dau, "wau": wau, "mau": mau,

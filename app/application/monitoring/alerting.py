@@ -131,8 +131,7 @@ def server_facts(ds: Dataset) -> rules.ServerFacts:
         top = golds[:max(1, len(golds) // 10)]
         facts.top10_share_pct = 100 * sum(top) / sum(golds)
         facts.holders = len(golds)
-    first_day = {pid: to_local(p.created_at).date() for pid, p in ds.players.items() if p.created_at}
-    cohorts = activity.retention(first_day, {pid: ds.active_days(pid) for pid in ds.players}, ds.today)
+    cohorts = activity.retention(ds.arrivals(), {pid: ds.active_days(pid) for pid in ds.players}, ds.today)
     recent = [c for c in cohorts[-4:] if c.retained.get(7) is not None]
     if recent:
         size = sum(c.size for c in recent)
