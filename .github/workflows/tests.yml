@@ -29,5 +29,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
 
+      # Pas de .env sur GitHub : des valeurs factices pour les champs
+      # obligatoires de Settings (les tests n'appellent jamais Discord).
       - name: Run domain tests
+        env:
+          DISCORD_TOKEN: ci-dummy
+          DATABASE_URL: "sqlite:///:memory:"
+          BETA_CHANNEL_ID: "0"
+          ENCOUNTER_CHANNEL_ID: "0"
         run: pytest tests/domain -v
