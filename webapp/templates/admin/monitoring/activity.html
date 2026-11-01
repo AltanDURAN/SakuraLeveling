@@ -1,0 +1,96 @@
+{% extends "admin/monitoring/_layout.html" %}
+{% import "admin/monitoring/_macros.html" as m %}
+{% block page_title %}Activité{% endblock %}
+{% block mon_title %}⏱️ Activité{% endblock %}
+{% block mon_sub %}Qui joue, quand, combien de temps — et qui revient.{% endblock %}
+{% block body %}
+<div class="kpis">
+    <div class="kpi"><span class="kpi-label">Temps de jeu total</span><span class="kpi-value">{{ viz.full(d.total_hours) }}<span class="kpi-unit">h</span></span><span class="kpi-foot"><span class="delta is-flat">sur {{ f.days }} jours</span></span></div>
+    <div class="kpi" title="Durée médiane d'une session (pauses de plus de 15 min = nouvelle session)."><span class="kpi-label">Session médiane ⓘ</span><span class="kpi-value">{{ viz.duration(d.median_session) }}</span><span class="kpi-foot"></span></div>
+    <div class="kpi"><span class="kpi-label">Sessions par jour joué</span><span class="kpi-value">{{ ('%.1f' % d.sessions_per_day)|replace('.', ',') }}</span><span class="kpi-foot"></span></div>
+    <div class="kpi" title="Joueurs actifs du jour (moyenne 7 j) ÷ joueurs actifs sur 30 jours : la part des joueurs du mois qui viennent chaque jour."><span class="kpi-label">Fidélité quotidienne ⓘ</span><span class="kpi-value">{{ viz.pct(d.stickiness) }}</span><span class="kpi-foot"><span class="delta is-flat">actifs du jour ÷ du mois</span></span></div>
+</div>
+
+<div class="card">
+    <div class="card-head"><div><h2>Joueurs actifs</h2>
+        <p class="sub">Chaque jour, et sur les 7 et 30 derniers jours glissants.</p></div></div>
+    {{ viz.line_chart(labels, [{"name": "30 jours", "values": d.mau, "slot": 3}, {"name": "7 jours", "values": d.wau, "slot": 2}, {"name": "Jour", "values": d.dau, "slot": 1, "emphasis": true}], width=1100, height=260, partial_last=true, title="Joueurs actifs") }}
+    <ul class="legend"><li><span class="key line s1"></span>Actifs du jour</li><li><span class="key line s2"></span>Actifs sur 7 jours</li><li><span class="key line s3"></span>Actifs sur 30 jours</li></ul>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <div class="card-head"><div><h2>Heures d'activité</h2><p class="sub">Actions par jour de la semaine et par heure (Paris).</p></div></div>
+        {{ viz.heatmap(d.grid, rows=weekdays) }}
+        <div class="hours-note">
+            {% for r in d.busy[:3] %}<span>🔥 Pic : <b>{{ r.label }}</b></span>{% endfor %}
+            {% for r in d.quiet[:3] %}<span>🌙 Creux : <b>{{ r.label }}</b></span>{% endfor %}
+        </div>
+        <h3 class="section-title" style="margin-top:1.1rem">Par jour de la semaine</h3>
+        {% set wd = [] %}{% for name, v in d.weekdays %}{% set _ = wd.append((name|capitalize, v)) %}{% endfor %}
+        {{ viz.ranked_bars(wd, value_format=viz.compact, slot=2) }}
+    </div>
+    <div class="card">
+        <div class="card-head"><div><h2>Au fil de la journée</h2><p class="sub">Actions par heure, tous jours confondus.</p></div></div>
+        {{ viz.columns(d.hours, d.profile, width=560, height=380, x_every=3, title="Actions par heure") }}
+    </div>
+</div>
+
+<div class="grid grid-21">
+    <div class="card">
+        <div class="card-head"><div><h2>Monstres combattus, heure par heure</h2>
+            <p class="sub">Part des monstres apparus qui ont trouvé au moins un combattant. Une heure basse = des zones qui tournent à vide.</p></div>
+            <a class="card-link" href="/admin/pacing">Rythme →</a></div>
+        {% set fill = [] %}{% set tips = [] %}
+        {% for s in d.spawn_fill %}{% set _ = fill.append(s.fill or 0) %}{% set _ = tips.append(s.hour ~ "h : " ~ (viz.pct(s.fill) if s.fill is not none else "aucun monstre") ~ " combattus (" ~ s.fought ~ " combats, " ~ s.fled ~ " repartis)") %}{% endfor %}
+        {{ viz.columns(d.hours, fill, width=720, height=220, y_format=viz.pct, slot=4, tips=tips, x_every=2, title="Monstres combattus par heure") }}
+    </div>
+    <div class="card">
+        <div class="card-head"><div><h2>💡 Combler les creux, profiter des pics</h2></div></div>
+        {% if d.suggestions %}<ul class="tips">{% for t in d.suggestions %}
+            <li class="tip-card"><span class="icon">{{ t.icon }}</span><div><strong>{{ t.title }}</strong><span>{{ t.text }}</span>
+            {% if t.link %} <a href="{{ t.link[0] }}">{{ t.link[1] }} →</a>{% endif %}</div></li>{% endfor %}</ul>
+        {% else %}{{ m.empty("Pas encore assez d'activité pour proposer quelque chose.") }}{% endif %}
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <div class="card-head"><div><h2>Temps de jeu par joueur</h2><p class="sub">Moyenne par jour joué : combien de joueurs dans chaque tranche.</p></div></div>
+        {% set pl = [] %}{% set pv = [] %}{% for name, v in d.playtime_bins %}{% set _ = pl.append(name) %}{% set _ = pv.append(v) %}{% endfor %}
+        {{ viz.columns(pl, pv, width=560, height=220, y_format=viz.full, slot=7, label_values=true, x_every=1, title="Temps de jeu par joueur") }}
+    </div>
+    <div class="card">
+        <div class="card-head"><div><h2>Commandes les plus utilisées</h2><p class="sub">Commandes tapées sur la période.</p></div></div>
+        {{ viz.ranked_bars(d.commands, value_format=viz.full, slot=2) }}
+        <p class="card-foot">Plus {{ viz.full(d.buttons) }} clics sur des boutons et menus (combattre, acheter, investir…).</p>
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <div class="card-head"><div><h2>Rétention par semaine d'arrivée</h2>
+            <p class="sub">Part des joueurs arrivés cette semaine-là qui jouaient encore N jours après (au moins une fois dans la semaine suivante).</p></div></div>
+        {% if d.cohorts %}
+        <div class="mtable-wrap"><table class="mtable">
+            <thead><tr><th>Arrivés la semaine du</th><th class="num">Joueurs</th><th class="num">J+1</th><th class="num">J+7</th><th class="num">J+14</th><th class="num">J+30</th></tr></thead>
+            <tbody>{% for c in d.cohorts|reverse %}<tr>
+                <td>{{ c.start.strftime('%d/%m/%Y') }}</td><td class="num">{{ c.size }}</td>
+                {% for n in (1, 7, 14, 30) %}{% set v = c.retained[n] %}
+                <td class="num{% if v is none %} muted{% endif %}">{% if v is none %}—{% else %}<span class="heat-cell h{{ 1 + (v / 100 * 6)|int if v else 0 }}" style="display:inline-block;width:10px;height:10px;margin-right:6px;vertical-align:middle"></span>{{ viz.pct(v) }}{% endif %}</td>
+                {% endfor %}</tr>{% endfor %}</tbody>
+        </table></div>
+        {% else %}{{ m.empty("Pas encore de joueurs arrivés.") }}{% endif %}
+    </div>
+    <div class="card">
+        <div class="card-head"><div><h2>Ceux qui jouent le plus</h2><p class="sub">Temps de jeu sur la période.</p></div></div>
+        <div class="mtable-wrap"><table class="mtable">
+            <thead><tr><th>Joueur</th><th class="num">Temps</th><th class="num">Jours</th><th class="num">Sessions</th><th class="num">Session moy.</th></tr></thead>
+            <tbody>{% for r in d.top_time %}<tr>
+                <td class="name"><a href="/admin/monitoring/players/{{ r.pid }}{{ qs }}">{{ r.name }}</a></td>
+                <td class="num">{{ viz.duration(r.play_min) }}</td><td class="num">{{ r.active_days }}</td>
+                <td class="num">{{ r.sessions }}</td><td class="num">{{ viz.duration(r.avg_session_min) }}</td></tr>{% endfor %}</tbody>
+        </table></div>
+    </div>
+</div>
+{% endblock %}

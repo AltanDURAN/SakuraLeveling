@@ -21,6 +21,8 @@ from app.infrastructure.db.repositories.player_repository import PlayerRepositor
 from app.infrastructure.db.repositories.work_order_repository import WorkOrderRepository
 from app.infrastructure.db.unit_of_work import commit
 from app.infrastructure.db.unit_of_work import transactional
+from app.domain.services.monitoring import kinds
+from app.infrastructure.monitoring.telemetry import record as record_event
 
 #: Lot maximal en une fois (garde-fou de l'interface).
 MAX_BATCH = 50
@@ -140,8 +142,9 @@ class BrewPotionUseCase:
         potion = self.items.get_by_code(item_code)
         self.inventory.add_item(player_id, potion.id, quantity + bonus, commit=False)
         if fee:
-            self.players.add_gold(player_id, -fee, commit=False)
+            self.players.add_gold(player_id, -fee, commit=False, source="alchimie")
         self.orders.increment_mastery(player_id, self.definition.code, gold_spent=fee, amount=quantity)
+        record_event(self.session, kinds.BREW, player_id=player_id, ref=item_code, qty=quantity + bonus, gold=-fee)
         commit(self.session)
 
         message = f"🧪 {quantity} × **{line.item_name}** préparée(s) pour {fee} or."

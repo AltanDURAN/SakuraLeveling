@@ -1,0 +1,63 @@
+{% extends "admin/monitoring/_layout.html" %}
+{% import "admin/monitoring/_macros.html" as m %}
+{% block page_title %}Rapport de la semaine{% endblock %}
+{% block mon_title %}📰 Rapport de la semaine{% endblock %}
+{% block mon_sub %}Du lundi {{ d.monday.strftime('%d/%m') }} au dimanche {{ d.sunday.strftime('%d/%m/%Y') }}{% if d.in_progress %} (semaine en cours){% endif %}, comparée à la précédente.{% endblock %}
+{% block filters %}
+<div class="mon-filters">
+    <nav class="pill-group" aria-label="Semaine">
+        {% for w in range(0, 5) %}<a href="?week={{ w }}" class="{% if week == w %}is-on{% endif %}">{{ 'Cette semaine' if w == 0 else ('Semaine dernière' if w == 1 else 'Il y a ' ~ w ~ ' sem.') }}</a>{% endfor %}
+    </nav>
+    <a class="mon-toggle" href="javascript:window.print()">🖨️ Imprimer</a>
+</div>
+{% endblock %}
+{% block body %}
+{% set c, p, ch = d.cur, d.prev, d.changes %}
+<div class="card">
+    <div class="card-head"><div><h2>Faits marquants</h2></div></div>
+    {% if d.highlights %}<ul class="report-hl">{% for icon, text in d.highlights %}<li><span>{{ icon }}</span><span>{{ text }}</span></li>{% endfor %}</ul>
+    {% else %}{{ m.empty("Semaine calme : rien à signaler.") }}{% endif %}
+</div>
+
+{% macro line(label, key, d, good_up=true) %}
+<div class="kpi"><span class="kpi-label">{{ label }}</span>
+    <span class="kpi-value">{{ m.value(d.cur[key], 'int', viz) }}</span>
+    <span class="kpi-foot">{{ m.delta({'delta': d.changes.get(key), 'previous': d.prev.get(key), 'good_up': good_up}) }}</span></div>
+{% endmacro %}
+<div class="kpis kpis-4">
+    {{ line("Joueurs actifs", "players", d) }}
+    {{ line("Nouveaux joueurs", "new", d) }}
+    {{ line("Heures de jeu", "hours", d) }}
+    {{ line("Combats", "combats", d) }}
+    {{ line("Niveaux gagnés", "levels", d) }}
+    {{ line("Or créé", "created", d, good_up=false) }}
+    {{ line("Or détruit", "destroyed", d) }}
+    {{ line("Achats chez Sorn", "purchases", d) }}
+</div>
+
+<div class="grid grid-3">
+    <div class="card"><div class="card-head"><div><h2>🔥 Les plus actifs</h2><p class="sub">Actions sur la semaine.</p></div></div>
+        {{ viz.ranked_bars(c.top, value_format=viz.full, slot=1, empty="Personne n'a joué.") }}</div>
+    <div class="card"><div class="card-head"><div><h2>⚔️ Monstres les plus vaincus</h2></div></div>
+        {{ viz.ranked_bars(c.mobs, value_format=viz.full, slot=2, empty="Aucun combat gagné.") }}</div>
+    <div class="card"><div class="card-head"><div><h2>✨ Belles trouvailles</h2></div></div>
+        <ol class="rbars">{% set top = (d.drops|map(attribute=1)|max) or 1 %}
+        {% for name, n in d.drops %}<li class="rbar"><span class="rbar-label">{{ name }}</span>
+            <span class="rbar-track"><span class="rbar-fill rar-{{ rarity_class[name] }}" style="width:{{ (100 * n / top)|round(1) if n else 0.6 }}%"></span></span>
+            <span class="rbar-value">{{ n }}</span></li>{% endfor %}</ol>
+        {% if c.rank_ups %}<h3 class="section-title" style="margin-top:1rem">Promotions</h3>
+        <ul class="timeline" style="max-height:none">{% for name, rank, lvl in c.rank_ups[:8] %}<li><span>🏅</span><span>{{ name }} → rang {{ rank }}</span><time>niv. {{ lvl }}</time></li>{% endfor %}</ul>
+        {% if c.rank_ups|length > 8 %}<p class="card-foot">… et {{ c.rank_ups|length - 8 }} autres.</p>{% endif %}{% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-head"><div><h2>🚨 Alertes apparues dans la semaine</h2></div><a class="card-link" href="/admin/monitoring/alerts">Alertes →</a></div>
+    {% if d.alerts %}<div class="mtable-wrap"><table class="mtable"><thead><tr><th>Gravité</th><th>Alerte</th><th>Apparue</th><th>État</th></tr></thead>
+    <tbody>{% for a in d.alerts %}<tr><td>{{ m.sev(a.severity, rules) }}</td>
+        <td class="name" style="max-width:560px">{% if a.player_id %}<a href="/admin/monitoring/players/{{ a.player_id }}">{{ a.title }}</a>{% else %}{{ a.title }}{% endif %}</td>
+        <td class="muted">{{ viz.when(local(a.first_seen)) }}</td>
+        <td>{% if a.resolved_at %}<span class="chip">résolue</span>{% else %}<span class="chip chip-accent">en cours</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+    {% else %}<div class="calm">✅ Aucune alerte n'est apparue cette semaine.</div>{% endif %}
+</div>
+{% endblock %}

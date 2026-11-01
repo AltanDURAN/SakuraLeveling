@@ -12,6 +12,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from app.infrastructure.config.settings import settings
+from app.infrastructure.monitoring import telemetry
 
 
 # Logging structuré dès le démarrage. Sans ça, en prod systemd, journalctl
@@ -56,6 +57,7 @@ _COG_MODULES = [
     "app.bot.cogs.stats_cog",
     "app.bot.cogs.notification_cog",
     "app.bot.cogs.cosmetic_cog",
+    "app.bot.cogs.monitoring_cog",
 ]
 
 
@@ -116,6 +118,9 @@ async def _on_app_command_error(
         getattr(interaction.command, "qualified_name", "?"),
         interaction.user.id, error,
     )
+    # Surveillance : les erreurs de commandes alimentent une alerte.
+    telemetry.interactions.push(interaction.user.id, getattr(interaction.command, "qualified_name", "?"),
+                                kind="error")
     msg = "❌ Une erreur est survenue. L'incident a été journalisé."
     try:
         if interaction.response.is_done():

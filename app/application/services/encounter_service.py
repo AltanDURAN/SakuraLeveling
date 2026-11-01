@@ -69,6 +69,8 @@ from app.infrastructure.skill_tree.skill_tree_loader import (
 from app.infrastructure.titles.title_loader import (
     get_definition as get_title_def,
 )
+from app.domain.services.monitoring import kinds
+from app.infrastructure.monitoring.telemetry import record as record_event
 
 
 class EncounterService:
@@ -413,6 +415,7 @@ class EncounterService:
         if item is None:
             return []
         GearRepository(session).add(player_id, item.id, rarity, source="drop")
+        record_event(session, kinds.GEAR_DROP, player_id=player_id, ref=code, data={"rarity": rarity.value})
         return [(item.name, rarity.value)]
 
     def apply_rewards(self, encounter, result) -> BattleSummary | None:
@@ -470,6 +473,8 @@ class EncounterService:
                             contribution=contribution,
                         )
                     )
+                self._journal_combat(session, encounter, result, rewards)
+                session.commit()
 
             return BattleSummary(
                 outcome="defeat",
@@ -582,7 +587,7 @@ class EncounterService:
                     base_gold * (1 + bonuses.gold_drop_percent) * (1 + farmer_pct)
                 )
                 if gold > 0:
-                    player_repository.add_gold(participant.player_id, gold)
+                    player_repository.add_gold(participant.player_id, gold, source="combat")
                     career_repository.add(participant.player_id, gold_earned=gold)
 
                 _wqp = WeeklyQuestProgressService(WeeklyQuestRepository(session))
@@ -751,6 +756,7 @@ class EncounterService:
                         gear=gear_drop,
                     )
                 )
+            self._journal_combat(session, encounter, result, rewards)
 
         return BattleSummary(
             outcome="victory",
@@ -763,6 +769,29 @@ class EncounterService:
             base_gold_reward=gold_reward,
             lunar_note=lunar_note,
         )
+
+    @staticmethod
+    def _journal_combat(session, encounter, result, rewards: list[PlayerReward]) -> None:
+        """Journal de surveillance : une ligne par participant (issue, durée,
+        part du combat, or et XP touchés) — monstres les plus farmés, taux de
+        victoire, temps passé par zone, or par heure de jeu."""
+        mobs = [s.code for s in (getattr(encounter, "mobs", None) or [encounter.mob_state])]
+        lunar = getattr(encounter, "lunar", None)
+        channel = getattr(encounter, "channel_id", 0) or None
+        started = getattr(encounter, "started_at", None)
+        key = f"{channel or 0}:{int(started.timestamp()) if started else 0}"
+        for r in rewards:
+            c = r.contribution
+            res = "loss" if not result.victory else ("win" if c is not None and c.survived else "death")
+            data = {"mobs": mobs, "res": res, "n": len(encounter.participants), "turns": result.turns,
+                    "enc": key}
+            if c is not None:
+                data.update(dmg=c.damage_dealt, tank=c.damage_tanked, heal=c.hp_healed,
+                            share=round(r.contribution_share or 0, 3))
+            if lunar is not None:
+                data["lune"] = getattr(lunar, "code", "")
+            record_event(session, kinds.COMBAT, player_id=r.player_id, zone=channel, ref=mobs[0],
+                         gold=r.gold, xp=r.xp, qty=len(mobs) if res == "win" else 0, data=data)
 
     @staticmethod
     def _merge_essences(gains: list[EssenceGain], more: list[EssenceGain]) -> list[EssenceGain]:

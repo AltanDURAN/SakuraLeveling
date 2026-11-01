@@ -2,6 +2,8 @@ from dataclasses import dataclass
 
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.unit_of_work import transactional
+from app.domain.services.monitoring import kinds
+from app.infrastructure.monitoring.telemetry import record as record_event
 
 
 @dataclass
@@ -78,8 +80,10 @@ class TransferGoldUseCase:
             )
 
         # Atomic
-        self.player_repository.add_gold(sender_profile.player.id, -amount)
-        self.player_repository.add_gold(receiver_profile.player.id, amount)
+        record_event(self.player_repository.session, kinds.TRANSFER, player_id=sender_profile.player.id,
+                     ref="virement", gold=amount, data={"to": receiver_profile.player.id})
+        self.player_repository.add_gold(sender_profile.player.id, -amount, source="virement")
+        self.player_repository.add_gold(receiver_profile.player.id, amount, source="virement")
 
         return TransferGoldResult(
             success=True,

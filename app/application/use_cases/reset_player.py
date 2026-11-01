@@ -41,6 +41,11 @@ from app.infrastructure.db.models.tutorial_model import PlayerTutorialModel
 from app.infrastructure.db.models.tower_progress_model import PlayerTowerProgressModel
 from app.infrastructure.db.models.tower_ticket_model import PlayerTowerTicketModel
 from app.infrastructure.db.unit_of_work import commit
+from app.infrastructure.db.models.monitoring_model import (
+    GameEventModel,
+    MonitoringAlertModel,
+    PlayerDailySnapshotModel,
+)
 
 
 class ResetPlayerUseCase:
@@ -124,6 +129,10 @@ class ResetPlayerUseCase:
             PlayerTowerTicketModel,
             OfferingContributionModel,
             PlayerTutorialModel,
+            # Surveillance : son historique repart à zéro avec lui.
+            GameEventModel,
+            PlayerDailySnapshotModel,
+            MonitoringAlertModel,
         ):
             session.execute(delete(model_cls).where(model_cls.player_id == player_id))
 

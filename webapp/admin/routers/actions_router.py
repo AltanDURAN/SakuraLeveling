@@ -195,7 +195,7 @@ async def set_level(
             player_id=pid,
             new_level=new_level,
             new_xp=0,
-            new_skill_points=profile.progression.skill_points,
+            new_skill_points=profile.progression.skill_points, source="admin",
         )
     return RedirectResponse(f"/admin/actions?message=Niveau+r%C3%A9gl%C3%A9+%C3%A0+{new_level}", status_code=303)
 

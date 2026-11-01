@@ -14,6 +14,7 @@ from app.infrastructure.db.repositories.element_affinity_repository import (
     ElementAffinityRepository,
 )
 from app.infrastructure.db.unit_of_work import commit as commit_session
+from app.infrastructure.monitoring.telemetry import record as record_event
 
 
 class PlayerRepository:
@@ -146,7 +147,10 @@ class PlayerRepository:
         progression.updated_at = datetime.now(UTC)
         commit_session(self.session)
 
-    def add_gold(self, player_id: int, gold: int, commit: bool = True) -> None:
+    def add_gold(self, player_id: int, gold: int, commit: bool = True, source: str = "") -> None:
+        """`source` : d'où vient (ou où part) l'or, pour le journal de
+        surveillance (`monitoring.kinds.GOLD_SOURCES`) — sans elle, le
+        mouvement apparaît en « non étiqueté » dans l'économie."""
         resources = self.session.get(PlayerResourceModel, player_id)
         if resources is None:
             return
@@ -154,17 +158,24 @@ class PlayerRepository:
         # Clamp à 0 : les déductions légitimes (buy_from_shop, transfer, accept_trade,
         # marketplace) vérifient le solde en amont — le clamp est de la défense en
         # profondeur contre une race ou un appel admin malformé.
+        before = resources.gold
         resources.gold = max(0, resources.gold + gold)
         resources.updated_at = datetime.now(UTC)
+        if resources.gold != before:      # la variation RÉELLE (après le clamp)
+            record_event(self.session, "gold", player_id=player_id, ref=source or "autre",
+                         gold=resources.gold - before)
         commit_session(self.session) if commit else self.session.flush()
 
-    def set_gold(self, player_id: int, gold: int) -> None:
+    def set_gold(self, player_id: int, gold: int, source: str = "admin") -> None:
         resources = self.session.get(PlayerResourceModel, player_id)
         if resources is None:
             return
 
+        before = resources.gold
         resources.gold = max(0, gold)
         resources.updated_at = datetime.now(UTC)
+        if resources.gold != before:
+            record_event(self.session, "gold", player_id=player_id, ref=source, gold=resources.gold - before)
         commit_session(self.session)
 
     def increment_daily_streak(self, player_id: int) -> int:
@@ -276,11 +287,19 @@ class PlayerRepository:
         new_xp: int,
         new_skill_points: int,
         new_stat_points: int | None = None,
+        source: str = "",
     ) -> None:
+        """`source="admin"` : niveau donné à la main (exclu des mesures de
+        rythme de la surveillance)."""
         progression = self.session.get(PlayerProgressionModel, player_id)
         if progression is None:
             return
 
+        if new_level > progression.level:
+            data = {"from": progression.level}
+            if source:
+                data["src"] = source
+            record_event(self.session, "level_up", player_id=player_id, qty=new_level, data=data)
         if new_stat_points is not None:
             progression.stat_points = new_stat_points
         progression.level = new_level

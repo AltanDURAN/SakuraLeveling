@@ -34,6 +34,9 @@ from app.infrastructure.db.repositories.player_repository import PlayerRepositor
 from app.infrastructure.db.session import get_db_session
 from app.infrastructure.rank_trials import rank_trial_loader
 from app.shared.formatters import format_int
+from app.domain.services.monitoring import kinds
+from app.infrastructure.db.models.progression_model import PlayerProgressionModel
+from app.infrastructure.monitoring.telemetry import record, record_now
 
 _logger = logging.getLogger("sakura.rank_trials")
 
@@ -184,9 +187,13 @@ class RankTrialCog(BetaChannelOnlyMixin, commands.Cog):
         except discord.HTTPException:
             _logger.warning("annonce de promotion impossible", exc_info=True)
 
-    def _apply_outcome(self, player_id: int, victory: bool) -> None:
+    def _apply_outcome(self, player_id: int, victory: bool, trial=None, role: str = "",
+                       score: float = 0) -> None:
         """Échec ⇒ cooldown. Les PV réels ne sont pas touchés : l'épreuve est
         un combat rituel, pas une sortie de farm."""
+        if trial is not None:           # journal de surveillance
+            record_now(get_db_session, kinds.RANK_TRIAL, player_id=player_id, ref=trial.rank,
+                       qty=round(score), data={"role": role, "passed": bool(victory)})
         if victory:
             return
         hours = rank_trial_loader.retry_cooldown_hours()
@@ -198,6 +205,14 @@ class RankTrialCog(BetaChannelOnlyMixin, commands.Cog):
                 last_used_at=now,
                 next_available_at=now + timedelta(hours=hours),
             )
+
+
+    @staticmethod
+    def _journal_promotion(player_id: int, rank: str) -> None:
+        with get_db_session() as session:
+            level = session.get(PlayerProgressionModel, player_id)
+            record(session, kinds.RANK_UP, player_id=player_id, ref=rank, qty=level.level if level else 0)
+            session.commit()
 
 
 class _TrialView(discord.ui.View):
@@ -236,7 +251,7 @@ class _RoleButton(discord.ui.Button):
             view.cog._run, view.elig, self._role, view.player_id, view.stats, view.user,
         )
         victory = trial.passed(self._role, run.score)
-        await asyncio.to_thread(view.cog._apply_outcome, view.player_id, victory)
+        await asyncio.to_thread(view.cog._apply_outcome, view.player_id, victory, trial, self._role, run.score)
 
         required = trial.thresholds[self._role]
         unit = {"dps": "dégâts infligés", "tank": "dégâts encaissés", "soutien": "PV soignés"}[self._role]
@@ -260,6 +275,7 @@ class _RoleButton(discord.ui.Button):
                 color=discord.Color.gold(),
             )
             if promoted:
+                await asyncio.to_thread(view.cog._journal_promotion, view.player_id, trial.rank)
                 await view.cog.announce_promotion(interaction.user, trial, self._role)
         else:
             hours = rank_trial_loader.retry_cooldown_hours()

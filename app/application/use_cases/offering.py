@@ -22,6 +22,8 @@ from app.infrastructure.db.models.player_model import PlayerModel
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.unit_of_work import atomic
 from app.infrastructure.offering import offering_loader
+from app.domain.services.monitoring import kinds
+from app.infrastructure.monitoring.telemetry import record as record_event
 
 _PARIS = ZoneInfo("Europe/Paris")
 
@@ -180,7 +182,8 @@ def contribute(session: Session, profile: PlayerProfile, amount: int,
         given = min(amount, players.get_profile_by_player_id(player_id).resources.gold)
         if given <= 0:
             raise OfferingError("💰 Tu n'as pas d'or à offrir.")
-        players.add_gold(player_id, -given)
+        record_event(session, kinds.OFFERING, player_id=player_id, gold=given)
+        players.add_gold(player_id, -given, source="offrande")
         row.contributed += given
         _credit(session, row.cycle, player_id, given)
 

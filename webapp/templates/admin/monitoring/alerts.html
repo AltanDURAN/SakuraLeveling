@@ -1,0 +1,68 @@
+{% extends "admin/monitoring/_layout.html" %}
+{% import "admin/monitoring/_macros.html" as m %}
+{% block page_title %}Alertes{% endblock %}
+{% block mon_title %}🚨 Alertes{% endblock %}
+{% block mon_sub %}Calculées sur les 30 derniers jours, toutes les heures par le bot et à chaque ouverture de cette page. Les nouvelles alertes graves sont envoyées en message privé aux admins.{% endblock %}
+{% block filters %}{% endblock %}
+{% block body %}
+{% if saved %}<div class="calm">✅ Réglages enregistrés : le bot les applique dès sa prochaine vérification.</div>{% endif %}
+{% for e in errors or [] %}<div class="alert is-critique" style="grid-template-columns:minmax(0,1fr)"><div class="alert-msg">{{ e }}</div></div>{% endfor %}
+
+<div class="kpis">
+    {% for sev in rules.SEVERITY_ORDER %}
+    <div class="kpi"><span class="kpi-label">{{ m.sev(sev, rules) }}</span><span class="kpi-value">{{ alert_counts[sev] }}</span><span class="kpi-foot"></span></div>
+    {% endfor %}
+</div>
+
+{% if not views %}<div class="calm">✅ Aucune alerte en cours : rien d'anormal dans le jeu.</div>{% endif %}
+{% for cat, label in rules.CATEGORY_LABELS.items() %}{% if by_cat.get(cat) %}
+<div class="card">
+    <div class="card-head"><div><h2>{{ label }}</h2></div><span class="chip">{{ by_cat[cat]|length }}</span></div>
+    <ul class="alerts">{% for v in by_cat[cat] %}{{ m.alert_item(v, rules, '/admin/monitoring/alerts', true, qs) }}{% endfor %}</ul>
+</div>
+{% endif %}{% endfor %}
+
+{% if past %}
+<div class="card">
+    <div class="card-head"><div><h2>Résolues récemment</h2><p class="sub">Ce qui s'est passé et ne se produit plus.</p></div></div>
+    <div class="mtable-wrap"><table class="mtable"><thead><tr><th>Gravité</th><th>Alerte</th><th>Apparue</th><th>Résolue</th></tr></thead>
+    <tbody>{% for a in past %}<tr><td>{{ m.sev(a.severity, rules) }}</td>
+        <td class="name" style="max-width:520px">{% if a.player_id %}<a href="/admin/monitoring/players/{{ a.player_id }}">{{ a.title }}</a>{% else %}{{ a.title }}{% endif %}</td>
+        <td class="muted">{{ viz.when(local(a.first_seen)) }}</td><td class="muted">{{ viz.when(local(a.resolved_at)) }}</td></tr>{% endfor %}</tbody></table></div>
+</div>
+{% endif %}
+
+<form class="card" method="post" action="/admin/monitoring/alerts/settings">
+    <div class="card-head"><div><h2>⚙️ Seuils et règles</h2>
+        <p class="sub">Une règle décochée ne produit plus d'alerte. Les seuils s'appliquent tout de suite, au bot comme au site (<code>monitoring.json</code>).</p></div>
+        <button class="btn btn-primary" type="submit">Enregistrer</button></div>
+    <div class="note-box" style="display:flex;flex-wrap:wrap;gap:.6rem 1.4rem;align-items:center;margin-bottom:.9rem">
+        <label class="switch"><input type="checkbox" name="notify" {% if settings.notify %}checked{% endif %}> Prévenir les admins en message privé</label>
+        <label class="switch">à partir de la gravité
+            <select name="notify_min_severity" class="input input-small" style="width:auto">
+                {% for sev in rules.SEVERITY_ORDER %}<option value="{{ sev }}" {% if settings.notify_min_severity == sev %}selected{% endif %}>{{ rules.SEVERITY_LABELS[sev] }}</option>{% endfor %}
+            </select></label>
+        <span class="muted">Une alerte n'est envoyée qu'une fois (ou de nouveau si elle revient après avoir disparu).</span>
+    </div>
+    {% for cat, label in rules.CATEGORY_LABELS.items() %}
+    <h3 class="section-title" style="margin:1rem 0 .6rem">{{ label }}</h3>
+    <div class="thresholds">
+        {% for rule in rules.RULES if rule.category == cat %}
+        <div class="rule-box">
+            <header><h3>{{ rule.label }}</h3>
+                <span style="display:flex;gap:.5rem;align-items:center">{{ m.sev(rule.severity, rules) }}
+                <label class="switch" title="Activer la règle"><input type="checkbox" name="r_{{ rule.code }}" {% if settings.rules.get(rule.code, true) %}checked{% endif %}> active</label></span></header>
+            <p>{{ rule.why }}</p>
+            <div class="rule-fields">
+                {% for t in thresholds_by_rule.get(rule.code, []) %}
+                <label class="rule-field"><span>{{ t.label }}{% if t.unit %} ({{ t.unit }}){% endif %}{% if t.help %}<small>{{ t.help }}</small>{% endif %}</span>
+                    <input class="input" name="t_{{ t.key }}" inputmode="decimal" value="{{ ('%g' % settings.thresholds[t.key])|replace('.', ',') }}"></label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+    <div class="form-actions"><button class="btn btn-primary" type="submit">Enregistrer les réglages</button></div>
+</form>
+{% endblock %}

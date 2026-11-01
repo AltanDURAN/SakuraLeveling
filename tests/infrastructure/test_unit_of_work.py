@@ -71,11 +71,11 @@ def test_un_virement_qui_plante_ne_perd_pas_d_or(session, monkeypatch):
     original = PlayerRepository.add_gold
     calls = []
 
-    def add_gold_puis_panne(self, player_id, gold, commit=True):
+    def add_gold_puis_panne(self, player_id, gold, commit=True, source=""):
         calls.append(player_id)
         if len(calls) == 2:
             raise RuntimeError("panne au crédit")
-        return original(self, player_id, gold, commit)
+        return original(self, player_id, gold, commit, source)
 
     monkeypatch.setattr(PlayerRepository, "add_gold", add_gold_puis_panne)
     with pytest.raises(RuntimeError):

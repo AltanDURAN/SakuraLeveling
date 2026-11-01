@@ -32,6 +32,8 @@ from app.infrastructure.db.repositories.player_repository import PlayerRepositor
 from app.infrastructure.db.repositories.work_order_repository import WorkOrderRepository
 from app.infrastructure.db.unit_of_work import commit
 from app.infrastructure.db.unit_of_work import transactional
+from app.domain.services.monitoring import kinds
+from app.infrastructure.monitoring.telemetry import record as record_event
 
 
 @dataclass(frozen=True)
@@ -194,8 +196,10 @@ class FuseGearUseCase:
                 self.session.rollback()
                 return FusionResult(False, f"❌ Il te manque des {preview.material_name}.")
         if preview.gold_cost:
-            self.players.add_gold(player_id, -preview.gold_cost)
+            self.players.add_gold(player_id, -preview.gold_cost, source="fusion")
         self.orders.increment_mastery(player_id, definition.code)
+        record_event(self.session, kinds.FUSION, player_id=player_id, ref=item_code, gold=-preview.gold_cost,
+                     data={"from": rarity, "to": str(getattr(preview.target_rarity, "value", preview.target_rarity))})
         commit(self.session)
         label = RARITY_LABELS[preview.target_rarity].lower()
         return FusionResult(

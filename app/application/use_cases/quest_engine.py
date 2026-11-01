@@ -16,6 +16,8 @@ from sqlalchemy.orm import Session
 from app.domain.services import quest_generation_service as qgs
 from app.domain.services.progression_service import ProgressionService
 from app.domain.services.quest_reward_service import scale_reward
+from app.domain.services.monitoring import kinds
+from app.infrastructure.monitoring.telemetry import record as record_event
 
 QUESTS_PER_PERIOD = 3
 
@@ -144,7 +146,9 @@ def claim_all(profile, repository, get_definition, period_start: datetime, playe
         # Montants indexés sur le niveau au moment de la réclamation.
         gold = scale_reward(template.reward_gold, level)
         xp = scale_reward(template.reward_xp, level)
-        player_repository.add_gold(profile.player.id, gold)
+        record_event(player_repository.session, kinds.QUEST, player_id=profile.player.id, ref=a.quest_code,
+                     gold=gold, xp=xp, data={"type": getattr(a, "objective_type", "") or ""})
+        player_repository.add_gold(profile.player.id, gold, source="quete")
         total_xp += xp
         for item_code, qty in template.reward_items:
             item = item_repository.get_by_code(item_code)

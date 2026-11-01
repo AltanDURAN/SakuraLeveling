@@ -428,7 +428,7 @@ async def players_update(player_id: int, request: Request, user: AdminUser = Dep
 
         repo.apply_progression(
             player_id=player_id, new_level=new_level, new_xp=new_xp, new_skill_points=new_sp,
-            new_stat_points=new_stat_pts,
+            new_stat_points=new_stat_pts, source="admin",
         )
         repo.set_gold(player_id, new_gold)
         repo.set_daily_streak(player_id, new_streak)

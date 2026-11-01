@@ -20,6 +20,14 @@
         <p class="dashboard-sub">Centre de pilotage du contenu de SakuraLeveling.</p>
     </header>
 
+    <h2 class="dashboard-section">📊 Surveillance</h2>
+    <div class="entity-grid">
+        {{ card('/admin/monitoring', '🧭', "Vue d'ensemble", 'Activité, économie, combats, progression : l’état du jeu en un coup d’œil.', 'ouvrir') }}
+        {{ card('/admin/monitoring/alerts', '🚨', 'Alertes', 'Comportements suspects, équilibrage, économie, rétention — avec leurs seuils.', 'surveiller') }}
+        {{ card('/admin/monitoring/players', '👥', 'Joueurs suivis', 'Chaque joueur comparé aux autres : temps de jeu, rythme, investissement.', 'comparer') }}
+        {{ card('/admin/monitoring/report', '📰', 'Rapport de la semaine', 'La semaine contre la précédente, faits marquants.', 'lire') }}
+    </div>
+
     <h2 class="dashboard-section">👥 Joueurs</h2>
     <div class="entity-grid">
         {{ card('/admin/players', '👥', 'Joueurs', 'Profils : voir, éditer, reset complet.', players_count ~ ' joueur(s)') }}

@@ -22,6 +22,8 @@ from app.infrastructure.db.repositories.inventory_repository import InventoryRep
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.unit_of_work import atomic
 from app.shared.enums import CooldownAction
+from app.domain.services.monitoring import kinds
+from app.infrastructure.monitoring.telemetry import record as record_event
 
 
 @dataclass(frozen=True)
@@ -63,6 +65,7 @@ def skip(session: Session, player_id: int) -> None:
         row = _row(session, player_id)
         if row.status != "termine":
             row.status = "passe"
+            record_event(session, kinds.TUTORIAL, player_id=player_id, ref="passe", qty=row.step)
         row.updated_at = datetime.now(UTC).replace(tzinfo=None)
 
 
@@ -71,6 +74,8 @@ def finish(session: Session, player_id: int) -> int:
     nombre de potions données (0 si déjà reçues)."""
     with atomic(session):
         row = _row(session, player_id)
+        if row.status != "termine":
+            record_event(session, kinds.TUTORIAL, player_id=player_id, ref="termine", qty=row.step)
         row.status = "termine"
         row.updated_at = datetime.now(UTC).replace(tzinfo=None)
         if row.rewarded_at is not None:

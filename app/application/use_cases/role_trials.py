@@ -22,6 +22,8 @@ from app.infrastructure.db.repositories.player_career_stats_repository import (
 )
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.role_trial_repository import RoleTrialRepository
+from app.domain.services.monitoring import kinds
+from app.infrastructure.monitoring.telemetry import record as record_event
 
 
 @dataclass(frozen=True)
@@ -53,6 +55,8 @@ def run_attempt(session: Session, profile: PlayerProfile, role: str, now: dateti
         seed=rts.attempt_seed(day, role, player_id),
     )
     repo = RoleTrialRepository(session)
+    record_event(session, kinds.ROLE_TRIAL, player_id=player_id, ref=role, qty=round(run.score),
+                 data={"variant": variant.code})
     best, improved, attempts = repo.record(player_id, day, role, variant.code, run.score)
     if attempts == 1:   # défi RELEVÉ : le premier essai du rôle aujourd'hui
         _quest_hook(session, player_id, role)
@@ -134,7 +138,7 @@ def settle_week(session: Session, week: date) -> dict | None:
         repo.mark_settled(week, results)
         for pid, gold in payouts:
             if gold > 0:
-                players.add_gold(pid, gold)
+                players.add_gold(pid, gold, source="defi")
                 career.add(pid, gold_earned=gold)
 
         titles = ExclusiveTitleService(session)

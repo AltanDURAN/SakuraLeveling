@@ -10,6 +10,8 @@ from app.infrastructure.db.repositories.player_repository import PlayerRepositor
 from app.infrastructure.db.repositories.player_skill_allocation_repository import (
     PlayerSkillAllocationRepository,
 )
+from app.domain.services.monitoring import kinds
+from app.infrastructure.monitoring.telemetry import record as record_event
 
 
 @dataclass
@@ -86,6 +88,8 @@ class ResetSkillTreeUseCase:
         # 1. Vide les allocations
         self.skill_allocation_repository.delete_for_player(profile.player.id)
         # 2. Crédite les points restitués
+        record_event(self.player_repository.session, kinds.RESPEC, player_id=profile.player.id, ref="arbre",
+                     qty=refunded, data={"token": True} if use_token else None)
         self.player_repository.apply_progression(
             player_id=profile.player.id,
             new_level=profile.progression.level,

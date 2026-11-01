@@ -5,6 +5,8 @@ from app.infrastructure.db.repositories.inventory_repository import InventoryRep
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.shop_repository import ShopRepository
 from app.infrastructure.db.unit_of_work import transactional
+from app.domain.services.monitoring import kinds
+from app.infrastructure.monitoring.telemetry import record as record_event
 
 
 @dataclass
@@ -91,7 +93,9 @@ class BuyFromShopUseCase:
                 ),
             )
 
-        self.player_repository.add_gold(profile.player.id, -total_cost)
+        record_event(self.player_repository.session, kinds.SHOP_BUY, player_id=profile.player.id,
+                     ref=item_code, qty=quantity, gold=-total_cost)
+        self.player_repository.add_gold(profile.player.id, -total_cost, source="boutique")
         self.inventory_repository.add_item(
             player_id=profile.player.id,
             item_definition_id=shop_item.item_definition.id,

@@ -51,6 +51,8 @@ from app.infrastructure.world_boss.boss_definition_loader import (
     get_definition as get_boss_definition,
     pick_random_definition,
 )
+from app.domain.services.monitoring import kinds
+from app.infrastructure.monitoring.telemetry import record as record_event
 
 
 BOSS_FIGHT_COOLDOWN_KEY = "world_boss_fight"
@@ -660,6 +662,11 @@ class LaunchPartyFightWorldBossUseCase:
             total_tanked += contrib.damage_tanked
             # Persiste le mana restant : il se régénérera hors combat.
             mana_repo.refresh_current_mana(participation.player_id, contrib.final_mana)
+            record_event(self.world_boss_repository.session, kinds.BOSS_FIGHT,
+                         player_id=participation.player_id, ref=boss.code,
+                         data={"dmg": contrib.damage_dealt, "tank": contrib.damage_tanked,
+                               "heal": contrib.hp_healed, "alive": bool(contrib.survived),
+                               "n": len(eligible)})
             self.world_boss_repository.add_combat_metrics(
                 boss_id, participation.player_id,
                 damage_dealt=contrib.damage_dealt,
@@ -926,7 +933,7 @@ class CompleteWorldBossUseCase:
             total_xp = scale_reward(total_xp, level, reference_level=1)
 
             # Application en DB
-            self.player_repository.add_gold(p.player_id, total_gold)
+            self.player_repository.add_gold(p.player_id, total_gold, source="raid")
             # XP avec calcul de level-up correct (sinon l'XP est juste
             # ajoutée mais le joueur ne gagne pas de niveau ni de skill points)
             progression = self.progression_service.apply_level_up(

@@ -52,6 +52,8 @@ from app.infrastructure.db.repositories.marketplace_repository import (
 )
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.unit_of_work import transactional
+from app.domain.services.monitoring import kinds
+from app.infrastructure.monitoring.telemetry import record as record_event
 
 
 MARKETPLACE_COMMISSION_PCT = 5  # 5% prélevé sur les ventes
@@ -285,8 +287,12 @@ class BuyMarketplaceListingUseCase:
         # 2. Décrément buyer + crédit seller (avec commission)
         commission = _commission_amount(total_price)
         seller_payout = total_price - commission
-        self.player_repository.add_gold(buyer_profile.player.id, -total_price)
-        self.player_repository.add_gold(listing.seller_player_id, seller_payout)
+        record_event(self.player_repository.session, kinds.MARKET_SALE, player_id=buyer_profile.player.id,
+                     ref=str(listing.item_definition_id), qty=listing.quantity, gold=total_price,
+                     data={"seller": listing.seller_player_id, "fee": commission,
+                           "gear": listing.gear_id is not None})
+        self.player_repository.add_gold(buyer_profile.player.id, -total_price, source="brocante")
+        self.player_repository.add_gold(listing.seller_player_id, seller_payout, source="brocante")
 
         # 3. Donner les items au buyer (une pièce : l'exemplaire lui-même)
         if listing.gear_id is not None:

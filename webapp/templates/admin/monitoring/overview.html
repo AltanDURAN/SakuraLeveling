@@ -1,0 +1,109 @@
+{% extends "admin/monitoring/_layout.html" %}
+{% import "admin/monitoring/_macros.html" as m %}
+{% block page_title %}Vue d'ensemble{% endblock %}
+{% block mon_sub %}L'état du jeu en un coup d'œil — {{ f.days }} derniers jours{% if not f.admins %}, comptes admin exclus{% endif %}.{% endblock %}
+{% block body %}
+
+<div class="hero">
+    <span class="hero-value">{{ d.hero.value }}</span>
+    <div>
+        <div class="hero-label">{{ d.hero.label }}</div>
+        <div class="hero-sub">{{ d.hero.sub }}</div>
+    </div>
+    <div style="margin-left:auto" class="sev-counts">
+        {% for sev in rules.SEVERITY_ORDER %}{% if alert_counts[sev] %}
+        <a href="/admin/monitoring/alerts{{ qs }}">{{ m.sev(sev, rules) }}<span class="chip">{{ alert_counts[sev] }}</span></a>
+        {% endif %}{% endfor %}
+        {% if not alert_counts.values()|sum %}<span class="chip">✅ Aucune alerte</span>{% endif %}
+    </div>
+</div>
+
+<div class="kpis">{% for k in d.kpis %}{{ m.tile(k, viz) }}{% endfor %}</div>
+
+<div class="card">
+    <div class="card-head">
+        <div><h2>🚨 À regarder</h2><p class="sub">Les alertes les plus graves en cours (sourdine exclue).</p></div>
+        <a class="card-link" href="/admin/monitoring/alerts{{ qs }}">Toutes les alertes →</a>
+    </div>
+    {% if top_alerts %}
+    <ul class="alerts">{% for v in top_alerts %}{{ m.alert_item(v, rules, request.url.path ~ qs, false, qs) }}{% endfor %}</ul>
+    {% else %}<div class="calm">✅ Rien d'anormal : aucune alerte en cours.</div>{% endif %}
+</div>
+
+<div class="grid grid-21">
+    <div class="card">
+        <div class="card-head"><div><h2>Joueurs actifs par jour</h2>
+            <p class="sub">Joueurs ayant joué au moins une fois dans la journée (heure de Paris).</p></div>
+            <a class="card-link" href="/admin/monitoring/activity{{ qs }}">Activité →</a></div>
+        {{ viz.line_chart(labels, [{"name": "Actifs", "values": d.dau, "slot": 1}], width=720, height=230, area=true, partial_last=true, title="Joueurs actifs par jour") }}
+    </div>
+    <div class="card">
+        <div class="card-head"><div><h2>⏳ Combien de temps le jeu va durer</h2>
+            <p class="sub">Au rythme des 14 derniers jours de chaque joueur.</p></div></div>
+        {% set ce = d.content_end %}
+        <div class="facts facts-list">
+            {% if ce.reached %}
+            <div class="fact">
+                <b style="color:var(--critical)">{{ ce.reached }}</b>
+                <span>joueur{{ 's ont' if ce.reached > 1 else ' a' }} déjà atteint le niveau {{ ce.level }}, la fin des zones ouvertes</span>
+            </div>
+            {% endif %}
+            <div class="fact">
+                <b>{% if ce.player %}{{ ce.player.days_to_content_end }} j{% else %}—{% endif %}</b>
+                <span>avant que {% if ce.player %}<a href="/admin/monitoring/players/{{ ce.player.pid }}{{ qs }}">{{ ce.player.name }}</a>{% else %}le plus avancé{% endif %} atteigne le niveau {{ ce.level }} (fin des zones ouvertes)</span>
+            </div>
+            <div class="fact">
+                <b>{% if d.median_cap_days %}{{ d.median_cap_days|round|int }} j{% else %}—{% endif %}</b>
+                <span>pour le niveau 100, joueur médian ({{ d.pace_players }} actifs)</span>
+            </div>
+            <div class="fact">
+                <b>{{ d.design_cap_days or '—' }} j</b>
+                <span>prévus par le design à 1 h de jeu par jour</span>
+            </div>
+        </div>
+        <p class="card-foot">Détails et courbes : <a href="/admin/monitoring/progression{{ qs }}">Progression →</a></p>
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <div class="card-head"><div><h2>Heures d'activité</h2>
+            <p class="sub">Actions par jour de la semaine et par heure (Paris), sur la période.</p></div></div>
+        {{ viz.heatmap(d.grid, rows=weekdays) }}
+        <div class="hours-note">
+            {% for r in d.busy %}<span>🔥 Pic : <b>{{ r.label }}</b></span>{% endfor %}
+            {% for r in d.quiet %}<span>🌙 Creux : <b>{{ r.label }}</b></span>{% endfor %}
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-head"><div><h2>Or créé et détruit</h2>
+            <p class="sub">Par jour : gains au-dessus de zéro, dépenses en dessous, trait = solde.</p></div>
+            <a class="card-link" href="/admin/monitoring/economy{{ qs }}">Économie →</a></div>
+        {{ viz.diverging_stack(labels, gains, spends, width=560, height=240, net=d.net, partial_last=true, title="Or créé et détruit") }}
+        <ul class="legend">{% for s in gains + spends %}<li><span class="key s{{ s.slot }}"></span>{{ s.name }}</li>{% endfor %}</ul>
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <div class="card-head"><div><h2>🔥 Les plus investis</h2>
+            <p class="sub">Temps de jeu, jours joués, combats et niveau, comparés aux autres.</p></div>
+            <a class="card-link" href="/admin/monitoring/players{{ qs }}">Tous les joueurs →</a></div>
+        <div class="mtable-wrap"><table class="mtable">
+            <thead><tr><th>Joueur</th><th class="num">Niv.</th><th class="num">Temps de jeu</th><th class="num">Jours</th><th>Investissement</th></tr></thead>
+            <tbody>{% for r in d.top_players %}<tr>
+                <td class="name"><a href="/admin/monitoring/players/{{ r.pid }}{{ qs }}">{{ r.name }}</a></td>
+                <td class="num">{{ r.level }}</td><td class="num">{{ viz.duration(r.play_min) }}</td>
+                <td class="num">{{ r.active_days }}</td>
+                <td style="min-width:120px">{{ viz.meter(r.investment) }}</td></tr>{% endfor %}</tbody>
+        </table></div>
+    </div>
+    <div class="card">
+        <div class="card-head"><div><h2>⚔️ Monstres les plus farmés</h2>
+            <p class="sub">Part des monstres vaincus sur la période.</p></div>
+            <a class="card-link" href="/admin/monitoring/combat{{ qs }}">Combats →</a></div>
+        {% set rows = [] %}{% for mb in d.mobs %}{% set _ = rows.append((mb.name, mb.kills, mb.share)) %}{% endfor %}
+        {{ viz.ranked_bars(rows, value_format=viz.full, note_format=viz.pct) }}
+    </div>
+</div>
+{% endblock %}

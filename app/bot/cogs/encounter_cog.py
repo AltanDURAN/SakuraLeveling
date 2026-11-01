@@ -50,6 +50,8 @@ _GENERATED_FILES_TTL_SECONDS = 7 * 24 * 3600
 _logger = logging.getLogger(__name__)
 
 from app.bot.rendering.fight_animation import MAX_UPLOAD_BYTES as _VIDEO_MAX_BYTES  # noqa: E402
+from app.domain.services.monitoring import kinds
+from app.infrastructure.monitoring.telemetry import record_now
 
 
 class EncounterCog(commands.Cog):
@@ -547,6 +549,7 @@ class EncounterCog(commands.Cog):
         )
         encounter.pack = [_state(m) for m in members[1:]]
         encounter.lunar = lunar
+        encounter.channel_id = channel_id
 
         view = EncounterView(self, channel_id, timeout=window_s)
 
@@ -618,6 +621,8 @@ class EncounterCog(commands.Cog):
             flee_embed = build_rewards_page_embed(flee_summary)
             await message.edit(embed=flee_embed, attachments=[], view=None)
             self._reschedule(channel_id, fled=True)
+            await asyncio.to_thread(record_now, get_db_session, kinds.FLEE, zone=channel_id,
+                                    ref=encounter.mob_state.code, qty=len(encounter.mobs))
             return
 
         result = self.encounter_service.resolve_active_encounter(encounter)

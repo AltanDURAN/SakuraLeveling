@@ -93,7 +93,7 @@ class AdminCog(commands.Cog):
                     new = max(0, amount)
                     repo.apply_progression(
                         profile.player.id, profile.progression.level, new,
-                        profile.progression.skill_points,
+                        profile.progression.skill_points, source="admin",
                     )
                 elif action == "give":
                     # Avec level-up calculé proprement
@@ -107,14 +107,14 @@ class AdminCog(commands.Cog):
                     )
                     repo.apply_progression(
                         profile.player.id, result.level, result.xp,
-                        result.skill_points, result.stat_points,
+                        result.skill_points, result.stat_points, source="admin",
                     )
                     new = result.xp
                 else:
                     new = max(0, current - amount)
                     repo.apply_progression(
                         profile.player.id, profile.progression.level, new,
-                        profile.progression.skill_points,
+                        profile.progression.skill_points, source="admin",
                     )
                 label = "XP"
 
@@ -142,7 +142,7 @@ class AdminCog(commands.Cog):
                     new = max(0, current - amount)
                 prog = profile.progression
                 repo.apply_progression(
-                    profile.player.id, prog.level, prog.xp, prog.skill_points, new,
+                    profile.player.id, prog.level, prog.xp, prog.skill_points, new, source="admin",
                 )
                 label = "Points de stats"
 
@@ -305,7 +305,7 @@ class AdminCog(commands.Cog):
                 player_id=profile.player.id,
                 new_level=level,
                 new_xp=0,
-                new_skill_points=profile.progression.skill_points,
+                new_skill_points=profile.progression.skill_points, source="admin",
             )
 
         await interaction.followup.send(

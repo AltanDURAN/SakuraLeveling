@@ -400,7 +400,7 @@ class EventCog(commands.Cog):
 
     def _grant_chest_reward(self, session, player_id: int, result) -> str:
         if result.kind == "gold" and result.gold_amount > 0:
-            PlayerRepository(session).add_gold(player_id, result.gold_amount)
+            PlayerRepository(session).add_gold(player_id, result.gold_amount, source="evenement")
             return f"{format_int(result.gold_amount)} or"
         if result.kind == "item" and result.item_code and result.quantity > 0:
             item = ItemRepository(session).get_by_code(result.item_code)
@@ -550,7 +550,7 @@ class EventCog(commands.Cog):
                 consequence.debuff_hours * 3600,
             )
         if consequence.gold_loss > 0:
-            PlayerRepository(session).add_gold(player_id, -consequence.gold_loss)
+            PlayerRepository(session).add_gold(player_id, -consequence.gold_loss, source="evenement")
         if consequence.halve_hp:
             self._halve_current_hp(session, profile)
         if consequence.grant_title:

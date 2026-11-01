@@ -1,0 +1,83 @@
+{% extends "admin/monitoring/_layout.html" %}
+{% import "admin/monitoring/_macros.html" as m %}
+{% block page_title %}Économie{% endblock %}
+{% block mon_title %}💰 Économie{% endblock %}
+{% block mon_sub %}D'où vient l'or, où il part, qui le détient. L'or est le régulateur du jeu : il doit sortir presque autant qu'il entre.{% endblock %}
+{% block body %}
+<div class="kpis">{% for k in d.kpis %}{{ m.tile(k, viz) }}{% endfor %}</div>
+
+{% if d.other %}
+<div class="alert is-serieux" style="grid-template-columns:auto minmax(0,1fr)"><span class="sev sev-serieux"><span class="sev-dot"></span>Journal</span>
+<div><div class="alert-title">{{ viz.full(d.other) }} or sans source étiquetée</div>
+<div class="alert-msg">Un appel à <code>add_gold</code> a oublié sa source : l'or est compté, mais rangé en « non étiqueté ». À corriger dans le code.</div></div></div>
+{% endif %}
+
+<div class="card">
+    <div class="card-head"><div><h2>Or créé et détruit, jour par jour</h2>
+        <p class="sub">Au-dessus de zéro, l'or qui entre dans le jeu ; en dessous, l'or qui en sort. Le trait noir est le solde du jour.</p></div></div>
+    {{ viz.diverging_stack(labels, gains, spends, width=1100, height=300, net=d.net, partial_last=true, title="Flux d'or") }}
+    <ul class="legend">{% for s in gains %}<li><span class="key s{{ s.slot }}"></span>{{ s.name }}</li>{% endfor %}<li style="opacity:.4">|</li>{% for s in spends %}<li><span class="key s{{ s.slot }}"></span>{{ s.name }}</li>{% endfor %}</ul>
+</div>
+
+<div class="grid grid-21">
+    <div class="card">
+        <div class="card-head"><div><h2>Masse d'or</h2><p class="sub">Or détenu par tous les joueurs, à la fin de chaque jour.</p></div></div>
+        {{ viz.line_chart(labels, [{"name": "Masse d'or", "values": d.supply, "slot": 1}], width=720, height=230, area=true, partial_last=true, title="Masse d'or") }}
+    </div>
+    <div class="card">
+        <div class="card-head"><div><h2>Qui détient l'or</h2><p class="sub">Part de l'or total détenue par chaque dixième des joueurs, du plus riche au moins riche.</p></div></div>
+        {% set dec = [] %}{% for v in d.deciles %}{% set _ = dec.append(("Top " ~ (loop.index * 10) ~ " %" if loop.index == 1 else (loop.index0 * 10) ~ "–" ~ (loop.index * 10) ~ " %", v)) %}{% endfor %}
+        {{ viz.ranked_bars(dec, value_format=viz.pct, slot=7) }}
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <div class="card-head"><div><h2>⬆️ D'où vient l'or</h2><p class="sub">Or créé par source, sur la période.</p></div></div>
+        {% set src = [] %}{% for s, v, p in d.sources %}{% set _ = src.append((s.emoji ~ " " ~ s.label, v, p)) %}{% endfor %}
+        {{ viz.ranked_bars(src, value_format=viz.compact, note_format=viz.pct, slot=1) }}
+    </div>
+    <div class="card">
+        <div class="card-head"><div><h2>⬇️ Où part l'or</h2><p class="sub">Or détruit par puits, sur la période.</p></div></div>
+        {% set snk = [] %}{% for s, v, p in d.sinks %}{% set _ = snk.append((s.emoji ~ " " ~ s.label, v, p)) %}{% endfor %}
+        {{ viz.ranked_bars(snk, value_format=viz.compact, note_format=viz.pct, slot=5) }}
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <div class="card-head"><div><h2>🏪 Les plus achetés chez Sorn</h2><p class="sub">Quantité, or dépensé et nombre d'acheteurs.</p></div></div>
+        {% if d.shop %}<div class="mtable-wrap"><table class="mtable">
+            <thead><tr><th>Objet</th><th class="num">Achats</th><th class="num">Or dépensé</th><th class="num">Acheteurs</th></tr></thead>
+            <tbody>{% for name, qty, gold, buyers in d.shop %}<tr><td class="name">{{ name }}</td><td class="num">{{ viz.full(qty) }}</td><td class="num">{{ viz.full(gold) }}</td><td class="num">{{ buyers }}</td></tr>{% endfor %}</tbody>
+        </table></div>{% else %}{{ m.empty("Aucun achat sur la période.") }}{% endif %}
+    </div>
+    <div class="card">
+        <div class="card-head"><div><h2>Or par heure de jeu, selon le niveau</h2>
+            <p class="sub">Or créé par heure (médiane des joueurs de la tranche) contre le design : 3 or × niveau par monstre, un combat toutes les 3 min.</p></div></div>
+        {% if d.bands %}
+        {% set bl = [] %}{% set bm = [] %}{% set bd = [] %}{% for b in d.bands %}{% set _ = bl.append(b.band) %}{% set _ = bm.append(b.measured) %}{% set _ = bd.append(b.design) %}{% endfor %}
+        {{ viz.line_chart(bl, [{"name": "Mesuré", "values": bm, "slot": 1, "emphasis": true}, {"name": "Design", "values": bd, "slot": 2, "dashed": true}], width=560, height=230, x_every=1, title="Or par heure") }}
+        <ul class="legend"><li><span class="key line s1"></span>Mesuré (médiane)</li><li><span class="key line dashed s2"></span>Prévu (combats seuls)</li></ul>
+        {% else %}{{ m.empty("Pas encore assez de temps de jeu.") }}{% endif %}
+    </div>
+</div>
+
+<div class="grid grid-3">
+    <div class="card"><div class="card-head"><div><h2>🤝 Entre joueurs</h2><p class="sub">Or qui change de main (ni créé ni détruit).</p></div></div>
+        <div class="facts facts-list">
+            <div class="fact"><b>{{ viz.compact(d.transfer.get('brocante', 0) / 2) }}</b><span>vendu à la brocante</span></div>
+            <div class="fact"><b>{{ viz.compact(d.transfer.get('echange', 0) / 2) }}</b><span>dans des échanges</span></div>
+            <div class="fact"><b>{{ viz.compact(d.transfer.get('virement', 0) / 2) }}</b><span>en virements (/payer)</span></div>
+        </div></div>
+    <div class="card"><div class="card-head"><div><h2>🏷️ Brocante</h2><p class="sub">Les objets les plus vendus.</p></div></div>
+        {% if d.market %}<div class="mtable-wrap"><table class="mtable"><thead><tr><th>Objet</th><th class="num">Ventes</th><th class="num">Or</th></tr></thead>
+        <tbody>{% for name, n, g in d.market %}<tr><td class="name">{{ name }}</td><td class="num">{{ n }}</td><td class="num">{{ viz.full(g) }}</td></tr>{% endfor %}</tbody></table></div>
+        {% else %}{{ m.empty("Aucune vente sur la période.") }}{% endif %}</div>
+    <div class="card"><div class="card-head"><div><h2>💎 Les plus riches</h2><p class="sub">Or détenu maintenant.</p></div><a class="card-link" href="/admin/monitoring/players{{ qs }}">Joueurs →</a></div>
+        {% set rich = [] %}{% for r in d.richest %}{% set _ = rich.append((r.name, r.gold, none, "/admin/monitoring/players/" ~ r.pid ~ qs)) %}{% endfor %}
+        {{ viz.ranked_bars(rich, value_format=viz.compact, slot=5) }}
+        {% if d.admin %}<p class="card-foot">🛠️ {{ viz.full(d.admin) }} or donné ou retiré par l'admin sur la période (exclu des flux).</p>{% endif %}
+    </div>
+</div>
+{% endblock %}

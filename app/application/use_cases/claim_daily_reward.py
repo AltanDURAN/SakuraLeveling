@@ -11,6 +11,8 @@ from app.infrastructure.db.repositories.player_career_stats_repository import (
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.shared.enums import CooldownAction
 from app.infrastructure.db.unit_of_work import transactional
+from app.domain.services.monitoring import kinds
+from app.infrastructure.monitoring.telemetry import record as record_event
 
 
 @dataclass
@@ -99,7 +101,9 @@ class ClaimDailyRewardUseCase:
         self.player_repository.set_daily_streak(profile.player.id, new_streak)
         gold_gained = daily_gold(profile.progression.level, new_streak)
 
-        self.player_repository.add_gold(profile.player.id, gold_gained)
+        record_event(self.player_repository.session, kinds.DAILY, player_id=profile.player.id,
+                     qty=new_streak, gold=gold_gained, data={"missed": missed} if missed else None)
+        self.player_repository.add_gold(profile.player.id, gold_gained, source="daily")
 
         if self.career_stats_repository is not None and gold_gained > 0:
             self.career_stats_repository.add(

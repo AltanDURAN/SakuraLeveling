@@ -12,11 +12,18 @@
     <script defer src="/static/admin/vendor/alpine-3.14.1.min.js"></script>
     <script src="/static/admin/vendor/htmx-1.9.12.min.js"></script>
     <script src="/static/admin/admin.js"></script>
+    {% block head %}{% endblock %}
 </head>
 <body>
     {% if user %}
     {% set cur = request.url.path %}
     {% set nav_groups = [
+        {'label': '📊 Surveillance', 'items': [
+            ('/admin/monitoring', "Vue d'ensemble"), ('/admin/monitoring/activity', 'Activité'),
+            ('/admin/monitoring/economy', 'Économie'), ('/admin/monitoring/combat', 'Combats'),
+            ('/admin/monitoring/meta', 'Méta'), ('/admin/monitoring/progression', 'Progression'),
+            ('/admin/monitoring/players', 'Joueurs suivis'), ('/admin/monitoring/alerts', 'Alertes'),
+            ('/admin/monitoring/report', 'Rapport')]},
         {'label': '👥 Joueurs', 'items': [
             ('/admin/players', 'Joueurs'), ('/admin/roles', 'Rôles'), ('/admin/actions', 'Actions')]},
         {'label': '🗺️ Monde', 'items': [
@@ -83,5 +90,6 @@
         <span>🌸 SakuraLeveling — admin interne</span>
     </footer>
     {% endif %}
+    {% block scripts %}{% endblock %}
 </body>
 </html>

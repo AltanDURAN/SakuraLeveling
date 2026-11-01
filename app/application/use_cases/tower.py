@@ -33,6 +33,8 @@ from app.infrastructure.db.repositories.player_repository import PlayerRepositor
 from app.infrastructure.db.repositories.tower_repository import TowerRepository
 from app.infrastructure.db.unit_of_work import atomic
 from app.infrastructure.tower import tower_loader
+from app.domain.services.monitoring import kinds
+from app.infrastructure.monitoring.telemetry import record as record_event
 
 _PARIS = ZoneInfo("Europe/Paris")
 
@@ -99,6 +101,8 @@ def attempt(session: Session, profile: PlayerProfile, now: datetime | None = Non
 
         result = _fight(session, profile, floor_data)
         repo.record_attempt(player_id, floor, result.victory)
+        record_event(session, kinds.TOWER, player_id=player_id, qty=floor,
+                     data={"won": bool(result.victory), "turns": result.turns})
         reward = ts.TowerReward()
         if result.victory:
             reward = ts.first_clear_reward(floor, tower_loader.floor_material(floor))
@@ -156,7 +160,7 @@ def _grant(session: Session, player_id: int, reward: ts.TowerReward) -> None:
 
     players = PlayerRepository(session)
     if reward.gold:
-        players.add_gold(player_id, reward.gold)
+        players.add_gold(player_id, reward.gold, source="tour")
         PlayerCareerStatsRepository(session).add(player_id, gold_earned=reward.gold)
     if reward.xp:
         EncounterService._grant_xp(players, player_id, reward.xp)

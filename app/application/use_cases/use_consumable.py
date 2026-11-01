@@ -52,6 +52,8 @@ from app.infrastructure.skill_tree.skill_tree_loader import (
 )
 from app.infrastructure.db.unit_of_work import commit
 from app.infrastructure.db.unit_of_work import transactional
+from app.domain.services.monitoring import kinds
+from app.infrastructure.monitoring.telemetry import record as record_event
 
 
 CONSUMABLE_CATEGORY = "consumable"
@@ -108,6 +110,16 @@ class UseConsumableUseCase:
         item_code: str,
         context: UseContext | None = None,
     ) -> UseConsumableResult:
+        result = self._execute(discord_id, username, display_name, item_code, context)
+        if result.success:                 # journal de surveillance
+            profile = self.player_repository.get_by_discord_id(discord_id)
+            if profile is not None:
+                record_event(self.equipment_repository.session, kinds.CONSUMABLE,
+                             player_id=profile.player.id, ref=item_code)
+        return result
+
+    def _execute(self, discord_id: int, username: str, display_name: str, item_code: str,
+                 context: UseContext | None) -> UseConsumableResult:
         item = self.item_repository.get_by_code(item_code)
         if item is None:
             return UseConsumableResult(

@@ -1,0 +1,93 @@
+{% extends "admin/monitoring/_layout.html" %}
+{% import "admin/monitoring/_macros.html" as m %}
+{% block page_title %}Progression{% endblock %}
+{% block mon_title %}📈 Progression{% endblock %}
+{% block mon_sub %}Le rythme réel des joueurs comparé au design, le temps passé dans chaque zone, et combien de temps le contenu va tenir.{% endblock %}
+{% block body %}
+{% set ahead = (d.ahead|selectattr('level', 'lt', d.end_level)|list)[0] if (d.ahead|selectattr('level', 'lt', d.end_level)|list) else none %}
+<div class="kpis">
+    <div class="kpi"><span class="kpi-label">Niveau médian</span><span class="kpi-value">{{ d.median_level|round|int }}</span><span class="kpi-foot"></span></div>
+    <div class="kpi" title="Au rythme de ses 14 derniers jours, pour la moitié des joueurs actifs."><span class="kpi-label">Niveau 100 (joueur médian) ⓘ</span>
+        <span class="kpi-value">{% if d.median_cap %}{{ d.median_cap|round|int }}<span class="kpi-unit">jours</span>{% else %}—{% endif %}</span>
+        <span class="kpi-foot"><span class="delta is-flat">design : {{ d.design_cap }} j (1 h/j), {{ d.design_cap_30 }} j (30 min/j)</span></span></div>
+    <div class="kpi"><span class="kpi-label">Fin des zones ouvertes (niv. {{ d.end_level }})</span>
+        {% if d.end_reached %}
+        <span class="kpi-value">{{ d.end_reached }}<span class="kpi-unit">déjà au bout</span></span>
+        <span class="kpi-foot"><span class="delta is-bad">plus de zone au-dessus d'eux{% if ahead %} · suivant dans {{ ahead.days_to_content_end }} j{% endif %}</span></span>
+        {% else %}
+        <span class="kpi-value">{% if ahead %}{{ ahead.days_to_content_end }}<span class="kpi-unit">jours</span>{% else %}—{% endif %}</span>
+        <span class="kpi-foot"><span class="delta is-flat">{% if ahead %}{{ ahead.name }}, le plus rapide{% endif %}</span></span>
+        {% endif %}</div>
+    <div class="kpi"><span class="kpi-label">Joueurs bloqués</span><span class="kpi-value">{{ d.stuck|length }}</span><span class="kpi-foot"><span class="delta is-flat">même niveau 5 jours en jouant</span></span></div>
+</div>
+
+<div class="card">
+    <div class="card-head"><div><h2>Niveau selon les jours depuis l'arrivée</h2>
+        <p class="sub">Chaque trait gris est un joueur ; en rose la médiane. En pointillés, le joueur de référence du design qui joue 1 h ou 30 min par jour.</p></div></div>
+    {% set xl = [] %}{% for i in range(d.horizon + 1) %}{% set _ = xl.append("J" ~ i) %}{% endfor %}
+    {{ viz.line_chart(xl, d.curves + [{"name": "30 min/jour", "values": d.ref30, "slot": 3, "dashed": true}, {"name": "1 h/jour", "values": d.ref60, "slot": 2, "dashed": true}, {"name": "Médiane", "values": d.median, "slot": 1, "emphasis": true}], width=1100, height=320, title="Niveau selon les jours depuis l'arrivée") }}
+    <ul class="legend"><li><span class="key line s1"></span>Médiane des joueurs</li><li><span class="key line dashed s2"></span>Design, 1 h par jour</li><li><span class="key line dashed s3"></span>Design, 30 min par jour</li><li><span class="key line faint"></span>Un joueur</li></ul>
+</div>
+
+<div class="card">
+    <div class="card-head"><div><h2>Temps passé dans chaque zone</h2>
+        <p class="sub">Du premier combat dans la zone (ou de l'arrivée, pour la première) à la promotion au rang suivant. Le design suppose 1 h de jeu par jour.</p></div></div>
+    <div class="mtable-wrap"><table class="mtable">
+        <thead><tr><th>Zone</th><th>Niveaux</th><th class="num">Sortis</th><th class="num">Durée médiane</th><th class="num">La moitié entre</th><th class="num">Design</th><th class="num">Combats (méd.)</th><th class="num">Encore dedans</th><th class="num">Depuis (méd.)</th></tr></thead>
+        <tbody>{% for z in d.zones %}<tr>
+            <td class="name"><span class="rank-chip">{{ z.rank }}</span> {{ z.name }}</td><td class="muted">{{ z.levels }}</td>
+            <td class="num">{{ z.done }}</td>
+            <td class="num"><b>{% if z.median_days is not none %}{{ ('%.1f' % z.median_days)|replace('.', ',') }} j{% else %}—{% endif %}</b>
+                {% if z.median_days is not none and z.design_days %}{% set ratio = z.median_days / z.design_days %}
+                <span class="chip {% if ratio < 0.6 %}chip-accent{% endif %}" title="Durée réelle ÷ durée prévue">{{ (ratio * 100)|round|int }} %</span>{% endif %}</td>
+            <td class="num muted">{% if z.p25 is not none %}{{ ('%.0f' % z.p25) }}–{{ ('%.0f' % z.p75) }} j{% else %}—{% endif %}</td>
+            <td class="num">{{ z.design_days or '—' }}{% if z.design_days %} j{% endif %}</td>
+            <td class="num">{{ viz.full(z.median_fights) if z.median_fights is not none else '—' }}</td>
+            <td class="num">{{ z.ongoing }}</td>
+            <td class="num muted">{% if z.ongoing_days is not none %}{{ ('%.1f' % z.ongoing_days)|replace('.', ',') }} j{% else %}—{% endif %}</td>
+        </tr>{% endfor %}</tbody>
+    </table></div>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <div class="card-head"><div><h2>Répartition des niveaux</h2><p class="sub">Joueurs par tranche de 5 niveaux, maintenant.</p></div></div>
+        {% set hl = [] %}{% set hv = [] %}{% for name, v in d.hist %}{% set _ = hl.append(name) %}{% set _ = hv.append(v) %}{% endfor %}
+        {{ viz.columns(hl, hv, width=560, height=230, y_format=viz.full, slot=1, x_every=2, title="Répartition des niveaux") }}
+    </div>
+    <div class="card">
+        <div class="card-head"><div><h2>Rangs portés</h2><p class="sub">Rôle de rang Discord (photo la plus récente).</p></div></div>
+        {{ viz.ranked_bars(d.ranks, value_format=viz.full, slot=7) }}
+        <h3 class="section-title" style="margin-top:1.1rem">D'où vient l'XP (période)</h3>
+        {{ viz.segmented([("Combats", d.xp_sources["Combats"], 1), ("Quêtes", d.xp_sources["Quêtes"], 2)], value_format=viz.compact) }}
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <div class="card-head"><div><h2>🏁 Projections</h2><p class="sub">Au rythme de ses 14 derniers jours (en kills équivalents par jour), les premiers au niveau 100.</p></div></div>
+        {% if d.projections %}<div class="mtable-wrap"><table class="mtable">
+            <thead><tr><th>Joueur</th><th class="num">Niveau</th><th class="num">Rythme</th><th class="num">Niv. {{ d.end_level }} dans</th><th class="num">Niv. 100 dans</th></tr></thead>
+            <tbody>{% for r in d.projections %}<tr><td class="name"><a href="/admin/monitoring/players/{{ r.pid }}{{ qs }}">{{ r.name }}</a></td>
+                <td class="num">{{ r.level }}</td><td class="num" title="Monstres de son niveau par jour">{{ r.kills_per_day|round|int }} / j</td>
+                <td class="num">{% if r.days_to_content_end %}{{ r.days_to_content_end }} j{% elif r.level >= d.end_level %}atteint{% else %}—{% endif %}</td>
+                <td class="num"><b>{% if r.days_to_cap == 0 %}atteint{% else %}{{ r.days_to_cap }} j{% endif %}</b></td></tr>{% endfor %}</tbody>
+        </table></div>{% else %}{{ m.empty("Pas encore assez d'historique (photos quotidiennes).") }}{% endif %}
+    </div>
+    <div class="card">
+        <div class="card-head"><div><h2>🧱 Bloqués et points oubliés</h2><p class="sub">Au même niveau depuis 5 jours (en jouant au moins 3), ou beaucoup de points à placer.</p></div></div>
+        {% if d.stuck %}<ul class="timeline" style="max-height:none">{% for r, days, played in d.stuck[:8] %}
+            <li><span>🧱</span><span><a href="/admin/monitoring/players/{{ r.pid }}{{ qs }}">{{ r.name }}</a> — niveau {{ r.level }} depuis {{ days }} jours ({{ played }} joués)</span><span></span></li>{% endfor %}</ul>
+        {% else %}<div class="calm">✅ Personne n'est bloqué.</div>{% endif %}
+        <h3 class="section-title" style="margin-top:1rem">Points à placer</h3>
+        {% set un = [] %}{% for r in d.unspent %}{% set _ = un.append((r.name, r.unspent, none, "/admin/monitoring/players/" ~ r.pid ~ qs)) %}{% endfor %}
+        {{ viz.ranked_bars(un, value_format=viz.full, slot=5, empty="Tout le monde a placé ses points.") }}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-head"><div><h2>🗼 Tour</h2><p class="sub">Étage record des joueurs, par dizaine.</p></div></div>
+    {% set tl = [] %}{% set tv = [] %}{% for name, v in d.towers %}{% set _ = tl.append("Étages " ~ name) %}{% set _ = tv.append(v) %}{% endfor %}
+    {{ viz.columns(tl, tv, width=1100, height=180, y_format=viz.full, slot=6, label_values=true, x_every=1, title="Tour") if tv else m.empty("Personne n'a encore tenté la tour.") }}
+</div>
+{% endblock %}

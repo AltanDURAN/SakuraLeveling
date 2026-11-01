@@ -45,6 +45,11 @@ from app.infrastructure.db.models.tower_progress_model import PlayerTowerProgres
 from app.infrastructure.db.models.tower_ticket_model import PlayerTowerTicketModel  # noqa: F401
 from app.infrastructure.db.models.offering_model import OfferingContributionModel, OfferingStateModel  # noqa: F401
 from app.infrastructure.db.models.tutorial_model import PlayerTutorialModel  # noqa: F401
+from app.infrastructure.db.models.monitoring_model import (  # noqa: F401
+    GameEventModel,
+    MonitoringAlertModel,
+    PlayerDailySnapshotModel,
+)
 from app.infrastructure.db.models.event_model import (  # noqa: F401
     ActiveEventModel,
     EventParticipationModel,

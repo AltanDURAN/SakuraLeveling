@@ -17,6 +17,8 @@ from app.infrastructure.db.repositories.element_affinity_repository import (
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.shared.enums import ALL_ELEMENTS
 from app.infrastructure.db.unit_of_work import commit
+from app.domain.services.monitoring import kinds
+from app.infrastructure.monitoring.telemetry import record as record_event
 
 
 @dataclass(frozen=True)
@@ -72,8 +74,10 @@ class RevealElementTalentUseCase:
                 price=price,
             )
         talent = self.affinities.reveal(player_id, element)  # flush
+        record_event(self.session, kinds.SEER, player_id=player_id, ref=element, gold=-price,
+                     qty=getattr(talent, "talent", 0) or 0)
         if price:
-            self.players.add_gold(player_id, -price)  # commit (révélation comprise)
+            self.players.add_gold(player_id, -price, source="voyante")  # commit (révélation comprise)
         else:
             commit(self.session)
         return RevealResult(True, "", element, talent, price)

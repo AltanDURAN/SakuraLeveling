@@ -10,6 +10,8 @@ from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.trade_repository import TradeRepository
 from app.infrastructure.db.unit_of_work import transactional
+from app.domain.services.monitoring import kinds
+from app.infrastructure.monitoring.telemetry import record as record_event
 
 
 @dataclass
@@ -202,19 +204,26 @@ class AcceptTradeUseCase:
 
     def _execute_swap(self, initiator_profile, target_profile, trade: Trade) -> None:
         # Or : initiator donne, target reçoit (et inversement)
+        session = self.player_repository.session
+        if trade.initiator_gold_offered > 0:
+            record_event(session, kinds.TRANSFER, player_id=initiator_profile.player.id, ref="echange",
+                         gold=trade.initiator_gold_offered, data={"to": target_profile.player.id})
+        if trade.target_gold_offered > 0:
+            record_event(session, kinds.TRANSFER, player_id=target_profile.player.id, ref="echange",
+                         gold=trade.target_gold_offered, data={"to": initiator_profile.player.id})
         if trade.initiator_gold_offered > 0:
             self.player_repository.add_gold(
-                initiator_profile.player.id, -trade.initiator_gold_offered
+                initiator_profile.player.id, -trade.initiator_gold_offered, source="echange"
             )
             self.player_repository.add_gold(
-                target_profile.player.id, trade.initiator_gold_offered
+                target_profile.player.id, trade.initiator_gold_offered, source="echange"
             )
         if trade.target_gold_offered > 0:
             self.player_repository.add_gold(
-                target_profile.player.id, -trade.target_gold_offered
+                target_profile.player.id, -trade.target_gold_offered, source="echange"
             )
             self.player_repository.add_gold(
-                initiator_profile.player.id, trade.target_gold_offered
+                initiator_profile.player.id, trade.target_gold_offered, source="echange"
             )
 
         # Items côté initiator → target

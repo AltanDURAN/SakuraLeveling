@@ -21,6 +21,8 @@ class ActiveEncounter:
     #: Événement lunaire en cours à l'apparition (cf. `lunar_service`) :
     #: monstres renforcés, gains multipliés. None hors événement.
     lunar: object | None = None
+    #: Salon de la zone (journal de surveillance : temps passé par zone).
+    channel_id: int = 0
 
     @property
     def mobs(self) -> list[EncounterMobState]:

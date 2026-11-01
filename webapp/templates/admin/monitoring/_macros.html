@@ -1,0 +1,68 @@
+{# Macros partagées des pages de surveillance. #}
+
+{% macro value(v, fmt, viz) -%}
+{%- if v is none -%}—
+{%- elif fmt == 'pct' -%}{{ viz.pct(v) }}
+{%- elif fmt == 'min' -%}{{ viz.duration(v) }}
+{%- elif fmt == 'dec' -%}{{ ('%.1f' % v)|replace('.', ',') }}
+{%- elif fmt == 'gini' -%}{{ ('%.2f' % v)|replace('.', ',') }}
+{%- elif v|abs >= 100000 -%}{{ viz.compact(v) }}
+{%- else -%}{{ viz.full(v) }}{%- endif -%}
+{%- endmacro %}
+
+{% macro delta(k) -%}
+{%- if k.delta is not none -%}
+{%- set up = k.delta > 0.5 -%}{%- set down = k.delta < -0.5 -%}
+{%- set good = (up and k.good_up) or (down and not k.good_up) -%}
+<span class="delta {% if not up and not down %}is-flat{% elif good %}is-good{% else %}is-bad{% endif %}"
+      title="Par rapport à la période précédente de même durée">
+    {%- if up %}▲ +{% elif down %}▼ {% else %}= {% endif %}{{ ('%.0f' % k.delta) }} % <small>vs avant</small></span>
+{%- elif k.previous is not none -%}
+<span class="delta is-flat">— <small>vs avant</small></span>
+{%- else -%}<span></span>{%- endif -%}
+{%- endmacro %}
+
+{% macro tile(k, viz) %}
+<div class="kpi"{% if k.hint %} title="{{ k.hint }}"{% endif %}>
+    <span class="kpi-label">{{ k.label }}{% if k.hint %} <span aria-hidden="true" style="opacity:.5">ⓘ</span>{% endif %}</span>
+    <span class="kpi-value">{{ value(k.value, k.fmt, viz) }}{% if k.unit and k.fmt not in ('pct', 'min') %}<span class="kpi-unit">{{ k.unit }}</span>{% endif %}</span>
+    <span class="kpi-foot">{{ delta(k) }}{{ viz.sparkline(k.spark) }}</span>
+</div>
+{% endmacro %}
+
+{% macro sev(severity, rules) -%}
+<span class="sev sev-{{ severity }}"><span class="sev-dot" aria-hidden="true"></span>{{ rules.SEVERITY_LABELS[severity] }}</span>
+{%- endmacro %}
+
+{% macro alert_item(view, rules, back, show_why=true, qs='') %}
+{% set a = view.alert if view.alert is defined else view %}
+<li class="alert is-{{ a.severity }}{% if view.muted is defined and view.muted %} is-muted{% endif %}">
+    {{ sev(a.severity, rules) }}
+    <div>
+        <div class="alert-title">
+            {%- if a.player_id %}<a href="/admin/monitoring/players/{{ a.player_id }}{{ qs }}">{{ a.title }}</a>
+            {%- elif a.ref and a.code.startswith('mob') %}<a href="/admin/mobs/{{ a.ref }}/edit">{{ a.title }}</a>
+            {%- else %}{{ a.title }}{% endif -%}
+        </div>
+        <div class="alert-msg">{{ a.message }}</div>
+        {% if show_why %}<div class="alert-why">{{ a.rule.label }} · {{ a.rule.why }}</div>{% endif %}
+    </div>
+    <div class="alert-meta">
+        {% if view.first_seen is defined and view.first_seen %}<span>depuis le {{ view.first_seen_local.strftime('%d/%m à %Hh%M') }}</span>{% endif %}
+        {% if view.muted is defined %}
+        <form method="post" action="/admin/monitoring/alerts/mute" class="alert-actions">
+            <input type="hidden" name="key" value="{{ a.key }}">
+            <input type="hidden" name="back" value="{{ back }}">
+            {% if view.muted %}
+            <span>en sourdine</span><button name="days" value="0">Réactiver</button>
+            {% else %}
+            <button name="days" value="1" title="Ne plus la montrer en haut ni l'envoyer pendant 24 h">Vu (24 h)</button>
+            <button name="days" value="7" title="Sourdine 7 jours">7 j</button>
+            {% endif %}
+        </form>
+        {% endif %}
+    </div>
+</li>
+{% endmacro %}
+
+{% macro empty(text) %}<p class="viz-empty">{{ text }}</p>{% endmacro %}

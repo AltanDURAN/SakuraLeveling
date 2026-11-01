@@ -1,0 +1,54 @@
+{% extends "admin/monitoring/_layout.html" %}
+{% import "admin/monitoring/_macros.html" as m %}
+{% block page_title %}Joueurs{% endblock %}
+{% block mon_title %}👥 Joueurs{% endblock %}
+{% block mon_sub %}Chaque joueur comparé aux autres sur la période — clique sur un nom pour sa fiche de suivi.{% endblock %}
+{% block body %}
+{% set s = d.segments %}
+<div class="card">
+    <div class="card-head" style="flex-wrap:wrap">
+        <div class="pill-group" data-segment-target="#players" role="tablist">
+            <button type="button" class="pill is-on" data-segment="all">Tous ({{ d.rows|length }})</button>
+            <button type="button" class="pill" data-segment="invested">🔥 Très investis ({{ s.invested }})</button>
+            <button type="button" class="pill" data-segment="new">🌱 Nouveaux ({{ s.new }})</button>
+            <button type="button" class="pill" data-segment="away">💤 Absents ({{ s.away }})</button>
+            <button type="button" class="pill" data-segment="flagged">🚨 Signalés ({{ s.flagged }})</button>
+        </div>
+        <input class="input mtable-search" type="search" placeholder="Chercher un joueur…" data-filter-table="#players">
+    </div>
+    <div class="mtable-wrap"><table class="mtable" id="players">
+        <thead><tr>
+            <th data-sort="text">Joueur</th><th class="num" data-sort="num">Niv.</th><th data-sort="text">Rang</th>
+            <th class="num" data-sort="num">Puissance</th><th class="num" data-sort="num">Or</th>
+            <th class="num" data-sort="num">Temps de jeu</th><th class="num" data-sort="num">Jours</th>
+            <th class="num" data-sort="num">Combats</th><th class="num" data-sort="num">Victoires</th>
+            <th class="num" data-sort="num">Or / h</th><th class="num" data-sort="num">Niv. 100 dans</th>
+            <th data-sort="num" class="is-sorted">Investissement</th><th class="num" data-sort="num">Vu il y a</th></tr></thead>
+        <tbody>{% for r in d.rows %}
+            {% set segs = [] %}
+            {% if r.investment >= 75 %}{% set _ = segs.append('invested') %}{% endif %}
+            {% if r.created_at and (now.replace(tzinfo=none) - r.created_at).days < 7 %}{% set _ = segs.append('new') %}{% endif %}
+            {% if r.investment >= 50 and (r.days_since_active or 0) >= 3 %}{% set _ = segs.append('away') %}{% endif %}
+            {% if r.flags %}{% set _ = segs.append('flagged') %}{% endif %}
+            <tr data-segments="{{ segs|join(' ') }}">
+            <td class="name"><a href="/admin/monitoring/players/{{ r.pid }}{{ qs }}">{{ r.name }}</a>
+                {% if r.is_admin %} <span class="chip">admin</span>{% endif %}
+                {% if r.flags %}
+                <span class="sev sev-{{ (rules.SEVERITY_ORDER|select('in', r.flags)|list)[0] }}" title="{{ r.flags|length }} alerte(s)"><span class="sev-dot"></span>{{ r.flags|length }}</span>{% endif %}</td>
+            <td class="num">{{ r.level }}</td>
+            <td data-v="{{ r.rank }}">{% if r.rank %}<span class="rank-chip">{{ r.rank }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+            <td class="num" data-v="{{ r.power }}">{{ viz.compact(r.power) }}</td>
+            <td class="num" data-v="{{ r.gold }}">{{ viz.compact(r.gold) }}</td>
+            <td class="num" data-v="{{ r.play_min }}">{{ viz.duration(r.play_min) }}</td>
+            <td class="num">{{ r.active_days }}</td>
+            <td class="num" data-v="{{ r.combats }}">{{ viz.full(r.combats) }}</td>
+            <td class="num" data-v="{{ r.win_rate or 0 }}">{{ viz.pct(r.win_rate) }}</td>
+            <td class="num" data-v="{{ r.gold_per_hour or 0 }}">{{ viz.compact(r.gold_per_hour) }}</td>
+            <td class="num" data-v="{{ r.days_to_cap if r.days_to_cap is not none else 99999 }}">{% if r.days_to_cap == 0 %}atteint{% elif r.days_to_cap %}{{ r.days_to_cap }} j{% else %}<span class="muted">—</span>{% endif %}</td>
+            <td data-v="{{ r.investment }}" style="min-width:150px"><span style="display:flex;align-items:center;gap:.5rem">{{ viz.meter(r.investment) }}<span class="muted" style="font-size:.74rem;min-width:5.5rem">{{ r.investment_label }}</span></span></td>
+            <td class="num" data-v="{{ r.days_since_active if r.days_since_active is not none else 9999 }}">{% if r.days_since_active is none %}<span class="muted">jamais</span>{% elif r.days_since_active < 1 %}{{ (r.days_since_active * 24)|round|int }} h{% else %}{{ r.days_since_active|round|int }} j{% endif %}</td>
+        </tr>{% endfor %}</tbody>
+    </table></div>
+    <p class="card-foot">Investissement : moyenne des centiles de temps de jeu, jours joués, combats et niveau parmi les joueurs actifs. « Niv. 100 dans » : au rythme de ses 14 derniers jours.</p>
+</div>
+{% endblock %}

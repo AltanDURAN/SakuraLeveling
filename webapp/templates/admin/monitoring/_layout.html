@@ -1,0 +1,39 @@
+{% extends "admin/base.html" %}
+{% block title %}{% block page_title %}Surveillance{% endblock %} — Sakura Admin{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/admin/monitoring.css">{% endblock %}
+{% block scripts %}<script src="/static/admin/monitoring.js" defer></script>{% endblock %}
+{% block content %}
+<section class="mon">
+    <header class="mon-head">
+        <div>
+            <h1>{% block mon_title %}📊 Surveillance{% endblock %}</h1>
+            <p>{% block mon_sub %}{% endblock %}</p>
+        </div>
+        {% block filters %}
+        <div class="mon-filters">
+            <nav class="pill-group" aria-label="Période">
+                {% for d, label in periods %}
+                <a href="?days={{ d }}{% if f.admins %}&admins=1{% endif %}" class="{% if f.days == d %}is-on{% endif %}">{{ label }}</a>
+                {% endfor %}
+            </nav>
+            <a class="mon-toggle {% if f.admins %}is-on{% endif %}" href="?days={{ f.days }}{% if not f.admins %}&admins=1{% endif %}"
+               title="Inclure les comptes admin (tests) dans les chiffres">{% if f.admins %}✓ {% endif %}Comptes admin</a>
+            <a class="mon-refresh" href="/admin/monitoring/refresh?back={{ (request.url.path ~ qs)|urlencode }}"
+               title="Les chiffres sont gardés 90 s d'une page à l'autre">↻ Actualiser</a>
+        </div>
+        {% endblock %}
+    </header>
+    <nav class="mon-tabs" aria-label="Pages de surveillance">
+        {% for slug, label, icon in tabs %}
+        <a href="/admin/monitoring{{ '/' ~ slug if slug }}{{ qs }}" class="{% if tab == slug %}is-on{% endif %}">
+            <span aria-hidden="true">{{ icon }}</span> {{ label }}
+            {% if slug == 'alerts' and (alert_counts['critique'] or alert_counts['serieux']) %}
+            <span class="tab-badge{% if not alert_counts['critique'] %} is-serious{% endif %}"
+                  title="Alertes critiques et sérieuses">{{ alert_counts['critique'] + alert_counts['serieux'] }}</span>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </nav>
+    {% block body %}{% endblock %}
+</section>
+{% endblock %}
