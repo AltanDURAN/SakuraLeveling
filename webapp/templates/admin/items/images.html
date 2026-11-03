@@ -1,0 +1,369 @@
+{% extends "admin/base.html" %}
+{% block title %}Images en lot — Sakura Admin{% endblock %}
+
+{% block content %}
+<style>
+  .bi-help { color:var(--text-soft); margin:.2rem 0 1rem; line-height:1.5; }
+  .bi-drop { border:2px dashed var(--border-strong); border-radius:var(--radius-lg); padding:1.4rem 1rem;
+             text-align:center; color:var(--text-soft); background:var(--bg-soft); transition:border-color .15s, background .15s; }
+  .bi-drop.is-over { border-color:var(--accent); background:var(--accent-soft); color:var(--text); }
+  .bi-drop strong { color:var(--text); font-size:1.05rem; }
+  .bi-bar[hidden], .bi-tray-wrap[hidden] { display:none !important; }
+  .bi-tray-wrap { margin-top:1rem; border:1px solid var(--border); border-radius:var(--radius-lg); background:var(--bg-elev); padding:.8rem; }
+  /* Sur grand écran, le bac reste visible pendant qu'on fait défiler les objets. */
+  @media (min-width:900px) { .bi-tray-wrap { position:sticky; top:66px; z-index:15; box-shadow:var(--shadow-md); } }
+  .bi-tray-head { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; justify-content:space-between; margin-bottom:.6rem; }
+  .bi-tray-head span { color:var(--text-soft); font-size:.9rem; }
+  .bi-tray { display:flex; gap:.6rem; overflow-x:auto; padding-bottom:.3rem; }
+  .bi-tray-item { flex:0 0 auto; width:92px; cursor:grab; border:2px solid var(--border); border-radius:12px;
+                  background:#fff; padding:4px; position:relative; }
+  .bi-tray-item img { width:100%; aspect-ratio:1; object-fit:contain; display:block; pointer-events:none; }
+  .bi-tray-item small { display:block; font-size:.66rem; color:#6e5a72; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .bi-tray-item.is-selected { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .bi-filters { display:flex; flex-wrap:wrap; gap:.7rem; margin:1.2rem 0 .4rem; align-items:flex-end; }
+  .bi-filters .field { flex:1; min-width:200px; }
+  .bi-filters .field.narrow { flex:0 1 220px; min-width:160px; }
+  .bi-group h2 { font-size:1rem; margin:1.2rem 0 .6rem; color:var(--text-soft); font-weight:700; }
+  .bi-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(132px, 1fr)); gap:.7rem; }
+  .bi-tile { position:relative; border:1px solid var(--border); border-radius:14px; background:var(--bg-elev);
+             padding:.45rem; cursor:pointer; display:flex; flex-direction:column; gap:.3rem; outline:none;
+             transition:border-color .12s, box-shadow .12s; }
+  .bi-tile:hover, .bi-tile:focus-visible { border-color:var(--border-strong); }
+  .bi-tile.is-target:hover, .bi-tile.is-over { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .bi-tile.is-pending { border:2px solid var(--accent); }
+  .bi-tile.is-done { border:2px solid var(--success); }
+  .bi-tile.is-error { border:2px solid var(--danger); }
+  .bi-img { aspect-ratio:1; border-radius:10px; background:#fff; display:flex; align-items:center; justify-content:center;
+            overflow:hidden; font-size:2rem; }
+  .bi-img img { width:100%; height:100%; object-fit:contain; pointer-events:none; }
+  .bi-name { font-size:.82rem; font-weight:600; line-height:1.2; }
+  .bi-code { font-size:.68rem; color:var(--text-faint); word-break:break-all; }
+  .bi-badge { position:absolute; top:.35rem; left:.35rem; font-size:.66rem; font-weight:700; padding:.1rem .4rem;
+              border-radius:999px; background:var(--accent); color:#fff; }
+  .bi-tile.is-done .bi-badge { background:var(--success); }
+  .bi-tile.is-error .bi-badge { background:var(--danger); }
+  .bi-undo { position:absolute; top:.25rem; right:.25rem; width:24px; height:24px; border-radius:50%; border:none;
+             background:rgba(0,0,0,.55); color:#fff; cursor:pointer; font-weight:800; line-height:24px; padding:0; }
+  .bi-err { font-size:.7rem; color:var(--danger); }
+  .bi-empty { color:var(--text-faint); padding:1rem 0; }
+  .bi-bar { position:sticky; bottom:0; z-index:20; margin-top:1.2rem; display:flex; flex-wrap:wrap; gap:.6rem;
+            align-items:center; justify-content:space-between; padding:.75rem 1rem; border:1px solid var(--border);
+            border-radius:var(--radius-lg); background:var(--bg-elev); box-shadow:var(--shadow-lg); }
+  .bi-bar .msg { font-weight:600; }
+  .bi-bar .msg.ok { color:var(--success); } .bi-bar .msg.bad { color:var(--danger); }
+  .bi-bar .actions { display:flex; gap:.5rem; flex-wrap:wrap; }
+</style>
+
+<section class="list-page">
+  <header class="list-header">
+    <div>
+      <a href="/admin/items" class="breadcrumb">← Objets</a>
+      <h1>🖼️ Images en lot <span class="count-pill">{{ tiles|length }}</span></h1>
+    </div>
+  </header>
+
+  <p class="bi-help">
+    Lâche toutes tes images d'un coup. Une image nommée comme l'objet (<code>lance_des_kobolds.png</code>, ou son nom
+    « Lance des kobolds ») se range toute seule. Les autres attendent dans le bac : clique une image du bac puis l'objet
+    (ou glisse-la dessus). Tu peux aussi lâcher une image directement sur un objet, ou cliquer un objet pour la choisir.
+    Rien n'est envoyé avant <b>Enregistrer</b>. Seule l'image change, jamais la fiche de l'objet.
+  </p>
+
+  <div id="bi-drop" class="bi-drop">
+    <strong>Lâche tes images ici</strong> (ou n'importe où sur la page)<br>
+    <button type="button" class="btn btn-small" id="bi-browse" style="margin-top:.6rem;">📂 Choisir des fichiers</button>
+    <input type="file" id="bi-files" accept="image/*" multiple hidden>
+    <input type="file" id="bi-one" accept="image/*" hidden>
+  </div>
+
+  <div id="bi-tray-wrap" class="bi-tray-wrap" hidden>
+    <div class="bi-tray-head">
+      <span id="bi-tray-title"></span>
+      <button type="button" class="btn btn-small btn-ghost" id="bi-tray-clear">Vider le bac</button>
+    </div>
+    <div id="bi-tray" class="bi-tray"></div>
+  </div>
+
+  <div class="bi-filters">
+    <label class="field">
+      <span class="field-label">Rechercher un objet</span>
+      <input type="search" class="input" id="bi-q" placeholder="lance, sceau, élixir…">
+    </label>
+    <label class="field narrow">
+      <span class="field-label">Afficher</span>
+      <select class="input" id="bi-show">
+        <option value="">Tous les objets</option>
+        <option value="pending">Images prêtes</option>
+        <option value="missing">Sans image</option>
+      </select>
+    </label>
+  </div>
+
+  <div id="bi-groups"></div>
+
+  <div id="bi-bar" class="bi-bar" hidden>
+    <span class="msg" id="bi-msg"></span>
+    <span class="actions">
+      <button type="button" class="btn btn-ghost" id="bi-cancel">Tout annuler</button>
+      <button type="button" class="btn btn-primary" id="bi-save">💾 Enregistrer</button>
+    </span>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const TILES = {{ tiles|tojson }};
+  const LABELS = {{ category_labels|tojson }};
+  const EMOJIS = {{ category_emojis|tojson }};
+  const UPLOADS_AT_ONCE = 3;
+
+  const pending = new Map();   // code → File choisi
+  const status = new Map();    // code → {kind: 'busy'|'done'|'error', msg}
+  const tray = [];             // images pas encore attribuées
+  let selected = null;         // image du bac sélectionnée
+  let saving = false;
+  let barMsg = null;           // {text, kind}
+
+  const $ = id => document.getElementById(id);
+  const byCode = new Map(TILES.map(t => [t.code, t]));
+  const slug = s => s.toLowerCase().replace(/œ/g, 'oe').replace(/æ/g, 'ae')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  const keys = new Map();
+  for (const t of TILES) { keys.set(slug(t.name), t.code); keys.set(t.code, t.code); }
+  const urls = new WeakMap();
+  const url = f => { if (!urls.has(f)) urls.set(f, URL.createObjectURL(f)); return urls.get(f); };
+
+  function el(tag, props = {}, ...children) {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(props)) {
+      if (k === 'class') n.className = v;
+      else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
+      else if (v !== false && v != null) n.setAttribute(k, v === true ? '' : v);
+    }
+    for (const c of children.flat()) if (c != null) n.append(c);
+    return n;
+  }
+
+  function match(file) {
+    const stem = slug(file.name.replace(/\.[^.]+$/, ''));
+    return keys.get(stem) || keys.get(stem.replace(/_\d+$/, '')) || null;
+  }
+
+  function addFiles(files) {
+    const images = [...files].filter(f => f.type.startsWith('image/'))
+      .sort((a, b) => a.lastModified - b.lastModified);
+    for (const f of images) {
+      const code = match(f);
+      if (code) assign(code, f, false); else tray.push(f);
+    }
+    if (!selected && tray.length) selected = tray[0];
+    barMsg = null;
+    render();
+  }
+
+  function assign(code, file, doRender = true) {
+    const i = tray.indexOf(file);
+    if (i >= 0) tray.splice(i, 1);
+    const previous = pending.get(code);
+    if (previous && previous !== file) tray.push(previous);    // rien ne se perd
+    pending.set(code, file);
+    status.delete(code);
+    if (selected === file) selected = tray[i >= 0 ? Math.min(i, tray.length - 1) : 0] || null;
+    if (doRender) { barMsg = null; render(); }
+  }
+
+  function unassign(code) {
+    const f = pending.get(code);
+    pending.delete(code); status.delete(code);
+    if (f) { tray.push(f); if (!selected) selected = f; }
+    render();
+  }
+
+  function visible(t) {
+    const q = slug($('bi-q').value || '');
+    if (q && !slug(t.name).includes(q) && !t.code.includes(q)) return false;
+    const show = $('bi-show').value;
+    if (show === 'pending') return pending.has(t.code) || status.has(t.code);
+    if (show === 'missing') return !t.version && !pending.has(t.code);
+    return true;
+  }
+
+  function tile(t) {
+    const file = pending.get(t.code), st = status.get(t.code);
+    const src = file ? url(file) : (t.version ? `/assets/items/${t.code}.png?v=${t.version}` : null);
+    const cls = ['bi-tile', selected ? 'is-target' : '', file ? 'is-pending' : '',
+                 st && st.kind === 'done' ? 'is-done' : '', st && st.kind === 'error' ? 'is-error' : ''].join(' ');
+    const badge = st && st.kind === 'busy' ? '⏳ Envoi…' : st && st.kind === 'done' ? '✅ Enregistrée'
+      : st && st.kind === 'error' ? '⚠️ Échec' : file ? 'Nouvelle' : null;
+    const node = el('div', {
+      class: cls, role: 'button', tabindex: 0, 'data-code': t.code,
+      title: selected ? `Mettre l'image sélectionnée sur « ${t.name} »` : `Choisir une image pour « ${t.name} »`,
+      onclick: () => pick(t.code),
+      onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(t.code); } },
+      ondragover: e => { e.preventDefault(); e.stopPropagation(); node.classList.add('is-over'); },
+      ondragleave: () => node.classList.remove('is-over'),
+      ondrop: e => dropOnTile(e, t.code),
+    },
+      el('div', { class: 'bi-img' }, src ? el('img', { src, alt: '', loading: 'lazy' }) : (EMOJIS[t.category] || '📦')),
+      el('div', { class: 'bi-name' }, t.name),
+      el('div', { class: 'bi-code' }, t.code),
+      badge ? el('span', { class: 'bi-badge' }, badge) : null,
+      st && st.kind === 'error' ? el('div', { class: 'bi-err' }, st.msg) : null,
+      file && !saving ? el('button', { type: 'button', class: 'bi-undo', title: 'Retirer (retourne dans le bac)',
+        'aria-label': 'Retirer', onclick: e => { e.stopPropagation(); unassign(t.code); } }, '✕') : null,
+    );
+    return node;
+  }
+
+  function render() {
+    // Bac
+    $('bi-tray-wrap').hidden = !tray.length;
+    $('bi-tray-title').textContent = `À attribuer (${tray.length}) — clique une image puis l'objet, ou glisse-la sur l'objet.`;
+    $('bi-tray').replaceChildren(...tray.map((f, i) => el('div', {
+      class: 'bi-tray-item' + (f === selected ? ' is-selected' : ''), draggable: 'true', title: f.name,
+      onclick: () => { selected = f === selected ? null : f; render(); },
+      ondragstart: e => { e.dataTransfer.setData('text/x-tray', String(i)); e.dataTransfer.effectAllowed = 'move'; },
+    }, el('img', { src: url(f), alt: '' }), el('small', {}, f.name))));
+
+    // Objets, par type
+    const groups = new Map();
+    for (const t of TILES) if (visible(t)) {
+      if (!groups.has(t.category)) groups.set(t.category, []);
+      groups.get(t.category).push(t);
+    }
+    $('bi-groups').replaceChildren(...(groups.size ? [...groups].map(([cat, list]) => el('div', { class: 'bi-group' },
+      el('h2', {}, `${EMOJIS[cat] || '📦'} ${LABELS[cat] || cat} (${list.length})`),
+      el('div', { class: 'bi-grid' }, list.map(tile)),
+    )) : [el('div', { class: 'bi-empty' }, 'Aucun objet ne correspond.')]));
+
+    // Barre d'enregistrement
+    const n = pending.size;
+    $('bi-bar').hidden = !n && !barMsg;
+    const msg = $('bi-msg');
+    msg.className = 'msg' + (barMsg && barMsg.kind ? ' ' + barMsg.kind : '');
+    msg.textContent = barMsg ? barMsg.text : `${n} image${n > 1 ? 's' : ''} prête${n > 1 ? 's' : ''} à enregistrer`;
+    $('bi-save').textContent = `💾 Enregistrer ${n || ''}`.trim();
+    $('bi-save').disabled = saving || !n;
+    $('bi-cancel').disabled = saving || !n;
+  }
+
+  function pick(code) {
+    if (saving) return;
+    if (selected) { assign(code, selected); return; }
+    const input = $('bi-one');
+    input.dataset.code = code;
+    input.value = '';
+    input.click();
+  }
+
+  function dropOnTile(e, code) {
+    e.preventDefault(); e.stopPropagation();
+    if (saving) return;
+    const idx = e.dataTransfer.getData('text/x-tray');
+    if (idx !== '' && tray[+idx]) { assign(code, tray[+idx]); return; }
+    const files = [...e.dataTransfer.files].filter(f => f.type.startsWith('image/'));
+    if (!files.length) return;
+    assign(code, files[0], false);
+    if (files.length > 1) addFiles(files.slice(1)); else render();
+  }
+
+  async function upload(code) {
+    const file = pending.get(code);
+    const fd = new FormData();
+    fd.append('image', file, file.name);
+    try {
+      const r = await fetch(`/admin/items/images/upload/${encodeURIComponent(code)}`, { method: 'POST', body: fd });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.ok) {
+        byCode.get(code).version = Number(new URL(j.url, location.href).searchParams.get('v')) || Date.now();
+        if (pending.get(code) === file) pending.delete(code);
+        status.set(code, { kind: 'done' });
+        return true;
+      }
+      const err = j.error || (r.status === 413 ? 'Image trop lourde pour le serveur (10 Mo max).' : `Erreur ${r.status}.`);
+      status.set(code, { kind: 'error', msg: err });
+    } catch (_) {
+      status.set(code, { kind: 'error', msg: 'Connexion perdue : réessaie.' });
+    }
+    return false;
+  }
+
+  async function save() {
+    const codes = [...pending.keys()];
+    if (!codes.length || saving) return;
+    saving = true;
+    const ok = [];
+    let done = 0;
+    const queue = [...codes];
+    for (const c of codes) status.set(c, { kind: 'busy' });
+    barMsg = { text: `Envoi 0/${codes.length}…` };
+    render();
+    const worker = async () => {
+      while (queue.length) {
+        const code = queue.shift();
+        if (await upload(code)) ok.push(code);
+        done += 1;
+        barMsg = { text: `Envoi ${done}/${codes.length}…` };
+        render();
+      }
+    };
+    await Promise.all(Array.from({ length: UPLOADS_AT_ONCE }, worker));
+    let pushed = false;
+    if (ok.length) {
+      barMsg = { text: 'Sauvegarde sur git…' };
+      render();
+      try {
+        const r = await fetch('/admin/items/images/push', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ codes: ok }),
+        });
+        pushed = r.ok && (await r.json()).pushed;
+      } catch (_) { /* les images sont déjà enregistrées sur le serveur */ }
+    }
+    saving = false;
+    const failed = codes.length - ok.length;
+    const saved = `${ok.length} image${ok.length > 1 ? 's' : ''} enregistrée${ok.length > 1 ? 's' : ''}`;
+    barMsg = failed
+      ? { text: `${saved}, ${failed} en échec (encadrées en rouge) : corrige-les puis réenregistre.`, kind: 'bad' }
+      : { text: `✅ ${saved}${pushed ? ' et sauvegardées sur git' : ''}.`, kind: 'ok' };
+    render();
+  }
+
+  // Lâcher n'importe où sur la page = ajouter au lot (jamais ouvrir l'image dans l'onglet).
+  const drop = $('bi-drop');
+  document.addEventListener('dragover', e => {
+    if (!e.dataTransfer.types.includes('Files')) return;
+    e.preventDefault();
+    drop.classList.add('is-over');
+  });
+  document.addEventListener('dragleave', e => { if (!e.relatedTarget) drop.classList.remove('is-over'); });
+  document.addEventListener('drop', e => {
+    drop.classList.remove('is-over');
+    if (!e.dataTransfer.files.length) return;
+    e.preventDefault();
+    if (!saving) addFiles(e.dataTransfer.files);
+  });
+  document.addEventListener('dragend', () => document.querySelectorAll('.is-over').forEach(n => n.classList.remove('is-over')));
+
+  $('bi-browse').addEventListener('click', () => $('bi-files').click());
+  $('bi-files').addEventListener('change', e => { addFiles(e.target.files); e.target.value = ''; });
+  $('bi-one').addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (f) assign(e.target.dataset.code, f);
+  });
+  $('bi-tray-clear').addEventListener('click', () => { tray.length = 0; selected = null; render(); });
+  $('bi-cancel').addEventListener('click', () => {
+    if (!confirm('Retirer toutes les images prêtes ? Rien ne sera enregistré.')) return;
+    pending.clear(); status.clear(); barMsg = null; render();
+  });
+  $('bi-save').addEventListener('click', save);
+  $('bi-q').addEventListener('input', render);
+  $('bi-show').addEventListener('change', render);
+  window.addEventListener('beforeunload', e => { if (pending.size || saving) { e.preventDefault(); e.returnValue = ''; } });
+
+  render();
+})();
+</script>
+{% endblock %}

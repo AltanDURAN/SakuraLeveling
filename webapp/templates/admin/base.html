@@ -32,7 +32,8 @@
             ('/admin/familles', 'Familles'), ('/admin/world-bosses', 'World Bosses'),
             ('/admin/events', 'Événements')]},
         {'label': '📦 Objets', 'items': [
-            ('/admin/items', 'Items'), ('/admin/shop', 'Shop'), ('/admin/offering', 'Offrande')]},
+            ('/admin/items', 'Items'), ('/admin/items/images', 'Images en lot'), ('/admin/shop', 'Shop'),
+            ('/admin/offering', 'Offrande')]},
         {'label': '📈 Progression', 'items': [
             ('/admin/skill-tree/builder', 'Arbre'), ('/admin/titles', 'Titres'),
             ('/admin/quests', 'Quêtes')]},
@@ -46,9 +47,10 @@
             <nav class="topnav">
                 <a href="/admin" class="topnav-link {% if cur == '/admin' or cur == '/admin/' %}is-active{% endif %}">🏠 Dashboard</a>
                 {% for g in nav_groups %}
-                    {% set ns = namespace(active=false) %}
+                    {# Lien actif = le plus long qui préfixe la page (/admin/items/images n'allume pas /admin/items). #}
+                    {% set ns = namespace(active=false, best='') %}
                     {% for href, label in g['items'] %}
-                        {% if cur.startswith(href) %}{% set ns.active = true %}{% endif %}
+                        {% if cur.startswith(href) %}{% set ns.active = true %}{% if href|length > ns.best|length %}{% set ns.best = href %}{% endif %}{% endif %}
                     {% endfor %}
                     <div class="topnav-group"
                          x-data="{ open: false }"
@@ -62,7 +64,7 @@
                         </button>
                         <div class="topnav-menu" x-show="open" x-cloak>
                             {% for href, label in g['items'] %}
-                                <a href="{{ href }}" class="{% if cur.startswith(href) %}is-active{% endif %}">{{ label }}</a>
+                                <a href="{{ href }}" class="{% if href == ns.best %}is-active{% endif %}">{{ label }}</a>
                             {% endfor %}
                         </div>
                     </div>

@@ -10,6 +10,7 @@ import re
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from PIL import Image
+from starlette.concurrency import run_in_threadpool
 
 from app.domain.services.gear_passives import PASSIVES
 from app.infrastructure.db.repositories.item_repository import ItemRepository
@@ -43,26 +44,42 @@ _RARITY_COLORS = {
 }
 
 
+MAX_IMAGE_BYTES = 8 * 1024 * 1024
+#: Les rendus n'affichent jamais un objet à plus de quelques centaines de
+#: pixels : au-delà, l'image ne fait qu'alourdir le dépôt (ChatGPT rend du
+#: 1254 px, ~2,5 Mo ; à 1024 px, ~30 % de moins).
+MAX_IMAGE_SIDE = 1024
+
+
+def _store_item_image(code: str, data: bytes) -> str | None:
+    """Écrit `data` en assets/items/<code>.png (converti en PNG pour rester
+    compatible avec les rendus qui lisent <code>.png/.jpg, réduit à
+    `MAX_IMAGE_SIDE`) et nettoie les autres extensions du même code.
+    Renvoie un message d'erreur, ou None."""
+    if len(data) > MAX_IMAGE_BYTES:
+        return "Image trop lourde (max 8 Mo)."
+    try:
+        img = Image.open(io.BytesIO(data)).convert("RGBA")
+    except Exception:
+        return "Image illisible (formats acceptés : PNG/JPG/WebP/GIF)."
+    if max(img.size) > MAX_IMAGE_SIDE:
+        img.thumbnail((MAX_IMAGE_SIDE, MAX_IMAGE_SIDE), Image.LANCZOS)
+    _clear_item_assets(code)
+    img.save(ITEMS_ASSETS_DIR / f"{code}.png", "PNG")
+    return None
+
+
 async def _save_item_image(form, code: str) -> tuple[str | None, str | None]:
-    """Enregistre l'image uploadée (le cas échéant) en assets/items/<code>.png
-    (convertie en PNG pour rester compatible avec les rendus qui lisent
-    <code>.png/.jpg). Nettoie les autres extensions du même code. Renvoie
-    (asset_path_git | None, error | None)."""
+    """Enregistre l'image uploadée (le cas échéant) avec la fiche de l'objet.
+    Renvoie (asset_path_git | None, error | None)."""
     upload = form.get("image_file")
     if upload is None or not getattr(upload, "filename", ""):
         return None, None
     data = await upload.read()
     if not data:
         return None, None
-    try:
-        img = Image.open(io.BytesIO(data)).convert("RGBA")
-    except Exception:
-        return None, "Image illisible (formats acceptés : PNG/JPG/WebP/GIF)."
-    if len(data) > 8 * 1024 * 1024:
-        return None, "Image trop lourde (max 8 Mo)."
-    _clear_item_assets(code)
-    img.save(ITEMS_ASSETS_DIR / f"{code}.png", "PNG")
-    return f"assets/items/{code}.png", None
+    err = _store_item_image(code, data)
+    return (None, err) if err else (f"assets/items/{code}.png", None)
 
 
 def _clear_item_assets(code: str) -> None:
@@ -231,6 +248,66 @@ async def items_list(
             **_labels_ctx(),
         },
     )
+
+
+# --------------------------------------------------------------------------
+# Images en lot : déposer toutes les images d'un coup, un seul Enregistrer.
+# Seules les images sont écrites — jamais la fiche de l'objet (ni la base, ni
+# items.json) : rien d'autre ne peut changer par erreur.
+# --------------------------------------------------------------------------
+
+def _image_version(code: str) -> int:
+    path = ITEMS_ASSETS_DIR / f"{code}.png"
+    return int(path.stat().st_mtime) if path.exists() else 0
+
+
+@router.get("/images", response_class=HTMLResponse)
+async def items_images(request: Request, user: AdminUser = Depends(require_admin)):
+    with get_db_session() as session:
+        items = ItemRepository(session).list_all()
+    order = {c.value: i for i, c in enumerate(ItemCategory)}
+    items.sort(key=lambda i: (order.get(i.category, 99), i.name))
+    tiles = [{"code": it.code, "name": it.name, "category": it.category,
+              "version": _image_version(it.code)} for it in items]
+    return get_templates().TemplateResponse(
+        request, "admin/items/images.html",
+        context={"user": user, "tiles": tiles, "category_labels": ITEM_CATEGORY_LABELS,
+                 "category_emojis": ITEM_CATEGORY_EMOJIS},
+    )
+
+
+@router.post("/images/upload/{code}")
+async def items_image_upload(code: str, request: Request, user: AdminUser = Depends(require_admin)):
+    """Écrit l'image d'UN objet, sans pousser sur git (cf. `/images/push`,
+    appelé une fois à la fin du lot)."""
+    with get_db_session() as session:
+        if ItemRepository(session).get_by_code(code) is None:
+            return JSONResponse({"ok": False, "error": f"Objet `{code}` introuvable."}, status_code=404)
+    upload = (await request.form()).get("image")
+    data = await upload.read() if upload is not None and hasattr(upload, "read") else b""
+    if not data:
+        return JSONResponse({"ok": False, "error": "Aucune image reçue."}, status_code=400)
+    err = await run_in_threadpool(_store_item_image, code, data)
+    if err:
+        return JSONResponse({"ok": False, "error": err}, status_code=400)
+    return {"ok": True, "url": f"/assets/items/{code}.png?v={_image_version(code)}"}
+
+
+@router.post("/images/push")
+async def items_images_push(request: Request, user: AdminUser = Depends(require_admin)):
+    """Un seul commit (et un seul push) pour toutes les images du lot."""
+    try:
+        codes = (await request.json()).get("codes") or []
+    except Exception:  # noqa: BLE001
+        codes = []
+    paths = sorted({f"assets/items/{c}.png" for c in codes
+                    if isinstance(c, str) and re.fullmatch(r"[a-z0-9_]+", c)
+                    and (ITEMS_ASSETS_DIR / f"{c}.png").exists()})
+    pushed = False
+    if paths:
+        noun = "image d'objet" if len(paths) == 1 else "images d'objets"
+        pushed = await run_in_threadpool(git_sync.push_content, paths, f"admin: {len(paths)} {noun}")
+    return {"ok": True, "count": len(paths), "pushed": pushed}
 
 
 @router.get("/new")
