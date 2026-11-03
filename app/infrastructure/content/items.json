@@ -1808,6 +1808,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
+      "max_hp_pct": 6,
       "hp_regeneration": 3
     },
     "equipment_slot": "tete",
@@ -1847,7 +1848,10 @@
     "sell_price": 0,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": null,
+    "stat_bonuses": {
+      "defense_pct": 6,
+      "max_hp_pct": 6
+    },
     "equipment_slot": "corps",
     "requires_two_hands": false,
     "family": "",
@@ -1944,6 +1948,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
+      "attack_pct": 8,
       "crit_chance": 2
     },
     "equipment_slot": "arme",
@@ -1963,7 +1968,10 @@
     "sell_price": 0,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": null,
+    "stat_bonuses": {
+      "defense_pct": 6,
+      "max_hp_pct": 6
+    },
     "equipment_slot": "corps",
     "requires_two_hands": false,
     "family": "",
@@ -1982,6 +1990,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
+      "max_hp_pct": 6,
       "mana_max": 15
     },
     "equipment_slot": "tete",
@@ -2001,7 +2010,10 @@
     "sell_price": 0,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": null,
+    "stat_bonuses": {
+      "defense_pct": 6,
+      "max_hp_pct": 4
+    },
     "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": "",
@@ -2020,6 +2032,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
+      "attack_pct": 8,
       "crit_damage": 6
     },
     "equipment_slot": "arme",
@@ -2078,6 +2091,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
+      "attack_pct": 20,
       "speed": -1
     },
     "equipment_slot": "arme",
@@ -2138,6 +2152,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
+      "max_hp_pct": 6,
       "speed": 1
     },
     "equipment_slot": "tete",
@@ -2157,7 +2172,10 @@
     "sell_price": 0,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": null,
+    "stat_bonuses": {
+      "defense_pct": 6,
+      "max_hp_pct": 4
+    },
     "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": "",
@@ -2294,6 +2312,7 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
+      "max_hp_pct": 6,
       "crit_chance": 2
     },
     "equipment_slot": "tete",

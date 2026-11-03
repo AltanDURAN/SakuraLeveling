@@ -218,6 +218,7 @@ LEGACY_SLOT_MAP: dict[str, str] = {
 
 # Stat de bonus d'item : libellé FR + icône (affichage admin).
 STAT_LABELS: dict[str, str] = {
+    "attack_pct": "Attaque %", "defense_pct": "Défense %", "max_hp_pct": "PV %",
     "max_hp": "PV", "attack": "Attaque", "defense": "Défense", "speed": "Vitesse",
     "crit_chance": "Crit %", "crit_damage": "Crit dmg", "dodge": "Esquive %",
     "hp_regeneration": "Régén PV",
@@ -226,6 +227,7 @@ STAT_LABELS: dict[str, str] = {
 # SOURCE UNIQUE des emojis de stats (bot ET admin). Les symboles historiques
 # du bot font foi — 🌀 = esquive partout, donc le mana prend 🔷 / 💧.
 STAT_EMOJIS: dict[str, str] = {
+    "attack_pct": "⚔️", "defense_pct": "🛡️", "max_hp_pct": "❤️",
     "max_hp": "❤️", "attack": "⚔️", "defense": "🛡️", "speed": "💨",
     "crit_chance": "🎯", "crit_damage": "💥", "dodge": "🌀",
     "hp_regeneration": "✨",

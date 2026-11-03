@@ -74,8 +74,11 @@ def _clear_item_assets(code: str) -> None:
             p.unlink()
 
 
-# Stats supportées par le système (cf StatsService)
+# Stats supportées par le système (cf StatsService). Saison 1 : ATK / DEF /
+# PV de l'équipement sont en % du socle (`*_pct`) — sans ces clés, enregistrer
+# une pièce (même pour changer son image) effaçait ses stats principales.
 SUPPORTED_STATS = [
+    "attack_pct", "defense_pct", "max_hp_pct",
     "max_hp", "attack", "defense", "speed",
     "crit_chance", "crit_damage", "dodge", "hp_regeneration",
     # Mana : déjà lu par StatsService sur l'équipement — il ne manquait que
@@ -371,6 +374,11 @@ async def items_update(
         if ((fields["category"] == "consumable" and kept.get("effect"))
                 or (fields["category"] == "cosmetic" and kept.get("cosmetic"))):
             fields["stat_bonuses"] = kept
+        else:
+            # Une clé que le formulaire ne connaît pas n'est jamais effacée.
+            unknown = {k: v for k, v in kept.items() if k not in SUPPORTED_STATS}
+            if unknown:
+                fields["stat_bonuses"] = {**unknown, **(fields["stat_bonuses"] or {})}
         repo.update_by_code(**fields)
 
     asset_path, img_err = await _save_item_image(form, code)

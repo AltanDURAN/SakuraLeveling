@@ -131,3 +131,23 @@ def test_editer_un_objet_garde_son_effet_ou_son_apparence(client, content, code,
     after = next(i for i in _load(content, "items.json") if i["code"] == code)
     assert after["name"].endswith("(édité)")
     assert after["stat_bonuses"][key] == before["stat_bonuses"][key]
+
+
+def test_editer_une_piece_garde_ses_stats_en_pourcentage(client, content):
+    """Saison 1 : ATK / DEF / PV d'une pièce sont en % du socle. Le formulaire
+    les renvoie comme toutes ses stats ; avant le 03/11/2026, il ne les
+    connaissait pas et enregistrer une pièce pour changer son image effaçait
+    ses stats principales (11 pièces touchées)."""
+    from webapp.admin.routers.items_router import SUPPORTED_STATS
+
+    before = next(i for i in _load(content, "items.json") if i["code"] == "lance_des_kobolds")
+    stats = before["stat_bonuses"]
+    data = {"name": before["name"], "description": before["description"],
+            "category": before["category"], "rarity": before["rarity"],
+            "equipment_slot": before["equipment_slot"], "passive": before["passive"],
+            "requires_two_hands": "on"}
+    data.update({f"stat_bonus_{s}": str(stats.get(s, "")) for s in SUPPORTED_STATS})
+    r = client.post("/admin/items/lance_des_kobolds", data=data, follow_redirects=False)
+    assert r.status_code == 303, r.text[:300]
+    after = next(i for i in _load(content, "items.json") if i["code"] == "lance_des_kobolds")
+    assert after["stat_bonuses"] == stats
