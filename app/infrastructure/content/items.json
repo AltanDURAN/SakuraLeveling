@@ -2298,7 +2298,6 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "max_hp_pct": 6,
       "crit_chance": 2
     },
     "equipment_slot": "tete",
