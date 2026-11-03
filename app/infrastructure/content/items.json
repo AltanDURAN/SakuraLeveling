@@ -1035,7 +1035,8 @@
     "equipment_slot": null,
     "requires_two_hands": false,
     "family": "",
-    "level_requirement": 1
+    "level_requirement": 1,
+    "passive": ""
   },
   {
     "code": "cadre_sakura_eternel",
