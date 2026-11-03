@@ -2079,7 +2079,6 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack_pct": 20,
       "speed": -1
     },
     "equipment_slot": "arme",
