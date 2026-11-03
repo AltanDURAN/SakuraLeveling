@@ -2002,10 +2002,7 @@
     "sell_price": 0,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": {
-      "defense_pct": 6,
-      "max_hp_pct": 4
-    },
+    "stat_bonuses": null,
     "equipment_slot": "arme",
     "requires_two_hands": false,
     "family": "",
