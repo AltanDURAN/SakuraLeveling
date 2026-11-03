@@ -1796,7 +1796,6 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "max_hp_pct": 6,
       "hp_regeneration": 3
     },
     "equipment_slot": "tete",
