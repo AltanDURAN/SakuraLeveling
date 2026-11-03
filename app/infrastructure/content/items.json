@@ -1944,7 +1944,6 @@
     "buy_price": null,
     "icon": null,
     "stat_bonuses": {
-      "attack_pct": 8,
       "crit_chance": 2
     },
     "equipment_slot": "arme",
