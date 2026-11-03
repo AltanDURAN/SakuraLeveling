@@ -1835,10 +1835,7 @@
     "sell_price": 0,
     "buy_price": null,
     "icon": null,
-    "stat_bonuses": {
-      "defense_pct": 6,
-      "max_hp_pct": 6
-    },
+    "stat_bonuses": null,
     "equipment_slot": "corps",
     "requires_two_hands": false,
     "family": "",
