@@ -1,22 +1,31 @@
 """Vue paginée du bestiaire (1 monstre par page).
 
-Chaque page : fiche complète d'un monstre (score de puissance, rang, stats,
-famille, drops) + aperçu de son image en thumbnail (haut-droite de l'embed).
-Monstres triés par score de puissance CROISSANT. Boutons ◀ / ▶, et un menu pour
-ne parcourir qu'une famille (les joueurs le demandaient depuis mai).
+Bestiaire À DÉCOUVRIR (07/11/2026, demande de l'auteur) : un monstre que le
+joueur n'a pas encore vaincu n'est qu'une silhouette, sans nom ni fiche ; une
+fois vaincu, sa fiche complète (score de puissance, rang, stats, famille,
+drops) et le nombre de victoires du joueur contre lui. Monstres triés par score
+de puissance CROISSANT. Boutons ◀ / ▶, et un menu pour ne parcourir qu'une
+famille (les joueurs le demandaient depuis mai).
 """
 
 from __future__ import annotations
 
+import asyncio
+import io
+
 import discord
 
+from app.bot.rendering.silhouette import FILENAME as SILHOUETTE_FILE
+from app.bot.rendering.silhouette import silhouette_png
 from app.domain.entities.mob_definition import MobDefinition
 from app.domain.services import element_service
 from app.domain.services.gear_passives import get_passive
 from app.domain.services.gear_service import DROP_RATES_PCT, RARITY_LABELS, PASSIVE_MIN_RARITY
+from app.domain.services.mob_ability_service import is_group_elite
 from app.domain.services.power_score_service import PowerScoreService
 from app.shared.emoji_mappings import format_stat_bonuses_short
 from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
+from app.infrastructure.encounters.farm_zone_loader import get_spawn_channel_for_family
 from app.shared.paths import MOBS_ASSETS_DIR
 from app.shared.formatters import format_int
 
@@ -70,6 +79,30 @@ def _gear_field(mob: MobDefinition, items: dict) -> str | None:
     return "\n".join(lines)
 
 
+def _footer(idx: int, total: int, progress: str) -> str:
+    parts = [f"Monstre {idx + 1}/{total}", progress, "trié par puissance croissante"]
+    return " · ".join(part for part in parts if part)
+
+
+def build_unknown_embed(mob: MobDefinition, idx: int, total: int, progress: str = "",
+                        silhouette: bool = False) -> discord.Embed:
+    """Un monstre pas encore vaincu : sa silhouette, où le trouver, rien d'autre
+    (pas même sa famille : « Slime », « Gobelin »… donneraient son nom)."""
+    embed = discord.Embed(
+        title="❔ ???",
+        description=("Tu ne l'as pas encore vaincu. Bats-le dans un combat de zone pour "
+                     "découvrir son nom et sa fiche : stats, butin, équipement."),
+        color=discord.Color.dark_grey(),
+    )
+    embed.add_field(name="🗺️ Où le trouver", value=f"<#{get_spawn_channel_for_family(mob.family)}>", inline=False)
+    if is_group_elite(mob.code):
+        embed.add_field(name="⚠️ Élite", value="On ne le bat qu'en groupe.", inline=False)
+    if silhouette:
+        embed.set_thumbnail(url=f"attachment://{SILHOUETTE_FILE}")
+    embed.set_footer(text=_footer(idx, total, progress))
+    return embed
+
+
 def build_mob_embed(
     mob: MobDefinition,
     idx: int,
@@ -77,6 +110,8 @@ def build_mob_embed(
     power_score: str,
     rank: str,
     items: dict | None = None,
+    kills: int | None = None,
+    progress: str = "",
 ) -> discord.Embed:
     items = items or {}
     embed = discord.Embed(
@@ -84,12 +119,14 @@ def build_mob_embed(
         description=mob.description or "_Pas de description._",
         color=discord.Color.dark_red(),
     )
-    # Puissance bien visible : score + rang
+    # Puissance bien visible : score + rang, et les victoires du joueur.
     embed.add_field(
         name="🏆 Puissance",
         value=f"Score : **{power_score}**\nRang : **{rank}**",
-        inline=False,
+        inline=kills is not None,
     )
+    if kills is not None:
+        embed.add_field(name="⚔️ Tes victoires", value=f"**{format_int(kills)}**", inline=True)
     embed.add_field(
         name="Identité",
         value=f"Famille : **{family_label(mob.family)}**\n{_element_line(mob.element)}",
@@ -131,7 +168,7 @@ def build_mob_embed(
     if mob.image_name:
         embed.set_thumbnail(url=f"attachment://{mob.image_name}")
 
-    embed.set_footer(text=f"Monstre {idx + 1}/{total} · trié par puissance croissante")
+    embed.set_footer(text=_footer(idx, total, progress))
     return embed
 
 
@@ -142,18 +179,31 @@ class BestiaireView(discord.ui.View):
         mobs: list[MobDefinition],
         timeout: float = 300.0,
         items: dict | None = None,
+        kills: dict[str, int] | None = None,
     ) -> None:
         super().__init__(timeout=timeout)
         self.author_id = author_id
         self.all_mobs = mobs
         self.mobs = mobs
         self.items = items or {}  # code → ItemDefinition
+        #: Victoires du joueur par monstre ; None = tout est visible (sans joueur).
+        self.kills = kills
         self.index = 0
         self._pss = PowerScoreService()
         families = list(dict.fromkeys(m.family or "" for m in mobs))
         if len(families) > 1:
             self.add_item(_FamilySelect(self, families))
         self._refresh_buttons()
+
+    def discovered(self, mob: MobDefinition) -> bool:
+        return self.kills is None or self.kills.get(mob.code, 0) > 0
+
+    def progress(self, mobs: list[MobDefinition] | None = None) -> str:
+        """« 📖 14/50 découverts » (rien si tout est visible)."""
+        if self.kills is None:
+            return ""
+        mobs = self.all_mobs if mobs is None else mobs
+        return f"📖 {sum(1 for m in mobs if self.discovered(m))}/{len(mobs)} découverts"
 
     async def show_family(self, interaction: discord.Interaction, family: str) -> None:
         if not await self._check_owner(interaction):
@@ -177,28 +227,35 @@ class BestiaireView(discord.ui.View):
             return False
         return True
 
-    def render_current(self) -> tuple[discord.Embed, discord.File | None]:
-        """Embed du mob courant + son image (thumbnail). File=None si absente."""
+    async def render(self) -> tuple[discord.Embed, discord.File | None]:
+        """Embed du monstre courant + son image (ou sa silhouette) en vignette.
+        File=None sans image."""
         mob = self.mobs[self.index]
+        path = MOBS_ASSETS_DIR / mob.image_name if mob.image_name else None
+        has_image = path is not None and path.exists()
+        if not self.discovered(mob):
+            embed = build_unknown_embed(mob, self.index, len(self.mobs), self.progress(), silhouette=has_image)
+            if not has_image:
+                return embed, None
+            data = await asyncio.to_thread(silhouette_png, path)
+            return embed, discord.File(io.BytesIO(data), filename=SILHOUETTE_FILE)
         score = self._pss.calculate_from_mob(mob)
         embed = build_mob_embed(
             mob, self.index, len(self.mobs),
             power_score=self._pss.format_score(score),
             rank=self._pss.compute_rank(score),
             items=self.items,
+            kills=None if self.kills is None else self.kills.get(mob.code, 0),
+            progress=self.progress(),
         )
-        file = None
-        if mob.image_name:
-            path = MOBS_ASSETS_DIR / mob.image_name
-            if path.exists():
-                file = discord.File(str(path), filename=mob.image_name)
-            else:
-                embed.set_thumbnail(url=None)  # pas d'image → pas de thumbnail cassé
-        return embed, file
+        if not has_image:
+            embed.set_thumbnail(url=None)  # pas d'image → pas de thumbnail cassé
+            return embed, None
+        return embed, discord.File(str(path), filename=mob.image_name)
 
     async def _send_page(self, interaction: discord.Interaction) -> None:
         self._refresh_buttons()
-        embed, file = self.render_current()
+        embed, file = await self.render()
         attachments = [file] if file is not None else []
         await interaction.response.edit_message(
             embed=embed, attachments=attachments, view=self,
@@ -235,8 +292,14 @@ class _FamilySelect(discord.ui.Select):
     """Une famille à la fois, dans l'ordre de puissance (donc des zones)."""
 
     def __init__(self, owner: BestiaireView, families: list[str]) -> None:
-        options = [discord.SelectOption(label="Tous les monstres", value=ALL_FAMILIES, default=True)]
-        options += [discord.SelectOption(label=family_label(family), value=family or "_")
+        def progress(family: str | None) -> str | None:
+            mobs = owner.all_mobs if family is None else [m for m in owner.all_mobs if (m.family or "") == family]
+            return owner.progress(mobs) or None
+
+        options = [discord.SelectOption(label="Tous les monstres", value=ALL_FAMILIES, default=True,
+                                        description=progress(None))]
+        options += [discord.SelectOption(label=family_label(family), value=family or "_",
+                                         description=progress(family))
                     for family in families[:24]]
         super().__init__(placeholder="Choisis une famille…", options=options, row=1)
         self._owner = owner
