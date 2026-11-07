@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.domain.entities.player_inventory_item import PlayerInventoryItem
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel
-from app.infrastructure.db.models.item_model import ItemDefinitionModel
 from app.infrastructure.db.repositories._mappers import map_item_definition
 from app.infrastructure.db.unit_of_work import commit as commit_session
 
