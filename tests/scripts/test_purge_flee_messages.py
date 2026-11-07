@@ -61,6 +61,8 @@ def _run(api, **kwargs):
 
 def test_seul_un_message_de_fuite_du_bot_est_reconnu():
     assert is_flee_message(_message(1), BOT)
+    assert is_flee_message(_message(1, title="🌫️ Banshee a pris la fuite"), BOT)          # fiche du 07/11/2026
+    assert is_flee_message(_message(1, title="🌫️ Loup et Gobelin ont pris la fuite"), BOT)
     assert not is_flee_message(_message(1, author="2"), BOT)
     assert not is_flee_message(_message(1, pinned=True), BOT)
     assert not is_flee_message(_message(1, content="Regardez ça"), BOT)

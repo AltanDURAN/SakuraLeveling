@@ -33,7 +33,7 @@ import aiohttp
 
 API = "https://discord.com/api/v10"
 FLEE_START = "🌫"
-FLEE_END = "s'est échappé"
+FLEE_END = ("s'est échappé", "pris la fuite")      # ancienne fiche, puis celle du 07/11/2026
 FLEE_TEXT = "Personne ne s'est présenté pour combattre."
 FIGHT_BUTTON = "Combattre"
 DEAD_AFTER = timedelta(hours=2)     # un monstre en jeu a la même forme : le temps pour rejoindre monte à 30 min

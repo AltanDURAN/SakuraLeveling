@@ -11,7 +11,12 @@ from app.bot.embeds.battle_summary_embeds import build_rewards_page_embed
 from app.bot.embeds.encounter_combat_log_embeds import (
     format_turn_action,
 )
-from app.bot.embeds.encounter_embeds import build_encounter_embed
+from app.bot.embeds.encounter_embeds import (
+    FLEE_TEXT,
+    FLEE_TITLE_START,
+    build_encounter_embed,
+    build_flee_embed,
+)
 from app.bot.rendering.fight_scene import compose_players_banner
 from app.bot.rendering.render_queue import video_slot
 from app.bot.runtime.active_encounter import ActiveEncounter
@@ -108,6 +113,8 @@ class EncounterCog(commands.Cog):
         self._zone_tasks: dict[int, asyncio.Task] = {}
         # Qui est passé dans chaque zone : {salon: {joueur: (niveau, date)}}.
         self._zone_visitors: dict[int, dict[int, tuple[int, datetime]]] = {}
+        # Fiche de fuite du dernier monstre, retirée à l'apparition du suivant.
+        self._zone_fled: dict[int, list] = {}
 
         self._startup_task: asyncio.Task | None = None
         self.generated_cleanup_loop.start()
@@ -145,9 +152,23 @@ class EncounterCog(commands.Cog):
         return any(getattr(child, "label", None) == "Combattre"
                    for row in message.components for child in getattr(row, "children", ()))
 
+    async def _retire_flee_notices(self, channel_id: int) -> None:
+        """Le monstre suivant est là : la fiche de fuite du précédent s'en va."""
+        for notice in self._zone_fled.pop(channel_id, []):
+            await self._delete_quietly(notice)
+
+    @staticmethod
+    def _is_flee_notice(message, bot_id: int) -> bool:
+        """La fiche de fuite d'un monstre (sans bouton)."""
+        if getattr(message.author, "id", None) != bot_id or message.components or len(message.embeds) != 1:
+            return False
+        embed = message.embeds[0]
+        return (embed.title or "").startswith(FLEE_TITLE_START) and (embed.description or "").startswith(FLEE_TEXT)
+
     async def _clean_leftovers(self) -> None:
         """Au démarrage, retire les monstres et notes laissés par le processus
-        précédent : personne ne peut plus y répondre."""
+        précédent : personne ne peut plus y répondre. La fiche de fuite du
+        dernier monstre reste, jusqu'au monstre suivant."""
         for channel_id in list_zone_channels():
             channel = self.bot.get_channel(channel_id)
             if channel is None:
@@ -156,6 +177,8 @@ class EncounterCog(commands.Cog):
                 async for message in channel.history(limit=RESTART_SCAN_LIMIT):
                     if self._is_leftover(message, self.bot.user.id):
                         await self._delete_quietly(message)
+                    elif self._is_flee_notice(message, self.bot.user.id):
+                        self._zone_fled.setdefault(channel_id, []).append(message)
             except discord.HTTPException:
                 _logger.warning("nettoyage de la zone %s impossible", channel_id, exc_info=True)
 
@@ -688,6 +711,7 @@ class EncounterCog(commands.Cog):
         encounter.message_id = message.id
         encounter.message = message
         self.active_encounters[channel_id] = encounter
+        await self._retire_flee_notices(channel_id)
         try:
             await self._play_encounter(channel, channel_id, encounter, view, message,
                                        background_path, window_s)
@@ -723,9 +747,15 @@ class EncounterCog(commands.Cog):
             return
 
         if not encounter.participants:
-            # Personne n'est venu : le message part avec le monstre. Il en
-            # restait ~240 par jour et par zone, qui noyaient les vrais combats.
-            await self._delete_quietly(message)
+            # Personne n'est venu : le message devient la fiche de fuite, qui
+            # reste jusqu'au monstre suivant (07/11/2026, demande de l'auteur :
+            # on voit toujours ce qu'est devenu le dernier monstre). Gardées
+            # pour toujours, il en restait ~240 par jour et par zone.
+            try:
+                await message.edit(embed=build_flee_embed(encounter), attachments=[], view=None)
+                self._zone_fled.setdefault(channel_id, []).append(message)
+            except discord.HTTPException:
+                await self._delete_quietly(message)     # jamais de boutons morts
             self._reschedule(channel_id, fled=True)
             await asyncio.to_thread(record_now, get_db_session, kinds.FLEE, zone=channel_id,
                                     ref=encounter.mob_state.code, qty=len(encounter.mobs))
@@ -785,6 +815,8 @@ class EncounterCog(commands.Cog):
     async def _delete_quietly(message) -> None:
         try:
             await message.delete()
+        except discord.NotFound:
+            pass                                        # déjà retiré (à la main, par exemple)
         except discord.HTTPException:
             _logger.warning("message du combat non supprimé", exc_info=True)
 

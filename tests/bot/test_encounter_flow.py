@@ -1,6 +1,7 @@
 """Déroulé d'un combat de zone (audit d'ouverture, 07/11/2026) : une zone ne se
-fige jamais, une fuite ne laisse pas de message, le bouton Lancer, une seule
-zone à la fois et un récapitulatif qui tient dans les limites de Discord."""
+fige jamais, la fiche d'une fuite reste jusqu'au monstre suivant, le bouton
+Lancer, une seule zone à la fois et un récapitulatif qui tient dans les limites
+de Discord."""
 
 import asyncio
 from datetime import UTC, datetime, timedelta
@@ -68,6 +69,7 @@ class FakeChannel:
 def cog(monkeypatch):
     c = object.__new__(EncounterCog)
     c.active_encounters, c._zone_next_spawn, c._zone_early_resolve, c._zone_visitors = {}, {}, {}, {}
+    c._zone_fled = {}
     monkeypatch.setattr(encounter_cog, "get_pacing", lambda: Pacing(zones=ZonePacing(
         respawn_min_minutes=1, respawn_max_minutes=1, flee_respawn_minutes=9)))
     c._current_lunar = lambda: None
@@ -99,14 +101,40 @@ def _no_record(monkeypatch):
     monkeypatch.setattr(encounter_cog, "record_now", lambda *a, **k: None)
 
 
-def test_une_fuite_supprime_le_message_et_applique_le_delai_de_fuite(cog, monkeypatch):
+def test_une_fuite_laisse_sa_fiche_jusqu_au_monstre_suivant(cog, monkeypatch):
+    """07/11/2026, demande de l'auteur : on voit toujours ce qu'est devenu le
+    dernier monstre ; la fiche part quand le suivant apparaît."""
+    from app.bot.embeds.encounter_embeds import FLEE_TEXT
+
     _no_record(monkeypatch)
     message = FakeMessage()
     before = datetime.now(UTC)
     asyncio.run(_play(cog, _encounter(), message))
-    assert message.deleted and not message.edits
+    assert not message.deleted
+    edit = message.edits[-1]
+    assert edit["view"] is None and edit["attachments"] == []          # plus de bouton ni d'image
+    assert edit["embed"].title == "🌫️ Slime a pris la fuite" and edit["embed"].description == FLEE_TEXT
+    assert cog._zone_fled[CHANNEL] == [message]
     assert CHANNEL not in cog.active_encounters
     assert cog._zone_next_spawn[CHANNEL] - before > timedelta(minutes=8)
+
+    asyncio.run(cog._retire_flee_notices(CHANNEL))                     # le monstre suivant apparaît
+    assert message.deleted and CHANNEL not in cog._zone_fled
+
+
+def test_une_fiche_de_fuite_refusee_ne_laisse_pas_de_boutons_morts(cog, monkeypatch):
+    _no_record(monkeypatch)
+    message = FakeMessage(fail_edit=True)
+    asyncio.run(_play(cog, _encounter(), message))
+    assert message.deleted and CHANNEL not in cog._zone_fled
+
+
+def test_une_meute_ont_pris_la_fuite():
+    from app.bot.embeds.encounter_embeds import build_flee_embed
+
+    pack = _encounter()
+    pack.pack = [_encounter().mob_state]
+    assert build_flee_embed(pack).title == "🌫️ Slime et Slime ont pris la fuite"
 
 
 def test_un_combat_annule_par_l_admin_retire_son_message(cog):
@@ -361,6 +389,39 @@ def test_seul_un_monstre_ou_une_note_d_arret_sont_retires_au_demarrage():
     assert not EncounterCog._is_leftover(SimpleNamespace(**mine), 1)                 # un récapitulatif
     assert not EncounterCog._is_leftover(
         SimpleNamespace(author=SimpleNamespace(id=2), content="", components=[_button_row("Combattre")]), 1)
+
+
+def test_au_demarrage_la_fiche_de_fuite_reste_jusqu_au_monstre_suivant(cog, monkeypatch):
+    from app.bot.embeds.encounter_embeds import FLEE_TEXT
+
+    bot_user = SimpleNamespace(id=1)
+    flee = SimpleNamespace(author=bot_user, content="", components=[], deleted=False,
+                           embeds=[discord.Embed(title="🌫️ Gobelin a pris la fuite", description=FLEE_TEXT)])
+    monster = SimpleNamespace(author=bot_user, content="", components=[_button_row("Combattre")],
+                              embeds=[], deleted=False)
+    recap = SimpleNamespace(author=bot_user, content="", components=[], deleted=False,
+                            embeds=[discord.Embed(title="🏆 Victoire contre Slime")])
+    for message in (flee, monster, recap):
+        async def delete(m=message):
+            m.deleted = True
+        message.delete = delete
+    assert EncounterCog._is_flee_notice(flee, 1)
+    assert not EncounterCog._is_flee_notice(recap, 1) and not EncounterCog._is_flee_notice(monster, 1)
+    assert not EncounterCog._is_flee_notice(SimpleNamespace(**{**vars(flee), "author": SimpleNamespace(id=2)}), 1)
+
+    class Channel:
+        async def history(self, limit):
+            for message in (monster, flee, recap):
+                yield message
+
+    channel = Channel()
+    cog.bot = SimpleNamespace(get_channel=lambda _: channel, user=bot_user)
+    monkeypatch.setattr(encounter_cog, "list_zone_channels", lambda: [CHANNEL])
+    asyncio.run(cog._clean_leftovers())
+    assert monster.deleted and not flee.deleted and not recap.deleted
+    assert cog._zone_fled[CHANNEL] == [flee]
+    asyncio.run(cog._retire_flee_notices(CHANNEL))
+    assert flee.deleted
 
 
 def test_un_arret_annule_les_combats_a_venir_et_montre_les_combats_joues(cog):
