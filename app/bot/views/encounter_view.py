@@ -1,7 +1,9 @@
 import discord
 
+from app.bot.rules_gate import GatedView
 
-class EncounterView(discord.ui.View):
+
+class EncounterView(GatedView):
     def __init__(self, cog, channel_id: int, timeout: float | None = 300):
         super().__init__(timeout=timeout)
         self.cog = cog

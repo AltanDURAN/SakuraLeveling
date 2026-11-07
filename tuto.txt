@@ -20,6 +20,17 @@ serveur. Les monstres, eux, apparaissent dans les salons de ZONE.
 1.1 — DÉMARRER
 --------------------------------------------------------------------------------
 
+LE RÈGLEMENT, À ACCEPTER UNE FOIS POUR JOUER
+    Le salon du règlement affiche le règlement et un bouton « J'accepte le
+    règlement ». Tant que tu ne l'as pas accepté, chaque commande ou bouton du
+    jeu (Combattre, raid, événements…) te le montre à la place, avec ce même
+    bouton : accepte-le, puis relance ton action. S'il change de façon
+    importante, il te sera proposé à nouveau.
+
+/reglement
+    Affiche le règlement : avec le bouton pour l'accepter si ce n'est pas
+    encore fait, sinon la date à laquelle tu l'as accepté. Marche partout.
+
 /demarrer
     Le guide du débutant. Crée ton personnage s'il n'existe pas encore et te
     donne le rôle Rang F, qui ouvre la première zone de farm.
@@ -955,6 +966,17 @@ Simulation de la saison :
     .venv/bin/python -m scripts.simulate_season [--minutes 30] [--cycle 3]
     Joue un joueur type jour par jour : jours pour atteindre chaque niveau,
     or gagné par source, prix d'une tenue complète à chaque palier.
+
+--------------------------------------------------------------------------------
+2.5 — RÈGLEMENT
+--------------------------------------------------------------------------------
+
+Le texte est dans app/infrastructure/content/rules.json. Au démarrage, le bot
+poste le règlement dans le salon du règlement (RULES_CHANNEL_ID) s'il n'y est
+pas, et le réécrit si le texte a changé. Augmente "version" SEULEMENT pour un
+changement important : tout le monde devra l'accepter à nouveau (une coquille
+corrigée sans changer la version ne redemande rien). Les commandes /admin,
+/boss_admin et /event restent ouvertes sans avoir accepté.
 
 ================================================================================
                            3. NOTES TECHNIQUES

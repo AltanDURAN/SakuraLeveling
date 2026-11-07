@@ -142,6 +142,7 @@ Noms FRANÇAIS (sans accents) — c'est ce que le joueur tape. Liste tirée du c
 
 | Commande | Cog | Rôle |
 |---|---|---|
+| `/reglement` | `rules_cog` | Le règlement, à accepter (bouton) avant d'avoir accès au bot — cf. « Règlement » |
 | `/demarrer`, `/help [commande]`, `/ping` | `onboarding_cog`, `help_cog`, `profile_cog` | Guide débutant (crée le profil + rôle Rang F), aide paginée par catégorie (`CATEGORIES` dans `help_cog`), ping |
 | `/tuto` | `tutorial_cog` | Tutoriel RP de Hana (salon tutoriel + salons de commandes) : suivre ou passer, actions vérifiées, 3 potions 100 % PV à la fin |
 | `/profil [joueur]`, `/or [joueur]`, `/cd [joueur]`, `/affinites [joueur]` | `profile_cog` | Consultatives — `joueur` optionnel (défaut : soi). `/profil` = bannière PNG |
@@ -192,6 +193,7 @@ class MyCog(BetaChannelOnlyMixin, commands.Cog):   # ordre important
 |---|---|---|
 | `profile_cog`, `equipment_cog`, `economy_cog`, `shop_cog`, `skill_cog`, `title_cog`, `trade_cog`, `brocante_cog`, `panoplie_cog`, `bestiaire_cog`, `chad_cog`, `daily_quest_cog`, `weekly_quest_cog`, `onboarding_cog`, `role_trial_cog` | ✅ mixin | Commandes joueur |
 | `leaderboard_cog`, `help_cog` | ❌ | Lecture publique |
+| `rules_cog` | ❌ | `/reglement` marche partout (il faut pouvoir lire le règlement avant de jouer) |
 | `admin_cog` | ❌ | `@admin_only` sur chaque commande |
 | `world_boss_cog`, `event_cog` | ❌ | Groupe dédié (`/boss`, `/event`) + `@admin_only` sur les commandes admin |
 | `encounter_cog` | n/a | Boucle de spawn, aucune slash command |
@@ -488,6 +490,16 @@ Demande de l'auteur : un tutoriel RP pour démarrer l'aventure, dans le salon tu
 - **Bot** : [`tutorial_cog.py`](app/bot/cogs/tutorial_cog.py) — `/tuto` (salon tutoriel ou salons de commandes) et un PANNEAU permanent posté dans le salon tutoriel s'il n'y est pas (`TutorialPanelView`, `custom_id` stable). Premier écran : « Suivre le tutoriel » ou « Passer et commencer l'aventure » (rôle Rang F, rappel que les potions attendent au bout) ; retour : reprendre / depuis le début / commencer. Étapes : Précédent, C'est fait (vérifie, sinon un indice) / Passer l'étape, ou Suivant ; à la fin, « Commencer l'aventure » donne les potions. Tout en éphémère.
 - **Tests** : [`test_tutorial.py`](tests/infrastructure/test_tutorial.py), [`test_tutorial_cog.py`](tests/bot/test_tutorial_cog.py).
 - **Accueil d'un nouveau membre** (`OnboardingCog.on_member_join`, 31/10/2026, demande de l'auteur : « la première chose qu'on voit, il faut que ça donne envie ») : carte illustrée [`welcome_card.py`](app/bot/rendering/welcome_card.py) (ciel `horizon_celeste.png`, avatar cerclé de rose, « BIENVENUE » en Bangers, « Ne aventurier du Grand Cerisier ») + message RP court (`build_join_embed`) et boutons-LIENS vers le salon tutoriel et la 1re zone (`build_join_view`, sans état : marchent en MP et après redémarrage), dans le salon d'accueil (`WELCOME_CHANNEL_ID`) et en MP. Le guide détaillé reste `/demarrer`. Test : [`test_welcome.py`](tests/bot/test_welcome.py).
+
+## Règlement (`/reglement`) — 07/11/2026
+
+Demande de l'auteur : accepter le règlement avant d'avoir accès au bot. Un BOUTON plutôt qu'une réaction (réponse privée immédiate, version gardée en base, on accepte là où l'on est). La présélection native de Discord (« Rules Screening ») demande le mode Communauté, ne vaut que pour les NOUVEAUX membres et ne sait rien du bot : elle pourra s'y ajouter plus tard.
+
+- **Texte** : [`rules.json`](app/infrastructure/content/rules.json) (sections de règles, intro, pied), lu par [`rules_loader`](app/infrastructure/rules/rules_loader.py) ; règles pures dans [`rules_service.py`](app/domain/services/rules_service.py) (`needs_acceptance`, `validate` : limites d'un embed Discord). ⚠️ `version` n'augmente que pour un changement IMPORTANT : tout le monde réaccepte ; une coquille corrigée sans changer la version ne redemande rien.
+- **Acceptation** : table `rules_acceptances` (`discord_id` → version, date ; migration `a6d2f8c4e1b7`), [`use_cases/rules.py`](app/application/use_cases/rules.py) (`accept` atomique et idempotent, événement `rules` du journal). Par COMPTE Discord : on accepte avant d'avoir un personnage, et ni `ResetPlayerUseCase` ni le reset de saison n'y touchent.
+- **Contrôle** ([`rules_gate.py`](app/bot/rules_gate.py)) : `SakuraTree.interaction_check` (toutes les commandes, après `season_launch.allow`) et `GatedView` (vues PUBLIQUES : monstres, raid, événements, panneau du tutoriel, échanges, offrande). Sans acceptation, le règlement s'affiche en privé avec le bouton ; accepté depuis cette réponse, elle devient « relance ta commande ». Restent ouverts : `/reglement`, les autocomplétions, les groupes `admin` / `boss_admin` / `event` (`OPEN_COMMANDS`). Cache des acceptations en mémoire ; une base illisible laisse passer (le jeu ne se ferme pas sur une panne). ⚠️ Toute nouvelle vue publique du jeu hérite de `GatedView`.
+- **Salon** (`settings.rules_channel_id`, défaut 1485372597360267364) : [`rules_cog.py`](app/bot/cogs/rules_cog.py) poste au démarrage le panneau (bandeau `compose_rules_card`, règlement, bouton persistant `rules:accept`) ou le réécrit si le texte a changé ; reconnu à son BOUTON, pas à son texte. Le message d'accueil (`build_join_embed` / `build_join_view`) envoie d'abord vers le règlement.
+- **Tests** : [`test_rules_service.py`](tests/domain/test_rules_service.py), [`test_rules_acceptance.py`](tests/infrastructure/test_rules_acceptance.py), [`test_rules_gate.py`](tests/bot/test_rules_gate.py).
 
 ## Surveillance (site admin › 📊 Surveillance) — 01/11/2026
 

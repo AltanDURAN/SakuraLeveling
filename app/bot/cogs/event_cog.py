@@ -59,6 +59,7 @@ from app.infrastructure.events import event_config_loader as cfg
 from app.shared.emoji_mappings import format_stat_bonuses_short
 from app.shared.formatters import format_int
 from app.shared.paths import EVENTS_ASSETS_DIR
+from app.bot.rules_gate import GatedView
 
 _logger = logging.getLogger(__name__)
 
@@ -85,7 +86,7 @@ def _image_file(image_name: str) -> discord.File | None:
 # --------------------------------------------------------------------------
 # Vue Coffre : premier qui clique gagne
 # --------------------------------------------------------------------------
-class ChestView(discord.ui.View):
+class ChestView(GatedView):
     def __init__(self, cog: "EventCog | None" = None) -> None:
         super().__init__(timeout=None)
         self.cog = cog
@@ -110,7 +111,7 @@ class ChestView(discord.ui.View):
         await cog.handle_chest_open(interaction)
 
 
-class LittleGirlView(discord.ui.View):
+class LittleGirlView(GatedView):
     def __init__(self, cog: "EventCog | None" = None) -> None:
         super().__init__(timeout=None)
         self.cog = cog
@@ -147,7 +148,7 @@ class LittleGirlView(discord.ui.View):
             await cog.handle_girl_choice(interaction, CHOICE_IGNORE)
 
 
-class ForgeView(discord.ui.View):
+class ForgeView(GatedView):
     def __init__(self, cog: "EventCog | None" = None) -> None:
         super().__init__(timeout=None)
         self.cog = cog

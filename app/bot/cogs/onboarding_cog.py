@@ -114,6 +114,7 @@ def build_join_embed(member_mention: str) -> discord.Embed:
     """Le message d'ARRIVÉE (la première chose qu'on voit sur le serveur) :
     court, RP, qui donne envie — le guide complet reste dans `/demarrer`."""
     tuto = f"<#{settings.tutorial_channel_id}>" if settings.tutorial_channel_id else "`/tuto`"
+    rules = f"<#{settings.rules_channel_id}>" if settings.rules_channel_id else "`/reglement`"
     embed = discord.Embed(
         title="🌸 Les pétales annoncent un nouvel aventurier !",
         description=(
@@ -125,8 +126,8 @@ def build_join_embed(member_mention: str) -> discord.Embed:
             "🌳 **Trois voies** : frapper, protéger ou soigner\n"
             "✨ **Huit éléments** et des talents cachés que seule la voyante sait lire\n"
             "👑 **Un boss chaque semaine**, et le vrai ciel de Paris qui réveille les monstres\n\n"
-            f"**Ton aventure commence ici :** Hana t'attend dans {tuto} pour te guider. "
-            "Au bout, **3 Potions du Grand Cerisier** 🧪 t'attendent."
+            f"**Ton aventure commence ici :** accepte le règlement dans {rules}, puis Hana "
+            f"t'attend dans {tuto} pour te guider. Au bout, **3 Potions du Grand Cerisier** 🧪 t'attendent."
         ),
         color=WELCOME_COLOR,
     )
@@ -139,6 +140,10 @@ def build_join_view(guild_id: int) -> discord.ui.View:
     """Boutons-liens (aucun état à garder : ils marchent aussi en MP et après
     un redémarrage)."""
     view = discord.ui.View(timeout=None)
+    if settings.rules_channel_id:
+        view.add_item(discord.ui.Button(
+            label="Lire le règlement", emoji="📜", style=discord.ButtonStyle.link,
+            url=f"https://discord.com/channels/{guild_id}/{settings.rules_channel_id}"))
     if settings.tutorial_channel_id:
         view.add_item(discord.ui.Button(
             label="Commencer le tutoriel", emoji="🌸", style=discord.ButtonStyle.link,

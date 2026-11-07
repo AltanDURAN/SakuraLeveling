@@ -25,6 +25,7 @@ from app.infrastructure.db.repositories.player_repository import PlayerRepositor
 from app.infrastructure.db.session import get_db_session
 from app.infrastructure.encounters.farm_zone_loader import list_zones
 from app.shared.paths import NPCS_ASSETS_DIR
+from app.bot.rules_gate import GatedView
 
 _logger = logging.getLogger("sakura.tutorial")
 _COLOR = discord.Color.from_rgb(240, 150, 190)
@@ -245,7 +246,7 @@ async def open_tutorial(interaction: discord.Interaction) -> None:
         await _send(interaction, intro_embed(name), TutorialView(player_id))
 
 
-class TutorialPanelView(discord.ui.View):
+class TutorialPanelView(GatedView):
     """Panneau permanent du salon du tutoriel (survit aux redémarrages)."""
 
     def __init__(self) -> None:

@@ -9,7 +9,7 @@
 - [ ] Rythme relu dans Monde › Rythme (temps pour rejoindre, délai entre deux combats, heures calmes).
 - [ ] Après tout changement du moteur, de l'arbre ou des niveaux, contenus recalibrés : `scripts/restat_mobs.py`, `scripts/restat_bosses.py`, `scripts/calibrate_rank_trials.py`, `scripts/build_tower.py`.
 - [ ] `tuto.txt`, `/help` et `/demarrer` relus.
-- [ ] Serveur Discord prêt : règlement, annonces, mode Communauté, salons bêta cachés, bot renommé.
+- [ ] Serveur Discord prêt : annonces, mode Communauté, salons bêta cachés, bot renommé. Le règlement est posté par le bot (texte : `app/infrastructure/content/rules.json`, à relire).
 - [ ] Images : monstres, décors, boss, arène, portrait de Hana.
 
 ## J-1 : déploiement et sauvegardes

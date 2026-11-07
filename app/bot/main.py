@@ -56,6 +56,7 @@ _COG_MODULES = [
     "app.bot.cogs.offering_cog",
     "app.bot.cogs.lunar_cog",
     "app.bot.cogs.tutorial_cog",
+    "app.bot.cogs.rules_cog",
     "app.bot.cogs.stats_cog",
     "app.bot.cogs.notification_cog",
     "app.bot.cogs.cosmetic_cog",
@@ -65,10 +66,11 @@ _COG_MODULES = [
 
 class SakuraTree(app_commands.CommandTree):
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        # Pendant le lancement d'une saison, seuls les admins passent.
-        from app.bot import season_launch
+        # Pendant le lancement d'une saison, seuls les admins passent ; puis il
+        # faut avoir accepté le règlement (sinon il est proposé, avec son bouton).
+        from app.bot import rules_gate, season_launch
 
-        return await season_launch.allow(interaction)
+        return await season_launch.allow(interaction) and await rules_gate.allow(interaction)
 
 
 class SakuraBot(commands.Bot):

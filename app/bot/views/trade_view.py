@@ -13,9 +13,10 @@ from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.trade_repository import TradeRepository
 from app.infrastructure.db.session import get_db_session
+from app.bot.rules_gate import GatedView
 
 
-class TradeResponseView(discord.ui.View):
+class TradeResponseView(GatedView):
     """Boutons Accepter / Refuser pour le destinataire ; Annuler pour l'initiator."""
 
     def __init__(

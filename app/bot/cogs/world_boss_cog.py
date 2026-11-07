@@ -73,6 +73,7 @@ from app.infrastructure.world_boss.boss_definition_loader import (
 )
 from app.shared.formatters import format_int
 from discord.utils import escape_markdown
+from app.bot.rules_gate import GatedView
 
 
 def _get_boss_channel(bot: commands.Bot):
@@ -110,7 +111,7 @@ _TRAIT_LABELS = {
 }
 
 
-class WorldBossView(discord.ui.View):
+class WorldBossView(GatedView):
     """View persistante attachée au message du boss (3 boutons).
 
     Persistante = `timeout=None` + chaque bouton a un `custom_id` stable.

@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "updated": "2026-11-07",
+  "title": "📜 Règlement du Grand Cerisier",
+  "intro": "Bienvenue, aventurier ! Ces quelques règles protègent le jeu et ceux qui y jouent. Lis-les, puis clique sur **J'accepte le règlement** : le jeu s'ouvre aussitôt.",
+  "sections": [
+    {
+      "emoji": "🤝",
+      "title": "Respect",
+      "rules": [
+        "Sois courtois avec tout le monde : pas d'insultes, de harcèlement, de menaces ni de propos haineux ou discriminatoires.",
+        "Pas de contenu choquant, violent ou sexuel, y compris dans ton pseudo et ton avatar.",
+        "Un désaccord ? Règle-le calmement, ou en privé avec un membre de l'équipe."
+      ]
+    },
+    {
+      "emoji": "💬",
+      "title": "Salons",
+      "rules": [
+        "Chaque salon a son rôle : le jeu dans les salons de jeu, la discussion dans le général.",
+        "Pas de spam, de flood ni de mentions à répétition.",
+        "Pas de publicité ni de lien douteux sans l'accord de l'équipe.",
+        "Ne partage jamais d'informations personnelles, ni les tiennes ni celles des autres."
+      ]
+    },
+    {
+      "emoji": "⚔️",
+      "title": "Jeu équitable",
+      "rules": [
+        "Un seul compte par personne : les comptes secondaires sont interdits.",
+        "Pas de script, de macro, d'auto-clic ni d'outil qui joue à ta place.",
+        "Un bug ? Signale-le à l'équipe au lieu d'en profiter. Exploiter un bug en connaissance de cause compte comme de la triche.",
+        "L'or, les objets et les comptes ne se vendent pas contre de l'argent réel ni contre quoi que ce soit en dehors du jeu.",
+        "Échange avec `/echange` et la brocante : l'équipe ne rembourse pas un accord passé en dehors du jeu."
+      ]
+    },
+    {
+      "emoji": "🛡️",
+      "title": "Équipe et sanctions",
+      "rules": [
+        "Les décisions de l'équipe s'appliquent. Si tu n'es pas d'accord, parles-en calmement en privé avec un admin.",
+        "Selon la gravité : avertissement, retrait des gains obtenus anormalement, remise à zéro du personnage ou exclusion du serveur.",
+        "Les Conditions d'utilisation et les Règles de la communauté de Discord s'appliquent aussi ici, âge minimum compris."
+      ]
+    },
+    {
+      "emoji": "🔒",
+      "title": "Tes données",
+      "rules": [
+        "Le jeu garde ton identifiant Discord, ta progression et le journal de tes actions en jeu : il en a besoin pour fonctionner, s'équilibrer et repérer la triche.",
+        "Pour les faire effacer, écris à un admin."
+      ]
+    }
+  ],
+  "footer": "Le règlement peut évoluer. Après un changement important, le bot te demandera de l'accepter à nouveau."
+}

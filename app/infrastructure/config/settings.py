@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     # Salon d'accueil des nouveaux membres (on_member_join, nécessite l'intent
     # SERVER MEMBERS). 0 = désactivé.
     welcome_channel_id: int = 0
+    # Salon du règlement : panneau « J'accepte le règlement » posté par le bot
+    # (accepter ouvre le jeu, cf. rules_gate). 0 = pas de panneau.
+    rules_channel_id: int = 1485372597360267364
     # Salon du tutoriel (/tuto + panneau « Commencer le tutoriel »).
     tutorial_channel_id: int = 1485370580881375343
     # Rôle attribué automatiquement à chaque nouveau membre (ex : "Sakura

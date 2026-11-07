@@ -23,6 +23,7 @@ from app.infrastructure.db.repositories.player_repository import PlayerRepositor
 from app.infrastructure.db.session import get_db_session
 from app.infrastructure.offering import offering_loader
 from app.shared.formatters import format_int
+from app.bot.rules_gate import GatedView
 
 _logger = logging.getLogger("sakura.offering")
 _PARIS = ZoneInfo("Europe/Paris")
@@ -114,7 +115,7 @@ class AmountModal(discord.ui.Modal, title="Faire une offrande"):
         await self.offering_view.give(interaction, int(raw))
 
 
-class OfferingView(discord.ui.View):
+class OfferingView(GatedView):
     def __init__(self, cog: "OfferingCog", state: offering.OfferingStatus) -> None:
         super().__init__(timeout=600)
         self.cog = cog
