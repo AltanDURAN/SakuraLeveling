@@ -40,7 +40,6 @@ sudo tee "$SSH_CONF" >/dev/null <<'CONF'
 PasswordAuthentication no
 KbdInteractiveAuthentication no
 PermitRootLogin prohibit-password
-MaxAuthTries 3
 CONF
 sudo sshd -t
 sudo systemctl reload ssh
@@ -66,7 +65,7 @@ sudo systemctl enable --now fail2ban >/dev/null
 sudo systemctl restart fail2ban
 
 echo
-sudo sshd -T | grep -E "^(passwordauthentication|permitrootlogin|maxauthtries) "
+sudo sshd -T | grep -E "^(passwordauthentication|permitrootlogin) "
 sudo ufw status | sed -n 1,8p
 echo
 echo "⚠️ Ouvre une NOUVELLE connexion et lance : bash scripts/harden_vps.sh --confirm"
