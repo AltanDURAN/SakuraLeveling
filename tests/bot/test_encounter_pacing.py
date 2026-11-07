@@ -76,8 +76,10 @@ def test_le_compte_a_rebours_reste_affiche_et_dit_quand_le_combat_part():
     enc = SimpleNamespace(pack=[], mob_names="Loup", ends_at=now + timedelta(minutes=5), participants={},
                           lunar=LunarEvent("lune_de_sang", now, now + timedelta(hours=9),
                                            rule=DEFAULT_RULES["lune_de_sang"]))
+    ts = int(enc.ends_at.timestamp())
     text = EncounterCog._spawn_description(enc)
-    assert "s'enfuit <t:" in text and "🩸 Lune de sang — monstres ×3 plus forts" in text
+    # Le compte à rebours ET l'heure (07/11/2026, demande de l'auteur).
+    assert f"s'enfuit <t:{ts}:R> (à <t:{ts}:t>)." in text and "🩸 Lune de sang — monstres ×3 plus forts" in text
     enc.participants = {1: object(), 2: object()}
-    assert "Le combat se lance <t:" in EncounterCog._spawn_description(enc) and "2 combattants" in \
-        EncounterCog._spawn_description(enc)
+    text = EncounterCog._spawn_description(enc)
+    assert f"Le combat se lance <t:{ts}:R> (à <t:{ts}:t>) — 2 combattants" in text

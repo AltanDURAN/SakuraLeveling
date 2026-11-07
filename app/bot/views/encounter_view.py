@@ -1,6 +1,7 @@
 import discord
 
 from app.bot.rules_gate import GatedView
+from app.shared.formatters import discord_countdown
 
 
 class EncounterView(GatedView):
@@ -65,7 +66,7 @@ class EncounterView(GatedView):
             # (il sera aussi mentionné au lancement).
             encounter = self.cog.active_encounters.get(self.channel_id)
             if encounter is not None:
-                message += (f"\n⏳ Le combat se lance <t:{int(encounter.ends_at.timestamp())}:R>, "
+                message += (f"\n⏳ Le combat se lance {discord_countdown(encounter.ends_at)}, "
                             "ou dès qu'un combattant clique sur **Lancer**. "
                             "Tu seras mentionné pour le suivre en direct.")
         await interaction.followup.send(message, ephemeral=True)

@@ -33,6 +33,7 @@ from app.infrastructure.encounters.farm_zone_loader import (
     list_zone_channels,
     unreleased_families,
 )
+from app.shared.formatters import discord_countdown
 from app.shared.generated_cleanup import purge_old_files
 from app.shared.paths import (
     GENERATED_ENCOUNTERS_DIR,
@@ -471,13 +472,13 @@ class EncounterCog(commands.Cog):
         event = getattr(encounter, "lunar", None)
         if event is not None:
             lines.append(f"{event.label} — {lunar_service.effects_text(event.rule)}")
-        ts = int(encounter.ends_at.timestamp())
+        when = discord_countdown(encounter.ends_at)
         if encounter.participants:
             count = len(encounter.participants)
-            lines.append(f"⚔️ Le combat se lance <t:{ts}:R> — {count} combattant{'s' if count > 1 else ''}. "
+            lines.append(f"⚔️ Le combat se lance {when} — {count} combattant{'s' if count > 1 else ''}. "
                          "Prêts ? Cliquez sur **Lancer**.")
         else:
-            lines.append(f"⏳ Sans combattant, le monstre s'enfuit <t:{ts}:R>.")
+            lines.append(f"⏳ Sans combattant, le monstre s'enfuit {when}.")
         return "\n".join(lines)
 
     def _forced_pending(self, channel_id: int) -> bool:

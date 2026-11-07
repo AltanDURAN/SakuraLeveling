@@ -426,8 +426,8 @@ COMBATS DE GROUPE (automatiques)
     Un monstre apparaît dans chaque salon de zone ; le suivant revient une à
     deux minutes après la fin du combat (le rythme est réglé par les admins,
     les nuits peuvent être calmes). Clique « Combattre » : le compte à
-    rebours sous le monstre dit quand le combat part (2 minutes par défaut,
-    5 pour une élite). Le groupe est prêt ? Un combattant clique « Lancer »
+    rebours sous le monstre dit quand le combat part, avec l'heure (« dans
+    2 minutes (à 21:05) » ; 2 minutes par défaut, 5 pour une élite). Le groupe est prêt ? Un combattant clique « Lancer »
     et le combat part tout de suite (après 30 secondes, pour laisser aux
     autres le temps de venir). Au lancement, le bot MENTIONNE tous les
     combattants : tu peux venir regarder le combat en direct.
