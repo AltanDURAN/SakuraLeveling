@@ -25,6 +25,8 @@ class TitleDefinition:
     #   "weekly_role_trial" : exclusif — gagnant de la semaine aux défis
     #                         (condition_target = dps / tank / soutien / general)
     #   "kills_record"  : exclusif — détenu par le record absolu de kills
+    #   "records_rank"  : exclusif — rang au tableau des records (condition_value
+    #                     = 1 / 2 / 3), redistribué chaque nuit (use_cases/records)
     condition_type: str
     condition_target: str = ""
     condition_value: int = 0
@@ -44,4 +46,6 @@ class TitleDefinition:
     #       +X additif sur crit_chance/crit_damage/dodge.
     #   "gold_xp_bonus_pct"           : value=pct, +X% sur gold/xp gagnés
     #       en combat (s'applique uniquement au détenteur du titre).
+    #   "gold_bonus_pct"              : value=pct, +X% sur l'OR seul gagné en
+    #       combat de zone (titres des records).
     effects: list[dict] = field(default_factory=list)

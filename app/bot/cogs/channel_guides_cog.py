@@ -70,10 +70,10 @@ async def find_guide(channel, bot_id: int):
     return None
 
 
-async def _pin(channel, message, bot_id: int) -> None:
+async def pin_message(channel, message, bot_id: int) -> None:
     """Épingle, puis retire la notice « … a épinglé un message » du bot."""
     try:
-        await message.pin(reason="Guide du salon")
+        await message.pin(reason="Message du salon")
     except discord.HTTPException:
         _logger.warning("guide non épinglé dans %s (droit « Épingler des messages » ?)",
                         getattr(channel, "id", "?"), exc_info=True)
@@ -95,17 +95,17 @@ async def post_or_update_guide(channel, bot_id: int, guide: Guide,
         message = await find_guide(channel, bot_id)
         if message is not None and same_panel(message, guide.embed):
             if not message.pinned:
-                await _pin(channel, message, bot_id)
+                await pin_message(channel, message, bot_id)
             return "inchangé"
         image = await asyncio.to_thread(banner, *guide.banner)
         file = discord.File(io.BytesIO(image), filename=guide.filename)
         if message is None:
             message = await channel.send(embed=guide.embed, file=file)
-            await _pin(channel, message, bot_id)
+            await pin_message(channel, message, bot_id)
             return "posté"
         await message.edit(embed=guide.embed, attachments=[file])
         if not message.pinned:
-            await _pin(channel, message, bot_id)
+            await pin_message(channel, message, bot_id)
         return "mis à jour"
     except discord.HTTPException:
         _logger.warning("guide impossible dans %s", getattr(channel, "id", "?"), exc_info=True)

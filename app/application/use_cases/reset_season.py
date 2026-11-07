@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
 from app.application.use_cases.reset_player import ResetPlayerUseCase
@@ -43,6 +43,7 @@ from app.infrastructure.db.models.offering_model import OfferingContributionMode
 from app.infrastructure.db.models.player_model import PlayerModel
 from app.infrastructure.db.models.progression_model import PlayerProgressionModel
 from app.infrastructure.db.models.resource_model import PlayerResourceModel
+from app.infrastructure.db.models.records_model import RecordBoardModel, RecordHolderModel
 from app.infrastructure.db.models.role_trial_model import RoleTrialScoreModel, RoleTrialWeekModel
 from app.infrastructure.db.models.trade_model import TradeItemModel, TradeModel
 from app.infrastructure.db.models.world_boss_model import (
@@ -67,6 +68,7 @@ GLOBAL_TABLES = (
     TradeModel,
     RoleTrialScoreModel,
     RoleTrialWeekModel,
+    RecordHolderModel,
     OfferingContributionModel,
     OfferingStateModel,
     # Surveillance : les lignes sans joueur (fuites, arrivées, alertes du
@@ -122,6 +124,8 @@ def reset_season(session: Session, queue_role_reset: bool = True, season: int = 
             reset_player.execute(session, player_id)
         for model in GLOBAL_TABLES:
             session.execute(delete(model))
+        # Le tableau des records se réécrit dans les 5 minutes (sans attendre minuit).
+        session.execute(update(RecordBoardModel).values(last_day=None))
         telemetry.record(session, kinds.SEASON_START, ref=f"saison {season}", qty=season)
         if queue_role_reset:
             AdminCommandRepository(session).enqueue("reset_rank_roles")

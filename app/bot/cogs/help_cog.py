@@ -51,7 +51,7 @@ CATEGORIES: list[tuple[str, str, str, set[str]]] = [
      {"marchand", "voyante", "apparence", "payer", "echange", "brocante"}),
     ("🏆", "Classements & utilitaires",
      "Compare-toi aux autres et trouve de l'aide.",
-     {"classement", "help", "ping", "chad", "reglement"}),
+     {"classement", "records", "help", "ping", "chad", "reglement"}),
 ]
 _OTHERS = ("📂", "Autres", "Commandes diverses.", set())
 

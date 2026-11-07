@@ -111,6 +111,17 @@ def _build_progress_label(
             f"toi : **{viewer_total}** (il te manque **{gap}**)"
         )
 
+    if title.condition_type == "records_rank":
+        # Titres des records : rang au nombre de records détenus, chaque nuit.
+        holder_id = excl.current_holder(title.code)
+        if holder_id is None:
+            return "_Personne ne le détient. Les records sont mis à jour chaque nuit (/records)._"
+        if holder_id == pid:
+            return "_Tu le détiens jusqu'à la prochaine mise à jour, à minuit (/records)._"
+        holder_profile = PlayerRepository(session).get_profile_by_player_id(holder_id)
+        holder_name = holder_profile.player.display_name if holder_profile else f"#{holder_id}"
+        return f"Détenteur : **{holder_name}** · bats des records pour le prendre (/records)"
+
     return f"_Condition : {title.condition_type}_"
 
 

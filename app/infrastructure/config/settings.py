@@ -51,6 +51,9 @@ class Settings(BaseSettings):
     # Salon de la tour solo : le bot y épingle le guide de la tour (le guide du
     # world boss va dans `boss_channel_id`). 0 = pas de guide.
     tower_channel_id: int = 1485373559105655095
+    # Salon des records : tableau mis à jour chaque nuit à minuit (heure de
+    # Paris) et records tombés dans la nuit. 0 = pas de salon.
+    records_channel_id: int = 1568684357819048008
     # Rôle attribué automatiquement à chaque nouveau membre (ex : "Sakura
     # Leveling"). 0 = pas d'attribution auto. Le bot doit avoir "Gérer les
     # rôles" et être au-dessus de ce rôle dans la hiérarchie.

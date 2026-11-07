@@ -1226,5 +1226,50 @@
         "value": 200
       }
     ]
+  },
+  {
+    "code": "records_1",
+    "name": "Légende des records",
+    "icon": "🥇",
+    "description": "Détient le plus de records du serveur (salon des records, redistribué chaque nuit à minuit). +5 % d'or gagné en combat de zone.",
+    "condition_type": "records_rank",
+    "condition_value": 1,
+    "exclusive": true,
+    "effects": [
+      {
+        "type": "gold_bonus_pct",
+        "value": 5
+      }
+    ]
+  },
+  {
+    "code": "records_2",
+    "name": "Prodige des records",
+    "icon": "🥈",
+    "description": "Deuxième au nombre de records détenus (redistribué chaque nuit à minuit). +3 % d'or gagné en combat de zone.",
+    "condition_type": "records_rank",
+    "condition_value": 2,
+    "exclusive": true,
+    "effects": [
+      {
+        "type": "gold_bonus_pct",
+        "value": 3
+      }
+    ]
+  },
+  {
+    "code": "records_3",
+    "name": "Étoile montante",
+    "icon": "🥉",
+    "description": "Troisième au nombre de records détenus (redistribué chaque nuit à minuit). +1 % d'or gagné en combat de zone.",
+    "condition_type": "records_rank",
+    "condition_value": 3,
+    "exclusive": true,
+    "effects": [
+      {
+        "type": "gold_bonus_pct",
+        "value": 1
+      }
+    ]
   }
 ]

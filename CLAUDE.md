@@ -165,6 +165,7 @@ Noms FRANÇAIS (sans accents) — c'est ce que le joueur tape. Liste tirée du c
 | `/boss moi`, `/boss historique` | `world_boss_cog` | Raid hebdomadaire (contribution, historique) — le catalogue est `/bestiaire boss` |
 | `/payer`, `/echange`, `/brocante annonces\|mes_annonces\|vendre\|acheter\|annuler` | `economy_cog`, `trade_cog`, `brocante_cog` | Or, échanges, place de marché (5 %) |
 | `/classement <catégorie>`, `/chad` | `leaderboard_cog`, `chad_cog` | Classements, rôle @chad |
+| `/records` | `records_cog` | Records du serveur : détenteurs de la nuit, ton meilleur, ce qu'il te manque — cf. « Records » |
 | (boucle automatique) | `encounter_cog`, `event_cog`, `world_boss_cog`, `admin_bridge_cog` | Spawn d'encounters, événements, raid 21 h, file `admin_commands` |
 | (webapp) `/admin/monitoring/*` | webapp + `monitoring_cog` | **Admin** — Surveillance : stats, suivis, alertes (MP aux admins), rapport hebdo |
 | `/admin give\|set\|remove <ressource>` | `admin_cog` | **Admin** — or, XP, points d'arbre, **points de stats**, PV/mana courants, série daily |
@@ -192,7 +193,7 @@ class MyCog(BetaChannelOnlyMixin, commands.Cog):   # ordre important
 | Cog | Restreint ? | Stratégie |
 |---|---|---|
 | `profile_cog`, `equipment_cog`, `economy_cog`, `shop_cog`, `skill_cog`, `title_cog`, `trade_cog`, `brocante_cog`, `panoplie_cog`, `bestiaire_cog`, `chad_cog`, `daily_quest_cog`, `weekly_quest_cog`, `onboarding_cog`, `role_trial_cog` | ✅ mixin | Commandes joueur |
-| `leaderboard_cog`, `help_cog` | ❌ | Lecture publique |
+| `leaderboard_cog`, `help_cog`, `records_cog` | ❌ | Lecture publique |
 | `rules_cog` | ❌ | `/reglement` marche partout (il faut pouvoir lire le règlement avant de jouer) |
 | `admin_cog` | ❌ | `@admin_only` sur chaque commande |
 | `world_boss_cog`, `event_cog` | ❌ | Groupe dédié (`/boss`, `/event`) + `@admin_only` sur les commandes admin |
@@ -397,7 +398,7 @@ On ne tape plus de code d'objet : on parle à quelqu'un.
 
 ## Système de titres
 
-- **Définitions** : [`titles.json`](app/infrastructure/content/titles.json) — Slayer / Pourfendeur (10% dmg vs famille, 100 kills — une par famille, toutes zones), titres de la SEMAINE des défis (Fléau +2 % dégâts, Bastion −2 % dégâts reçus, Ange gardien +2 % soins, Champion de la semaine +1 % stats — exclusifs, `condition_type: weekly_role_trial`), Farmer Fou (exclusif), Bourreau (500 kills total → +5 crit_damage), Intouchable (100 esquives en encounter → +1 dodge), titres de série /daily : Habitué (7 j, +1 % or/XP), Taverne Addict (30 j, +3 crit_damage — n'offre plus de potion), Pilier (100 j, +2 % or/XP), Chasseur Légendaire (1 titre par monstre, toutes zones : 50 kills, 25 pour une élite de groupe → +5% drop rate sur ce monstre). Test : chaque famille et chaque monstre a son titre (`test_content_integrity`).
+- **Définitions** : [`titles.json`](app/infrastructure/content/titles.json) — Slayer / Pourfendeur (10% dmg vs famille, 100 kills — une par famille, toutes zones), titres de la SEMAINE des défis (Fléau +2 % dégâts, Bastion −2 % dégâts reçus, Ange gardien +2 % soins, Champion de la semaine +1 % stats — exclusifs, `condition_type: weekly_role_trial`), Farmer Fou (exclusif), Bourreau (500 kills total → +5 crit_damage), Intouchable (100 esquives en encounter → +1 dodge), titres de série /daily : Habitué (7 j, +1 % or/XP), Taverne Addict (30 j, +3 crit_damage — n'offre plus de potion), Pilier (100 j, +2 % or/XP), Chasseur Légendaire (1 titre par monstre, toutes zones : 50 kills, 25 pour une élite de groupe → +5% drop rate sur ce monstre), titres des RECORDS (Légende / Prodige / Étoile montante, +5 / +3 / +1 % d'or en combat de zone — exclusifs, redistribués chaque nuit, cf. « Records »). Test : chaque famille et chaque monstre a son titre (`test_content_integrity`).
 - **Modèle DB** : `player_titles(player_id, title_code, is_active, unlocked_at)` — 1:N avec unicité applicative (pas en DB) sur `(title_code, *)` pour les titres exclusifs.
 - **Tracking dodges** : `player_career_stats.dodges_total` (ajouté par migration `9f6c9ab82525_add_dodges_total_to_player_career_stats`). Incrémenté UNIQUEMENT par `PartyCombatService` quand un joueur esquive (encounters de groupe). 
 - **Effets passifs** ([`title_bonus_service.py`](app/domain/services/title_bonus_service.py)) — agrégés dans `TitleBonuses` :
@@ -501,6 +502,19 @@ Demande de l'auteur : silhouette tant que le monstre n'a pas été vaincu, et co
 - **Boss** ([`boss_bestiary_view.py`](app/bot/views/boss_bestiary_view.py)) : découvert = abattu (statut `defeated` ET PV à 0) avec au moins un assaut du joueur (`WorldBossRepository.victories_by_code`, `fights_count > 0`) ; inconnu : silhouette, salon du raid et niveau où il vient ; connu : niveau du raid, « ⚔️ Tes victoires », élément, stats, mécaniques (`mechanics_lines` : phases, ultime, gardes, particularités `TRAIT_LABELS`), butin. Trié par niveau, « 👑 X/5 vaincus ».
 - Le bestiaire du SITE (`/bestiary`, vitrine publique) reste complet.
 - Tests : [`test_bestiaire_view.py`](tests/bot/test_bestiaire_view.py).
+
+## Records du serveur (salon des records, `/records`) — 07/11/2026
+
+Idée de l'auteur, règles validées le 07/11/2026 : des records BATTABLES dans plusieurs domaines, publiés chaque nuit ; trois titres tournants récompensent ceux qui en détiennent le plus.
+
+- **18 records** ([`records_service.py`](app/domain/services/records_service.py), `all_records`) : 6 EXPLOITS en combat de zone (plus gros coup, plus gros coup encaissé SANS TOMBER, plus gros soin donné à un ALLIÉ en PV vraiment rendus, plus de dégâts / encaissé / soins en un combat), 3 DÉFIS (meilleur score DPS / Tank / Soutien), la TOUR (plus haut étage), le WORLD BOSS (le plus de dégâts sur un boss en une semaine), la CHASSE par FAMILLE des zones ouvertes (`open_families` : une de plus à chaque zone ouverte ; par monstre, 43 records noieraient les autres et le plus gros farmeur aurait toujours le titre).
+- **Règles** : battre = STRICTEMENT mieux, à égalité le premier arrivé garde (`holder`) ; exploits hors événements LUNAIRES (une lune de sang triple la force des monstres : record imbattable des mois), élixirs compris ; comptes ADMIN exclus de tous les records (`excluded_players`, `settings.admin_ids`).
+- **Données** : exploits lus dans les événements du moteur (`fight_peaks` : `hit`/`crit` joueur → ennemi, ennemi → joueur hors `reflect` et hors coup suivi d'un `ko` dans la même action, `heal` d'un joueur à un autre) et les contributions, notés par `track_fight` après chaque combat de zone, victoire comme défaite (table `player_records`, savepoint : une panne n'annule jamais les récompenses). Les autres sont lus dans les tables du jeu ([`records_repository.py`](app/infrastructure/db/repositories/records_repository.py)) : `role_trial_scores` (`updated_at` = quand le score a été battu), `player_tower_progress.best_at`, `world_boss_participations`, `player_mob_kills` (dernière victoire). Migration `b7e3c9a5d2f1`.
+- **Nuit** ([`use_cases/records.py`](app/application/use_cases/records.py), `run_night`, atomique et une fois par jour de Paris via `record_board.last_day`) : détenteurs, changements depuis la veille (`record_holders` ; un record CUMULATIF — chasse, boss — n'est une nouvelle que s'il change de main), titres `records_1/2/3` (`ExclusiveTitleService`, `ranking` : le plus de records, à égalité le record le plus récent).
+- **Titres** (`titles.json`, `condition_type: records_rank`) : 🥇 Légende des records +5 %, 🥈 Prodige des records +3 %, 🥉 Étoile montante +1 % — effet `gold_bonus_pct` = OR seul en combat de zone, ADDITIONNÉ au Farmer Fou (`EncounterService.apply_rewards`). ~1 % du revenu total d'un joueur.
+- **Salon** (`settings.records_channel_id`, 1568684357819048008, [`records_cog.py`](app/bot/cogs/records_cog.py)) : boucle de 5 min ; un tableau ÉPINGLÉ réécrit chaque nuit (`build_board_embed`, message gardé dans `record_board.message_id`, reposté s'il a disparu), puis un message « 🌙 Cette nuit dans les records » qui MENTIONNE les seuls nouveaux détenteurs (`allowed_mentions`). Le reset de saison remet `last_day` à vide : le tableau se réécrit dans les 5 minutes.
+- **`/records`** (éphémère, partout) : chaque record, son détenteur de la nuit, ton meilleur EN DIRECT et ce qu'il te manque (« il te manque N », « 🔥 mieux que le record ! », « 👑 c'est toi »).
+- Tests : [`test_records_service.py`](tests/domain/test_records_service.py), [`test_records.py`](tests/infrastructure/test_records.py), [`test_records_display.py`](tests/bot/test_records_display.py).
 
 ## Guides épinglés (world boss, tour solo) — 07/11/2026
 

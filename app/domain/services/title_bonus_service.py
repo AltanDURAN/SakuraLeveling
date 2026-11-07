@@ -42,6 +42,9 @@ class TitleBonuses:
     # Bonus gold/xp en combat (titre Farmer Fou). S'applique uniquement au
     # détenteur, pas aux coéquipiers.
     gold_xp_bonus_pct: int = 0
+    # Bonus d'OR seulement en combat de zone (titres des records : +5 / +3 /
+    # +1 %), additionné aux autres pourcentages d'or.
+    gold_bonus_pct: int = 0
     # Bonus flat additifs sur les stats (Bourreau pour crit_damage,
     # Intouchable pour dodge). Ils s'additionnent au champion_all_stats.
     crit_damage_flat: int = 0
@@ -149,6 +152,8 @@ class TitleBonusService:
                     bonuses.heal_power_pct += value
                 elif etype == "gold_xp_bonus_pct" and value > 0:
                     bonuses.gold_xp_bonus_pct += value
+                elif etype == "gold_bonus_pct" and value > 0:
+                    bonuses.gold_bonus_pct += value
                 elif etype == "crit_damage_flat" and value > 0:
                     bonuses.crit_damage_flat += value
                 elif etype == "dodge_flat" and value > 0:

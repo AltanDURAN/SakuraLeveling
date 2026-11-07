@@ -1,6 +1,7 @@
 from dataclasses import replace
 from datetime import datetime, UTC
 
+from app.application.use_cases.records import track_fight
 from app.application.services.elemental_resolver import elemental_multipliers
 from app.application.services.encounter_participant import EncounterParticipant
 from app.application.services.exclusive_title_service import ExclusiveTitleService
@@ -502,6 +503,7 @@ class EncounterService:
                         )
                     )
                 self._journal_combat(session, encounter, result, rewards)
+                track_fight(session, encounter, result)          # records : exploits
                 session.commit()
 
             return BattleSummary(
@@ -580,9 +582,11 @@ class EncounterService:
                 bonuses: SkillBonuses = skill_tree_service.aggregate_bonuses(allocations)
 
                 # Bonus du titre Farmer Fou (+1% gold/xp). N'affecte que le
-                # détenteur — les coéquipiers n'en bénéficient pas.
+                # détenteur — les coéquipiers n'en bénéficient pas. Titres des
+                # records : de l'or seulement (+5 / +3 / +1 %), additionné.
                 title_bonuses = resolve_title_bonuses(session, participant.player_id)
                 farmer_pct = title_bonuses.gold_xp_bonus_pct / 100.0
+                records_pct = title_bonuses.gold_bonus_pct / 100.0
 
                 # Coup de pouce des débuts (cf. ProgressionService).
                 level_before = self._level_of(player_repository, participant.player_id)
@@ -625,7 +629,7 @@ class EncounterService:
 
                 base_gold = gold_per_player.get(participant.player_id, 0)
                 gold = round(
-                    base_gold * (1 + bonuses.gold_drop_percent) * (1 + farmer_pct)
+                    base_gold * (1 + bonuses.gold_drop_percent) * (1 + farmer_pct + records_pct)
                 )
                 if gold > 0:
                     player_repository.add_gold(participant.player_id, gold, source="combat")
@@ -800,6 +804,7 @@ class EncounterService:
                     )
                 )
             self._journal_combat(session, encounter, result, rewards)
+            track_fight(session, encounter, result)              # records : exploits
 
         return BattleSummary(
             outcome="victory",

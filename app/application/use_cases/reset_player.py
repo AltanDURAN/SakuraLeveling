@@ -39,6 +39,7 @@ from app.infrastructure.db.models.player_cosmetic_model import PlayerCosmeticMod
 from app.infrastructure.db.models.offering_model import OfferingContributionModel
 from app.infrastructure.db.models.tutorial_model import PlayerTutorialModel
 from app.infrastructure.db.models.tower_progress_model import PlayerTowerProgressModel
+from app.infrastructure.db.models.records_model import PlayerRecordModel, RecordHolderModel
 from app.infrastructure.db.models.tower_ticket_model import PlayerTowerTicketModel
 from app.infrastructure.db.unit_of_work import commit
 from app.infrastructure.db.models.monitoring_model import (
@@ -127,6 +128,9 @@ class ResetPlayerUseCase:
             PlayerTowerTicketModel,
             OfferingContributionModel,
             PlayerTutorialModel,
+            # Records : ses exploits, et les records qu'il détenait.
+            PlayerRecordModel,
+            RecordHolderModel,
             # Surveillance : son historique repart à zéro avec lui.
             GameEventModel,
             PlayerDailySnapshotModel,

@@ -842,6 +842,27 @@ WORLD BOSS — /boss moi, /boss historique, /bestiaire boss
     niveau, or, stats, victoires (au total, par monstre, par famille), défis
     de la semaine (DPS, Tank, Soutien, général).
 
+/records
+    LES RECORDS DU SERVEUR. Le salon des records affiche 18 records battables :
+      • exploits en combat de zone : plus gros coup, plus gros coup encaissé
+        sans tomber, plus gros soin donné à un allié, et le plus de dégâts
+        infligés, encaissés et soignés en un seul combat (les nuits de lune
+        ne comptent pas : les monstres y sont plus forts) ;
+      • meilleur score aux défis DPS, Tank et Soutien ;
+      • plus haut étage de la tour solo ;
+      • le plus de dégâts sur un world boss en une semaine ;
+      • la chasse : le plus de monstres tués dans chaque famille.
+    Chaque nuit à minuit (heure de Paris), le tableau est mis à jour : pour
+    battre un record il faut faire STRICTEMENT mieux (à égalité, le premier
+    arrivé le garde). Un message annonce les records tombés et mentionne les
+    nouveaux détenteurs. Les comptes admin n'y entrent pas.
+    Trois TITRES tournent chaque nuit selon le nombre de records détenus (à
+    égalité, celui dont le record est le plus récent passe devant) :
+      🥇 Légende des records +5 % d'or · 🥈 Prodige des records +3 % ·
+      🥉 Étoile montante +1 % (or gagné en combat de zone).
+    /records montre chaque record, son détenteur, ton meilleur score et ce
+    qu'il te manque pour le prendre.
+
 /chad
     Prendre ou retirer le rôle @chad (tagué quand quelqu'un demande de l'aide
     en combat).

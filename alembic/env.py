@@ -46,6 +46,11 @@ from app.infrastructure.db.models.tower_ticket_model import PlayerTowerTicketMod
 from app.infrastructure.db.models.offering_model import OfferingContributionModel, OfferingStateModel  # noqa: F401
 from app.infrastructure.db.models.tutorial_model import PlayerTutorialModel  # noqa: F401
 from app.infrastructure.db.models.rules_model import RulesAcceptanceModel  # noqa: F401
+from app.infrastructure.db.models.records_model import (  # noqa: F401
+    PlayerRecordModel,
+    RecordBoardModel,
+    RecordHolderModel,
+)
 from app.infrastructure.db.models.monitoring_model import (  # noqa: F401
     GameEventModel,
     MonitoringAlertModel,
