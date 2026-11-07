@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     rules_channel_id: int = 1485372597360267364
     # Salon du tutoriel (/tuto + panneau « Commencer le tutoriel »).
     tutorial_channel_id: int = 1485370580881375343
+    # Salon de la tour solo : le bot y épingle le guide de la tour (le guide du
+    # world boss va dans `boss_channel_id`). 0 = pas de guide.
+    tower_channel_id: int = 1485373559105655095
     # Rôle attribué automatiquement à chaque nouveau membre (ex : "Sakura
     # Leveling"). 0 = pas d'attribution auto. Le bot doit avoir "Gérer les
     # rôles" et être au-dessus de ce rôle dans la hiérarchie.

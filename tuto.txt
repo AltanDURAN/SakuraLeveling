@@ -433,7 +433,8 @@ COMBATS DE GROUPE (automatiques)
     combattants : tu peux venir regarder le combat en direct.
     Tes PV sont relus au lancement : la potion bue pendant l'attente et la
     régénération comptent. On ne s'inscrit qu'à un combat à la fois.
-    Sans combattant, le monstre s'enfuit et son message disparaît.
+    Sans combattant, le monstre s'enfuit : son message le dit (« … a pris la
+    fuite ») jusqu'à l'arrivée du monstre suivant.
     Quand le combat part, il se joue en VIDÉO dans le message du monstre
     (elle se lance toute seule), puis laisse la place au récapitulatif en
     trois pages : récompenses, détail et part de victoire de chacun, et le
@@ -649,11 +650,16 @@ LE MANA DES COMPÉTENCES 💧
       chaque jour sans remplissage la fait redescendre de 2 %.
 
 /bestiaire
-    Le catalogue des monstres : stats, élément, récompenses, butin et la
-    pièce d'équipement que porte chacun (avec son passif). Un menu permet de
-    ne parcourir qu'une famille.
+    Le bestiaire À DÉCOUVRIR : un monstre que tu n'as jamais vaincu en combat
+    de zone n'est qu'une silhouette, avec le salon où le trouver. Bats-le une
+    fois : sa fiche s'ouvre (stats, élément, récompenses, butin, la pièce
+    d'équipement qu'il porte avec son passif) et le bestiaire compte tes
+    victoires contre lui. En bas : combien de monstres tu as découverts. Un
+    menu permet de ne parcourir qu'une famille.
 
 WORLD BOSS — /boss moi, /boss historique, /boss list
+    (Le guide complet est épinglé en tête du salon du world boss, comme celui
+    de la tour dans le salon de la tour solo.)
     Un boss apparaît chaque semaine, choisi selon le niveau des joueurs
     actifs (le premier arrive quand quatre d'entre eux ont atteint le niveau
     15). Inscris-toi avec 🤝 avant la fermeture des inscriptions : le combat

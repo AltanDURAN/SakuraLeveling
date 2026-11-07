@@ -201,18 +201,25 @@ RULES_HEIGHT = 420
 @lru_cache(maxsize=1)
 def compose_rules_card() -> bytes:
     """Bandeau du salon du règlement (même ciel que l'accueil, plus bas)."""
+    return compose_channel_card("RÈGLEMENT", "Le code du Grand Cerisier",
+                                "Lis-le, accepte-le, et l'aventure s'ouvre", seed=4242)
+
+
+@lru_cache(maxsize=8)
+def compose_channel_card(title: str, subtitle: str, tagline: str, seed: int = 4242) -> bytes:
+    """Bandeau d'un salon (règlement, guides épinglés) : le ciel de l'accueil,
+    un titre en grand, deux lignes dessous."""
     full = _background()
     top = (HEIGHT - RULES_HEIGHT) // 2
     img = full.crop((0, top, WIDTH, top + RULES_HEIGHT))
-    draw_sakura_petals(img, seed=4242, count=24, size_range=(22, 54),
+    draw_sakura_petals(img, seed=seed, count=24, size_range=(22, 54),
                        palette=[(255, 196, 220, 110), (255, 170, 205, 95), (255, 226, 236, 90)])
     _blossom(img, (WIDTH // 2, 70), 50)
 
     y = 150
-    y += _glow_text(img, WIDTH // 2, y, "RÈGLEMENT", _bangers(116), (*_GOLD, 255), (255, 120, 170), 16) + 22
-    y += _glow_text(img, WIDTH // 2, y, "Le code du Grand Cerisier", try_font(40, bold=True), _TEXT,
-                    (190, 80, 150), 8) + 16
-    _glow_text(img, WIDTH // 2, y, "Lis-le, accepte-le, et l'aventure s'ouvre", try_font(26), _MUTED, (90, 30, 90), 6)
+    y += _glow_text(img, WIDTH // 2, y, title, _bangers(116), (*_GOLD, 255), (255, 120, 170), 16) + 22
+    y += _glow_text(img, WIDTH // 2, y, subtitle, try_font(40, bold=True), _TEXT, (190, 80, 150), 8) + 16
+    _glow_text(img, WIDTH // 2, y, tagline, try_font(26), _MUTED, (90, 30, 90), 6)
 
     out = io.BytesIO()
     img.convert("RGB").save(out, format="PNG", optimize=True)
