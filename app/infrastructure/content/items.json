@@ -423,6 +423,27 @@
     "passive": ""
   },
   {
+    "code": "cor_chasse_s",
+    "name": "Cor de chasse de la Faille",
+    "description": "Fait apparaître l'élite de la Faille du Néant (rang S) dans le salon de la zone, à la suite du combat en cours. Il faut avoir accès à la zone ; 1 h d'attente entre deux cors, une seule élite invoquée par zone à la fois.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "summon_elite",
+      "rank": "S"
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1,
+    "passive": ""
+  },
+  {
     "code": "sceau_souffle_e",
     "name": "Sceau du second souffle (rang E)",
     "description": "Efface l'attente après un échec à l'épreuve du rang E : tu peux la retenter tout de suite.",

@@ -160,6 +160,21 @@ def test_regles_d_equilibrage_et_de_serveur():
     assert [a.ref for a in hard] == ["liche"]               # 3 combats : on ne juge pas
 
 
+def test_la_fin_du_contenu_part_en_mp_et_nomme_la_zone_suivante():
+    """La Faille du Néant s'annonce quand les premiers atteignent le niveau 80
+    (décision de l'auteur, 07/11/2026) : encore faut-il qu'il le sache."""
+    soon = alerts.ServerFacts(now=T0, content_end_days=20, content_end_level=80, content_end_player="Aiko",
+                              next_zone="Faille du Néant")
+    reached = alerts.ServerFacts(now=T0, content_end_reached=1, content_end_level=80, next_zone="Faille du Néant")
+    last = alerts.ServerFacts(now=T0, content_end_reached=1, content_end_level=100)
+    warning, = [a for a in alerts.evaluate([], [], soon) if a.code == "content_end"]
+    arrived, = [a for a in alerts.evaluate([], [], reached) if a.code == "content_end"]
+    done, = [a for a in alerts.evaluate([], [], last) if a.code == "content_end"]
+    assert warning.severity == alerts.SERIOUS and arrived.severity == alerts.SERIOUS
+    assert "à préparer : Faille du Néant" in warning.message and "à annoncer maintenant : Faille du Néant" in arrived.message
+    assert "tour" in done.message
+
+
 def test_chaque_seuil_appartient_a_une_regle():
     codes = {r.code for r in alerts.RULES}
     assert all(t.rule in codes for t in alerts.THRESHOLDS)

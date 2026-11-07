@@ -92,8 +92,9 @@ RULES: tuple[Rule, ...] = (
     Rule("pace", "Rythme de progression", BALANCE, WARNING,
          "Au rythme actuel, les joueurs atteindront la fin du contenu bien plus tôt (ou plus "
          "tard) que prévu par le design."),
-    Rule("content_end", "Fin du contenu proche", BALANCE, WARNING,
-         "Le joueur le plus avancé va bientôt atteindre le dernier niveau des zones ouvertes."),
+    Rule("content_end", "Fin du contenu proche", BALANCE, SERIOUS,
+         "Le joueur le plus avancé va bientôt atteindre le dernier niveau des zones ouvertes : "
+         "la zone suivante s'annonce à ce moment-là."),
     Rule("stuck", "Joueur bloqué", BALANCE, INFO,
          "Actif mais au même niveau depuis plusieurs jours : mur de difficulté ou d'XP."),
     Rule("inflation", "Inflation", ECONOMY, WARNING,
@@ -247,6 +248,7 @@ class ServerFacts:
     content_end_level: int = 0
     content_end_reached: int = 0
     content_end_player: str = ""
+    next_zone: str = ""                 # prochaine zone prévue, à ouvrir après celles-ci
     admin_gold_7d: int = 0
     errors_24h: int = 0
     error_commands: tuple[str, ...] = ()
@@ -387,11 +389,13 @@ def evaluate(players: list[PlayerFacts], mobs: list[MobFacts], server: ServerFac
     if s.content_end_reached:
         add("content_end", "reached", f"{s.content_end_reached} joueur{'s ont' if s.content_end_reached > 1 else ' a'} "
             f"atteint la fin du contenu", f"Niveau {s.content_end_level} ou plus : il n'y a plus de zone au-dessus "
-            f"pour eux. Ouvrir la zone suivante, ou leur donner un objectif (tour, raid, défis).")
+            f"pour eux. " + (f"Zone à annoncer maintenant : {s.next_zone}." if s.next_zone
+                             else "Il leur reste la tour, le raid et les défis."))
     elif s.content_end_days is not None and s.content_end_days <= t["content_end_days"]:
         add("content_end", "top", f"Fin du contenu dans {s.content_end_days} jours",
             f"{s.content_end_player} atteindra le niveau {s.content_end_level}, le dernier des zones ouvertes, "
-            f"à son rythme actuel.")
+            f"à son rythme actuel." + (f" Zone à préparer : {s.next_zone} (docs/lancement_saison1.md)."
+                                       if s.next_zone else ""))
     if s.money_growth_pct is not None and s.money_growth_pct >= t["inflation_pct"]:
         add("inflation", "money", f"Masse d'or : +{s.money_growth_pct:.1f} % par jour".replace(".", ","),
             "Croissance moyenne sur les 7 derniers jours.")

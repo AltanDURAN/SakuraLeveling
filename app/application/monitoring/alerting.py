@@ -19,6 +19,7 @@ from app.application.monitoring.players import build_rows, content_end_level
 from app.domain.services.monitoring import activity, alerts as rules, kinds
 from app.domain.services.monitoring.stats import median, robust_z
 from app.infrastructure.db.models.monitoring_model import MonitoringAlertModel
+from app.infrastructure.encounters.farm_zone_loader import planned_zones
 from app.infrastructure.monitoring.monitoring_loader import MonitoringSettings, get_settings
 
 STAT_LABELS = analysis.STAT_LABELS
@@ -147,6 +148,7 @@ def server_facts(ds: Dataset) -> rules.ServerFacts:
     end = content_end_level(ds)
     facts.content_end_reached = sum(1 for r in rows if r.level >= end and not r.is_admin)
     facts.content_end_level = end
+    facts.next_zone = next((z["name"] for z in planned_zones() if z.get("name")), "")
     ahead = sorted((r for r in rows if r.days_to_content_end and r.level < end and not r.is_admin),
                    key=lambda r: r.days_to_content_end)
     if ahead:
