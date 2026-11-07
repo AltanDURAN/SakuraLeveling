@@ -88,6 +88,9 @@ def build_attempt_embed(outcome: TowerAttempt, material_names: dict[str, str] | 
         desc = f"Victoire en {result.turns} actions. Nouveau record : **étage {outcome.best_floor}**."
         if not outcome.reward.is_empty:
             desc += f"\n**Premier passage** : {_reward_text(outcome.reward, material_names)}"
+        if outcome.new_level:
+            desc += (f"\n🆙 **Niveau {outcome.new_level} !** À placer : {outcome.stat_points} de stats (/stats), "
+                     f"{outcome.skill_points} d'arbre (/arbre).")
         desc += f"\n🎟️ Ticket gardé ({outcome.tickets_left} disponible{'s' if outcome.tickets_left > 1 else ''})."
     else:
         embed = discord.Embed(title=f"🗼 {title} : défaite", color=discord.Color.red())

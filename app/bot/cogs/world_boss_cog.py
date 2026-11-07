@@ -1,7 +1,7 @@
 """Cog du système de world boss.
 
 Système final V1 :
-    • /boss spawn <boss_code>     [admin]   force un spawn d'un boss défini
+    • /boss_admin spawn <boss_code> [admin] force un spawn d'un boss défini
                                             dans boss_definitions.json
     • /boss list                  [public]  liste les boss définis (vue admin
                                             mais pratique pour tous)
@@ -280,7 +280,10 @@ class WorldBossCog(commands.Cog):
         • Tirage 5% / heure (en moyenne ~1 spawn/jour après la fenêtre)
     """
 
-    boss = app_commands.Group(name="boss", description="Gestion des world bosses")
+    boss = app_commands.Group(name="boss", description="Le world boss : ta contribution, l'historique, le catalogue")
+    # À part : Discord masque un groupe entier, pas une sous-commande.
+    boss_admin = app_commands.Group(name="boss_admin", description="World boss (admin)",
+                                    default_permissions=discord.Permissions(administrator=True))
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
@@ -368,7 +371,7 @@ class WorldBossCog(commands.Cog):
     async def _before_auto_spawn(self) -> None:
         await self.bot.wait_until_ready()
 
-    @boss.command(
+    @boss_admin.command(
         name="spawn",
         description="[Admin] Spawn manuel d'un world boss défini",
     )
@@ -465,7 +468,7 @@ class WorldBossCog(commands.Cog):
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @boss.command(
+    @boss_admin.command(
         name="stop",
         description="[Admin] Arrête le world boss en cours (pas de récompenses distribuées)",
     )

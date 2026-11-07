@@ -79,13 +79,11 @@ class ResetPlayerUseCase:
             resources.daily_streak = 0
             resources.updated_at = now
 
-        # Élément actif : remis à NULL → re-résolu sur les nouvelles affinités
-        # (réinitialisées au prochain accès via le backfill paresseux).
+        # Le rang gagné repart de F, comme le rôle Discord.
         from app.infrastructure.db.models.player_model import PlayerModel
         player_model = session.get(PlayerModel, player_id)
         if player_model is not None:
-            player_model.skill_slot_1 = None
-            player_model.skill_slot_2 = None
+            player_model.earned_rank = "F"
             player_model.updated_at = now
 
         # Sets d'équipement : DELETE en cascade via FK on the model side.

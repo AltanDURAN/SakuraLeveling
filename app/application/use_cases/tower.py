@@ -63,6 +63,10 @@ class TowerAttempt:
     ticket_used: bool               # perdu sur une défaite
     tickets_left: int
     best_floor: int
+    #: Niveau atteint si ce passage en a fait gagner (0 sinon).
+    new_level: int = 0
+    stat_points: int = 0
+    skill_points: int = 0
 
 
 def tower_day(now: datetime | None = None) -> date:
@@ -104,16 +108,21 @@ def attempt(session: Session, profile: PlayerProfile, now: datetime | None = Non
         record_event(session, kinds.TOWER, player_id=player_id, qty=floor,
                      data={"won": bool(result.victory), "turns": result.turns})
         reward = ts.TowerReward()
+        progression = None
         if result.victory:
             reward = ts.first_clear_reward(floor, tower_loader.floor_material(floor))
-            _grant(session, player_id, reward)
+            progression = _grant(session, player_id, reward)
         else:
             tickets.consume(player_id, now)
+        leveled = progression is not None and progression.leveled_up
         return TowerAttempt(
             floor=floor, floor_data=floor_data, victory=result.victory, result=result,
             reward=reward, ticket_used=not result.victory,
             tickets_left=tickets.status(player_id, now).available,
             best_floor=repo.best_floor(player_id),
+            new_level=progression.level if leveled else 0,
+            stat_points=progression.stat_points if leveled else 0,
+            skill_points=progression.skill_points if leveled else 0,
         )
 
 
@@ -155,17 +164,18 @@ def _fight(session: Session, profile: PlayerProfile, floor_data: dict) -> PartyB
     )
 
 
-def _grant(session: Session, player_id: int, reward: ts.TowerReward) -> None:
+def _grant(session: Session, player_id: int, reward: ts.TowerReward):
+    """Donne la récompense ; renvoie le nouvel état de progression (ou None)."""
     from app.application.services.encounter_service import EncounterService
 
     players = PlayerRepository(session)
     if reward.gold:
         players.add_gold(player_id, reward.gold, source="tour")
         PlayerCareerStatsRepository(session).add(player_id, gold_earned=reward.gold)
-    if reward.xp:
-        EncounterService._grant_xp(players, player_id, reward.xp)
+    progression = EncounterService._grant_xp(players, player_id, reward.xp) if reward.xp else None
     items, inventory = ItemRepository(session), InventoryRepository(session)
     for code, qty in reward.materials:
         item = items.get_by_code(code)
         if item is not None:
             inventory.add_item(player_id, item.id, qty)
+    return progression

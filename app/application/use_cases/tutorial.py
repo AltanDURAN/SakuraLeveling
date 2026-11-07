@@ -16,6 +16,7 @@ from app.domain.services import tutorial_service as tsvc
 from app.infrastructure.db.models.player_career_stats_model import PlayerCareerStatsModel
 from app.infrastructure.db.models.element_affinity_model import PlayerElementAffinityModel
 from app.infrastructure.db.models.progression_model import PlayerProgressionModel
+from app.infrastructure.db.models.tower_progress_model import PlayerTowerProgressModel
 from app.infrastructure.db.models.tutorial_model import PlayerTutorialModel
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
@@ -106,13 +107,18 @@ def _combat(session: Session, player_id: int) -> bool:
     return career is not None and career.combats_fought > 0
 
 
+def _tour(session: Session, player_id: int) -> bool:
+    row = session.get(PlayerTowerProgressModel, player_id)
+    return row is not None and row.attempts > 0
+
+
 def _voyante(session: Session, player_id: int) -> bool:
     return session.execute(select(PlayerElementAffinityModel.player_id).where(
         PlayerElementAffinityModel.player_id == player_id,
         PlayerElementAffinityModel.revealed.is_(True)).limit(1)).first() is not None
 
 
-CHECKS = {"daily": _daily, "stats": _stats, "combat": _combat, "voyante": _voyante}
+CHECKS = {"daily": _daily, "stats": _stats, "tour": _tour, "combat": _combat, "voyante": _voyante}
 
 
 def check(session: Session, player_id: int, step: tsvc.TutorialStep) -> bool:

@@ -188,6 +188,7 @@ class EncounterService:
             current_hp=regenerated_current_hp,
             max_hp=stats.max_hp,
             stats=stats,
+            level=profile.progression.level,
         )
 
         encounter.participants[user_id] = participant

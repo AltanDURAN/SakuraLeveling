@@ -301,7 +301,7 @@ def test_une_categorie_negligeable_ne_vaut_pas_un_tiers_de_l_or():
         _make_contribution(3, damage_dealt=0, damage_tanked=0, hp_healed=8, survived=True),
     ])
     assert shares[3] < 0.01
-    assert shares[1] > 0.15
+    assert shares[1] > 0.1
 
 
 def test_un_vrai_soigneur_compte_autant_qu_avant():

@@ -19,3 +19,4 @@ class EncounterParticipant:
     current_hp: int
     max_hp: int
     stats: Stats
+    level: int = 1

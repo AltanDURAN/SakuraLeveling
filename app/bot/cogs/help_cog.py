@@ -25,7 +25,7 @@ from app.bot.views.help_view import HelpView
 
 
 # Préfixes de groupes à ne PAS afficher dans le catalogue joueur.
-HIDDEN_GROUP_PREFIXES = ("admin",)
+HIDDEN_GROUP_PREFIXES = ("admin", "boss_admin", "event")
 
 # Catégories thématiques : (emoji, titre, sous-titre, {noms de commandes}).
 # Le matching se fait sur le NOM DE TÊTE de la commande (ex : "boss spawn"

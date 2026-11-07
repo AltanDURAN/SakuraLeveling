@@ -36,9 +36,12 @@ _RARITY_CHOICES = [
 class AdminCog(commands.Cog):
     """Commandes administrateur — réservées aux Discord IDs listés dans `ADMIN_DISCORD_IDS`."""
 
+    # Masquée pour les joueurs dans le menu de Discord (`@admin_only` reste
+    # la vraie protection).
     admin = app_commands.Group(
         name="admin",
         description="Commandes administrateur",
+        default_permissions=discord.Permissions(administrator=True),
     )
 
     def __init__(self, bot: commands.Bot) -> None:

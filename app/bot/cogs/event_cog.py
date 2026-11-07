@@ -192,7 +192,8 @@ class ForgeSelectView(discord.ui.View):
 
 class EventCog(commands.Cog):
     event = app_commands.Group(
-        name="event", description="Événements non-combat (admin)"
+        name="event", description="Événements non-combat (admin)",
+        default_permissions=discord.Permissions(administrator=True),
     )
 
     def __init__(self, bot: commands.Bot) -> None:

@@ -52,6 +52,12 @@ _GENERATED_FILES_TTL_SECONDS = 7 * 24 * 3600
 _ZONE_STAGGER_SECONDS = 25
 #: Un palier de niveau tous les N niveaux est annoncé à tout le serveur.
 LEVEL_MILESTONE = 10
+#: Sous ce niveau, un joueur seul ne bat presque que le monstre le plus faible
+#: de la Clairière. Si la zone n'a vu que des débutants depuis `BEGINNER_MEMORY`,
+#: ce monstre a `BEGINNER_WEIGHT` fois plus de chances d'apparaître, sans meute.
+BEGINNER_LEVEL = 8
+BEGINNER_WEIGHT = 10
+BEGINNER_MEMORY = timedelta(minutes=15)
 
 _logger = logging.getLogger(__name__)
 
@@ -94,6 +100,8 @@ class EncounterCog(commands.Cog):
         self._zone_early_resolve: dict[int, asyncio.Event] = {}
         # Tâche asyncio de chaque zone.
         self._zone_tasks: dict[int, asyncio.Task] = {}
+        # Qui est passé dans chaque zone : {salon: {joueur: (niveau, date)}}.
+        self._zone_visitors: dict[int, dict[int, tuple[int, datetime]]] = {}
 
         self._startup_task: asyncio.Task | None = None
         self.generated_cleanup_loop.start()
@@ -155,7 +163,16 @@ class EncounterCog(commands.Cog):
             display_name=display_name,
             avatar_url=avatar_url,
         )
+        if success:
+            participant = self.active_encounters[channel_id].participants[user_id]
+            self._zone_visitors.setdefault(channel_id, {})[user_id] = (participant.level, datetime.now(UTC))
         return success, message
+
+    def _beginners_only(self, channel_id: int) -> bool:
+        """La zone n'a vu que des débutants ces dernières minutes."""
+        since = datetime.now(UTC) - BEGINNER_MEMORY
+        levels = [level for level, at in self._zone_visitors.get(channel_id, {}).values() if at >= since]
+        return bool(levels) and max(levels) < BEGINNER_LEVEL
 
     async def unregister_participant(
         self,
@@ -204,9 +221,13 @@ class EncounterCog(commands.Cog):
         ]
         if not eligible:
             return None
-        return random.choices(
-            eligible, weights=[m.spawn_weight for m in eligible], k=1
-        )[0]
+        weights = [m.spawn_weight for m in eligible]
+        if self._beginners_only(channel_id):
+            # Le premier combat d'un nouveau venu ne doit pas être une défaite.
+            power = self.power_score_service.calculate_from_mob
+            weakest = min(eligible, key=power)
+            weights = [w * (BEGINNER_WEIGHT if m is weakest else 1) for m, w in zip(eligible, weights)]
+        return random.choices(eligible, weights=weights, k=1)[0]
 
     @staticmethod
     def _pack_chance() -> float:
@@ -441,7 +462,8 @@ class EncounterCog(commands.Cog):
         # Meute : de temps en temps (jamais sur un monstre forcé : cor de
         # chasse, test admin), ou forcée par l'admin.
         companions = []
-        if forced_pack or (forced_code is None and random.random() < self._pack_chance()):
+        if forced_pack or (forced_code is None and not self._beginners_only(channel_id)
+                           and random.random() < self._pack_chance()):
             size = forced_pack or pack_service.pick_pack_size(
                 weights=pacing_service.pack_size_weights(pacing.zones))
             companions = self._pick_companions(channel_id, mob, size)

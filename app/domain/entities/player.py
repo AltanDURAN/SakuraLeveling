@@ -11,7 +11,6 @@ class Player:
     created_at: datetime
     updated_at: datetime
     last_seen_at: datetime
-    skill_slot_1: str | None = None
-    skill_slot_2: str | None = None
+    earned_rank: str = "F"
     combat_tactic: str = "egoiste"
     panoplie_bonus: str = "attack"

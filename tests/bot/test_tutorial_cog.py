@@ -17,7 +17,7 @@ def test_chaque_etape_s_affiche_sans_trou():
         assert f"Étape {i + 1} / {len(tsvc.STEPS)}" in embed.footer.text
         if step.check:
             assert any(f.name == "✅ Vérification" for f in embed.fields)
-    assert zone in tutorial_cog.step_embed(3).description            # le combat pointe la 1re zone
+    assert zone in tutorial_cog.step_embed(4).description            # le combat pointe la 1re zone
 
 
 def test_premier_choix_suivre_ou_passer():

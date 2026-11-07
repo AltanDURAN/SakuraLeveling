@@ -18,6 +18,7 @@ def cog(monkeypatch):
     c = object.__new__(EncounterCog)
     c.active_encounters, c._zone_next_spawn = {}, {}
     c._zone_forced_mob, c._zone_forced_element, c._zone_forced_pack = {}, {}, {}
+    c._zone_visitors = {}
     spawned = []
 
     async def run(channel_id, mob, **kw):

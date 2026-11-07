@@ -475,6 +475,18 @@ def _draw_stat_card(
     )
 
 
+def _fit_classes(level_text: str, class_name: str | None, font, max_width: int) -> str:
+    """« Niveau 30 · Gardien · Clerc +2 » : les classes qui tiennent avant le
+    badge de rang, le reste en nombre."""
+    classes = class_name.split(" · ") if class_name else []
+    for shown in range(len(classes), 0, -1):
+        hidden = len(classes) - shown
+        text = f"{level_text}  ·  {' · '.join(classes[:shown])}" + (f" +{hidden}" if hidden else "")
+        if font.getlength(text) <= max_width:
+            return text
+    return level_text
+
+
 def _draw_rank_badge(
     base: Image.Image,
     origin: tuple[int, int],
@@ -797,8 +809,7 @@ def compose_profile_banner(
 
     # Niveau · Classe — placé sous le nom (qui fait `name_font.size` de haut)
     level_text = f"Niveau {level}"
-    if class_name:
-        level_text += f"  ·  {class_name}"
+    level_text = _fit_classes(level_text, class_name, sub_font, WIDTH - info_x - 220)
     level_y = info_y + name_font.size + 6
     _draw_text_with_shadow(
         draw, (info_x, level_y), level_text, sub_font,

@@ -13,6 +13,7 @@ from discord import app_commands
 from discord.ext import commands
 from datetime import datetime, UTC
 from app.shared.formatters import format_int as _format_int
+from app.bot.rank_roles import current_rank
 from app.bot.embeds.player_embeds import build_player_profile_embed
 from app.domain.services.stats_service import StatsService
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
@@ -102,7 +103,12 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
 
             raw_power_score = resolve_player_power(session, profile.player.id, stats)
             formatted_power_score = power_score_service.format_score(raw_power_score)
-            rank_label = power_score_service.compute_rank(raw_power_score)
+            # Le rang montré est celui GAGNÉ à l'épreuve (celui qui ouvre les
+            # zones), la puissance vient en dessous. Le rôle fait foi ; la base
+            # sert pour un joueur qui n'est plus sur le serveur.
+            shown = target_member or interaction.user
+            rank_label = (current_rank(shown) if isinstance(shown, discord.Member)
+                          else profile.player.earned_rank)
 
             health_state = player_health_repository.get_or_create(
                 player_id=profile.player.id,

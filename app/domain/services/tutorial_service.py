@@ -58,17 +58,29 @@ STEPS: tuple[TutorialStep, ...] = (
         check="stats", hint="Tu as encore un point à placer : `/stats`, puis un des trois boutons.",
     ),
     TutorialStep(
-        "combat", "⚔️", "Le premier sang",
-        "Assez parlé ! Dans la **{zone}**, un monstre apparaît régulièrement. Clique sur "
-        "**⚔️ Combattre** pour rejoindre le groupe : un compte à rebours dit quand le combat part, "
-        "et je te mentionnerai au lancement pour que tu le regardes en direct. Le combat se joue "
-        "tout seul, en vidéo — ta préparation fait tout.",
+        "tour", "🗼", "Le premier sang",
+        "Assez parlé ! Avant les terres sauvages, fais-toi la main à la **Tour** : cent étages à "
+        "gravir seul, à PV pleins, quand tu veux. Le premier est à ta portée, et il rapporte de "
+        "l'or et de l'XP dès ta première victoire.",
+        ("Tape **`/tour`**, puis clique **Tenter l'étage 1**.",
+         "Une victoire garde ton ticket : tu peux enchaîner. Une défaite ne coûte qu'un ticket, "
+         "jamais un étage."),
+        check="tour", hint="Je ne t'ai pas encore vu à la Tour : `/tour`, puis **Tenter l'étage 1**.",
+    ),
+    TutorialStep(
+        "combat", "⚔️", "La chasse en groupe",
+        "Maintenant, dehors ! Dans la **{zone}**, un monstre apparaît régulièrement. Clique sur "
+        "**⚔️ Combattre** pour rejoindre le groupe, puis sur **🚀 Lancer** quand tout le monde est "
+        "prêt (sinon le combat part tout seul à la fin du compte à rebours). Je te mentionnerai "
+        "pour que tu le regardes en direct : il se joue en vidéo, ta préparation fait tout.",
         ("Va dans {zone} et clique **⚔️ Combattre** sur le monstre.",
-         "Seul, c'est possible ; à plusieurs, c'est plus sûr : l'XP est entière pour chacun, l'or "
-         "est partagé selon ta part du combat.",
+         "Si je te préviens qu'il est **très dangereux**, clique **Quitter** et attends le "
+         "suivant : les slimes sont à ta portée, les gobelins plus tard.",
+         "Jusqu'au niveau 10, ton XP de combat est **doublée**. À plusieurs, chacun touche toute "
+         "l'XP ; l'or est partagé selon ta part du combat.",
          "Tes PV ne remontent qu'ENTRE les combats (régénération), pas pendant. À 0 PV, on ne "
          "peut pas rejoindre : attends ou bois une potion (`/utiliser`)."),
-        check="combat", hint="Je n'ai pas encore vu ton premier combat. Le monstre t'attend dans {zone} !",
+        check="combat", hint="Je n'ai pas encore vu ton premier combat de zone. Le monstre t'attend dans {zone} !",
     ),
     TutorialStep(
         "butin", "🎒", "Le butin du chasseur",
@@ -104,7 +116,7 @@ STEPS: tuple[TutorialStep, ...] = (
         "quetes", "📋", "Contrats et défis",
         "La guilde affiche chaque jour des **quêtes** taillées pour toi : trois par jour, trois par "
         "semaine. Il y a aussi les **défis** de rôle — DPS, Tank, Soutien — où tout le serveur se "
-        "mesure, et la **Tour**, cent étages à gravir seul.",
+        "mesure, et ton record à la **Tour** rapporte une récompense chaque jour.",
         ("Tes quêtes : **`/quetes`** et **`/quetes_hebdo`**.",
          "Les défis du jour : **`/defi`** · la tour : **`/tour`** · les classements : **`/classement`**."),
     ),

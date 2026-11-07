@@ -67,7 +67,7 @@ class FakeChannel:
 @pytest.fixture
 def cog(monkeypatch):
     c = object.__new__(EncounterCog)
-    c.active_encounters, c._zone_next_spawn, c._zone_early_resolve = {}, {}, {}
+    c.active_encounters, c._zone_next_spawn, c._zone_early_resolve, c._zone_visitors = {}, {}, {}, {}
     monkeypatch.setattr(encounter_cog, "get_pacing", lambda: Pacing(zones=ZonePacing(
         respawn_min_minutes=1, respawn_max_minutes=1, flee_respawn_minutes=9)))
     c._current_lunar = lambda: None
@@ -203,7 +203,11 @@ def test_le_bouton_lancer_laisse_aux_autres_le_temps_de_venir(cog):
 def test_une_seule_zone_a_la_fois(cog):
     cog.active_encounters[1] = _encounter([9])
     cog.active_encounters[2] = _encounter()
-    cog.encounter_service = SimpleNamespace(register_participant=lambda **kw: (True, "ok"))
+    def register(**kwargs):
+        kwargs["encounter"].participants[kwargs["user_id"]] = SimpleNamespace(level=4)
+        return True, "ok"
+
+    cog.encounter_service = SimpleNamespace(register_participant=register)
     ok, message = asyncio.run(cog.register_participant(2, 9, "J", ""))
     assert not ok and "<#1>" in message
     cog.active_encounters[1].resolved = True           # sa vidéo tourne : il peut repartir
@@ -277,3 +281,67 @@ def test_le_titre_du_recapitulatif_s_accorde_avec_une_meute():
     summary = BattleSummary(outcome="defeat", mob_name="Loup et Ours", mob_image_name="", mob_family="", turns=9,
                             mob_count=2)
     assert build_rewards_page_embed(summary).title == "💀 Défaite contre Loup et Ours"
+
+
+def _zone_cog(monkeypatch, mobs):
+    from app.domain.services.power_score_service import PowerScoreService
+
+    c = object.__new__(EncounterCog)
+    c._zone_visitors = {}
+    c.power_score_service = PowerScoreService()
+
+    class Repo:
+        def __init__(self, session):
+            pass
+
+        def list_all(self):
+            return mobs
+
+    class Session:
+        def __enter__(self):
+            return None
+
+        def __exit__(self, *exc):
+            return False
+
+    monkeypatch.setattr(encounter_cog, "MobRepository", Repo)
+    monkeypatch.setattr(encounter_cog, "get_db_session", Session)
+    monkeypatch.setattr(encounter_cog, "get_spawn_channel_for_family", lambda family: CHANNEL)
+    monkeypatch.setattr(encounter_cog, "unreleased_families", set)
+    return c
+
+
+def _mob(code, attack, weight):
+    return SimpleNamespace(code=code, family="f", spawn_weight=weight, max_hp=100, attack=attack, defense=5,
+                           speed=5, crit_chance=0, crit_damage=100, dodge=0, hp_regeneration=0)
+
+
+def _draw(cog, n=2000):
+    import random
+    from collections import Counter
+
+    random.seed(3)
+    return Counter(cog._pick_mob_for_zone(CHANNEL, None).code for _ in range(n))
+
+
+def test_une_zone_de_debutants_voit_surtout_le_monstre_le_plus_faible(monkeypatch):
+    mobs = [_mob("slime", 8, 40), _mob("gobelin", 10, 40), _mob("chaman", 26, 60), _mob("runique", 42, 80)]
+    cog = _zone_cog(monkeypatch, mobs)
+    assert _draw(cog)["slime"] < 500                      # personne de connu : tirage normal
+    cog._zone_visitors[CHANNEL] = {1: (3, datetime.now(UTC))}
+    assert cog._beginners_only(CHANNEL)
+    assert _draw(cog)["slime"] > 1200
+
+
+def test_un_ancien_dans_la_zone_rend_le_tirage_normal(monkeypatch):
+    mobs = [_mob("slime", 8, 40), _mob("gobelin", 10, 40)]
+    cog = _zone_cog(monkeypatch, mobs)
+    now = datetime.now(UTC)
+    cog._zone_visitors[CHANNEL] = {1: (3, now), 2: (30, now)}
+    assert not cog._beginners_only(CHANNEL)
+
+
+def test_le_passage_d_un_debutant_s_oublie(monkeypatch):
+    cog = _zone_cog(monkeypatch, [_mob("slime", 8, 40)])
+    cog._zone_visitors[CHANNEL] = {1: (3, datetime.now(UTC) - timedelta(minutes=30))}
+    assert not cog._beginners_only(CHANNEL)

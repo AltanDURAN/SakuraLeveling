@@ -7,6 +7,7 @@ from app.application.use_cases import tutorial
 from app.domain.services import tutorial_service as tsvc
 from app.infrastructure.db.models.player_career_stats_model import PlayerCareerStatsModel
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
+from app.infrastructure.db.repositories.tower_repository import TowerRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from tests.infrastructure.test_encounter_service import (  # noqa: F401  (fixtures)
     _create_player,
@@ -55,6 +56,10 @@ def test_les_actions_sont_verifiees(session):
     now = datetime.now(UTC)
     CooldownRepository(session).upsert(pid, "daily", now, now + timedelta(hours=20))
     assert tutorial.check(session, pid, step["daily"])
+    assert not tutorial.check(session, pid, step["tour"])
+    TowerRepository(session).record_attempt(pid, 1, False)
+    session.commit()
+    assert tutorial.check(session, pid, step["tour"])               # même un échec compte
     assert not tutorial.check(session, pid, step["combat"])
     session.get(PlayerCareerStatsModel, pid).combats_fought = 1
     session.commit()
