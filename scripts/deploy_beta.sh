@@ -15,9 +15,9 @@ PROJECT_DIR="/home/ubuntu/SakuraLeveling"
 SERVICE_NAME="sakura-bot"
 PYTHON_BIN="python3.12"
 BOSS_CHANNEL_ID="1485330054182604810"  # salon world-boss
-# Salons où les commandes joueur sont autorisées : général + zone de farm de
-# base (clairière-sinistre) + world-boss.
-COMMAND_CHANNELS="1485329709201096796,1485329739605348484,1485330054182604810"
+# Salons où les commandes joueur sont autorisées : général, world-boss,
+# tour-solo, tutoriel et les six zones ouvertes.
+COMMAND_CHANNELS="1485329709201096796,1485330054182604810,1485373559105655095,1485370580881375343,1485329739605348484,1525863083321462914,1485329905737797652,1485329799994933461,1485329948649717932,1564534686762672178"
 DISCORD_GUILD_ID="1485307656364101785"  # serveur Sakura Leveling (gestion rôles admin web)
 WELCOME_CHANNEL_ID="1485370050956362029"       # salon bienvenue (accueil nouveaux membres)
 DEFAULT_MEMBER_ROLE_ID="1485382885560029215"   # rôle "Sakura Leveling" auto

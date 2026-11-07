@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Script de déploiement à exécuter SUR le VPS (pas en local).
-# Usage : ssh ubuntu@151.80.233.231, puis :
-#   cd /home/ubuntu/SakuraLeveling && bash scripts/deploy_vps.sh
+# Usage : ssh sakura-vps "cd /home/ubuntu/SakuraLeveling && bash scripts/deploy_vps.sh"
 
 set -euo pipefail
 
@@ -57,6 +56,9 @@ echo "==> 4. Seed contenu (idempotent)"
 .venv/bin/python -m app.infrastructure.db.seeders.seed_content
 
 echo "==> 5. Restart services"
+# Les unités systemd suivent le dépôt (réglages mémoire, adresse d'écoute).
+sudo install -m 644 deploy/sakura-bot.service deploy/sakura-webapp.service /etc/systemd/system/
+sudo systemctl daemon-reload
 sudo systemctl restart sakura-bot
 # Note historique : on filtrait via `systemctl list-unit-files | grep`
 # mais la sortie de systemctl est tronquée selon la largeur du tty

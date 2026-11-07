@@ -81,6 +81,10 @@ def _try_font(size: int, bold: bool = False):
     return try_font(size, bold)
 
 
+#: Un nom sur deux lignes remonte d'autant, sur le bas de la vignette (souvent vide).
+NAME_TWO_LINES_LIFT = 12
+
+
 def _gradient_bg(width: int, height: int) -> Image.Image:
     return gradient_background(width, height, _BG_TOP, _BG_BOTTOM)
 
@@ -210,6 +214,23 @@ def _format_stat_bonuses_short(stat_bonuses: dict | None) -> str:
     return format_stat_bonuses_short(stat_bonuses)
 
 
+def _name_lines(draw, name: str, max_width: int) -> tuple[list[str], object]:
+    """Le nom de la pièce sur une ligne, ou sur deux en plus petit. Il n'est
+    coupé qu'en dernier recours : « Couronne du… » ne dit rien au joueur."""
+    font = _try_font(24, bold=True)
+    if draw.textlength(name, font=font) <= max_width:
+        return [name], font
+    font = _try_font(19, bold=True)
+    words = name.split()
+    for cut in range(len(words) - 1, 0, -1):
+        first, second = " ".join(words[:cut]), " ".join(words[cut:])
+        if draw.textlength(first, font=font) <= max_width and draw.textlength(second, font=font) <= max_width:
+            return [first, second], font
+    while name and draw.textlength(name + "…", font=font) > max_width:
+        name = name[:-1]
+    return [name + "…"], font
+
+
 def _draw_slot_card(
     base: Image.Image,
     origin: tuple[int, int],
@@ -328,23 +349,18 @@ def _draw_slot_card(
     # Nom de l'item + bonus de stats sous l'image
     if equipment is not None:
         item = equipment.item_definition
-        name_font = _try_font(24, bold=True)
         bonuses_font = _try_font(23, bold=True)
         draw = ImageDraw.Draw(base)
 
         name_y = img_y + img_size + 12
-        # Tronque légèrement plus court pour fitter avec la fonte 24
-        # Troncature à la largeur RÉELLE : compter les caractères ne dit rien
-        # de la place occupée (les cartes font 230 px en grille 4 colonnes).
-        name = item.name
-        max_name_w = w - 32
-        if draw.textlength(name, font=name_font) > max_name_w:
-            while name and draw.textlength(name + "…", font=name_font) > max_name_w:
-                name = name[:-1]
-            name = (name + "…") if name else "…"
-        _draw_text_with_shadow(
-            draw, (x + 16, name_y), name, name_font,
-        )
+        # Largeur RÉELLE : compter les caractères ne dit rien de la place
+        # occupée (les cartes font 230 px en grille 4 colonnes).
+        lines_of_name, name_font = _name_lines(draw, item.name, w - 32)
+        for index, line in enumerate(lines_of_name):
+            top = name_y - (NAME_TWO_LINES_LIFT if len(lines_of_name) > 1 else 0)
+            _draw_text_with_shadow(
+                draw, (x + 16, top + index * (name_font.size + 3)), line, name_font,
+            )
 
         # Bonus stats : multi-lignes pour ne RIEN tronquer (max 2 lignes
         # pour rester dans la card). On distribue les parts sur les

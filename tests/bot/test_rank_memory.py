@@ -77,3 +77,15 @@ def test_les_classes_qui_ne_tiennent_pas_deviennent_un_nombre():
     short = _fit_classes("Niveau 30", classes, font, 300)
     assert short.startswith("Niveau 30  ·  Guerrier") and short.rstrip("0123456789").endswith("+")
     assert _fit_classes("Niveau 30", None, font, 300) == "Niveau 30"
+
+
+def test_un_nom_de_piece_long_tient_sur_deux_lignes():
+    from PIL import Image, ImageDraw
+
+    from app.bot.rendering.equipment_image import _name_lines
+
+    draw = ImageDraw.Draw(Image.new("RGB", (10, 10)))
+    assert _name_lines(draw, "Auréole brisée", 198)[0] == ["Auréole brisée"]
+    lines, font = _name_lines(draw, "Sceau du gardien draconique", 198)
+    assert " ".join(lines) == "Sceau du gardien draconique" and len(lines) == 2
+    assert all(draw.textlength(line, font=font) <= 198 for line in lines)
