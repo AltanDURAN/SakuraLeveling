@@ -1,12 +1,12 @@
 """Embeds pour /trade : récapitulatif d'une proposition d'échange."""
 
-from datetime import UTC
+from datetime import UTC, datetime
 
 import discord
 
 from app.domain.entities.trade import Trade, TradeSide, TradeStatus
 from app.domain.services.gear_service import gear_label
-from app.shared.formatters import format_int
+from app.shared.formatters import discord_countdown, format_int
 
 
 _STATUS_LABELS = {
@@ -63,14 +63,19 @@ def build_trade_embed(trade: Trade) -> discord.Embed:
         inline=True,
     )
 
+    # Discord n'affiche pas les <t:…> d'un pied de page (on y lisait
+    # « Expire <t:1793747027:R> ») : l'échéance va dans la description, la
+    # date de mise à jour dans l'horodatage de l'embed.
     if trade.status == TradeStatus.PENDING and trade.expires_at is not None:
-        expires_at = trade.expires_at
-        if expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=UTC)
-        ts = int(expires_at.timestamp())
-        embed.set_footer(text=f"Expire <t:{ts}:R>")
-    else:
-        ts = int(trade.updated_at.timestamp()) if trade.updated_at else 0
-        embed.set_footer(text=f"Mis à jour <t:{ts}:R>")
+        embed.description = f"⏳ Expire {discord_countdown(_utc(trade.expires_at))}."
+    elif trade.updated_at is not None:
+        embed.set_footer(text="Mis à jour")
+        embed.timestamp = _utc(trade.updated_at)
 
     return embed
+
+
+def _utc(moment: datetime) -> datetime:
+    """La base rend des dates SANS fuseau, en UTC : sans ce rappel, Python
+    les lirait à l'heure du serveur (une heure d'écart à Paris)."""
+    return moment.replace(tzinfo=UTC) if moment.tzinfo is None else moment
