@@ -13,6 +13,7 @@ PURGE = importlib.util.module_from_spec(_spec)
 sys.modules["purge_flee_messages"] = PURGE
 _spec.loader.exec_module(PURGE)
 is_flee_message, purge_zone, split_by_age = PURGE.is_flee_message, PURGE.purge_zone, PURGE.split_by_age
+is_dead_monster = PURGE.is_dead_monster
 
 BOT = "1"
 ZONE = 7
@@ -76,6 +77,35 @@ def test_un_monstre_mort_laisse_par_un_redemarrage_n_est_pas_une_fuite():
     leftover = _message(1, title="", text="⏳ Sans combattant, le monstre s'enfuit <t:1793747027:R>.",
                         components=[{"type": 1}])
     assert not is_flee_message(leftover, BOT)
+
+
+def _monster(message_id, *, hours=30, **extra):
+    buttons = [{"type": 1, "components": [{"type": 2, "label": "Combattre"},
+                                          {"type": 2, "label": "Demander de l'aide"}]}]
+    return {**_message(message_id, days=hours / 24, title="", components=buttons,
+                       text="⏳ Sans combattant, le monstre s'enfuit <t:1793747027:R>."), **extra}
+
+
+def test_un_monstre_mort_est_reconnu_mais_pas_celui_en_jeu():
+    assert is_dead_monster(_monster(1), BOT)
+    assert is_dead_monster(_monster(1, hours=3), BOT)
+    assert not is_dead_monster(_monster(1, hours=1), BOT)       # peut être le monstre en jeu
+    assert not is_dead_monster(_monster(1, author={"id": "2"}), BOT)
+    assert not is_dead_monster(_monster(1, pinned=True), BOT)
+
+
+def test_un_recapitulatif_de_combat_n_est_pas_un_monstre_mort():
+    pages = [{"type": 1, "components": [{"type": 2, "label": "Récompenses"}, {"type": 2, "label": "Détails"}]}]
+    assert not is_dead_monster(_message(1, title="🏆 Victoire", components=pages), BOT)
+    assert not is_dead_monster(_message(1), BOT)                # une fuite n'a pas de bouton
+
+
+def test_chaque_mode_ne_retire_que_ce_qu_il_vise():
+    flee, monster, fight = _message(1), _monster(2), _message(3, title="🏆 Victoire contre Slime")
+    api = FakeApi([flee, monster, fight])
+    report = _run(api, matches=is_dead_monster)
+    assert report.removed == 1
+    assert sorted(m["id"] for m in api.messages) == ["1", "3"]
 
 
 def test_les_messages_recents_partent_par_lot_les_vieux_un_par_un():

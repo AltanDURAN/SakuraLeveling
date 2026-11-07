@@ -9,6 +9,9 @@ d'autre (`is_flee_message`).
     .venv/bin/python -m scripts.purge_flee_messages --confirm --limit 5   # essai : 5 par zone
     .venv/bin/python -m scripts.purge_flee_messages --confirm             # tout
 
+`--dead-monsters` vise à la place les monstres laissés par d'anciens redémarrages,
+dont le bouton Combattre ne répond plus (`is_dead_monster`).
+
 Il passe par l'API REST avec le jeton du bot : pas de seconde connexion, le bot
 continue de tourner. Les zones avancent ensemble. Les messages de moins de
 14 jours partent par lots de 100 ; Discord n'accepte les plus vieux qu'un par
@@ -21,6 +24,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import signal
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -31,6 +35,8 @@ API = "https://discord.com/api/v10"
 FLEE_START = "🌫"
 FLEE_END = "s'est échappé"
 FLEE_TEXT = "Personne ne s'est présenté pour combattre."
+FIGHT_BUTTON = "Combattre"
+DEAD_AFTER = timedelta(hours=2)     # un monstre en jeu a la même forme : le temps pour rejoindre monte à 30 min
 PAGE_SIZE = 100
 BULK_MAX_AGE = timedelta(days=13, hours=20)     # Discord refuse au-delà de 14 jours
 BULK_MIN = 2                                    # et en dessous de 2 messages
@@ -52,6 +58,18 @@ def is_flee_message(message: dict, bot_id: str) -> bool:
     title = embeds[0].get("title") or ""
     text = embeds[0].get("description") or ""
     return title.startswith(FLEE_START) and title.endswith(FLEE_END) and text.startswith(FLEE_TEXT)
+
+
+def is_dead_monster(message: dict, bot_id: str, now: datetime | None = None) -> bool:
+    """Un monstre d'un ancien processus : message du bot avec le bouton
+    Combattre (la règle d'`EncounterCog._is_leftover`), assez vieux pour que ce
+    ne soit pas le monstre en jeu dans la zone."""
+    if message.get("author", {}).get("id") != bot_id or message.get("pinned"):
+        return False
+    labels = {button.get("label") for row in message.get("components") or []
+              for button in row.get("components") or []}
+    age = (now or datetime.now(UTC)) - datetime.fromisoformat(message["timestamp"])
+    return FIGHT_BUTTON in labels and age > DEAD_AFTER
 
 
 def split_by_age(messages: list[dict], now: datetime) -> tuple[list[str], list[str]]:
@@ -113,7 +131,7 @@ class ZoneReport:
     error: str = ""
 
     def line(self) -> str:
-        text = f"{self.name} : {self.seen} messages lus, {self.found} fuites, {self.removed} retirées"
+        text = f"{self.name} : {self.seen} messages lus, {self.found} visés, {self.removed} retirés"
         return f"{text} — {self.error}" if self.error else text
 
 
@@ -137,7 +155,8 @@ async def _remove(api, channel_id: int, messages: list[dict], report: ZoneReport
 
 
 async def purge_zone(api, name: str, channel_id: int, bot_id: str, *, confirm: bool, pause: float = 1.0,
-                     limit: int = 0, stop: asyncio.Event | None = None) -> ZoneReport:
+                     limit: int = 0, stop: asyncio.Event | None = None,
+                     matches: Callable[[dict, str], bool] = is_flee_message) -> ZoneReport:
     """Parcourt le salon du plus récent au plus ancien : ce qui peut partir par
     lots passe d'abord, avant d'avoir 14 jours."""
     stop = stop or asyncio.Event()
@@ -149,7 +168,7 @@ async def purge_zone(api, name: str, channel_id: int, bot_id: str, *, confirm: b
             break
         before = page[-1]["id"]
         report.seen += len(page)
-        targets = [m for m in page if is_flee_message(m, bot_id)]
+        targets = [m for m in page if matches(m, bot_id)]
         report.found += len(targets)
         if confirm:
             await _remove(api, channel_id, targets[:limit - report.removed] if limit else targets, report,
@@ -175,19 +194,21 @@ async def run(args: argparse.Namespace) -> None:
         _, me = await api.call("GET", "/users/@me")
         zones = [z for z in list_zones() if z.get("channel_id")]
         print(("Suppression" if args.confirm else "Aperçu, rien n'est supprimé") + f" : {len(zones)} zones", flush=True)
+        matches = is_dead_monster if args.dead_monsters else is_flee_message
         reports = await asyncio.gather(*(
             purge_zone(api, z["name"], int(z["channel_id"]), me["id"], confirm=args.confirm, pause=args.pause,
-                       limit=args.limit, stop=stop)
+                       limit=args.limit, stop=stop, matches=matches)
             for z in zones))
     for report in reports:
         print(report.line(), flush=True)
-    print(f"Total : {sum(r.found for r in reports)} fuites vues, {sum(r.removed for r in reports)} retirées, "
+    print(f"Total : {sum(r.found for r in reports)} messages visés, {sum(r.removed for r in reports)} retirés, "
           f"{api.throttled} attentes imposées par Discord", flush=True)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Retire les anciens messages de fuite des salons de zone.")
     parser.add_argument("--confirm", action="store_true", help="supprime vraiment (sinon, aperçu)")
+    parser.add_argument("--dead-monsters", action="store_true", help="vise les monstres morts au lieu des fuites")
     parser.add_argument("--limit", type=int, default=0, help="au plus N messages par zone (0 = tout)")
     parser.add_argument("--pause", type=float, default=1.0, help="secondes entre deux suppressions à l'unité")
     asyncio.run(run(parser.parse_args()))
