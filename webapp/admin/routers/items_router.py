@@ -28,6 +28,7 @@ from app.shared.enums import (
     ItemCategory,
     ItemRarity,
 )
+from app.shared.image_tools import prepare_item_image
 from app.shared.paths import ITEMS_ASSETS_DIR
 from webapp.admin import content_sync, git_sync, image_gen, uploads
 from webapp.admin.auth import AdminUser, require_admin
@@ -45,27 +46,22 @@ _RARITY_COLORS = {
 
 
 MAX_IMAGE_BYTES = 8 * 1024 * 1024
-#: Les rendus n'affichent jamais un objet à plus de quelques centaines de
-#: pixels : au-delà, l'image ne fait qu'alourdir le dépôt (ChatGPT rend du
-#: 1254 px, ~2,5 Mo ; à 1024 px, ~30 % de moins).
-MAX_IMAGE_SIDE = 1024
 
 
 def _store_item_image(code: str, data: bytes) -> str | None:
     """Écrit `data` en assets/items/<code>.png (converti en PNG pour rester
-    compatible avec les rendus qui lisent <code>.png/.jpg, réduit à
-    `MAX_IMAGE_SIDE`) et nettoie les autres extensions du même code.
-    Renvoie un message d'erreur, ou None."""
+    compatible avec les rendus qui lisent <code>.png/.jpg, réduit à 512 px et
+    détouré s'il est sur fond blanc, cf. `prepare_item_image`) et nettoie les
+    autres extensions du même code. Renvoie un message d'erreur, ou None."""
     if len(data) > MAX_IMAGE_BYTES:
         return "Image trop lourde (max 8 Mo)."
     try:
         img = Image.open(io.BytesIO(data)).convert("RGBA")
     except Exception:
         return "Image illisible (formats acceptés : PNG/JPG/WebP/GIF)."
-    if max(img.size) > MAX_IMAGE_SIDE:
-        img.thumbnail((MAX_IMAGE_SIDE, MAX_IMAGE_SIDE), Image.LANCZOS)
+    ready = prepare_item_image(img)
     _clear_item_assets(code)
-    img.save(ITEMS_ASSETS_DIR / f"{code}.png", "PNG")
+    ready.save(ITEMS_ASSETS_DIR / f"{code}.png", "PNG", optimize=True)
     return None
 
 

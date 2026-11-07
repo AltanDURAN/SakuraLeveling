@@ -23,6 +23,7 @@ from app.shared.enums import (
     ITEM_CATEGORY_LABELS,
     ITEM_RARITY_LABELS,
 )
+from app.shared.image_tools import MOB_MAX_SIDE
 from app.shared.paths import MOBS_ASSETS_DIR
 from webapp.admin import image_gen, content_sync, git_sync, json_writer, uploads
 from webapp.admin.auth import AdminUser, require_admin
@@ -150,7 +151,7 @@ async def _save_mob_image(form, code: str, fallback: str) -> tuple[str, str | No
     data = await upload.read()
     try:
         saved = uploads.save_asset_bytes(
-            data, upload.filename, MOBS_ASSETS_DIR, preferred_stem=code,
+            data, upload.filename, MOBS_ASSETS_DIR, preferred_stem=code, max_side=MOB_MAX_SIDE,
         )
     except uploads.UploadError as exc:
         return fallback, None, str(exc)

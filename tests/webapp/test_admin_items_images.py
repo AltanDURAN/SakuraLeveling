@@ -50,12 +50,24 @@ def test_la_page_montre_tous_les_objets(client):
     assert "lance_des_kobolds" in r.text and "potion_soin" in r.text
 
 
-def test_une_image_est_ecrite_et_reduite_a_1024_px(client, assets):
+def test_une_image_est_ecrite_et_reduite_a_512_px(client, assets):
     r = _upload(client, "lance_des_kobolds", _png(1254))
     assert r.status_code == 200 and r.json()["ok"], r.text
     assert r.json()["url"].startswith("/assets/items/lance_des_kobolds.png?v=")
     with Image.open(assets / "lance_des_kobolds.png") as img:
-        assert img.size == (1024, 1024)
+        assert img.size == (512, 512)
+
+
+def test_une_image_sur_fond_blanc_est_detouree(client, assets):
+    from PIL import ImageDraw
+
+    image = Image.new("RGBA", (300, 300), (255, 255, 255, 255))
+    ImageDraw.Draw(image).ellipse([60, 60, 240, 240], fill=(180, 30, 30, 255))
+    buffer = io.BytesIO()
+    image.save(buffer, "PNG")
+    assert _upload(client, "lance_des_kobolds", buffer.getvalue()).json()["ok"]
+    with Image.open(assets / "lance_des_kobolds.png") as img:
+        assert img.getpixel((5, 5))[3] == 0 and img.getpixel((150, 150))[3] == 255
 
 
 def test_une_petite_image_garde_sa_taille_et_remplace_les_autres_formats(client, assets):
