@@ -750,11 +750,11 @@ WORLD BOSS — /boss moi, /boss historique, /boss list
     objets qui servent davantage à haut niveau.
 
         Article                         Prix              Effet (/utiliser)
-        Cor de chasse (par zone)        F 1 000 ·         fait apparaître l'élite de la
-                                        E 1 500 ·         zone dans son salon, après le
-                                        D 2 600           combat en cours (rang de la
-                                                          zone requis, 1 h entre deux
-                                                          cors, une élite à la fois)
+        Cor de chasse (par zone)        F 550 · E 900 ·   fait apparaître l'élite de la
+                                        D 1 200 ·         zone dans son salon, après le
+                                        C 1 500 ·         combat en cours (rang de la
+                                        B 1 800 ·         zone requis, 1 h entre deux
+                                        A 2 150           cors, une élite à la fois)
         Sceau du second souffle         E 700 · D 1 500 · efface les 6 h d'attente après
           (par rang)                    C 2 300 · B 3 000 un échec à l'épreuve de CE rang
                                         A 3 800 · S 4 500
@@ -921,6 +921,9 @@ INTERFACE WEB D'ADMINISTRATION
 --------------------------------------------------------------------------------
 2.4 — SAISON : RESET ET SIMULATION
 --------------------------------------------------------------------------------
+
+Une saison dure UN AN. À la fin, tout repart à zéro : seule l'identité Discord
+reste, et il n'y a pas de tableau d'honneur.
 
 /admin lancer_saison [numéro] [annonce]
     Lance officiellement une saison. Affiche d'abord ce qui sera effacé

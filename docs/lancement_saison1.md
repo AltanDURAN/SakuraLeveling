@@ -67,3 +67,30 @@ Les rôles Discord ne reviennent pas tout seuls : `/admin set_rank` joueur par j
 - [ ] Le premier raid arrive le lundi où au moins quatre joueurs actifs ont atteint le niveau 15 (`/boss moi` le rappelle aux joueurs).
 - [ ] Mesurer la cadence réelle des combats et relancer le simulateur avec `--cycle`.
 - [ ] Pendant la saison, un déploiement annule les combats en attente (une note s'affiche) : préférer les heures creuses.
+
+## La durée de la saison
+
+Une saison dure un an, puis tout repart à zéro sans tableau d'honneur. La saison 2 se lance de la même façon, un an après : `/admin lancer_saison numero:2`.
+
+## Ouvrir la Faille du Néant
+
+Elle s'annonce quand les premiers joueurs atteignent le niveau 80. Le bot te prévient deux fois par MP : 21 jours avant au rythme du joueur le plus rapide (« Fin du contenu dans N jours »), puis quand un joueur y arrive.
+
+Ça peut venir vite. Niveau 80 simulé selon le temps de jeu, du joueur qui clique sur Lancer à celui qui attend la fin du compte à rebours :
+
+| Temps de jeu | Niveau 80 |
+|---|---|
+| 8 h par jour | J11 à J20 |
+| 4 h par jour | J21 à J38 |
+| 2 h par jour | J40 à J70 |
+| 1 h par jour | J73 à J125 |
+| 30 min par jour | J132 à J209 |
+
+Le simulateur compte seulement l'XP : il ignore les défaites, l'équipement et les épreuves de rang, donc un vrai joueur ira moins vite. Prépare quand même les images dès le premier mois.
+
+1. Crée le salon de la zone, réservé au rôle de rang S, et ajoute son identifiant à `COMMAND_CHANNELS` (dans le `.env` du VPS et dans `scripts/deploy_beta.sh`).
+2. Prépare les images : les 7 monstres de la famille `abyssal`, leurs 7 pièces et le décor.
+3. Regarde l'aperçu : `.venv/bin/python -m scripts.open_zones S=<id du salon>`.
+4. Applique : la même commande avec `--write`. Elle ouvre la zone, recalibre les élites et active le cor de chasse. Essayé le 07/11/2026 sur une copie : tous les tests passent.
+5. Lance `pytest`, commite et déploie : le seed et le redémarrage du bot appliquent tout.
+6. Règle le décor de la zone depuis l'admin, puis annonce l'ouverture.

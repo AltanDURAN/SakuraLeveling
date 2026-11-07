@@ -234,6 +234,7 @@ def build_announcement_embed(season: int) -> discord.Embed:
             "🌱 **Remis à zéro** : niveaux, or, équipement, arbre, titres, quêtes, tour, défis, "
             "affinités… et de **nouveaux talents élémentaires**, tirés pour chacun — la voyante a "
             "déjà sorti ses cartes.\n\n"
+            "⏳ **La saison dure un an**, puis tout repart à zéro.\n\n"
             "**Par où commencer ?**\n"
             f"1️⃣ Hana t'attend dans {tuto} : au bout, **3 Potions du Grand Cerisier** 🧪\n"
             "2️⃣ `/daily` chaque jour, `/stats` pour placer tes points\n"

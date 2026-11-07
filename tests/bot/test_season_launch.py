@@ -114,6 +114,7 @@ def test_lancement_complet(db, monkeypatch):
     post = bot.channel.sent[0]
     assert post["content"] == "@everyone" and post["allowed_mentions"].everyone
     assert post["embed"].title == "🌸 La saison 1 commence !"
+    assert "dure un an" in post["embed"].description
     assert post["files"] and post["files"][0].filename == season_launch.SEASON_IMAGE
     assert result.announcement_url
 

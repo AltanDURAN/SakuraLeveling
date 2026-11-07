@@ -52,6 +52,7 @@ RANK_LEVELS = {"F": 1, "E": 12, "D": 25, "C": 38, "B": 50, "A": 63, "S": 75, "SS
 FIGHT_MINUTES = 0.4
 #: Pièces d'une tenue complète.
 OUTFIT_PIECES = 7
+SEASON_DAYS = 365          # une saison dure un an (décision de l'auteur, 07/11/2026)
 
 #: Hypothèses de comportement d'un joueur régulier.
 DAILY_QUESTS_DONE = 2      # sur 3 tirées chaque jour
@@ -138,7 +139,7 @@ class Result:
     gold: dict[str, float]
 
 
-def simulate(world: World, minutes_per_day: float, minutes_per_kill: float, days: int = 730) -> Result:
+def simulate(world: World, minutes_per_day: float, minutes_per_kill: float, days: int = SEASON_DAYS) -> Result:
     prog = ProgressionService()
     daily_xp, daily_gold = _quest_means("daily_quests.json")
     weekly_xp, weekly_gold = _quest_means("weekly_quests.json")
@@ -146,9 +147,9 @@ def simulate(world: World, minutes_per_day: float, minutes_per_kill: float, days
 
     level, xp, streak = 1, 0, 0
     gold = {"combats": 0.0, "quêtes": 0.0, "raid": 0.0, "daily": 0.0}
-    milestones = (5, 10, 25, 50, 75, 100)
+    milestones = (5, 10, 25, 50, 75, 80, 100)
     days_to: dict[int, int | None] = {m: None for m in milestones}
-    checkpoints = (1, 7, 30, 90, 180, 365, 730)
+    checkpoints = (1, 7, 30, 90, 180, 365)
     level_at: dict[int, int] = {}
 
     for day in range(1, days + 1):
@@ -200,11 +201,11 @@ def report(cycle: float, minutes: float, zones: dict) -> None:
         r = simulate(world, minutes, cycle)
         print(f"== {world.name}")
         print("  jours pour atteindre : " + ", ".join(
-            f"niv {m} → {d if d is not None else '> 730'}" for m, d in r.days_to.items()))
+            f"niv {m} → {d if d is not None else f'> {SEASON_DAYS}'}" for m, d in r.days_to.items()))
         print("  niveau atteint      : " + ", ".join(f"J{d} {lv}" for d, lv in r.level_at.items()))
         total = sum(r.gold.values())
         parts = ", ".join(f"{k} {v / total:.0%}" for k, v in r.gold.items())
-        print(f"  or cumulé sur 2 ans : {total:,.0f} ({parts})".replace(",", " "))
+        print(f"  or sur la saison    : {total:,.0f} ({parts})".replace(",", " "))
         print()
 
 
