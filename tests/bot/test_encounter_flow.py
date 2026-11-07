@@ -345,3 +345,48 @@ def test_le_passage_d_un_debutant_s_oublie(monkeypatch):
     cog = _zone_cog(monkeypatch, [_mob("slime", 8, 40)])
     cog._zone_visitors[CHANNEL] = {1: (3, datetime.now(UTC) - timedelta(minutes=30))}
     assert not cog._beginners_only(CHANNEL)
+
+
+def _button_row(*labels):
+    return SimpleNamespace(children=[SimpleNamespace(label=label) for label in labels])
+
+
+def test_seul_un_monstre_ou_une_note_d_arret_sont_retires_au_demarrage():
+    from app.bot.cogs.encounter_cog import RESTART_NOTE
+
+    bot_user = SimpleNamespace(id=1)
+    mine = dict(author=bot_user, content="", components=[])
+    assert EncounterCog._is_leftover(SimpleNamespace(**{**mine, "components": [_button_row("Combattre")]}), 1)
+    assert EncounterCog._is_leftover(SimpleNamespace(**{**mine, "content": RESTART_NOTE}), 1)
+    assert not EncounterCog._is_leftover(SimpleNamespace(**mine), 1)                 # un récapitulatif
+    assert not EncounterCog._is_leftover(
+        SimpleNamespace(author=SimpleNamespace(id=2), content="", components=[_button_row("Combattre")]), 1)
+
+
+def test_un_arret_annule_les_combats_a_venir_et_montre_les_combats_joues(cog):
+    from app.bot.cogs.encounter_cog import RESTART_NOTE
+
+    waiting, played = _encounter([1]), _encounter([2])
+    waiting.message, played.message = FakeMessage(), FakeMessage()
+    played.resolved = True
+    played.summary = BattleSummary(outcome="victory", mob_name="Slime", mob_image_name="", mob_family="", turns=3,
+                                   rewards=[_reward(1)])
+    channel = FakeChannel()
+    cog.bot = SimpleNamespace(get_channel=lambda _: channel)
+    cog.active_encounters = {1: waiting, 2: played}
+    asyncio.run(cog.prepare_shutdown())
+    assert waiting.message.deleted and channel.sent == [RESTART_NOTE]
+    assert not played.message.deleted and played.message.edits[0]["view"] is None
+
+
+def test_les_boutons_du_recapitulatif_partent_a_la_fin():
+    from app.bot.views.battle_summary_view import BattleSummaryView
+
+    async def scenario():
+        view = BattleSummaryView(BattleSummary(outcome="defeat", mob_name="Slime", mob_image_name="",
+                                               mob_family="", turns=1))
+        view.message = FakeMessage()
+        await view.on_timeout()
+        return view.message.edits
+
+    assert asyncio.run(scenario()) == [{"view": None}]

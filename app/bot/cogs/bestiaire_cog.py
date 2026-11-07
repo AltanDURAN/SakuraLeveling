@@ -1,4 +1,4 @@
-"""Cog `/bestiaire` — vue paginée des mobs et leurs stats.
+"""Cog `/bestiaire` — vue paginée des monstres et leurs stats, par famille.
 
 Lecture seule : sert de référence pour les joueurs qui veulent connaître
 les drops, stats et familles des monstres rencontrables.
@@ -24,7 +24,7 @@ class BestiaireCog(BetaChannelOnlyMixin, commands.Cog):
 
     @app_commands.command(
         name="bestiaire",
-        description="Catalogue des monstres : stats et drops, 1 par page",
+        description="Catalogue des monstres, par famille : stats et butin",
     )
     async def bestiaire(self, interaction: discord.Interaction) -> None:
         with get_db_session() as session:

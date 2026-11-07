@@ -14,6 +14,18 @@ class Leaderboard:
     category_code: str
     category_label: str
     entries: list[LeaderboardEntry]
+    #: Place de celui qui regarde, s'il est classé (1 = premier).
+    viewer_rank: int | None = None
+    viewer_entry: LeaderboardEntry | None = None
+    #: Nombre de joueurs classés.
+    total: int = 0
+
+    def focused_on(self, player_id: int | None, limit: int) -> "Leaderboard":
+        """Le haut du classement, et la place de `player_id` dans l'ensemble."""
+        rank = next((i for i, e in enumerate(self.entries, start=1) if e.player_id == player_id), None)
+        return Leaderboard(self.category_code, self.category_label, self.entries[:limit],
+                           viewer_rank=rank, viewer_entry=self.entries[rank - 1] if rank else None,
+                           total=len(self.entries))
 
 
 class LeaderboardService:

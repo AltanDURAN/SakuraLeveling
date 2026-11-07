@@ -5,7 +5,9 @@ slash commands (un user n'a jamais une erreur opaque, et l'erreur est journalis�
 côté serveur), et tolère qu'un cog cassé n'empêche pas le démarrage des autres.
 """
 
+import asyncio
 import logging
+import signal
 
 import discord
 from discord import app_commands
@@ -91,6 +93,19 @@ class SakuraBot(commands.Bot):
         _logger.info("Cogs chargés : %d/%d (%d échec(s))",
                      loaded, len(_COG_MODULES), failed)
         await self.tree.sync()
+        # systemd arrête le bot par SIGTERM : sans ça, le processus tombe d'un
+        # coup et laisse des boutons morts dans les salons (déploiements).
+        asyncio.get_running_loop().add_signal_handler(
+            signal.SIGTERM, lambda: asyncio.ensure_future(self._stop_cleanly()))
+
+    async def _stop_cleanly(self) -> None:
+        encounters = self.get_cog("EncounterCog")
+        try:
+            if encounters is not None:
+                await asyncio.wait_for(encounters.prepare_shutdown(), timeout=20)
+        except Exception:  # noqa: BLE001 — l'arrêt passe avant tout
+            _logger.exception("arrêt propre des combats impossible")
+        await self.close()
 
 
 bot = SakuraBot()

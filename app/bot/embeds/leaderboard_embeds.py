@@ -23,6 +23,17 @@ def build_leaderboard_embed(leaderboard: Leaderboard) -> discord.Embed:
         safe_name = escape_markdown(entry.display_name)
         lines.append(f"{prefix} **{safe_name}** — `{entry.formatted_value}`")
 
+    # Ta place, même loin du podium : c'est elle qu'on regarde d'abord.
+    you = leaderboard.viewer_entry
+    if you is not None and leaderboard.viewer_rank > len(leaderboard.entries):
+        lines.append("…")
+        lines.append(f"`#{leaderboard.viewer_rank:>2}` **{escape_markdown(you.display_name)}** — "
+                     f"`{you.formatted_value}`")
+
     embed.description = "\n".join(lines)
-    embed.set_footer(text=f"Top {len(leaderboard.entries)}")
+    footer = f"Top {len(leaderboard.entries)}"
+    if leaderboard.viewer_rank is not None:
+        place = "1ʳᵉ" if leaderboard.viewer_rank == 1 else f"{leaderboard.viewer_rank}ᵉ"
+        footer += f" · Ta place : {place} sur {leaderboard.total}"
+    embed.set_footer(text=footer)
     return embed

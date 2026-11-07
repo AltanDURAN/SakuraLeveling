@@ -289,8 +289,22 @@ class EventCog(commands.Cog):
             return None
         message = await spawners[event_type]()
         if message is not None:
+            await self._ping_role(message)
             await self._notify_event(event_type, message)
         return message
+
+    @staticmethod
+    async def _ping_role(message: discord.Message) -> None:
+        """Mentionne le rôle des événements (réglage facultatif), en réponse au
+        message de l'événement : il faut y réagir vite."""
+        role_id = settings.event_ping_role_id
+        if not role_id:
+            return
+        try:
+            await message.reply(f"<@&{role_id}>", mention_author=False,
+                                allowed_mentions=discord.AllowedMentions(roles=True))
+        except discord.HTTPException:
+            _logger.warning("mention du rôle des événements impossible", exc_info=True)
 
     async def _notify_event(self, event_type: str, message: discord.Message) -> None:
         from app.bot.notifications import holders_of, send_dm

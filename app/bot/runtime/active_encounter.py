@@ -30,6 +30,10 @@ class ActiveEncounter:
     #: vidéo et le récapitulatif. On ne le rejoint plus, et ses combattants
     #: peuvent déjà aller ailleurs.
     resolved: bool = False
+    #: Le message du monstre et, une fois le combat joué, son récapitulatif :
+    #: un arrêt du bot doit pouvoir les remettre d'aplomb.
+    message: object | None = None
+    summary: object | None = None
 
     @property
     def mobs(self) -> list[EncounterMobState]:

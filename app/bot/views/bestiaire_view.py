@@ -1,8 +1,9 @@
-"""Vue paginée du bestiaire (1 mob par page).
+"""Vue paginée du bestiaire (1 monstre par page).
 
-Chaque page : fiche complète d'un mob (score de puissance, rang, stats,
+Chaque page : fiche complète d'un monstre (score de puissance, rang, stats,
 famille, drops) + aperçu de son image en thumbnail (haut-droite de l'embed).
-Mobs triés par score de puissance CROISSANT. Boutons ◀ / ▶.
+Monstres triés par score de puissance CROISSANT. Boutons ◀ / ▶, et un menu pour
+ne parcourir qu'une famille (les joueurs le demandaient depuis mai).
 """
 
 from __future__ import annotations
@@ -18,6 +19,14 @@ from app.shared.emoji_mappings import format_stat_bonuses_short
 from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
 from app.shared.paths import MOBS_ASSETS_DIR
 from app.shared.formatters import format_int
+
+
+ALL_FAMILIES = "__toutes__"
+
+
+def family_label(family: str) -> str:
+    """« mort_vivant » → « Mort-vivant »."""
+    return (family or "Sans famille").replace("_", "-").capitalize()
 
 
 def _element_line(element: str) -> str:
@@ -83,7 +92,7 @@ def build_mob_embed(
     )
     embed.add_field(
         name="Identité",
-        value=f"`{mob.code}`\nFamille : **{mob.family or '—'}**\n{_element_line(mob.element)}",
+        value=f"Famille : **{family_label(mob.family)}**\n{_element_line(mob.element)}",
         inline=False,
     )
     embed.add_field(
@@ -103,8 +112,7 @@ def build_mob_embed(
         name="💰 Récompenses",
         value=(
             f"✨ XP : **{mob.xp_reward}**\n"
-            f"💰 Or : **{mob.gold_reward}**\n"
-            f"⚖️ Poids spawn : {mob.spawn_weight}"
+            f"💰 Or : **{mob.gold_reward}**"
         ),
         inline=True,
     )
@@ -137,11 +145,23 @@ class BestiaireView(discord.ui.View):
     ) -> None:
         super().__init__(timeout=timeout)
         self.author_id = author_id
+        self.all_mobs = mobs
         self.mobs = mobs
         self.items = items or {}  # code → ItemDefinition
         self.index = 0
         self._pss = PowerScoreService()
+        families = list(dict.fromkeys(m.family or "" for m in mobs))
+        if len(families) > 1:
+            self.add_item(_FamilySelect(self, families))
         self._refresh_buttons()
+
+    async def show_family(self, interaction: discord.Interaction, family: str) -> None:
+        if not await self._check_owner(interaction):
+            return
+        self.mobs = self.all_mobs if family == ALL_FAMILIES else \
+            [m for m in self.all_mobs if (m.family or "") == family]
+        self.index = 0
+        await self._send_page(interaction)
 
     def _refresh_buttons(self) -> None:
         self.prev_button.disabled = self.index <= 0
@@ -209,3 +229,20 @@ class BestiaireView(discord.ui.View):
         if self.index < len(self.mobs) - 1:
             self.index += 1
         await self._send_page(interaction)
+
+
+class _FamilySelect(discord.ui.Select):
+    """Une famille à la fois, dans l'ordre de puissance (donc des zones)."""
+
+    def __init__(self, owner: BestiaireView, families: list[str]) -> None:
+        options = [discord.SelectOption(label="Tous les monstres", value=ALL_FAMILIES, default=True)]
+        options += [discord.SelectOption(label=family_label(family), value=family or "_")
+                    for family in families[:24]]
+        super().__init__(placeholder="Choisis une famille…", options=options, row=1)
+        self._owner = owner
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        value = self.values[0]
+        for option in self.options:
+            option.default = option.value == value
+        await self._owner.show_family(interaction, "" if value == "_" else value)

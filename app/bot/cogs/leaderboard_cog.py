@@ -60,7 +60,9 @@ class LeaderboardCog(commands.Cog):
                 tower_repository=TowerRepository(session),
             )
 
-            leaderboard = use_case.execute(category_code=category, limit=10)
+            viewer = PlayerRepository(session).get_by_discord_id(interaction.user.id)
+            leaderboard = use_case.execute(category_code=category, limit=10,
+                                           viewer_player_id=viewer.player.id if viewer else None)
 
         if leaderboard is None:
             await interaction.followup.send(

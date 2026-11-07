@@ -27,6 +27,10 @@ COMPUTED_STAT_FIELDS = {
 }
 
 
+#: Assez pour classer tout le serveur.
+_EVERYONE = 1_000_000
+
+
 @dataclass
 class LeaderboardCategory:
     code: str
@@ -57,7 +61,14 @@ class GetLeaderboardUseCase:
         self.role_trial_repository = role_trial_repository
         self.tower_repository = tower_repository
 
-    def execute(self, category_code: str, limit: int = 10) -> Leaderboard | None:
+    def execute(self, category_code: str, limit: int = 10,
+                viewer_player_id: int | None = None) -> Leaderboard | None:
+        """Le haut du classement, et la place de `viewer_player_id` : tout est
+        calculé (il faut connaître sa place), seul l'affichage est coupé."""
+        board = self._compute(category_code, _EVERYONE)
+        return board.focused_on(viewer_player_id, limit) if board is not None else None
+
+    def _compute(self, category_code: str, limit: int) -> Leaderboard | None:
         if category_code == "power":
             return self._compute_power(limit)
 

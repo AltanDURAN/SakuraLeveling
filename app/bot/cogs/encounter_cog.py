@@ -7,6 +7,7 @@ import discord
 from discord.ext import commands, tasks
 
 from app.application.services.encounter_service import EncounterService
+from app.bot.embeds.battle_summary_embeds import build_rewards_page_embed
 from app.bot.embeds.encounter_combat_log_embeds import (
     format_turn_action,
 )
@@ -50,6 +51,10 @@ _GENERATED_FILES_TTL_SECONDS = 7 * 24 * 3600
 #: Premières apparitions décalées d'une zone à l'autre : sinon les zones
 #: tournent ensemble, leurs combats finissent ensemble et leurs vidéos s'empilent.
 _ZONE_STAGGER_SECONDS = 25
+#: Message laissé quand un redémarrage annule un combat (retiré au retour du bot).
+RESTART_NOTE = "🔧 Le bot redémarre : ce combat est annulé, rien n'est perdu."
+#: Messages relus par zone au démarrage pour retirer ce que l'ancien processus a laissé.
+RESTART_SCAN_LIMIT = 30
 #: Un palier de niveau tous les N niveaux est annoncé à tout le serveur.
 LEVEL_MILESTONE = 10
 #: Sous ce niveau, un joueur seul ne bat presque que le monstre le plus faible
@@ -118,6 +123,7 @@ class EncounterCog(commands.Cog):
         """Démarre une boucle async indépendante par zone de farm, une fois le
         bot prêt. Chaque zone spawn/combat en parallèle des autres."""
         await self.bot.wait_until_ready()
+        await self._clean_leftovers()
         now = datetime.now(UTC)
         for index, channel_id in enumerate(list_zone_channels()):
             self._zone_next_spawn.setdefault(
@@ -126,6 +132,52 @@ class EncounterCog(commands.Cog):
                 self._zone_loop(channel_id)
             )
         _logger.info("Zones d'encounter démarrées : %s", list(self._zone_tasks.keys()))
+
+    @staticmethod
+    def _is_leftover(message, bot_id: int) -> bool:
+        """Un monstre posé par l'ancien processus (ses boutons sont morts), ou
+        la note d'un redémarrage."""
+        if getattr(message.author, "id", None) != bot_id:
+            return False
+        if message.content.startswith(RESTART_NOTE):
+            return True
+        return any(getattr(child, "label", None) == "Combattre"
+                   for row in message.components for child in getattr(row, "children", ()))
+
+    async def _clean_leftovers(self) -> None:
+        """Au démarrage, retire les monstres et notes laissés par le processus
+        précédent : personne ne peut plus y répondre."""
+        for channel_id in list_zone_channels():
+            channel = self.bot.get_channel(channel_id)
+            if channel is None:
+                continue
+            try:
+                async for message in channel.history(limit=RESTART_SCAN_LIMIT):
+                    if self._is_leftover(message, self.bot.user.id):
+                        await self._delete_quietly(message)
+            except discord.HTTPException:
+                _logger.warning("nettoyage de la zone %s impossible", channel_id, exc_info=True)
+
+    async def prepare_shutdown(self) -> None:
+        """Le bot s'arrête (déploiement) : aucun bouton mort ne reste derrière
+        lui. Un combat pas encore joué est annulé ; un combat joué affiche son
+        récapitulatif, sa vidéo ne sera pas finie."""
+        for channel_id, encounter in list(self.active_encounters.items()):
+            message = encounter.message
+            if message is None:
+                continue
+            if encounter.resolved and encounter.summary is not None:
+                try:
+                    await message.edit(embed=build_rewards_page_embed(encounter.summary), attachments=[],
+                                       view=None)
+                except discord.HTTPException:
+                    _logger.warning("récapitulatif d'arrêt impossible", exc_info=True)
+                continue
+            await self._delete_quietly(message)
+            if encounter.participants:
+                channel = self.bot.get_channel(channel_id)
+                if channel is not None:
+                    await self._send_quietly(channel, RESTART_NOTE)
 
     @tasks.loop(hours=12)
     async def generated_cleanup_loop(self) -> None:
@@ -633,6 +685,7 @@ class EncounterCog(commands.Cog):
 
         message = await channel.send(embed=embed, view=view, file=file)
         encounter.message_id = message.id
+        encounter.message = message
         self.active_encounters[channel_id] = encounter
         try:
             await self._play_encounter(channel, channel_id, encounter, view, message,
@@ -686,6 +739,7 @@ class EncounterCog(commands.Cog):
         self.encounter_service.persist_final_players_hp(result, encounter)
         battle_summary = self.encounter_service.apply_rewards(encounter, result)
         encounter.resolved = True
+        encounter.summary = battle_summary
 
         if battle_summary is not None:
             battle_summary.journal = [format_turn_action(log) for log in result.turn_logs]
@@ -714,6 +768,7 @@ class EncounterCog(commands.Cog):
             return
 
         summary_view = BattleSummaryView(battle_summary, timeout=600.0)
+        summary_view.message = message
         try:
             await message.edit(embed=summary_view.current_embed, attachments=[], view=summary_view)
         except discord.HTTPException:

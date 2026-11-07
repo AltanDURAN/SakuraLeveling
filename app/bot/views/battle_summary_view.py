@@ -11,7 +11,18 @@ class BattleSummaryView(discord.ui.View):
         super().__init__(timeout=timeout)
         self.summary = summary
         self.page_index = 0
+        #: Le message qui porte cette vue : ses boutons en partent à la fin.
+        self.message: discord.Message | None = None
         self._refresh_buttons()
+
+    async def on_timeout(self) -> None:
+        """Après le délai, les boutons ne répondent plus : autant les retirer."""
+        if self.message is None:
+            return
+        try:
+            await self.message.edit(view=None)
+        except discord.HTTPException:
+            pass
 
     @property
     def current_embed(self) -> discord.Embed:
