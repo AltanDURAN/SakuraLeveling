@@ -26,8 +26,13 @@ Calibrage (cf. `scripts/calibrate_progression.py`) :
     ≈ 3 500 kills pour atteindre le niveau 100.
 
 ⚠️ Le plancher de 8 kills est VOULU : les premiers niveaux ne doivent pas
-tomber tout seuls. Un joueur met une dizaine de jours à atteindre le niveau 10
-— la galère du début fait partie de l'expérience.
+tomber tout seuls.
+
+Mesuré à l'audit d'ouverture (06/11/2026) : c'était trop lent, le niveau 2
+demandait ~5 heures de présence et le niveau 4 arrivait à J7, alors qu'un
+nouveau venu se décide dans la première heure. D'où le COUP DE POUCE des
+débuts : l'XP des combats de zone est doublée jusqu'au niveau 10
+(`newcomer_xp_multiplier`). La courbe elle-même ne change pas.
 """
 
 from __future__ import annotations
@@ -47,6 +52,15 @@ XP_PER_KILL_COEF = 6.25
 #: Points gagnés à chaque niveau.
 STAT_POINTS_PER_LEVEL = 1
 SKILL_POINTS_PER_LEVEL = 1
+
+#: Coup de pouce des débuts : l'XP des combats de zone est multipliée tant que
+#: le joueur n'a pas atteint ce niveau.
+NEWCOMER_LEVEL = 10
+NEWCOMER_XP_MULTIPLIER = 2
+
+
+def newcomer_xp_multiplier(level: int) -> int:
+    return NEWCOMER_XP_MULTIPLIER if level < NEWCOMER_LEVEL else 1
 
 
 @dataclass(frozen=True)

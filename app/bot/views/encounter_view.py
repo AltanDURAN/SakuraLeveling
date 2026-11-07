@@ -10,22 +10,24 @@ class EncounterView(discord.ui.View):
         self.channel_id = channel_id
         # État interne du bouton "Demander de l'aide" : usable une seule fois.
         self._help_used: bool = False
-        # Le bouton "Quitter" n'apparaît que s'il y a au moins un participant.
-        # Au spawn, personne n'a rejoint → on le retire.
+        # Lancer et Quitter n'apparaissent que s'il y a au moins un participant.
+        # Au spawn, personne n'a rejoint → on les retire.
+        self.remove_item(self.launch_encounter)
         self.remove_item(self.leave_encounter)
 
     def sync(self) -> None:
         """Synchronise l'affichage/état des boutons avec l'état de l'encounter :
-        - Quitter présent seulement si ≥1 participant.
+        - Lancer et Quitter présents seulement si ≥1 participant.
         - Demander de l'aide désactivé + relabellisé si déjà utilisé.
         Appeler avant de ré-éditer le message avec la view."""
         encounter = self.cog.active_encounters.get(self.channel_id)
         has_participants = bool(encounter and encounter.participants)
-        present = self.leave_encounter in self.children
-        if has_participants and not present:
+        self.clear_items()
+        self.add_item(self.join_encounter)
+        if has_participants:
+            self.add_item(self.launch_encounter)
             self.add_item(self.leave_encounter)
-        elif not has_participants and present:
-            self.remove_item(self.leave_encounter)
+        self.add_item(self.request_help)
 
         if self._help_used:
             self.request_help.disabled = True
@@ -49,7 +51,7 @@ class EncounterView(discord.ui.View):
 
         if success:
             await self.cog.refresh_encounter_scene(self.channel_id)
-            # Fait apparaître le bouton Quitter maintenant qu'il y a du monde.
+            # Fait apparaître Lancer et Quitter maintenant qu'il y a du monde.
             self.sync()
             try:
                 await interaction.message.edit(view=self)
@@ -61,9 +63,20 @@ class EncounterView(discord.ui.View):
             # (il sera aussi mentionné au lancement).
             encounter = self.cog.active_encounters.get(self.channel_id)
             if encounter is not None:
-                message += (f"\n⏳ Le combat se lance <t:{int(encounter.ends_at.timestamp())}:R> — "
-                            "tu seras mentionné pour le suivre en direct.")
+                message += (f"\n⏳ Le combat se lance <t:{int(encounter.ends_at.timestamp())}:R>, "
+                            "ou dès qu'un combattant clique sur **Lancer**. "
+                            "Tu seras mentionné pour le suivre en direct.")
         await interaction.followup.send(message, ephemeral=True)
+
+    @discord.ui.button(label="Lancer", style=discord.ButtonStyle.primary, emoji="🚀", row=0)
+    async def launch_encounter(
+        self,
+        interaction: discord.Interaction,
+        button: discord.ui.Button,
+    ) -> None:
+        """Le groupe est prêt : pas besoin d'attendre la fin du temps pour rejoindre."""
+        _, message = self.cog.request_launch(self.channel_id, interaction.user.id)
+        await interaction.response.send_message(message, ephemeral=True)
 
     @discord.ui.button(label="Quitter", style=discord.ButtonStyle.secondary, emoji="🚪", row=0)
     async def leave_encounter(
@@ -80,7 +93,7 @@ class EncounterView(discord.ui.View):
 
         if success:
             await self.cog.refresh_encounter_scene(self.channel_id)
-            # Retire le bouton Quitter s'il ne reste plus personne.
+            # Retire Lancer et Quitter s'il ne reste plus personne.
             self.sync()
             try:
                 await interaction.message.edit(view=self)
@@ -105,7 +118,7 @@ class EncounterView(discord.ui.View):
         désactivé et affiche « Aide demandée »."""
         if self._help_used:
             await interaction.response.send_message(
-                "⚠️ L'appel à l'aide a déjà été lancé pour ce combat.",
+                "⚠️ L'appel à l'aide est déjà parti pour ce combat.",
                 ephemeral=True,
             )
             return
@@ -128,8 +141,8 @@ class EncounterView(discord.ui.View):
         if role is None or not role.members:
             await interaction.response.edit_message(view=self)
             await interaction.followup.send(
-                "📣 Aucun chad pour l'instant — utilisez `/chad` "
-                "pour prendre le rôle et être notifié.",
+                "📣 Aucun chad pour l'instant : `/chad` pour prendre le rôle "
+                "et être prévenu.",
                 ephemeral=False,
             )
             return

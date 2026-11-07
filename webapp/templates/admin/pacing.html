@@ -6,10 +6,11 @@
 <section class="form-page"
   x-data="{
     min: {{ z.respawn_min_minutes }}, max: {{ z.respawn_max_minutes }}, flee: {{ z.flee_respawn_minutes }},
-    join: {{ z.join_window_minutes }}, qs: {{ z.quiet_start_hour }}, qe: {{ z.quiet_end_hour }},
+    join: {{ z.join_window_minutes }}, launch: {{ z.launch_min_seconds }}, qs: {{ z.quiet_start_hour }}, qe: {{ z.quiet_end_hour }},
     pack: {{ z.pack_chance_pct }}, three: {{ z.pack_of_three_pct }}, zones: {{ zones | length }},
     quietHours(){ const s = +this.qs, e = +this.qe; return s === e ? 0 : (e > s ? e - s : 24 - s + e); },
     cycle(){ return (+this.join) + 0.5 + ((+this.min) + Math.max(+this.min, +this.max)) / 2; },
+    fastCycle(){ return (+this.launch) / 60 + 0.5 + ((+this.min) + Math.max(+this.min, +this.max)) / 2; },
     fleeCycle(){ return (+this.join) + (+this.flee); },
     perHour(c){ return 60 / Math.max(0.5, c); },
     perDay(c){ return this.perHour(c) * (24 - this.quietHours()) * this.zones; },
@@ -37,6 +38,10 @@
         <input class="input" type="number" min="0.5" step="0.5" name="flee_respawn_minutes" x-model.number="flee" required></label>
       <label class="field"><span class="field-label">Temps pour rejoindre (min)</span>
         <input class="input" type="number" min="1" max="30" step="0.5" name="join_window_minutes" x-model.number="join" required></label>
+      <label class="field"><span class="field-label">Temps pour rejoindre une élite (min)</span>
+        <input class="input" type="number" min="1" max="30" step="0.5" name="elite_join_window_minutes" value="{{ '%g' % z.elite_join_window_minutes }}" required></label>
+      <label class="field"><span class="field-label">Bouton Lancer ouvert après (s)</span>
+        <input class="input" type="number" min="0" max="1800" step="5" name="launch_min_seconds" x-model.number="launch" required></label>
       <label class="field"><span class="field-label">Heures calmes : de (h, Paris)</span>
         <input class="input" type="number" min="0" max="23" name="quiet_start_hour" x-model.number="qs" required></label>
       <label class="field"><span class="field-label">Heures calmes : à (h, Paris)</span>
@@ -47,7 +52,8 @@
         <input class="input" type="number" min="0" max="100" step="1" name="pack_of_three_pct" x-model.number="three" required></label>
     </div>
     <ul class="form-section-help" style="margin:.7rem 0 .2rem; padding-left:1.2rem; line-height:1.6;">
-      <li><strong>Fuite</strong> : personne n'a rejoint pendant le temps imparti, le monstre s'en va. Un délai plus long évite de remplir un salon vide.</li>
+      <li><strong>Fuite</strong> : personne n'a rejoint pendant le temps imparti, le monstre s'en va et son message est supprimé. Un délai plus long évite de remplir un salon vide.</li>
+      <li><strong>Lancer</strong> : un combattant inscrit peut démarrer le combat sans attendre la fin du temps pour rejoindre, une fois ce délai passé (il laisse aux autres le temps de venir).</li>
       <li><strong>Heures calmes</strong> : aucun monstre n'apparaît dans cette plage (même heure de début et de fin = désactivé). Un cor de chasse ou un spawn admin passe quand même.</li>
       <li><strong>Meutes</strong> : 2 ou 3 monstres réduits (calibrés pour rester aussi faisables qu'un monstre seul). La bénédiction de Morrigane les porte à 25 % si c'est plus.</li>
     </ul>
@@ -55,16 +61,19 @@
       <table class="data-table">
         <thead><tr><th>Estimation par zone</th><th>Durée d'un cycle</th><th>Monstres / heure</th><th>Monstres / jour ({{ zones | length }} zones)</th></tr></thead>
         <tbody>
-          <tr><td>Quelqu'un rejoint (combat ≈ 30 s)</td>
+          <tr><td>Quelqu'un rejoint et attend (combat ≈ 30 s)</td>
             <td class="num" x-text="fmt(cycle()) + ' min'"></td><td class="num" x-text="fmt(perHour(cycle()))"></td>
             <td class="num" x-text="fmt(perDay(cycle()), 0)"></td></tr>
+          <tr><td>Quelqu'un rejoint et clique Lancer</td>
+            <td class="num" x-text="fmt(fastCycle()) + ' min'"></td><td class="num" x-text="fmt(perHour(fastCycle()))"></td>
+            <td class="num" x-text="fmt(perDay(fastCycle()), 0)"></td></tr>
           <tr><td>Personne ne vient (fuite)</td>
             <td class="num" x-text="fmt(fleeCycle()) + ' min'"></td><td class="num" x-text="fmt(perHour(fleeCycle()))"></td>
             <td class="num" x-text="fmt(perDay(fleeCycle()), 0)"></td></tr>
         </tbody>
       </table>
     </div>
-    <p class="form-section-help" style="margin:.4rem 0 .8rem;">Le temps pour rejoindre est un maximum : le groupe peut lancer le combat avant. <span x-show="quietHours() > 0" x-text="'Heures calmes : ' + quietHours() + ' h sans monstre par jour.'"></span></p>
+    <p class="form-section-help" style="margin:.4rem 0 .8rem;">L'équilibrage suppose environ 3 minutes par combat. <span x-show="quietHours() > 0" x-text="'Heures calmes : ' + quietHours() + ' h sans monstre par jour.'"></span></p>
     <div class="form-actions"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
   </form>
 

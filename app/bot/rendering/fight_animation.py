@@ -15,10 +15,16 @@ qui ne boucle PAS ; le bot remplace le message par le récapitulatif une fois
 la vidéo finie. Le décor est préparé une fois (`fight_scene.build_scene`) et
 les effets une fois par action (`combat_fx.collect_fx`) : chaque image ne
 recolle que ce qui bouge.
+
+Mémoire (audit du 06/11/2026 : une longue vidéo prenait 840 Mo sur un VPS de
+1,8 Go) : une image n'existe en couleurs que le temps d'être quantifiée
+(`_GifFrames`), la vidéo se construit en images à palette (3 fois plus légères)
+et les vidéos passent une à une (`render_queue`).
 """
 
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -140,9 +146,57 @@ def _palette(sample: Image.Image) -> tuple[Image.Image, list[int]]:
     return pal, colors
 
 
+class _GifFrames:
+    """Les images de la vidéo, quantifiées dès qu'elles sont prêtes.
+
+    La palette vient de la première image (le décor au repos, les couleurs des
+    effets sont réservées) ; chaque image ne garde que ce qui a changé depuis
+    la précédente (le reste est transparent)."""
+
+    def __init__(self, size: tuple[int, int]) -> None:
+        self.size = size
+        self.frames: list[Image.Image] = []
+        self.durations: list[int] = []
+        self._palette: Image.Image | None = None
+        self._colors: list[int] = []
+        self._previous: Image.Image | None = None
+
+    def push(self, img: Image.Image, ms: int) -> None:
+        frame = img.convert("RGB").resize(self.size, Image.BILINEAR)
+        if self._palette is None:
+            self._palette, colors = _palette(frame)
+            self._colors = colors + [255, 0, 255]
+        q = frame.quantize(palette=self._palette, dither=Image.Dither.NONE)
+        q.putpalette(self._colors)
+        previous, self._previous = self._previous, q
+        if previous is not None:
+            # Pixels inchangés → transparents (l'image précédente reste visible).
+            same = ImageChops.difference(Image.frombytes("L", q.size, q.tobytes()),
+                                         Image.frombytes("L", q.size, previous.tobytes()))
+            mask = same.point(lambda v: 255 if v == 0 else 0)
+            q = q.copy()
+            q.paste(_TRANSPARENT, mask=mask)
+        self.frames.append(q)
+        self.durations.append(ms)
+
+    def save(self, out_path: Path) -> None:
+        def remaining():
+            # Chaque image est lâchée dès que Pillow l'a reprise : sinon elles
+            # existent deux fois jusqu'à la fin de l'écriture.
+            while frames:
+                yield frames.popleft()
+
+        frames = deque(self.frames)
+        self.frames = []
+        first = frames.popleft()
+        # Sans `loop` : le GIF ne se joue qu'une fois.
+        first.save(out_path, save_all=True, append_images=remaining(), duration=self.durations,
+                   disposal=1, transparency=_TRANSPARENT, optimize=False)
+
+
 def animate_fight(scene: Scene, start_enemies: dict, start_players: dict, logs: list,
                   out_path: str | Path, *, fps: int = FPS, width: int = WIDTH,
-                  fmt: str = "gif", frames_per_action: int = FRAMES_PER_ACTION,
+                  frames_per_action: int = FRAMES_PER_ACTION,
                   interlude=None, outro=None) -> Animation:
     """Rejoue les `logs` du combat en vidéo. `start_*` : les PV avant la
     première action ({clé: (PV, max[, bouclier])}). `interlude(log)` peut
@@ -155,13 +209,10 @@ def animate_fight(scene: Scene, start_enemies: dict, start_players: dict, logs: 
     budget = max(1, MAX_SECONDS * fps - INTRO_FRAMES)
     if shown * frames_per_action > budget:   # long combat : accéléré
         frames_per_action = max(MIN_FRAMES_PER_ACTION, budget // max(1, shown))
-    height = round(width * FRAME_H / FRAME_W)
-    frames: list[Image.Image] = []
-    durations: list[int] = []
+    video = _GifFrames((width, round(width * FRAME_H / FRAME_W)))
 
     def push(img: Image.Image, ms: int = step_ms) -> None:
-        frames.append(img.convert("RGB").resize((width, height), Image.BILINEAR))
-        durations.append(ms)
+        video.push(img, ms)
 
     enemies = {k: (v + (0,))[:3] for k, v in start_enemies.items()}
     players = dict(start_players)
@@ -217,10 +268,11 @@ def animate_fight(scene: Scene, start_enemies: dict, start_players: dict, logs: 
     if closing:
         for img, ms in closing:
             push(img, ms)
-    elif durations:
-        durations[-1] = OUTRO_MS
-    _save(frames, durations, out_path, fmt)
-    return Animation(out_path, sum(durations) / 1000, len(frames), out_path.stat().st_size)
+    elif video.durations:
+        video.durations[-1] = OUTRO_MS
+    count = len(video.frames)
+    video.save(out_path)
+    return Animation(out_path, sum(video.durations) / 1000, count, out_path.stat().st_size)
 
 
 def _final(scene: Scene, dead: frozenset, enemies: dict, players: dict) -> Image.Image:
@@ -228,30 +280,3 @@ def _final(scene: Scene, dead: frozenset, enemies: dict, players: dict) -> Image
     img = scene.static(dead).copy()
     scene.draw_bars(img, enemies, players)
     return img
-
-
-def _save(frames: list[Image.Image], durations: list[int], out_path: Path, fmt: str) -> None:
-    if fmt == "webp":
-        frames[0].save(out_path, save_all=True, append_images=frames[1:], duration=durations,
-                       loop=1, quality=62, method=4)
-        return
-    pal, colors = _palette(frames[len(frames) // 2])
-    colors = colors + [255, 0, 255]
-    out, previous = [], None
-    for frame in frames:
-        q = frame.quantize(palette=pal, dither=Image.Dither.NONE)
-        q.putpalette(colors)
-        if previous is None:
-            out.append(q)
-        else:
-            # Pixels inchangés → transparents (l'image précédente reste visible).
-            same = ImageChops.difference(Image.frombytes("L", q.size, q.tobytes()),
-                                         Image.frombytes("L", q.size, previous.tobytes()))
-            mask = same.point(lambda v: 255 if v == 0 else 0)
-            delta = q.copy()
-            delta.paste(_TRANSPARENT, mask=mask)
-            out.append(delta)
-        previous = q
-    # Sans `loop` : le GIF ne se joue qu'une fois.
-    out[0].save(out_path, save_all=True, append_images=out[1:], duration=durations,
-                disposal=1, transparency=_TRANSPARENT, optimize=False)

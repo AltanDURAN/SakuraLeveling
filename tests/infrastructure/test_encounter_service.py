@@ -107,7 +107,8 @@ def _make_stats() -> Stats:
     )
 
 
-def _create_player(session, discord_id: int, name: str) -> int:
+def _create_player(session, discord_id: int, name: str, level: int = 10) -> int:
+    """Niveau 10 par défaut : au-dessus du coup de pouce des débuts (XP ×2)."""
     now = datetime.now(UTC)
     player = PlayerModel(
         discord_id=discord_id,
@@ -120,7 +121,7 @@ def _create_player(session, discord_id: int, name: str) -> int:
     session.add(player)
     session.flush()
     session.add(PlayerProgressionModel(
-        player_id=player.id, level=1, xp=0, skill_points=0,
+        player_id=player.id, level=level, xp=0, skill_points=0,
         created_at=now, updated_at=now,
     ))
     session.add(PlayerResourceModel(
@@ -258,7 +259,7 @@ def test_apply_rewards_distributes_gold_to_survivors_only(session, patch_get_db_
     assert p2_res.gold == 0
 
     # Progression : l'XP a été appliquée via ProgressionService.
-    # 50 XP avec level=1 et requirement = 100*1 = 100 → reste niveau 1 avec 50 xp.
+    # 50 XP au niveau 10 : loin du palier, reste niveau 10 avec 50 XP.
     p1_prog = session.get(PlayerProgressionModel, p1_id)
     p2_prog = session.get(PlayerProgressionModel, p2_id)
     assert p1_prog.xp == 50
@@ -407,3 +408,109 @@ def test_persist_final_players_hp_sauve_aussi_le_mana(session, patch_get_db_sess
     mana = session.execute(select(PlayerManaStateModel).where(PlayerManaStateModel.player_id == pid)).scalar_one()
     hp = session.execute(select(PlayerHealthStateModel).where(PlayerHealthStateModel.player_id == pid)).scalar_one()
     assert mana.current_mana == 13 and hp.current_hp == 42
+
+
+def _won_by(player_id: int, discord_id: int, name: str = "Alice", survived: bool = True, final_hp: int = 80):
+    return PartyBattleResult(
+        victory=True, turns=5, mob_name="Test Mob", mob_image_name="", mob_remaining_hp=0,
+        surviving_players=[name] if survived else [], defeated_players=[] if survived else [name],
+        xp_gained=0, gold_gained=0, summary="", turn_logs=[],
+        contributions=[PlayerContribution(player_id=player_id, user_id=discord_id, name=name,
+                                          damage_dealt=100, survived=survived, final_hp=final_hp,
+                                          max_hp=100)])
+
+
+def _participant(player_id: int, discord_id: int, hp: int = 80, name: str = "Alice") -> EncounterParticipant:
+    return EncounterParticipant(user_id=discord_id, player_id=player_id, display_name=name, avatar_url="",
+                                current_hp=hp, max_hp=100, stats=_make_stats())
+
+
+def test_l_xp_est_doublee_jusqu_au_niveau_10(session, patch_get_db_session):
+    young = _create_player(session, discord_id=111, name="Alice", level=9)
+    veteran = _create_player(session, discord_id=222, name="Bob", level=10)
+    _seed_mob(session, xp=50)
+    for pid, discord_id, expected, flag in ((young, 111, 100, True), (veteran, 222, 50, False)):
+        enc = _build_encounter([_participant(pid, discord_id)])
+        reward = EncounterService().apply_rewards(enc, _won_by(pid, discord_id)).rewards[0]
+        assert reward.xp == expected and reward.newcomer_bonus is flag
+
+
+def test_le_recapitulatif_connait_le_niveau_gagne_et_les_points(session, patch_get_db_session):
+    pid = _create_player(session, discord_id=111, name="Alice", level=1)
+    _seed_mob(session, xp=500)                  # ×2 : de quoi franchir plusieurs niveaux
+    enc = _build_encounter([_participant(pid, 111)])
+    reward = EncounterService().apply_rewards(enc, _won_by(pid, 111)).rewards[0]
+    assert reward.level_before == 1 and reward.level_after > 2 and reward.levels_gained == reward.level_after - 1
+    assert reward.stat_points == reward.levels_gained and reward.skill_points == reward.levels_gained
+
+
+def test_un_mort_voit_aussi_son_niveau_gagne(session, patch_get_db_session):
+    pid = _create_player(session, discord_id=111, name="Alice", level=1)
+    _seed_mob(session, xp=500)
+    enc = _build_encounter([_participant(pid, 111)])
+    reward = EncounterService().apply_rewards(enc, _won_by(pid, 111, survived=False, final_hp=0)).rewards[0]
+    assert reward.gold == 0 and reward.xp == 1000 and reward.levels_gained > 0
+
+
+def test_un_titre_debloque_en_combat_est_remonte(session, patch_get_db_session, monkeypatch):
+    from types import SimpleNamespace
+
+    from app.application.services import title_unlock_service as module
+
+    title = SimpleNamespace(code="bourreau", name="Bourreau", condition_value=1, condition_target="")
+    monkeypatch.setattr(module, "list_for_condition",
+                        lambda condition: [title] if condition == "kills_total" else [])
+    pid = _create_player(session, discord_id=111, name="Alice")
+    _seed_mob(session)
+    enc = _build_encounter([_participant(pid, 111)])
+    reward = EncounterService().apply_rewards(enc, _won_by(pid, 111)).rewards[0]
+    assert reward.titles == ["Bourreau"]
+
+
+def _mob_row(session):
+    return session.execute(select(MobDefinitionModel)).scalars().first()
+
+
+def test_les_pv_sont_relus_au_lancement_du_combat(session, patch_get_db_session):
+    """Le bug signalé en mai : une potion bue entre le clic et le combat était
+    perdue, les PV lus à l'inscription écrasaient tout."""
+    pid = _create_player(session, discord_id=111, name="Alice")
+    _seed_mob(session, code="slime_test")
+    enc = _build_encounter([_participant(pid, 111, hp=20)], mob_code="slime_test")
+    enc.participants[111].max_hp = 200          # inscription ancienne, pas à jour
+    health = session.get(PlayerHealthStateModel, pid)
+    health.current_hp = 90                      # la potion est bue après l'inscription
+    health.updated_at = datetime.now(UTC)
+    session.commit()
+
+    result = EncounterService().resolve_active_encounter(enc)
+
+    assert enc.participants[111].current_hp >= 90        # et plus les 20 PV de l'inscription
+    assert result.turn_logs[0].players_state[0]["max_hp"] == enc.participants[111].max_hp
+
+
+def test_un_joueur_tombe_ailleurs_ne_combat_pas(session, patch_get_db_session):
+    alice = _create_player(session, discord_id=111, name="Alice")
+    bob = _create_player(session, discord_id=222, name="Bob")
+    _seed_mob(session, code="slime_test")
+    enc = _build_encounter([_participant(alice, 111), _participant(bob, 222, name="Bob")], mob_code="slime_test")
+    health = session.get(PlayerHealthStateModel, bob)
+    health.current_hp = 0
+    health.updated_at = datetime.now(UTC)
+    session.commit()
+
+    result = EncounterService().resolve_active_encounter(enc)
+
+    assert list(enc.participants) == [111]
+    assert {c.user_id for c in result.contributions} == {111}
+
+
+def test_personne_ne_rejoint_un_combat_deja_joue(session, patch_get_db_session):
+    pid = _create_player(session, discord_id=111, name="Alice")
+    _seed_mob(session)
+    enc = _build_encounter([])
+    enc.resolved = True
+    ok, message = EncounterService().register_participant(enc, 111, "Alice", "")
+    assert not ok and "déjà commencé" in message
+    enc.participants[111] = _participant(pid, 111)
+    assert not EncounterService().unregister_participant(enc, 111)[0]

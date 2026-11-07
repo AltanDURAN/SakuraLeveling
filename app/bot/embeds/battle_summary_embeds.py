@@ -6,6 +6,62 @@ from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
 from app.domain.services.gear_service import RARITY_EMOJIS, RARITY_LABELS
 from app.domain.value_objects.battle_summary import BattleSummary
 
+#: Limites de Discord : 25 champs et 6 000 caractères par embed, 1 024 par
+#: champ. Dépassées, l'envoi est refusé en bloc (26 joueurs ont suffi à figer
+#: une zone). Au-delà, les derniers joueurs sont résumés en une ligne.
+MAX_PLAYER_FIELDS = 20
+EMBED_BUDGET = 5500
+FIELD_LIMIT = 1024
+
+
+def _add_player_fields(embed: discord.Embed, fields: list[tuple[str, str]],
+                       rest_line, rest_title: str) -> None:
+    """Un champ par joueur tant que l'embed peut en porter ; `rest_line(i)` :
+    la ligne qui résume le joueur `i` de ceux qui n'y tiennent pas."""
+    used = len(embed)
+    shown = 0
+    for name, value in fields:
+        if shown >= MAX_PLAYER_FIELDS or used + len(name) + len(value) > EMBED_BUDGET - FIELD_LIMIT:
+            break
+        embed.add_field(name=name, value=value, inline=False)
+        used += len(name) + len(value)
+        shown += 1
+    if shown == len(fields):
+        return
+    lines: list[str] = []
+    total = 0
+    for index in range(shown, len(fields)):
+        line = rest_line(index)
+        more = f"… et {len(fields) - index} de plus."
+        if total + len(line) + 1 + len(more) > FIELD_LIMIT - 8:
+            lines.append(more)
+            break
+        lines.append(line)
+        total += len(line) + 1
+    embed.add_field(name=rest_title, value="\n".join(lines), inline=False)
+
+
+def _growth_lines(reward) -> list[str]:
+    """Niveau gagné et titres débloqués : les moments forts d'un récap."""
+    lines: list[str] = []
+    if reward.levels_gained > 0:
+        to_place = []
+        if reward.stat_points:
+            to_place.append(f"{reward.stat_points} point{'s' if reward.stat_points > 1 else ''} "
+                            "de stats (/stats)")
+        if reward.skill_points:
+            to_place.append(f"{reward.skill_points} point{'s' if reward.skill_points > 1 else ''} "
+                            "d'arbre (/arbre)")
+        lines.append(f"🆙 **Niveau {reward.level_after} !**"
+                     + (f" À placer : {', '.join(to_place)}." if to_place else ""))
+    for title in reward.titles:
+        lines.append(f"🏷️ Titre débloqué : **{escape_markdown(title)}** (/titre_actif)")
+    return lines
+
+
+def _xp_line(reward) -> str:
+    return f"⭐ **{_format_int(reward.xp)}** XP" + (" 🌱 ×2 pour tes débuts" if reward.newcomer_bonus else "")
+
 
 def _essence_lines(reward) -> list[str]:
     """Lignes de récap des essences gagnées + montées d'affinité (auto)."""
@@ -27,19 +83,13 @@ def _essence_lines(reward) -> list[str]:
 
 
 def _outcome_color(summary: BattleSummary) -> discord.Color:
-    if summary.is_victory:
-        return discord.Color.gold()
-    if summary.is_defeat:
-        return discord.Color.dark_red()
-    return discord.Color.light_grey()
+    return discord.Color.gold() if summary.is_victory else discord.Color.dark_red()
 
 
 def _outcome_title(summary: BattleSummary) -> str:
-    if summary.is_victory:
-        return f"🏆 Victoire — {summary.mob_name} vaincu"
-    if summary.is_defeat:
-        return f"💀 Défaite — {summary.mob_name} l'emporte"
-    return f"🌫️ Le {summary.mob_name} s'est échappé"
+    # « contre » : pas d'accord à faire avec une meute ou un monstre au féminin.
+    return f"🏆 Victoire contre {summary.mob_name}" if summary.is_victory \
+        else f"💀 Défaite contre {summary.mob_name}"
 
 
 def build_rewards_page_embed(summary: BattleSummary) -> discord.Embed:
@@ -47,13 +97,6 @@ def build_rewards_page_embed(summary: BattleSummary) -> discord.Embed:
         title=_outcome_title(summary),
         color=_outcome_color(summary),
     )
-
-    if summary.is_flee:
-        embed.description = (
-            "Personne ne s'est présenté pour combattre. "
-            "Le monstre a disparu dans la nature avec son butin."
-        )
-        return embed
 
     rewards_sorted = sorted(
         summary.rewards,
@@ -69,6 +112,7 @@ def build_rewards_page_embed(summary: BattleSummary) -> discord.Embed:
     if summary.lunar_note:
         embed.description = "\n".join(filter(None, [summary.lunar_note, embed.description]))
 
+    fields: list[tuple[str, str]] = []
     for reward in rewards_sorted:
         contribution = reward.contribution
         survived_emoji = "✅" if (contribution and contribution.survived) else "💀"
@@ -76,7 +120,7 @@ def build_rewards_page_embed(summary: BattleSummary) -> discord.Embed:
         lines: list[str] = []
         if summary.is_victory and contribution and contribution.survived:
             lines.append(f"💰 **{_format_int(reward.gold)}** or")
-            lines.append(f"⭐ **{_format_int(reward.xp)}** XP")
+            lines.append(_xp_line(reward))
             if reward.items:
                 items_text = " • ".join(
                     f"{quantity}× {getattr(reward, 'item_names', {}).get(code) or f'`{code}`'}"
@@ -92,26 +136,36 @@ def build_rewards_page_embed(summary: BattleSummary) -> discord.Embed:
                     + (" — **MYTHIQUE !**" if rarity == "mythic" else "")
                 )
             lines.extend(_essence_lines(reward))
+            lines.extend(_growth_lines(reward))
         elif summary.is_victory:
-            lines.append("_Vaincu pendant le combat — aucune récompense._")
+            lines.append(_xp_line(reward))
+            lines.append("_K.O. pendant le combat : ni or ni butin._")
+            lines.extend(_growth_lines(reward))
         else:
             lines.append("_Aucune récompense (défaite)._")
 
-        embed.add_field(
-            name=f"{survived_emoji} {escape_markdown(reward.name)}",
-            value="\n".join(lines),
-            inline=False,
-        )
+        fields.append((f"{survived_emoji} {escape_markdown(reward.name)}", "\n".join(lines)))
+
+    def rest_line(index: int) -> str:
+        reward = rewards_sorted[index]
+        growth = f" 🆙 niveau {reward.level_after}" if reward.levels_gained > 0 else ""
+        return f"{escape_markdown(reward.name)} : {_format_int(reward.gold)} or, {_format_int(reward.xp)} XP{growth}"
+
+    _add_player_fields(embed, fields, rest_line, "Et aussi")
 
     if summary.is_victory:
         embed.set_footer(
             text=(
                 f"Combat en {summary.turns} actions • "
-                "Or partagé selon la contribution (dégâts + tank + soins) • "
-                "XP selon le rapport de force"
+                "Or partagé selon la contribution (dégâts, coups encaissés, soins) • "
+                "XP égale pour tous"
             )
         )
     return embed
+
+
+#: Lignes du graphique de contribution (une ligne fait ~45 caractères).
+CHART_MAX_LINES = 20
 
 
 def _percent_of(value: int, total: int) -> str:
@@ -132,8 +186,10 @@ def _build_contribution_chart(rewards: list, bar_width: int = 18) -> str:
     if not survivors:
         return ""
 
-    # Classement décroissant par part de contribution
-    sorted_rewards = sorted(survivors, key=lambda r: r.contribution_share, reverse=True)
+    # Classement décroissant par part de contribution ; le graphique tient
+    # dans un champ de Discord (1 024 caractères).
+    ranked = sorted(survivors, key=lambda r: r.contribution_share, reverse=True)
+    sorted_rewards = ranked[:CHART_MAX_LINES]
 
     # Plus long nom (tronqué à 12) pour un padding cohérent
     name_width = max(len(r.name[:12]) for r in sorted_rewards)
@@ -151,6 +207,8 @@ def _build_contribution_chart(rewards: list, bar_width: int = 18) -> str:
         prefix = medals[idx] if idx < 3 else "  "
         name_str = reward.name[:12].ljust(name_width)
         lines.append(f"{prefix} {name_str}  {bar}  {pct:>3}%")
+    if len(ranked) > len(sorted_rewards):
+        lines.append(f"   … et {len(ranked) - len(sorted_rewards)} de plus")
 
     return "```\n" + "\n".join(lines) + "\n```"
 
@@ -160,10 +218,6 @@ def build_details_page_embed(summary: BattleSummary) -> discord.Embed:
         title=f"📊 Détails du combat — {summary.mob_name}",
         color=_outcome_color(summary),
     )
-
-    if summary.is_flee:
-        embed.description = "Pas de combat à détailler."
-        return embed
 
     if not summary.rewards:
         embed.description = "Aucun participant à détailler."
@@ -196,10 +250,13 @@ def build_details_page_embed(summary: BattleSummary) -> discord.Embed:
         (r.contribution.hp_healed if r.contribution else 0) for r in summary.rewards
     )
 
+    fields: list[tuple[str, str]] = []
+    detailed = []
     for reward in rewards_sorted:
         contribution = reward.contribution
         if contribution is None:
             continue
+        detailed.append(reward)
 
         survived_emoji = "✅" if contribution.survived else "💀"
         share_pct = round(reward.contribution_share * 100)
@@ -220,16 +277,19 @@ def build_details_page_embed(summary: BattleSummary) -> discord.Embed:
             spent = f" (−{contribution.mana_spent} en compétences)" if contribution.mana_spent else ""
             lines.append(f"💧 Mana restant : **{contribution.final_mana}** / {contribution.mana_max}{spent}")
 
-        embed.add_field(
-            name=f"{survived_emoji} {escape_markdown(reward.name)}{header_suffix}",
-            value="\n".join(lines),
-            inline=False,
-        )
+        fields.append((f"{survived_emoji} {escape_markdown(reward.name)}{header_suffix}", "\n".join(lines)))
+
+    def rest_line(index: int) -> str:
+        c = detailed[index].contribution
+        return (f"{escape_markdown(detailed[index].name)} : ⚔️ {_format_int(c.damage_dealt)} · "
+                f"🛡️ {_format_int(c.damage_tanked)} · 💚 {_format_int(c.hp_healed)}")
+
+    _add_player_fields(embed, fields, rest_line, "Et aussi")
 
     embed.set_footer(
         text=(
             f"Combat en {summary.turns} actions • "
-            "🏅 = part de contribution (dégâts + tank + soins) qui pondère le partage de l'or"
+            "🏅 = part de contribution (dégâts, coups encaissés, soins) qui répartit l'or"
         )
     )
     return embed

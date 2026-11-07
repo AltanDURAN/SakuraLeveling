@@ -2,10 +2,12 @@
 les apparitions de monstres dans les zones et le rendez-vous du raid.
 
 Règles pures ; les valeurs vivent dans `pacing.json` (`pacing_loader`), relu
-par le bot sans redémarrage. Les valeurs par défaut sont celles d'avant :
-1 min entre deux combats, 5 min pour rejoindre, 10 % de meutes (60 % de 2,
-40 % de 3), boss le lundi à 13 h, assaut quotidien à 21 h, inscriptions
-fermées 10 min avant.
+par le bot sans redémarrage. Valeurs par défaut (07/11/2026, audit d'ouverture :
+le cycle réel était de 6 minutes contre 3 prévues) : 1 à 2 min entre deux
+combats, 2 min pour rejoindre (5 pour une élite, il faut rassembler du monde),
+le groupe peut LANCER le combat dès 30 s, 10 % de meutes (60 % de 2, 40 % de
+3), boss le lundi à 13 h, assaut quotidien à 21 h, inscriptions fermées 10 min
+avant.
 
   • ZONES : après un combat, le monstre suivant arrive au bout d'un délai
     tiré entre `respawn_min_minutes` et `respawn_max_minutes` (un rythme
@@ -40,9 +42,11 @@ FIGHT_CATCH_UP = timedelta(minutes=15)
 @dataclass(frozen=True)
 class ZonePacing:
     respawn_min_minutes: float = 1.0
-    respawn_max_minutes: float = 1.0
-    flee_respawn_minutes: float = 1.0
-    join_window_minutes: float = 5.0
+    respawn_max_minutes: float = 2.0
+    flee_respawn_minutes: float = 2.0
+    join_window_minutes: float = 2.0
+    elite_join_window_minutes: float = 5.0
+    launch_min_seconds: int = 30       # avant, personne ne peut lancer : les autres ont le temps de venir
     quiet_start_hour: int = 0          # heure de Paris ; début = fin ⇒ pas d'heures calmes
     quiet_end_hour: int = 0
     pack_chance_pct: float = 10.0
@@ -114,6 +118,11 @@ def next_spawn_at(zones: ZonePacing, override: ZoneOverride | None, now: datetim
     return now + timedelta(minutes=minutes / max(1.0, rate))
 
 
+def join_window_seconds(zones: ZonePacing, *, elite: bool = False) -> int:
+    """Temps pour rejoindre un combat, en secondes (une minute au moins)."""
+    return max(60, round((zones.elite_join_window_minutes if elite else zones.join_window_minutes) * 60))
+
+
 def pack_size_weights(zones: ZonePacing) -> dict[int, float]:
     three = max(0.0, min(100.0, zones.pack_of_three_pct))
     return {2: 100.0 - three, 3: three}
@@ -121,7 +130,8 @@ def pack_size_weights(zones: ZonePacing) -> dict[int, float]:
 
 def cycle_minutes(zones: ZonePacing, fight_minutes: float = 0.5) -> float:
     """Durée moyenne d'un cycle d'une zone quand personne ne lance le combat
-    avant la fin de l'attente : attente + combat + délai moyen."""
+    avant la fin de l'attente : attente + combat + délai moyen. (Avec le
+    bouton Lancer, l'attente tombe à `launch_min_seconds`.)"""
     low, high = respawn_range(zones)
     return zones.join_window_minutes + fight_minutes + (low + high) / 2
 
@@ -188,6 +198,10 @@ def validate(pacing: Pacing) -> list[str]:
         errors.append("Le délai après une fuite va de 30 secondes à 24 h.")
     if not 1 <= z.join_window_minutes <= 30:
         errors.append("Le temps pour rejoindre va de 1 à 30 minutes.")
+    if not 1 <= z.elite_join_window_minutes <= 30:
+        errors.append("Le temps pour rejoindre une élite va de 1 à 30 minutes.")
+    if not 0 <= z.launch_min_seconds <= 60 * z.join_window_minutes:
+        errors.append("Le lancement anticipé s'ouvre avant la fin du temps pour rejoindre.")
     if not (0 <= z.quiet_start_hour <= 23 and 0 <= z.quiet_end_hour <= 23):
         errors.append("Les heures calmes vont de 0 à 23 h.")
     if not 0 <= z.pack_chance_pct <= 100 or not 0 <= z.pack_of_three_pct <= 100:

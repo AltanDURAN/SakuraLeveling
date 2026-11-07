@@ -7,12 +7,12 @@ import discord
 from discord.ext import commands, tasks
 
 from app.application.services.encounter_service import EncounterService
-from app.bot.embeds.battle_summary_embeds import build_rewards_page_embed
 from app.bot.embeds.encounter_combat_log_embeds import (
     format_turn_action,
 )
 from app.bot.embeds.encounter_embeds import build_encounter_embed
 from app.bot.rendering.fight_scene import compose_players_banner
+from app.bot.rendering.render_queue import video_slot
 from app.bot.runtime.active_encounter import ActiveEncounter
 from app.bot.runtime.encounter_mob_state import EncounterMobState
 from app.bot.views.battle_summary_view import BattleSummaryView
@@ -20,10 +20,10 @@ from app.bot.views.encounter_view import EncounterView
 from app.domain.services import lunar_service, pack_service, pacing_service
 from app.domain.services.mob_ability_service import is_group_elite
 from app.domain.services.power_score_service import PowerScoreService
-from app.domain.value_objects.battle_summary import BattleSummary
 from app.domain.value_objects.stats import Stats
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.db.session import get_db_session
+from app.infrastructure.config.settings import settings
 from app.infrastructure.pacing.pacing_loader import get_pacing
 from app.infrastructure.encounters.farm_zone_loader import (
     default_channel_id,
@@ -46,6 +46,12 @@ from app.shared.paths import (
 # Les images servent une seule fois (attachment Discord), Discord en garde
 # sa propre copie sur son CDN. Au-delà de cet âge, on purge.
 _GENERATED_FILES_TTL_SECONDS = 7 * 24 * 3600
+
+#: Premières apparitions décalées d'une zone à l'autre : sinon les zones
+#: tournent ensemble, leurs combats finissent ensemble et leurs vidéos s'empilent.
+_ZONE_STAGGER_SECONDS = 25
+#: Un palier de niveau tous les N niveaux est annoncé à tout le serveur.
+LEVEL_MILESTONE = 10
 
 _logger = logging.getLogger(__name__)
 
@@ -105,8 +111,9 @@ class EncounterCog(commands.Cog):
         bot prêt. Chaque zone spawn/combat en parallèle des autres."""
         await self.bot.wait_until_ready()
         now = datetime.now(UTC)
-        for channel_id in list_zone_channels():
-            self._zone_next_spawn.setdefault(channel_id, now + timedelta(minutes=1))
+        for index, channel_id in enumerate(list_zone_channels()):
+            self._zone_next_spawn.setdefault(
+                channel_id, now + timedelta(minutes=1, seconds=index * _ZONE_STAGGER_SECONDS))
             self._zone_tasks[channel_id] = asyncio.ensure_future(
                 self._zone_loop(channel_id)
             )
@@ -136,6 +143,12 @@ class EncounterCog(commands.Cog):
         display_name: str,
         avatar_url: str,
     ) -> tuple[bool, str]:
+        # Une seule zone à la fois : deux combats en parallèle écrivaient les
+        # mêmes PV, le second effaçait la mort du premier.
+        for other_id, other in self.active_encounters.items():
+            if other_id != channel_id and user_id in other.participants and not other.resolved:
+                return False, (f"⚔️ Tu es déjà inscrit à un combat dans <#{other_id}>. "
+                               "Quitte-le ou termine-le avant d'en rejoindre un autre.")
         success, message = self.encounter_service.register_participant(
             encounter=self.active_encounters.get(channel_id),
             user_id=user_id,
@@ -154,6 +167,23 @@ class EncounterCog(commands.Cog):
             user_id=user_id,
         )
         return success, message
+
+    def request_launch(self, channel_id: int, user_id: int) -> tuple[bool, str]:
+        """Bouton Lancer : un combattant inscrit démarre le combat sans attendre
+        la fin du temps pour rejoindre (une fois passé le délai minimum)."""
+        encounter = self.active_encounters.get(channel_id)
+        if encounter is None or encounter.resolved:
+            return False, "Ce combat a déjà commencé."
+        if user_id not in encounter.participants:
+            return False, "Rejoins d'abord le combat pour pouvoir le lancer."
+        if encounter.launch_after is not None and datetime.now(UTC) < encounter.launch_after:
+            return False, ("⏳ Laisse aux autres le temps de venir : tu pourras lancer "
+                           f"<t:{int(encounter.launch_after.timestamp())}:R>.")
+        event = self._zone_early_resolve.get(channel_id)
+        if event is None:
+            return False, "Ce combat a déjà commencé."
+        event.set()
+        return True, "🚀 C'est parti !"
 
     # ---------------------- Commandes admin (zone-aware) ----------------------
 
@@ -371,7 +401,8 @@ class EncounterCog(commands.Cog):
         ts = int(encounter.ends_at.timestamp())
         if encounter.participants:
             count = len(encounter.participants)
-            lines.append(f"⚔️ Le combat se lance <t:{ts}:R> — {count} combattant{'s' if count > 1 else ''}.")
+            lines.append(f"⚔️ Le combat se lance <t:{ts}:R> — {count} combattant{'s' if count > 1 else ''}. "
+                         "Prêts ? Cliquez sur **Lancer**.")
         else:
             lines.append(f"⏳ Sans combattant, le monstre s'enfuit <t:{ts}:R>.")
         return "\n".join(lines)
@@ -537,8 +568,10 @@ class EncounterCog(commands.Cog):
             )
 
         mob_state = _state(mob)
-        # Temps pour rejoindre (réglable depuis l'admin, Monde › Rythme).
-        window_s = max(60, round(get_pacing().zones.join_window_minutes * 60))
+        # Temps pour rejoindre (réglable depuis l'admin, Monde › Rythme) : plus
+        # long pour une élite, qu'on ne bat qu'en groupe.
+        zones = get_pacing().zones
+        window_s = pacing_service.join_window_seconds(zones, elite=is_group_elite(mob.code))
 
         encounter = ActiveEncounter.create(
             mob_state=mob_state,
@@ -550,10 +583,11 @@ class EncounterCog(commands.Cog):
         encounter.pack = [_state(m) for m in members[1:]]
         encounter.lunar = lunar
         encounter.channel_id = channel_id
+        encounter.launch_after = encounter.started_at + timedelta(seconds=zones.launch_min_seconds)
 
         view = EncounterView(self, channel_id, timeout=window_s)
 
-        spawn_filename = f"encounter_spawn_{encounter.mob_state.code}.png"
+        spawn_filename = f"encounter_spawn_{encounter.mob_state.code}.jpg"
         spawn_output_full = self.generated_dir / spawn_filename
         spawn_output_relative = f"generated_encounters/{spawn_filename}"
 
@@ -578,9 +612,21 @@ class EncounterCog(commands.Cog):
         message = await channel.send(embed=embed, view=view, file=file)
         encounter.message_id = message.id
         self.active_encounters[channel_id] = encounter
+        try:
+            await self._play_encounter(channel, channel_id, encounter, view, message,
+                                       background_path, window_s)
+        finally:
+            # Quoi qu'il arrive (Discord en panne, récapitulatif refusé…), la
+            # zone repart : sinon elle restait figée jusqu'au redémarrage.
+            if self.active_encounters.get(channel_id) is encounter:
+                self._reschedule(channel_id)
 
-        # Fenêtre de recrutement / combat : le temps pour rejoindre OU
-        # jusqu'au signal d'/admin start_encounter (early resolve).
+    async def _play_encounter(self, channel, channel_id: int, encounter, view, message,
+                              background_path, window_s: int) -> None:
+        """Du monstre posé au récapitulatif : attente, fuite ou combat, vidéo.
+        La zone est libérée par l'appelant, quoi qu'il arrive ici."""
+        # Fenêtre de recrutement : le temps pour rejoindre, ou jusqu'au bouton
+        # Lancer et au signal d'/admin start_encounter (early resolve).
         event = asyncio.Event()
         self._zone_early_resolve[channel_id] = event
         try:
@@ -594,47 +640,45 @@ class EncounterCog(commands.Cog):
             child.disabled = True
 
         # L'encounter a-t-il été annulé/remplacé pendant la fenêtre (admin
-        # end/spawn) ? Si oui, on abandonne sans reprogrammer (celui qui a
-        # annulé a déjà posé le prochain spawn).
+        # end/spawn) ? Si oui, on retire son message et on abandonne sans
+        # reprogrammer (celui qui a annulé a déjà posé le prochain spawn).
         if self.active_encounters.get(channel_id) is not encounter:
+            await self._delete_quietly(message)
             return
 
-        # Les combattants sont prévenus : le combat se joue en direct ici.
-        if encounter.participants:
-            mentions = " ".join(f"<@{p.user_id}>" for p in encounter.participants.values())
-            try:
-                await channel.send(
-                    f"⚔️ **Le combat contre {encounter.mob_names} commence !** {mentions}\n"
-                    f"Il se joue en direct : {message.jump_url}",
-                    allowed_mentions=discord.AllowedMentions(users=True, everyone=False, roles=False))
-            except discord.HTTPException:
-                _logger.warning("annonce du début du combat impossible", exc_info=True)
-
         if not encounter.participants:
-            flee_summary = BattleSummary(
-                outcome="flee",
-                mob_name=encounter.mob_names,
-                mob_image_name=encounter.mob_state.image_name,
-                mob_family="",
-                turns=0,
-            )
-            flee_embed = build_rewards_page_embed(flee_summary)
-            await message.edit(embed=flee_embed, attachments=[], view=None)
+            # Personne n'est venu : le message part avec le monstre. Il en
+            # restait ~240 par jour et par zone, qui noyaient les vrais combats.
+            await self._delete_quietly(message)
             self._reschedule(channel_id, fled=True)
             await asyncio.to_thread(record_now, get_db_session, kinds.FLEE, zone=channel_id,
                                     ref=encounter.mob_state.code, qty=len(encounter.mobs))
             return
 
         result = self.encounter_service.resolve_active_encounter(encounter)
-        if result is None:
-            self._reschedule(channel_id)
+        if result is None or not encounter.participants:
+            # Tous les inscrits sont tombés ailleurs entre-temps : pas de combat.
+            await self._delete_quietly(message)
             return
 
         self.encounter_service.persist_final_players_hp(result, encounter)
         battle_summary = self.encounter_service.apply_rewards(encounter, result)
+        encounter.resolved = True
 
         if battle_summary is not None:
             battle_summary.journal = [format_turn_action(log) for log in result.turn_logs]
+
+        # Les combattants sont prévenus : le combat se joue en direct ici. (Le
+        # message part une fois la vidéo finie : le récapitulatif reste seul.)
+        mentions = " ".join(f"<@{p.user_id}>" for p in encounter.participants.values())
+        announce = None
+        try:
+            announce = await channel.send(
+                f"⚔️ **Le combat contre {encounter.mob_names} commence !** {mentions}\n"
+                f"Il se joue en direct : {message.jump_url}",
+                allowed_mentions=discord.AllowedMentions(users=True, everyone=False, roles=False))
+        except discord.HTTPException:
+            _logger.warning("annonce du début du combat impossible", exc_info=True)
 
         # Le combat en VIDÉO (27/10/2026) : un GIF qui se lance tout seul et ne
         # boucle pas, puis le message passe au récapitulatif. Il remplace les
@@ -642,19 +686,36 @@ class EncounterCog(commands.Cog):
         # déroulé est la 3e page du récapitulatif).
         await self._play_fight_video(channel_id, encounter, message, result, background_path)
 
+        if announce is not None:
+            await self._delete_quietly(announce)
         if battle_summary is None:
-            self._reschedule(channel_id)
             return
 
         summary_view = BattleSummaryView(battle_summary, timeout=600.0)
-        await message.edit(
-            embed=summary_view.current_embed,
-            attachments=[],
-            view=summary_view,
-        )
+        try:
+            await message.edit(embed=summary_view.current_embed, attachments=[], view=summary_view)
+        except discord.HTTPException:
+            # Les récompenses sont déjà données : le joueur doit au moins le savoir.
+            _logger.exception("récapitulatif du combat refusé par Discord")
+            await self._send_quietly(channel, f"⚔️ Combat terminé contre {battle_summary.mob_name} : "
+                                              "les récompenses sont distribuées (/profil, /inventaire).")
 
         await self._announce_mythics(channel, battle_summary, getattr(message, "jump_url", None))
-        self._reschedule(channel_id)
+        await self._announce_milestones(battle_summary)
+
+    @staticmethod
+    async def _delete_quietly(message) -> None:
+        try:
+            await message.delete()
+        except discord.HTTPException:
+            _logger.warning("message du combat non supprimé", exc_info=True)
+
+    @staticmethod
+    async def _send_quietly(channel, text: str) -> None:
+        try:
+            await channel.send(text)
+        except discord.HTTPException:
+            _logger.warning("message non envoyé", exc_info=True)
 
     def _render_fight_video(self, channel_id: int, encounter, result, background_path):
         """Le GIF du combat (cf. `fight_animation`), ou None si le rendu
@@ -702,8 +763,13 @@ class EncounterCog(commands.Cog):
         except discord.HTTPException:
             pass
         try:
-            anim = await asyncio.to_thread(self._render_fight_video, channel_id, encounter, result,
-                                           background_path)
+            # Une vidéo à la fois (mémoire) ; file trop longue ⇒ récapitulatif direct.
+            async with video_slot() as granted:
+                if not granted:
+                    _logger.warning("file des vidéos trop longue : combat sans vidéo")
+                    return
+                anim = await asyncio.to_thread(self._render_fight_video, channel_id, encounter, result,
+                                               background_path)
         except Exception:
             _logger.exception("vidéo du combat échouée")
             return
@@ -742,6 +808,25 @@ class EncounterCog(commands.Cog):
                 except discord.HTTPException:
                     pass
 
+    async def _announce_milestones(self, summary) -> None:
+        """Les paliers de niveau (tous les 10) sont annoncés à tout le serveur,
+        sans mentionner personne (le joueur l'a déjà vu dans son récapitulatif)."""
+        lines = []
+        for reward in getattr(summary, "rewards", None) or []:
+            before, after = reward.level_before, reward.level_after
+            if before and after // LEVEL_MILESTONE > before // LEVEL_MILESTONE:
+                lines.append(f"🌸 **{discord.utils.escape_markdown(reward.name)}** atteint le "
+                             f"**niveau {after // LEVEL_MILESTONE * LEVEL_MILESTONE}** !")
+        if not lines:
+            return
+        channel = self.bot.get_channel(settings.rank_announce_channel_id)
+        if channel is None:
+            return
+        try:
+            await channel.send("\n".join(lines), allowed_mentions=discord.AllowedMentions.none())
+        except discord.HTTPException:
+            _logger.warning("annonce de palier impossible", exc_info=True)
+
     async def refresh_encounter_scene(self, channel_id: int) -> None:
         encounter = self.active_encounters.get(channel_id)
         if encounter is None or encounter.message_id is None:
@@ -773,7 +858,7 @@ class EncounterCog(commands.Cog):
             for participant in encounter.participants.values()
         ]
 
-        filename = f"encounter_{encounter.message_id}_current.png"
+        filename = f"encounter_{encounter.message_id}_current.jpg"
         output_full = self.generated_dir / filename
         output_relative = f"generated_encounters/{filename}"
         background_path = self._zone_bg.get(

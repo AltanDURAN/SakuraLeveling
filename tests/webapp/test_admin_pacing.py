@@ -12,7 +12,8 @@ from tests.webapp.test_admin_content_crud import _same_origin, content  # noqa: 
 from tests.webapp.test_admin_pages_smoke import client  # noqa: F401  (fixture)
 
 ZONES = {"respawn_min_minutes": "2", "respawn_max_minutes": "6,5", "flee_respawn_minutes": "10",
-         "join_window_minutes": "4", "quiet_start_hour": "2", "quiet_end_hour": "8",
+         "join_window_minutes": "4", "elite_join_window_minutes": "6", "launch_min_seconds": "20",
+         "quiet_start_hour": "2", "quiet_end_hour": "8",
          "pack_chance_pct": "15", "pack_of_three_pct": "30"}
 
 
@@ -39,6 +40,7 @@ def test_regler_les_zones(client, pacing_copy):
     zones = pacing_loader.get_pacing().zones
     assert (zones.respawn_min_minutes, zones.respawn_max_minutes, zones.join_window_minutes) == (2, 6.5, 4)
     assert (zones.quiet_start_hour, zones.quiet_end_hour, zones.pack_chance_pct) == (2, 8, 15)
+    assert (zones.elite_join_window_minutes, zones.launch_min_seconds) == (6, 20)
     bad = {**ZONES, "respawn_max_minutes": "1"}                     # max < min
     assert client.post("/admin/pacing/zones", data=bad).status_code == 400
     assert _saved(pacing_copy)["zones"]["respawn_max_minutes"] == 6.5   # rien n'a été écrit

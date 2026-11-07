@@ -7,8 +7,7 @@ from app.domain.value_objects.player_reward import PlayerReward
 class BattleSummary:
     """Résumé d'un combat pour affichage et persistance.
 
-    `outcome` est l'un de : "victory", "defeat", "flee".
-    `flee` correspond à l'absence de participants : pas de combat ni de récompense.
+    `outcome` est l'un de : "victory", "defeat".
     """
 
     outcome: str
@@ -24,6 +23,8 @@ class BattleSummary:
     journal: list[str] = field(default_factory=list)
     #: Événement lunaire du combat (« 🌕 Pleine lune — … »), vide sinon.
     lunar_note: str = ""
+    #: Nombre de monstres (une meute en compte plusieurs).
+    mob_count: int = 1
 
     @property
     def is_victory(self) -> bool:
@@ -32,7 +33,3 @@ class BattleSummary:
     @property
     def is_defeat(self) -> bool:
         return self.outcome == "defeat"
-
-    @property
-    def is_flee(self) -> bool:
-        return self.outcome == "flee"

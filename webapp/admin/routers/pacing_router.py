@@ -92,6 +92,8 @@ async def save_zones(request: Request, user: AdminUser = Depends(require_admin))
         "respawn_max_minutes": _num(form, "respawn_max_minutes"),
         "flee_respawn_minutes": _num(form, "flee_respawn_minutes"),
         "join_window_minutes": _num(form, "join_window_minutes"),
+        "elite_join_window_minutes": _num(form, "elite_join_window_minutes"),
+        "launch_min_seconds": _num(form, "launch_min_seconds", int),
         "quiet_start_hour": _num(form, "quiet_start_hour", int),
         "quiet_end_hour": _num(form, "quiet_end_hour", int),
         "pack_chance_pct": _num(form, "pack_chance_pct"),

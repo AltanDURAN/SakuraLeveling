@@ -12,6 +12,10 @@ User=ubuntu
 Group=ubuntu
 WorkingDirectory=/home/ubuntu/SakuraLeveling
 ExecStart=/home/ubuntu/SakuraLeveling/.venv/bin/python -m app.bot.main
+# Mémoire : sans ça, chaque thread de rendu garde son tas et le bot ne rend
+# jamais ce qu'il a pris (mesuré : 630 Mo au repos, 150 Mo avec ces réglages).
+Environment=MALLOC_ARENA_MAX=2
+Environment=MALLOC_TRIM_THRESHOLD_=131072
 Restart=on-failure
 RestartSec=5s
 

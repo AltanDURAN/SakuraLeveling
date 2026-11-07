@@ -924,7 +924,12 @@ class WorldBossCog(commands.Cog):
                 avatars[fighter["player_id"]] = user.display_avatar.replace(size=128).url
         anim = None
         try:
-            anim = await asyncio.to_thread(self._render_assault_video, boss, boss_def, result, avatars)
+            from app.bot.rendering.render_queue import BOSS_WAIT_S, video_slot
+
+            # Une vidéo à la fois (mémoire), même pour le raid.
+            async with video_slot(BOSS_WAIT_S) as granted:
+                if granted:
+                    anim = await asyncio.to_thread(self._render_assault_video, boss, boss_def, result, avatars)
         except Exception:
             logging.getLogger(__name__).exception("vidéo de l'assaut échouée")
         try:

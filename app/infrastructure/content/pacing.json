@@ -1,9 +1,11 @@
 {
   "zones": {
     "respawn_min_minutes": 1,
-    "respawn_max_minutes": 1,
-    "flee_respawn_minutes": 1,
-    "join_window_minutes": 5,
+    "respawn_max_minutes": 2,
+    "flee_respawn_minutes": 2,
+    "join_window_minutes": 2,
+    "elite_join_window_minutes": 5,
+    "launch_min_seconds": 30,
     "quiet_start_hour": 0,
     "quiet_end_hour": 0,
     "pack_chance_pct": 10,

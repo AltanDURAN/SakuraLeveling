@@ -13,10 +13,11 @@ def at(hour: int, minute: int = 0, day: int = 28) -> datetime:
     return datetime(2026, 10, day, hour, minute, tzinfo=PARIS)
 
 
-def test_les_valeurs_par_defaut_sont_celles_d_avant():
+def test_les_valeurs_par_defaut():
     assert ps.DEFAULT == parse({})
     z, r = ps.DEFAULT.zones, ps.DEFAULT.raid
-    assert (z.respawn_min_minutes, z.respawn_max_minutes, z.join_window_minutes, z.pack_chance_pct) == (1, 1, 5, 10)
+    assert (z.respawn_min_minutes, z.respawn_max_minutes, z.join_window_minutes, z.pack_chance_pct) == (1, 2, 2, 10)
+    assert (z.elite_join_window_minutes, z.launch_min_seconds) == (5, 30)
     assert (ps.fight_label(r), ps.close_label(r)) == ("21h", "20h50")
     assert ps.validate(ps.DEFAULT) == []
 
@@ -57,6 +58,17 @@ def test_inscriptions_et_assaut_du_raid():
     assert ps.next_fight_at(raid, at(21)) == at(20, 30, day=29)
 
 
+def test_une_elite_laisse_plus_de_temps_pour_rejoindre():
+    zones = ZonePacing(join_window_minutes=2, elite_join_window_minutes=5)
+    assert ps.join_window_seconds(zones) == 120 and ps.join_window_seconds(zones, elite=True) == 300
+    assert ps.join_window_seconds(ZonePacing(join_window_minutes=0.1)) == 60
+
+
+def test_le_lancement_s_ouvre_avant_la_fin_de_l_attente():
+    errors = ps.validate(Pacing(zones=ZonePacing(join_window_minutes=1, launch_min_seconds=90)))
+    assert any("lancement" in e for e in errors)
+
+
 def test_validation():
     bad = Pacing(zones=ZonePacing(respawn_min_minutes=5, respawn_max_minutes=2, join_window_minutes=60),
                  overrides={1: ZoneOverride(respawn_min_minutes=0.1)},
@@ -69,6 +81,6 @@ def test_validation():
 def test_lecture_du_json():
     pacing = parse({"zones": {"respawn_min_minutes": 3, "respawn_max_minutes": "6"},
                     "zone_overrides": {"42": {"paused": True}}, "raid": {"fight_hour": 20}})
-    assert pacing.zones.respawn_max_minutes == 6.0 and pacing.zones.join_window_minutes == 5
+    assert pacing.zones.respawn_max_minutes == 6.0 and pacing.zones.join_window_minutes == 2
     assert pacing.override(42).paused and not pacing.override(7).paused
     assert pacing.raid.fight_hour == 20 and pacing.raid.fight_minute == 0

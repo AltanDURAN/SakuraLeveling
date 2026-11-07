@@ -27,7 +27,7 @@ from app.infrastructure.loot.family_drop_loader import get_family_drops
 from app.domain.services import pack_service
 from app.domain.services.party_combat_service import EnemySetup, PartyCombatService
 from app.domain.services.power_score_service import PowerScoreService
-from app.domain.services.progression_service import ProgressionService
+from app.domain.services.progression_service import ProgressionService, newcomer_xp_multiplier
 from app.domain.services.reward_distribution_service import RewardDistributionService
 from app.domain.services.skill_tree_service import SkillTreeService
 from app.domain.services.stats_service import StatsService
@@ -81,31 +81,34 @@ class EncounterService:
         hp_regeneration: int,
     ) -> int:
         with get_db_session() as session:
-            player_health_repository = PlayerHealthRepository(session)
+            return self._regenerated_hp(session, player_id, max_hp, hp_regeneration)
 
-            health_state = player_health_repository.get_or_create(
+    @staticmethod
+    def _regenerated_hp(session, player_id: int, max_hp: int, hp_regeneration: int) -> int:
+        """PV du joueur à cet instant, régénération hors combat comprise."""
+        player_health_repository = PlayerHealthRepository(session)
+
+        health_state = player_health_repository.get_or_create(
+            player_id=player_id,
+            default_current_hp=max_hp,
+        )
+
+        regenerated_current_hp = HealthRegenerationService().apply_out_of_combat_regeneration(
+            current_hp=health_state.current_hp,
+            max_hp=max_hp,
+            hp_regeneration=hp_regeneration,
+            last_updated_at=health_state.updated_at,
+            now=datetime.now(UTC),
+            boosts=resolve_regen_boosts(session, player_id),
+        )
+
+        if regenerated_current_hp != health_state.current_hp:
+            player_health_repository.refresh_current_hp(
                 player_id=player_id,
-                default_current_hp=max_hp,
+                new_current_hp=regenerated_current_hp,
             )
 
-            now = datetime.now(UTC)
-
-            regenerated_current_hp = HealthRegenerationService().apply_out_of_combat_regeneration(
-                current_hp=health_state.current_hp,
-                max_hp=max_hp,
-                hp_regeneration=hp_regeneration,
-                last_updated_at=health_state.updated_at,
-                now=now,
-                boosts=resolve_regen_boosts(session, player_id),
-            )
-
-            if regenerated_current_hp != health_state.current_hp:
-                player_health_repository.refresh_current_hp(
-                    player_id=player_id,
-                    new_current_hp=regenerated_current_hp,
-                )
-
-            return regenerated_current_hp
+        return regenerated_current_hp
 
     def register_participant(
         self,
@@ -117,8 +120,11 @@ class EncounterService:
         if encounter is None:
             return False, "Aucun combat à rejoindre."
 
+        if getattr(encounter, "resolved", False):
+            return False, "Ce combat a déjà commencé."
+
         if user_id in encounter.participants:
-            return False, "Vous avez déjà rejoint le combat."
+            return False, "Tu as déjà rejoint le combat."
 
         with get_db_session() as session:
             player_repository = PlayerRepository(session)
@@ -127,7 +133,7 @@ class EncounterService:
 
             profile = player_repository.get_by_discord_id(user_id)
             if profile is None:
-                return False, "Votre profil joueur n'existe pas encore. Utilisez /demarrer d'abord."
+                return False, "Ton profil n'existe pas encore : commence par /demarrer."
 
             equipped_items = equipment_repository.list_by_player_id(profile.player.id)
             allocations = skill_allocation_repository.list_by_player(profile.player.id)
@@ -186,7 +192,7 @@ class EncounterService:
 
         encounter.participants[user_id] = participant
 
-        return True, "Vous avez rejoint le combat." + self._danger_note(
+        return True, "Tu as rejoint le combat." + self._danger_note(
             encounter, combat_stats, self._scaled_hp(regenerated_current_hp, stats.max_hp, combat_stats.max_hp),
         )
 
@@ -261,6 +267,7 @@ class EncounterService:
             )
 
             party = []
+            fallen: list[int] = []
             title_bonuses_by_player: dict = {}
             mana_repo = PlayerManaRepository(session)
             now = datetime.now(UTC)
@@ -299,6 +306,24 @@ class EncounterService:
                     set_bonuses=set_bonuses,
                     status_bonuses=status_bonuses,
                 )
+                # PV relus AU LANCEMENT, comptés sur le maximum sans élixir (celui
+                # des PV stockés) : lus à l'inscription, ils perdaient la potion
+                # bue et la régénération de l'attente (signalé par un testeur).
+                base_stats = StatsService().calculate_player_stats(
+                    profile=profile,
+                    equipped_items=equipped_items,
+                    skill_bonuses=skill_bonuses,
+                    title_bonuses=title_bonuses,
+                    set_bonuses=set_bonuses,
+                    status_bonuses=resolve_status_effects(session, participant.player_id),
+                )
+                participant.max_hp = base_stats.max_hp
+                participant.current_hp = self._regenerated_hp(
+                    session, participant.player_id, base_stats.max_hp, base_stats.hp_regeneration)
+                if participant.current_hp <= 0:
+                    # Tombé ailleurs depuis son inscription : il ne combat pas.
+                    fallen.append(participant.user_id)
+                    continue
 
                 # Mana courant (régénéré hors combat jusqu'à MAINTENANT) : les
                 # compétences actives y puisent (cf. combat_passives.MANA_COSTS).
@@ -347,6 +372,8 @@ class EncounterService:
                                           elemental_out=outgoing, elemental_in=incoming,
                                           infusion=infused))
 
+        for user_id in fallen:
+            del encounter.participants[user_id]
         if not party:
             return None
 
@@ -486,6 +513,7 @@ class EncounterService:
                 base_xp_reward=xp_reward,
                 base_gold_reward=gold_reward,
                 lunar_note=lunar_note,
+                mob_count=size,
             )
 
         contribution_shares = reward_distribution_service.compute_contribution_shares(
@@ -555,14 +583,25 @@ class EncounterService:
                 title_bonuses = resolve_title_bonuses(session, participant.player_id)
                 farmer_pct = title_bonuses.gold_xp_bonus_pct / 100.0
 
+                # Coup de pouce des débuts (cf. ProgressionService).
+                level_before = self._level_of(player_repository, participant.player_id)
+                newcomer = newcomer_xp_multiplier(level_before)
+
                 base_xp = xp_per_player.get(participant.player_id, 0)
                 xp = round(
-                    base_xp * (1 + bonuses.xp_drop_percent) * (1 + farmer_pct) * blessed_xp
+                    base_xp * (1 + bonuses.xp_drop_percent) * (1 + farmer_pct) * blessed_xp * newcomer
                 )
 
                 # L'XP est gagnée par TOUS les participants, morts inclus
                 # (le mob est vaincu) — appliquée via le palier de niveau.
-                self._grant_xp(player_repository, participant.player_id, xp)
+                progression = self._grant_xp(player_repository, participant.player_id, xp)
+                growth = {
+                    "level_before": level_before,
+                    "level_after": progression.level if progression else level_before,
+                    "stat_points": progression.stat_points if progression else 0,
+                    "skill_points": progression.skill_points if progression else 0,
+                    "newcomer_bonus": newcomer > 1,
+                }
 
                 if not survived:
                     # Mort en combat : XP oui (déjà appliquée), mais PAS d'or,
@@ -578,6 +617,7 @@ class EncounterService:
                             items=[],
                             contribution=contribution,
                             contribution_share=0.0,
+                            **growth,
                         )
                     )
                     continue
@@ -600,6 +640,7 @@ class EncounterService:
                 dropped: dict[str, int] = {}
                 gear_drop: list[tuple[str, str]] = []
                 essence_gains: list[EssenceGain] = []
+                unlocked: list = []       # titres débloqués, montrés au récapitulatif
                 # Chaque monstre vaincu : une victoire (kill, titres, quêtes) ;
                 # son butin tombe toujours seul, avec la probabilité du
                 # facteur de meute sinon (pack_service.loot_roll).
@@ -643,12 +684,11 @@ class EncounterService:
                         ))
 
                     # Check titres : kills_family / kills_mob.
-                    # Unlock silencieux côté embed (le joueur découvre via /title).
                     if definition.family:
-                        title_unlock_service.check_kills_family(
+                        unlocked += title_unlock_service.check_kills_family(
                             participant.player_id, definition.family
                         )
-                    title_unlock_service.check_kills_mob(
+                    unlocked += title_unlock_service.check_kills_mob(
                         participant.player_id, definition.code,
                     )
                     # Kill : n'importe quel monstre, sa famille, et « à plusieurs »
@@ -660,7 +700,7 @@ class EncounterService:
                         participant.player_id, definition.family or "", definition.code, count=1,
                         group_size=group_size,
                     )
-                title_unlock_service.check_kills_total(participant.player_id)
+                unlocked += title_unlock_service.check_kills_total(participant.player_id)
                 dropped_items = list(dropped.items())
 
                 # Check titre Intouchable : esquives totales tracées en
@@ -670,7 +710,7 @@ class EncounterService:
                 career_after = career_repository.get_or_create(
                     participant.player_id
                 )
-                title_unlock_service.check_dodges_total(
+                unlocked += title_unlock_service.check_dodges_total(
                     participant.player_id, career_after.dodges_total,
                 )
 
@@ -754,6 +794,8 @@ class EncounterService:
                         ),
                         essence_gains=essence_gains,
                         gear=gear_drop,
+                        titles=[event.title.name for event in unlocked],
+                        **growth,
                     )
                 )
             self._journal_combat(session, encounter, result, rewards)
@@ -768,6 +810,7 @@ class EncounterService:
             base_xp_reward=xp_reward,
             base_gold_reward=gold_reward,
             lunar_note=lunar_note,
+            mob_count=size,
         )
 
     @staticmethod
@@ -865,18 +908,25 @@ class EncounterService:
         return gains
 
     @staticmethod
-    def _grant_xp(player_repository, player_id: int, xp: int) -> None:
-        """Applique un gain d'XP en passant par le palier de niveau.
+    def _level_of(player_repository, player_id: int) -> int:
+        profile = player_repository.get_profile_by_player_id(player_id)
+        return profile.progression.level if profile is not None else 1
+
+    @staticmethod
+    def _grant_xp(player_repository, player_id: int, xp: int):
+        """Applique un gain d'XP en passant par le palier de niveau, et renvoie
+        le nouvel état (`LevelUpResult`, None si rien n'a changé) pour que le
+        récapitulatif annonce le niveau gagné.
 
         Mutualisé entre survivants et morts (les morts gagnent l'XP aussi).
         Passe par ProgressionService pour gérer level-up + skill points,
         au lieu d'un `add_xp` brut qui empilerait l'XP au-delà du palier.
         """
         if xp <= 0:
-            return
+            return None
         profile_after = player_repository.get_profile_by_player_id(player_id)
         if profile_after is None:
-            return
+            return None
         progression = ProgressionService().apply_level_up(
             current_level=profile_after.progression.level,
             current_xp=profile_after.progression.xp,
@@ -893,6 +943,7 @@ class EncounterService:
             new_skill_points=progression.skill_points,
             new_stat_points=progression.stat_points,
         )
+        return progression
 
     def _record_combat_career_stats(
         self,
@@ -932,8 +983,11 @@ class EncounterService:
         if encounter is None:
             return False, "Aucun combat à quitter."
 
+        if getattr(encounter, "resolved", False):
+            return False, "Ce combat a déjà commencé."
+
         if user_id not in encounter.participants:
-            return False, "Vous n'avez pas rejoint ce combat."
+            return False, "Tu n'as pas rejoint ce combat."
 
         del encounter.participants[user_id]
-        return True, "Vous avez quitté le combat."
+        return True, "Tu as quitté le combat."

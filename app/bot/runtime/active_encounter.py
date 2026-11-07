@@ -23,6 +23,13 @@ class ActiveEncounter:
     lunar: object | None = None
     #: Salon de la zone (journal de surveillance : temps passé par zone).
     channel_id: int = 0
+    #: Le bouton Lancer ne s'ouvre qu'à cette date : les autres ont le temps
+    #: de venir. None = tout de suite.
+    launch_after: datetime | None = None
+    #: Le combat est joué (PV et récompenses enregistrés) : il ne reste que la
+    #: vidéo et le récapitulatif. On ne le rejoint plus, et ses combattants
+    #: peuvent déjà aller ailleurs.
+    resolved: bool = False
 
     @property
     def mobs(self) -> list[EncounterMobState]:

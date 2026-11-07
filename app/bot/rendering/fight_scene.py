@@ -51,6 +51,9 @@ _PANEL_BORDER = (255, 255, 255, 32)
 _AUTO_DECOR_ZOOM = 1.35   # zoom du décor quand aucune scène n'est composée
 _AUTO_MOB_FILL = 0.92     # part de la zone occupée par le monstre en auto
 
+#: Côté maximal d'une image de monstre, en pixels.
+MAX_MOB_SIDE = 1024
+
 _FONTS = {"title": 46, "stat": 30, "hp": 26, "badge": 96, "av_d": 88}
 
 
@@ -172,7 +175,11 @@ def has_mob_image(image_name: str | None) -> bool:
 def _load_mob_image(image_name: str | None) -> Image.Image:
     if image_name:
         try:
-            return Image.open(MOBS_ASSETS_DIR / image_name).convert("RGBA")
+            image = Image.open(MOBS_ASSETS_DIR / image_name).convert("RGBA")
+            # Un monstre ne dépasse jamais le cadre (1080 px de large) : garder
+            # ses 3 460 px d'origine coûtait 45 Mo par image, pour rien.
+            image.thumbnail((MAX_MOB_SIDE, MAX_MOB_SIDE), Image.LANCZOS)
+            return image
         except Exception as e:
             _logger.warning("Chargement image mob %s échoué : %s", image_name, e)
     return Image.new("RGBA", (600, 600), (120, 120, 120, 255))
@@ -615,5 +622,10 @@ def compose_players_banner(
         spot=spot, placement=placement, mobs=mobs, placements=placements,
         formation=formation, events=events, fx_seed=fx_seed,
     )
-    image.save(output_path)
+    if str(output_path).lower().endswith((".jpg", ".jpeg")):
+        # Le message d'un monstre part à chaque apparition et chaque inscription :
+        # 300 Ko en JPEG contre 2,4 Mo en PNG, sans différence visible sur le décor.
+        image.convert("RGB").save(output_path, quality=85, optimize=True)
+    else:
+        image.save(output_path)
     _logger.debug("Scène de combat générée : %s", output_path)

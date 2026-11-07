@@ -34,3 +34,17 @@ class PlayerReward:
     gear: list[tuple[str, str]] = field(default_factory=list)
     #: Nom affiché des objets de `items` (code → nom), pour le récap.
     item_names: dict[str, str] = field(default_factory=dict)
+    #: Niveau avant et après le combat (0 = inconnu : combat perdu, sans XP).
+    level_before: int = 0
+    level_after: int = 0
+    #: Points à placer après le combat (montrés au passage d'un niveau).
+    stat_points: int = 0
+    skill_points: int = 0
+    #: Noms des titres débloqués par ce combat.
+    titles: list[str] = field(default_factory=list)
+    #: L'XP a profité du coup de pouce des débuts.
+    newcomer_bonus: bool = False
+
+    @property
+    def levels_gained(self) -> int:
+        return max(0, self.level_after - self.level_before) if self.level_before else 0
