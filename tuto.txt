@@ -65,12 +65,11 @@ LA PROGRESSION
     puissance, stats de combat, statistiques de carrière et affinités
     élémentaires. Avec un joueur : son profil.
 
-    Le RANG affiché sur le profil (F- … SSS+, puis Ω) est calculé à partir de
-    ta puissance : un joueur typique gagne un sous-rang tous les 5 niveaux et
-    affiche S au niveau 100 ; S+, SS et SSS récompensent ce qui va au-delà
-    (raretés hautes, mythiques, affinités). Le kit de soutien (sort de soin,
-    aura) compte dans la puissance. Le rang qui ouvre les zones est un rôle
-    Discord, gagné avec /epreuve (ci-dessous).
+    Le RANG affiché sur le profil (F → SSS) est celui que tu as GAGNÉ avec
+    /epreuve (ci-dessous) : c'est lui qui ouvre les zones, et tu le gardes
+    même si tu quittes le serveur et reviens. Ta PUISSANCE (PWR) s'affiche
+    en dessous : elle résume ta force et ouvre les épreuves. Le kit de
+    soutien (sort de soin, aura) compte dans la puissance.
 
 /epreuve
     Fait apparaître le GARDIEN du rang au-dessus du tien. Réussis son
@@ -413,16 +412,23 @@ PANOPLIES
 --------------------------------------------------------------------------------
 
 COMBATS DE GROUPE (automatiques)
-    Un monstre apparaît dans chaque salon de zone ; le suivant revient
-    quelques minutes après la fin du combat (le rythme est réglé par les
-    admins, les nuits peuvent être calmes). Clique « Combattre » : le compte
-    à rebours sous le monstre dit quand le combat part (5 minutes par défaut ;
-    le combat peut être lancé avant). Au lancement, le bot MENTIONNE tous
-    les combattants : tu peux venir regarder le combat en direct.
+    Un monstre apparaît dans chaque salon de zone ; le suivant revient une à
+    deux minutes après la fin du combat (le rythme est réglé par les admins,
+    les nuits peuvent être calmes). Clique « Combattre » : le compte à
+    rebours sous le monstre dit quand le combat part (2 minutes par défaut,
+    5 pour une élite). Le groupe est prêt ? Un combattant clique « Lancer »
+    et le combat part tout de suite (après 30 secondes, pour laisser aux
+    autres le temps de venir). Au lancement, le bot MENTIONNE tous les
+    combattants : tu peux venir regarder le combat en direct.
+    Tes PV sont relus au lancement : la potion bue pendant l'attente et la
+    régénération comptent. On ne s'inscrit qu'à un combat à la fois.
+    Sans combattant, le monstre s'enfuit et son message disparaît.
     Quand le combat part, il se joue en VIDÉO dans le message du monstre
     (elle se lance toute seule), puis laisse la place au récapitulatif en
     trois pages : récompenses, détail et part de victoire de chacun, et le
-    journal du combat.
+    journal du combat. Le récapitulatif annonce ton niveau gagné, tes points
+    à placer et tes titres débloqués. Les paliers (tous les 10 niveaux) sont
+    annoncés à tout le serveur.
     Dans la vidéo, chaque action s'affiche : les dégâts en chiffres
     (plus le coup est gros, plus le chiffre est grand), les CRITIQUES en or,
     les soins en vert, les boucliers en bleu, les esquives, poisons,
@@ -431,10 +437,12 @@ COMBATS DE GROUPE (automatiques)
 
 RÉCOMPENSES D'UN COMBAT DE GROUPE
     • Or : une somme FIXE par monstre, partagée entre les survivants selon
-      leur contribution (dégâts infligés, dégâts encaissés, soins donnés).
-      En groupe on tue plus vite mais chacun touche une part plus petite.
-      Mort en combat : pas d'or.
-    • XP : le montant plein pour TOUS, morts compris.
+      leur contribution (dégâts infligés, dégâts encaissés, soins donnés ;
+      une catégorie presque vide, quelques PV soignés par exemple, ne pèse
+      presque rien). En groupe on tue plus vite mais chacun touche une part
+      plus petite. Mort en combat : pas d'or.
+    • XP : le montant plein pour TOUS, morts compris. Jusqu'au niveau 10,
+      l'XP des combats de zone est DOUBLÉE.
     • Butin : un tirage par survivant, plus le butin commun de la famille.
     • Essences : selon l'élément du monstre (survivants uniquement).
 
@@ -586,8 +594,8 @@ LE MANA DES COMPÉTENCES 💧
     LE TUTORIEL de Hana, la gardienne du Grand Cerisier (aussi par le bouton
     du salon tutoriel). Tu peux le suivre ou le passer pour commencer tout
     de suite. Il raconte le jeu étape par étape avec des choses à faire pour
-    de vrai (ta solde, tes stats, ton premier combat, la voyante…) ; tu
-    reprends où tu t'étais arrêté. Au bout : 3 Potions du Grand Cerisier,
+    de vrai (ta solde, tes stats, ton premier combat à la Tour puis en zone,
+    la voyante…) ; tu reprends où tu t'étais arrêté. Au bout : 3 Potions du Grand Cerisier,
     qui rendent 100 % des PV (une seule fois).
 
 /lune
@@ -631,15 +639,19 @@ LE MANA DES COMPÉTENCES 💧
 
 /bestiaire
     Le catalogue des monstres : stats, élément, récompenses, butin et la
-    pièce d'équipement que porte chacun (avec son passif).
+    pièce d'équipement que porte chacun (avec son passif). Un menu permet de
+    ne parcourir qu'une famille.
 
 WORLD BOSS — /boss moi, /boss historique, /boss list
-    Un boss apparaît chaque semaine. Inscris-toi avec 🤝 avant la fermeture
-    des inscriptions : le combat collectif se lance automatiquement chaque
-    jour à l'heure de l'assaut (21 h et 20 h 50 par défaut, heure de Paris —
-    les heures exactes sont sur le message du boss). Les
-    récompenses suivent ta part de l'effort (paliers de contribution), avec
-    du butin exclusif et le titre de MVP.
+    Un boss apparaît chaque semaine, choisi selon le niveau des joueurs
+    actifs (le premier arrive quand quatre d'entre eux ont atteint le niveau
+    15). Inscris-toi avec 🤝 avant la fermeture des inscriptions : le combat
+    collectif se lance automatiquement chaque jour à l'heure de l'assaut (21 h
+    et 20 h 50 par défaut, heure de Paris — les heures exactes sont sur le
+    message du boss). Les récompenses suivent ta part de l'effort (paliers de
+    contribution), avec du butin exclusif et le titre de MVP. Après le
+    dernier assaut de la semaine, un boss encore debout repart : chacun
+    touche sa part selon les PV qu'on lui a retirés, sans butin ni titre.
     L'assaut se joue en vidéo dans le salon du boss, puis laisse place à son
     bilan. Ce qui t'attend :
       • ses GARDES (2) : on les abat d'abord — tant qu'il en reste un, le boss
@@ -806,9 +818,9 @@ WORLD BOSS — /boss moi, /boss historique, /boss list
 --------------------------------------------------------------------------------
 
 /classement <catégorie>
-    Les classements (top 10), avec autocomplétion : puissance, niveau, or,
-    stats, victoires (au total, par monstre, par famille), défis de la
-    semaine (DPS, Tank, Soutien, général).
+    Les classements (top 10 et ta place), avec autocomplétion : puissance,
+    niveau, or, stats, victoires (au total, par monstre, par famille), défis
+    de la semaine (DPS, Tank, Soutien, général).
 
 /chad
     Prendre ou retirer le rôle @chad (tagué quand quelqu'un demande de l'aide
@@ -820,6 +832,8 @@ WORLD BOSS — /boss moi, /boss historique, /boss list
 
 Les commandes /admin ne sont accessibles qu'aux comptes listés dans
 ADMIN_DISCORD_IDS (.env). Réponses éphémères, depuis n'importe quel salon.
+Elles sont masquées dans le menu des joueurs, comme /event et /boss_admin
+(seuls les administrateurs du serveur Discord les voient).
 
 INTERFACE WEB D'ADMINISTRATION
     http://<vps>/admin (connexion Discord, mêmes comptes autorisés).
@@ -833,7 +847,8 @@ INTERFACE WEB D'ADMINISTRATION
     événements) demandent un REDÉMARRAGE du bot après modification.
     RYTHME (Monde › Rythme, sans redémarrage) : délai entre deux monstres
     (fixe ou tiré dans une plage), délai après une fuite, temps pour
-    rejoindre, heures calmes la nuit, part des meutes ; une zone peut être
+    rejoindre (et pour une élite), délai avant le bouton Lancer, heures
+    calmes la nuit, part des meutes ; une zone peut être
     mise en pause ou avoir son propre délai ; jour et heure du boss de la
     semaine, heure de l'assaut quotidien et fermeture des inscriptions.
 
@@ -892,9 +907,9 @@ INTERFACE WEB D'ADMINISTRATION
 /event spawn <type>
     Fait apparaître un événement : coffre, petite fille, forge sacrée.
 
-/boss spawn <boss> · /boss stop · /boss list
-    Fait apparaître un world boss, l'arrête sans récompense, ou liste les
-    boss. Un boss ne regagne jamais ses PV.
+/boss_admin spawn <boss> · /boss_admin stop
+    Fait apparaître un world boss, ou l'arrête sans récompense. Un boss ne
+    regagne jamais ses PV.
 
 --------------------------------------------------------------------------------
 2.3 — BOUTIQUE
@@ -959,7 +974,8 @@ Simulation de la saison :
   Le critique s'applique AVANT la défense : il garde sa pleine valeur contre
   une cible très défensive, et réduit d'autant le contrecoup.
 
-— XP pour passer le niveau N : 6,25 × N × (8 + 0,547 × N).
+— XP pour passer le niveau N : 6,25 × N × (8 + 0,547 × N). Sous le niveau
+  10, l'XP des combats de zone compte double.
   XP d'un monstre : 6,25 × son niveau ; or : 3 × son niveau (×3 pour une
   élite de groupe).
 

@@ -16,6 +16,7 @@ from app.domain.services.progression_service import (
     LEVEL_CAP,
     XP_PER_KILL_COEF,
     ProgressionService,
+    newcomer_xp_multiplier,
 )
 
 #: Tranche de niveaux de chaque zone (joueur de référence, cf. CLAUDE.md
@@ -62,7 +63,7 @@ def project_days(level: int, xp: int, kills_daily: float, target: int = LEVEL_CA
         return None
     prog = ProgressionService()
     for day in range(1, MAX_PROJECTION_DAYS + 1):
-        gained = kills_daily * XP_PER_KILL_COEF * level
+        gained = kills_daily * XP_PER_KILL_COEF * level * newcomer_xp_multiplier(level)
         r = prog.apply_level_up(current_level=level, current_xp=xp, gained_xp=int(gained),
                                 current_skill_points=0, current_stat_points=0)
         level, xp = r.level, r.xp
@@ -83,7 +84,7 @@ def reference_curve(minutes_per_day: float, days: int, minutes_per_kill: float =
     kills = minutes_per_day / minutes_per_kill
     out = []
     for _ in range(days):
-        gained = kills * XP_PER_KILL_COEF * level + quest_xp_at_20 * level / 20
+        gained = kills * XP_PER_KILL_COEF * level * newcomer_xp_multiplier(level) + quest_xp_at_20 * level / 20
         r = prog.apply_level_up(current_level=level, current_xp=xp, gained_xp=int(gained),
                                 current_skill_points=0, current_stat_points=0)
         level, xp = r.level, r.xp

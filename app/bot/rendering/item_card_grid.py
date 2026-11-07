@@ -168,11 +168,15 @@ def _draw_card(
         )
 
     # Nom à gauche (tronqué si déborde)
-    name_font = try_font(24, bold=True)
     available_w = w - (icon_size + 14 + 18 + 16) - right_w - (
         badge_w + 16 if badge_w else 0
     ) - 12
     name = card.name
+    # Un nom long passe d'abord en plus petit ; il n'est tronqué qu'en dernier.
+    for size in (24, 22, 20, 18):
+        name_font = try_font(size, bold=True)
+        if name_font.getlength(name) <= available_w:
+            break
     # Tronque approximativement par mesure plutôt que par char count fixe
     while name and name_font.getlength(name) > available_w:
         name = name[:-1]

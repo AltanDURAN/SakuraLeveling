@@ -7,7 +7,7 @@ jour et mesure :
   • les jours pour atteindre les niveaux clés, et le niveau atteint à J1, J7,
     J30, J90, J180, J365 ;
   • l'or gagné par source (combats, quêtes, raid, /daily), comparé au prix
-    d'une tenue complète chez les artisans à chaque palier d'équipement.
+    des fusions d'une tenue complète.
 
 Deux mondes sont simulés :
   • « contenu actuel » : les zones et monstres de mobs.json / farm_zones.json,
@@ -15,7 +15,11 @@ Deux mondes sont simulés :
   • « zones complètes » : comme si chaque rang avait sa zone, avec des
     monstres au niveau du joueur — la cible de la V1.
 
-    .venv/bin/python -m scripts.simulate_season            # 30 min/jour, 3 min par combat
+Le cycle d'un combat vient de Monde › Rythme (`pacing.json`) : le simulateur
+joue le joueur qui attend la fin du temps pour rejoindre, et celui qui clique
+sur Lancer dès que possible. `--cycle` impose une durée mesurée en bêta.
+
+    .venv/bin/python -m scripts.simulate_season            # 30 min/jour, rythme réglé
     .venv/bin/python -m scripts.simulate_season --minutes 60 --cycle 4
 """
 
@@ -27,24 +31,27 @@ import statistics
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from app.domain.services.artisan_service import ArtisanService
-from app.domain.services.item_power_service import ItemPowerService
+from app.domain.services import pacing_service
+from app.domain.services.gear_service import FUSION_GOLD, RARITY_LABELS, RARITY_ORDER
 from app.domain.services.progression_service import (
     LEVEL_CAP,
     XP_PER_KILL_COEF,
     ProgressionService,
+    newcomer_xp_multiplier,
 )
 from app.domain.services.daily_reward_service import daily_gold as daily_reward_gold
 from app.domain.services.quest_reward_service import scale_reward
-from app.infrastructure.artisans import artisan_loader
+from app.infrastructure.pacing.pacing_loader import get_pacing
 
 CONTENT = Path(__file__).resolve().parents[1] / "app" / "infrastructure" / "content"
 
 #: Niveau auquel un joueur type passe l'épreuve de chaque rang (calibrage des
 #: gardiens, cf. scripts/calibrate_rank_trials.py).
 RANK_LEVELS = {"F": 1, "E": 12, "D": 25, "C": 38, "B": 50, "A": 63, "S": 75, "SS": 88, "SSS": 100}
-#: Zones actuelles → rang requis (cf. mémoire projet « rôles de rang »).
-ZONE_RANKS = {"Clairière sinistre": "F", "Cimetière abandonné lumière": "E", "Berceau cataclysmique": "D"}
+#: Durée d'un combat (vidéo comprise), en minutes.
+FIGHT_MINUTES = 0.4
+#: Pièces d'une tenue complète.
+OUTFIT_PIECES = 7
 
 #: Hypothèses de comportement d'un joueur régulier.
 DAILY_QUESTS_DONE = 2      # sur 3 tirées chaque jour
@@ -85,6 +92,11 @@ def _quest_means(name: str) -> tuple[float, float]:
     )
 
 
+def _zone_ranks() -> dict[str, str]:
+    """Zones ouvertes → rang requis."""
+    return {zone["name"]: zone.get("rank", "F") for zone in _load("farm_zones.json")["zones"]}
+
+
 def rank_for_level(level: int) -> str:
     rank = "F"
     for r, lv in RANK_LEVELS.items():
@@ -107,7 +119,7 @@ class World:
             return XP_PER_KILL_COEF * level, 3.0 * level
         order = list(RANK_LEVELS)
         best = None
-        for zone, rank in ZONE_RANKS.items():
+        for zone, rank in _zone_ranks().items():
             if order.index(rank) <= order.index(rank_for_level(level)) and self.zones.get(zone):
                 mobs = self.zones[zone]
                 cand = (
@@ -142,7 +154,7 @@ def simulate(world: World, minutes_per_day: float, minutes_per_kill: float, days
     for day in range(1, days + 1):
         gained = 0.0
         xp_kill, gold_kill = world.per_kill(level)
-        gained += kills_per_day * xp_kill
+        gained += kills_per_day * xp_kill * newcomer_xp_multiplier(level)
         gold["combats"] += kills_per_day * gold_kill
 
         gained += DAILY_QUESTS_DONE * scale_reward(round(daily_xp), level)
@@ -170,50 +182,22 @@ def simulate(world: World, minutes_per_day: float, minutes_per_kill: float, days
     return Result(days_to=days_to, level_at=level_at, gold=gold)
 
 
-def gear_costs() -> dict[int, int]:
-    """Prix (palier Apprenti, sans remise) d'une tenue complète à chaque niveau
-    requis : la pièce la plus chère de chaque emplacement disponible."""
-    items = _load("items.json")
-    items = items if isinstance(items, list) else items.get("items", [])
-    artisans = ArtisanService(artisan_loader.load_pricing())
-    power = ItemPowerService()
-    tier = artisan_loader.get_artisan("forgeron").tiers[0]
-    slots = {"tete": 1, "corps": 1, "arme": 2, "accessoire": 3}
-    out: dict[int, int] = {}
-    levels = sorted({int(i.get("level_requirement", 1)) for i in items if i.get("equipment_slot")})
-    for lv in levels:
-        total = 0
-        for slot, count in slots.items():
-            pool = [
-                i for i in items
-                if i.get("equipment_slot") == slot and int(i.get("level_requirement", 1)) == lv
-            ]
-            prices = sorted(
-                (
-                    artisans.gold_cost(
-                        power.marginal_power(i.get("stat_bonuses") or {}, lv), tier,
-                    )
-                    for i in pool
-                ),
-                reverse=True,
-            )
-            total += sum(prices[:count])
-        out[lv] = total
-    return out
+def fusion_costs() -> dict:
+    """Or pour fusionner une tenue complète jusqu'à chaque rareté, depuis des
+    copies communes (deux copies de la rareté du dessous, chacune déjà payée)."""
+    costs, piece = {}, 0
+    for lower, price in zip(RARITY_ORDER, FUSION_GOLD.values()):
+        piece = price + 2 * piece
+        costs[RARITY_ORDER[RARITY_ORDER.index(lower) + 1]] = piece * OUTFIT_PIECES
+    return costs
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Simule une saison de progression.")
-    parser.add_argument("--minutes", type=float, default=30, help="minutes de jeu par jour")
-    parser.add_argument("--cycle", type=float, default=3, help="minutes par combat (rejoindre → combat → réapparition)")
-    args = parser.parse_args()
-
-    zones = _mobs_by_zone()
-    print(f"Joueur type : {args.minutes:g} min/jour, {args.cycle:g} min par combat "
-          f"→ {args.minutes / args.cycle:.0f} combats/jour, {DAILY_QUESTS_DONE} quêtes/jour, "
+def report(cycle: float, minutes: float, zones: dict) -> None:
+    print(f"Joueur type : {minutes:g} min/jour, {cycle:.1f} min par combat "
+          f"→ {minutes / cycle:.0f} combats/jour, {DAILY_QUESTS_DONE} quêtes/jour, "
           f"{WEEKLY_QUESTS_DONE} hebdo + raid/semaine.\n")
     for world in (World("contenu actuel", False, zones), World("zones complètes", True)):
-        r = simulate(world, args.minutes, args.cycle)
+        r = simulate(world, minutes, cycle)
         print(f"== {world.name}")
         print("  jours pour atteindre : " + ", ".join(
             f"niv {m} → {d if d is not None else '> 730'}" for m, d in r.days_to.items()))
@@ -223,9 +207,24 @@ def main() -> None:
         print(f"  or cumulé sur 2 ans : {total:,.0f} ({parts})".replace(",", " "))
         print()
 
-    print("== Prix d'une tenue complète (meilleure pièce par emplacement, palier Apprenti)")
-    for lv, cost in gear_costs().items():
-        print(f"  niveau requis {lv:>3} : {cost:>9,} or".replace(",", " "))
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Simule une saison de progression.")
+    parser.add_argument("--minutes", type=float, default=30, help="minutes de jeu par jour")
+    parser.add_argument("--cycle", type=float, default=0,
+                        help="minutes par combat, mesurées en bêta (0 = d'après Monde › Rythme)")
+    args = parser.parse_args()
+
+    zones = _mobs_by_zone()
+    pacing = get_pacing().zones
+    waiting = pacing_service.cycle_minutes(pacing, fight_minutes=FIGHT_MINUTES)
+    launching = waiting - pacing.join_window_minutes + pacing.launch_min_seconds / 60
+    for cycle in [args.cycle] if args.cycle else [waiting, launching]:
+        report(cycle, args.minutes, zones)
+
+    print("== Or pour fusionner une tenue complète (7 pièces, depuis des copies communes)")
+    for rarity, cost in fusion_costs().items():
+        print(f"  {RARITY_LABELS[rarity]:<12} : {cost:>9,} or".replace(",", " "))
 
 
 if __name__ == "__main__":

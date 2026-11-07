@@ -264,7 +264,9 @@ def _render_node(
     level: int,
     show_icon: bool,
     ui: float = 1.0,
-) -> str:
+) -> tuple[str, str]:
+    """(la case, son étiquette). Les étiquettes se dessinent après TOUTES les
+    cases : sinon une case voisine en recouvrait le nom."""
     shape = _shape_of(definition, node)
     geometry = shape.get("geometry", "circle")
     size = _size_of(definition, node)
@@ -312,12 +314,13 @@ def _render_node(
         f'text-anchor="middle" y="{label_y:.1f}" font-family="{FONT}" '
         f'font-size="{13 * ui:.1f}" font-weight="700"'
     )
-    parts.append(
+    label_svg = (
+        f'<g transform="translate({node.position.x}, {node.position.y})" pointer-events="none">'
         f'<text {common} fill="{COLORS["label_outline"]}" '
         f'stroke="{COLORS["label_outline"]}" stroke-width="{3.5 * ui:.1f}" '
         f'stroke-linejoin="round">{label}</text>'
         f'<text {common} fill="{COLORS["label"]}"'
-        f'{" opacity=\"0.55\"" if locked else ""}>{label}</text>'
+        f'{" opacity=\"0.55\"" if locked else ""}>{label}</text></g>'
     )
 
     data = (
@@ -330,7 +333,7 @@ def _render_node(
     return (
         f'<g transform="translate({node.position.x}, {node.position.y})">'
         f'<g class="skill-node skill-node--{state}" {data}>{"".join(parts)}</g></g>'
-    )
+    ), label_svg
 
 
 def _states(state: SkillTreeState, definition: SkillTreeDefinition) -> dict[str, str]:
@@ -365,13 +368,14 @@ def render_to_svg(
     vx, vy, vw, vh = view_box or _compute_view_box(definition, header=header)
     mx, my, mw, mh = main_tree_view_box(definition)
     bg_defs, background = _render_background(definition, states)
-    nodes = "".join(
+    rendered = [
         _render_node(
             definition, node, states[node.code], _display_level(state, node),
             show_icon=icons_in_svg, ui=ui_scale,
         )
         for node in definition.skills.values()
-    )
+    ]
+    nodes = "".join(svg for svg, _ in rendered) + "".join(label for _, label in rendered)
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vx} {vy} {vw} {vh}" '
         f'preserveAspectRatio="xMidYMid meet" data-main-view="{mx} {my} {mw} {mh}">'
