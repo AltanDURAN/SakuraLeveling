@@ -493,7 +493,7 @@ class SkillTreeService:
         if available_points < cost:
             return (
                 False,
-                f"Points insuffisants : il vous manque **{cost - available_points}** "
+                f"Points insuffisants : il te manque **{cost - available_points}** "
                 f"point(s) pour débloquer **{node.name}** (niveau {target_level}).",
                 cost,
             )

@@ -91,8 +91,8 @@ class CreateEquipmentSetUseCase:
             return CreateSetResult(
                 success=False,
                 message=(
-                    f"❌ Vous avez déjà un set nommé `{cleaned}`. "
-                    f"Supprimez-le d'abord avec `/supprimer_set` ou choisissez "
+                    f"❌ Tu as déjà un set nommé `{cleaned}`. "
+                    f"Supprime-le d'abord avec `/supprimer_set` ou choisis "
                     f"un autre nom."
                 ),
             )

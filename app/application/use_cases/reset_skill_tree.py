@@ -80,7 +80,7 @@ class ResetSkillTreeUseCase:
         if not allocations:
             return ResetSkillTreeResult(
                 success=False,
-                message="ℹ️ Vous n'avez aucun point investi à restituer.",
+                message="ℹ️ Tu n'as aucun point investi à restituer.",
             )
 
         refunded = self.skill_tree_service.compute_total_refund(allocations)

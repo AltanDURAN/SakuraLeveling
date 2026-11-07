@@ -32,10 +32,10 @@ class SkillCog(BetaChannelOnlyMixin, commands.Cog):
 
     @app_commands.command(
         name="arbre",
-        description="Afficher votre arbre de compétences",
+        description="Ton arbre de compétences",
     )
     @app_commands.describe(
-        target="Joueur dont afficher l'arbre (par défaut : vous)",
+        target="Joueur dont afficher l'arbre (par défaut : toi)",
     )
     async def skill(
         self,

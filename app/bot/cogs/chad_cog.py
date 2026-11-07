@@ -38,7 +38,7 @@ class _ChadConfirmView(discord.ui.View):
     async def _check_owner(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.author_id:
             await interaction.response.send_message(
-                "❌ Cette confirmation ne vous est pas destinée.",
+                "❌ Cette confirmation ne t'est pas destinée.",
                 ephemeral=True,
             )
             return False
@@ -71,13 +71,13 @@ class _ChadConfirmView(discord.ui.View):
             if self.is_currently_chad:
                 await member.remove_roles(role, reason="/chad — quitte les chads")
                 msg = (
-                    "✅ Rôle **chad** retiré — vous ne serez plus tagué lors "
+                    "✅ Rôle **chad** retiré : tu ne seras plus tagué lors "
                     "des appels à l'aide. Refaites `/chad` pour le reprendre."
                 )
             else:
                 await member.add_roles(role, reason="/chad — rejoint les chads")
                 msg = (
-                    "✅ Rôle **chad** ajouté — vous serez tagué (via @chad) "
+                    "✅ Rôle **chad** ajouté : tu seras tagué (via @chad) "
                     "quand un joueur cliquera sur **Demander de l'aide** dans "
                     "un encounter. Refaites `/chad` pour le retirer."
                 )
@@ -139,14 +139,14 @@ class ChadCog(BetaChannelOnlyMixin, commands.Cog):
 
         if is_chad:
             prompt = (
-                "💪 Vous avez actuellement le rôle **chad**.\n"
-                "Voulez-vous le retirer ? Vous ne serez plus tagué (@chad) "
+                "💪 Tu as le rôle **chad**.\n"
+                "Tu veux le retirer ? Tu ne seras plus tagué (@chad) "
                 "lors des appels à l'aide."
             )
         else:
             prompt = (
-                "💪 Voulez-vous prendre le rôle **chad** ?\n"
-                "Vous serez tagué (@chad) dans le canal d'encounter quand un "
+                "💪 Tu veux prendre le rôle **chad** ?\n"
+                "Tu seras tagué (@chad) dans les salons de zone quand un "
                 "joueur cliquera sur **Demander de l'aide**."
             )
 

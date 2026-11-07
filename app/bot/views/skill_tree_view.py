@@ -91,7 +91,7 @@ class SkillTreeView(discord.ui.View):
     async def _check_owner(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.owner_discord_id:
             await interaction.response.send_message(
-                "❌ Vous ne pouvez modifier que votre propre arbre.",
+                "❌ Tu ne peux modifier que ton propre arbre.",
                 ephemeral=True,
             )
             return False
@@ -156,8 +156,8 @@ class SkillTreeView(discord.ui.View):
         select_view.add_item(select)
 
         await interaction.response.send_message(
-            f"Choisissez une compétence à investir "
-            f"(vous avez **{state.available_points}** point(s) dispo) :" + locked_note,
+            f"Choisis une compétence à investir "
+            f"(tu as **{state.available_points}** point(s) disponible(s)) :" + locked_note,
             view=select_view,
             ephemeral=True,
         )
@@ -205,7 +205,7 @@ class SkillTreeView(discord.ui.View):
             definition=self.definition,
         )
         await interaction.response.send_message(
-            "⚠️ Voulez-vous **vraiment** réinitialiser votre arbre ?\n"
+            "⚠️ Tu veux **vraiment** réinitialiser ton arbre ?\n"
             "Tous les points seront restitués pour être réinvestis. **Un seul reset par semaine** : le prochain sera possible lundi à 00h (heure de Paris).",
             view=confirm_view,
             ephemeral=True,
@@ -246,7 +246,7 @@ class SkillInvestSelect(discord.ui.Select):
             )
 
         super().__init__(
-            placeholder="Choisissez une compétence à investir...",
+            placeholder="Choisis une compétence à investir...",
             min_values=1,
             max_values=1,
             options=options,

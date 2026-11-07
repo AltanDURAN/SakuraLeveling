@@ -696,7 +696,7 @@ class AdminCog(commands.Cog):
 
     @admin.command(
         name="start_encounter",
-        description="Lance immédiatement le combat de l'encounter actif (skip les 5 min)",
+        description="Lance tout de suite les combats en attente",
     )
     @admin_only
     async def start_encounter(self, interaction: discord.Interaction) -> None:
@@ -848,7 +848,7 @@ class AdminCog(commands.Cog):
 
     @admin.command(
         name="shop_add",
-        description="Ajoute un objet au shop (achat fixe + vente dynamique)",
+        description="Ajoute un objet à la boutique",
     )
     @app_commands.describe(
         item_code="Code de l'objet à mettre en shop",
@@ -892,7 +892,7 @@ class AdminCog(commands.Cog):
             if existing is not None:
                 await interaction.followup.send(
                     f"❌ `{item.name}` est déjà dans le shop. "
-                    "Utilisez `/admin shop_set` pour le modifier.",
+                    "Utilise `/admin shop_set` pour le modifier.",
                     ephemeral=True,
                 )
                 return

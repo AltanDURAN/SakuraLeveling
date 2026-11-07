@@ -259,7 +259,7 @@ def test_buy_self_listing_refused(session):
         listing_id=list_result.listing.id,
     )
     assert buy_result.success is False
-    assert "votre propre" in buy_result.message.lower()
+    assert "ta propre" in buy_result.message.lower()
 
 
 def test_buy_twice_refused_anti_race(session):

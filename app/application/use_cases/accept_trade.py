@@ -58,19 +58,19 @@ class AcceptTradeUseCase:
     ) -> AcceptTradeResult:
         trade = self.trade_repository.get_by_id(trade_id)
         if trade is None:
-            return AcceptTradeResult(success=False, message="❌ Trade introuvable.")
+            return AcceptTradeResult(success=False, message="❌ Échange introuvable.")
 
         if trade.status != TradeStatus.PENDING:
             return AcceptTradeResult(
                 success=False,
-                message=f"❌ Ce trade n'est plus en attente (statut : {trade.status.value}).",
+                message="❌ Cet échange n'est plus en attente.",
             )
 
         # Seul le target peut accepter
         if accepting_player_discord_id != trade.target_discord_id:
             return AcceptTradeResult(
                 success=False,
-                message="❌ Seul le destinataire du trade peut l'accepter.",
+                message="❌ Seul le destinataire de l'échange peut l'accepter.",
             )
 
         # Expiration
@@ -82,7 +82,7 @@ class AcceptTradeUseCase:
             self.trade_repository.update_status(trade.id, TradeStatus.EXPIRED)
             return AcceptTradeResult(
                 success=False,
-                message="❌ Ce trade a expiré.",
+                message="❌ Cet échange a expiré.",
             )
 
         # ----- Revérification de la disponibilité réelle -----
@@ -97,7 +97,7 @@ class AcceptTradeUseCase:
             self.trade_repository.update_status(trade.id, TradeStatus.FAILED)
             return AcceptTradeResult(
                 success=False,
-                message="❌ Un des profils joueur a disparu. Trade annulé.",
+                message="❌ Un des profils joueur a disparu : échange annulé.",
             )
 
         ok, message = self._verify_resources(
@@ -120,7 +120,7 @@ class AcceptTradeUseCase:
             self.trade_repository.update_status(trade.id, TradeStatus.FAILED)
             return AcceptTradeResult(
                 success=False,
-                message="❌ Erreur pendant l'échange. Le trade est annulé.",
+                message="❌ Erreur pendant l'échange : il est annulé.",
             )
 
         self.trade_repository.update_status(

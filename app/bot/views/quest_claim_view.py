@@ -44,7 +44,7 @@ class QuestClaimView(discord.ui.View):
         async def _cb(interaction: discord.Interaction) -> None:
             if interaction.user.id != self.author_id:
                 await interaction.response.send_message(
-                    "❌ Cette interaction ne vous est pas destinée.", ephemeral=True,
+                    "❌ Cette interaction ne t'est pas destinée.", ephemeral=True,
                 )
                 return
             await self._on_claim(interaction)

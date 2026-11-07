@@ -9,6 +9,9 @@ Pas de page 'Tout' : on force le tri par catégorie pour la lisibilité.
 
 import discord
 
+from app.infrastructure.db.repositories.item_repository import ItemRepository
+from app.infrastructure.db.session import get_db_session
+
 from app.domain.entities.player_inventory_item import PlayerInventoryItem
 from app.shared.enums import EQUIPABLE_CATEGORIES
 
@@ -97,3 +100,14 @@ def build_inventory_embed(
     embed.set_author(name=f"{page_emoji} {page_label} ({n} {item_word})")
 
     return embed
+
+
+def item_names(codes: set[str]) -> dict[str, str]:
+    """Le nom affiché de ces objets (code → nom) : un joueur ne doit jamais
+    voir un code comme `potion_soin`."""
+    if not codes:
+        return {}
+    with get_db_session() as session:
+        repository = ItemRepository(session)
+        items = {code: repository.get_by_code(code) for code in codes}
+    return {code: item.name for code, item in items.items() if item is not None}

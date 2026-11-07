@@ -79,7 +79,7 @@ def _build_progress_label(
         if holder_id is None:
             return "_Personne ne le détient cette semaine. Résultats des défis le dimanche à 20 h (/defi)._"
         if holder_id == pid:
-            return "_Vous êtes le détenteur de la semaine !_"
+            return "_Tu es le détenteur de la semaine !_"
         holder_profile = PlayerRepository(session).get_profile_by_player_id(holder_id)
         holder_name = (
             holder_profile.player.display_name if holder_profile else f"#{holder_id}"
@@ -94,12 +94,12 @@ def _build_progress_label(
         if holder_id is None:
             return (
                 f"_Personne ne détient encore le record._ "
-                f"Vous : **{viewer_total}** kills."
+                f"Toi : **{viewer_total}** kills."
             )
         holder_total = kill_repo.get_total_kills(holder_id)
         if holder_id == pid:
             return (
-                f"_Vous êtes le détenteur actuel avec_ **{holder_total}** kills."
+                f"_Tu es le détenteur actuel avec_ **{holder_total}** kills."
             )
         holder_profile = PlayerRepository(session).get_profile_by_player_id(holder_id)
         holder_name = (
@@ -109,7 +109,7 @@ def _build_progress_label(
         gap = max(0, holder_total - viewer_total + 1)
         return (
             f"Détenteur : **{holder_name}** avec **{holder_total}** kills · "
-            f"vous : **{viewer_total}** (il vous manque **{gap}**)"
+            f"toi : **{viewer_total}** (il te manque **{gap}**)"
         )
 
     return f"_Condition : {title.condition_type}_"
@@ -122,7 +122,7 @@ class TitleCog(BetaChannelOnlyMixin, commands.Cog):
     @app_commands.command(
         name="titre", description="Afficher les titres débloqués d'un joueur"
     )
-    @app_commands.describe(target="Joueur ciblé (par défaut : vous)")
+    @app_commands.describe(target="Joueur ciblé (par défaut : toi)")
     async def title(
         self,
         interaction: discord.Interaction,
@@ -196,7 +196,7 @@ class TitleCog(BetaChannelOnlyMixin, commands.Cog):
 
     @app_commands.command(
         name="titre_actif",
-        description="Choisir le titre affiché dans votre profil",
+        description="Choisis le titre affiché sur ton profil",
     )
     @app_commands.describe(
         title="Code du titre à afficher (laisser vide pour désactiver)"
@@ -218,7 +218,7 @@ class TitleCog(BetaChannelOnlyMixin, commands.Cog):
             if title is None:
                 title_repo.set_active(profile.player.id, None)
                 await interaction.followup.send(
-                    "✅ Aucun titre actif. Votre profil n'affiche plus de titre.",
+                    "✅ Aucun titre actif : ton profil n'en affiche plus.",
                     ephemeral=True,
                 )
                 return
@@ -233,7 +233,7 @@ class TitleCog(BetaChannelOnlyMixin, commands.Cog):
             success = title_repo.set_active(profile.player.id, title)
             if not success:
                 await interaction.followup.send(
-                    f"❌ Vous n'avez pas débloqué **{title_def.name}**.",
+                    f"❌ Tu n'as pas débloqué **{title_def.name}**.",
                     ephemeral=True,
                 )
                 return

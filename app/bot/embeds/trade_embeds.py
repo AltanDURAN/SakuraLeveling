@@ -37,7 +37,7 @@ def build_trade_embed(trade: Trade) -> discord.Embed:
     )
 
     embed = discord.Embed(
-        title=f"🤝 Trade #{trade.id} — {label}",
+        title=f"🤝 Échange n° {trade.id} — {label}",
         color=color,
     )
 

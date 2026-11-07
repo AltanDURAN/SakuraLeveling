@@ -35,7 +35,7 @@ class EquipmentCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
         self.bot = bot
 
     @app_commands.command(name="inventaire", description="Afficher un inventaire")
-    @app_commands.describe(target="Joueur dont afficher l'inventaire (par défaut : vous)")
+    @app_commands.describe(target="Joueur dont afficher l'inventaire (par défaut : toi)")
     async def inventory(
         self,
         interaction: discord.Interaction,
@@ -57,7 +57,7 @@ class EquipmentCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
         name="equipement",
         description="Afficher l'équipement en image (2 pages : emplacements / résumé)",
     )
-    @app_commands.describe(target="Joueur dont afficher l'équipement (par défaut : vous)")
+    @app_commands.describe(target="Joueur dont afficher l'équipement (par défaut : toi)")
     async def equipment(
         self,
         interaction: discord.Interaction,
@@ -106,7 +106,7 @@ class EquipmentCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
         name="equipement_liste",
         description="Liste les équipements possédés par catégorie (équipés ou non)",
     )
-    @app_commands.describe(target="Joueur ciblé (par défaut : vous)")
+    @app_commands.describe(target="Joueur ciblé (par défaut : toi)")
     async def equipement_list(
         self,
         interaction: discord.Interaction,
@@ -337,7 +337,7 @@ class EquipmentCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
 
         msg = f"✅ **{item_name}** déséquipé de **{SLOT_LABELS.get(slot, slot)}**."
         if was_two_hands:
-            msg += "\n_(Pièce à 2 mains : vos deux emplacements d'arme sont de nouveau libres.)_"
+            msg += "\n_(Pièce à 2 mains : tes deux emplacements d'arme sont de nouveau libres.)_"
         await interaction.response.send_message(msg)
 
     @unequip.autocomplete("slot")
@@ -500,9 +500,9 @@ class EquipmentCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
 
     @app_commands.command(
         name="utiliser",
-        description="Utiliser un consommable de votre inventaire (potion, etc.)",
+        description="Utilise un consommable de ton inventaire (potion, outil…)",
     )
-    @app_commands.describe(item_code="Code du consommable (autocomplete sur votre inventaire)")
+    @app_commands.describe(item_code="Le consommable (tes objets s'affichent en tapant)")
     async def use(self, interaction: discord.Interaction, item_code: str) -> None:
         await interaction.response.defer(ephemeral=True)
         from app.application.use_cases.use_consumable import UseContext

@@ -280,7 +280,7 @@ class JoinWorldBossUseCase:
         )
         existing = self.world_boss_repository.get_participation(boss.id, profile.player.id)
         if existing is not None and existing.joined:
-            return JoinLeaveResult(False, "⚠️ Vous êtes déjà inscrit à ce raid.")
+            return JoinLeaveResult(False, "⚠️ Tu es déjà inscrit à ce raid.")
 
         self.world_boss_repository.upsert_participation(
             boss.id, profile.player.id, joined=True
@@ -289,7 +289,7 @@ class JoinWorldBossUseCase:
         word = "joueur" if count <= 1 else "joueurs"
         return JoinLeaveResult(
             True,
-            f"✅ Vous rejoignez le raid contre **{boss.name}** (raid à {count} {word}).",
+            f"✅ Tu rejoins le raid contre **{boss.name}** (raid à {count} {word}).",
         )
 
 
@@ -309,21 +309,21 @@ class LeaveWorldBossUseCase:
 
         profile = self.player_repository.get_by_discord_id(discord_id)
         if profile is None:
-            return JoinLeaveResult(False, "❌ Vous n'avez pas de profil joueur.")
+            return JoinLeaveResult(False, "❌ Tu n'as pas de profil joueur.")
 
         existing = self.world_boss_repository.get_participation(boss.id, profile.player.id)
         if existing is None or not existing.joined:
-            return JoinLeaveResult(False, "⚠️ Vous n'étiez pas inscrit.")
+            return JoinLeaveResult(False, "⚠️ Tu n'étais pas inscrit.")
         if existing.fights_count > 0:
             return JoinLeaveResult(
                 False,
-                "⚠️ Vous avez déjà combattu ce boss : impossible de quitter le raid.",
+                "⚠️ Tu as déjà combattu ce boss : impossible de quitter le raid.",
             )
 
         self.world_boss_repository.upsert_participation(
             boss.id, profile.player.id, joined=False
         )
-        return JoinLeaveResult(True, "🚪 Vous quittez le raid.")
+        return JoinLeaveResult(True, "🚪 Tu quittes le raid.")
 
 
 # ---------- 2.5 Vote ----------
@@ -362,19 +362,19 @@ class VoteForFightWorldBossUseCase:
 
         profile = self.player_repository.get_by_discord_id(discord_id)
         if profile is None:
-            return VoteResult(False, "❌ Vous n'avez pas de profil joueur.")
+            return VoteResult(False, "❌ Tu n'as pas de profil joueur.")
 
         participation = self.world_boss_repository.get_participation(
             boss.id, profile.player.id,
         )
         if participation is None or not participation.joined:
             return VoteResult(
-                False, "❌ Vous devez d'abord rejoindre le raid (🤝).",
+                False, "❌ Rejoins d'abord le raid (🤝).",
             )
 
         if participation.voted_to_start:
             return VoteResult(
-                False, "✅ Vous avez déjà voté pour lancer le combat.",
+                False, "✅ Tu as déjà voté pour lancer le combat.",
                 votes=self.world_boss_repository.count_voted(boss.id),
                 total=self.world_boss_repository.count_joined(boss.id),
                 boss_id=boss.id,

@@ -48,8 +48,7 @@ def build_welcome_embed(display_name: str | None = None) -> discord.Embed:
     embed.add_field(
         name="1️⃣ Ton personnage",
         value=(
-            "**`/profil`** — ton perso, tes stats et tes **affinités "
-            "élémentaires** (tirées à ta création).\n"
+            "**`/profil`** — ton perso, ton rang et tes stats.\n"
             "**`/stats`** — à chaque niveau tu gagnes **1 point de stats** : "
             "place-le en attaque, en défense ou en PV. C'est ta seule source de "
             "puissance brute.\n"
@@ -60,12 +59,13 @@ def build_welcome_embed(display_name: str | None = None) -> discord.Embed:
     embed.add_field(
         name="2️⃣ Combats & progression",
         value=(
-            "Les **monstres** apparaissent dans les salons de zone : clique "
-            "**Rejoindre** pour combattre en groupe et gagner XP, or et butin.\n"
+            "**`/tour`** — ton premier combat, tout de suite et à ta portée.\n"
+            "Les **monstres** apparaissent ensuite dans les salons de zone : clique "
+            "**Combattre**, puis **Lancer** quand le groupe est prêt, pour gagner XP, or "
+            "et butin. Jusqu'au niveau 10, ton XP de combat est **doublée**.\n"
             "**`/arbre`** — chaque niveau donne aussi **1 point d'arbre** : "
             "bonus, passifs et, aux jonctions, des classes.\n"
-            "**`/epreuve`** — bats le gardien du rang suivant pour ouvrir une "
-            "nouvelle zone."
+            "**`/epreuve`** — réussis l'épreuve de ton rôle pour ouvrir une nouvelle zone."
         ),
         inline=False,
     )
@@ -98,7 +98,7 @@ def build_welcome_embed(display_name: str | None = None) -> discord.Embed:
         value=(
             f"Un boss apparaît chaque semaine. **Inscris-toi** (🤝) avant **{close}**, "
             f"le combat collectif se lance **automatiquement à {fight}**. Récompenses "
-            "proportionnelles à ta contribution + **loot exclusif** !"
+            "selon ta contribution, **butin exclusif** s'il tombe avant de repartir !"
         ),
         inline=False,
     )

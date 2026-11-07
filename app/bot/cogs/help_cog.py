@@ -62,8 +62,8 @@ def _build_intro_embed(total_cmds: int, n_pages: int) -> discord.Embed:
         title="🌸 Bienvenue dans SakuraLeveling",
         description=(
             "Un **RPG Discord** où tu fais grandir ton personnage : combats les "
-            "monstres qui apparaissent dans les salons, fais forger ton "
-            "équipement, développe ton arbre de compétences et grimpe de rang."
+            "monstres qui apparaissent dans les salons, équipe-toi de ce qu'ils "
+            "lâchent, développe ton arbre de compétences et grimpe de rang."
         ),
         color=discord.Color.magenta(),
     )
@@ -77,8 +77,8 @@ def _build_intro_embed(total_cmds: int, n_pages: int) -> discord.Embed:
             "**3.** 🛠️ **Équipe-toi** — les monstres lâchent la pièce qu'ils "
             "portent ; Borak (`/forgeron`) **fusionne** tes copies pour monter leur "
             "rareté, Elna (`/alchimiste`) prépare tes **potions** avec leurs matériaux.\n"
-            "**4.** 🎖️ **Monte en rang** — `/epreuve` : bats le gardien du rang "
-            "suivant pour ouvrir une nouvelle zone.\n"
+            "**4.** 🎖️ **Monte en rang** — `/epreuve` : réussis l'épreuve de ton rôle "
+            "face au gardien pour ouvrir une nouvelle zone.\n"
             "**5.** 🏆 **Brille** — quêtes (`/quetes`, `/quetes_hebdo`), raid du "
             "world boss et `/classement`."
         ),

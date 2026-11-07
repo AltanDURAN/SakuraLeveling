@@ -40,7 +40,7 @@ class EconomyCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
     ) -> None:
         if target.bot:
             await interaction.response.send_message(
-                "❌ Vous ne pouvez pas envoyer d'or à un bot.",
+                "❌ Tu ne peux pas envoyer d'or à un bot.",
                 ephemeral=True,
             )
             return
@@ -65,7 +65,7 @@ class EconomyCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
             f"_Votre solde : {result.sender_balance_after} or._"
         )
 
-    @app_commands.command(name="daily", description="Récupérer votre récompense quotidienne")
+    @app_commands.command(name="daily", description="Récupère ta récompense quotidienne")
     async def daily(self, interaction: discord.Interaction) -> None:
         with get_db_session() as session:
             player_repository = PlayerRepository(session)

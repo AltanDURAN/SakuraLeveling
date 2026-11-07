@@ -134,7 +134,7 @@ class ListItemForSaleUseCase:
 
         item = self.item_repository.get_by_code(item_code)
         if item is None:
-            return ListResult(False, f"❌ Item `{item_code}` introuvable.")
+            return ListResult(False, f"❌ Objet `{item_code}` introuvable.")
 
         # Étape critique : retirer l'item de l'inventaire AVANT la création
         # de l'annonce. Si on inverse, un crash entre les 2 = item dupliqué.
@@ -146,7 +146,7 @@ class ListItemForSaleUseCase:
         if not removed:
             return ListResult(
                 False,
-                f"❌ Vous n'avez pas {quantity}× **{item.name}** en inventaire.",
+                f"❌ Tu n'as pas {quantity}× **{item.name}** en inventaire.",
             )
 
         expires_at = datetime.now(UTC) + timedelta(days=duration_days)
@@ -258,7 +258,7 @@ class BuyMarketplaceListingUseCase:
             display_name=buyer_display_name,
         )
         if buyer_profile.player.id == listing.seller_player_id:
-            return BuyResult(False, "❌ Vous ne pouvez pas acheter votre propre annonce.")
+            return BuyResult(False, "❌ Tu ne peux pas acheter ta propre annonce.")
 
         if listing.gear_id is not None:
             gear = self.gear_repository.get(listing.gear_id)
@@ -350,7 +350,7 @@ class CancelMarketplaceListingUseCase:
         seller_profile = self.player_repository.get_by_discord_id(seller_discord_id)
         if seller_profile is None or seller_profile.player.id != listing.seller_player_id:
             return CancelResult(
-                False, "❌ Cette annonce ne vous appartient pas."
+                False, "❌ Cette annonce ne t'appartient pas."
             )
         if listing.status != ListingStatus.ACTIVE:
             return CancelResult(False, "❌ Annonce déjà clôturée.")
@@ -360,7 +360,7 @@ class CancelMarketplaceListingUseCase:
         _release(listing, self.inventory_repository, self.gear_repository)
         return CancelResult(
             success=True,
-            message="✅ Annonce annulée. Items restitués à votre inventaire.",
+            message="✅ Annonce annulée. Les objets sont revenus dans ton inventaire.",
         )
 
 

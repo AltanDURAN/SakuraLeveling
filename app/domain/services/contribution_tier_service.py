@@ -48,7 +48,7 @@ def tier_for_share(share: float) -> ContributionTier:
 
 def next_tier(share: float) -> ContributionTier | None:
     """Palier suivant à viser (None si déjà au sommet) — sert à afficher
-    « il vous manque X % pour ... »."""
+    « il te manque X % pour ... »."""
     current = tier_for_share(share)
     higher = [t for t in TIERS if t.min_share > current.min_share]
     return min(higher, key=lambda t: t.min_share) if higher else None

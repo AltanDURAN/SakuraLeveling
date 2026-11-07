@@ -123,7 +123,7 @@ class UseConsumableUseCase:
         item = self.item_repository.get_by_code(item_code)
         if item is None:
             return UseConsumableResult(
-                success=False, message=f"❌ Item `{item_code}` introuvable."
+                success=False, message=f"❌ Objet `{item_code}` introuvable."
             )
         if item.category != CONSUMABLE_CATEGORY:
             return UseConsumableResult(
@@ -151,7 +151,7 @@ class UseConsumableUseCase:
         if owned < 1:
             return UseConsumableResult(
                 success=False,
-                message=f"❌ Vous n'avez pas de **{item.name}** en inventaire.",
+                message=f"❌ Tu n'as pas de **{item.name}** en inventaire.",
                 item_name=item.name,
             )
 
@@ -209,7 +209,7 @@ class UseConsumableUseCase:
         if not removed:
             return UseConsumableResult(
                 success=False,
-                message=f"❌ Vous n'avez pas de **{item.name}** en inventaire.",
+                message=f"❌ Tu n'as pas de **{item.name}** en inventaire.",
                 item_name=item.name,
             )
 
@@ -224,7 +224,7 @@ class UseConsumableUseCase:
         return UseConsumableResult(
             success=True,
             message=(
-                f"💚 **{item.name}** utilisé : "
+                f"💚 **{item.name}** : "
                 f"PV {hp_before} → **{hp_after}** / {max_hp} (+{hp_after - hp_before})"
             ),
             item_name=item.name,
@@ -249,12 +249,12 @@ class UseConsumableUseCase:
                          f"**{item.name}** n'a pas été utilisée."),
             )
         if not self.inventory_repository.remove_item(player_id, item.id, 1):
-            return UseConsumableResult(False, f"❌ Vous n'avez pas de **{item.name}** en inventaire.", item.name)
+            return UseConsumableResult(False, f"❌ Tu n'as pas de **{item.name}** en inventaire.", item.name)
         after = min(stats.mana_max, before + round(stats.mana_max * int((item.stat_bonuses or {}).get("value", 0)) / 100))
         mana_repo.update_current_mana(player_id, after)
         return UseConsumableResult(
             success=True, item_name=item.name,
-            message=f"💧 **{item.name}** utilisée : mana {before} → **{after}** / {stats.mana_max} (+{after - before})",
+            message=f"💧 **{item.name}** : mana {before} → **{after}** / {stats.mana_max} (+{after - before})",
         )
 
     # ------------------------------------------------------------- élixirs --
@@ -267,7 +267,7 @@ class UseConsumableUseCase:
                 False, f"🧪 Un élixir plus fort de ce type est déjà actif : **{item.name}** n'a pas été bu.",
                 item.name)
         if not self.inventory_repository.remove_item(player_id, item.id, 1, commit=False):
-            return UseConsumableResult(False, f"❌ Vous n'avez pas de **{item.name}** en inventaire.", item.name)
+            return UseConsumableResult(False, f"❌ Tu n'as pas de **{item.name}** en inventaire.", item.name)
         _, renewed = repo.apply_elixir(player_id, item.code, elixir.status_kind, elixir.multiplier,
                                        elixir.minutes * 60)
         commit(session)
@@ -304,7 +304,7 @@ class UseConsumableUseCase:
             if not placed:
                 return fail("📜 Tu n'as aucun point de stats placé : le parchemin n'a pas servi.")
             if not self._consume(pid, item):
-                return fail(f"❌ Vous n'avez pas de **{item.name}** en inventaire.")
+                return fail(f"❌ Tu n'as pas de **{item.name}** en inventaire.")
             refunded = self.player_repository.reset_stat_points(pid)
             return UseConsumableResult(True, f"📜 **{item.name}** : {refunded} points de stats repris. "
                                              "Replace-les avec `/stats`.", item.name)
@@ -338,7 +338,7 @@ class UseConsumableUseCase:
             if until is None or until <= now:
                 return fail("🔱 Tu peux déjà tenter ton épreuve : garde ton sceau pour un échec.")
             if not self._consume(pid, item):
-                return fail(f"❌ Vous n'avez pas de **{item.name}** en inventaire.")
+                return fail(f"❌ Tu n'as pas de **{item.name}** en inventaire.")
             cooldowns.upsert(pid, "rank_trial", last_used_at=cooldown.last_used_at or now, next_available_at=now)
             return UseConsumableResult(True, f"🔱 Second souffle ! Tu peux retenter l'épreuve du rang "
                                              f"**{rank}** tout de suite : `/epreuve`.", item.name)

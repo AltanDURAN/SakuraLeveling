@@ -110,11 +110,11 @@ def build_draft_embed(
     target_display_name: str,
 ) -> discord.Embed:
     embed = discord.Embed(
-        title=f"🤝 Brouillon de trade avec {target_display_name}",
+        title=f"🤝 Brouillon d'échange avec {target_display_name}",
         color=discord.Color.blurple(),
         description=(
-            "Construisez votre proposition avec les boutons ci-dessous, "
-            "puis cliquez **Soumettre** pour envoyer la demande."
+            "Construis ta proposition avec les boutons ci-dessous, "
+            "puis clique sur **Soumettre** pour envoyer la demande."
         ),
     )
     embed.add_field(
@@ -214,7 +214,7 @@ class _QuantityModal(discord.ui.Modal):
             return
         if self.max_quantity is not None and qty > self.max_quantity:
             await interaction.response.send_message(
-                f"❌ Vous n'en avez que {self.max_quantity}.", ephemeral=True
+                f"❌ Tu n'en as que {self.max_quantity}.", ephemeral=True
             )
             return
         await self.on_submit_callback(interaction, qty)
@@ -343,14 +343,14 @@ class TradeDraftView(discord.ui.View):
         choices = choices[:SELECT_LIMIT]
         if not choices:
             await interaction.response.send_message(
-                "❌ Vous n'avez aucun item dans votre inventaire à proposer.",
+                "❌ Tu n'as aucun objet à proposer dans ton inventaire.",
                 ephemeral=True,
             )
             return
 
         await self._open_item_select(
             interaction,
-            title="Choisissez un item à proposer",
+            title="Choisis un objet à proposer",
             choices=choices,
             side="offered",
         )
@@ -383,14 +383,14 @@ class TradeDraftView(discord.ui.View):
         choices = choices[:SELECT_LIMIT]
         if not choices:
             await interaction.response.send_message(
-                f"❌ {self.target.display_name} n'a aucun item dans son inventaire à demander.",
+                f"❌ {self.target.display_name} n'a aucun objet à demander dans son inventaire.",
                 ephemeral=True,
             )
             return
 
         await self._open_item_select(
             interaction,
-            title=f"Choisissez un item à demander à {self.target.display_name}",
+            title=f"Choisis un objet à demander à {self.target.display_name}",
             choices=choices,
             side="requested",
         )
@@ -454,7 +454,7 @@ class TradeDraftView(discord.ui.View):
             await self._refresh_self(submit_interaction)
 
         modal = _GoldInputModal(
-            title="Or que vous proposez",
+            title="Or que tu proposes",
             current_value=self.draft.offered_gold,
             on_submit_callback=on_submit,
         )
@@ -471,7 +471,7 @@ class TradeDraftView(discord.ui.View):
             await self._refresh_self(submit_interaction)
 
         modal = _GoldInputModal(
-            title="Or que vous demandez",
+            title="Or que tu demandes",
             current_value=self.draft.requested_gold,
             on_submit_callback=on_submit,
         )
@@ -560,7 +560,7 @@ class TradeDraftView(discord.ui.View):
             timeout=5 * 60,
         )
         await interaction.followup.send(
-            content=f"{self.target.mention}, {self.initiator.mention} vous propose un échange :",
+            content=f"{self.target.mention}, {self.initiator.mention} te propose un échange :",
             embed=build_trade_embed(result.trade),
             view=public_view,
             ephemeral=False,

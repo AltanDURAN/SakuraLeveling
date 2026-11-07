@@ -53,7 +53,7 @@ class TransferGoldUseCase:
         if sender_discord_id == receiver_discord_id:
             return TransferGoldResult(
                 success=False,
-                message="❌ Vous ne pouvez pas vous payer à vous-même.",
+                message="❌ Tu ne peux pas te payer toi-même.",
             )
 
         sender_profile = self.player_repository.get_or_create_by_discord_id(
@@ -73,7 +73,7 @@ class TransferGoldUseCase:
             return TransferGoldResult(
                 success=False,
                 message=(
-                    f"❌ Fonds insuffisants : il vous manque "
+                    f"❌ Fonds insuffisants : il te manque "
                     f"**{amount - sender_profile.resources.gold}** or "
                     f"(possédé : {sender_profile.resources.gold}, à envoyer : {amount})."
                 ),

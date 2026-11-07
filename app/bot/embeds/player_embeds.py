@@ -36,7 +36,7 @@ def build_affinities_embed(
     progression = ElementAffinityProgressionService()
     talents = talents or {}
     revealed = revealed or set()
-    who = "Vos" if is_self else f"Affinités de {display_name} —"
+    who = "Tes" if is_self else f"Affinités de {display_name} —"
     unknown = sum(1 for e in ALL_ELEMENTS if e.value not in revealed)
     description = (
         "Tuez des monstres d'un élément pour gagner des **essences** ; "
@@ -45,7 +45,7 @@ def build_affinities_embed(
     )
     if unknown:
         hint = (
-            f"\n\n🔮 **{unknown} talent(s) encore inconnu(s).** Chacun de vous "
+            f"\n\n🔮 **{unknown} talent(s) encore inconnu(s).** Chaque aventurier "
             "naît avec un talent caché par élément : il décide à quelle vitesse "
             "les essences tombent… et certains éléments réservent des surprises."
         )

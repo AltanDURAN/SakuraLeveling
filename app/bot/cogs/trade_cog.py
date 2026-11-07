@@ -47,7 +47,7 @@ class TradeCog(BetaChannelOnlyMixin, commands.Cog):
 
     @app_commands.command(
         name="echange",
-        description="Proposer un échange à un autre joueur (items et/ou or)",
+        description="Propose un échange à un autre joueur (objets et/ou or)",
     )
     @app_commands.describe(target="Joueur avec qui échanger")
     async def trade(
@@ -57,14 +57,14 @@ class TradeCog(BetaChannelOnlyMixin, commands.Cog):
     ) -> None:
         if target.bot:
             await interaction.response.send_message(
-                "❌ Vous ne pouvez pas échanger avec un bot.",
+                "❌ Tu ne peux pas échanger avec un bot.",
                 ephemeral=True,
             )
             return
 
         if target.id == interaction.user.id:
             await interaction.response.send_message(
-                "❌ Vous ne pouvez pas échanger avec vous-même.",
+                "❌ Tu ne peux pas échanger avec toi-même.",
                 ephemeral=True,
             )
             return

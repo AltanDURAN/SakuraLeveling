@@ -61,7 +61,7 @@ def build_equip_confirm_embed(
         title=f"🔄 Confirmer l'équipement de {item_name}",
         description=(
             f"Emplacement : **{SLOT_LABELS.get(slot, slot)}** — actuellement : **{replacing_name}**\n"
-            "Voici le diff de vos statistiques après le changement :"
+            "Voici ce que change cet équipement pour tes statistiques :"
         ),
         color=discord.Color.orange(),
     )
@@ -95,7 +95,7 @@ class EquipConfirmView(discord.ui.View):
     async def _interaction_is_owner(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.author_id:
             await interaction.response.send_message(
-                "❌ Cette confirmation ne vous est pas destinée.", ephemeral=True
+                "❌ Cette confirmation ne t'est pas destinée.", ephemeral=True
             )
             return False
         return True

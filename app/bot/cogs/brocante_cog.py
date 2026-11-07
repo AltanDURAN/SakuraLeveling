@@ -2,7 +2,7 @@
 
 Sous-commandes :
     • /brocante annonces                               → catalogue actif
-    • /brocante mes_annonces                                 → vos annonces actives
+    • /brocante mes_annonces                                 → tes annonces actives
     • /brocante vendre <item> <qty> <price> [days]     → créer une annonce
     • /brocante acheter <listing_id>                     → acheter
     • /brocante annuler <listing_id>                  → annuler une annonce
@@ -177,7 +177,7 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
     # ---------- my listings ----------
 
     @brocante.command(
-        name="mes_annonces", description="Voir vos annonces actives"
+        name="mes_annonces", description="Tes annonces actives"
     )
     async def my_listings(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
@@ -185,7 +185,7 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
             profile = PlayerRepository(session).get_by_discord_id(interaction.user.id)
             if profile is None:
                 await interaction.followup.send(
-                    "❌ Vous n'avez pas encore de profil.", ephemeral=True
+                    "❌ Tu n'as pas encore de profil.", ephemeral=True
                 )
                 return
             listings = MarketplaceRepository(session).list_active_for_seller(
@@ -198,7 +198,7 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
             color=discord.Color.dark_orange(),
         )
         if not listings:
-            embed.description = "_Vous n'avez aucune annonce active._"
+            embed.description = "_Tu n'as aucune annonce active._"
         else:
             lines = [
                 (f"`#{l.id}` **{names[l.id]}** à {l.total_price} or" if l.gear_id is not None
@@ -213,7 +213,7 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
 
     @brocante.command(
         name="vendre",
-        description="Mettre un item en vente sur la brocante",
+        description="Mets un objet en vente sur la brocante",
     )
     @app_commands.describe(
         item="Item ou pièce d'équipement à vendre (autocomplete)",
@@ -310,7 +310,7 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
 
     @brocante.command(
         name="annuler",
-        description="Annuler une de vos annonces et récupérer les items",
+        description="Annule une de tes annonces et récupère les objets",
     )
     @app_commands.describe(listing_id="ID de l'annonce à annuler")
     async def cancel(

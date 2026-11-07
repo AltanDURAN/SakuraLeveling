@@ -203,7 +203,7 @@ def test_create_trade_rejects_self_trade(session):
     )
 
     assert result.success is False
-    assert "vous-même" in result.message.lower() or "vous meme" in result.message.lower()
+    assert "toi-même" in result.message.lower()
 
 
 def test_create_trade_rejects_when_initiator_lacks_items(session):
@@ -309,7 +309,7 @@ def test_create_trade_rejects_existing_pending_between_pair(session):
         target_request=TradeOffer(gold=5),
     )
     assert r2.success is False
-    assert "pending" in r2.message.lower() or "existe" in r2.message.lower()
+    assert "en attente" in r2.message.lower()
 
 
 # ---------- AcceptTrade ----------

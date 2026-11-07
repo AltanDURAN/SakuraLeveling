@@ -123,7 +123,7 @@ def build_mob_embed(
     if mob.image_name:
         embed.set_thumbnail(url=f"attachment://{mob.image_name}")
 
-    embed.set_footer(text=f"Mob {idx + 1}/{total} · trié par puissance croissante")
+    embed.set_footer(text=f"Monstre {idx + 1}/{total} · trié par puissance croissante")
     return embed
 
 
@@ -151,7 +151,7 @@ class BestiaireView(discord.ui.View):
     async def _check_owner(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.author_id:
             await interaction.response.send_message(
-                "❌ Cette navigation ne vous est pas destinée. Tape `/bestiaire`.",
+                "❌ Cette navigation ne t'est pas destinée. Tape `/bestiaire`.",
                 ephemeral=True,
             )
             return False

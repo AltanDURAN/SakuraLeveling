@@ -16,7 +16,7 @@ def build_daily_success_embed(
     guard_used: bool = False,
 ) -> discord.Embed:
     lines = [
-        "Vous récupérez :",
+        "Tu récupères :",
         f"**{_format_int(gold_gained)}** 🪙"
         + (f" (dont **+{streak_bonus_pct} %** de série)" if streak_bonus_pct else ""),
     ]
@@ -46,7 +46,7 @@ def build_daily_success_embed(
         for name, qty in bonus_items:
             lines.append(f"• **{name}** ×{qty}")
     lines.append("")
-    lines.append("Revenez également demain !")
+    lines.append("Reviens aussi demain !")
 
     embed = discord.Embed(
         title=f"Série de {streak} jour{'s' if streak > 1 else ''} 🔥 !",
@@ -64,7 +64,7 @@ def build_daily_cooldown_embed(
     embed = discord.Embed(
         title="⏳ Daily déjà récupéré",
         description=(
-            f"Vous avez déjà récupéré votre récompense quotidienne.\n"
+            f"Tu as déjà récupéré ta récompense quotidienne.\n"
             f"Prochain daily disponible <t:{timestamp}:R> (<t:{timestamp}:F>).\n\n"
             f"Série actuelle : **{streak}** 🔥"
         ),

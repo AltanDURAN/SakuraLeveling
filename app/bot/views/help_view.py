@@ -32,7 +32,7 @@ class HelpView(discord.ui.View):
     async def _check_owner(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.author_id:
             await interaction.response.send_message(
-                "❌ Cette navigation ne vous est pas destinée. Tape `/help` pour la tienne.",
+                "❌ Cette navigation ne t'est pas destinée. Tape `/help` pour la tienne.",
                 ephemeral=True,
             )
             return False

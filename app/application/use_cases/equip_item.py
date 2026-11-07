@@ -208,7 +208,7 @@ class EquipItemUseCase:
                 success=True,
                 message=(
                     f"✅ **{item_def.name}** équipée à **deux mains** — elle "
-                    f"occupe vos deux emplacements d'arme."
+                    f"occupe tes deux emplacements d'arme."
                 ),
                 slots_equipped=[s.value for s in WEAPON_SLOTS],
                 unequipped_items=unequipped,

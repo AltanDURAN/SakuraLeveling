@@ -506,7 +506,7 @@ class WorldBossCog(commands.Cog):
 
     @boss.command(
         name="moi",
-        description="Votre contribution au raid : rang, dégâts, palier, progrès",
+        description="Ta contribution au raid : rang, dégâts, palier, progrès",
     )
     async def boss_me(self, interaction: discord.Interaction) -> None:
         """Vue JOUEUR : où j'en suis dans le raid de la semaine, et est-ce que
@@ -563,8 +563,8 @@ class WorldBossCog(commands.Cog):
 
         if mine is None or mine.fights_count == 0:
             await interaction.followup.send(
-                f"⚔️ **{boss.name}** vous attend — vous n'avez pas encore frappé "
-                "cette semaine.\nRejoignez le raid : chaque jour à "
+                f"⚔️ **{boss.name}** t'attend : tu n'as pas encore frappé "
+                "cette semaine.\nRejoins le raid : chaque jour à "
                 f"**{pacing_service.fight_label(get_pacing().raid)}**, l'équipe lance l'assaut.",
                 ephemeral=True)
             return
@@ -575,22 +575,22 @@ class WorldBossCog(commands.Cog):
         nxt = next_tier(share)
 
         embed = discord.Embed(
-            title=f"⚔️ Votre raid — {boss.name}",
+            title=f"⚔️ Ton raid — {boss.name}",
             description=f"Semaine en cours · **{len(metrics)}** combattants engagés",
             color=discord.Color.dark_red(),
         )
         embed.add_field(
-            name="🏅 Votre rang",
+            name="🏅 Ton rang",
             value=f"**#{rank}** sur {len(ranking)}\n{tier.format()}",
             inline=True,
         )
         embed.add_field(
-            name="📊 Votre part",
+            name="📊 Ta part",
             value=f"**{share * 100:.1f} %** de l'effort du raid",
             inline=True,
         )
         embed.add_field(
-            name="⚔️ Vos assauts",
+            name="⚔️ Tes assauts",
             value=f"**{mine.fights_count}** cette semaine",
             inline=True,
         )
@@ -610,7 +610,7 @@ class WorldBossCog(commands.Cog):
             manque = share_to_next(share) * 100
             embed.add_field(
                 name="🎯 Palier suivant",
-                value=(f"{nxt.icon} **{nxt.label}** — il vous manque "
+                value=(f"{nxt.icon} **{nxt.label}** : il te manque "
                        f"**{manque:.1f} %** de contribution "
                        f"(×{nxt.gold_multiplier} sur l'or final)"),
                 inline=False,
@@ -618,7 +618,7 @@ class WorldBossCog(commands.Cog):
         else:
             embed.add_field(
                 name="🎯 Palier",
-                value="Vous êtes au **sommet** — palier maximal atteint. 💎",
+                value="Tu es au **sommet** : palier maximal atteint. 💎",
                 inline=False,
             )
         if previous_damage > 0:
@@ -664,8 +664,8 @@ class WorldBossCog(commands.Cog):
         embed = discord.Embed(
             title="📜 Annales des raids",
             description=(
-                "Les dernières semaines de guerre. Comparez les dégâts cumulés "
-                "et le nombre de combattants : c'est la mesure de vos progrès."
+                "Les dernières semaines de guerre : les dégâts cumulés et le "
+                "nombre de combattants mesurent les progrès du serveur."
             ),
             color=discord.Color.dark_gold(),
         )
@@ -756,7 +756,7 @@ class WorldBossCog(commands.Cog):
             description=(
                 "Un colosse se dresse. Il restera là **toute la semaine** : "
                 "chaque PV que vous lui arrachez est **définitif**, il ne "
-                "régénère jamais."
+                "régénère jamais. Après le dernier assaut, s'il tient encore debout, il repart."
             ),
             color=discord.Color.dark_red(),
         )
@@ -783,8 +783,9 @@ class WorldBossCog(commands.Cog):
             value=(
                 "À sa mort, tout le monde est payé **selon sa contribution** "
                 "(dégâts infligés, dégâts encaissés, soins prodigués). "
-                "Le podium et les meilleurs rôles reçoivent bien plus.\n"
-                "`/boss` pour votre contribution · `/boss historique` pour les "
+                "Le podium et les meilleurs rôles reçoivent bien plus. "
+                "S'il repart vivant, chacun touche sa part selon les PV retirés, sans butin ni titre.\n"
+                "`/boss moi` pour ta contribution · `/boss historique` pour les "
                 "semaines passées."
             ),
             inline=False,

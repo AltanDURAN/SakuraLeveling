@@ -13,6 +13,7 @@ from app.application.use_cases.weekly_quests import (
     GetWeeklyQuestsUseCase,
     WeeklyQuestState,
 )
+from app.bot.embeds.inventory_embeds import item_names
 from app.bot.views.quest_claim_view import QuestClaimView
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
@@ -61,6 +62,7 @@ def build_weekly_embed(
         embed.add_field(name="—", value="Aucune quête assignée.", inline=False)
         return embed
 
+    names = item_names({code for q in state.quests for code, _ in q.reward_items})
     for q in state.quests:
         if q.claimed:
             status_emoji = "🎁"
@@ -70,14 +72,14 @@ def build_weekly_embed(
             status_emoji = "⏳"
         bar = _build_progress_bar(q.progress, q.objective_quantity)
         items_label = (
-            ", ".join(f"{qty}× `{c}`" for c, qty in q.reward_items)
+            ", ".join(f"{qty}× {names.get(c, c)}" for c, qty in q.reward_items)
             if q.reward_items
             else "—"
         )
         value = (
             f"{q.description}\n"
             f"{bar} **{format_int(q.progress)}/{format_int(q.objective_quantity)}**\n"
-            f"💰 {q.reward_gold} or | ✨ {q.reward_xp} xp | 🎁 {items_label}"
+            f"💰 {format_int(q.reward_gold)} or | ✨ {format_int(q.reward_xp)} XP | 🎁 {items_label}"
         )
         embed.add_field(
             name=f"{status_emoji} {_tier_emoji(q.tier)} {q.name}",
@@ -92,7 +94,7 @@ class WeeklyQuestCog(BetaChannelOnlyMixin, commands.Cog):
 
     @app_commands.command(
         name="quetes_hebdo",
-        description="Voir et réclamer vos 3 quêtes hebdomadaires",
+        description="Tes 3 quêtes de la semaine : voir et réclamer",
     )
     async def weekly_quest(self, interaction: discord.Interaction) -> None:
         state = self._fetch_state(interaction)
@@ -137,14 +139,15 @@ class WeeklyQuestCog(BetaChannelOnlyMixin, commands.Cog):
             lines = [result.message]
             total_gold = sum(r.gold for r in result.rewards)
             total_xp = sum(r.xp for r in result.rewards)
-            lines.append(f"💰 +{total_gold} or | ✨ +{total_xp} xp")
+            lines.append(f"💰 +{format_int(total_gold)} or | ✨ +{format_int(total_xp)} XP")
+            names = item_names({code for r in result.rewards for code, _ in r.items})
             for r in result.rewards:
                 items_label = (
-                    " — " + ", ".join(f"{q}× `{c}`" for c, q in r.items)
+                    " — " + ", ".join(f"{q}× {names.get(c, c)}" for c, q in r.items)
                     if r.items
                     else ""
                 )
-                lines.append(f"  • **{r.name}** : {r.gold} or, {r.xp} xp{items_label}")
+                lines.append(f"  • **{r.name}** : {format_int(r.gold)} or, {format_int(r.xp)} XP{items_label}")
             if result.leveled_up and result.new_level is not None:
                 lines.append(f"🎉 Niveau **{result.new_level}** atteint !")
 

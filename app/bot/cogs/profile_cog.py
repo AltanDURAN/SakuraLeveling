@@ -46,7 +46,7 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
         await interaction.response.send_message("🏓 Pong !")
 
     @app_commands.command(name="profil", description="Afficher un profil joueur")
-    @app_commands.describe(target="Joueur dont afficher le profil (par défaut : vous)")
+    @app_commands.describe(target="Joueur dont afficher le profil (par défaut : toi)")
     async def profile(
         self,
         interaction: discord.Interaction,
@@ -317,9 +317,9 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
 
     @app_commands.command(
         name="affinites",
-        description="Voir vos affinités élémentaires et votre progression d'essences",
+        description="Tes affinités élémentaires et ta progression d'essences",
     )
-    @app_commands.describe(target="Joueur dont afficher les affinités (par défaut : vous)")
+    @app_commands.describe(target="Joueur dont afficher les affinités (par défaut : toi)")
     async def affinities_cmd(
         self,
         interaction: discord.Interaction,
@@ -407,7 +407,7 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
         name="cd",
         description="Voir les cooldowns d'un joueur (daily, world boss, etc.)",
     )
-    @app_commands.describe(target="Joueur ciblé (par défaut : vous)")
+    @app_commands.describe(target="Joueur ciblé (par défaut : toi)")
     async def cd(
         self,
         interaction: discord.Interaction,
@@ -468,7 +468,7 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
             active.append((cd.action_key, next_at))
 
         is_self = target_member.id == interaction.user.id
-        owner = "Vos" if is_self else "Les"
+        owner = "Tes" if is_self else "Les"
         suffix = "" if is_self else f" de {target_member.display_name}"
         title = f"⏳ {owner} cooldowns{suffix}"
 
@@ -497,9 +497,9 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
 
     @app_commands.command(
         name="or",
-        description="Voir votre or (ou celui d'un autre joueur)",
+        description="Ton or (ou celui d'un autre joueur)",
     )
-    @app_commands.describe(target="Joueur ciblé (par défaut : vous)")
+    @app_commands.describe(target="Joueur ciblé (par défaut : toi)")
     async def gold(
         self,
         interaction: discord.Interaction,
@@ -522,7 +522,7 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
                 career_gold = 0
 
         is_self = target_member.id == interaction.user.id
-        title = "💰 Votre bourse" if is_self else f"💰 Bourse de {target_member.display_name}"
+        title = "💰 Ta bourse" if is_self else f"💰 Bourse de {target_member.display_name}"
 
         embed = discord.Embed(
             title=title,

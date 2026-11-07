@@ -87,7 +87,7 @@ class BuyFromShopUseCase:
             return BuyResult(
                 success=False,
                 message=(
-                    f"Fonds insuffisants : il vous manque "
+                    f"Fonds insuffisants : il te manque "
                     f"**{total_cost - profile.resources.gold}** or "
                     f"(coût total {total_cost})."
                 ),
@@ -105,7 +105,7 @@ class BuyFromShopUseCase:
         return BuyResult(
             success=True,
             message=(
-                f"✅ Vous avez acheté **{quantity}× {shop_item.item_definition.name}** "
+                f"✅ Tu as acheté **{quantity}× {shop_item.item_definition.name}** "
                 f"pour **{total_cost}** or."
             ),
             total_cost=total_cost,

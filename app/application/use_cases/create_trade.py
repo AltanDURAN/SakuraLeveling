@@ -67,12 +67,12 @@ class CreateTradeUseCase:
         if initiator_discord_id == target_discord_id:
             return CreateTradeResult(
                 success=False,
-                message="❌ Vous ne pouvez pas commercer avec vous-même.",
+                message="❌ Tu ne peux pas commercer avec toi-même.",
             )
 
         # Validation des quantités positives
         for side_offer, side_label in (
-            (initiator_offer, "votre offre"),
+            (initiator_offer, "ton offre"),
             (target_request, "la demande"),
         ):
             if side_offer.gold < 0:
@@ -97,7 +97,7 @@ class CreateTradeUseCase:
         if nothing_offered:
             return CreateTradeResult(
                 success=False,
-                message="❌ Le trade est vide : proposez ou demandez au moins quelque chose.",
+                message="❌ L'échange est vide : propose ou demande au moins quelque chose.",
             )
 
         initiator_profile = self.player_repository.get_or_create_by_discord_id(
@@ -131,8 +131,8 @@ class CreateTradeUseCase:
             return CreateTradeResult(
                 success=False,
                 message=(
-                    "❌ Un trade pending existe déjà entre vous deux. "
-                    "Annulez-le ou attendez son expiration."
+                    "❌ Un échange est déjà en attente entre vous deux. "
+                    "Annule-le ou attends son expiration."
                 ),
             )
 
@@ -162,7 +162,7 @@ class CreateTradeUseCase:
             return CreateTradeResult(
                 success=False,
                 message=(
-                    f"❌ Vous n'avez que **{initiator_profile.resources.gold}** or, "
+                    f"❌ Tu n'as que **{initiator_profile.resources.gold}** or, "
                     f"impossible d'en proposer **{initiator_offer.gold}**."
                 ),
             )
@@ -173,14 +173,14 @@ class CreateTradeUseCase:
             if item is None:
                 return CreateTradeResult(
                     success=False,
-                    message=f"❌ Item proposé inconnu : `{item_code}`.",
+                    message=f"❌ Objet proposé inconnu : `{item_code}`.",
                 )
             available = inventory_by_code.get(item_code, 0)
             if available < qty:
                 return CreateTradeResult(
                     success=False,
                     message=(
-                        f"❌ Vous n'avez pas assez de **{item.name}** "
+                        f"❌ Tu n'as pas assez de **{item.name}** "
                         f"(possédé : {available}, proposé : {qty})."
                     ),
                 )
@@ -193,7 +193,7 @@ class CreateTradeUseCase:
             if item is None:
                 return CreateTradeResult(
                     success=False,
-                    message=f"❌ Item demandé inconnu : `{item_code}`.",
+                    message=f"❌ Objet demandé inconnu : `{item_code}`.",
                 )
 
         # Construction de la liste pour le repository
@@ -220,7 +220,7 @@ class CreateTradeUseCase:
 
         return CreateTradeResult(
             success=True,
-            message="✅ Proposition de trade créée.",
+            message="✅ Proposition d'échange créée.",
             trade=trade,
         )
 
