@@ -8,7 +8,7 @@ spécifique (FK on delete=cascade) — on garde l'historique des morts.
 
 from datetime import datetime, UTC
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.domain.entities.world_boss import (
@@ -100,13 +100,17 @@ class WorldBossRepository:
         commit(self.session)
         return model.current_hp
 
-    def mark_defeated(self, boss_id: int) -> None:
+    def mark_defeated(self, boss_id: int, killed: bool = True) -> None:
+        """Le boss est fini. `killed=False` : arrêté par un admin, ses PV
+        restent ceux qu'il avait (l'historique et le bestiaire ne le comptent
+        pas comme abattu)."""
         model = self.session.get(WorldBossModel, boss_id)
         if model is None:
             return
         model.status = WorldBossStatus.DEFEATED.value
         model.defeated_at = datetime.now(UTC)
-        model.current_hp = 0
+        if killed:
+            model.current_hp = 0
         commit(self.session)
 
     def mark_escaped(self, boss_id: int) -> None:
@@ -308,6 +312,22 @@ class WorldBossRepository:
             self._participation_to_domain(m)
             for m in self.session.execute(stmt).scalars().all()
         ]
+
+    def victories_by_code(self, player_id: int) -> dict[str, int]:
+        """Boss ABATTUS (pas arrêtés, pas repartis) contre lesquels le joueur
+        a mené au moins un assaut, par code de boss (bestiaire des boss)."""
+        rows = self.session.execute(
+            select(WorldBossModel.code, func.count(WorldBossModel.id))
+            .join(WorldBossParticipationModel, WorldBossParticipationModel.boss_id == WorldBossModel.id)
+            .where(
+                WorldBossParticipationModel.player_id == player_id,
+                WorldBossParticipationModel.fights_count > 0,
+                WorldBossModel.status == WorldBossStatus.DEFEATED.value,
+                WorldBossModel.current_hp <= 0,
+            )
+            .group_by(WorldBossModel.code)
+        ).all()
+        return {code: count for code, count in rows}
 
     def list_history(self, limit: int = 8) -> list[dict]:
         """Historique des raids passés, du plus récent au plus ancien.

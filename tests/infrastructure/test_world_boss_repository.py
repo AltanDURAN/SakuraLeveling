@@ -139,3 +139,35 @@ def test_add_combat_metrics_cumulates(session):
     assert p.damage_tanked == 30
     assert p.hp_healed == 5
     assert p.fights_count == 2
+
+
+def test_un_arret_admin_n_est_pas_une_victoire():
+    """07/11/2026 : `/boss_admin stop` mettait les PV à 0 ; l'historique et le
+    bestiaire le prenaient pour un boss abattu."""
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    session = sessionmaker(bind=engine)()
+    repo = WorldBossRepository(session)
+    alice, bob = _create_player(session, 1, "Alice"), _create_player(session, 2, "Bob")
+
+    def raid(code, fighters, end):
+        boss = repo.create(code=code, name=code, image_name="", max_hp=100, attack=10, defense=5, speed=5)
+        for player in fighters:
+            repo.add_combat_metrics(boss.id, player, 50, 10, 0)
+        end(boss.id)
+        return boss
+
+    raid("titan", [alice, bob], repo.mark_defeated)                                   # abattu
+    raid("titan", [alice], repo.mark_defeated)                                        # abattu encore
+    stopped = raid("dragon", [alice], lambda boss_id: repo.mark_defeated(boss_id, killed=False))
+    raid("liche", [alice], repo.mark_escaped)                                         # reparti vivant
+    joined_only = repo.create(code="hydre", name="hydre", image_name="", max_hp=100, attack=1, defense=1, speed=1)
+    repo.upsert_participation(joined_only.id, bob)                                    # inscrit, jamais combattu
+    repo.mark_defeated(joined_only.id)
+
+    assert repo.victories_by_code(alice) == {"titan": 2}
+    assert repo.victories_by_code(bob) == {"titan": 1}
+    assert repo.get_by_id(stopped.id).current_hp == 100
+    assert not next(h for h in repo.list_history() if h["code"] == "dragon")["killed"]
+    session.close()
+    engine.dispose()

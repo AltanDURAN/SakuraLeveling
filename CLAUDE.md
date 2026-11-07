@@ -157,12 +157,12 @@ Noms FRANÇAIS (sans accents) — c'est ce que le joueur tape. Liste tirée du c
 | `/marchand` | `shop_cog` | Achat uniquement — outils (cor, sceau, parchemin, jeton, sablier) et cosmétiques |
 | `/apparence` | `cosmetic_cog` | Cosmétiques portés sur la bannière `/profil` (fond, cadre, couleur du titre) |
 | `/voyante` | `seer_cog` | Ysaline lit un talent élémentaire caché (prix croissant, 1re offerte) |
-| `/utiliser <consommable>`, `/bestiaire` | `equipment_cog`, `bestiaire_cog` | Consommable, bestiaire À DÉCOUVRIR (silhouette tant que le monstre n'est pas vaincu, victoires par monstre) — cf. « Bestiaire » |
+| `/utiliser <consommable>`, `/bestiaire monstres\|boss` | `equipment_cog`, `bestiaire_cog` | Consommable, bestiaires À DÉCOUVRIR des monstres et des world boss (silhouette tant que non vaincu, victoires) — cf. « Bestiaire » |
 | `/defi [role]` | `role_trial_cog` | Défis de rôle du jour (DPS / Tank / Soutien) — remplacent les duels JcJ |
 | `/tour` | `tower_cog` | Tour solo : 100 étages, record permanent, récompense du jour |
 | `/offrande` | `offering_cog` | Offrande commune : jauge d'or du serveur → une divinité bénit tout le monde 24 h |
 | `/lune` | `lunar_cog` | Ciel de Paris : phase, pleines lunes / lunes de sang / éclipses à venir (événements des zones) |
-| `/boss moi`, `/boss historique`, `/boss list` | `world_boss_cog` | Raid hebdomadaire (contribution, historique, catalogue) |
+| `/boss moi`, `/boss historique` | `world_boss_cog` | Raid hebdomadaire (contribution, historique) — le catalogue est `/bestiaire boss` |
 | `/payer`, `/echange`, `/brocante annonces\|mes_annonces\|vendre\|acheter\|annuler` | `economy_cog`, `trade_cog`, `brocante_cog` | Or, échanges, place de marché (5 %) |
 | `/classement <catégorie>`, `/chad` | `leaderboard_cog`, `chad_cog` | Classements, rôle @chad |
 | (boucle automatique) | `encounter_cog`, `event_cog`, `world_boss_cog`, `admin_bridge_cog` | Spawn d'encounters, événements, raid 21 h, file `admin_commands` |
@@ -392,7 +392,7 @@ On ne tape plus de code d'objet : on parle à quelqu'un.
   - Modifier inconnu = ignoré poliment → extensibilité par contenu pur
 - **Persistence HP** : le boss garde `current_hp` entre les combats. `hp_regeneration=0` forcé — un boss ne regen jamais ses PV.
 - **Récompenses** ([`CompleteWorldBossUseCase`](app/application/use_cases/world_boss.py)) : base de présence + part du pool d'or selon le score de contribution, amplifiées par le palier de contribution ; bonus top-3 et top par catégorie ; loot exclusif ; titre MVP. ⚠️ Tous les montants de la classe sont des montants de **niveau 1**, multipliés par le niveau du joueur (`scale_reward(..., reference_level=1)`).
-- **Catalogue** : `/boss list` affiche tous les bosses définis avec leurs stats et particularités (utile pour debug/preview).
+- **Catalogue** : `/bestiaire boss` (07/11/2026, remplace `/boss list`, cf. « Bestiaire »). Un arrêt admin (`/boss_admin stop`, site) appelle `mark_defeated(killed=False)` : ses PV restent, ni l'historique ni le bestiaire ne le comptent comme abattu.
 - **À faire quand le user enverra ses vraies données** : remplacer/étendre `boss_definitions.json`, ajuster `spawn_probability` du loop si besoin.
 
 ## Système de titres
@@ -491,13 +491,14 @@ Demande de l'auteur : un tutoriel RP pour démarrer l'aventure, dans le salon tu
 - **Tests** : [`test_tutorial.py`](tests/infrastructure/test_tutorial.py), [`test_tutorial_cog.py`](tests/bot/test_tutorial_cog.py).
 - **Accueil d'un nouveau membre** (`OnboardingCog.on_member_join`, 31/10/2026, demande de l'auteur : « la première chose qu'on voit, il faut que ça donne envie ») : carte illustrée [`welcome_card.py`](app/bot/rendering/welcome_card.py) (ciel `horizon_celeste.png`, avatar cerclé de rose, « BIENVENUE » en Bangers, « Ne aventurier du Grand Cerisier ») + message RP court (`build_join_embed`) et boutons-LIENS vers le salon tutoriel et la 1re zone (`build_join_view`, sans état : marchent en MP et après redémarrage), dans le salon d'accueil (`WELCOME_CHANNEL_ID`) et en MP. Le guide détaillé reste `/demarrer`. Test : [`test_welcome.py`](tests/bot/test_welcome.py).
 
-## Bestiaire à découvrir (`/bestiaire`) — 07/11/2026
+## Bestiaire à découvrir (`/bestiaire monstres|boss`) — 07/11/2026
 
-Demande de l'auteur : silhouette tant que le monstre n'a pas été vaincu, et compteur de victoires.
+Demande de l'auteur : silhouette tant que le monstre n'a pas été vaincu, et compteur de victoires. `/bestiaire` est un GROUPE (Discord n'accepte pas une commande qui soit aussi un groupe) : `monstres` et `boss` (ex-`/boss list`, même style). Socle commun `PagedBookView` (◀ n/N ▶ réservé à l'auteur) + `picture` (image ou silhouette).
 
 - **Découvert** = au moins une victoire en COMBAT DE ZONE (`player_mob_kills`, `PlayerKillRepository.get_kills_per_mob` — le même compteur que les titres ; la tour n'y compte pas). Sans profil, rien n'est découvert.
 - **Pas encore vaincu** ([`bestiaire_view.py`](app/bot/views/bestiaire_view.py), `build_unknown_embed`) : « ❔ ??? », sa silhouette en vignette ([`silhouette.py`](app/bot/rendering/silhouette.py) : forme remplie de violet presque noir, halo lavande lisible sur les deux thèmes, 256 px, cache par date de l'image, fichier au nom NEUTRE `inconnu.png` — le nom du fichier se lit dans Discord), le salon où le trouver, la mention Élite. Ni nom, ni stats, ni butin — ni FAMILLE (« Slime », « Gobelin »… donneraient son nom).
 - **Vaincu** : la fiche complète + « ⚔️ Tes victoires ». Pied de page et menu des familles : « 📖 X/Y découverts ».
+- **Boss** ([`boss_bestiary_view.py`](app/bot/views/boss_bestiary_view.py)) : découvert = abattu (statut `defeated` ET PV à 0) avec au moins un assaut du joueur (`WorldBossRepository.victories_by_code`, `fights_count > 0`) ; inconnu : silhouette, salon du raid et niveau où il vient ; connu : niveau du raid, « ⚔️ Tes victoires », élément, stats, mécaniques (`mechanics_lines` : phases, ultime, gardes, particularités `TRAIT_LABELS`), butin. Trié par niveau, « 👑 X/5 vaincus ».
 - Le bestiaire du SITE (`/bestiary`, vitrine publique) reste complet.
 - Tests : [`test_bestiaire_view.py`](tests/bot/test_bestiaire_view.py).
 

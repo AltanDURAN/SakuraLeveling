@@ -3,8 +3,8 @@
 Système final V1 :
     • /boss_admin spawn <boss_code> [admin] force un spawn d'un boss défini
                                             dans boss_definitions.json
-    • /boss list                  [public]  liste les boss définis (vue admin
-                                            mais pratique pour tous)
+    • le catalogue des boss est dans `/bestiaire boss` (bestiaire_cog), à
+      découvrir comme les monstres
     • View attachée au message du boss : Rejoindre / Quitter / Lancer combat
     • Le boss reste actif jusqu'à mort (HP persistés en DB entre combats)
     • Cooldown 1 combat / joueur / jour, reset à minuit (heure de Paris)
@@ -99,16 +99,6 @@ def _active_levels(session) -> list[int]:
             sa.select(GameEventModel.player_id).where(
                 GameEventModel.kind == kinds.COMBAT, GameEventModel.at >= since))))
     return [row[0] for row in rows]
-
-
-#: Particularités d'un boss, dites simplement (/boss list).
-_TRAIT_LABELS = {
-    "damage_immunity_threshold": "ignore les coups trop faibles",
-    "auto_heal_per_turn": "se soigne",
-    "reflect_pct": "renvoie une part des dégâts",
-    "crit_immunity": "insensible aux critiques",
-    "adds": "invoque des renforts",
-}
 
 
 class WorldBossView(GatedView):
@@ -280,7 +270,7 @@ class WorldBossCog(commands.Cog):
         • Tirage 5% / heure (en moyenne ~1 spawn/jour après la fenêtre)
     """
 
-    boss = app_commands.Group(name="boss", description="Le world boss : ta contribution, l'historique, le catalogue")
+    boss = app_commands.Group(name="boss", description="Le world boss : ta contribution et l'historique des raids")
     # À part : Discord masque un groupe entier, pas une sous-commande.
     boss_admin = app_commands.Group(name="boss_admin", description="World boss (admin)",
                                     default_permissions=discord.Permissions(administrator=True))
@@ -429,45 +419,6 @@ class WorldBossCog(commands.Cog):
                 break
         return out
 
-    @boss.command(
-        name="list",
-        description="Les world boss : leur niveau, leurs mécaniques et leur histoire",
-    )
-    async def boss_list(self, interaction: discord.Interaction) -> None:
-        defs = list_definitions()
-        if not defs:
-            await interaction.response.send_message(
-                "ℹ️ Aucun boss défini.", ephemeral=True,
-            )
-            return
-
-        lines: list[str] = []
-        for d in sorted(defs, key=lambda d: d.level):
-            traits = [label for key, label in _TRAIT_LABELS.items() if d.modifiers.get(key)]
-            mechanics = []
-            if d.phases:
-                mechanics.append("phases " + " · ".join(f"{ph.get('name', '?')} ({ph.get('below_pct')} %)"
-                                                       for ph in d.phases))
-            if d.ultimate:
-                mechanics.append(f"ultime {d.ultimate.get('name', '?')} (toutes les "
-                                 f"{d.ultimate.get('every', '?')} actions)")
-            if d.guards:
-                mechanics.append(f"{len(d.guards)} gardes ({d.guards[0].get('name', '?')})")
-            lines.append(
-                f"**{d.name}** · pour le niveau {d.level}\n"
-                f"  ❤️ {format_int(d.max_hp)} PV | ⚔️ {d.attack} attaque | 🛡️ {d.defense} défense | "
-                f"💨 {d.speed} vitesse\n"
-                + (f"  Particularités : {', '.join(traits)}\n" if traits else "")
-                + (f"  Mécaniques : {' — '.join(mechanics)}\n" if mechanics else "")
-                + f"  _{d.lore or d.description}_"
-            )
-        embed = discord.Embed(
-            title="📜 Catalogue des World Bosses",
-            description="\n\n".join(lines)[:4000],
-            color=discord.Color.dark_purple(),
-        )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-
     @boss_admin.command(
         name="stop",
         description="[Admin] Arrête le world boss en cours (pas de récompenses distribuées)",
@@ -485,7 +436,7 @@ class WorldBossCog(commands.Cog):
                     "ℹ️ Aucun world boss actif à arrêter.", ephemeral=True,
                 )
                 return
-            repo.mark_defeated(boss.id)
+            repo.mark_defeated(boss.id, killed=False)    # arrêté, pas abattu
             boss_name = boss.name
             message_id = boss.channel_message_id
 
@@ -722,7 +673,7 @@ class WorldBossCog(commands.Cog):
             boss = repo.get_active()
             if boss is None or not boss.is_alive:
                 return False, "Aucun world boss actif à arrêter."
-            repo.mark_defeated(boss.id)
+            repo.mark_defeated(boss.id, killed=False)    # arrêté, pas abattu
             boss_name, message_id = boss.name, boss.channel_message_id
         if message_id is not None:
             channel = _get_boss_channel(self.bot)

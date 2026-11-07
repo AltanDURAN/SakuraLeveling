@@ -312,7 +312,7 @@ LES 7 EMPLACEMENTS
 
 D'OÙ VIENNENT LES PIÈCES
     Chaque monstre porte UNE pièce précise : son arme, son armure, son
-    casque, son bouclier, sinon un accessoire (le /bestiaire la montre). À
+    casque, son bouclier, sinon un accessoire (/bestiaire monstres la montre). À
     chaque victoire, il peut la lâcher (environ 9,5 % de chance), dans une
     seule rareté tirée au sort :
         ⚪ Commun 6 % · 🟢 Peu commun 2,5 % · 🔵 Rare 0,8 %
@@ -649,7 +649,7 @@ LE MANA DES COMPÉTENCES 💧
       plus chère (+75 or × le nombre de jauges déjà remplies, puis +4 %) ;
       chaque jour sans remplissage la fait redescendre de 2 %.
 
-/bestiaire
+/bestiaire monstres
     Le bestiaire À DÉCOUVRIR : un monstre que tu n'as jamais vaincu en combat
     de zone n'est qu'une silhouette, avec le salon où le trouver. Bats-le une
     fois : sa fiche s'ouvre (stats, élément, récompenses, butin, la pièce
@@ -657,7 +657,7 @@ LE MANA DES COMPÉTENCES 💧
     victoires contre lui. En bas : combien de monstres tu as découverts. Un
     menu permet de ne parcourir qu'une famille.
 
-WORLD BOSS — /boss moi, /boss historique, /boss list
+WORLD BOSS — /boss moi, /boss historique, /bestiaire boss
     (Le guide complet est épinglé en tête du salon du world boss, comme celui
     de la tour dans le salon de la tour solo.)
     Un boss apparaît chaque semaine, choisi selon le niveau des joueurs
@@ -680,7 +680,10 @@ WORLD BOSS — /boss moi, /boss historique, /boss list
         (plus fort, mais sur lui seul).
         /boss moi        : ton rang, ta part, tes dégâts / encaissé / soins.
         /boss historique : les raids des semaines passées.
-        /boss list       : le catalogue des boss (phases, ultime, gardes).
+        /bestiaire boss  : le bestiaire des boss, à découvrir comme celui des
+                           monstres : un boss que tu n'as jamais aidé à abattre
+                           reste une silhouette ; abattu, sa fiche (stats,
+                           phases, ultime, gardes, butin) et tes victoires.
 
 --------------------------------------------------------------------------------
 1.6 — QUÊTES

@@ -172,86 +172,36 @@ def build_mob_embed(
     return embed
 
 
-class BestiaireView(discord.ui.View):
-    def __init__(
-        self,
-        author_id: int,
-        mobs: list[MobDefinition],
-        timeout: float = 300.0,
-        items: dict | None = None,
-        kills: dict[str, int] | None = None,
-    ) -> None:
+class PagedBookView(discord.ui.View):
+    """Un livre à pages (◀ n/N ▶), réservé à celui qui l'a ouvert : socle du
+    bestiaire des monstres et de celui des boss. Les sous-classes rendent la
+    page courante (`render`)."""
+
+    #: La commande à rappeler à un autre joueur qui clique.
+    command = "/bestiaire monstres"
+
+    def __init__(self, author_id: int, pages: list, timeout: float = 300.0) -> None:
         super().__init__(timeout=timeout)
         self.author_id = author_id
-        self.all_mobs = mobs
-        self.mobs = mobs
-        self.items = items or {}  # code → ItemDefinition
-        #: Victoires du joueur par monstre ; None = tout est visible (sans joueur).
-        self.kills = kills
+        self.pages = pages
         self.index = 0
-        self._pss = PowerScoreService()
-        families = list(dict.fromkeys(m.family or "" for m in mobs))
-        if len(families) > 1:
-            self.add_item(_FamilySelect(self, families))
-        self._refresh_buttons()
 
-    def discovered(self, mob: MobDefinition) -> bool:
-        return self.kills is None or self.kills.get(mob.code, 0) > 0
-
-    def progress(self, mobs: list[MobDefinition] | None = None) -> str:
-        """« 📖 14/50 découverts » (rien si tout est visible)."""
-        if self.kills is None:
-            return ""
-        mobs = self.all_mobs if mobs is None else mobs
-        return f"📖 {sum(1 for m in mobs if self.discovered(m))}/{len(mobs)} découverts"
-
-    async def show_family(self, interaction: discord.Interaction, family: str) -> None:
-        if not await self._check_owner(interaction):
-            return
-        self.mobs = self.all_mobs if family == ALL_FAMILIES else \
-            [m for m in self.all_mobs if (m.family or "") == family]
-        self.index = 0
-        await self._send_page(interaction)
+    async def render(self) -> tuple[discord.Embed, discord.File | None]:
+        raise NotImplementedError
 
     def _refresh_buttons(self) -> None:
         self.prev_button.disabled = self.index <= 0
-        self.next_button.disabled = self.index >= len(self.mobs) - 1
-        self.counter.label = f"{self.index + 1} / {len(self.mobs)}"
+        self.next_button.disabled = self.index >= len(self.pages) - 1
+        self.counter.label = f"{self.index + 1} / {len(self.pages)}"
 
     async def _check_owner(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.author_id:
             await interaction.response.send_message(
-                "❌ Cette navigation ne t'est pas destinée. Tape `/bestiaire`.",
+                f"❌ Cette navigation ne t'est pas destinée. Tape `{self.command}`.",
                 ephemeral=True,
             )
             return False
         return True
-
-    async def render(self) -> tuple[discord.Embed, discord.File | None]:
-        """Embed du monstre courant + son image (ou sa silhouette) en vignette.
-        File=None sans image."""
-        mob = self.mobs[self.index]
-        path = MOBS_ASSETS_DIR / mob.image_name if mob.image_name else None
-        has_image = path is not None and path.exists()
-        if not self.discovered(mob):
-            embed = build_unknown_embed(mob, self.index, len(self.mobs), self.progress(), silhouette=has_image)
-            if not has_image:
-                return embed, None
-            data = await asyncio.to_thread(silhouette_png, path)
-            return embed, discord.File(io.BytesIO(data), filename=SILHOUETTE_FILE)
-        score = self._pss.calculate_from_mob(mob)
-        embed = build_mob_embed(
-            mob, self.index, len(self.mobs),
-            power_score=self._pss.format_score(score),
-            rank=self._pss.compute_rank(score),
-            items=self.items,
-            kills=None if self.kills is None else self.kills.get(mob.code, 0),
-            progress=self.progress(),
-        )
-        if not has_image:
-            embed.set_thumbnail(url=None)  # pas d'image → pas de thumbnail cassé
-            return embed, None
-        return embed, discord.File(str(path), filename=mob.image_name)
 
     async def _send_page(self, interaction: discord.Interaction) -> None:
         self._refresh_buttons()
@@ -283,9 +233,91 @@ class BestiaireView(discord.ui.View):
     ) -> None:
         if not await self._check_owner(interaction):
             return
-        if self.index < len(self.mobs) - 1:
+        if self.index < len(self.pages) - 1:
             self.index += 1
         await self._send_page(interaction)
+
+
+async def picture(image_name: str | None, known: bool) -> discord.File | None:
+    """La vignette d'une page : l'image, ou sa silhouette si l'entrée n'est pas
+    encore découverte ; None sans image."""
+    path = MOBS_ASSETS_DIR / image_name if image_name else None
+    if path is None or not path.exists():
+        return None
+    if known:
+        return discord.File(str(path), filename=image_name)
+    data = await asyncio.to_thread(silhouette_png, path)
+    return discord.File(io.BytesIO(data), filename=SILHOUETTE_FILE)
+
+
+class BestiaireView(PagedBookView):
+    def __init__(
+        self,
+        author_id: int,
+        mobs: list[MobDefinition],
+        timeout: float = 300.0,
+        items: dict | None = None,
+        kills: dict[str, int] | None = None,
+    ) -> None:
+        super().__init__(author_id, mobs, timeout=timeout)
+        self.all_mobs = mobs
+        self.items = items or {}  # code → ItemDefinition
+        #: Victoires du joueur par monstre ; None = tout est visible (sans joueur).
+        self.kills = kills
+        self._pss = PowerScoreService()
+        families = list(dict.fromkeys(m.family or "" for m in mobs))
+        if len(families) > 1:
+            self.add_item(_FamilySelect(self, families))
+        self._refresh_buttons()
+
+    @property
+    def mobs(self) -> list[MobDefinition]:
+        """Les monstres parcourus (une famille, ou tous)."""
+        return self.pages
+
+    @mobs.setter
+    def mobs(self, value: list[MobDefinition]) -> None:
+        self.pages = value
+
+    def discovered(self, mob: MobDefinition) -> bool:
+        return self.kills is None or self.kills.get(mob.code, 0) > 0
+
+    def progress(self, mobs: list[MobDefinition] | None = None) -> str:
+        """« 📖 14/50 découverts » (rien si tout est visible)."""
+        if self.kills is None:
+            return ""
+        mobs = self.all_mobs if mobs is None else mobs
+        return f"📖 {sum(1 for m in mobs if self.discovered(m))}/{len(mobs)} découverts"
+
+    async def show_family(self, interaction: discord.Interaction, family: str) -> None:
+        if not await self._check_owner(interaction):
+            return
+        self.mobs = self.all_mobs if family == ALL_FAMILIES else \
+            [m for m in self.all_mobs if (m.family or "") == family]
+        self.index = 0
+        await self._send_page(interaction)
+
+    async def render(self) -> tuple[discord.Embed, discord.File | None]:
+        """Embed du monstre courant + son image (ou sa silhouette) en vignette.
+        File=None sans image."""
+        mob = self.mobs[self.index]
+        known = self.discovered(mob)
+        file = await picture(mob.image_name, known)
+        if not known:
+            return build_unknown_embed(mob, self.index, len(self.mobs), self.progress(),
+                                       silhouette=file is not None), file
+        score = self._pss.calculate_from_mob(mob)
+        embed = build_mob_embed(
+            mob, self.index, len(self.mobs),
+            power_score=self._pss.format_score(score),
+            rank=self._pss.compute_rank(score),
+            items=self.items,
+            kills=None if self.kills is None else self.kills.get(mob.code, 0),
+            progress=self.progress(),
+        )
+        if file is None:
+            embed.set_thumbnail(url=None)  # pas d'image → pas de thumbnail cassé
+        return embed, file
 
 
 class _FamilySelect(discord.ui.Select):

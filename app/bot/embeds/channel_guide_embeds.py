@@ -87,7 +87,7 @@ def build_world_boss_guide(raid: pacing_service.RaidPacing, first_raid_level: in
         f"n'ont pas atteint le niveau **{first_raid_level}**."
     ))
     embed.add_field(name="📜 Commandes", inline=False, value=(
-        "`/boss moi` ta contribution · `/boss historique` les semaines passées · `/boss list` les boss du jeu"
+        "`/boss moi` ta contribution · `/boss historique` les semaines passées · `/bestiaire boss` les boss du jeu, à découvrir"
     ))
     embed.set_image(url=f"attachment://{WORLD_BOSS_FILE}")
     embed.set_footer(text=GUIDE_FOOTER)
