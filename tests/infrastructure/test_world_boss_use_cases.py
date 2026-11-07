@@ -407,3 +407,86 @@ def test_weekly_next_week_raid_is_allowed(session):
     auto = SpawnRandomWorldBossUseCase(world_boss_repository=repo)
     semaine_suivante = datetime.now(UTC) + timedelta(days=8)
     assert auto.execute(now=semaine_suivante, force=True).spawned is True
+
+
+def _complete(session):
+    return CompleteWorldBossUseCase(
+        world_boss_repository=WorldBossRepository(session),
+        player_repository=PlayerRepository(session),
+        item_repository=ItemRepository(session),
+        inventory_repository=InventoryRepository(session),
+    )
+
+
+def _fighter(session, boss_id, discord_id=1, damage=500):
+    JoinWorldBossUseCase(WorldBossRepository(session), PlayerRepository(session)).execute(
+        discord_id=discord_id, username=f"j{discord_id}", display_name=f"J{discord_id}")
+    player_id = session.query(PlayerModel).filter_by(discord_id=discord_id).one().id
+    WorldBossRepository(session).add_combat_metrics(boss_id, player_id, damage_dealt=damage,
+                                                    damage_tanked=0, hp_healed=0)
+    return player_id
+
+
+def test_un_boss_reparti_vivant_paye_selon_les_pv_retires(session):
+    _seed_potions(session)
+    SpawnWorldBossUseCase(WorldBossRepository(session)).execute(boss_code="slime_titan")
+    repo = WorldBossRepository(session)
+    boss = repo.get_active()
+    _fighter(session, boss.id)
+    repo.set_current_hp(boss.id, boss.max_hp // 2)
+
+    half = _complete(session).execute(boss.id, escaped=True)
+
+    assert half.success and half.rewards[0].gold > 0
+    gone = repo.get_by_id(boss.id)
+    assert gone.status.value == "escaped" and not gone.is_alive and gone.current_hp == boss.max_hp // 2
+    assert repo.get_active() is None
+    assert repo.list_history(limit=1)[0]["killed"] is False
+
+    # Le même combat, boss tué : deux fois plus d'or et d'XP.
+    SpawnWorldBossUseCase(WorldBossRepository(session)).execute(boss_code="slime_titan")
+    second = repo.get_active()
+    _fighter(session, second.id)
+    repo.mark_defeated(second.id)
+    full = _complete(session).execute(second.id)
+    assert abs(full.rewards[0].gold - 2 * half.rewards[0].gold) <= 1
+    assert abs(full.rewards[0].xp - 2 * half.rewards[0].xp) <= 1
+    assert half.rewards[0].items == [("potion_soin", 1)]        # pas de butin de palier
+
+
+def test_un_boss_reparti_ne_donne_ni_titre_ni_butin(session):
+    from app.infrastructure.db.repositories.player_title_repository import PlayerTitleRepository
+
+    _seed_potions(session)
+    SpawnWorldBossUseCase(WorldBossRepository(session)).execute(boss_code="slime_titan")
+    boss = WorldBossRepository(session).get_active()
+    player_id = _fighter(session, boss.id)
+    _complete(session).execute(boss.id, escaped=True)
+    assert PlayerTitleRepository(session).list_codes_for_player(player_id) == []
+
+
+def test_un_boss_reparti_sans_combattant_libere_le_raid(session):
+    SpawnWorldBossUseCase(WorldBossRepository(session)).execute(boss_code="slime_titan")
+    boss = WorldBossRepository(session).get_active()
+    result = _complete(session).execute(boss.id, escaped=True)
+    assert not result.rewards and WorldBossRepository(session).get_active() is None
+
+
+def test_le_raid_attend_que_le_serveur_soit_pret(session):
+    now = datetime(2026, 11, 9, 14, 0, tzinfo=UTC)
+    repo = WorldBossRepository(session)
+    refused = SpawnRandomWorldBossUseCase(repo, levels=[5, 6, 7], spawn_hour=12).execute(now=now)
+    assert not refused.spawned and refused.reason == "serveur_pas_pret"
+    spawned = SpawnRandomWorldBossUseCase(repo, levels=[20, 20, 20, 20], spawn_hour=12).execute(now=now)
+    assert spawned.spawned and spawned.boss.code == "slime_titan"
+
+
+def test_le_boss_suivant_n_est_pas_le_meme_quand_le_serveur_a_le_choix(session):
+    repo = WorldBossRepository(session)
+    monday = datetime(2026, 11, 9, 14, 0, tzinfo=UTC)
+    first = SpawnRandomWorldBossUseCase(repo, levels=[100] * 6, spawn_hour=12).execute(
+        now=monday, rng=random.Random(1)).boss
+    repo.mark_escaped(first.id)
+    second = SpawnRandomWorldBossUseCase(repo, levels=[100] * 6, spawn_hour=12).execute(
+        now=monday + timedelta(days=7), rng=random.Random(1)).boss
+    assert second.code != first.code

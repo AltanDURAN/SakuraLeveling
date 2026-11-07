@@ -7,7 +7,8 @@ Use cases regroupés pour cohérence :
     4. LeaveWorldBossUseCase — joueur se désinscrit (refus s'il a déjà combattu)
     5. VoteForFightWorldBossUseCase / LaunchPartyFightWorldBossUseCase — combat
        collectif (vote puis bataille de groupe) + application des modifiers
-    6. CompleteWorldBossUseCase — récompenses à la défaite
+    6. CompleteWorldBossUseCase — récompenses à la défaite, ou au départ du
+       boss s'il a survécu à sa semaine (au prorata des PV qu'on lui a retirés)
 
 Convention HP/résultat : l'assaut passe par `PartyCombatService.fight_party_vs_mobs`
 avec le boss, ses gardes, ses phases et son ultime (cf. `boss_assault`) ; les
@@ -31,6 +32,7 @@ from app.domain.services.cooldown_service import CooldownService
 from app.domain.services.contribution_tier_service import tier_for_share
 from app.domain.services.progression_service import ProgressionService
 from app.domain.services.quest_reward_service import scale_reward
+from app.domain.services.reward_distribution_service import contribution_scores
 from app.domain.services.skill_tree_service import SkillTreeService
 from app.domain.services.stats_service import StatsService
 from app.domain.services.world_boss_scaling_service import WorldBossScalingService
@@ -159,7 +161,8 @@ class AutoSpawnDecision:
 
 
 class SpawnRandomWorldBossUseCase:
-    """Spawn du RAID HEBDOMADAIRE : un rendez-vous, pas une loterie.
+    """Spawn du RAID HEBDOMADAIRE : un rendez-vous, pas une loterie, et un boss
+    à la mesure des joueurs actifs (`levels`, cf. boss_selection_service).
 
     Le world boss est l'événement de la semaine — il doit donc tomber à un
     moment PRÉVISIBLE autour duquel la communauté se rassemble, et non au
@@ -174,7 +177,8 @@ class SpawnRandomWorldBossUseCase:
 
     Le boss reste ensuite en vie toute la semaine : chaque jour à 21 h, les
     inscrits l'attaquent ensemble et lui arrachent des PV définitivement (il ne
-    régénère jamais). `weekly=False` restaure l'ancien tirage aléatoire.
+    régénère jamais), jusqu'à son départ la veille du raid suivant.
+    `weekly=False` restaure l'ancien tirage aléatoire.
     """
 
     def __init__(
@@ -184,7 +188,7 @@ class SpawnRandomWorldBossUseCase:
         weekly: bool = True,
         spawn_weekday: int = 0,   # 0 = lundi
         spawn_hour: int = 12,     # heure d'ouverture du raid (UTC, ou de `timezone`)
-        party_attack: int = 0,    # attaque du meilleur joueur (0 = pas de filtre)
+        levels: list[int] | None = None,   # niveaux des joueurs actifs (None = pas de filtre)
         timezone: ZoneInfo | None = None,
     ) -> None:
         self.world_boss_repository = world_boss_repository
@@ -192,7 +196,7 @@ class SpawnRandomWorldBossUseCase:
         self.weekly = weekly
         self.spawn_weekday = spawn_weekday
         self.spawn_hour = spawn_hour
-        self.party_attack = party_attack
+        self.levels = levels
         self.timezone = timezone
 
     def execute(
@@ -233,11 +237,12 @@ class SpawnRandomWorldBossUseCase:
             if not force and rng.random() > self.spawn_probability:
                 return AutoSpawnDecision(False, "tirage_negatif")
 
-        # Borné par la puissance réelle du serveur : tirer un boss dont la
-        # défense dépasse l'attaque des joueurs gâcherait la semaine.
-        definition = pick_random_definition(rng=rng, party_attack=self.party_attack)
+        # À la mesure du serveur, et pas deux fois de suite le même.
+        history = self.world_boss_repository.list_history(limit=1)
+        definition = pick_random_definition(
+            rng=rng, levels=self.levels, previous_code=history[0]["code"] if history else "")
         if definition is None:
-            return AutoSpawnDecision(False, "aucune_definition")
+            return AutoSpawnDecision(False, "serveur_pas_pret")
 
         boss = _create_boss_from_definition(self.world_boss_repository, definition)
         return AutoSpawnDecision(
@@ -781,7 +786,10 @@ class CompleteBossResult:
 
 
 class CompleteWorldBossUseCase:
-    """Distribue les récompenses à tous les participants d'un boss vaincu.
+    """Distribue les récompenses à tous les participants d'un boss vaincu, ou
+    d'un boss reparti vivant (`escaped=True`) : l'or et l'XP valent alors la
+    part de ses PV qu'on lui a retirée, sans butin exclusif ni titres. Sinon un
+    serveur encore faible resterait sans aucune récompense toute la semaine.
 
     Règles spec :
         • Top damage / top tank / top heal reçoivent un bonus catégorie
@@ -822,31 +830,29 @@ class CompleteWorldBossUseCase:
         self.progression_service = progression_service or ProgressionService()
 
     @transactional
-    def execute(self, boss_id: int) -> CompleteBossResult:
+    def execute(self, boss_id: int, escaped: bool = False) -> CompleteBossResult:
         boss = self.world_boss_repository.get_by_id(boss_id)
         if boss is None:
             return CompleteBossResult(False, "❌ Boss introuvable.")
 
         participations = self.world_boss_repository.list_participations_with_metrics(boss_id)
+        if escaped:
+            self.world_boss_repository.mark_escaped(boss_id)
         if not participations:
             return CompleteBossResult(
                 False, "⚠️ Aucun participant à récompenser.", rewards=[],
             )
+
+        # Part du travail accomplie : 100 % sur un boss tué.
+        completion = 1.0 if not escaped else 1 - max(0, boss.current_hp) / max(1, boss.max_hp)
 
         # Multiplicateur de tier (gros boss = plus grosses récompenses).
         tier_mult = 1 + (boss.max_hp // 200_000)
         gold_pool = self.GOLD_POOL_PER_TIER * tier_mult
         xp_each = self.XP_PER_TIER * tier_mult
 
-        # Score de contribution combiné (dégâts + tank + soin, normalisés).
-        tot_d = sum(p.damage_dealt for p in participations) or 1
-        tot_t = sum(p.damage_tanked for p in participations) or 1
-        tot_h = sum(p.hp_healed for p in participations) or 1
-
-        def _score(p) -> float:
-            return p.damage_dealt / tot_d + p.damage_tanked / tot_t + p.hp_healed / tot_h
-
-        scores = {p.player_id: _score(p) for p in participations}
+        # Score de contribution combiné (dégâts, coups encaissés, soins).
+        scores = contribution_scores(participations)
         total_score = sum(scores.values()) or 1.0
 
         # Top-1 par catégorie (None si métrique nulle).
@@ -861,7 +867,7 @@ class CompleteWorldBossUseCase:
 
         # Loot exclusif du boss : roll indépendant par participant.
         boss_def = get_boss_definition(boss.code)
-        boss_loot = boss_def.loot_table if boss_def is not None else []
+        boss_loot = boss_def.loot_table if boss_def is not None and not escaped else []
 
         # Top-3 global (par score combiné) → rangs pour le bonus.
         top3 = sorted(participations, key=lambda p: scores[p.player_id], reverse=True)[:3]
@@ -922,6 +928,8 @@ class CompleteWorldBossUseCase:
                 except (KeyError, ValueError, TypeError):
                     continue
 
+            if escaped:
+                items = [self.BASE_REWARD_ITEM]     # le butin récompense la victoire
             role = roles_won[0] if roles_won else "participant"
 
             # Les montants ci-dessus sont des montants de NIVEAU 1 : on les
@@ -929,8 +937,8 @@ class CompleteWorldBossUseCase:
             # le raid de la semaine ne vaudrait plus rien à haut niveau. Le
             # raid est hebdomadaire et doit rester marquant : référence 1.
             level = profile.progression.level
-            total_gold = scale_reward(total_gold, level, reference_level=1)
-            total_xp = scale_reward(total_xp, level, reference_level=1)
+            total_gold = round(scale_reward(total_gold, level, reference_level=1) * completion)
+            total_xp = round(scale_reward(total_xp, level, reference_level=1) * completion)
 
             # Application en DB
             self.player_repository.add_gold(p.player_id, total_gold, source="raid")
@@ -985,9 +993,10 @@ class CompleteWorldBossUseCase:
             session = self.world_boss_repository.session
             title_repo = PlayerTitleRepository(session)
             tueur_code = f"tueur_{boss.code}"
-            for p in participations:
-                title_repo.unlock(p.player_id, tueur_code)
-            if mvp_id is not None:
+            if not escaped:
+                for p in participations:
+                    title_repo.unlock(p.player_id, tueur_code)
+            if mvp_id is not None and not escaped:
                 ExclusiveTitleService(session).award_to("mvp_world_boss", mvp_id)
         except Exception:
             import logging
@@ -995,8 +1004,9 @@ class CompleteWorldBossUseCase:
                 "Attribution des titres world boss échouée", exc_info=True
             )
 
+        verb = "repart" if escaped else "vaincu"
         return CompleteBossResult(
             success=True,
-            message=f"🏆 **{boss.name}** vaincu — {len(rewards)} participant(s) récompensé(s).",
+            message=f"🏆 **{boss.name}** {verb} — {len(rewards)} participant(s) récompensé(s).",
             rewards=rewards,
         )

@@ -226,6 +226,7 @@ def main() -> None:
         print(f"{b['name']:<26}{c['max_hp']:>12,}{c['attack']:>7}{c['defense']:>7}"
               f"   niv {level} · {c['measured']:,} dégâts/assaut mesurés"
               .replace(",", " "))
+        b["level"] = level
         b["max_hp"], b["attack"], b["defense"] = c["max_hp"], c["attack"], c["defense"]
         if c["guards"]:
             print(f"{'':26}gardes : {len(c['guards'])} × {c['guards'][0]['max_hp']} PV, "

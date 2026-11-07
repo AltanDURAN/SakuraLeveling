@@ -109,6 +109,16 @@ class WorldBossRepository:
         model.current_hp = 0
         commit(self.session)
 
+    def mark_escaped(self, boss_id: int) -> None:
+        """Le boss repart vivant à la fin de la semaine : ses PV restent ceux
+        qu'il avait, l'historique le montre survivant."""
+        model = self.session.get(WorldBossModel, boss_id)
+        if model is None:
+            return
+        model.status = WorldBossStatus.ESCAPED.value
+        model.defeated_at = datetime.now(UTC)
+        commit(self.session)
+
     def set_message_id(self, boss_id: int, message_id: int) -> None:
         model = self.session.get(WorldBossModel, boss_id)
         if model is None:

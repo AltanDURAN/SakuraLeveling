@@ -29,6 +29,10 @@ class BossDefinition:
     # via le graphe élémentaire. "" = neutre (aucun avantage élémentaire).
     element: str = ""
 
+    # Niveau de l'équipe pour laquelle il est calibré (`restat_bosses`) : c'est
+    # lui qui décide quand il sort (cf. boss_selection_service).
+    level: int = 1
+
     # Particularités du boss. Tous les modifiers sont optionnels et ignorés
     # poliment s'ils ne sont pas connus du moteur — facilite l'extension.
     #   damage_immunity_threshold (int) : ignore les dégâts < N

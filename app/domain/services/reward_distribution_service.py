@@ -1,12 +1,37 @@
 from app.domain.value_objects.player_contribution import PlayerContribution
 
+CONTRIBUTION_METRICS = ("damage_dealt", "damage_tanked", "hp_healed")
+#: Une catégorie compte pleinement dès qu'elle pèse ce quart de la plus grosse.
+#: En dessous, son poids fond d'autant : chaque catégorie valait un tiers quoi
+#: qu'il arrive, et 8 PV soignés ramassaient un tiers de l'or (audit de
+#: novembre 2026). Un vrai soigneur, un vrai tank pèsent bien plus que ça.
+FULL_WEIGHT_SHARE = 0.25
+
+
+def contribution_scores(rows: list, key=lambda row: row.player_id) -> dict:
+    """Score de chaque joueur : sa part de chaque catégorie, pondérée par le
+    poids réel de la catégorie dans le combat."""
+    totals = {metric: sum(getattr(row, metric) for row in rows) for metric in CONTRIBUTION_METRICS}
+    biggest = max(totals.values(), default=0)
+    scores = {key(row): 0.0 for row in rows}
+    if biggest <= 0:
+        return scores
+    for metric, total in totals.items():
+        if total <= 0:
+            continue
+        weight = min(1.0, total / (FULL_WEIGHT_SHARE * biggest))
+        for row in rows:
+            scores[key(row)] += weight * getattr(row, metric) / total
+    return scores
+
 
 class RewardDistributionService:
     """Calcule la répartition des récompenses d'un combat de groupe.
 
     Or : pool FIXE (= or_base du mob, PAS multiplié par le nombre de joueurs),
         réparti entre les SURVIVANTS au prorata d'un score de contribution
-        multi-métriques (dégâts infligés, dégâts tankés, PV soignés). Pool fixe
+        multi-métriques (dégâts infligés, dégâts tankés, PV soignés, chaque
+        catégorie pesant selon `contribution_scores`). Pool fixe
         ⇒ l'or/heure d'un groupe ≈ l'or/heure d'un solo (on tue plus vite mais
         chacun touche une part plus petite). C'est le régulateur de l'économie :
         les power-levelés en co-op montent vite en XP mais manquent d'or ⇒
@@ -17,8 +42,6 @@ class RewardDistributionService:
         totale créée est donc multipliée par la taille du groupe (récompense
         sociale assumée — l'or reste, lui, le frein).
     """
-
-    CONTRIBUTION_METRICS = ("damage_dealt", "damage_tanked", "hp_healed")
 
     def compute_contribution_shares(
         self,
@@ -32,20 +55,7 @@ class RewardDistributionService:
         if not survivors:
             return result
 
-        team_totals = {
-            metric: sum(getattr(c, metric) for c in survivors)
-            for metric in self.CONTRIBUTION_METRICS
-        }
-
-        scores: dict[int, float] = {c.player_id: 0.0 for c in survivors}
-
-        for metric in self.CONTRIBUTION_METRICS:
-            team_total = team_totals[metric]
-            if team_total <= 0:
-                continue
-            for survivor in survivors:
-                scores[survivor.player_id] += getattr(survivor, metric) / team_total
-
+        scores = contribution_scores(survivors)
         total_score = sum(scores.values())
 
         if total_score <= 0:

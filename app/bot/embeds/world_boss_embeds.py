@@ -118,6 +118,26 @@ def build_boss_dashboard_embed(
     return embed
 
 
+def build_boss_escaped_embed(boss: WorldBoss, rewards: list[BossRewardEntry]) -> discord.Embed:
+    """Le boss a tenu toute la semaine : il repart, chacun touche sa part."""
+    left = round(100 * boss.current_hp / max(1, boss.max_hp))
+    embed = discord.Embed(
+        title=f"🌫️ {boss.name} repart",
+        description=(
+            f"Il quitte le champ de bataille avec **{left} %** de ses PV. Pas de butin ni de titre "
+            "cette fois, mais chacun touche sa part selon les PV qu'on lui a retirés."
+            if rewards else f"Il quitte le champ de bataille avec **{left} %** de ses PV : "
+                            "personne ne s'est mesuré à lui cette semaine."
+        ),
+        color=discord.Color.dark_grey(),
+    )
+    lines = [f"**{escape_markdown(r.display_name)}** : {format_int(r.gold)} or, {format_int(r.xp)} XP"
+             for r in sorted(rewards, key=lambda r: -r.gold)[:25]]
+    if lines:
+        embed.add_field(name="🎁 Récompenses", value="\n".join(lines)[:1024], inline=False)
+    return embed
+
+
 def build_boss_defeated_embed(
     boss: WorldBoss, rewards: list[BossRewardEntry]
 ) -> discord.Embed:

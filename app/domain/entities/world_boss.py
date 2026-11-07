@@ -14,6 +14,7 @@ from enum import Enum
 class WorldBossStatus(str, Enum):
     ACTIVE = "active"
     DEFEATED = "defeated"
+    ESCAPED = "escaped"     # reparti vivant à la fin de la semaine
 
 
 @dataclass

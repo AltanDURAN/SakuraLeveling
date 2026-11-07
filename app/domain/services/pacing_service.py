@@ -20,7 +20,8 @@ avant.
     sont vérifiées à chaque apparition : un réglage vaut tout de suite.
   • RAID : le boss de la semaine arrive le `spawn_weekday` à `spawn_hour`
     (Paris), l'assaut part chaque jour à `fight_hour`:`fight_minute`, les
-    inscriptions ferment `registration_close_minutes` avant.
+    inscriptions ferment `registration_close_minutes` avant. La veille de
+    l'arrivée du suivant, après l'assaut, un boss encore debout repart.
 """
 
 from __future__ import annotations
@@ -175,6 +176,20 @@ def fight_due(raid: RaidPacing, now: datetime, last_fight_day) -> bool:
         return False
     start = datetime.combine(local.date(), fight_time(raid), tzinfo=PARIS)
     return start <= local < start + FIGHT_CATCH_UP
+
+
+def raid_ends_today(raid: RaidPacing, now: datetime) -> bool:
+    """Dernier jour du raid : la veille du jour d'arrivée du boss suivant."""
+    return now.astimezone(PARIS).weekday() == (raid.spawn_weekday - 1) % 7
+
+
+def raid_deadline(raid: RaidPacing, spawned_at: datetime) -> datetime:
+    """Date limite d'un boss : l'arrivée du suivant. Filet de sécurité si le
+    bot était éteint à l'heure du dernier assaut."""
+    local = spawned_at.astimezone(PARIS)
+    days = (raid.spawn_weekday - local.weekday()) % 7 or 7
+    day = (local + timedelta(days=days)).date()
+    return datetime.combine(day, time(raid.spawn_hour), tzinfo=PARIS)
 
 
 def next_fight_at(raid: RaidPacing, now: datetime) -> datetime:

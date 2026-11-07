@@ -20,10 +20,11 @@ Reste à venir (besoin liste user) :
 
 import asyncio
 import logging
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import discord
+import sqlalchemy as sa
 from discord import app_commands
 from discord.ext import commands, tasks
 
@@ -41,14 +42,20 @@ from app.application.use_cases.world_boss import (
 )
 from app.bot.checks.admin_check import admin_only
 from app.bot.embeds.world_boss_embeds import (
+    build_boss_escaped_embed,
     build_boss_dashboard_embed,
     build_boss_defeated_embed,
 )
+from app.domain.services import boss_selection_service
 from app.domain.services.boss_modifier_service import BossModifierService
+from app.domain.services.reward_distribution_service import contribution_scores
 from app.domain.services.cooldown_service import CooldownService
 from app.domain.services.stats_service import StatsService
 from app.domain.services.world_boss_scaling_service import WorldBossScalingService
+from app.domain.services.monitoring import kinds
 from app.infrastructure.config.settings import settings
+from app.infrastructure.db.models.monitoring_model import GameEventModel
+from app.infrastructure.db.models.progression_model import PlayerProgressionModel
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
@@ -78,41 +85,30 @@ def _get_boss_channel(bot: commands.Bot):
 _logger = logging.getLogger("sakura.world_boss")
 
 
-def _server_top_attack(session) -> int:
-    """Attaque du joueur le plus fort du serveur.
+#: Un joueur est actif s'il a combattu dans ces derniers jours.
+ACTIVE_DAYS = 14
 
-    Sert à borner le tirage du boss hebdomadaire : au-dessus d'une certaine
-    défense, les coups tombent au plancher de 1 dégât et le raid est perdu
-    d'avance. Best effort — en cas de souci, 0 = aucun filtre (comportement
-    d'avant).
-    """
-    try:
-        import sqlalchemy as sa
 
-        from app.application.services.player_stats_resolver import (
-            resolve_player_stats,
-        )
-        from app.infrastructure.db.repositories.equipment_repository import (
-            EquipmentRepository,
-        )
+def _active_levels(session) -> list[int]:
+    """Niveaux des joueurs actifs : ils décident du boss de la semaine (cf.
+    boss_selection_service). Le journal fait foi : un joueur qui ne combat plus
+    ne doit pas retenir le serveur."""
+    since = datetime.now(UTC).replace(tzinfo=None) - timedelta(days=ACTIVE_DAYS)
+    rows = session.execute(
+        sa.select(PlayerProgressionModel.level).where(PlayerProgressionModel.player_id.in_(
+            sa.select(GameEventModel.player_id).where(
+                GameEventModel.kind == kinds.COMBAT, GameEventModel.at >= since))))
+    return [row[0] for row in rows]
 
-        ids = [r[0] for r in session.execute(sa.text("SELECT id FROM players")).all()]
-        best = 0
-        players = PlayerRepository(session)
-        for player_id in ids:
-            profile = players.get_profile_by_player_id(player_id)
-            if profile is None:
-                continue
-            stats = resolve_player_stats(
-                session,
-                profile,
-                EquipmentRepository(session).list_by_player_id(player_id),
-            )
-            best = max(best, stats.attack)
-        return best
-    except Exception:  # noqa: BLE001
-        _logger.warning("Puissance serveur illisible — tirage non borné", exc_info=True)
-        return 0
+
+#: Particularités d'un boss, dites simplement (/boss list).
+_TRAIT_LABELS = {
+    "damage_immunity_threshold": "ignore les coups trop faibles",
+    "auto_heal_per_turn": "se soigne",
+    "reflect_pct": "renvoie une part des dégâts",
+    "crit_immunity": "insensible aux critiques",
+    "adds": "invoque des renforts",
+}
 
 
 class WorldBossView(discord.ui.View):
@@ -325,12 +321,16 @@ class WorldBossCog(commands.Cog):
                 return
             with get_db_session() as session:
                 joined = WorldBossRepository(session).count_joined(boss_id)
-            if joined <= 0:
-                return
-            logging.getLogger(__name__).info(
-                "Combat quotidien world boss : %s inscrit(s)", joined
-            )
-            await self.launch_party_fight(boss_id)
+            if joined > 0:
+                logging.getLogger(__name__).info(
+                    "Combat quotidien world boss : %s inscrit(s)", joined
+                )
+                await self.launch_party_fight(boss_id)
+            # Dernier jour de la semaine : un boss encore debout s'en va.
+            if pacing_service.raid_ends_today(get_pacing().raid, now):
+                boss_id = await self._resolve_active_boss_id()
+                if boss_id is not None:
+                    await self.boss_departs(boss_id)
         except Exception:
             logging.getLogger(__name__).exception("daily_fight_loop failed")
 
@@ -341,11 +341,18 @@ class WorldBossCog(commands.Cog):
     @tasks.loop(hours=1)
     async def auto_spawn_loop(self) -> None:
         try:
+            raid = get_pacing().raid
+            # Filet de sécurité : le bot était éteint au dernier assaut, le
+            # boss de la semaine passée est encore là.
             with get_db_session() as session:
-                raid = get_pacing().raid
+                active = WorldBossRepository(session).get_active()
+            if active is not None and datetime.now(UTC) >= pacing_service.raid_deadline(
+                    raid, active.spawned_at.replace(tzinfo=UTC)):
+                await self.boss_departs(active.id)
+            with get_db_session() as session:
                 use_case = SpawnRandomWorldBossUseCase(
                     world_boss_repository=WorldBossRepository(session),
-                    party_attack=_server_top_attack(session),
+                    levels=_active_levels(session),
                     spawn_weekday=raid.spawn_weekday,
                     spawn_hour=raid.spawn_hour,
                     timezone=_PARIS,
@@ -354,8 +361,8 @@ class WorldBossCog(commands.Cog):
             if decision.spawned and decision.boss is not None:
                 await self._post_boss_message(decision.boss)
         except Exception:
-            # Best effort — un échec ne doit jamais planter le bot
-            pass
+            # Un échec ne doit jamais planter le bot, mais il doit se voir.
+            logging.getLogger(__name__).exception("auto_spawn_loop failed")
 
     @auto_spawn_loop.before_loop
     async def _before_auto_spawn(self) -> None:
@@ -421,7 +428,7 @@ class WorldBossCog(commands.Cog):
 
     @boss.command(
         name="list",
-        description="Liste les world bosses définis (codes + tier + lore)",
+        description="Les world boss : leur niveau, leurs mécaniques et leur histoire",
     )
     async def boss_list(self, interaction: discord.Interaction) -> None:
         defs = list_definitions()
@@ -432,8 +439,8 @@ class WorldBossCog(commands.Cog):
             return
 
         lines: list[str] = []
-        for d in defs:
-            mod_keys = ", ".join(d.modifiers.keys()) if d.modifiers else "—"
+        for d in sorted(defs, key=lambda d: d.level):
+            traits = [label for key, label in _TRAIT_LABELS.items() if d.modifiers.get(key)]
             mechanics = []
             if d.phases:
                 mechanics.append("phases " + " · ".join(f"{ph.get('name', '?')} ({ph.get('below_pct')} %)"
@@ -444,10 +451,10 @@ class WorldBossCog(commands.Cog):
             if d.guards:
                 mechanics.append(f"{len(d.guards)} gardes ({d.guards[0].get('name', '?')})")
             lines.append(
-                f"**[{d.tier}] {d.name}** (`{d.code}`)\n"
-                f"  ❤️ {format_int(d.max_hp)} PV | ⚔️ {d.attack} atk | 🛡️ {d.defense} def | "
-                f"💨 {d.speed} spd | poids {d.spawn_weight}\n"
-                f"  Particularités : {mod_keys}\n"
+                f"**{d.name}** · pour le niveau {d.level}\n"
+                f"  ❤️ {format_int(d.max_hp)} PV | ⚔️ {d.attack} attaque | 🛡️ {d.defense} défense | "
+                f"💨 {d.speed} vitesse\n"
+                + (f"  Particularités : {', '.join(traits)}\n" if traits else "")
                 + (f"  Mécaniques : {' — '.join(mechanics)}\n" if mechanics else "")
                 + f"  _{d.lore or d.description}_"
             )
@@ -518,9 +525,13 @@ class WorldBossCog(commands.Cog):
             history = repo.list_history(limit=6)
 
             if boss is None:
+                raid = get_pacing().raid
+                first = min(d.level for d in list_definitions())
                 await interaction.followup.send(
-                    "😴 Aucun raid en cours. Le prochain colosse se dresse "
-                    "**lundi** — `/boss historique` pour revoir les précédents.",
+                    f"😴 Aucun raid en cours. Le prochain colosse se dresse "
+                    f"**{pacing_service.WEEKDAYS[raid.spawn_weekday]}**, si au moins quatre "
+                    f"aventuriers actifs ont atteint le niveau {first - boss_selection_service.MARGIN}. "
+                    "`/boss historique` pour revoir les précédents.",
                     ephemeral=True)
                 return
 
@@ -528,16 +539,8 @@ class WorldBossCog(commands.Cog):
             mine = next((m for m in metrics if m.player_id == pid), None)
 
             # Part de contribution : même formule que la distribution des
-            # récompenses (dégâts + encaissé + soins, normalisés).
-            tot_d = sum(m.damage_dealt for m in metrics) or 1
-            tot_t = sum(m.damage_tanked for m in metrics) or 1
-            tot_h = sum(m.hp_healed for m in metrics) or 1
-
-            def _score(m):
-                return (m.damage_dealt / tot_d + m.damage_tanked / tot_t
-                        + m.hp_healed / tot_h)
-
-            scores = {m.player_id: _score(m) for m in metrics}
+            # récompenses (dégâts, coups encaissés, soins).
+            scores = contribution_scores(metrics)
             total = sum(scores.values()) or 1.0
             ranking = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)
 
@@ -1017,6 +1020,24 @@ class WorldBossCog(commands.Cog):
             if before > threshold >= after:
                 return announces.get(threshold)
         return None
+
+    async def boss_departs(self, boss_id: int) -> None:
+        """Fin de la semaine : un boss encore debout repart, chaque combattant
+        touche sa part selon les PV qu'on lui a retirés."""
+        with get_db_session() as session:
+            use_case = CompleteWorldBossUseCase(
+                world_boss_repository=WorldBossRepository(session),
+                player_repository=PlayerRepository(session),
+                item_repository=ItemRepository(session),
+                inventory_repository=InventoryRepository(session),
+            )
+            result = use_case.execute(boss_id, escaped=True)
+            boss = WorldBossRepository(session).get_by_id(boss_id)
+        await self.refresh_boss_message(boss_id)
+        channel = _get_boss_channel(self.bot)
+        if channel is None or boss is None:
+            return
+        await channel.send(embed=build_boss_escaped_embed(boss, result.rewards))
 
     async def complete_boss(self, boss_id: int) -> None:
         with get_db_session() as session:

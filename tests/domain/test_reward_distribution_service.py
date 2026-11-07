@@ -290,3 +290,25 @@ def test_xp_zero_reward_returns_zero():
     )
 
     assert rewards == {1: 0}
+
+
+def test_une_categorie_negligeable_ne_vaut_pas_un_tiers_de_l_or():
+    """Audit d'ouverture : 8 PV soignés ramassaient un tiers de l'or."""
+    service = RewardDistributionService()
+    shares = service.compute_contribution_shares([
+        _make_contribution(1, damage_dealt=2600, damage_tanked=0, hp_healed=0, survived=True),
+        _make_contribution(2, damage_dealt=7400, damage_tanked=3000, hp_healed=0, survived=True),
+        _make_contribution(3, damage_dealt=0, damage_tanked=0, hp_healed=8, survived=True),
+    ])
+    assert shares[3] < 0.01
+    assert shares[1] > 0.15
+
+
+def test_un_vrai_soigneur_compte_autant_qu_avant():
+    service = RewardDistributionService()
+    shares = service.compute_contribution_shares([
+        _make_contribution(1, damage_dealt=4000, damage_tanked=0, hp_healed=0, survived=True),
+        _make_contribution(2, damage_dealt=0, damage_tanked=3000, hp_healed=0, survived=True),
+        _make_contribution(3, damage_dealt=0, damage_tanked=0, hp_healed=1000, survived=True),
+    ])
+    assert all(abs(shares[i] - 1 / 3) < 0.01 for i in (1, 2, 3))
