@@ -943,3 +943,13 @@ code {
     flex-direction: column;
     gap: 0.6rem;
 }
+
+/* Téléphone (audit du 06/11/2026) : rien ne pousse la page en largeur. Un
+   tableau défile dans son cadre, un formulaire en colonnes passe sur une seule. */
+.form-section { min-width: 0; max-width: 100%; box-sizing: border-box; }
+@media (max-width: 720px) {
+  .form-section .data-table { display: block; overflow-x: auto; }
+  .form-page form[style*="grid-template-columns"] { grid-template-columns: minmax(0, 1fr) !important; }
+  .form-page form[style*="grid-template-columns"] .field[style*="grid-column"] { grid-column: auto !important; }
+  .form-page [style*="display:flex"] { flex-wrap: wrap; }
+}

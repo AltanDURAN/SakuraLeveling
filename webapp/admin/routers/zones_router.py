@@ -13,7 +13,6 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse, Response
-from PIL import Image
 
 from app.bot.rendering import fight_scene
 from app.infrastructure.db.repositories.mob_repository import MobRepository

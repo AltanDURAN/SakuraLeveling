@@ -14,7 +14,6 @@ from discord import app_commands
 from discord.ext import commands
 
 from app.application.services.exclusive_title_service import ExclusiveTitleService
-from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.player_career_stats_repository import (
     PlayerCareerStatsRepository,
 )

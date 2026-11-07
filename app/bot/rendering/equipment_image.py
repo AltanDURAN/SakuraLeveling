@@ -29,7 +29,6 @@ from app.bot.rendering.pillow_utils import (
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
 from app.domain.services.gear_service import RARITY_COLORS, RARITY_EMOJIS, RARITY_LABELS, gear_stats
 from app.domain.services.set_bonus_service import SetBonuses, format_panoplie_value, panoplie_type
-from app.domain.value_objects.stats import Stats
 from app.shared.emoji_mappings import (
     format_stat_bonuses_short,
 )

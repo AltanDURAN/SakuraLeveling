@@ -19,7 +19,6 @@ from dataclasses import dataclass, field
 
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.equipment_set_repository import (
-    EquipmentSet,
     EquipmentSetRepository,
 )
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository

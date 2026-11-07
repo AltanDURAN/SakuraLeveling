@@ -43,7 +43,6 @@ from app.application.use_cases.world_boss import (
 from app.bot.checks.admin_check import admin_only
 from app.bot.embeds.world_boss_embeds import (
     build_boss_escaped_embed,
-    build_boss_dashboard_embed,
     build_boss_defeated_embed,
 )
 from app.domain.services import boss_selection_service

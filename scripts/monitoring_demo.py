@@ -24,7 +24,7 @@ import subprocess
 import sys
 from bisect import bisect_right
 from dataclasses import dataclass, field
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 

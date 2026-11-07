@@ -27,7 +27,6 @@ from app.application.use_cases.marketplace import (
     MAX_LISTING_DAYS,
 )
 from app.domain.services.gear_service import gear_label, gear_ref
-from app.infrastructure.config.settings import settings
 from app.infrastructure.db.models.gear_model import PlayerGearModel
 from app.infrastructure.db.models.item_model import ItemDefinitionModel
 from app.infrastructure.db.repositories.gear_repository import GearRepository

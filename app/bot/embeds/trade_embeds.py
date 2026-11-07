@@ -1,6 +1,6 @@
 """Embeds pour /trade : récapitulatif d'une proposition d'échange."""
 
-from datetime import datetime, UTC
+from datetime import UTC
 
 import discord
 

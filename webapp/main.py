@@ -38,12 +38,14 @@ from app.domain.services.skill_tree_service import SkillTreeService
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
-from app.infrastructure.encounters.farm_zone_loader import unreleased_families
+from app.infrastructure.encounters.farm_zone_loader import list_zones, unreleased_families
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.player_skill_allocation_repository import (
     PlayerSkillAllocationRepository,
 )
 from app.infrastructure.db.session import get_db_session
+from app.infrastructure.tower import tower_loader
+from app.shared.paths import MOBS_ASSETS_DIR
 from app.infrastructure.skill_tree.skill_tree_loader import (
     get_definition as get_skill_tree_definition,
 )
@@ -161,9 +163,23 @@ def _load_state_for_discord(discord_id: int):
     return state, definition
 
 
+def _landing_context() -> dict:
+    """Page d'accueil : quelques chiffres vrais et les monstres qui ont une image."""
+    hidden = unreleased_families()
+    with get_db_session() as session:
+        mobs = [m for m in MobRepository(session).list_all() if m.family not in hidden]
+    return {
+        "invite_url": settings.discord_invite_url,
+        "mob_count": len(mobs),
+        "zone_count": len([z for z in list_zones() if z.get("channel_id")]),
+        "tower_floors": tower_loader.floor_count(),
+        "mobs": [m for m in mobs if m.image_name and (MOBS_ASSETS_DIR / m.image_name).exists()],
+    }
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    return templates.TemplateResponse(request, "index.html")
+    return templates.TemplateResponse(request, "index.html", context=_landing_context())
 
 
 def _nodes_payload(state, definition) -> list[dict]:

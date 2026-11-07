@@ -15,7 +15,6 @@ from app.application.use_cases.daily_quests import (
 )
 from app.bot.embeds.inventory_embeds import item_names
 from app.bot.views.quest_claim_view import QuestClaimView
-from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.daily_quest_repository import DailyQuestRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository

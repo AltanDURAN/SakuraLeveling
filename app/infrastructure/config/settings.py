@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     # général (choix de l'auteur, 26/10/2026). Override via
     # RANK_ANNOUNCE_CHANNEL_ID ; 0 = pas d'annonce.
     rank_announce_channel_id: int = 1485329709201096796
+    # Invitation au serveur, affichée sur la page d'accueil du site (vide = pas
+    # de bouton).
+    discord_invite_url: str = ""
     # Serveur Discord principal (pour la gestion des rôles via l'admin web).
     # 0 = feature de gestion de rôles désactivée.
     discord_guild_id: int = 0

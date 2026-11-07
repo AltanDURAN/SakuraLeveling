@@ -15,7 +15,6 @@ survivent à un reboot du bot.
 
 from __future__ import annotations
 
-import json
 import logging
 import random
 from datetime import datetime, timedelta, UTC

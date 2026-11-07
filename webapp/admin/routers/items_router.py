@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import io
-import json
 import logging
 import re
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from PIL import Image
 from starlette.concurrency import run_in_threadpool
@@ -30,7 +29,7 @@ from app.shared.enums import (
 )
 from app.shared.image_tools import prepare_item_image
 from app.shared.paths import ITEMS_ASSETS_DIR
-from webapp.admin import content_sync, git_sync, image_gen, uploads
+from webapp.admin import content_sync, git_sync, image_gen
 from webapp.admin.auth import AdminUser, require_admin
 from webapp.admin._shared import get_templates
 

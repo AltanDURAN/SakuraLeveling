@@ -333,3 +333,9 @@
 }
 .kpis-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 @media (max-width: 720px) { .kpis-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Téléphone : les filtres passent à la ligne au lieu de pousser la page. */
+.pill-group { max-width: 100%; flex-wrap: wrap; border-radius: 1rem; }
+@media (max-width: 720px) {
+  .delta { white-space: normal; }
+}

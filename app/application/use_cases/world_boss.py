@@ -21,7 +21,6 @@ from dataclasses import dataclass, field
 from datetime import datetime, UTC, timedelta
 from zoneinfo import ZoneInfo
 
-from app.application.services.set_bonus_resolver import resolve_set_bonuses
 from app.application.services.player_stats_resolver import resolve_player_stats
 from app.infrastructure.db.unit_of_work import transactional
 from app.application.services.status_effect_resolver import resolve_regen_boosts
@@ -33,7 +32,6 @@ from app.domain.services.contribution_tier_service import tier_for_share
 from app.domain.services.progression_service import ProgressionService
 from app.domain.services.quest_reward_service import scale_reward
 from app.domain.services.reward_distribution_service import contribution_scores
-from app.domain.services.skill_tree_service import SkillTreeService
 from app.domain.services.stats_service import StatsService
 from app.domain.services.world_boss_scaling_service import WorldBossScalingService
 from app.domain.value_objects.battle_result import BattleResult
@@ -46,9 +44,6 @@ from app.infrastructure.db.repositories.player_skill_allocation_repository impor
     PlayerSkillAllocationRepository,
 )
 from app.infrastructure.db.repositories.world_boss_repository import WorldBossRepository
-from app.infrastructure.skill_tree.skill_tree_loader import (
-    get_definition as get_skill_tree_definition,
-)
 from app.infrastructure.world_boss.boss_definition_loader import (
     get_definition as get_boss_definition,
     pick_random_definition,

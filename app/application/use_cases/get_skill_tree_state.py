@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 from app.domain.entities.skill_tree_definition import SkillTreeDefinition
-from app.domain.services.cooldown_service import CooldownService
 from app.domain.services.skill_tree_service import SkillTreeService
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository

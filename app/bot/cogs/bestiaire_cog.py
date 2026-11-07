@@ -10,7 +10,6 @@ from discord.ext import commands
 
 from app.bot.views.bestiaire_view import BestiaireView
 from app.domain.services.power_score_service import PowerScoreService
-from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.mob_repository import MobRepository
 from app.infrastructure.encounters.farm_zone_loader import unreleased_families

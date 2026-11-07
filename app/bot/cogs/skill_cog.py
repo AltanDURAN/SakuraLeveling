@@ -7,7 +7,6 @@ from discord.ext import commands
 from app.application.use_cases.get_skill_tree_state import GetSkillTreeStateUseCase
 from app.bot.embeds.skill_embeds import build_skill_tree_embed
 from app.bot.views.skill_tree_view import SkillTreeView, render_attachment
-from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.player_skill_allocation_repository import (

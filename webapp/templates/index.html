@@ -3,35 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SakuraLeveling — Skill Tree Viewer</title>
-    <link rel="stylesheet" href="/static/skill_tree.css">
+    <title>Sakura Leveling — le RPG de groupe sur Discord</title>
+    <meta name="description" content="Combats en groupe, classes, équipement à fusionner, boss de la semaine : un RPG qui se joue directement sur Discord.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
+    <link rel="stylesheet" href="/static/home.css">
 </head>
 <body>
-    <div class="page">
-        <header class="page-header">
-            <h1>🌳 SakuraLeveling</h1>
-            <p class="subtitle">Visualiseur d'arbre de compétences</p>
-        </header>
+    <header class="hero">
+        <div class="hero-inner">
+            <p class="eyebrow">RPG de groupe sur Discord</p>
+            <h1>Sakura Leveling</h1>
+            <p class="lead">Des monstres surgissent dans les salons, ton groupe les affronte en vidéo, et chaque victoire te rapproche du rang suivant.</p>
+            <div class="cta">
+                {% if invite_url %}<a class="button primary" href="{{ invite_url }}">Rejoindre le serveur</a>{% endif %}
+                <a class="button" href="/bestiary">Voir le bestiaire</a>
+            </div>
+            <ul class="figures">
+                <li><strong>{{ mob_count }}</strong> monstres</li>
+                <li><strong>{{ zone_count }}</strong> zones</li>
+                <li><strong>{{ tower_floors }}</strong> étages de tour</li>
+                <li><strong>8</strong> éléments</li>
+            </ul>
+        </div>
+    </header>
 
-        <main class="page-main">
-            <div class="card">
-                <h2>🌳 Arbre de compétences</h2>
-                <p>Naviguez vers <code>/skill/&lt;votre_discord_id&gt;</code> pour voir
-                l'arbre d'un joueur.</p>
-                <p>Exemple : <a href="/skill/701782195844546662">/skill/701782195844546662</a></p>
+    <main>
+        <section class="features">
+            <article>
+                <h2>⚔️ Le combat se joue tout seul</h2>
+                <p>Un monstre apparaît : tu cliques sur Combattre, le groupe se forme, et le combat se déroule en vidéo. Ce qui compte, c'est ta préparation.</p>
+            </article>
+            <article>
+                <h2>🛡️ Trois rôles, et le tien</h2>
+                <p>Frapper, encaisser, soigner : place tes points, choisis ta voie dans l'arbre et trouve ta place dans le groupe, ou reste généraliste et avance seul.</p>
+            </article>
+            <article>
+                <h2>✨ Du commun au mythique</h2>
+                <p>Chaque monstre porte sa pièce. Fusionne tes copies chez le forgeron pour monter leur rareté et réveiller leur passif.</p>
+            </article>
+            <article>
+                <h2>👑 Un boss par semaine</h2>
+                <p>Le serveur s'inscrit, et chaque soir le raid frappe ensemble. Ses PV ne remontent jamais, et il ne reste que jusqu'à la fin de la semaine.</p>
+            </article>
+            <article>
+                <h2>🌕 Le vrai ciel de Paris</h2>
+                <p>Pleines lunes, lunes de sang, éclipses : le ciel réel change les monstres des zones. Plus forts, et bien plus riches.</p>
+            </article>
+            <article>
+                <h2>🗼 Et aussi</h2>
+                <p>Une tour de cent étages à gravir seul, des défis de rôle chaque jour, la brocante, l'offrande commune aux divinités…</p>
+            </article>
+        </section>
+
+        {% if mobs %}
+        <section class="gallery" aria-label="Quelques monstres">
+            <h2>Ils t'attendent</h2>
+            <div class="gallery-row">
+                {% for mob in mobs[-6:] %}
+                <figure>
+                    <img src="/assets/mobs/{{ mob.image_name }}" alt="{{ mob.name }}" loading="lazy">
+                    <figcaption>{{ mob.name }}</figcaption>
+                </figure>
+                {% endfor %}
             </div>
-            <div class="card">
-                <h2>📖 Bestiaire</h2>
-                <p>Catalogue public des monstres du jeu (stats, drops, rang
-                de puissance) : <a href="/bestiary">/bestiary</a>.</p>
-            </div>
-            <div class="card">
-                <h2>API JSON</h2>
-                <p><code>GET /api/skill/&lt;discord_id&gt;</code> et
-                <code>GET /api/bestiary</code> renvoient les données complètes
-                au format JSON.</p>
-            </div>
-        </main>
-    </div>
+            <a class="more" href="/bestiary">Tout le bestiaire</a>
+        </section>
+        {% endif %}
+
+        <section class="start">
+            <h2>Déjà sur le serveur ?</h2>
+            <p>Tape <code>/tuto</code> : Hana te guide pas à pas. <code>/arbre</code> te donne le lien vers ton arbre de compétences.</p>
+        </section>
+    </main>
+
+    <footer>Sakura Leveling</footer>
 </body>
 </html>

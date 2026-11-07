@@ -9,8 +9,8 @@ chacune est elle-même atomique sur une ligne précise.
 
 from datetime import datetime, UTC
 
-from sqlalchemy import select, update
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from app.domain.entities.marketplace_listing import (
     ListingStatus,

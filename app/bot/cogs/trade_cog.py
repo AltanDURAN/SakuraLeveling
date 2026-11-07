@@ -5,7 +5,6 @@ from discord import app_commands
 from discord.ext import commands, tasks
 
 from app.bot.views.trade_draft_view import TradeDraftView
-from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.trade_repository import TradeRepository
 from app.infrastructure.db.session import get_db_session
 from app.bot.cogs._mixins import BetaChannelOnlyMixin

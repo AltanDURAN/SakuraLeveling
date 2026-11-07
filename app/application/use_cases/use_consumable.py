@@ -32,7 +32,6 @@ from app.domain.services.health_regeneration_service import HealthRegenerationSe
 from app.domain.services.mana_regeneration_service import ManaRegenerationService
 from app.domain.services import merchant_items as tools
 from app.domain.services.stats_service import StatsService
-from app.domain.services.skill_tree_service import SkillTreeService
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
