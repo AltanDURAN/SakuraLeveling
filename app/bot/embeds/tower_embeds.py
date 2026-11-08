@@ -8,7 +8,7 @@ from app.application.use_cases.tower import TowerAttempt, TowerStatus
 from app.domain.services import tower_service as ts
 from app.domain.services.mob_ability_service import MOB_ABILITY_SUMMARY
 from app.infrastructure.tower import tower_loader
-from app.shared.enums import ELEMENT_EMOJIS
+from app.shared.enums import ELEMENT_EMOJIS, GOLD_EMOJI
 from app.shared.formatters import format_int
 
 #: Règle explicite, comme pour les épreuves (décision de l'auteur).
@@ -20,7 +20,7 @@ RULES = ("Seul, à PV et mana **pleins**, sans potion ni élixir. Tant que tu ga
 def _reward_text(reward: ts.TowerReward, material_names: dict[str, str] | None = None) -> str:
     parts = []
     if reward.gold:
-        parts.append(f"💰 {format_int(reward.gold)} or")
+        parts.append(f"{GOLD_EMOJI} {format_int(reward.gold)} or")
     if reward.xp:
         parts.append(f"✨ {format_int(reward.xp)} XP")
     for code, qty in reward.materials:

@@ -234,6 +234,17 @@ STAT_EMOJIS: dict[str, str] = {
     "mana_max": "🔷", "mana_regeneration": "💧",
 }
 
+# La pièce d'or, monnaie du jeu (08/11/2026, dessin de l'auteur) : emoji de
+# l'APPLICATION (Developer Portal › Emojis) — le bot s'en sert partout, MP
+# compris, sans la permission « emojis externes ». La copie du serveur
+# (<:piece_or:1568910264039116831>) est pour les joueurs. Devant un MONTANT
+# d'or ; 💰 reste l'icône de la bourse et de l'économie. ⚠️ Discord ne
+# l'affiche pas dans un pied de page, l'auteur d'une fiche, ni le TEXTE d'un
+# bouton ou d'une option de menu : là, `emoji=GOLD_EMOJI` (discord.py lit
+# `<:nom:id>`). Dans les IMAGES, 💰 et 🪙 sont dessinés avec la pièce
+# (`emoji_text.IMAGE_EMOJIS`).
+GOLD_EMOJI = "<:piece_or:1568912634672185405>"
+
 
 class CooldownAction(StrEnum):
     DAILY = "daily"

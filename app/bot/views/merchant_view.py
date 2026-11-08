@@ -18,7 +18,7 @@ import discord
 from app.bot.rendering.npc_panel import compose_npc_panel, panel_path
 from app.domain.entities.artisan import MerchantDefinition
 from app.domain.services.shop_pricing_service import ShopPricingService
-from app.shared.enums import CATEGORY_ICONS, ITEM_CATEGORY_LABELS
+from app.shared.enums import CATEGORY_ICONS, GOLD_EMOJI, ITEM_CATEGORY_LABELS
 from app.shared.formatters import format_int
 
 _QUANTITY_STEPS = (1, 5, 10)
@@ -348,7 +348,7 @@ class _BuyButton(discord.ui.Button):
         super().__init__(
             label="Acheter",
             style=discord.ButtonStyle.success,
-            emoji="💰",
+            emoji=GOLD_EMOJI,
             disabled=not enabled,
             row=3,
         )
@@ -382,7 +382,7 @@ class _BuyButton(discord.ui.Button):
             return
         await parent.refresh(interaction)
         await interaction.followup.send(
-            f"💰 **{result.item_name}** ×{result.quantity} acheté pour "
+            f"{GOLD_EMOJI} **{result.item_name}** ×{result.quantity} acheté pour "
             f"**{format_int(result.total_cost)} or**.",
             ephemeral=True,
         )

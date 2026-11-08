@@ -12,6 +12,9 @@ cible (proportionnellement à la hauteur de la font texte).
 
 Cache LRU sur les rendus d'emoji (le même cœur ❤️ apparaît dans
 plusieurs cartes — pas la peine de le re-générer à chaque appel).
+
+Certains emojis sont des IMAGES du jeu (`IMAGE_EMOJIS`) : 💰 et 🪙 sont
+dessinés avec la pièce d'or (08/11/2026), comme `GOLD_EMOJI` sur Discord.
 """
 
 from __future__ import annotations
@@ -22,9 +25,14 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
+from app.shared.paths import GOLD_COIN_IMAGE
+
 
 _NOTO_PATH = Path("/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf")
 _NOTO_NATIVE_SIZE = 109
+
+#: Emojis remplacés par une image du jeu dans TOUTES les images du bot.
+IMAGE_EMOJIS: dict[str, Path] = {"💰": GOLD_COIN_IMAGE, "🪙": GOLD_COIN_IMAGE}
 
 
 def _load_emoji_font() -> ImageFont.ImageFont | None:
@@ -82,13 +90,26 @@ def split_emoji_segments(text: str) -> list[tuple[str, str]]:
     return merged
 
 
+@lru_cache(maxsize=8)
+def _load_image_emoji(path: Path) -> Image.Image | None:
+    try:
+        with Image.open(path) as image:
+            return image.convert("RGBA")
+    except OSError:
+        return None
+
+
 @lru_cache(maxsize=128)
 def _render_emoji_cached(emoji: str, target_height: int) -> Image.Image | None:
-    """Rend un emoji à la hauteur cible via NotoColorEmoji.
+    """Rend un emoji à la hauteur cible via NotoColorEmoji (ou son image du jeu).
 
     Renvoie None si la font n'est pas disponible (fallback texte côté
     appelant). Retourne une image RGBA cropée tight + redimensionnée.
     """
+    picture = IMAGE_EMOJIS.get(emoji.replace("️", ""))
+    if picture is not None and (image := _load_image_emoji(picture)) is not None:
+        width = max(1, round(image.width * target_height / image.height))
+        return image.resize((width, target_height), Image.Resampling.LANCZOS)
     if _EMOJI_FONT is None:
         return None
     canvas = Image.new("RGBA", (160, 160), (0, 0, 0, 0))

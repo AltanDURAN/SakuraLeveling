@@ -2,6 +2,7 @@ from datetime import datetime
 
 import discord
 
+from app.shared.enums import GOLD_EMOJI
 from app.shared.formatters import format_int as _format_int
 
 
@@ -17,7 +18,7 @@ def build_daily_success_embed(
 ) -> discord.Embed:
     lines = [
         "Tu récupères :",
-        f"**{_format_int(gold_gained)}** 🪙"
+        f"**{_format_int(gold_gained)}** {GOLD_EMOJI}"
         + (f" (dont **+{streak_bonus_pct} %** de série)" if streak_bonus_pct else ""),
     ]
     if guard_used:

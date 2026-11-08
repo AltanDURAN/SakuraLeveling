@@ -22,6 +22,7 @@ from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
 from app.infrastructure.offering import offering_loader
+from app.shared.enums import GOLD_EMOJI
 from app.shared.formatters import format_int
 from app.bot.rules_gate import GatedView
 
@@ -120,7 +121,7 @@ class OfferingView(GatedView):
         super().__init__(timeout=600)
         self.cog = cog
         for amount in _AMOUNTS:
-            button = discord.ui.Button(label=f"Offrir {format_int(amount)}", emoji="💰",
+            button = discord.ui.Button(label=f"Offrir {format_int(amount)}", emoji=GOLD_EMOJI,
                                        style=discord.ButtonStyle.primary)
             button.callback = self._giver(amount)
             self.add_item(button)

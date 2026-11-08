@@ -1,7 +1,7 @@
 import discord
 
 from app.shared.formatters import format_int as _format_int
-from app.shared.enums import ALL_ELEMENTS, ELEMENT_EMOJIS, ELEMENT_LABELS
+from app.shared.enums import ALL_ELEMENTS, ELEMENT_EMOJIS, ELEMENT_LABELS, GOLD_EMOJI
 from app.domain.entities.player_career_stats import PlayerCareerStats
 from app.domain.entities.player_profile import PlayerProfile
 from app.domain.services.element_affinity_progression_service import (
@@ -138,7 +138,7 @@ def build_player_profile_embed(
     # Bloc identité / progression
     embed.add_field(name="🎯 Niveau", value=str(profile.progression.level), inline=True)
     embed.add_field(name="✨ XP", value=_format_int(profile.progression.xp), inline=True)
-    embed.add_field(name="💰 Or", value=_format_int(profile.resources.gold), inline=True)
+    embed.add_field(name=f"{GOLD_EMOJI} Or", value=_format_int(profile.resources.gold), inline=True)
     embed.add_field(name="🔥 Puissance", value=power_score, inline=True)
     embed.add_field(name="🏅 Rang", value=f"**{rank_label}**", inline=True)
     embed.add_field(
@@ -191,7 +191,7 @@ def build_player_profile_embed(
                 f"⚔️ Combats : **{_format_int(career_stats.combats_fought)}**"
                 f" — {career_stats.combats_won}V / {career_stats.combats_lost}D{win_rate}"
             ),
-            f"💰 Or amassé : **{_format_int(career_stats.gold_earned_total)}** au total",
+            f"{GOLD_EMOJI} Or amassé : **{_format_int(career_stats.gold_earned_total)}** au total",
             f"💢 Dégâts infligés : **{_format_int(career_stats.damage_dealt_total)}**",
             f"🛡️ Dégâts encaissés : **{_format_int(career_stats.damage_tanked_total)}**",
             f"💚 PV soignés : **{_format_int(career_stats.hp_healed_total)}**",

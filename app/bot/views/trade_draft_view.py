@@ -6,7 +6,7 @@ visuellement maintenu avec autocomplete sur les items.
 Flow d'utilisation :
     /trade @target
         → message ephemeral avec un brouillon vide (TradeDraftView) +
-          boutons "+ Mon item", "+ Item demandé", "💰 Mon or", "💰 Or demandé",
+          boutons "+ Mon item", "+ Item demandé", "Mon or", "Or demandé" (pièce d'or),
           "🔄 Reset", "✅ Soumettre", "🛑 Annuler"
 
     Clic "+ Mon item" / "+ Item demandé"
@@ -14,7 +14,7 @@ Flow d'utilisation :
           (TradeItemSelectView) listant les items du joueur ciblé. Sélection
           → modal de quantité → ajout au draft → retour à la TradeDraftView.
 
-    Clic "💰 Mon or" / "💰 Or demandé"
+    Clic "Mon or" / "Or demandé"
         → modal courte avec un seul champ. Submit → met à jour l'état et
           rafraîchit l'embed du draft.
 
@@ -43,6 +43,7 @@ from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.trade_repository import TradeRepository
 from app.infrastructure.db.session import get_db_session
+from app.shared.enums import GOLD_EMOJI
 
 
 SELECT_LIMIT = 25  # contrainte Discord
@@ -95,7 +96,7 @@ def _format_offer_lines(items: list[tuple[str, int]], gold: int,
     labels = labels or {}
     parts: list[str] = []
     if gold > 0:
-        parts.append(f"💰 **{gold}** or")
+        parts.append(f"{GOLD_EMOJI} **{gold}** or")
     for code, quantity in items:
         if parse_gear_ref(code) is not None:
             parts.append(labels.get(code, code))
@@ -443,7 +444,7 @@ class TradeDraftView(discord.ui.View):
             embed=self._build_embed(), view=select_view
         )
 
-    @discord.ui.button(label="💰 Mon or", style=discord.ButtonStyle.secondary, row=1)
+    @discord.ui.button(label="Mon or", emoji=GOLD_EMOJI, style=discord.ButtonStyle.secondary, row=1)
     async def set_offered_gold(
         self,
         interaction: discord.Interaction,
@@ -460,7 +461,7 @@ class TradeDraftView(discord.ui.View):
         )
         await interaction.response.send_modal(modal)
 
-    @discord.ui.button(label="💰 Or demandé", style=discord.ButtonStyle.secondary, row=1)
+    @discord.ui.button(label="Or demandé", emoji=GOLD_EMOJI, style=discord.ButtonStyle.secondary, row=1)
     async def set_requested_gold(
         self,
         interaction: discord.Interaction,

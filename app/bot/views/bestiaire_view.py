@@ -24,7 +24,7 @@ from app.domain.services.gear_service import DROP_RATES_PCT, RARITY_LABELS, PASS
 from app.domain.services.mob_ability_service import is_group_elite
 from app.domain.services.power_score_service import PowerScoreService
 from app.shared.emoji_mappings import format_stat_bonuses_short
-from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
+from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS, GOLD_EMOJI
 from app.infrastructure.encounters.farm_zone_loader import get_spawn_channel_for_family
 from app.shared.paths import MOBS_ASSETS_DIR
 from app.shared.formatters import format_int
@@ -149,7 +149,7 @@ def build_mob_embed(
         name="💰 Récompenses",
         value=(
             f"✨ XP : **{mob.xp_reward}**\n"
-            f"💰 Or : **{mob.gold_reward}**"
+            f"{GOLD_EMOJI} Or : **{mob.gold_reward}**"
         ),
         inline=True,
     )

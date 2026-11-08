@@ -12,6 +12,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from datetime import datetime, UTC
+from app.shared.enums import GOLD_EMOJI
 from app.shared.formatters import format_int as _format_int
 from app.bot.rank_roles import current_rank
 from app.bot.embeds.player_embeds import build_player_profile_embed
@@ -531,7 +532,7 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
         embed.set_thumbnail(url=target_member.display_avatar.url)
         embed.add_field(
             name="Or actuel",
-            value=f"🪙 **{_format_int(gold_amount)}**",
+            value=f"{GOLD_EMOJI} **{_format_int(gold_amount)}**",
             inline=False,
         )
         if career_gold > 0:

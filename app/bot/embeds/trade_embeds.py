@@ -6,6 +6,7 @@ import discord
 
 from app.domain.entities.trade import Trade, TradeSide, TradeStatus
 from app.domain.services.gear_service import gear_label
+from app.shared.enums import GOLD_EMOJI
 from app.shared.formatters import discord_countdown, format_int
 
 
@@ -22,7 +23,7 @@ _STATUS_LABELS = {
 def _format_offer(items, gold: int) -> str:
     parts: list[str] = []
     if gold > 0:
-        parts.append(f"💰 **{format_int(gold)}** or")
+        parts.append(f"{GOLD_EMOJI} **{format_int(gold)}** or")
     for offer in items:
         if offer.gear_id is not None:
             parts.append(f"**{gear_label(offer.item_name, offer.rarity or 'common')}**")

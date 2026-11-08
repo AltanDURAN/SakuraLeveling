@@ -2,7 +2,7 @@ import discord
 from discord.utils import escape_markdown
 
 from app.shared.formatters import format_int as _format_int
-from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
+from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS, GOLD_EMOJI
 from app.domain.services.gear_service import RARITY_EMOJIS, RARITY_LABELS
 from app.domain.value_objects.battle_summary import BattleSummary
 
@@ -119,7 +119,7 @@ def build_rewards_page_embed(summary: BattleSummary) -> discord.Embed:
 
         lines: list[str] = []
         if summary.is_victory and contribution and contribution.survived:
-            lines.append(f"💰 **{_format_int(reward.gold)}** or")
+            lines.append(f"{GOLD_EMOJI} **{_format_int(reward.gold)}** or")
             lines.append(_xp_line(reward))
             if reward.items:
                 items_text = " • ".join(

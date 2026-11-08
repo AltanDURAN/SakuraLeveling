@@ -21,6 +21,7 @@ from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
 from app.bot.cogs._mixins import BetaChannelOnlyMixin
+from app.shared.enums import GOLD_EMOJI
 from app.shared.formatters import format_int
 
 
@@ -73,7 +74,7 @@ def build_daily_embed(display_name: str, state: DailyQuestState) -> discord.Embe
         value = (
             f"{q.description}\n"
             f"{bar} **{format_int(q.progress)}/{format_int(q.objective_quantity)}**\n"
-            f"💰 {format_int(q.reward_gold)} or | ✨ {format_int(q.reward_xp)} XP | 🎁 {items_label}"
+            f"{GOLD_EMOJI} {format_int(q.reward_gold)} or | ✨ {format_int(q.reward_xp)} XP | 🎁 {items_label}"
         )
         embed.add_field(
             name=f"{status_emoji} {_tier_emoji(q.tier)} {q.name}",
@@ -133,7 +134,7 @@ class DailyQuestCog(BetaChannelOnlyMixin, commands.Cog):
             lines = [result.message]
             total_gold = sum(r.gold for r in result.rewards)
             total_xp = sum(r.xp for r in result.rewards)
-            lines.append(f"💰 +{format_int(total_gold)} or | ✨ +{format_int(total_xp)} XP")
+            lines.append(f"{GOLD_EMOJI} +{format_int(total_gold)} or | ✨ +{format_int(total_xp)} XP")
             names = item_names({code for r in result.rewards for code, _ in r.items})
             for r in result.rewards:
                 items_label = (
