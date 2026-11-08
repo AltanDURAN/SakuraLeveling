@@ -59,7 +59,7 @@ async def main(confirm: bool, create_role: bool) -> int:
         if not confirm:
             print("\nAperçu seulement : relance avec --confirm pour appliquer.")
             return 0
-        done, failed = await access.apply(guild, channels, plan.changes)
+        done, failed = await access.settle(guild, guild.fetch_channels)
         print(f"\n{done} salon(s) réglé(s), {len(failed)} échec(s).")
         for line in failed:
             print("  ❌ " + line)

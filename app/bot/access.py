@@ -241,3 +241,23 @@ async def apply(guild, channels, changes: list[ap.Change]) -> tuple[int, list[st
             continue
         done += 1
     return done, failed
+
+
+async def settle(guild, fetch_channels, *, passes: int = 3) -> tuple[int, list[str]]:
+    """Applique le plan, puis le recalcule sur les salons RELUS jusqu'à ce
+    qu'il ne reste rien. ⚠️ Modifier une catégorie recopie ses permissions
+    dans les salons qui lui sont synchronisés (constaté le 08/11/2026 :
+    l'accueil et le tutoriel avaient hérité « aventuriers » de leur
+    catégorie, après le calcul du plan). Renvoie (salons réglés, échecs)."""
+    touched: set[int] = set()
+    for _ in range(passes):
+        channels = await fetch_channels()
+        changes = plan(guild.id, channels).changes
+        if not changes:
+            return len(touched), []
+        _done, failed = await apply(guild, channels, changes)
+        touched.update(change.channel_id for change in changes)
+        if failed:                                   # le même refus reviendrait
+            return len(touched) - len(failed), failed
+    left = plan(guild.id, await fetch_channels()).changes
+    return len(touched) - len(left), [f"{change.title} (encore à régler : relance)" for change in left]

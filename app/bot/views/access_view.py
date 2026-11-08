@@ -70,9 +70,8 @@ class AccessView(discord.ui.View):
     async def apply_button(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         self.stop()
         await interaction.response.edit_message(content="⏳ Réglage des salons…", view=None)
-        channels = list(self.guild.channels)
-        plan = access.plan(self.guild.id, channels)      # relu : le serveur a pu changer
-        done, failed = await access.apply(self.guild, channels, plan.changes)
+        # Plan relu (le serveur a pu changer) et recalculé après chaque passe.
+        done, failed = await access.settle(self.guild, self.guild.fetch_channels)
         await interaction.edit_original_response(content=None, embed=build_result_embed(done, failed))
 
     @discord.ui.button(label="Annuler", style=discord.ButtonStyle.secondary)

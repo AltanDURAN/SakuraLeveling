@@ -284,3 +284,35 @@ def test_le_plan_puis_son_application(states, monkeypatch):
     general = channels[1]
     assert general._overwrites == {GUILD: (0, view), ADV: (view, 0)}
     assert general.calls[0] == ADV                                     # ce qui ouvre d'abord
+
+
+class Category(Channel):
+    """Comme Discord : modifier la catégorie recopie ses permissions dans les
+    salons qui lui sont synchronisés (mêmes permissions qu'elle)."""
+
+    def __init__(self, channel_id, name, children, position=0):
+        super().__init__(channel_id, name, kind=discord.ChannelType.category, position=position)
+        self.children = children
+
+    async def set_permissions(self, target, *, overwrite=None, reason=None):
+        synced = [child for child in self.children if child._overwrites == self._overwrites]
+        await super().set_permissions(target, overwrite=overwrite, reason=reason)
+        for child in synced:
+            child._overwrites = dict(self._overwrites)
+
+
+def test_une_categorie_recopiee_dans_ses_salons_est_rattrapee(states, monkeypatch):
+    monkeypatch.setattr(settings, "welcome_channel_id", 21)
+    monkeypatch.setattr(settings, "tutorial_channel_id", 23)
+    welcome = Channel(21, "bienvenue", position=0, category_id=41)
+    tutorial = Channel(23, "tutoriel", position=1, category_id=41)
+    channels = [Category(41, "Accueil", [welcome, tutorial]), welcome, tutorial]
+
+    async def fetch_channels():
+        return list(channels)
+
+    # Une seule passe : les deux salons héritent « aventuriers » de la catégorie.
+    assert asyncio.run(access.settle(Guild(), fetch_channels)) == (3, [])
+    assert access.plan(GUILD, channels).changes == []
+    assert ADV not in welcome._overwrites and ADV not in tutorial._overwrites
+    assert tutorial._overwrites[GUILD] == (0, ap.VIEW_CHANNEL)
