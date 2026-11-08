@@ -56,11 +56,11 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
         # defer() AVANT le calcul de stats + le rendu Pillow (évite Unknown
         # interaction). _send_no_profile_error gère le cas déjà-répondu.
         await interaction.response.defer()
-        # Filet de sécurité : quiconque consulte SON profil obtient le Rang F
-        # s'il ne l'a pas encore (no-op s'il porte déjà un rôle de rang).
-        if target is None and isinstance(interaction.user, discord.Member):
-            from app.bot.rank_roles import ensure_start_rank_role
-            await ensure_start_rank_role(interaction.user)
+        # Filet de sécurité : quiconque consulte SON profil reçoit les rôles de
+        # son parcours qui lui manquent (Rang F, Aventurier ; rien n'est retiré).
+        if target is None:
+            from app.bot import access
+            await access.restore_for(interaction)
         with get_db_session() as session:
             profile, target_member = self._resolve_profile(interaction, target, session)
             if profile is None:

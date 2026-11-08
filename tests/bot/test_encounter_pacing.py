@@ -57,6 +57,9 @@ def test_une_zone_en_pause_ne_fait_rien_apparaitre_sauf_un_monstre_force(cog, mo
 
 
 def test_heures_calmes(cog, monkeypatch):
+    # Un événement lunaire lève les heures calmes : le vrai ciel ne doit pas
+    # décider du test (il échouait les nuits de nouvelle ou de pleine lune).
+    monkeypatch.setattr(cog, "_current_lunar", lambda: None)
     hour = datetime.now(encounter_cog.pacing_service.PARIS).hour
     use(monkeypatch, Pacing(zones=ZonePacing(quiet_start_hour=hour, quiet_end_hour=(hour + 2) % 24,
                                              pack_chance_pct=0)))

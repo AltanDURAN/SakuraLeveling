@@ -10,6 +10,9 @@ Branché sur `SakuraTree.interaction_check` (toutes les commandes) et sur
 `GatedView` (boutons publics : monstres, raid, événements, tutoriel, échanges,
 offrande). Passent toujours : /reglement, les autocomplétions et les groupes
 admin (`@admin_only` garde ceux-là).
+
+Accepter donne aussi le Rang F, qui ouvre le tutoriel, la tour et la première
+zone (parcours d'arrivée, 08/11/2026 — `app/bot/access.py`).
 """
 
 from __future__ import annotations
@@ -21,6 +24,7 @@ from datetime import UTC, datetime
 import discord
 
 from app.application.use_cases import rules as rules_uc
+from app.bot import access
 from app.bot.embeds.rules_embeds import build_rules_embed
 from app.domain.services.rules_service import Rules, needs_acceptance
 from app.infrastructure.config.settings import settings
@@ -113,10 +117,22 @@ async def prompt(interaction: discord.Interaction, rules: Rules | None = None, *
 
 def welcome_text() -> str:
     """Ce qu'on dit à qui vient d'accepter depuis le salon du règlement."""
-    text = "✅ Merci, c'est noté : le jeu t'est ouvert !"
+    text = ("✅ Merci, c'est noté ! La guilde t'inscrit au **Rang F** : le tutoriel, la tour "
+            "et la première zone s'ouvrent à toi.")
     if settings.tutorial_channel_id:
-        text += f"\n🌸 Nouveau ? Hana t'attend dans <#{settings.tutorial_channel_id}> pour te guider (ou tape `/tuto`)."
+        text += (f"\n🌸 Hana t'attend dans <#{settings.tutorial_channel_id}> pour te guider (ou tape `/tuto`). "
+                 "Fini ou passé, le tutoriel t'ouvre tout le reste du serveur.")
     return text
+
+
+def welcome_view(guild_id: int | None) -> discord.ui.View | None:
+    """Le bouton vers le salon du tutoriel."""
+    if not guild_id or not settings.tutorial_channel_id:
+        return None
+    view = discord.ui.View(timeout=None)
+    view.add_item(discord.ui.Button(label="Commencer le tutoriel", emoji="🌸", style=discord.ButtonStyle.link,
+                                    url=access.channel_url(guild_id, settings.tutorial_channel_id)))
+    return view
 
 
 async def accept(interaction: discord.Interaction) -> None:
@@ -128,16 +144,20 @@ async def accept(interaction: discord.Interaction) -> None:
         await interaction.response.send_message(SAVE_FAILED, ephemeral=True)
         return
     _accepted[interaction.user.id] = max(_accepted.get(interaction.user.id, 0), found.version)
+    # Le Rang F (et Aventurier pour qui revient) AVANT la réponse : le lien
+    # vers le tutoriel doit marcher dès qu'on le voit.
+    await access.restore_soon(interaction)
     message = interaction.message
     if message is not None and message.flags.ephemeral:
         # Le règlement proposé à la place d'une action : on le remplace.
         await interaction.response.edit_message(content=DONE_IN_PLACE, embed=None, view=None)
         return
-    if newly:
-        text = welcome_text()
-    else:
-        text = f"✅ Tu as déjà accepté ce règlement (le {timestamp(found.accepted_at)}). Bonne chasse !"
-    await interaction.response.send_message(text, ephemeral=True)
+    if not newly:
+        await interaction.response.send_message(
+            f"✅ Tu as déjà accepté ce règlement (le {timestamp(found.accepted_at)}). Bonne chasse !", ephemeral=True)
+        return
+    view = welcome_view(getattr(interaction, "guild_id", None) or settings.discord_guild_id)
+    await interaction.response.send_message(welcome_text(), ephemeral=True, **({"view": view} if view else {}))
 
 
 class RulesAcceptView(discord.ui.View):

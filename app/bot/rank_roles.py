@@ -1,11 +1,12 @@
 """Gestion des rôles Discord de RANG (accès aux zones de farm par palier).
 
-Chaque joueur porte UN rôle de rang courant (F → SSS). Tout le monde démarre
-au Rang F (attribué automatiquement) ; la progression se gagne à l'épreuve du
-rang suivant (`/epreuve`) ou manuellement via `/admin set_rank`. L'accès aux
-salons de zone est géré côté Discord (permissions du salon par rôle) — le bot ne
-fait qu'attribuer le bon rôle. Le rang est aussi gardé en base
-(`players.earned_rank`) : un joueur qui quitte le serveur et revient le retrouve.
+Chaque joueur porte UN rôle de rang courant (F → SSS). Le Rang F se reçoit en
+acceptant le règlement (parcours d'arrivée, `app/bot/access.py`) ; la
+progression se gagne à l'épreuve du rang suivant (`/epreuve`) ou manuellement
+via `/admin set_rank`. Les permissions des salons (un rang ouvre sa zone et
+celles en dessous) sont posées par `/admin acces`. Le rang est aussi gardé en
+base (`players.earned_rank`) : un joueur qui quitte le serveur et revient le
+retrouve.
 
 Le bot doit avoir la permission « Gérer les rôles » et être positionné
 AU-DESSUS de ces rôles dans la hiérarchie du serveur.
@@ -38,32 +39,36 @@ def has_any_rank_role(member: discord.Member) -> bool:
     return any(r.id in ids for r in member.roles)
 
 
-async def ensure_start_rank_role(member: discord.Member) -> None:
+async def ensure_start_rank_role(member: discord.Member) -> bool:
     """Attribue le rôle du rang gagné (Rang F d'abord) si le membre n'a AUCUN
-    rôle de rang : un joueur qui revient retrouve le sien.
+    rôle de rang : un joueur qui revient retrouve le sien. Vrai si un rôle a
+    été donné.
 
     Idempotent et non-régressif : un joueur déjà promu (rang ≥ E) n'est jamais
     rétrogradé. No-op si la feature n'est pas configurée (RANK_ROLE_IDS vide).
+    ⚠️ Seulement après le règlement accepté : passer par `access.restore`.
     """
     if getattr(member, "bot", False):
-        return
+        return False
     roles = settings.rank_roles
     start_id = roles.get(START_RANK)
     if not start_id:
-        return
+        return False
     if has_any_rank_role(member):
-        return
+        return False
     earned = _earned_rank(member.id)
     if earned != START_RANK and await set_rank_role(member, earned):
-        return
+        return True
     role = member.guild.get_role(start_id)
     if role is None:
         _logger.warning("Rang F : rôle %s introuvable sur le serveur", start_id)
-        return
+        return False
     try:
-        await member.add_roles(role, reason="Début d'aventure — Rang F")
+        await member.add_roles(role, reason="Règlement accepté — Rang F")
     except discord.DiscordException as exc:
         _logger.warning("Rang F : échec attribution à %s : %s", member.id, exc)
+        return False
+    return True
 
 
 def _earned_rank(discord_id: int) -> str:

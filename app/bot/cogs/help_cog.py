@@ -87,7 +87,8 @@ def _build_intro_embed(total_cmds: int, n_pages: int) -> discord.Embed:
     embed.add_field(
         name="🚀 Premiers pas",
         value=(
-            "• `/demarrer` — le guide du débutant (et ton rôle de Rang F).\n"
+            "• `/tuto` — Hana te fait découvrir le jeu (3 potions à la clé).\n"
+            "• `/demarrer` — le guide du débutant, en une page.\n"
             "• `/profil` — ton personnage d'un coup d'œil.\n"
             "• `/stats` — place tes points de stats après chaque niveau.\n"
             "• `/daily` — ta récompense quotidienne (à faire chaque jour !)."

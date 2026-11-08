@@ -65,10 +65,14 @@ class Settings(BaseSettings):
     chad_role_id: int = 0
     # Rôles Discord de RANG (accès aux zones de farm gaté par palier). Format
     # env RANK_ROLE_IDS : "F:123,E:456,D:...,C:...,B:...,A:...,S:...,SS:...,SSS:...".
-    # Tout le monde démarre au Rang F (attribué automatiquement au 1er contact) ;
-    # la montée en rang se gagne via des épreuves (à venir) ou `/admin set_rank`.
-    # Le bot doit avoir "Gérer les rôles" et être AU-DESSUS de ces rôles.
+    # Le Rang F se reçoit en ACCEPTANT LE RÈGLEMENT (parcours d'arrivée,
+    # `app/bot/access.py`) ; les suivants à l'épreuve (`/epreuve`) ou par
+    # `/admin set_rank`. Le bot doit avoir "Gérer les rôles" et être AU-DESSUS.
     rank_role_ids: str = ""
+    # Rôle « Aventurier » (08/11/2026) : tutoriel fini ou passé. Il ouvre le
+    # reste du serveur (général, annonces, raid, événements, records…), cf.
+    # `/admin acces`. 0 = rôle non donné.
+    adventurer_role_id: int = 0
     # URL publique du webapp skill tree (utilisée par le bouton 'Vue détaillée'
     # de /skill). Sans valeur, on retombe sur l'URL locale http://localhost:8000.
     webapp_base_url: str = "http://localhost:8000"

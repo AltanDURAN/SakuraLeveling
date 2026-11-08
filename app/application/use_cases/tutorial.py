@@ -12,8 +12,10 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.application.use_cases import member_access
 from app.domain.services import tutorial_service as tsvc
 from app.infrastructure.db.models.player_career_stats_model import PlayerCareerStatsModel
+from app.infrastructure.db.models.player_model import PlayerModel
 from app.infrastructure.db.models.element_affinity_model import PlayerElementAffinityModel
 from app.infrastructure.db.models.progression_model import PlayerProgressionModel
 from app.infrastructure.db.models.tower_progress_model import PlayerTowerProgressModel
@@ -60,6 +62,14 @@ def go_to(session: Session, player_id: int, step: int) -> None:
         row.updated_at = datetime.now(UTC).replace(tzinfo=None)
 
 
+def _start_adventure(session: Session, player_id: int, how: str) -> None:
+    """L'aventure commence (rôle Aventurier) : retenu par compte Discord."""
+    discord_id = session.execute(
+        select(PlayerModel.discord_id).where(PlayerModel.id == player_id)).scalar_one_or_none()
+    if discord_id is not None:
+        member_access.mark_adventurer(session, discord_id, how)
+
+
 def skip(session: Session, player_id: int) -> None:
     """Le joueur passe le tutoriel dès le début (il pourra y revenir)."""
     with atomic(session):
@@ -68,6 +78,7 @@ def skip(session: Session, player_id: int) -> None:
             row.status = "passe"
             record_event(session, kinds.TUTORIAL, player_id=player_id, ref="passe", qty=row.step)
         row.updated_at = datetime.now(UTC).replace(tzinfo=None)
+        _start_adventure(session, player_id, "passe")
 
 
 def finish(session: Session, player_id: int) -> int:
@@ -79,6 +90,7 @@ def finish(session: Session, player_id: int) -> int:
             record_event(session, kinds.TUTORIAL, player_id=player_id, ref="termine", qty=row.step)
         row.status = "termine"
         row.updated_at = datetime.now(UTC).replace(tzinfo=None)
+        _start_adventure(session, player_id, "termine")
         if row.rewarded_at is not None:
             return 0
         item = ItemRepository(session).get_by_code(tsvc.REWARD_ITEM)

@@ -6,6 +6,9 @@ de suite. Le tutoriel raconte le bot en RP, étape par étape, avec des actions
 commence et Hana offre 3 potions du Grand Cerisier (100 % des PV), une seule
 fois. Un panneau permanent dans le salon du tutoriel lance le même parcours.
 Règles : `tutorial_service` ; progression : `use_cases/tutorial`.
+
+L'aventure commencée (tutoriel fini OU passé) donne le rôle Aventurier, qui
+ouvre le reste du serveur (parcours d'arrivée, 08/11/2026 — `access`).
 """
 
 from __future__ import annotations
@@ -18,12 +21,11 @@ from discord import app_commands
 from discord.ext import commands
 
 from app.application.use_cases import tutorial
-from app.bot.rank_roles import ensure_start_rank_role
+from app.bot import access
 from app.domain.services import tutorial_service as tsvc
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
-from app.infrastructure.encounters.farm_zone_loader import list_zones
 from app.shared.paths import NPCS_ASSETS_DIR
 from app.bot.rules_gate import GatedView
 
@@ -35,7 +37,7 @@ PANEL_TITLE = "🌸 Bienvenue au Grand Cerisier"
 
 def _first_zone() -> str:
     """Le salon de la première zone (rang F), pour le texte des étapes."""
-    zone = next((z for z in list_zones() if z.get("rank") == "F" and z.get("channel_id")), None)
+    zone = access.first_zone()
     return f"<#{zone['channel_id']}>" if zone else "la Clairière sinistre"
 
 
@@ -83,7 +85,8 @@ def intro_embed(name: str, resume_at: int = 0, done: bool = False) -> discord.Em
 
 def adventure_embed(potions: int, skipped: bool) -> discord.Embed:
     zone = _first_zone()
-    lines = [f"Ton aventure commence ! Le **Rang F** t'ouvre {zone} : va y combattre ton premier monstre.",
+    lines = ["Ton aventure commence ! Te voilà **Aventurier** : le salon général, les annonces, le raid, "
+             f"les événements et les records s'ouvrent à toi. Ton premier monstre t'attend dans {zone}.",
              "Les indispensables : **`/profil`**, **`/daily`**, **`/stats`**, **`/arbre`**, **`/quetes`**, "
              "et **`/help`** pour tout le reste."]
     if potions:
@@ -93,6 +96,22 @@ def adventure_embed(potions: int, skipped: bool) -> discord.Embed:
         lines.append(f"Si tu changes d'avis, **`/tuto`** reprend le tutoriel — et ses "
                      f"{tsvc.REWARD_QUANTITY} potions t'attendent à la fin.")
     return _embed("🚀 L'aventure commence", "\n\n".join(lines))
+
+
+def adventure_view(guild_id: int | None) -> discord.ui.View | None:
+    """Les boutons vers les salons que l'aventure vient d'ouvrir."""
+    if not guild_id:
+        return None
+    view = discord.ui.View(timeout=None)
+    if access.general_channel_id():
+        view.add_item(discord.ui.Button(label="Le salon général", emoji="💬", style=discord.ButtonStyle.link,
+                                        url=access.channel_url(guild_id, access.general_channel_id())))
+    zone = access.first_zone()
+    if zone:
+        view.add_item(discord.ui.Button(label=f"Combattre : {zone['name']}", emoji="⚔️",
+                                        style=discord.ButtonStyle.link,
+                                        url=access.channel_url(guild_id, zone["channel_id"])))
+    return view if view.children else None
 
 
 def _player_id(user: discord.abc.User) -> int:
@@ -193,10 +212,11 @@ class TutorialView(discord.ui.View):
                 return 0
 
         potions = await asyncio.to_thread(run)
-        if isinstance(interaction.user, discord.Member):
-            await ensure_start_rank_role(interaction.user)
         self.stop()
-        await _edit(interaction, adventure_embed(potions, skipped=not finished), None)
+        # Le rôle Aventurier avant la réponse : ses boutons mènent aux salons qu'il ouvre.
+        await access.restore_soon(interaction)
+        guild_id = getattr(interaction, "guild_id", None) or settings.discord_guild_id
+        await _edit(interaction, adventure_embed(potions, skipped=not finished), adventure_view(guild_id))
 
     async def _finish(self, interaction: discord.Interaction) -> None:
         await self._start_adventure(interaction, finished=True)

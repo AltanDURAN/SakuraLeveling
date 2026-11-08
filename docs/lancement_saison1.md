@@ -88,9 +88,9 @@ Elle s'annonce quand les premiers joueurs atteignent le niveau 80. Le bot te pr�
 
 Le simulateur compte seulement l'XP : il ignore les défaites, l'équipement et les épreuves de rang, donc un vrai joueur ira moins vite. Prépare quand même les images dès le premier mois.
 
-1. Crée le salon de la zone, réservé au rôle de rang S, et ajoute son identifiant à `COMMAND_CHANNELS` (dans le `.env` du VPS et dans `scripts/deploy_beta.sh`).
+1. Crée le salon de la zone et ajoute son identifiant à `COMMAND_CHANNELS` (dans le `.env` du VPS et dans `scripts/deploy_beta.sh`). Ne règle pas ses permissions à la main : `/admin acces` s'en charge à l'étape 5.
 2. Prépare les images : les 7 monstres de la famille `abyssal`, leurs 7 pièces et le décor.
 3. Regarde l'aperçu : `.venv/bin/python -m scripts.open_zones S=<id du salon>`.
 4. Applique : la même commande avec `--write`. Elle ouvre la zone, recalibre les élites et active le cor de chasse. Essayé le 07/11/2026 sur une copie : tous les tests passent.
-5. Lance `pytest`, commite et déploie : le seed et le redémarrage du bot appliquent tout.
+5. Lance `pytest`, commite et déploie : le seed et le redémarrage du bot appliquent tout. Puis `/admin acces` : l'aperçu doit montrer le salon de la zone passer au « Rang S et plus » ; applique.
 6. Règle le décor de la zone depuis l'admin, puis annonce l'ouverture.

@@ -57,6 +57,7 @@ _COG_MODULES = [
     "app.bot.cogs.lunar_cog",
     "app.bot.cogs.tutorial_cog",
     "app.bot.cogs.rules_cog",
+    "app.bot.cogs.access_cog",
     "app.bot.cogs.channel_guides_cog",
     "app.bot.cogs.records_cog",
     "app.bot.cogs.stats_cog",

@@ -2,8 +2,10 @@
 
 Guide de démarrage clair (profil, combat, éléments/compétences, world boss).
 À l'ARRIVÉE sur le serveur : carte de bienvenue illustrée (`welcome_card`) et
-message court qui donne envie, avec des boutons vers le tutoriel et la
-première zone (31/10/2026, demande de l'auteur).
+message court qui donne envie (31/10/2026, demande de l'auteur), avec le
+bouton du règlement : un nouveau venu ne voit que l'accueil et le règlement
+(parcours d'arrivée, 08/11/2026 — `app/bot/access.py`). Qui revient retrouve
+ses rôles.
 
 NOTE : l'accueil AUTOMATIQUE à l'arrivée d'un membre (`on_member_join`)
 nécessite l'intent privilégié **SERVER MEMBERS** (Discord Dev Portal +
@@ -21,10 +23,9 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from app.bot import access
 from app.bot.cogs._mixins import BetaChannelOnlyMixin
-from app.bot.rank_roles import ensure_start_rank_role
 from app.bot.rendering.welcome_card import compose_welcome_card
-from app.infrastructure.encounters.farm_zone_loader import list_zones
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
@@ -110,49 +111,50 @@ WELCOME_COLOR = discord.Color.from_rgb(255, 150, 195)
 WELCOME_IMAGE = "bienvenue.png"
 
 
-def build_join_embed(member_mention: str) -> discord.Embed:
+#: Le parcours, rappelé sous le message d'arrivée.
+JOURNEY = "📜 Règlement → 🌸 Tutoriel → ⚔️ Aventure · bonne chasse !"
+
+
+def build_join_embed(member_mention: str, *, returning: bool = False) -> discord.Embed:
     """Le message d'ARRIVÉE (la première chose qu'on voit sur le serveur) :
-    court, RP, qui donne envie — le guide complet reste dans `/demarrer`."""
-    tuto = f"<#{settings.tutorial_channel_id}>" if settings.tutorial_channel_id else "`/tuto`"
+    court, RP, qui donne envie — le guide complet reste dans `/demarrer`.
+
+    Il ne mentionne que le salon du règlement : un nouveau venu ne voit rien
+    d'autre (le salon du tutoriel s'afficherait « sans accès »)."""
     rules = f"<#{settings.rules_channel_id}>" if settings.rules_channel_id else "`/reglement`"
+    if returning:
+        start = "**Bon retour parmi nous !** Ton rang et tes salons te sont rendus."
+    else:
+        start = (f"**Ton aventure commence ici :** lis le règlement et accepte-le dans {rules}. La guilde "
+                 "t'inscrira au **Rang F**, et Hana t'ouvrira le salon du tutoriel pour te guider. Au bout, "
+                 "**3 Potions du Grand Cerisier** 🧪 t'attendent.")
     embed = discord.Embed(
         title="🌸 Les pétales annoncent un nouvel aventurier !",
         description=(
             f"{member_mention}, le vent du Grand Cerisier t'a porté jusqu'à nous.\n"
-            "Des monstres sortent des terres sauvages, et la guilde cherche des héros. "
-            "Ton nom est déjà inscrit au registre, au **Rang F**.\n\n"
+            "Des monstres sortent des terres sauvages, et la guilde cherche des héros.\n\n"
             "⚔️ **Des combats en groupe**, filmés en vidéo, qu'on rejoint d'un clic\n"
             "🎒 **Un butin unique** sur chaque monstre, du commun au **mythique**\n"
             "🌳 **Trois voies** : frapper, protéger ou soigner\n"
             "✨ **Huit éléments** et des talents cachés que seule la voyante sait lire\n"
             "👑 **Un boss chaque semaine**, et le vrai ciel de Paris qui réveille les monstres\n\n"
-            f"**Ton aventure commence ici :** accepte le règlement dans {rules}, puis Hana "
-            f"t'attend dans {tuto} pour te guider. Au bout, **3 Potions du Grand Cerisier** 🧪 t'attendent."
+            f"{start}"
         ),
         color=WELCOME_COLOR,
     )
     embed.set_image(url=f"attachment://{WELCOME_IMAGE}")
-    embed.set_footer(text="Rang F débloqué · /help pour toutes les commandes · bonne chasse ! 🌸")
+    embed.set_footer(text=JOURNEY)
     return embed
 
 
 def build_join_view(guild_id: int) -> discord.ui.View:
-    """Boutons-liens (aucun état à garder : ils marchent aussi en MP et après
-    un redémarrage)."""
+    """Le bouton-lien du règlement (aucun état à garder : il marche aussi en
+    MP et après un redémarrage)."""
     view = discord.ui.View(timeout=None)
     if settings.rules_channel_id:
         view.add_item(discord.ui.Button(
             label="Lire le règlement", emoji="📜", style=discord.ButtonStyle.link,
-            url=f"https://discord.com/channels/{guild_id}/{settings.rules_channel_id}"))
-    if settings.tutorial_channel_id:
-        view.add_item(discord.ui.Button(
-            label="Commencer le tutoriel", emoji="🌸", style=discord.ButtonStyle.link,
-            url=f"https://discord.com/channels/{guild_id}/{settings.tutorial_channel_id}"))
-    zone = next((z for z in list_zones() if z.get("channel_id")), None)
-    if zone:
-        view.add_item(discord.ui.Button(
-            label=f"Foncer : {zone['name']}", emoji="⚔️", style=discord.ButtonStyle.link,
-            url=f"https://discord.com/channels/{guild_id}/{zone['channel_id']}"))
+            url=access.channel_url(guild_id, settings.rules_channel_id)))
     return view
 
 
@@ -165,8 +167,8 @@ class OnboardingCog(BetaChannelOnlyMixin, commands.Cog):
         description="Guide de démarrage pour les nouveaux joueurs",
     )
     async def demarrer(self, interaction: discord.Interaction) -> None:
-        # Début d'aventure : on crée le profil (idempotent) et on attribue le
-        # rôle Rang F pour débloquer l'accès à la première zone de farm.
+        # Début d'aventure : on crée le profil (idempotent) et on rend les rôles
+        # du parcours (Rang F : règlement accepté, sinon la commande n'arrive pas ici).
         try:
             with get_db_session() as session:
                 PlayerRepository(session).get_or_create_by_discord_id(
@@ -176,20 +178,20 @@ class OnboardingCog(BetaChannelOnlyMixin, commands.Cog):
                 )
         except Exception:
             _logger.warning("demarrer: échec création profil %s", interaction.user.id, exc_info=True)
-        if isinstance(interaction.user, discord.Member):
-            await ensure_start_rank_role(interaction.user)
         await interaction.response.send_message(
             embed=build_welcome_embed(interaction.user.display_name), ephemeral=True
         )
+        await access.restore_for(interaction)
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member) -> None:
         """Accueil complet d'un nouveau membre :
         1. l'enregistre dans la base des joueurs (crée son profil + affinités
            + compétences de départ),
-        2. lui attribue le rôle par défaut (Sakura Leveling),
-        3. lui souhaite la bienvenue + lui donne les bases (embed guide) en DM
-           et/ou dans le salon d'accueil.
+        2. lui attribue le rôle par défaut (Sakura Leveling) — aucun rang : il
+           ne voit que l'accueil et le règlement ; qui REVIENT retrouve son
+           rang et Aventurier,
+        3. lui souhaite la bienvenue en DM et dans le salon d'accueil.
         Chaque étape est best-effort : un échec ne bloque pas les autres."""
         if member.bot:
             return
@@ -219,8 +221,12 @@ class OnboardingCog(BetaChannelOnlyMixin, commands.Cog):
                 except discord.DiscordException as exc:
                     _logger.warning("Onboarding: échec rôle %s → %s : %s", role_id, member.id, exc)
 
-        # 2b. Rang F (accès à la première zone de farm) — best-effort.
-        await ensure_start_rank_role(member)
+        # 2b. Qui revient retrouve ses rôles (règlement accepté, aventure commencée).
+        returning = False
+        try:
+            returning = (await access.restore(member)).accepted
+        except Exception:  # noqa: BLE001
+            _logger.warning("Onboarding: rôles du parcours non rendus à %s", member.id, exc_info=True)
 
         # 3. Carte de bienvenue (avatar, numéro d'aventurier) + message RP.
         try:
@@ -232,7 +238,7 @@ class OnboardingCog(BetaChannelOnlyMixin, commands.Cog):
             card = None
 
         def message() -> dict:
-            embed = build_join_embed(member.mention)
+            embed = build_join_embed(member.mention, returning=returning)
             kwargs = {"embed": embed, "view": build_join_view(member.guild.id)}
             if card is not None:
                 kwargs["file"] = discord.File(io.BytesIO(card), filename=WELCOME_IMAGE)

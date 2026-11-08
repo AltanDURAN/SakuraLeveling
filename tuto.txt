@@ -20,20 +20,31 @@ serveur. Les monstres, eux, apparaissent dans les salons de ZONE.
 1.1 — DÉMARRER
 --------------------------------------------------------------------------------
 
+TON ARRIVÉE SUR LE SERVEUR : TROIS ÉTAPES
+    1. En arrivant, tu ne vois que l'accueil et le règlement.
+    2. Accepte le règlement (bouton « J'accepte le règlement ») : la guilde
+       t'inscrit au RANG F, et le salon du tutoriel, la tour solo et la
+       première zone (la Clairière) s'ouvrent.
+    3. Finis le tutoriel de Hana, ou passe-le : tu deviens AVENTURIER, et
+       tout le reste du serveur s'ouvre (général, annonces, événements, raid,
+       records, vocal…).
+    Ensuite, chaque rang gagné à l'épreuve (/epreuve) ouvre sa zone. Si tu
+    quittes le serveur et reviens, tu retrouves ton rang et tes salons.
+
 LE RÈGLEMENT, À ACCEPTER UNE FOIS POUR JOUER
     Le salon du règlement affiche le règlement et un bouton « J'accepte le
     règlement ». Tant que tu ne l'as pas accepté, chaque commande ou bouton du
     jeu (Combattre, raid, événements…) te le montre à la place, avec ce même
     bouton : accepte-le, puis relance ton action. S'il change de façon
-    importante, il te sera proposé à nouveau.
+    importante, il te sera proposé à nouveau (tes salons restent ouverts).
 
 /reglement
     Affiche le règlement : avec le bouton pour l'accepter si ce n'est pas
     encore fait, sinon la date à laquelle tu l'as accepté. Marche partout.
 
 /demarrer
-    Le guide du débutant. Crée ton personnage s'il n'existe pas encore et te
-    donne le rôle Rang F, qui ouvre la première zone de farm.
+    Le guide du débutant. Crée ton personnage s'il n'existe pas encore (et te
+    rend le Rang F si tu l'avais perdu).
 
 /help [commande]
     Le mini-tutoriel intégré : une page d'accueil (la boucle de jeu, les
@@ -612,7 +623,8 @@ LE MANA DES COMPÉTENCES 💧
     de suite. Il raconte le jeu étape par étape avec des choses à faire pour
     de vrai (ta solde, tes stats, ton premier combat à la Tour puis en zone,
     la voyante…) ; tu reprends où tu t'étais arrêté. Au bout : 3 Potions du Grand Cerisier,
-    qui rendent 100 % des PV (une seule fois).
+    qui rendent 100 % des PV (une seule fois). Fini OU passé, le tutoriel te
+    donne le rôle Aventurier, qui ouvre tout le reste du serveur.
 
 /lune
     LE CIEL DE PARIS — le vrai : phase de la lune, prochains événements,
@@ -922,6 +934,25 @@ INTERFACE WEB D'ADMINISTRATION
 /admin set_rank <joueur> <rang>
     Pose un rôle de rang (et retire les autres).
 
+/admin acces
+    Les permissions des salons selon le parcours d'arrivée : l'aperçu d'abord
+    (pour chaque salon, qui le voit avant → après), puis un bouton
+    « Appliquer ». Accueil et règlement : tout le monde, en lecture seule ;
+    tutoriel, tour et Clairière : Rang F et plus ; chaque zone : son rang et
+    plus ; tout le reste (catégories comprises) : les aventuriers. Seuls
+    @everyone, les rangs et Aventurier sont touchés ; un salon d'équipe (que
+    ni @everyone ni ces rôles ne voient) ne l'est jamais. À relancer après
+    l'ouverture d'une zone ou la création d'un salon.
+    Sans Discord, sur le VPS :
+        .venv/bin/python -m scripts.channel_access              # aperçu
+        .venv/bin/python -m scripts.channel_access --confirm    # applique
+        .venv/bin/python -m scripts.channel_access --create-role
+            (crée le rôle « ⊰🧭⊱ Aventurier » et donne l'identifiant à mettre
+            dans .env : ADVENTURER_ROLE_ID)
+    Les rôles des membres sont donnés par le bot (règlement → Rang F,
+    tutoriel → Aventurier) et rattrapés toutes les 30 minutes ; il n'en
+    retire jamais.
+
 /admin set_kills <joueur> <monstre> <nombre>
     Fixe le compteur de victoires sur un monstre (0 supprime la ligne).
 
@@ -1010,7 +1041,8 @@ poste le règlement dans le salon du règlement (RULES_CHANNEL_ID) s'il n'y est
 pas, et le réécrit si le texte a changé. Augmente "version" SEULEMENT pour un
 changement important : tout le monde devra l'accepter à nouveau (une coquille
 corrigée sans changer la version ne redemande rien). Les commandes /admin,
-/boss_admin et /event restent ouvertes sans avoir accepté.
+/boss_admin et /event restent ouvertes sans avoir accepté. Accepter donne le
+Rang F (cf. /admin acces) ; une nouvelle version ne ferme aucun salon.
 
 ================================================================================
                            3. NOTES TECHNIQUES

@@ -532,6 +532,33 @@ class AdminCog(commands.Cog):
                 ephemeral=True,
             )
 
+    @admin.command(
+        name="acces",
+        description="Accès aux salons (parcours d'arrivée) : aperçu de ce qui change, puis bouton pour appliquer",
+    )
+    @admin_only
+    async def acces(self, interaction: discord.Interaction) -> None:
+        """Règlement → Rang F → tutoriel → Aventurier → rangs : les
+        permissions des salons suivent le parcours (cf. `app/bot/access.py`).
+        Rien ne change avant le bouton « Appliquer »."""
+        from app.bot import access
+        from app.bot.views.access_view import AccessView, build_access_embed
+
+        await interaction.response.defer(ephemeral=True)
+        guild = self.bot.get_guild(settings.discord_guild_id) if settings.discord_guild_id else interaction.guild
+        if guild is None:
+            await interaction.followup.send("❌ Serveur du jeu introuvable (`DISCORD_GUILD_ID`).", ephemeral=True)
+            return
+        if not access.configured():
+            await interaction.followup.send(
+                "❌ Rôles du parcours non configurés : il faut `RANK_ROLE_IDS` et `ADVENTURER_ROLE_ID` "
+                "dans `.env` (le rôle se crée avec `python -m scripts.channel_access --create-role`).",
+                ephemeral=True)
+            return
+        plan = access.plan(guild.id, guild.channels)
+        kwargs = {"view": AccessView(interaction.user.id, guild)} if plan.changes else {}
+        await interaction.followup.send(embed=build_access_embed(plan), ephemeral=True, **kwargs)
+
     # -------------------------- Kill counter --------------------------
 
     @admin.command(
