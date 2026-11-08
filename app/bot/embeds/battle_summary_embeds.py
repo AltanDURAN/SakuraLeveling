@@ -82,14 +82,38 @@ def _essence_lines(reward) -> list[str]:
     return lines
 
 
+def actions_label(count: int) -> str:
+    """« 1 action », « 12 actions »."""
+    return f"{count} action{'s' if count > 1 else ''}"
+
+
 def _outcome_color(summary: BattleSummary) -> discord.Color:
     return discord.Color.gold() if summary.is_victory else discord.Color.dark_red()
 
 
 def _outcome_title(summary: BattleSummary) -> str:
+    if summary.is_tower:
+        return f"🗼 {summary.mob_name} : " + ("franchi !" if summary.is_victory else "défaite")
     # « contre » : pas d'accord à faire avec une meute ou un monstre au féminin.
     return f"🏆 Victoire contre {summary.mob_name}" if summary.is_victory \
         else f"💀 Défaite contre {summary.mob_name}"
+
+
+#: Conditions d'un combat de la tour (rappelées sous son récapitulatif).
+TOWER_CONDITIONS = "seul, à PV et mana pleins, sans potion ni élixir"
+
+
+def _enemy_lines(enemies: list[dict]) -> str:
+    """Ce qu'il restait à chaque ennemi à la fin du combat."""
+    lines = []
+    for enemy in enemies:
+        name = escape_markdown(str(enemy.get("name", "?")))
+        left = int(enemy.get("remaining_hp", 0) or 0)
+        if enemy.get("defeated") or left <= 0:
+            lines.append(f"💀 **{name}** — vaincu")
+        else:
+            lines.append(f"❤️ **{name}** — {_format_int(left)} / {_format_int(enemy.get('max_hp', left))} PV")
+    return "\n".join(lines)[:FIELD_LIMIT]
 
 
 def build_rewards_page_embed(summary: BattleSummary) -> discord.Embed:
@@ -104,9 +128,11 @@ def build_rewards_page_embed(summary: BattleSummary) -> discord.Embed:
         reverse=True,
     )
 
-    if not summary.is_victory:
+    if summary.notes:
+        embed.description = "\n".join(summary.notes)
+    elif not summary.is_victory:
         embed.description = (
-            f"Le groupe a tenu **{summary.turns} actions** mais a été vaincu. "
+            f"Le groupe a tenu **{actions_label(summary.turns)}** mais a été vaincu. "
             "Aucune récompense n'est distribuée."
         )
     if summary.lunar_note:
@@ -153,10 +179,12 @@ def build_rewards_page_embed(summary: BattleSummary) -> discord.Embed:
 
     _add_player_fields(embed, fields, rest_line, "Et aussi")
 
-    if summary.is_victory:
+    if summary.is_tower:
+        embed.set_footer(text=f"Combat en {actions_label(summary.turns)} • {TOWER_CONDITIONS}")
+    elif summary.is_victory:
         embed.set_footer(
             text=(
-                f"Combat en {summary.turns} actions • "
+                f"Combat en {actions_label(summary.turns)} • "
                 "Or partagé selon la contribution (dégâts, coups encaissés, soins) • "
                 "XP égale pour tous"
             )
@@ -231,8 +259,10 @@ def build_details_page_embed(summary: BattleSummary) -> discord.Embed:
 
     # Bandeau "graphique de participation" en haut du panneau Détails.
     # Permet de voir d'un coup la répartition (qui a porté le combat)
-    # avant de plonger dans le détail des métriques par joueur.
-    chart = _build_contribution_chart(rewards_sorted)
+    # avant de plonger dans le détail des métriques par joueur. La tour se
+    # joue seul : ni graphique ni pourcentages (toujours 100 %).
+    solo = summary.is_tower
+    chart = "" if solo else _build_contribution_chart(rewards_sorted)
     if chart:
         embed.add_field(
             name="🏅 Part de victoire",
@@ -240,13 +270,13 @@ def build_details_page_embed(summary: BattleSummary) -> discord.Embed:
             inline=False,
         )
 
-    team_dmg = sum(
+    team_dmg = 0 if solo else sum(
         (r.contribution.damage_dealt if r.contribution else 0) for r in summary.rewards
     )
-    team_tanked = sum(
+    team_tanked = 0 if solo else sum(
         (r.contribution.damage_tanked if r.contribution else 0) for r in summary.rewards
     )
-    team_healed = sum(
+    team_healed = 0 if solo else sum(
         (r.contribution.hp_healed if r.contribution else 0) for r in summary.rewards
     )
 
@@ -261,7 +291,7 @@ def build_details_page_embed(summary: BattleSummary) -> discord.Embed:
         survived_emoji = "✅" if contribution.survived else "💀"
         share_pct = round(reward.contribution_share * 100)
         header_suffix = (
-            f" — 🏅 {share_pct}% de la victoire" if contribution.survived else ""
+            f" — 🏅 {share_pct}% de la victoire" if contribution.survived and not solo else ""
         )
 
         lines = [
@@ -286,12 +316,18 @@ def build_details_page_embed(summary: BattleSummary) -> discord.Embed:
 
     _add_player_fields(embed, fields, rest_line, "Et aussi")
 
-    embed.set_footer(
-        text=(
-            f"Combat en {summary.turns} actions • "
-            "🏅 = part de contribution (dégâts, coups encaissés, soins) qui répartit l'or"
+    if summary.enemies:
+        embed.add_field(name="👹 Ennemis", value=_enemy_lines(summary.enemies), inline=False)
+
+    if solo:
+        embed.set_footer(text=f"Combat en {actions_label(summary.turns)} • {TOWER_CONDITIONS}")
+    else:
+        embed.set_footer(
+            text=(
+                f"Combat en {actions_label(summary.turns)} • "
+                "🏅 = part de contribution (dégâts, coups encaissés, soins) qui répartit l'or"
+            )
         )
-    )
     return embed
 
 

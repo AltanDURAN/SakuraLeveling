@@ -25,6 +25,18 @@ class BattleSummary:
     lunar_note: str = ""
     #: Nombre de monstres (une meute en compte plusieurs).
     mob_count: int = 1
+    #: « zone » (combat de groupe) ou « tour » (tour solo, 08/11/2026) : la
+    #: tour n'a ni or partagé ni part de victoire.
+    kind: str = "zone"
+    #: Lignes en tête de la page Récompenses (tour : record, ticket).
+    notes: list[str] = field(default_factory=list)
+    #: État final des ennemis {name, max_hp, remaining_hp, defeated} : page
+    #: Détails de la tour (ce qu'il leur restait).
+    enemies: list[dict] = field(default_factory=list)
+
+    @property
+    def is_tower(self) -> bool:
+        return self.kind == "tour"
 
     @property
     def is_victory(self) -> bool:

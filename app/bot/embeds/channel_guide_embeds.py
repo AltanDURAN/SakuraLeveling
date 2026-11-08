@@ -118,6 +118,8 @@ def build_tower_guide() -> discord.Embed:
     embed.add_field(name="⚔️ Le combat", inline=False, value=(
         "Seul, PV et mana pleins, **sans potion ni élixir** : la tour mesure ton build, pas tes réserves. "
         "Tes vrais PV ne bougent pas.\n"
+        "Il se joue en **vidéo**, comme en zone, puis son récapitulatif (récompenses, détails, journal) : "
+        "après une victoire, l'étage suivant se tente de là.\n"
         "Un aventurier équilibré passe un étage de son niveau environ deux fois sur trois "
         "(une fois sur deux contre un boss). Un pur soutien peine seul : adapte ton build pour grimper."
     ))

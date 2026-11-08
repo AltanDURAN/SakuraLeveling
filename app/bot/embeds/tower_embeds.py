@@ -5,8 +5,12 @@ from __future__ import annotations
 import discord
 
 from app.application.use_cases.tower import TowerAttempt, TowerStatus
+from app.bot.embeds.battle_summary_embeds import actions_label
+from app.bot.embeds.encounter_combat_log_embeds import format_turn_action
 from app.domain.services import tower_service as ts
 from app.domain.services.mob_ability_service import MOB_ABILITY_SUMMARY
+from app.domain.value_objects.battle_summary import BattleSummary
+from app.domain.value_objects.player_reward import PlayerReward
 from app.infrastructure.tower import tower_loader
 from app.shared.enums import ELEMENT_EMOJIS, GOLD_EMOJI
 from app.shared.formatters import format_int
@@ -78,35 +82,44 @@ def build_status_embed(state: TowerStatus, name: str, material_names: dict[str, 
     return embed
 
 
-def build_attempt_embed(outcome: TowerAttempt, material_names: dict[str, str] | None = None,
-                        log_lines: int = 8) -> discord.Embed:
+def floor_title(outcome: TowerAttempt) -> str:
+    name = outcome.floor_data.get("name")
+    return f"Étage {outcome.floor}" + (f" — {name}" if name else "")
+
+
+def build_tower_summary(outcome: TowerAttempt, material_names: dict[str, str] | None = None) -> BattleSummary:
+    """Le récapitulatif d'un essai, aux pages des combats de zone (08/11/2026) :
+    récompenses (record et ticket en tête), détails (ce qu'il restait aux
+    ennemis), journal."""
     result = outcome.result
-    floor = outcome.floor_data
-    title = f"Étage {outcome.floor}" + (f" — {floor['name']}" if floor.get("name") else "")
+    enemies = outcome.floor_data["enemies"]
+    names = material_names or {}
+    me = result.contributions[0] if result.contributions else None
+    reward = PlayerReward(
+        player_id=me.player_id if me else 0, user_id=me.user_id if me else 0,
+        name=me.name if me else "?", avatar_url="",
+        gold=outcome.reward.gold, xp=outcome.reward.xp, items=list(outcome.reward.materials),
+        item_names={code: names.get(code, code) for code, _ in outcome.reward.materials},
+        contribution=me, contribution_share=1.0 if outcome.victory else 0.0,
+        level_before=outcome.new_level - 1 if outcome.new_level else 0, level_after=outcome.new_level,
+        stat_points=outcome.stat_points, skill_points=outcome.skill_points,
+    )
+    plural = "s" if outcome.tickets_left > 1 else ""
     if outcome.victory:
-        embed = discord.Embed(title=f"🗼 {title} : franchi !", color=discord.Color.green())
-        desc = f"Victoire en {result.turns} actions. Nouveau record : **étage {outcome.best_floor}**."
-        if not outcome.reward.is_empty:
-            desc += f"\n**Premier passage** : {_reward_text(outcome.reward, material_names)}"
-        if outcome.new_level:
-            desc += (f"\n🆙 **Niveau {outcome.new_level} !** À placer : {outcome.stat_points} de stats (/stats), "
-                     f"{outcome.skill_points} d'arbre (/arbre).")
-        desc += f"\n🎟️ Ticket gardé ({outcome.tickets_left} disponible{'s' if outcome.tickets_left > 1 else ''})."
+        notes = [f"Victoire en **{actions_label(result.turns)}**. Nouveau record : **étage {outcome.best_floor}**.",
+                 f"🎟️ Ticket gardé ({outcome.tickets_left} disponible{plural})."]
     else:
-        embed = discord.Embed(title=f"🗼 {title} : défaite", color=discord.Color.red())
         left = sum(e["remaining_hp"] for e in result.enemies)
-        desc = (f"Vaincu après {result.turns} actions ({format_int(left)} PV restaient aux ennemis).\n"
-                f"🎟️ Ticket perdu — {outcome.tickets_left} restant{'s' if outcome.tickets_left > 1 else ''}. "
-                "Ton record ne bouge pas : adapte ton build et reviens.")
-    embed.description = desc
-    lines = []
-    for log in result.turn_logs[-log_lines:]:
-        text = " ".join(a for a in log.player_actions if a) or log.mob_action
-        if text:
-            lines.append(f"• {text[:180]}")
-    if lines:
-        embed.add_field(name="Fin du combat", value="\n".join(lines)[:1024], inline=False)
-    return embed
+        notes = [f"Vaincu après **{actions_label(result.turns)}** ({format_int(left)} PV restaient aux ennemis).",
+                 f"🎟️ Ticket perdu — {outcome.tickets_left} restant{plural}. "
+                 "Ton record ne bouge pas : adapte ton build et reviens."]
+    return BattleSummary(
+        outcome="victory" if outcome.victory else "defeat", mob_name=floor_title(outcome),
+        mob_image_name=enemies[0].get("image_name"), mob_family=enemies[0].get("family", ""),
+        turns=result.turns, rewards=[reward], mob_count=len(enemies),
+        journal=[format_turn_action(log) for log in result.turn_logs],
+        kind="tour", notes=notes, enemies=list(result.enemies),
+    )
 
 
 def build_daily_embed(reward: ts.TowerReward, best_floor: int,

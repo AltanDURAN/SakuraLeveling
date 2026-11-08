@@ -589,6 +589,10 @@ LE MANA DES COMPÉTENCES 💧
     t'attend tous les 10 étages. La commande montre l'étage suivant : ses
     monstres, leur élément et leurs capacités.
     • Tu combats SEUL, à PV et mana PLEINS, sans potion ni élixir.
+    • Le combat se joue en VIDÉO, comme en zone, puis son récapitulatif à
+      3 pages : récompenses (record, ticket), détails (ce qu'il restait
+      aux ennemis) et journal. Après une victoire, tente l'étage suivant
+      directement sous le récapitulatif.
     • 1 ticket par jour (+1 avec la case « Confort » de l'arbre), remis à
       minuit. Tant que tu gagnes, tu GARDES ton ticket et tu enchaînes les
       étages ; une défaite coûte le ticket, jamais un étage : ton record est
