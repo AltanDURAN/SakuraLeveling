@@ -78,7 +78,33 @@ def test_la_saison_repart_a_zero_mais_garde_les_joueurs(session):
         assert session.get(PlayerProgressionModel, pid).level == 1
         assert session.get(PlayerResourceModel, pid).gold == 0
     pending = session.execute(select(AdminCommandModel.action)).scalars().all()
-    assert pending == ["reset_rank_roles"]
+    assert pending == ["reset_journey_roles"]
+
+
+def test_tout_le_monde_repart_du_reglement(session):
+    """Décision de l'auteur (09/11/2026) : règlement, aventure et tutoriel
+    effacés — anciens comme nouveaux repassent par le parcours d'arrivée.
+    Un compte sans personnage (règlement accepté, jamais joué) aussi."""
+    from app.application.use_cases import member_access, tutorial
+    from app.infrastructure.db.models.adventurer_model import AdventurerModel
+    from app.infrastructure.db.models.rules_model import RulesAcceptanceModel
+    from app.infrastructure.db.models.tutorial_model import PlayerTutorialModel
+
+    a = _create_player(session, 1, "Alice")
+    now = datetime.now(UTC).replace(tzinfo=None)
+    for discord_id in (1, 555):                      # 555 : pas de personnage
+        session.add(RulesAcceptanceModel(discord_id=discord_id, version=1, accepted_at=now))
+    session.commit()
+    tutorial.skip(session, a)                       # tutoriel passé → aventurier
+    session.commit()
+    assert member_access.access(session, 1) == member_access.MemberAccess(accepted=True, adventurer=True)
+    assert preview_season_reset(session).cleared["rules_acceptances"] == 2
+
+    reset_season(session)
+
+    assert _count(session, RulesAcceptanceModel) == 0 and _count(session, AdventurerModel) == 0
+    assert _count(session, PlayerTutorialModel) == 0
+    assert member_access.all_access(session) == {}
 
 
 def test_la_surveillance_repart_du_lancement_de_la_saison(session):

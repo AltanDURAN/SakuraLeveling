@@ -188,31 +188,46 @@ def test_every_known_action_is_dispatchable():
         assert "non gérée" not in msg and "inconnue" not in msg.lower(), (
             f"{action} non dispatché : {msg}"
         )
-        if action != "reset_rank_roles":  # dépend de RANK_ROLE_IDS, testé à part
+        if action != "reset_journey_roles":  # dépend de RANK_ROLE_IDS, testé à part
             assert ok is True, f"{action} en échec : {msg}"
 
 
-def test_reset_rank_roles_redescend_tous_les_rangs_au_rang_f(monkeypatch):
-    """Reset de saison : chaque porteur d'un rang ≥ E repasse au Rang F."""
+def test_reset_journey_roles_renvoie_tout_le_monde_au_reglement(monkeypatch):
+    """Lancement de saison (décision de l'auteur, 09/11/2026) : chaque membre,
+    admins compris, perd ses rangs et Aventurier ; ses autres rôles restent,
+    les bots ne sont pas touchés, et le bot oublie les règlements acceptés
+    qu'il gardait en mémoire."""
     from types import SimpleNamespace
 
-    import app.bot.rank_roles as rank_roles
-    from app.infrastructure.config.settings import settings
+    from app.bot import rules_gate
+    from app.infrastructure.config.settings import Settings, settings
 
-    monkeypatch.setattr(type(settings), "rank_roles", property(lambda self: {"F": 1, "E": 2, "D": 3}))
-    alice, bob = SimpleNamespace(id=10), SimpleNamespace(id=11)
-    roles = {1: SimpleNamespace(members=[]), 2: SimpleNamespace(members=[alice]),
-             3: SimpleNamespace(members=[bob, alice])}
-    guild = SimpleNamespace(get_role=roles.get)
-    moved = []
+    monkeypatch.setattr(Settings, "rank_roles", property(lambda self: {"F": 1, "E": 2, "D": 3}))
+    monkeypatch.setattr(settings, "adventurer_role_id", 9)
+    monkeypatch.setattr(settings, "discord_guild_id", 500)
+    monkeypatch.setitem(rules_gate._accepted, 10, 1)
 
-    async def fake_set_rank_role(member, rank):
-        moved.append((member.id, rank))
-        return True
+    class Member:
+        def __init__(self, member_id, role_ids, bot=False):
+            self.id, self.bot, self.display_name = member_id, bot, f"m{member_id}"
+            self.roles = [SimpleNamespace(id=r) for r in role_ids]
 
-    monkeypatch.setattr(rank_roles, "set_rank_role", fake_set_rank_role)
+        async def remove_roles(self, *roles, reason=""):
+            gone = {r.id for r in roles}
+            self.roles = [r for r in self.roles if r.id not in gone]
+
+    alice = Member(10, [1, 9, 77])          # Rang F, Aventurier, un rôle hors parcours
+    bob = Member(11, [3, 2])                # deux rangs (reliquat manuel)
+    newcomer = Member(12, [77])             # rien du parcours
+    robot = Member(13, [1], bot=True)
+    other_server = SimpleNamespace(id=600, members=[Member(14, [1, 9])])
     bridge = _bridge({})
-    bridge.bot = _FakeBot({}, guilds=[guild])
-    ok, msg = _run(bridge, "reset_rank_roles")
-    assert ok and "2 joueur(s)" in msg
-    assert sorted(moved) == [(10, "F"), (11, "F")]
+    bridge.bot = _FakeBot({}, guilds=[SimpleNamespace(id=500, members=[alice, bob, newcomer, robot]), other_server])
+
+    ok, msg = _run(bridge, "reset_journey_roles")
+
+    assert ok and "2 membre(s)" in msg, msg
+    assert [r.id for r in alice.roles] == [77] and bob.roles == [] and [r.id for r in newcomer.roles] == [77]
+    assert [r.id for r in robot.roles] == [1], "un bot n'est pas touché"
+    assert [r.id for r in other_server.members[0].roles] == [1, 9], "seul le serveur du jeu"
+    assert rules_gate._accepted == {}

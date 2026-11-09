@@ -1,8 +1,9 @@
 """Aventure commencée (tutoriel fini ou passé), par COMPTE Discord (08/11/2026).
 
 Comme le règlement accepté : gardé à part du joueur, elle survit au reset d'un
-joueur comme au reset de saison. Le rôle Aventurier se rend ainsi à qui
-quitte le serveur puis revient.
+joueur — le rôle Aventurier se rend ainsi à qui quitte le serveur puis
+revient. Le reset de SAISON la vide : tout le monde repasse par le règlement
+et le tutoriel (décision de l'auteur, 09/11/2026).
 """
 
 from datetime import datetime

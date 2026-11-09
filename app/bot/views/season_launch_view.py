@@ -56,12 +56,18 @@ def build_preview_embed(preview: season_launch.Preview, season: int, ping: str) 
     live = [f"{preview.encounters} combat(s) de zone annulé(s)" if preview.encounters else "",
             f"world boss **{preview.boss}** arrêté" if preview.boss else "",
             f"{preview.events} message(s) d'événement retiré(s)" if preview.events else ""]
+    embed.add_field(name="🧭 Tout le monde repart du règlement",
+                    value=(f"{format_int(cleared.get('rules_acceptances', 0))} règlement(s) accepté(s) et "
+                           f"{format_int(cleared.get('adventurers', 0))} aventurier(s) effacés · rangs et rôle "
+                           "Aventurier retirés à **chaque membre, admins compris** : on ne voit plus que l'accueil "
+                           "et le règlement, puis on réaccepte et on refait (ou passe) le tutoriel."),
+                    inline=False)
     embed.add_field(name="🎭 Sur Discord",
-                    value="Rangs remis au **Rang F** · commandes des joueurs fermées quelques secondes"
-                          + "".join(f" · {x}" for x in live if x),
+                    value="Commandes des joueurs fermées quelques secondes" + "".join(f" · {x}" for x in live if x),
                     inline=False)
     embed.add_field(name="📣 Annonce",
-                    value=("Dans le salon général, " + season_launch.PING_LABELS[ping]
+                    value=("Dans le salon d'accueil (le seul que tout le monde voit encore), "
+                           + season_launch.PING_LABELS[ping]
                            if season_launch.PINGS.get(ping) is not None else "Aucune (changer avec l'option `annonce`)."),
                     inline=False)
     embed.set_footer(text="Restent : l'identité des joueurs, le contenu du jeu et les réglages du site "

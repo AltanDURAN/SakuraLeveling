@@ -106,35 +106,32 @@ class AdminBridgeCog(commands.Cog):
                 )
             return True, f"Événement « {event_type} » lancé."
 
-        if action == "reset_rank_roles":
-            return await self.reset_rank_roles()
+        if action == "reset_journey_roles":
+            return await self.reset_journey_roles()
 
         return False, f"Action non gérée : {action}"
 
-    async def reset_rank_roles(self) -> tuple[bool, str]:
-        """Reset de saison : chaque porteur d'un rang supérieur redescend au
-        Rang F (les rôles ouvrent les salons de zone)."""
-        from app.bot.rank_roles import START_RANK, set_rank_role
+    async def reset_journey_roles(self) -> tuple[bool, str]:
+        """Reset de saison (décision de l'auteur, 09/11/2026) : tout le monde
+        repart du règlement. Le bot oublie les acceptations qu'il gardait en
+        mémoire, puis chaque membre perd ses rangs et Aventurier."""
+        from app.bot import access, rules_gate
         from app.infrastructure.config.settings import settings
 
-        start_id = settings.rank_roles.get(START_RANK)
-        if not start_id:
-            return False, "Rôles de rang non configurés (RANK_ROLE_IDS)."
-        moved, failed = 0, 0
+        rules_gate.forget_all()
+        if not access.journey_role_ids():
+            return False, "Rôles du parcours non configurés (RANK_ROLE_IDS, ADVENTURER_ROLE_ID)."
+        done, failed = 0, []
         for guild in self.bot.guilds:
-            members: dict[int, object] = {}
-            for rank, role_id in settings.rank_roles.items():
-                if rank == START_RANK:
-                    continue
-                role = guild.get_role(role_id)
-                for member in (role.members if role else []):
-                    members[member.id] = member
-            for member in members.values():
-                if await set_rank_role(member, START_RANK):
-                    moved += 1
-                else:
-                    failed += 1
-        return failed == 0, f"{moved} joueur(s) remis au Rang {START_RANK}, {failed} échec(s)."
+            if settings.discord_guild_id and guild.id != settings.discord_guild_id:
+                continue
+            reset, errors = await access.reset_journey(guild)
+            done += reset
+            failed += errors
+        message = f"{done} membre(s) renvoyé(s) au règlement (rangs et Aventurier retirés), {len(failed)} échec(s)."
+        if failed:
+            message += " " + ", ".join(failed[:5])
+        return not failed, message
 
 
 async def setup(bot: commands.Bot) -> None:

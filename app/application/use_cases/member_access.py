@@ -1,6 +1,7 @@
 """Où en est un compte Discord dans le parcours d'arrivée (08/11/2026).
 
-Deux étapes, retenues par COMPTE (elles survivent aux resets) :
+Deux étapes, retenues par COMPTE (elles survivent au reset d'un joueur ; le
+reset de saison les vide, chacun repart du règlement) :
   • le règlement accepté (`rules_acceptances`) → Rang F ;
   • l'aventure commencée, tutoriel fini ou passé (`adventurers`) → Aventurier.
 Les rôles Discord eux-mêmes sont donnés par le bot (`app/bot/access.py`).

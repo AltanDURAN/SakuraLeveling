@@ -30,6 +30,8 @@ TON ARRIVÉE SUR LE SERVEUR : TROIS ÉTAPES
        records, vocal…).
     Ensuite, chaque rang gagné à l'épreuve (/epreuve) ouvre sa zone. Si tu
     quittes le serveur et reviens, tu retrouves ton rang et tes salons.
+    À chaque NOUVELLE SAISON, tout le monde repart de ces trois étapes,
+    anciens comme nouveaux : règlement, tutoriel, puis l'aventure.
 
 LE RÈGLEMENT, À ACCEPTER UNE FOIS POUR JOUER
     Le salon du règlement affiche le règlement et un bouton « J'accepte le
@@ -1016,16 +1018,22 @@ reste, et il n'y a pas de tableau d'honneur.
         nouveaux talents élémentaires), boss, événements, brocante, échanges,
         défis et offrande vidés, et la SURVEILLANCE du site admin repart du
         lancement (ses réglages sont gardés) ;
-      • tout le monde redescend au Rang F, les commandes rouvrent ;
-      • l'annonce part dans le salon général, avec sa carte « SAISON 1 » et
-        les boutons vers le tutoriel et la première zone (option annonce :
-        @everyone par défaut, @here, sans mention, ou pas d'annonce).
+      • tout le monde repart du RÈGLEMENT, admins compris : règlements
+        acceptés, aventuriers et tutoriels effacés, rangs et rôle Aventurier
+        retirés à chaque membre — on ne voit plus que l'accueil et le
+        règlement, on réaccepte (Rang F), puis on finit ou passe le tutoriel
+        (Aventurier) ; les commandes rouvrent ;
+      • l'annonce part dans le salon d'ACCUEIL (avec le règlement, le seul que
+        tout le monde voit encore), avec sa carte « SAISON 1 » et le bouton
+        vers le règlement (option annonce : @everyone par défaut, @here, sans
+        mention, ou pas d'annonce).
 
 Reset de saison sans le bot (recours, sur le VPS) :
     .venv/bin/python -m scripts.season_reset                       # aperçu
     .venv/bin/python -m scripts.season_reset --confirm "SAISON 1"  # exécute
     Même reset et même sauvegarde, sans annonce ; au démarrage suivant, le
-    bot remet tous les rôles de rang au Rang F.
+    bot retire les rangs et le rôle Aventurier à tout le monde (retour au
+    règlement).
 
 Simulation de la saison :
     .venv/bin/python -m scripts.simulate_season [--minutes 30] [--cycle 3]

@@ -13,9 +13,12 @@ site admin (journal, photos des joueurs, alertes) — elle repart du repère
 Le contenu du jeu (objets, monstres, recettes, boutique) n'est PAS touché :
 il vit dans les JSON et se ré-applique au seed.
 
-Les rôles de rang Discord sont remis au Rang F par le BOT (file
-`admin_commands`, action `reset_rank_roles`, ou directement par
-`/admin lancer_saison`) : la base ne peut pas toucher à Discord elle-même.
+Le PARCOURS D'ARRIVÉE repart aussi du début (décision de l'auteur,
+09/11/2026) : règlements acceptés et aventuriers effacés (les tutoriels
+partent avec les joueurs), tout le monde repasse par le règlement. Les rôles
+Discord (rangs, Aventurier) sont retirés par le BOT (file `admin_commands`,
+action `reset_journey_roles`, ou directement par `/admin lancer_saison`) :
+la base ne peut pas toucher à Discord elle-même.
 """
 
 from __future__ import annotations
@@ -27,6 +30,7 @@ from sqlalchemy.orm import Session
 
 from app.application.use_cases.reset_player import ResetPlayerUseCase
 from app.domain.services.monitoring import kinds
+from app.infrastructure.db.models.adventurer_model import AdventurerModel
 from app.infrastructure.db.models.event_model import (
     ActiveEventModel,
     EventParticipationModel,
@@ -45,6 +49,7 @@ from app.infrastructure.db.models.progression_model import PlayerProgressionMode
 from app.infrastructure.db.models.resource_model import PlayerResourceModel
 from app.infrastructure.db.models.records_model import RecordBoardModel, RecordHolderModel
 from app.infrastructure.db.models.role_trial_model import RoleTrialScoreModel, RoleTrialWeekModel
+from app.infrastructure.db.models.rules_model import RulesAcceptanceModel
 from app.infrastructure.db.models.trade_model import TradeItemModel, TradeModel
 from app.infrastructure.db.models.world_boss_model import (
     WorldBossModel,
@@ -55,6 +60,9 @@ from app.infrastructure.db.repositories.admin_command_repository import (
 )
 from app.infrastructure.db.unit_of_work import atomic
 from app.infrastructure.monitoring import telemetry
+
+#: Action du bot qui retire les rôles du parcours à tous (`AdminBridgeCog`).
+JOURNEY_ROLES_ACTION = "reset_journey_roles"
 
 #: Tables globales vidées entièrement (dans cet ordre : enfants d'abord).
 GLOBAL_TABLES = (
@@ -71,6 +79,10 @@ GLOBAL_TABLES = (
     RecordHolderModel,
     OfferingContributionModel,
     OfferingStateModel,
+    # Parcours d'arrivée (par compte Discord) : tout le monde repasse par le
+    # règlement et le tutoriel.
+    RulesAcceptanceModel,
+    AdventurerModel,
     # Surveillance : les lignes sans joueur (fuites, arrivées, alertes du
     # serveur, rapports envoyés) — celles d'un joueur partent avec lui.
     GameEventModel,
@@ -128,6 +140,6 @@ def reset_season(session: Session, queue_role_reset: bool = True, season: int = 
         session.execute(update(RecordBoardModel).values(last_day=None))
         telemetry.record(session, kinds.SEASON_START, ref=f"saison {season}", qty=season)
         if queue_role_reset:
-            AdminCommandRepository(session).enqueue("reset_rank_roles")
+            AdminCommandRepository(session).enqueue(JOURNEY_ROLES_ACTION)
             report.roles_queued = True
     return report

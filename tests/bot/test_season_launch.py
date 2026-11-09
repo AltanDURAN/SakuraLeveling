@@ -1,10 +1,11 @@
 """`/admin lancer_saison` : le déroulé complet sur un faux bot — sauvegarde
 d'abord (et rien ne bouge si elle échoue), combats et boss arrêtés, joueurs
-remis à zéro, rangs, photo, annonce — et les commandes des joueurs fermées
-pendant le lancement."""
+remis à zéro, retour au règlement pour tous, photo, annonce dans l'accueil —
+et les commandes des joueurs fermées pendant le lancement."""
 
 import asyncio
 from contextlib import contextmanager
+from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -14,11 +15,13 @@ from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.bot import season_launch
+from app.bot import rules_gate, season_launch
 from app.bot.views.season_launch_view import SeasonConfirmModal, SeasonLaunchView, build_preview_embed
 from app.infrastructure.db.base import Base
+from app.infrastructure.db.models.adventurer_model import AdventurerModel
 from app.infrastructure.db.models.monitoring_model import GameEventModel
 from app.infrastructure.db.models.progression_model import PlayerProgressionModel
+from app.infrastructure.db.models.rules_model import RulesAcceptanceModel
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 
 
@@ -43,6 +46,9 @@ def db(monkeypatch):
         pid = repo.get_or_create_by_discord_id(7, "alice", "Alice").player.id
         repo.apply_progression(pid, 12, 0, 11)
         repo.add_gold(pid, 900, source="combat")
+        now = datetime.now(UTC).replace(tzinfo=None)
+        s.add(RulesAcceptanceModel(discord_id=7, version=1, accepted_at=now))
+        s.add(AdventurerModel(discord_id=7, started_at=now, how="passe"))
         s.commit()
     yield SimpleNamespace(session=get_session, pid=pid)
     engine.dispose()
@@ -61,6 +67,7 @@ class _Channel:
 class _Bot:
     def __init__(self, gate_seen):
         self.channel = _Channel()
+        self.channel_ids = []
         self.calls = []
         bot = self
 
@@ -77,10 +84,10 @@ class _Bot:
                 return False, "Aucun world boss actif à arrêter."
 
         class Bridge:
-            async def reset_rank_roles(self):
-                bot.calls.append("ranks")
+            async def reset_journey_roles(self):
+                bot.calls.append("journey")
                 gate_seen.append(season_launch.is_closed())
-                return True, "3 joueur(s) remis au Rang F, 0 échec(s)."
+                return True, "3 membre(s) renvoyé(s) au règlement (rangs et Aventurier retirés), 0 échec(s)."
 
         class Monitoring:
             async def take_snapshots_now(self):
@@ -94,11 +101,16 @@ class _Bot:
         return self.cogs.get(name)
 
     def get_channel(self, channel_id):
+        self.channel_ids.append(channel_id)
         return self.channel
 
 
 def test_lancement_complet(db, monkeypatch):
     monkeypatch.setattr(season_launch, "backup_sqlite", lambda label: Path(f"/srv/lita_v2_{label}.db"))
+    monkeypatch.setattr(season_launch.settings, "welcome_channel_id", 21)
+    monkeypatch.setattr(season_launch.settings, "rules_channel_id", 22)
+    monkeypatch.setattr(season_launch.settings, "tutorial_channel_id", 23)
+    monkeypatch.setitem(rules_gate._accepted, 7, 1)
     gate_seen = []
     bot = _Bot(gate_seen)
 
@@ -106,15 +118,23 @@ def test_lancement_complet(db, monkeypatch):
 
     assert all(ok for ok, _ in result.steps), result.steps
     assert result.backup.name == "lita_v2_avant_saison_1.db"
-    assert bot.calls == ["encounters", "boss", "ranks", "snapshot"]
+    assert bot.calls == ["encounters", "boss", "journey", "snapshot"]
     assert gate_seen == [True] and not season_launch.is_closed(), "fermé pendant, rouvert après"
     with db.session() as s:
         assert s.get(PlayerProgressionModel, db.pid).level == 1
         assert s.execute(select(GameEventModel.kind)).scalars().all() == ["season"]
+        # Tout le monde repart du règlement (décision de l'auteur, 09/11/2026).
+        assert s.execute(select(func.count()).select_from(RulesAcceptanceModel)).scalar_one() == 0
+        assert s.execute(select(func.count()).select_from(AdventurerModel)).scalar_one() == 0
+    assert 7 not in rules_gate._accepted, "le bot oublie les acceptations gardées en mémoire"
+    # L'annonce part dans l'accueil : avec le règlement, le seul salon que tous voient encore.
+    assert bot.channel_ids == [21]
     post = bot.channel.sent[0]
     assert post["content"] == "@everyone" and post["allowed_mentions"].everyone
     assert post["embed"].title == "🌸 La saison 1 commence !"
-    assert "dure un an" in post["embed"].description
+    description = post["embed"].description
+    assert "dure un an" in description and "<#22>" in description
+    assert "<#23>" not in description, "un salon invisible s'afficherait « sans accès »"
     assert post["files"] and post["files"][0].filename == season_launch.SEASON_IMAGE
     assert result.announcement_url
 
@@ -161,9 +181,12 @@ def test_les_commandes_des_joueurs_sont_fermees_pendant_le_lancement(monkeypatch
 def test_l_apercu_et_la_confirmation(db):
     preview = season_launch.preview(_Bot([]))
     assert preview.report.players == 1 and preview.report.gold_total == 900 and preview.report.max_level == 12
+    assert preview.report.cleared["rules_acceptances"] == 1 and preview.report.cleared["adventurers"] == 1
     embed = build_preview_embed(preview, 2, "here")
     assert "SAISON 2" in embed.description and len(embed) < 6000
-    assert any("avec @here" in f.value for f in embed.fields)
+    assert any("avec @here" in f.value and "accueil" in f.value for f in embed.fields)
+    journey = next(f for f in embed.fields if "règlement" in f.name)
+    assert "1 règlement(s) accepté(s)" in journey.value and "admins compris" in journey.value
 
     async def build():
         origin = SimpleNamespace(user=SimpleNamespace(id=7))

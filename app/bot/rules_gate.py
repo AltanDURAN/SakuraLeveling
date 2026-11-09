@@ -48,6 +48,12 @@ SAVE_FAILED = "❌ Ton acceptation n'a pas pu être enregistrée. Réessaie dans
 _accepted: dict[int, int] = {}
 
 
+def forget_all() -> None:
+    """Lancement de saison : les acceptations gardées en mémoire sont oubliées
+    (la base vient d'être vidée) — chacun réaccepte le règlement."""
+    _accepted.clear()
+
+
 def timestamp(moment: datetime) -> str:
     """Date affichée par Discord dans la langue de chacun."""
     return f"<t:{int(moment.replace(tzinfo=UTC).timestamp())}:D>"

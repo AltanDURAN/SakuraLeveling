@@ -6,7 +6,7 @@
 
 - [ ] `.venv/bin/python -m pytest` : tout passe.
 - [ ] `.venv/bin/python -m scripts.simulate_season --cycle <mesure>` : le niveau 100 tombe entre ~250 et ~365 jours à 30 min/jour, avec la cadence de combat **mesurée en bêta** (site admin › Surveillance › Progression).
-- [ ] Rythme relu dans Monde › Rythme (temps pour rejoindre, délai entre deux combats, heures calmes).
+- [ ] Rythme relu dans Monde › Rythme (temps pour rejoindre, délai entre deux combats). Les heures calmes restent désactivées (0 → 0) : ceux qui jouent la nuit doivent pouvoir farmer.
 - [ ] Après tout changement du moteur, de l'arbre ou des niveaux, contenus recalibrés : `scripts/restat_mobs.py`, `scripts/restat_bosses.py`, `scripts/calibrate_rank_trials.py`, `scripts/build_tower.py`.
 - [ ] `tuto.txt`, `/help` et `/demarrer` relus.
 - [ ] Serveur Discord prêt : annonces, mode Communauté, salons bêta cachés, bot renommé. Le règlement est posté par le bot (texte : `app/infrastructure/content/rules.json`, à relire).
@@ -36,16 +36,17 @@ Depuis Discord, dans n'importe quel salon :
 Le bot fait tout dans cet ordre, et s'arrête sans rien toucher si la sauvegarde échoue :
 
 - commandes des joueurs fermées (les admins passent), attente de celles en cours ;
-- sauvegarde `lita_v2_avant_reset_<date>.db` ;
+- sauvegarde `lita_v2_avant_saison_1_<date>.db` ;
 - combats annulés, boss arrêté, messages d'événements retirés ;
 - remise à zéro de tous les joueurs et des tables de saison ;
-- tout le monde au Rang F, première photo pour la Surveillance ;
-- réouverture des commandes et annonce dans le général.
+- tout le monde repart du règlement, toi compris : rangs et Aventurier retirés à chaque membre, règlement à réaccepter, tutoriel à refaire ou passer ;
+- première photo pour la Surveillance ;
+- réouverture des commandes et annonce dans le salon d'accueil, le seul que tout le monde voit encore (avec le règlement).
 
 Vérifications :
 
 - [ ] Le bot affiche le chemin de la sauvegarde : note-le.
-- [ ] Un compte de test : `/tuto` (la Tour, puis une zone), `/profil` niveau 1, 0 or, Rang F.
+- [ ] Un compte de test ne voit que l'accueil et le règlement. Il accepte le règlement : Rang F, le tutoriel s'ouvre. `/tuto` (la Tour, puis une zone), puis fin ou « Passer » : Aventurier, le général s'ouvre. `/profil` : niveau 1, 0 or, Rang F.
 - [ ] Un monstre apparaît dans la Clairière sinistre ; le bouton Lancer démarre le combat ; le récapitulatif s'affiche, avec le niveau gagné.
 - [ ] `/arbre`, `/stats`, `/forgeron`, `/marchand`, `/quetes` répondent.
 
@@ -54,12 +55,13 @@ Recours sans le bot (s'il ne répond plus) : `.venv/bin/python -m scripts.season
 ## Si quelque chose tourne mal (retour arrière)
 
 ```bash
-sudo systemctl stop sakura-bot
-cp lita_v2_avant_reset_<date>.db lita_v2.db       # la sauvegarde notée plus haut
-git checkout <commit précédent> && sudo systemctl start sakura-bot
+sudo systemctl stop sakura-bot sakura-webapp           # le site a aussi la base ouverte
+rm -f lita_v2.db-wal lita_v2.db-shm                     # journal WAL de la base remplacée
+cp lita_v2_avant_saison_1_<date>.db lita_v2.db          # la sauvegarde notée plus haut
+git checkout <commit précédent> && sudo systemctl start sakura-bot sakura-webapp
 ```
 
-Les rôles Discord ne reviennent pas tout seuls : `/admin set_rank` joueur par joueur si besoin.
+Les rôles Discord reviennent tout seuls au démarrage : le bot rend à chacun ce que dit la base restaurée (règlement accepté → rang gagné, tutoriel fini ou passé → Aventurier).
 
 ## Après l'ouverture
 

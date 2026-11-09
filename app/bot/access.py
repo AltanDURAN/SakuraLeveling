@@ -5,7 +5,9 @@ les rôles des membres et les permissions des salons.
   • tutoriel fini ou passé → Aventurier (`tutorial_cog`) ;
   • retour d'un membre parti → ses rôles lui sont rendus (`on_member_join`) ;
   • filet de sécurité : `reconcile` (démarrage puis toutes les 30 min,
-    `AccessCog`) donne ce qui manque. Rien n'est jamais RETIRÉ à un membre.
+    `AccessCog`) donne ce qui manque. Rien n'est jamais RETIRÉ à un membre…
+  • … sauf au lancement d'une saison (`reset_journey`, décision de l'auteur
+    du 09/11/2026) : tout le monde repasse par le règlement et le tutoriel.
 
 Les permissions des salons ne changent que sur demande, après un aperçu :
 `/admin acces` ou `scripts/channel_access.py`. Règles : `access_plan`.
@@ -35,6 +37,9 @@ ADVENTURER_NAME = "⊰🧭⊱ Aventurier"
 ROLE_WAIT = 2.0
 
 _background: set[asyncio.Task] = set()
+#: Augmente à chaque remise à zéro du parcours : un rattrapage ou un `restore`
+#: qui a lu la base AVANT ne redonne rien APRÈS (ses états sont périmés).
+_generation = 0
 
 
 def general_channel_id() -> int:
@@ -87,10 +92,11 @@ async def restore(member) -> member_access.MemberAccess:
     """Donne à un membre les rôles de son parcours, sans jamais en retirer :
     un rang s'il a accepté le règlement, Aventurier s'il a aussi commencé
     l'aventure. Renvoie où il en est."""
+    generation = _generation
     state = await asyncio.to_thread(_state, member.id)
-    if state.accepted and not getattr(member, "bot", False):
+    if state.accepted and not getattr(member, "bot", False) and generation == _generation:
         await ensure_start_rank_role(member)
-        if state.adventurer:
+        if state.adventurer and generation == _generation:
             await grant_adventurer(member)
     return state
 
@@ -139,9 +145,12 @@ async def reconcile(guild) -> tuple[int, int]:
     Renvoie (rangs donnés, rôles Aventurier donnés)."""
     if not settings.rank_roles:
         return 0, 0
+    generation = _generation
     states = await asyncio.to_thread(_states)
     ranks = adventurers = 0
     for member in list(guild.members):
+        if generation != _generation:              # parcours remis à zéro entre-temps
+            break
         state = states.get(member.id)
         if state is None or member.bot:
             continue
@@ -149,9 +158,39 @@ async def reconcile(guild) -> tuple[int, int]:
             state.accepted, state.adventurer, has_any_rank_role(member), has_adventurer_role(member))
         if need_rank and await ensure_start_rank_role(member):
             ranks += 1
-        if need_adventurer and await grant_adventurer(member):
+        if need_adventurer and generation == _generation and await grant_adventurer(member):
             adventurers += 1
     return ranks, adventurers
+
+
+def journey_role_ids() -> set[int]:
+    """Les rôles du parcours : les rangs et Aventurier."""
+    ids = set(settings.rank_roles.values())
+    if settings.adventurer_role_id:
+        ids.add(settings.adventurer_role_id)
+    return ids
+
+
+async def reset_journey(guild) -> tuple[int, list[str]]:
+    """Lancement de saison (décision de l'auteur, 09/11/2026) : chaque membre,
+    admins compris, perd ses rangs et Aventurier — tout le monde repasse par le
+    règlement et le tutoriel. La base doit être vidée AVANT (`reset_season`),
+    sinon le rattrapage les redonnerait. Renvoie (membres remis au départ, échecs)."""
+    global _generation
+    _generation += 1
+    journey = journey_role_ids()
+    done, failed = 0, []
+    for member in list(guild.members):
+        held = [role for role in member.roles if role.id in journey]
+        if not held or getattr(member, "bot", False):
+            continue
+        try:
+            await member.remove_roles(*held, reason=f"{REASON} — nouvelle saison : retour au règlement")
+        except discord.DiscordException as exc:
+            failed.append(f"{getattr(member, 'display_name', member.id)} ({exc})")
+            continue
+        done += 1
+    return done, failed
 
 
 # ------------------------------------------------------------------ salons

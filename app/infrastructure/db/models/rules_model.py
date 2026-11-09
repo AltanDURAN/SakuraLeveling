@@ -1,7 +1,8 @@
 """Règlement accepté, par COMPTE Discord (07/11/2026).
 
 Gardé à part du joueur : on accepte avant d'avoir un personnage, et
-l'acceptation survit au reset d'un joueur comme au reset de saison.
+l'acceptation survit au reset d'un joueur. Le reset de SAISON la vide : tout
+le monde réaccepte (décision de l'auteur, 09/11/2026).
 """
 
 from datetime import datetime

@@ -10,9 +10,10 @@ Usage (sur le VPS, bot ARRÊTÉ de préférence) :
     .venv/bin/python -m scripts.season_reset --saison 2 --confirm "SAISON 2"
 
 Avant toute écriture, la base est sauvegardée (API de sauvegarde SQLite,
-cohérente même en mode WAL) dans `lita_v2_avant_saison_<N>_<date>.db`. Les rôles de
-rang Discord sont remis au Rang F par le bot au démarrage suivant (action
-`reset_rank_roles` mise en file) — il doit donc tourner après le reset.
+cohérente même en mode WAL) dans `lita_v2_avant_saison_<N>_<date>.db`. Tout le
+monde repart du règlement : les rangs et le rôle Aventurier sont retirés à
+chaque membre par le bot au démarrage suivant (action `reset_journey_roles`
+mise en file) — il doit donc tourner après le reset.
 """
 
 from __future__ import annotations
@@ -75,7 +76,7 @@ def main() -> None:
         report = reset_season(session, season=args.saison)
     _print_report("✅ Saison remise à zéro :", report)
     if report.roles_queued:
-        print("🎭 Rôles de rang : remise au Rang F en file, exécutée par le bot (≤ 5 s une fois lancé).")
+        print("🧭 Retour au règlement : rangs et Aventurier retirés à tous par le bot (≤ 5 s une fois lancé).")
 
 
 if __name__ == "__main__":

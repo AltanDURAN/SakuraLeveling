@@ -11,10 +11,13 @@ Déroulé (`launch`) :
   2. sauvegarde de la base — si elle échoue, on s'arrête là, rien n'est touché ;
   3. combats de zone annulés, world boss arrêté (son message supprimé),
      messages d'événements retirés ;
-  4. `reset_season` (joueurs, tables de saison, surveillance), tout ou rien,
-     et le repère « saison N » dans le journal ;
-  5. rangs Discord remis au Rang F, première photo des joueurs ;
-  6. les commandes rouvrent, l'annonce part dans le salon général.
+  4. `reset_season` (joueurs, tables de saison, parcours d'arrivée,
+     surveillance), tout ou rien, et le repère « saison N » dans le journal ;
+  5. tout le monde repart du règlement (décision de l'auteur, 09/11/2026) :
+     rangs et Aventurier retirés à chaque membre, admins compris, première
+     photo des joueurs ;
+  6. les commandes rouvrent, l'annonce part dans le salon d'ACCUEIL — le seul,
+     avec le règlement, que tout le monde voit encore.
 """
 
 from __future__ import annotations
@@ -30,10 +33,12 @@ import discord
 from sqlalchemy import select
 
 from app.application.use_cases.reset_season import (
+    JOURNEY_ROLES_ACTION,
     SeasonResetReport,
     preview_season_reset,
     reset_season,
 )
+from app.bot import access, rules_gate
 from app.domain.services.pacing_service import PARIS
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.backup import BackupError, backup_sqlite
@@ -143,14 +148,17 @@ def _reset(season: int) -> SeasonResetReport:
         return reset_season(session, queue_role_reset=False, season=season)
 
 
-async def _reset_ranks(bot) -> tuple[bool, str]:
+async def _reset_journey(bot) -> tuple[bool, str]:
+    """Tout le monde repart du règlement : acceptations oubliées, rangs et
+    Aventurier retirés (la base vient d'être vidée par `reset_season`)."""
+    rules_gate.forget_all()
     bridge = bot.get_cog("AdminBridgeCog")
     if bridge is not None:
-        return await bridge.reset_rank_roles()
+        return await bridge.reset_journey_roles()
     with get_db_session() as session:
-        AdminCommandRepository(session).enqueue("reset_rank_roles")
+        AdminCommandRepository(session).enqueue(JOURNEY_ROLES_ACTION)
         session.commit()
-    return True, "remise au Rang F mise en file (le bot l'exécutera)."
+    return True, "retrait des rangs et d'Aventurier mis en file (le bot l'exécutera)."
 
 
 async def launch(bot, season: int, ping: str = "everyone") -> LaunchResult:
@@ -193,11 +201,12 @@ async def launch(bot, season: int, ping: str = "everyone") -> LaunchResult:
                          season, result.report.players, result.backup)
 
             try:
-                ok, msg = await _reset_ranks(bot)
+                ok, msg = await _reset_journey(bot)
             except Exception:  # noqa: BLE001 — la saison est lancée, on le signale
-                _logger.exception("remise des rangs au Rang F impossible")
-                ok, msg = False, "échec (voir les journaux du bot) — relancer depuis le site admin."
-            result.steps.append((ok, f"Rangs Discord : {msg}"))
+                _logger.exception("retour au règlement impossible")
+                ok, msg = False, ("échec (voir les journaux du bot) : retire les rangs et Aventurier "
+                                  "à la main à ceux qui les ont encore.")
+            result.steps.append((ok, f"Parcours d'arrivée : {msg}"))
             monitoring_cog = bot.get_cog("MonitoringCog")
             if monitoring_cog is not None:
                 try:
@@ -220,25 +229,27 @@ async def launch(bot, season: int, ping: str = "everyone") -> LaunchResult:
 
 # ------------------------------------------------------------------ annonce
 def build_announcement_embed(season: int) -> discord.Embed:
-    from app.infrastructure.encounters.farm_zone_loader import list_zones
-
-    tuto = f"<#{settings.tutorial_channel_id}>" if settings.tutorial_channel_id else "`/tuto`"
-    zone = next((z for z in list_zones() if z.get("channel_id")), None)
-    zone_txt = f"<#{zone['channel_id']}>" if zone else "la première zone"
+    # Lue par des membres qui ne voient que l'accueil et le règlement : pas de
+    # lien vers un autre salon, il s'afficherait « sans accès ».
+    rules = f"<#{settings.rules_channel_id}>" if settings.rules_channel_id else "`/reglement`"
+    zone = access.first_zone()
+    zone_txt = f"la **{zone['name']}**" if zone and zone.get("name") else "la première zone"
     embed = discord.Embed(
         title=f"🌸 La saison {season} commence !",
         description=(
             "Le Grand Cerisier a refleuri et les registres de la guilde ont été effacés : "
-            "**tout le monde repart du Rang F**, niveau 1, la bourse vide. La course recommence, "
-            "et elle est la même pour tous.\n\n"
+            "**tout le monde repart de zéro**, niveau 1, la bourse vide — anciens comme nouveaux, "
+            "chacun repasse par le règlement. La course recommence, et elle est la même pour tous.\n\n"
             "🌱 **Remis à zéro** : niveaux, or, équipement, arbre, titres, quêtes, tour, défis, "
             "affinités… et de **nouveaux talents élémentaires**, tirés pour chacun — la voyante a "
             "déjà sorti ses cartes.\n\n"
             "⏳ **La saison dure un an**, puis tout repart à zéro.\n\n"
             "**Par où commencer ?**\n"
-            f"1️⃣ Hana t'attend dans {tuto} : au bout, **3 Potions du Grand Cerisier** 🧪\n"
-            "2️⃣ `/daily` chaque jour, `/stats` pour placer tes points\n"
-            f"3️⃣ Les monstres sortent déjà dans {zone_txt} ⚔️\n\n"
+            f"1️⃣ Accepte le règlement dans {rules} : la guilde t'inscrit au **Rang F**\n"
+            "2️⃣ Hana t'attend au tutoriel : au bout, **3 Potions du Grand Cerisier** 🧪 — "
+            "fini ou passé, il t'ouvre tout le serveur\n"
+            f"3️⃣ Les monstres sortent déjà dans {zone_txt} ⚔️ — `/daily` chaque jour, "
+            "`/stats` pour placer tes points\n\n"
             "Premier au Rang E, premier mythique, premier au sommet de la tour : "
             "**les classements sont vides**. À toi de les remplir."
         ),
@@ -249,12 +260,18 @@ def build_announcement_embed(season: int) -> discord.Embed:
     return embed
 
 
+def announce_channel_id() -> int:
+    """L'accueil : après le retour au règlement, c'est (avec le règlement) le
+    seul salon que tout le monde voit. Le général sinon (accueil non réglé)."""
+    return settings.welcome_channel_id or settings.rank_announce_channel_id
+
+
 async def announce(bot, season: int, mention: str) -> str | None:
-    """Poste l'annonce dans le salon général ; renvoie son lien."""
+    """Poste l'annonce dans le salon d'accueil ; renvoie son lien."""
     from app.bot.cogs.onboarding_cog import build_join_view
     from app.bot.rendering.welcome_card import compose_season_card
 
-    channel = bot.get_channel(settings.rank_announce_channel_id)
+    channel = bot.get_channel(announce_channel_id())
     if channel is None:
         return None
     files = []

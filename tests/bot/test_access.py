@@ -123,6 +123,50 @@ def test_le_rattrapage_ne_donne_que_ce_qui_manque(states):
     assert asyncio.run(access.reconcile(guild)) == (0, 0)
 
 
+def test_une_nouvelle_saison_renvoie_tout_le_monde_au_reglement(states):
+    """Décision de l'auteur (09/11/2026) : rangs et Aventurier retirés à
+    chaque membre ; ses autres rôles restent, un bot n'est pas touché, et un
+    refus de Discord est signalé sans arrêter les autres."""
+    guild = Guild()
+    alice = Member(1, [RANKS["D"], ADV, DEFAULT_ROLE], guild)
+    newcomer = Member(2, [DEFAULT_ROLE], guild)
+    robot = Member(3, [RANKS["F"]], guild)
+    robot.bot = True
+    stubborn = Member(4, [RANKS["F"]], guild)
+
+    async def refused(*roles, reason=""):
+        raise discord.Forbidden(SimpleNamespace(status=403, reason="Forbidden"), "hiérarchie")
+
+    stubborn.remove_roles = refused
+    guild.members = [alice, newcomer, robot, stubborn]
+
+    done, failed = asyncio.run(access.reset_journey(guild))
+
+    assert done == 1 and len(failed) == 1 and failed[0].startswith("m4")
+    assert alice.role_ids == [DEFAULT_ROLE] and newcomer.role_ids == [DEFAULT_ROLE]
+    assert robot.role_ids == [RANKS["F"]]
+
+
+def test_un_rattrapage_commence_avant_la_remise_a_zero_ne_redonne_rien(states, monkeypatch):
+    """Le rattrapage et `restore` lisent la base PUIS donnent les rôles : si
+    la saison est relancée entre les deux, leurs états sont périmés."""
+    guild = Guild()
+    late = Member(2, [], guild)
+    guild.members = [late]
+    states[2] = MemberAccess(True, True)
+
+    def read_during_reset(*args):
+        access._generation += 1                   # la remise à zéro passe pendant la lecture
+        return dict(states) if not args else states[args[0]]
+
+    monkeypatch.setattr(access, "_generation", 0)
+    monkeypatch.setattr(access, "_states", read_during_reset)
+    monkeypatch.setattr(access, "_state", read_during_reset)
+    assert asyncio.run(access.reconcile(guild)) == (0, 0)
+    asyncio.run(access.restore(late))
+    assert late.role_ids == []
+
+
 # ------------------------------------------------------------- les clics
 class Response:
     def __init__(self):
