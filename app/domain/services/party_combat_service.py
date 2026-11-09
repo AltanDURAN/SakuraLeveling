@@ -907,8 +907,10 @@ class PartyCombatService:
             damage, recoil = resolve_hit(raw_attack, mob_def)
 
             title_bonus = title_bonuses_by_player.get(player["player_id"])
-            if title_bonus is not None and E["family"]:
-                damage = max(1, round(damage * title_bonus.damage_multiplier_vs(E["family"])))
+            if title_bonus is not None:     # titres (famille) et cartes (ce monstre)
+                title_mult = title_bonus.damage_multiplier_vs(E["family"], E["base"].code)
+                if title_mult != 1.0:
+                    damage = max(1, round(damage * title_mult))
 
             elem_mult = E["out"].get(player["player_id"], 1.0)
             if elem_mult != 1.0:

@@ -132,6 +132,9 @@ class ItemCategory(StrEnum):
     ACCESSOIRE = "accessoire"
     #: Apparence du profil (fond, cadre, couleur du titre) — aucun effet en jeu.
     COSMETIC = "cosmetic"
+    #: Cartes à collectionner (`cards.json`) : une normale et une brillante par
+    #: carte. Rangées dans l'album (/album), jamais dans /inventaire.
+    CARD = "carte"
 
 
 class ItemRarity(str, Enum):

@@ -57,12 +57,18 @@ class TitleBonuses:
     # Multiplicatif sur le drop_rate de base (préserve la rareté des items
     # rares). Plusieurs titres ciblant le même mob s'additionnent.
     drop_rate_bonus_vs_mob: dict[str, int] = field(default_factory=dict)
+    # Dégâts contre UN monstre (ou un boss, ses gardes) : cartes à
+    # collectionner, ajoutées seulement en combat de zone et au world boss
+    # (`card_service.with_card_bonuses`).
+    damage_bonus_vs_mob: dict[str, int] = field(default_factory=dict)
     # Items octroyés à chaque /daily (Taverne Addict). Liste de tuples
     # (item_code, quantity).
     daily_bonus_items: list[tuple[str, int]] = field(default_factory=list)
 
-    def damage_multiplier_vs(self, family: str) -> float:
+    def damage_multiplier_vs(self, family: str, mob_code: str = "") -> float:
         pct = min(MAX_BONUS_PCT, self.damage_bonus_vs_family.get(family, 0))
+        if mob_code:
+            pct += min(MAX_BONUS_PCT, self.damage_bonus_vs_mob.get(mob_code, 0))
         return 1.0 + pct / 100
 
     def damage_received_multiplier_from(self, family: str) -> float:

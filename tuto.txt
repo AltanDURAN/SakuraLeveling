@@ -405,7 +405,8 @@ FORGE SACRÉE (+0 → +10)
     brocante n'y apparaît pas.
 
 /inventaire [joueur]
-    Consommables et ressources (les équipements sont dans /equipement_liste).
+    Consommables et ressources (les équipements sont dans /equipement_liste,
+    les cartes dans /album).
     Les ressources sont les matériaux de FAMILLE (un par famille de monstres,
     lâché à chaque victoire) : ils servent à la fusion des pièces.
 
@@ -810,6 +811,8 @@ WORLD BOSS — /boss moi, /boss historique, /bestiaire boss
 
     Le parchemin, le jeton, le sablier et chaque cosmétique : un seul à la
     fois (on ne peut pas en racheter tant qu'on en a un).
+    Ses BOOSTERS DE CARTES se vendent à son comptoir du salon des cartes
+    (/booster) : voir plus bas.
     Choisis un cosmétique : un APERÇU montre l'en-tête de TA bannière
     /profil avec lui, porté avec le reste de ta tenue actuelle — tu sais ce
     que tu achètes.
@@ -827,6 +830,62 @@ WORLD BOSS — /boss moi, /boss historique, /bestiaire boss
     1re lecture offerte, puis 1 200 · 3 000 · 7 500 · 19 000 · 38 000 ·
     68 000 · 112 000 or. Ton corps protège ce secret, et cette protection se
     renforce à chaque découverte : chaque lecture coûte plus que la précédente.
+
+/booster [nombre]
+    LES CARTES À COLLECTIONNER : Sorn vend des boosters dans le salon des
+    cartes (« gambling addict »). 61 cartes : les monstres des zones, les
+    personnages (Borak, Elna, Sorn, Ysaline, Hana), les 7 divinités de
+    l'offrande, les 5 world boss… et une seule MYTHIQUE, le Grand Cerisier.
+    • Un booster = 5 cartes pour 2 000 or, le PREMIER EST OFFERT. Tape
+      /booster dans le salon des cartes, ou clique sur les boutons (×1, ×5,
+      ×10) sous le guide épinglé ou sous l'ouverture d'un autre joueur.
+    • L'ouverture est PUBLIQUE : les cartes se retournent l'une après
+      l'autre, de la moins rare à la plus rare. La 5e est toujours RARE OU
+      MIEUX. Une mythique est annoncée dans le salon général.
+    • Taux des 4 premières cartes : Commune 68 % · Peu commune 24 % · Rare
+      6 % · Épique 1,6 % · Légendaire 0,38 % · Mythique 0,02 %. 5e carte :
+      Rare 72,7 % · Épique 22 % · Légendaire 5 % · Mythique 0,3 %. En gros :
+      une épique tous les 4 boosters, une légendaire tous les 16, la
+      mythique une fois sur 260.
+    • BRILLANTES ✨ : chaque carte a 4 % de chances de sortir brillante (même
+      effet, pur prestige, elle scintille). La mythique est TOUJOURS
+      brillante.
+    • LÉGENDAIRE GARANTI : au plus tard au 40e booster sans légendaire ni
+      mythique — et celui-là est brillant.
+    • EFFETS : dès que tu possèdes une carte (normale ou brillante, une seule
+      fois), son effet joue en COMBAT DE ZONE et au WORLD BOSS (jamais à la
+      tour, aux défis ni aux épreuves) :
+        monstre      contre lui : +3 à +6 % de dégâts et +5 à +15 % de butin
+                     (matériaux et sa pièce), selon sa rareté ;
+        world boss   +10 % de dégâts contre lui et ses gardes ;
+        personnages  Borak −5 % d'or sur les fusions · Elna +5 % de potion
+                     offerte · Sorn +1 % de brillantes · Ysaline −5 % sur ses
+                     lectures · Hana +10 % de PV rendus par les potions ;
+        divinités    Aurélia +5 % de matériaux · Kaïros +2 % d'XP · Lysia
+                     +5 % de pièces · Sylve +25 % de régénération hors combat
+                     · Éona +5 % d'essences · Morrigane +10 % d'or et d'XP
+                     contre les meutes · Thalos +15 % d'or à la récompense
+                     du jour de la tour ;
+        mythique     le Grand Cerisier : +2 % d'or et d'XP en zone.
+    • DOUBLONS : garde-les pour les échanger (/echange, /brocante) ou
+      recycle-les en PÉTALES depuis /album (tu gardes toujours un exemplaire
+      de chaque carte et de chaque brillante) : commune 5, peu commune 10,
+      rare 25, épique 80, légendaire 400, mythique 2 000 — ×5 pour une
+      brillante. Avec des pétales, FABRIQUE une carte qui te manque (10 fois
+      son recyclage : 50 / 100 / 250 / 800 / 4 000). Jamais une brillante :
+      la mythique se tire ou s'échange.
+
+/album [joueur]
+    TON ALBUM : une page par chapitre (les 6 zones, Personnages, Divinités,
+    Légendes), avec la silhouette des cartes qui te manquent, le nombre
+    d'exemplaires et tes brillantes. En haut : ta progression, par rareté,
+    et tes pétales. « Voir une carte » ouvre sa fiche (effet, histoire,
+    bouton Fabriquer) ; « Recycler » transforme tes doublons en pétales.
+    Avec [joueur] : l'album d'un autre (sans les boutons).
+    TITRES : Collectionneur (25 % de l'album), Archiviste (50 %),
+    Conservateur (75 %), Maître de l'album (100 %), et Prisme du Grand
+    Cerisier pour l'album TOUT BRILLANT. Le salon des records affiche aussi
+    l'album le plus complet du serveur.
 
 --------------------------------------------------------------------------------
 1.8 — ÉCHANGES ENTRE JOUEURS
@@ -864,7 +923,7 @@ WORLD BOSS — /boss moi, /boss historique, /bestiaire boss
     de la semaine (DPS, Tank, Soutien, général).
 
 /records
-    LES RECORDS DU SERVEUR. Le salon des records affiche 18 records battables :
+    LES RECORDS DU SERVEUR. Le salon des records affiche 19 records battables :
       • exploits en combat de zone : plus gros coup, plus gros coup encaissé
         sans tomber, plus gros soin donné à un allié, et le plus de dégâts
         infligés, encaissés et soignés en un seul combat (les nuits de lune
@@ -872,7 +931,8 @@ WORLD BOSS — /boss moi, /boss historique, /bestiaire boss
       • meilleur score aux défis DPS, Tank et Soutien ;
       • plus haut étage de la tour solo ;
       • le plus de dégâts sur un world boss en une semaine ;
-      • la chasse : le plus de monstres tués dans chaque famille.
+      • la chasse : le plus de monstres tués dans chaque famille ;
+      • la collection : l'album de cartes le plus complet.
     Chaque nuit à minuit (heure de Paris), le tableau est mis à jour : pour
     battre un record il faut faire STRICTEMENT mieux (à égalité, le premier
     arrivé le garde). Un message annonce les records tombés et mentionne les
@@ -931,7 +991,8 @@ INTERFACE WEB D'ADMINISTRATION
     Ajoute ou retire des objets. Pour une pièce d'équipement : crée des
     copies de la rareté et du niveau de forge choisis (20 max), ou retire
     les copies les moins précieuses d'abord (celles en vente ne sont pas
-    touchées).
+    touchées). Une carte à collectionner est un objet : « Carte Slime »
+    (code carte_slime), « Carte Slime ✨ » pour sa brillante.
 
 /admin heal_full <joueur>
     PV et mana au maximum.

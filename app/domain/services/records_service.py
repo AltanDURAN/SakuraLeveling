@@ -42,6 +42,7 @@ CATEGORIES = (
     ("tour", "🗼 Tour solo"),
     ("boss", "👑 World boss"),
     ("chasse", "🐾 Chasse"),
+    ("collection", "🎴 Collection"),
 )
 
 EXPLOITS = (
@@ -61,6 +62,8 @@ DEFIS = (
 DEFI_ROLES = {"dps": "defi_dps", "tank": "defi_tank", "soutien": "defi_soutien"}
 TOWER = RecordDef("tour", "tour", "🗼", "Plus haut étage", "étage")
 BOSS = RecordDef("boss", "boss", "👑", "Plus de dégâts sur un boss en une semaine", "dégâts", cumulative=True)
+#: Cartes à collectionner : le plus de cartes DIFFÉRENTES (09/11/2026).
+ALBUM = RecordDef("album", "collection", "🎴", "Album le plus complet", "cartes", cumulative=True)
 
 #: Titres tournants, du 1er au 3e (leur effet est dans `titles.json`).
 TITLE_CODES = ("records_1", "records_2", "records_3")
@@ -74,7 +77,7 @@ def hunt_record(family: str, plural: str) -> RecordDef:
 def all_records(families: list[tuple[str, str]]) -> list[RecordDef]:
     """Tous les records, dans l'ordre du tableau. `families` : (code, nom)
     des familles des zones OUVERTES."""
-    return [*EXPLOITS, *DEFIS, TOWER, BOSS, *(hunt_record(code, label) for code, label in families)]
+    return [*EXPLOITS, *DEFIS, TOWER, BOSS, *(hunt_record(code, label) for code, label in families), ALBUM]
 
 
 @dataclass(frozen=True)

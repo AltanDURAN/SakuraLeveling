@@ -64,9 +64,11 @@ def test_les_exploits_d_un_combat():
                         "encaisse_combat": 700, "soins_combat": 300}
 
 
-def test_dix_huit_records_aujourd_hui():
+def test_dix_neuf_records_aujourd_hui():
+    """18 records au 07/11/2026, plus l'album le plus complet (cartes, 09/11/2026)."""
     families = [("slime", "slimes"), ("gobelin", "gobelins"), ("mort-vivant", "morts-vivants"), ("demoniaque", "démons"),
                 ("primordial", "bêtes primordiales"), ("nocturne", "créatures nocturnes"), ("draconique", "dragons")]
     records = rs.all_records(families)
-    assert len(records) == 18 and len({r.code for r in records}) == 18
+    assert len(records) == 19 and len({r.code for r in records}) == 19
+    assert records[-1] == rs.ALBUM
     assert {r.category for r in records} == {code for code, _ in rs.CATEGORIES}

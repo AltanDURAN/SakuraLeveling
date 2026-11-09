@@ -40,7 +40,8 @@ def _page_for_category(category: str) -> str:
 
 def _is_inventory_item(item: PlayerInventoryItem) -> bool:
     """Filtre : ne garde que les items NON équipables."""
-    return item.item_definition.category not in EQUIPABLE_CATEGORIES
+    # Les cartes à collectionner vivent dans /album.
+    return item.item_definition.category not in EQUIPABLE_CATEGORIES and item.item_definition.category != "carte"
 
 
 def _filter_items_for_page(

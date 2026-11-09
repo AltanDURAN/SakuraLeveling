@@ -1,0 +1,1090 @@
+{
+  "_comment": "Cartes à collectionner, Série 1 « Le Grand Cerisier » (09/11/2026). La rareté suit la puissance dans le jeu. Effets : monstre (contre lui), boss (au raid, gardes compris), bonus (clés de card_service.BONUS_TEXTS). Image : assets/cards/<code>.png, sinon l'image du monstre / le portrait du personnage.",
+  "series": 1,
+  "name": "Le Grand Cerisier",
+  "cards": [
+    {
+      "number": 1,
+      "code": "slime",
+      "name": "Slime",
+      "title": "Clairière sinistre",
+      "category": "monstre",
+      "rarity": "common",
+      "chapter": "clairiere",
+      "element": "",
+      "source": "slime",
+      "effect": {
+        "type": "monstre",
+        "mob": "slime",
+        "damage_pct": 3,
+        "drop_pct": 5
+      },
+      "flavor": "Une flaque de gelée affamée qui engloutit tout ce qui passe à sa portée."
+    },
+    {
+      "number": 2,
+      "code": "gobelin",
+      "name": "Gobelin",
+      "title": "Clairière sinistre",
+      "category": "monstre",
+      "rarity": "common",
+      "chapter": "clairiere",
+      "element": "",
+      "source": "gobelin",
+      "effect": {
+        "type": "monstre",
+        "mob": "gobelin",
+        "damage_pct": 3,
+        "drop_pct": 5
+      },
+      "flavor": "Petit, teigneux et jamais seul : c'est sur lui qu'on apprend à se battre."
+    },
+    {
+      "number": 3,
+      "code": "gobelin_combattant",
+      "name": "Gobelin Combattant",
+      "title": "Clairière sinistre",
+      "category": "monstre",
+      "rarity": "common",
+      "chapter": "clairiere",
+      "element": "terre",
+      "source": "gobelin_combattant",
+      "effect": {
+        "type": "monstre",
+        "mob": "gobelin_combattant",
+        "damage_pct": 3,
+        "drop_pct": 5
+      },
+      "flavor": "Il a survécu à assez de bagarres pour savoir tenir une lame."
+    },
+    {
+      "number": 4,
+      "code": "gobelin_geant",
+      "name": "Gobelin Géant",
+      "title": "Clairière sinistre",
+      "category": "monstre",
+      "rarity": "common",
+      "chapter": "clairiere",
+      "element": "",
+      "source": "gobelin_geant",
+      "effect": {
+        "type": "monstre",
+        "mob": "gobelin_geant",
+        "damage_pct": 3,
+        "drop_pct": 5
+      },
+      "flavor": "Deux fois plus grand que ses frères : ses coups balaient tout le monde d'un seul geste."
+    },
+    {
+      "number": 5,
+      "code": "gobelin_chaman",
+      "name": "Gobelin Chaman",
+      "title": "Clairière sinistre",
+      "category": "monstre",
+      "rarity": "uncommon",
+      "chapter": "clairiere",
+      "element": "tenebre",
+      "source": "gobelin_chaman",
+      "effect": {
+        "type": "monstre",
+        "mob": "gobelin_chaman",
+        "damage_pct": 4,
+        "drop_pct": 8
+      },
+      "flavor": "Il marmonne de vieilles prières qui referment ses plaies au pire moment."
+    },
+    {
+      "number": 6,
+      "code": "gobelin_ballon",
+      "name": "Gobelin Ballon",
+      "title": "Clairière sinistre",
+      "category": "monstre",
+      "rarity": "uncommon",
+      "chapter": "clairiere",
+      "element": "",
+      "source": "gobelin_ballon",
+      "effect": {
+        "type": "monstre",
+        "mob": "gobelin_ballon",
+        "damage_pct": 4,
+        "drop_pct": 8
+      },
+      "flavor": "Une bande d'inventeurs accrochés à un ballon rapiécé, qui lâche ses bombes sur tout le groupe."
+    },
+    {
+      "number": 7,
+      "code": "gobelin_assassin",
+      "name": "Gobelin Assassin",
+      "title": "Clairière sinistre",
+      "category": "monstre",
+      "rarity": "rare",
+      "chapter": "clairiere",
+      "element": "",
+      "source": "gobelin_assassin",
+      "effect": {
+        "type": "monstre",
+        "mob": "gobelin_assassin",
+        "damage_pct": 5,
+        "drop_pct": 10
+      },
+      "flavor": "On ne le voit jamais venir : il vise le plus faible et ne s'arrête plus."
+    },
+    {
+      "number": 8,
+      "code": "gobelin_runique",
+      "name": "Gobelin Runique",
+      "title": "Clairière sinistre",
+      "category": "monstre",
+      "rarity": "rare",
+      "chapter": "clairiere",
+      "element": "",
+      "source": "gobelin_runique",
+      "effect": {
+        "type": "monstre",
+        "mob": "gobelin_runique",
+        "damage_pct": 5,
+        "drop_pct": 10
+      },
+      "flavor": "Les runes volées qui brûlent sur sa peau n'attendent que sa mort pour exploser."
+    },
+    {
+      "number": 9,
+      "code": "gobelin_superieur",
+      "name": "Gobelin Supérieur",
+      "title": "Clairière sinistre",
+      "category": "monstre",
+      "rarity": "epic",
+      "chapter": "clairiere",
+      "element": "",
+      "source": "gobelin_superieur",
+      "effect": {
+        "type": "monstre",
+        "mob": "gobelin_superieur",
+        "damage_pct": 6,
+        "drop_pct": 15
+      },
+      "flavor": "Le chef de la Clairière, derrière son bouclier."
+    },
+    {
+      "number": 10,
+      "code": "zombie",
+      "name": "Zombie",
+      "title": "Cimetière abandonné",
+      "category": "monstre",
+      "rarity": "common",
+      "chapter": "cimetiere",
+      "element": "",
+      "source": "zombie",
+      "effect": {
+        "type": "monstre",
+        "mob": "zombie",
+        "damage_pct": 3,
+        "drop_pct": 5
+      },
+      "flavor": "Une carcasse putride et lente, mais coriace."
+    },
+    {
+      "number": 11,
+      "code": "fantome",
+      "name": "Fantôme",
+      "title": "Cimetière abandonné",
+      "category": "monstre",
+      "rarity": "common",
+      "chapter": "cimetiere",
+      "element": "",
+      "source": "fantome",
+      "effect": {
+        "type": "monstre",
+        "mob": "fantome",
+        "damage_pct": 3,
+        "drop_pct": 5
+      },
+      "flavor": "Une âme errante insaisissable qui glisse entre les coups."
+    },
+    {
+      "number": 12,
+      "code": "squelette",
+      "name": "Squelette",
+      "title": "Cimetière abandonné",
+      "category": "monstre",
+      "rarity": "common",
+      "chapter": "cimetiere",
+      "element": "tenebre",
+      "source": "squelette",
+      "effect": {
+        "type": "monstre",
+        "mob": "squelette",
+        "damage_pct": 3,
+        "drop_pct": 5
+      },
+      "flavor": "Un pantin d'os réanimé."
+    },
+    {
+      "number": 13,
+      "code": "gargouille",
+      "name": "Gargouille",
+      "title": "Cimetière abandonné",
+      "category": "monstre",
+      "rarity": "uncommon",
+      "chapter": "cimetiere",
+      "element": "terre",
+      "source": "gargouille",
+      "effect": {
+        "type": "monstre",
+        "mob": "gargouille",
+        "damage_pct": 4,
+        "drop_pct": 8
+      },
+      "flavor": "Une statue de pierre animée qui frappe comme un bélier."
+    },
+    {
+      "number": 14,
+      "code": "momie",
+      "name": "Momie",
+      "title": "Cimetière abandonné",
+      "category": "monstre",
+      "rarity": "uncommon",
+      "chapter": "cimetiere",
+      "element": "terre",
+      "source": "momie",
+      "effect": {
+        "type": "monstre",
+        "mob": "momie",
+        "damage_pct": 4,
+        "drop_pct": 8
+      },
+      "flavor": "Un corps embaumé aux bandelettes maudites, quasi increvable."
+    },
+    {
+      "number": 15,
+      "code": "banshee",
+      "name": "Banshee",
+      "title": "Cimetière abandonné",
+      "category": "monstre",
+      "rarity": "rare",
+      "chapter": "cimetiere",
+      "element": "",
+      "source": "banshee",
+      "effect": {
+        "type": "monstre",
+        "mob": "banshee",
+        "damage_pct": 5,
+        "drop_pct": 10
+      },
+      "flavor": "Un spectre hurlant dont le cri glaçant transperce l'âme."
+    },
+    {
+      "number": 16,
+      "code": "liche_maudite",
+      "name": "Liche maudite",
+      "title": "Cimetière abandonné",
+      "category": "monstre",
+      "rarity": "epic",
+      "chapter": "cimetiere",
+      "element": "tenebre",
+      "source": "liche_maudite",
+      "effect": {
+        "type": "monstre",
+        "mob": "liche_maudite",
+        "damage_pct": 6,
+        "drop_pct": 15
+      },
+      "flavor": "Un sorcier mort-vivant dont la magie noire dévaste."
+    },
+    {
+      "number": 17,
+      "code": "diablotin",
+      "name": "Diablotin",
+      "title": "Berceau cataclysmique",
+      "category": "monstre",
+      "rarity": "common",
+      "chapter": "berceau",
+      "element": "",
+      "source": "diablotin",
+      "effect": {
+        "type": "monstre",
+        "mob": "diablotin",
+        "damage_pct": 3,
+        "drop_pct": 5
+      },
+      "flavor": "Petit démon espiègle et véloce, tout juste éclos du Berceau."
+    },
+    {
+      "number": 18,
+      "code": "demon_cornu",
+      "name": "Démon cornu",
+      "title": "Berceau cataclysmique",
+      "category": "monstre",
+      "rarity": "common",
+      "chapter": "berceau",
+      "element": "",
+      "source": "demon_cornu",
+      "effect": {
+        "type": "monstre",
+        "mob": "demon_cornu",
+        "damage_pct": 3,
+        "drop_pct": 5
+      },
+      "flavor": "Fantassin cornu des légions infernales, brutal et sans pitié."
+    },
+    {
+      "number": 19,
+      "code": "cerbere",
+      "name": "Cerbère",
+      "title": "Berceau cataclysmique",
+      "category": "monstre",
+      "rarity": "common",
+      "chapter": "berceau",
+      "element": "",
+      "source": "cerbere",
+      "effect": {
+        "type": "monstre",
+        "mob": "cerbere",
+        "damage_pct": 3,
+        "drop_pct": 5
+      },
+      "flavor": "Molosse à trois têtes gardant les portes de l'abîme."
+    },
+    {
+      "number": 20,
+      "code": "ogre_demoniaque",
+      "name": "Ogre démoniaque",
+      "title": "Berceau cataclysmique",
+      "category": "monstre",
+      "rarity": "uncommon",
+      "chapter": "berceau",
+      "element": "",
+      "source": "ogre_demoniaque",
+      "effect": {
+        "type": "monstre",
+        "mob": "ogre_demoniaque",
+        "damage_pct": 4,
+        "drop_pct": 8
+      },
+      "flavor": "Masse de muscles corrompue qui écrase tout sur son passage."
+    },
+    {
+      "number": 21,
+      "code": "ange_dechu",
+      "name": "Ange déchu",
+      "title": "Berceau cataclysmique",
+      "category": "monstre",
+      "rarity": "uncommon",
+      "chapter": "berceau",
+      "element": "",
+      "source": "ange_dechu",
+      "effect": {
+        "type": "monstre",
+        "mob": "ange_dechu",
+        "damage_pct": 4,
+        "drop_pct": 8
+      },
+      "flavor": "Ancien séraphin banni ; sa lumière s'est muée en fureur."
+    },
+    {
+      "number": 22,
+      "code": "succube",
+      "name": "Succube",
+      "title": "Berceau cataclysmique",
+      "category": "monstre",
+      "rarity": "rare",
+      "chapter": "berceau",
+      "element": "",
+      "source": "succube",
+      "effect": {
+        "type": "monstre",
+        "mob": "succube",
+        "damage_pct": 5,
+        "drop_pct": 10
+      },
+      "flavor": "Démone envoûtante qui draine la vie de ses proies."
+    },
+    {
+      "number": 23,
+      "code": "archidemon",
+      "name": "Archidémon",
+      "title": "Berceau cataclysmique",
+      "category": "monstre",
+      "rarity": "epic",
+      "chapter": "berceau",
+      "element": "",
+      "source": "archidemon",
+      "effect": {
+        "type": "monstre",
+        "mob": "archidemon",
+        "damage_pct": 6,
+        "drop_pct": 15
+      },
+      "flavor": "Seigneur des enfers, apogée de la corruption du Berceau."
+    },
+    {
+      "number": 24,
+      "code": "loup_sacre",
+      "name": "Loup sacré",
+      "title": "Sanctuaire primordial",
+      "category": "monstre",
+      "rarity": "common",
+      "chapter": "sanctuaire",
+      "element": "vent",
+      "source": "loup_sacre",
+      "effect": {
+        "type": "monstre",
+        "mob": "loup_sacre",
+        "damage_pct": 3,
+        "drop_pct": 5
+      },
+      "flavor": "Gardien à la fourrure d'argent ; il chasse en meute depuis l'aube des temps."
+    },
+    {
+      "number": 25,
+      "code": "serpent_des_racines",
+      "name": "Serpent des racines",
+      "title": "Sanctuaire primordial",
+      "category": "monstre",
+      "rarity": "common",
+      "chapter": "sanctuaire",
+      "element": "plante",
+      "source": "serpent_des_racines",
+      "effect": {
+        "type": "monstre",
+        "mob": "serpent_des_racines",
+        "damage_pct": 3,
+        "drop_pct": 5
+      },
+      "flavor": "Il dort sous les racines et frappe d'un venin sylvestre."
+    },
+    {
+      "number": 26,
+      "code": "golem_de_mousse",
+      "name": "Golem de mousse",
+      "title": "Sanctuaire primordial",
+      "category": "monstre",
+      "rarity": "uncommon",
+      "chapter": "sanctuaire",
+      "element": "terre",
+      "source": "golem_de_mousse",
+      "effect": {
+        "type": "monstre",
+        "mob": "golem_de_mousse",
+        "damage_pct": 4,
+        "drop_pct": 8
+      },
+      "flavor": "Un rocher couvert de mousse qui repousse plus vite qu'on ne l'arrache."
+    },
+    {
+      "number": 27,
+      "code": "cerf_esprit",
+      "name": "Cerf-esprit",
+      "title": "Sanctuaire primordial",
+      "category": "monstre",
+      "rarity": "uncommon",
+      "chapter": "sanctuaire",
+      "element": "plante",
+      "source": "cerf_esprit",
+      "effect": {
+        "type": "monstre",
+        "mob": "cerf_esprit",
+        "damage_pct": 4,
+        "drop_pct": 8
+      },
+      "flavor": "Un cerf translucide ; la forêt se tait sur son passage."
+    },
+    {
+      "number": 28,
+      "code": "ours_colosse",
+      "name": "Ours colosse",
+      "title": "Sanctuaire primordial",
+      "category": "monstre",
+      "rarity": "rare",
+      "chapter": "sanctuaire",
+      "element": "terre",
+      "source": "ours_colosse",
+      "effect": {
+        "type": "monstre",
+        "mob": "ours_colosse",
+        "damage_pct": 5,
+        "drop_pct": 10
+      },
+      "flavor": "Ses griffes fendent la pierre comme l'armure."
+    },
+    {
+      "number": 29,
+      "code": "aigle_tempete",
+      "name": "Aigle-tempête",
+      "title": "Sanctuaire primordial",
+      "category": "monstre",
+      "rarity": "epic",
+      "chapter": "sanctuaire",
+      "element": "vent",
+      "source": "aigle_tempete",
+      "effect": {
+        "type": "monstre",
+        "mob": "aigle_tempete",
+        "damage_pct": 6,
+        "drop_pct": 15
+      },
+      "flavor": "Chacun de ses battements d'ailes soulève une bourrasque."
+    },
+    {
+      "number": 30,
+      "code": "chauve_souris_geante",
+      "name": "Chauve-souris géante",
+      "title": "Éclipse éternelle",
+      "category": "monstre",
+      "rarity": "common",
+      "chapter": "eclipse",
+      "element": "tenebre",
+      "source": "chauve_souris_geante",
+      "effect": {
+        "type": "monstre",
+        "mob": "chauve_souris_geante",
+        "damage_pct": 3,
+        "drop_pct": 5
+      },
+      "flavor": "Elle surgit de l'éclipse par nuées entières."
+    },
+    {
+      "number": 31,
+      "code": "chevalier_de_l_eclipse",
+      "name": "Chevalier de l'éclipse",
+      "title": "Éclipse éternelle",
+      "category": "monstre",
+      "rarity": "common",
+      "chapter": "eclipse",
+      "element": "glace",
+      "source": "chevalier_de_l_eclipse",
+      "effect": {
+        "type": "monstre",
+        "mob": "chevalier_de_l_eclipse",
+        "damage_pct": 3,
+        "drop_pct": 5
+      },
+      "flavor": "Son armure noire rend chaque coup à celui qui l'a porté."
+    },
+    {
+      "number": 32,
+      "code": "goule",
+      "name": "Goule",
+      "title": "Éclipse éternelle",
+      "category": "monstre",
+      "rarity": "common",
+      "chapter": "eclipse",
+      "element": "tenebre",
+      "source": "goule",
+      "effect": {
+        "type": "monstre",
+        "mob": "goule",
+        "damage_pct": 3,
+        "drop_pct": 5
+      },
+      "flavor": "Elle rôde entre les tombes, affamée de chair fraîche."
+    },
+    {
+      "number": 33,
+      "code": "loup_garou",
+      "name": "Loup-garou",
+      "title": "Éclipse éternelle",
+      "category": "monstre",
+      "rarity": "uncommon",
+      "chapter": "eclipse",
+      "element": "",
+      "source": "loup_garou",
+      "effect": {
+        "type": "monstre",
+        "mob": "loup_garou",
+        "damage_pct": 4,
+        "drop_pct": 8
+      },
+      "flavor": "Sous l'éclipse, la bête l'emporte sur l'homme — et sa rage grandit avec ses blessures."
+    },
+    {
+      "number": 34,
+      "code": "vampire_noble",
+      "name": "Vampire noble",
+      "title": "Éclipse éternelle",
+      "category": "monstre",
+      "rarity": "uncommon",
+      "chapter": "eclipse",
+      "element": "tenebre",
+      "source": "vampire_noble",
+      "effect": {
+        "type": "monstre",
+        "mob": "vampire_noble",
+        "damage_pct": 4,
+        "drop_pct": 8
+      },
+      "flavor": "Il boit la vie de ses adversaires avec élégance."
+    },
+    {
+      "number": 35,
+      "code": "sorciere_de_sang",
+      "name": "Sorcière de sang",
+      "title": "Éclipse éternelle",
+      "category": "monstre",
+      "rarity": "rare",
+      "chapter": "eclipse",
+      "element": "tenebre",
+      "source": "sorciere_de_sang",
+      "effect": {
+        "type": "monstre",
+        "mob": "sorciere_de_sang",
+        "damage_pct": 5,
+        "drop_pct": 10
+      },
+      "flavor": "Elle appelle ses familiers d'un murmure."
+    },
+    {
+      "number": 36,
+      "code": "comtesse_ecarlate",
+      "name": "Comtesse écarlate",
+      "title": "Éclipse éternelle",
+      "category": "monstre",
+      "rarity": "epic",
+      "chapter": "eclipse",
+      "element": "lumiere",
+      "source": "comtesse_ecarlate",
+      "effect": {
+        "type": "monstre",
+        "mob": "comtesse_ecarlate",
+        "damage_pct": 6,
+        "drop_pct": 15
+      },
+      "flavor": "Un regard, et ses ennemis se battent pour elle."
+    },
+    {
+      "number": 37,
+      "code": "dragonnet",
+      "name": "Dragonnet",
+      "title": "Cimes des Wyrms",
+      "category": "monstre",
+      "rarity": "common",
+      "chapter": "cimes",
+      "element": "feu",
+      "source": "dragonnet",
+      "effect": {
+        "type": "monstre",
+        "mob": "dragonnet",
+        "damage_pct": 3,
+        "drop_pct": 5
+      },
+      "flavor": "Un jeune dragon, vif et capricieux."
+    },
+    {
+      "number": 38,
+      "code": "wyverne",
+      "name": "Wyverne",
+      "title": "Cimes des Wyrms",
+      "category": "monstre",
+      "rarity": "common",
+      "chapter": "cimes",
+      "element": "vent",
+      "source": "wyverne",
+      "effect": {
+        "type": "monstre",
+        "mob": "wyverne",
+        "damage_pct": 3,
+        "drop_pct": 5
+      },
+      "flavor": "Elle fond sur sa proie et frappe deux fois avant qu'on la voie."
+    },
+    {
+      "number": 39,
+      "code": "dragon_de_givre",
+      "name": "Dragon de givre",
+      "title": "Cimes des Wyrms",
+      "category": "monstre",
+      "rarity": "common",
+      "chapter": "cimes",
+      "element": "glace",
+      "source": "dragon_de_givre",
+      "effect": {
+        "type": "monstre",
+        "mob": "dragon_de_givre",
+        "damage_pct": 3,
+        "drop_pct": 5
+      },
+      "flavor": "Son souffle fige le sang dans les veines."
+    },
+    {
+      "number": 40,
+      "code": "kobold",
+      "name": "Kobold",
+      "title": "Cimes des Wyrms",
+      "category": "monstre",
+      "rarity": "uncommon",
+      "chapter": "cimes",
+      "element": "terre",
+      "source": "kobold",
+      "effect": {
+        "type": "monstre",
+        "mob": "kobold",
+        "damage_pct": 4,
+        "drop_pct": 8
+      },
+      "flavor": "Petit, rusé, armé d'une lance trop grande pour lui."
+    },
+    {
+      "number": 41,
+      "code": "gardien_draconique",
+      "name": "Gardien draconique",
+      "title": "Cimes des Wyrms",
+      "category": "monstre",
+      "rarity": "uncommon",
+      "chapter": "cimes",
+      "element": "terre",
+      "source": "gardien_draconique",
+      "effect": {
+        "type": "monstre",
+        "mob": "gardien_draconique",
+        "damage_pct": 4,
+        "drop_pct": 8
+      },
+      "flavor": "Une écaille-bouclier le protège avant qu'on puisse l'atteindre."
+    },
+    {
+      "number": 42,
+      "code": "drake_de_braise",
+      "name": "Drake de braise",
+      "title": "Cimes des Wyrms",
+      "category": "monstre",
+      "rarity": "rare",
+      "chapter": "cimes",
+      "element": "feu",
+      "source": "drake_de_braise",
+      "effect": {
+        "type": "monstre",
+        "mob": "drake_de_braise",
+        "damage_pct": 5,
+        "drop_pct": 10
+      },
+      "flavor": "Ses morsures laissent des brûlures qui couvent longtemps."
+    },
+    {
+      "number": 43,
+      "code": "dragon_ancien",
+      "name": "Dragon ancien",
+      "title": "Cimes des Wyrms",
+      "category": "monstre",
+      "rarity": "epic",
+      "chapter": "cimes",
+      "element": "feu",
+      "source": "dragon_ancien",
+      "effect": {
+        "type": "monstre",
+        "mob": "dragon_ancien",
+        "damage_pct": 6,
+        "drop_pct": 15
+      },
+      "flavor": "Le maître des cimes."
+    },
+    {
+      "number": 44,
+      "code": "borak",
+      "name": "Borak",
+      "title": "Forgeron",
+      "category": "personnage",
+      "rarity": "rare",
+      "chapter": "personnages",
+      "element": "",
+      "source": "forgeron",
+      "effect": {
+        "type": "bonus",
+        "fusion_discount_pct": 5
+      },
+      "flavor": "« Pose ton minerai sur l'enclume. Je m'occupe du reste. »"
+    },
+    {
+      "number": 45,
+      "code": "elna",
+      "name": "Elna",
+      "title": "Alchimiste",
+      "category": "personnage",
+      "rarity": "rare",
+      "chapter": "personnages",
+      "element": "",
+      "source": "alchimiste",
+      "effect": {
+        "type": "bonus",
+        "brew_bonus_pct": 5
+      },
+      "flavor": "« Apporte-moi ce que les monstres ont laissé, et un peu d'or pour le feu. Je m'occupe du reste. »"
+    },
+    {
+      "number": 46,
+      "code": "sorn",
+      "name": "Sorn",
+      "title": "Marchand",
+      "category": "personnage",
+      "rarity": "rare",
+      "chapter": "personnages",
+      "element": "",
+      "source": "marchand",
+      "effect": {
+        "type": "bonus",
+        "brillante_bonus_pct": 1
+      },
+      "flavor": "« Approche. J'ai fait un long voyage pour t'apporter tout ça. »"
+    },
+    {
+      "number": 47,
+      "code": "ysaline",
+      "name": "Ysaline",
+      "title": "Voyante",
+      "category": "personnage",
+      "rarity": "rare",
+      "chapter": "personnages",
+      "element": "",
+      "source": "voyante",
+      "effect": {
+        "type": "bonus",
+        "seer_discount_pct": 5
+      },
+      "flavor": "« Assieds-toi. Ton sang porte des éléments que tu ignores encore… »"
+    },
+    {
+      "number": 48,
+      "code": "hana",
+      "name": "Hana",
+      "title": "Gardienne du Grand Cerisier",
+      "category": "personnage",
+      "rarity": "rare",
+      "chapter": "personnages",
+      "element": "",
+      "source": "hana",
+      "effect": {
+        "type": "bonus",
+        "potion_heal_pct": 10
+      },
+      "flavor": "« Le Grand Cerisier t'a choisi. Je serai là à chaque pas. »"
+    },
+    {
+      "number": 49,
+      "code": "aurelia",
+      "name": "Aurélia",
+      "title": "Déesse de l'abondance",
+      "category": "divinite",
+      "rarity": "epic",
+      "chapter": "divinites",
+      "element": "",
+      "source": "aurelia",
+      "effect": {
+        "type": "bonus",
+        "materials_pct": 5
+      },
+      "flavor": "Les moissons ne manquent jamais à qui l'honore."
+    },
+    {
+      "number": 50,
+      "code": "kairos",
+      "name": "Kaïros",
+      "title": "Gardien du savoir",
+      "category": "divinite",
+      "rarity": "epic",
+      "chapter": "divinites",
+      "element": "",
+      "source": "kairos",
+      "effect": {
+        "type": "bonus",
+        "xp_pct": 2
+      },
+      "flavor": "Chaque combat lui apprend quelque chose, et à toi aussi."
+    },
+    {
+      "number": 51,
+      "code": "lysia",
+      "name": "Lysia",
+      "title": "Dame de la fortune",
+      "category": "divinite",
+      "rarity": "epic",
+      "chapter": "divinites",
+      "element": "",
+      "source": "lysia",
+      "effect": {
+        "type": "bonus",
+        "gear_drop_pct": 5
+      },
+      "flavor": "Un sourire de sa part, et le butin tombe."
+    },
+    {
+      "number": 52,
+      "code": "sylve",
+      "name": "Sylve",
+      "title": "Mère des sources",
+      "category": "divinite",
+      "rarity": "epic",
+      "chapter": "divinites",
+      "element": "",
+      "source": "sylve",
+      "effect": {
+        "type": "bonus",
+        "regen_pct": 25
+      },
+      "flavor": "Ses sources referment les plaies des voyageurs."
+    },
+    {
+      "number": 53,
+      "code": "eona",
+      "name": "Éona",
+      "title": "Tisseuse des éléments",
+      "category": "divinite",
+      "rarity": "epic",
+      "chapter": "divinites",
+      "element": "",
+      "source": "eona",
+      "effect": {
+        "type": "bonus",
+        "essence_pct": 5
+      },
+      "flavor": "Elle file les essences comme de la soie."
+    },
+    {
+      "number": 54,
+      "code": "morrigane",
+      "name": "Morrigane",
+      "title": "Reine de la chasse",
+      "category": "divinite",
+      "rarity": "epic",
+      "chapter": "divinites",
+      "element": "",
+      "source": "morrigane",
+      "effect": {
+        "type": "bonus",
+        "pack_reward_pct": 10
+      },
+      "flavor": "La meute la suit, la proie la craint."
+    },
+    {
+      "number": 55,
+      "code": "thalos",
+      "name": "Thalos",
+      "title": "Veilleur de la tour",
+      "category": "divinite",
+      "rarity": "epic",
+      "chapter": "divinites",
+      "element": "",
+      "source": "thalos",
+      "effect": {
+        "type": "bonus",
+        "tower_daily_pct": 15
+      },
+      "flavor": "Il compte chaque marche que tu gravis."
+    },
+    {
+      "number": 56,
+      "code": "slime_titan",
+      "name": "Titan Visqueux",
+      "title": "World boss · niveau 20",
+      "category": "boss",
+      "rarity": "legendary",
+      "chapter": "legendes",
+      "element": "eau",
+      "source": "slime_titan",
+      "effect": {
+        "type": "boss",
+        "boss": "slime_titan",
+        "guards": [
+          "slime"
+        ],
+        "damage_pct": 10
+      },
+      "flavor": "Un slime ancestral devenu colosse, sa masse étouffante absorbe les coups les plus faibles et se régénère lentement."
+    },
+    {
+      "number": 57,
+      "code": "gobelin_warlord",
+      "name": "Seigneur de Guerre Gobelin",
+      "title": "World boss · niveau 40",
+      "category": "boss",
+      "rarity": "legendary",
+      "chapter": "legendes",
+      "element": "feu",
+      "source": "gobelin_warlord",
+      "effect": {
+        "type": "boss",
+        "boss": "gobelin_warlord",
+        "guards": [
+          "gobelin_combattant"
+        ],
+        "damage_pct": 10
+      },
+      "flavor": "Le chef d'une horde sanguinaire."
+    },
+    {
+      "number": 58,
+      "code": "stone_colossus",
+      "name": "Colosse de Pierre",
+      "title": "World boss · niveau 60",
+      "category": "boss",
+      "rarity": "legendary",
+      "chapter": "legendes",
+      "element": "terre",
+      "source": "stone_colossus",
+      "effect": {
+        "type": "boss",
+        "boss": "stone_colossus",
+        "guards": [
+          "gargouille"
+        ],
+        "damage_pct": 10
+      },
+      "flavor": "Une statue runique animée par d'antiques magies."
+    },
+    {
+      "number": 59,
+      "code": "shadow_wraith",
+      "name": "Spectre des Ténèbres",
+      "title": "World boss · niveau 80",
+      "category": "boss",
+      "rarity": "legendary",
+      "chapter": "legendes",
+      "element": "tenebre",
+      "source": "shadow_wraith",
+      "effect": {
+        "type": "boss",
+        "boss": "shadow_wraith",
+        "guards": [
+          "fantome"
+        ],
+        "damage_pct": 10
+      },
+      "flavor": "Une entité incorporelle qui glisse entre les coups."
+    },
+    {
+      "number": 60,
+      "code": "ancient_dragon",
+      "name": "Dragon Ancestral",
+      "title": "World boss · niveau 100",
+      "category": "boss",
+      "rarity": "legendary",
+      "chapter": "legendes",
+      "element": "lumiere",
+      "source": "ancient_dragon",
+      "effect": {
+        "type": "boss",
+        "boss": "ancient_dragon",
+        "guards": [
+          "dragonnet"
+        ],
+        "damage_pct": 10
+      },
+      "flavor": "Le sommet de l'évolution."
+    },
+    {
+      "number": 61,
+      "code": "grand_cerisier",
+      "name": "Le Grand Cerisier",
+      "title": "Cœur du monde",
+      "category": "mythique",
+      "rarity": "mythic",
+      "chapter": "legendes",
+      "element": "",
+      "source": "grand_cerisier",
+      "effect": {
+        "type": "bonus",
+        "gold_pct": 2,
+        "xp_pct": 2
+      },
+      "flavor": "L'arbre dont chaque pétale est une vie. Le voir fleurir, c'est voir la saison renaître."
+    }
+  ]
+}

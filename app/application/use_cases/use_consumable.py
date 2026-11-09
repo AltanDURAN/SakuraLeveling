@@ -214,7 +214,10 @@ class UseConsumableUseCase:
 
         # Application de l'effet
         percent = int(bonuses.get("value", 0))
-        heal_amount = round(max_hp * percent / 100)
+        from app.application.use_cases.cards import player_card_bonuses
+
+        hana = player_card_bonuses(self.inventory_repository.session, profile.player.id).potion_heal_pct
+        heal_amount = round(max_hp * percent * (1 + hana / 100) / 100)
         hp_after = min(max_hp, hp_before + heal_amount)
         self.health_repository.update_current_hp(profile.player.id, hp_after)
 

@@ -128,7 +128,10 @@ class FuseGearUseCase:
 
     def _discounted_gold(self, definition: ArtisanDefinition, player_id: int, gold: int) -> int:
         tier = self.artisans.tier_for(definition, self.orders.orders_completed(player_id, definition.code))
-        return round(gold * (1 - tier.gold_discount_pct / 100))
+        from app.application.use_cases.cards import player_card_bonuses
+
+        card = player_card_bonuses(self.session, player_id).fusion_discount_pct   # carte de Borak
+        return round(gold * (1 - (tier.gold_discount_pct + card) / 100))
 
     def preview(self, definition: ArtisanDefinition, player_id: int,
                 item_code: str, rarity: str) -> FusionPreview | None:

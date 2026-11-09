@@ -37,11 +37,15 @@ MEMBER_JOIN = "member_join"   # discord_id
 RULES = "rules"               # discord_id, qty = version du règlement acceptée
 ERROR = "error"               # ref = commande en erreur
 SEASON_START = "season"       # qty = numéro de la saison (reset de saison : le journal repart de là)
+BOOSTER = "booster"           # qty = boosters ouverts, gold = −prix, data.best/new/brillantes/free
+CARD_RECYCLE = "card_recycle" # qty = cartes recyclées, data.petals
+CARD_CRAFT = "card_craft"     # ref = carte fabriquée, data.petals
 
 #: Ce qui compte comme « le joueur joue » (temps de jeu, heures actives).
 ACTIVITY_KINDS = frozenset({
     INTERACTION, COMBAT, SHOP_BUY, FUSION, BREW, CONSUMABLE, QUEST, DAILY,
     RANK_TRIAL, TOWER, ROLE_TRIAL, BOSS_FIGHT, MARKET_SALE, TRANSFER, OFFERING, SEER,
+    BOOSTER, CARD_RECYCLE, CARD_CRAFT,
 })
 
 # --------------------------------------------------------------- sources d'or
@@ -71,6 +75,7 @@ GOLD_SOURCES: dict[str, GoldSource] = {s.code: s for s in (
     GoldSource("defi", "Défis", "🎯", CREATION),
     GoldSource("evenement", "Événements", "🎲"),
     GoldSource("boutique", "Sorn (boutique)", "🏪", DESTRUCTION),
+    GoldSource("cartes", "Boosters de cartes", "🎴", DESTRUCTION),
     GoldSource("fusion", "Fusion (Borak)", "⚒️", DESTRUCTION),
     GoldSource("alchimie", "Potions (Elna)", "⚗️", DESTRUCTION),
     GoldSource("voyante", "Voyante", "🔮", DESTRUCTION),
@@ -84,7 +89,7 @@ GOLD_SOURCES: dict[str, GoldSource] = {s.code: s for s in (
 
 #: Ordre FIXE des sources dans les graphiques (la couleur suit la source).
 CREATION_ORDER = ("combat", "quete", "daily", "raid", "tour", "defi", "evenement")
-DESTRUCTION_ORDER = ("boutique", "fusion", "alchimie", "voyante", "offrande", "taxe", "evenement")
+DESTRUCTION_ORDER = ("boutique", "cartes", "fusion", "alchimie", "voyante", "offrande", "taxe", "evenement")
 
 
 def gold_source(code: str | None) -> GoldSource:

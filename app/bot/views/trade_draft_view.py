@@ -239,16 +239,15 @@ class _ItemSelectView(discord.ui.View):
         self.on_pick_callback = on_pick_callback
         self.on_cancel_callback = on_cancel_callback
         self._max_qty_by_code = {code: max_qty for code, _, max_qty in choices}
+        # Plus de 25 objets (les cartes à collectionner s'ajoutent vite) :
+        # des pages de 25, ◀ ▶ pour passer de l'une à l'autre.
+        self.title = title
+        self.choices = choices
+        self.page = 0
+        self.pages = max(1, -(-len(choices) // SELECT_LIMIT))
 
-        self.select = discord.ui.Select(
-            placeholder=title[:100],
-            min_values=1,
-            max_values=1,
-            options=[
-                discord.SelectOption(label=label[:100], value=code)
-                for code, label, _ in choices
-            ],
-        )
+        self.select = discord.ui.Select(min_values=1, max_values=1, row=0)
+        self._fill_select()
 
         async def select_callback(interaction: discord.Interaction):
             code = self.select.values[0]
@@ -257,14 +256,44 @@ class _ItemSelectView(discord.ui.View):
 
         self.select.callback = select_callback
         self.add_item(self.select)
+        if self.pages > 1:
+            for label, step in (("◀", -1), ("▶", 1)):
+                button = discord.ui.Button(label=label, style=discord.ButtonStyle.primary, row=1)
 
-    @discord.ui.button(label="Annuler", style=discord.ButtonStyle.secondary)
+                async def turn(interaction: discord.Interaction, step=step):
+                    self.page = (self.page + step) % self.pages
+                    self._fill_select()
+                    await interaction.response.edit_message(view=self)
+                button.callback = turn
+                self.add_item(button)
+
+    def _fill_select(self) -> None:
+        start = self.page * SELECT_LIMIT
+        page = self.choices[start:start + SELECT_LIMIT]
+        suffix = f" ({self.page + 1}/{self.pages})" if self.pages > 1 else ""
+        self.select.placeholder = (self.title[: 100 - len(suffix)] + suffix)
+        self.select.options = [discord.SelectOption(label=label[:100], value=code) for code, label, _ in page]
+
+    @discord.ui.button(label="Annuler", style=discord.ButtonStyle.secondary, row=1)
     async def cancel_button(
         self,
         interaction: discord.Interaction,
         button: discord.ui.Button,
     ) -> None:
         await self.on_cancel_callback(interaction)
+
+
+def _sorted_items(inventory) -> list:
+    """Objets d'abord (les plus nombreux en tête), puis les cartes à
+    collectionner, les plus rares en tête."""
+    from app.domain.services.card_service import rarity_index
+
+    def key(item):
+        definition = item.item_definition
+        if definition.category == "carte":
+            return (1, -rarity_index(definition.rarity), definition.name)
+        return (0, -item.quantity, definition.name)
+    return sorted(inventory, key=key)
 
 
 def _gear_choices(gear) -> list[tuple[str, str, int | None]]:
@@ -328,7 +357,7 @@ class TradeDraftView(discord.ui.View):
                 inventory = InventoryRepository(session).list_by_player_id(
                     profile.player.id
                 )
-                items = sorted(inventory, key=lambda i: -i.quantity)
+                items = _sorted_items(inventory)
                 # Pièces libres seulement : on ne cède pas ce qu'on porte.
                 gear = [g for g in GearRepository(session).list_owned(profile.player.id)
                         if not g.equipped]
@@ -341,7 +370,6 @@ class TradeDraftView(discord.ui.View):
             )
             for item in items
         ]
-        choices = choices[:SELECT_LIMIT]
         if not choices:
             await interaction.response.send_message(
                 "❌ Tu n'as aucun objet à proposer dans ton inventaire.",
@@ -370,7 +398,7 @@ class TradeDraftView(discord.ui.View):
                 inventory = InventoryRepository(session).list_by_player_id(
                     target_profile.player.id
                 )
-                items = sorted(inventory, key=lambda i: -i.quantity)
+                items = _sorted_items(inventory)
                 gear = GearRepository(session).list_owned(target_profile.player.id)
 
         choices = _gear_choices(gear) + [
@@ -381,7 +409,6 @@ class TradeDraftView(discord.ui.View):
             )
             for item in items
         ]
-        choices = choices[:SELECT_LIMIT]
         if not choices:
             await interaction.response.send_message(
                 f"❌ {self.target.display_name} n'a aucun objet à demander dans son inventaire.",

@@ -54,6 +54,9 @@ class Settings(BaseSettings):
     # Salon des records : tableau mis à jour chaque nuit à minuit (heure de
     # Paris) et records tombés dans la nuit. 0 = pas de salon.
     records_channel_id: int = 1568684357819048008
+    # Salon des cartes à collectionner (« gambling addict ») : on y ouvre les
+    # boosters de Sorn, en public ; le guide y est épinglé. 0 = pas de salon.
+    gambling_channel_id: int = 1485330022914068652
     # Rôle attribué automatiquement à chaque nouveau membre (ex : "Sakura
     # Leveling"). 0 = pas d'attribution auto. Le bot doit avoir "Gérer les
     # rôles" et être au-dessus de ce rôle dans la hiérarchie.

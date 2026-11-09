@@ -104,6 +104,21 @@ class TitleUnlockService:
                 unlocked.append(TitleUnlockedEvent(title=title))
         return unlocked
 
+    def check_card_album(
+        self, player_id: int, percent: int, brillante_complete: bool
+    ) -> list[TitleUnlockedEvent]:
+        """Titres de l'album des cartes (25 / 50 / 75 / 100 % des cartes) et
+        de l'album tout brillant. Gardés une fois débloqués."""
+        unlocked: list[TitleUnlockedEvent] = []
+        for title in list_for_condition("card_album"):
+            if percent >= title.condition_value and self.title_repository.unlock(player_id, title.code):
+                unlocked.append(TitleUnlockedEvent(title=title))
+        if brillante_complete:
+            for title in list_for_condition("card_brillante"):
+                if self.title_repository.unlock(player_id, title.code):
+                    unlocked.append(TitleUnlockedEvent(title=title))
+        return unlocked
+
     def check_daily_streak(
         self, player_id: int, current_streak: int
     ) -> list[TitleUnlockedEvent]:

@@ -1271,5 +1271,50 @@
         "value": 1
       }
     ]
+  },
+  {
+    "code": "album_25",
+    "name": "Collectionneur",
+    "icon": "🎴",
+    "description": "A rempli le quart de l'album des cartes (/album).",
+    "condition_type": "card_album",
+    "condition_value": 25,
+    "effects": []
+  },
+  {
+    "code": "album_50",
+    "name": "Archiviste",
+    "icon": "📚",
+    "description": "A rempli la moitié de l'album des cartes (/album).",
+    "condition_type": "card_album",
+    "condition_value": 50,
+    "effects": []
+  },
+  {
+    "code": "album_75",
+    "name": "Conservateur",
+    "icon": "🗃️",
+    "description": "A rempli les trois quarts de l'album des cartes (/album).",
+    "condition_type": "card_album",
+    "condition_value": 75,
+    "effects": []
+  },
+  {
+    "code": "album_100",
+    "name": "Maître de l'album",
+    "icon": "🌸",
+    "description": "Possède toutes les cartes de l'album (/album).",
+    "condition_type": "card_album",
+    "condition_value": 100,
+    "effects": []
+  },
+  {
+    "code": "album_brillant",
+    "name": "Prisme du Grand Cerisier",
+    "icon": "✨",
+    "description": "Possède toutes les cartes de l'album en BRILLANTE.",
+    "condition_type": "card_brillante",
+    "condition_value": 100,
+    "effects": []
   }
 ]

@@ -11,6 +11,8 @@ rang affiché : sinon ce serait une course à l'or (décision de l'auteur,
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from sqlalchemy.orm import Session
 
 from app.domain.services.status_effect_service import StatusEffectService
@@ -30,6 +32,10 @@ def resolve_status_effects(session: Session, player_id: int, *,
     return StatusEffectService().aggregate(repo.list_active_multipliers(player_id), active_elixirs)
 
 
+#: Une fenêtre qui couvre toute la saison (effets permanents).
+_ALWAYS = (datetime(2000, 1, 1, tzinfo=UTC), datetime(2200, 1, 1, tzinfo=UTC))
+
+
 def resolve_regen_boosts(session: Session, player_id: int) -> list:
     """Fenêtres de l'élixir de récupération — et de la bénédiction de Sylve
     (offrande commune) — à passer en `boosts=` aux services de régénération
@@ -44,4 +50,10 @@ def resolve_regen_boosts(session: Session, player_id: int) -> list:
     window = blessing_window(session)
     if deity is not None and deity.effect == "regen_mult" and window is not None:
         windows.append((window[0], window[1], deity.value))
+    # Carte de Sylve (cartes à collectionner) : une fenêtre permanente.
+    from app.application.use_cases.cards import player_card_bonuses
+
+    regen = player_card_bonuses(session, player_id).regen_pct
+    if regen:
+        windows.append((_ALWAYS[0], _ALWAYS[1], 1 + regen / 100))
     return windows

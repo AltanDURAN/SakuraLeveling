@@ -479,6 +479,25 @@ def write_world_bosses_sheet(wb: Workbook) -> None:
     _finalize(ws, freeze="C2")
 
 
+def write_cards_sheet(wb: Workbook) -> None:
+    """Cartes à collectionner (cards.json) : lecture seule, l'import ne les
+    reprend pas — elles se modifient dans cards.json."""
+    from app.domain.services.card_service import CATEGORIES, CHAPTER_LABELS, RARITY_LABELS, effect_text
+    from app.infrastructure.cards.card_loader import list_cards
+
+    cards = list_cards()
+    if not cards:
+        return
+    ws = wb.create_sheet("🎴 Cartes")
+    ws.append(["N°", "Code", "Nom", "Sous-titre", "Catégorie", "Rareté", "Chapitre", "Élément",
+               "Effet", "Texte"])
+    for card in cards:
+        ws.append([card.number, card.code, card.name, card.title, CATEGORIES.get(card.category, card.category),
+                   RARITY_LABELS.get(card.rarity, card.rarity), CHAPTER_LABELS.get(card.chapter, card.chapter),
+                   card.element or "—", effect_text(card), card.flavor])
+    _finalize(ws, freeze="C2")
+
+
 def write_summary_sheet(wb: Workbook) -> None:
     ws = wb.create_sheet("📋 Sommaire", 0)
     ws["A1"] = "🌸 SakuraLeveling V2 — Contenu du jeu"
@@ -499,6 +518,8 @@ def write_summary_sheet(wb: Workbook) -> None:
         ("🌳 Skill Tree", "Tous les nœuds de l'arbre."),
         ("🏷️ Titres", "Titres, conditions et effets."),
         ("🐉 World Bosses", "Bosses + modifiers."),
+        ("🎴 Cartes", "Les 61 cartes à collectionner (Série 1) : rareté, chapitre, effet. Lecture seule : "
+         "elles se modifient dans cards.json."),
         ("⚙️ Calibrage", "Constantes du score de puissance. NE PAS supprimer."),
     ]
     for name, desc in feuilles:
@@ -546,6 +567,7 @@ def main() -> None:
     write_skill_tree_sheet(wb)
     write_titles_sheet(wb)
     write_world_bosses_sheet(wb)
+    write_cards_sheet(wb)
     write_summary_sheet(wb)        # index 0
 
     # Ordre d'affichage : Sommaire, Équipements, Mobs… puis Calibrage en dernier.

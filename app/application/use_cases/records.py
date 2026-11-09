@@ -84,6 +84,7 @@ def _all_entries(session: Session, records: list[rs.RecordDef]) -> dict[str, lis
     entries.update(repo.defi_entries())
     entries[rs.TOWER.code] = repo.tower_entries()
     entries[rs.BOSS.code] = repo.boss_entries()
+    entries[rs.ALBUM.code] = repo.album_entries()
     families = [r.code.removeprefix("chasse_") for r in records if r.category == "chasse"]
     entries.update(repo.hunt_entries(families))
     wanted = {r.code for r in records}

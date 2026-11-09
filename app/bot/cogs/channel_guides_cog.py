@@ -1,4 +1,5 @@
-"""Guides épinglés des salons du world boss et de la tour solo (07/11/2026).
+"""Guides épinglés des salons du world boss, de la tour solo (07/11/2026) et
+des cartes à collectionner (09/11/2026, avec les boutons d'ouverture).
 
 Le premier message de chaque salon, épinglé : ce qu'on y fait, les règles,
 les commandes. Posté s'il n'y est pas, réécrit quand son texte change (un
@@ -37,6 +38,8 @@ class Guide:
     embed: discord.Embed
     banner: tuple[str, str, str, int]
     filename: str
+    #: Boutons sous le guide (persistants), ou rien.
+    view: Callable[[], discord.ui.View] | None = None
 
 
 def current_guides() -> list[Guide]:
@@ -52,6 +55,12 @@ def current_guides() -> list[Guide]:
     if settings.tower_channel_id:
         found.append(Guide(settings.tower_channel_id, guides.build_tower_guide(),
                            guides.TOWER_BANNER, guides.TOWER_FILE))
+    if settings.gambling_channel_id:
+        from app.bot.embeds import card_embeds
+        from app.bot.views.card_views import BoosterButtons
+
+        found.append(Guide(settings.gambling_channel_id, card_embeds.build_cards_guide(guides.GUIDE_FOOTER),
+                           card_embeds.GUIDE_BANNER, card_embeds.GUIDE_FILE, view=BoosterButtons))
     return found
 
 
@@ -99,11 +108,12 @@ async def post_or_update_guide(channel, bot_id: int, guide: Guide,
             return "inchangé"
         image = await asyncio.to_thread(banner, *guide.banner)
         file = discord.File(io.BytesIO(image), filename=guide.filename)
+        extra = {"view": guide.view()} if guide.view is not None else {}
         if message is None:
-            message = await channel.send(embed=guide.embed, file=file)
+            message = await channel.send(embed=guide.embed, file=file, **extra)
             await pin_message(channel, message, bot_id)
             return "posté"
-        await message.edit(embed=guide.embed, attachments=[file])
+        await message.edit(embed=guide.embed, attachments=[file], **extra)
         if not message.pinned:
             await pin_message(channel, message, bot_id)
         return "mis à jour"

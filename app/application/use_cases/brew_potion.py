@@ -138,7 +138,10 @@ class BrewPotionUseCase:
                     player_id, material.id, qty * quantity, commit=False):
                 self.session.rollback()
                 return BrewResult(False, "❌ Il te manque des ingrédients.", line.item_name)
-        bonus = alchemy.bonus_potions(quantity, status.tier.bonus_pct, self.rng)
+        from app.application.use_cases.cards import player_card_bonuses
+
+        bonus_pct = status.tier.bonus_pct + player_card_bonuses(self.session, player_id).brew_bonus_pct
+        bonus = alchemy.bonus_potions(quantity, bonus_pct, self.rng)
         potion = self.items.get_by_code(item_code)
         self.inventory.add_item(player_id, potion.id, quantity + bonus, commit=False)
         if fee:

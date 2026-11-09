@@ -41,6 +41,7 @@ from app.infrastructure.db.models.tutorial_model import PlayerTutorialModel
 from app.infrastructure.db.models.tower_progress_model import PlayerTowerProgressModel
 from app.infrastructure.db.models.records_model import PlayerRecordModel, RecordHolderModel
 from app.infrastructure.db.models.tower_ticket_model import PlayerTowerTicketModel
+from app.infrastructure.db.models.card_model import PlayerCardStateModel
 from app.infrastructure.db.unit_of_work import commit
 from app.infrastructure.db.models.monitoring_model import (
     GameEventModel,
@@ -126,6 +127,9 @@ class ResetPlayerUseCase:
             PlayerCosmeticModel,
             PlayerTowerProgressModel,
             PlayerTowerTicketModel,
+            # Cartes à collectionner : pétales, pitié, booster offert (les
+            # cartes elles-mêmes partent avec l'inventaire).
+            PlayerCardStateModel,
             OfferingContributionModel,
             PlayerTutorialModel,
             # Records : ses exploits, et les records qu'il détenait.

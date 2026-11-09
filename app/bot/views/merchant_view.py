@@ -233,6 +233,11 @@ class MerchantView(discord.ui.View):
         )
         filename = path.rsplit("/", 1)[-1]
         embed = discord.Embed(color=discord.Color.from_rgb(*self.definition.accent))
+        from app.infrastructure.config.settings import settings
+
+        if settings.gambling_channel_id:   # cartes à collectionner : son comptoir
+            embed.description = (f"🎴 Mes **boosters de cartes** ? À mon comptoir de "
+                                 f"<#{settings.gambling_channel_id}> (`/booster`) — le premier est offert.")
         embed.set_image(url=f"attachment://{filename}")
         embeds, files = [embed], [discord.File(path, filename=filename)]
         if self._preview is not None:

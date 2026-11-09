@@ -56,6 +56,47 @@ def seed_items() -> None:
     print("Items seedés.")
 
 
+def seed_cards() -> None:
+    """Les cartes à collectionner (`cards.json`) : un objet d'inventaire par
+    version — normale et brillante, la mythique n'existe qu'en brillante."""
+    with get_db_session() as session:
+        seed_card_items(session)
+    print("Cartes seedées.")
+
+
+def seed_card_items(session) -> None:
+    """Crée ou met à jour les objets des cartes dans `session`."""
+    from app.domain.services.card_service import effect_text
+    from app.infrastructure.cards.card_loader import item_code, item_name, list_cards, variants
+    from app.shared.enums import ItemCategory
+
+    item_repository = ItemRepository(session)
+    for card in list_cards():
+        for brillante in variants(card):
+            payload = dict(
+                code=item_code(card.code, brillante),
+                name=item_name(card, brillante),
+                description=effect_text(card)[:255],
+                category=ItemCategory.CARD.value,
+                rarity=card.rarity,
+                stackable=True,
+                max_stack=None,
+                sell_price=0,
+                buy_price=None,
+                icon=None,
+                stat_bonuses={"card": card.code, "brillante": brillante},
+                equipment_slot=None,
+                requires_two_hands=False,
+                family="",
+                level_requirement=1,
+                passive="",
+            )
+            if item_repository.get_by_code(payload["code"]) is None:
+                item_repository.create(**payload)
+            else:
+                item_repository.update_by_code(**payload)
+
+
 def seed_mobs() -> None:
     mobs = load_json("mobs.json")
 
@@ -217,6 +258,7 @@ def seed_shop_items() -> None:
 
 def main() -> None:
     seed_items()
+    seed_cards()
     seed_mobs()
     seed_quests()
     seed_professions()

@@ -74,6 +74,17 @@ def tower_day(now: datetime | None = None) -> date:
     return (now or datetime.now(UTC)).astimezone(_PARIS).date()
 
 
+def _daily_reward(session: Session, player_id: int, best: int) -> ts.TowerReward:
+    """Récompense du jour, carte de Thalos comprise (cartes à collectionner)."""
+    from dataclasses import replace
+
+    from app.application.use_cases.cards import player_card_bonuses
+
+    reward = ts.daily_reward(best, tower_loader.floor_material(best))
+    pct = player_card_bonuses(session, player_id).tower_daily_pct if reward.gold else 0
+    return replace(reward, gold=round(reward.gold * (1 + pct / 100))) if pct else reward
+
+
 def status(session: Session, profile: PlayerProfile, now: datetime | None = None) -> TowerStatus:
     player_id = profile.player.id
     progress = TowerRepository(session).get_or_create(player_id)
@@ -84,7 +95,7 @@ def status(session: Session, profile: PlayerProfile, now: datetime | None = None
         floor=tower_loader.get_floor(nxt) if nxt else None,
         tickets=TowerTicketsUseCase(session).status(player_id, now),
         daily_claimed=progress.daily_claimed_on == tower_day(now),
-        daily=ts.daily_reward(progress.best_floor, tower_loader.floor_material(progress.best_floor)),
+        daily=_daily_reward(session, player_id, progress.best_floor),
     )
 
 
@@ -132,7 +143,7 @@ def claim_daily(session: Session, profile: PlayerProfile, now: datetime | None =
     with atomic(session):
         repo = TowerRepository(session)
         best = repo.get_or_create(player_id).best_floor
-        reward = ts.daily_reward(best, tower_loader.floor_material(best))
+        reward = _daily_reward(session, player_id, best)
         if reward.is_empty:
             raise TowerError("🗼 Franchis au moins un étage pour toucher la récompense du jour.")
         if not repo.claim_daily(player_id, tower_day(now)):

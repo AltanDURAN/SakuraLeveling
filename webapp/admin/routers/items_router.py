@@ -121,7 +121,7 @@ def _parse_stat_bonuses(form_data: dict[str, str]) -> dict[str, int]:
 def _labels_ctx() -> dict:
     """Maps FR + icônes + couleurs injectées dans la page cartes."""
     return {
-        "categories": [c.value for c in ItemCategory],
+        "categories": [c.value for c in ItemCategory if c is not ItemCategory.CARD],
         "rarities": [r.value for r in ItemRarity],
         # Un item déclare un TYPE d'emplacement (tete, corps, accessoire,
         # arme), jamais un emplacement physique numéroté : c'est le use case
@@ -201,7 +201,7 @@ def _validate_item_form(form_data: dict[str, str], require_code: bool) -> dict[s
         errors["code"] = "Code requis."
     if not form_data.get("name", "").strip():
         errors["name"] = "Nom requis."
-    if form_data.get("category", "").strip() not in {c.value for c in ItemCategory}:
+    if form_data.get("category", "").strip() not in {c.value for c in ItemCategory if c is not ItemCategory.CARD}:
         errors["category"] = "Catégorie invalide."
     return errors
 
@@ -214,7 +214,8 @@ async def items_list(
     err: str | None = None,
 ):
     with get_db_session() as session:
-        items = ItemRepository(session).list_all()
+        # Les cartes à collectionner se gèrent dans cards.json, pas ici.
+        items = [i for i in ItemRepository(session).list_all() if i.category != ItemCategory.CARD.value]
     items.sort(key=lambda i: (i.category, i.name))
 
     cards = []
@@ -259,7 +260,7 @@ def _image_version(code: str) -> int:
 @router.get("/images", response_class=HTMLResponse)
 async def items_images(request: Request, user: AdminUser = Depends(require_admin)):
     with get_db_session() as session:
-        items = ItemRepository(session).list_all()
+        items = [i for i in ItemRepository(session).list_all() if i.category != ItemCategory.CARD.value]
     order = {c.value: i for i, c in enumerate(ItemCategory)}
     items.sort(key=lambda i: (order.get(i.category, 99), i.name))
     tiles = [{"code": it.code, "name": it.name, "category": it.category,

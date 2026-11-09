@@ -42,7 +42,7 @@ TABS = (
 #: différentes auraient la même couleur de part et d'autre de zéro).
 GAIN_GROUPS = (("Combats", ("combat",), 1), ("Quêtes", ("quete",), 2), ("Daily", ("daily",), 3),
                ("Raid, tour, défis, événements", ("raid", "tour", "defi", "evenement"), 4))
-SPEND_GROUPS = (("Sorn", ("boutique",), 5), ("Fusion", ("fusion",), 6), ("Potions", ("alchimie",), 7),
+SPEND_GROUPS = (("Sorn (boutique, boosters)", ("boutique", "cartes"), 5), ("Fusion", ("fusion",), 6), ("Potions", ("alchimie",), 7),
                 ("Voyante, offrande, taxe, événements", ("voyante", "offrande", "taxe", "evenement"), 8))
 GOLD_SLOTS = {code: slot for _, codes, slot in GAIN_GROUPS + SPEND_GROUPS for code in codes}
 RARITY_CLASS = {"Commun": "common", "Peu commun": "uncommon", "Rare": "rare", "Épique": "epic",

@@ -52,8 +52,13 @@ class RevealElementTalentUseCase:
         revealed_codes = self.affinities.revealed_elements(player_id)
         profile = self.players.get_profile_by_player_id(player_id)
         codes = [e.value for e in ALL_ELEMENTS]
+        price = paper_price(len(revealed_codes), self.prices)
+        if price:   # carte d'Ysaline (cartes à collectionner)
+            from app.application.use_cases.cards import player_card_bonuses
+
+            price = round(price * (1 - player_card_bonuses(self.session, player_id).seer_discount_pct / 100))
         return PaperStatus(
-            next_price=paper_price(len(revealed_codes), self.prices),
+            next_price=price,
             unrevealed=tuple(c for c in codes if c not in revealed_codes),
             revealed={c: talents[c] for c in codes if c in revealed_codes and c in talents},
             gold=profile.resources.gold if profile else 0,

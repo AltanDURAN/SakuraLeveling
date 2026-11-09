@@ -636,12 +636,26 @@ class LaunchPartyFightWorldBossUseCase:
             adds=modifiers.get("adds"),
             elemental_out=elemental_out, elemental_in=elemental_in, infusion=infused,
         )
+        # Cartes à collectionner : la carte du boss, + dégâts contre lui et ses
+        # gardes (seuls effets de carte au raid : les gardes portent des codes
+        # de monstres, leurs cartes de monstre ne comptent pas ici).
+        from app.application.use_cases.cards import player_card_bonuses
+        from app.domain.services.card_service import with_card_bonuses
+        from app.domain.services.title_bonus_service import TitleBonuses
+
+        session = self.world_boss_repository.session
+        card_titles = {
+            payload["player_id"]: with_card_bonuses(
+                TitleBonuses(), player_card_bonuses(session, payload["player_id"]), boss=True)
+            for payload in party
+        }
         battle_result = PartyCombatService().fight_party_vs_mobs(
             party, enemies,
             skill_loadouts_by_player=skill_loadouts,
             max_turns=BOSS_FIGHT_MAX_TURNS,
             passives_by_player=passives_by_player,
             tactics_by_player=tactics_by_player,
+            title_bonuses_by_player=card_titles,
         )
 
         # Les PV restants du boss = résultat réel de la simulation (intègre

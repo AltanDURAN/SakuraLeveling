@@ -64,6 +64,8 @@ from app.infrastructure.db.repositories.player_skill_allocation_repository impor
 from app.infrastructure.db.repositories.player_title_repository import PlayerTitleRepository
 from app.infrastructure.db.repositories.weekly_quest_repository import WeeklyQuestRepository
 from app.infrastructure.db.session import get_db_session
+from app.application.use_cases.cards import player_card_bonuses
+from app.domain.services.card_service import stochastic_round, with_card_bonuses
 from app.infrastructure.skill_tree.skill_tree_loader import (
     get_definition as get_skill_tree_definition,
 )
@@ -294,7 +296,9 @@ class EncounterService:
                     d for d in (get_title_def(code) for code in title_codes) if d is not None
                 ]
                 title_bonuses = title_bonus_service.aggregate(title_defs)
-                title_bonuses_by_player[participant.player_id] = title_bonuses
+                # Cartes à collectionner : + dégâts contre CE monstre (zone seulement).
+                title_bonuses_by_player[participant.player_id] = with_card_bonuses(
+                    title_bonuses, player_card_bonuses(session, participant.player_id))
 
                 set_bonuses = resolve_set_bonuses(equipped_items, profile.player.panoplie_bonus)
                 # Élixirs d'Elna compris : un combat de zone est du terrain.
@@ -584,9 +588,16 @@ class EncounterService:
                 # Bonus du titre Farmer Fou (+1% gold/xp). N'affecte que le
                 # détenteur — les coéquipiers n'en bénéficient pas. Titres des
                 # records : de l'or seulement (+5 / +3 / +1 %), additionné.
-                title_bonuses = resolve_title_bonuses(session, participant.player_id)
-                farmer_pct = title_bonuses.gold_xp_bonus_pct / 100.0
-                records_pct = title_bonuses.gold_bonus_pct / 100.0
+                # Cartes à collectionner : butin contre CE monstre (comme le
+                # Chasseur légendaire), XP / or / matériaux / pièces / essences.
+                cards = player_card_bonuses(session, participant.player_id)
+                title_bonuses = with_card_bonuses(
+                    resolve_title_bonuses(session, participant.player_id), cards)
+                pack_pct = cards.pack_reward_pct if size > 1 else 0
+                # Tous ces % s'additionnent (Farmer Fou, records, cartes).
+                xp_bonus_pct = (title_bonuses.gold_xp_bonus_pct + cards.xp_pct + pack_pct) / 100.0
+                gold_bonus_pct = (title_bonuses.gold_xp_bonus_pct + title_bonuses.gold_bonus_pct
+                                  + cards.gold_pct + pack_pct) / 100.0
 
                 # Coup de pouce des débuts (cf. ProgressionService).
                 level_before = self._level_of(player_repository, participant.player_id)
@@ -594,7 +605,7 @@ class EncounterService:
 
                 base_xp = xp_per_player.get(participant.player_id, 0)
                 xp = round(
-                    base_xp * (1 + bonuses.xp_drop_percent) * (1 + farmer_pct) * blessed_xp * newcomer
+                    base_xp * (1 + bonuses.xp_drop_percent) * (1 + xp_bonus_pct) * blessed_xp * newcomer
                 )
 
                 # L'XP est gagnée par TOUS les participants, morts inclus
@@ -629,7 +640,7 @@ class EncounterService:
 
                 base_gold = gold_per_player.get(participant.player_id, 0)
                 gold = round(
-                    base_gold * (1 + bonuses.gold_drop_percent) * (1 + farmer_pct + records_pct)
+                    base_gold * (1 + bonuses.gold_drop_percent) * (1 + gold_bonus_pct)
                 )
                 if gold > 0:
                     player_repository.add_gold(participant.player_id, gold, source="combat")
@@ -657,7 +668,8 @@ class EncounterService:
                         chasseur_mult = title_bonuses.drop_rate_multiplier_for_mob(definition.code)
                         for item_code, quantity in loot_service.generate_loot(
                             definition,
-                            drop_rate_multiplier=bonuses.drop_rate_multiplier * chasseur_mult * lunar_rewards,
+                            drop_rate_multiplier=(bonuses.drop_rate_multiplier * chasseur_mult * lunar_rewards
+                                                  * (1 + cards.materials_pct / 100)),
                             family_drops=get_family_drops(),
                         ):
                             dropped[item_code] = dropped.get(item_code, 0) + quantity
@@ -668,7 +680,8 @@ class EncounterService:
                         # Équipement v2 : 0 ou 1 pièce, celle que porte le monstre.
                         gear_drop += self._roll_gear_drop(
                             session, participant.player_id, definition,
-                            drop_bonus=bonuses.drop_rate_multiplier * chasseur_mult * blessed_gear,
+                            drop_bonus=(bonuses.drop_rate_multiplier * chasseur_mult * blessed_gear
+                                        * (1 + cards.gear_drop_pct / 100)),
                             drop_rate_multiplier=lunar_rewards,
                         )
                         # Essences élémentaires : drop selon la zone (nombre tiré
@@ -682,7 +695,9 @@ class EncounterService:
                             progression_service=affinity_progression,
                             player_id=participant.player_id,
                             mob=definition,
-                            essences_per_kill=round(_random.randint(essences_min, essences_max) * lunar_essences),
+                            essences_per_kill=stochastic_round(
+                                _random.randint(essences_min, essences_max) * lunar_essences
+                                * (1 + cards.essence_pct / 100)),
                             element_override=getattr(state, "element", "") or "",
                             # Chasseur d'essences (pièce épique et plus) : +1 par kill.
                             bonus_essences=essence_hunter,
