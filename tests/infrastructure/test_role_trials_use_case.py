@@ -124,3 +124,53 @@ def test_classement_de_la_semaine_en_cours(session):
         role_trial_repository=repo,
     ).execute("defi_tank")
     assert [(e.player_id, e.formatted_value) for e in board.entries] == [(alice.player.id, "4 321")]
+
+
+def test_un_meilleur_score_obtenu_plus_tard_est_bien_enregistre(tmp_path):
+    """Avant le 09/11/2026, rien ne validait la transaction après le premier
+    essai d'un rôle : le « nouveau record » s'affichait puis disparaissait."""
+    from app.infrastructure.db.models.progression_model import PlayerProgressionModel
+
+    engine = create_engine(f"sqlite:///{tmp_path / 'defis.db'}")
+    Base.metadata.create_all(engine)
+    make_session = sessionmaker(bind=engine)
+    try:
+        with make_session() as s:
+            pid = _player(s, 1).player.id
+        for points in (0, 20):            # plus d'attaque au second essai
+            with make_session() as s:
+                s.query(PlayerProgressionModel).filter_by(player_id=pid).update({"points_attack": points})
+                s.commit()
+                profile = PlayerRepository(s).get_profile_by_player_id(pid)
+                outcome = role_trials.run_attempt(s, profile, "dps", NOW)
+        assert outcome.improved and outcome.attempts == 2
+        with make_session() as s:         # relu dans une autre session : bien validé
+            assert RoleTrialRepository(s).player_day(pid, rts.trial_day(NOW)) == {"dps": (outcome.score, 2)}
+    finally:
+        engine.dispose()
+
+
+def test_le_premier_defi_de_la_journee_rapporte_un_peu_d_or_une_fois(session):
+    from app.infrastructure.db.models.monitoring_model import GameEventModel
+    from app.infrastructure.db.repositories.player_career_stats_repository import (
+        PlayerCareerStatsRepository,
+    )
+
+    profile = _player(session, 1, level=30)
+    pid = profile.player.id
+
+    def gold() -> int:
+        return PlayerRepository(session).get_profile_by_player_id(pid).resources.gold
+
+    before = gold()
+    assert role_trials.run_attempt(session, profile, "soutien", NOW).gold == 5 * 30
+    assert role_trials.run_attempt(session, profile, "soutien", NOW).gold == 0   # même rôle
+    assert role_trials.run_attempt(session, profile, "dps", NOW).gold == 0       # autre rôle
+    assert gold() == before + 150
+    tomorrow = NOW + timedelta(days=1)
+    assert role_trials.run_attempt(session, profile, "tank", tomorrow).gold == 150
+    assert gold() == before + 300
+    # Or étiqueté « défi » dans la surveillance, compté dans l'or amassé.
+    assert [e.ref for e in session.query(GameEventModel).filter_by(kind="gold", player_id=pid)] == [
+        "defi", "defi"]
+    assert PlayerCareerStatsRepository(session).get_or_create(pid).gold_earned_total == 300

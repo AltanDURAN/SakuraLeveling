@@ -2,8 +2,10 @@
 l'auteur). Pleine lune, lune de sang, nuit noire et éclipses changent les
 monstres des zones (règles : `lunar_service`, ciel : `astronomy`).
 
-Annonces dans le salon général et les salons de zone : un rappel quelques
-heures avant (sauf la nuit noire), le lever de l'événement, sa fin.
+Annonces dans le salon GÉNÉRAL seulement (09/11/2026, demande de l'auteur :
+plus dans les salons de zone) : un rappel quelques heures avant (sauf la nuit
+noire), le lever de l'événement, sa fin. Dans une zone, chaque monstre porte
+déjà la mention de l'événement.
 """
 
 from __future__ import annotations
@@ -20,7 +22,6 @@ from discord.ext import commands, tasks
 from app.bot.cogs._mixins import BetaChannelOnlyMixin
 from app.domain.services import astronomy, lunar_service
 from app.infrastructure.config.settings import settings
-from app.infrastructure.encounters.farm_zone_loader import list_zone_channels
 from app.infrastructure.pacing.pacing_loader import get_pacing
 
 _logger = logging.getLogger("sakura.lunar")
@@ -109,18 +110,16 @@ class LunarCog(BetaChannelOnlyMixin, commands.Cog):
     def cog_unload(self) -> None:
         self.sky_loop.cancel()
 
-    async def _announce(self, embed: discord.Embed, zones: bool) -> None:
-        targets = set(list_zone_channels()) if zones else set()
-        if settings.rank_announce_channel_id:
-            targets.add(settings.rank_announce_channel_id)
-        for channel_id in targets:
-            channel = self.bot.get_channel(channel_id)
-            if channel is None:
-                continue
-            try:
-                await channel.send(embed=embed)
-            except discord.HTTPException:
-                _logger.warning("annonce lunaire impossible dans %s", channel_id)
+    async def _announce(self, embed: discord.Embed) -> None:
+        """Dans le salon général seulement."""
+        channel_id = settings.rank_announce_channel_id
+        channel = self.bot.get_channel(channel_id) if channel_id else None
+        if channel is None:
+            return
+        try:
+            await channel.send(embed=embed)
+        except discord.HTTPException:
+            _logger.warning("annonce lunaire impossible dans %s", channel_id)
 
     def _once(self, event: lunar_service.LunarEvent, phase: str) -> bool:
         key = (event.code, event.start.isoformat(), phase)
@@ -142,16 +141,16 @@ class LunarCog(BetaChannelOnlyMixin, commands.Cog):
             if previous is not None and (active is None or active.code != previous.code
                                          or active.start != previous.start):
                 if self._once(previous, "end"):
-                    await self._announce(build_event_embed(previous, "end"), zones=False)
+                    await self._announce(build_event_embed(previous, "end"))
             self._current = active
             if active is not None and (not first or now - active.start < LATE_ANNOUNCE) \
                     and (previous is None or previous.start != active.start or previous.code != active.code):
                 if self._once(active, "start"):
-                    await self._announce(build_event_embed(active, "start"), zones=True)
+                    await self._announce(build_event_embed(active, "start"))
             for event in coming:
                 if (event.code != "nouvelle_lune" and now < event.start <= now + REMINDER_BEFORE
                         and self._once(event, "soon")):
-                    await self._announce(build_event_embed(event, "soon"), zones=False)
+                    await self._announce(build_event_embed(event, "soon"))
         except Exception:  # noqa: BLE001
             _logger.exception("boucle lunaire")
 

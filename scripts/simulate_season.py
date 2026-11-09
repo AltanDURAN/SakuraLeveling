@@ -6,8 +6,8 @@ jour et mesure :
 
   • les jours pour atteindre les niveaux clés, et le niveau atteint à J1, J7,
     J30, J90, J180, J365 ;
-  • l'or gagné par source (combats, quêtes, raid, /daily), comparé au prix
-    des fusions d'une tenue complète.
+  • l'or gagné par source (combats, quêtes, raid, /daily, premier défi du
+    jour), comparé au prix des fusions d'une tenue complète.
 
 Deux mondes sont simulés :
   • « contenu actuel » : les zones et monstres de mobs.json / farm_zones.json,
@@ -40,6 +40,7 @@ from app.domain.services.progression_service import (
     newcomer_xp_multiplier,
 )
 from app.domain.services.daily_reward_service import daily_gold as daily_reward_gold
+from app.domain.services.role_trial_service import first_of_day_gold
 from app.domain.services.quest_reward_service import scale_reward
 from app.infrastructure.pacing.pacing_loader import get_pacing
 
@@ -60,6 +61,7 @@ WEEKLY_QUESTS_DONE = 2     # sur 3 tirées chaque lundi
 RAID_XP_BASE = 50          # CompleteWorldBossUseCase.XP_PER_TIER (palier 1)
 RAID_GOLD_BASE = 50 + 200 * 0.25  # base + part moyenne du pool d'un raid à 4
 # /daily : règle réelle du jeu (daily_reward_service), joueur assidu (pas de jour manqué).
+# Défi : il relève chaque jour au moins un défi (/defi) — l'or du premier.
 
 
 def _load(name: str):
@@ -146,7 +148,7 @@ def simulate(world: World, minutes_per_day: float, minutes_per_kill: float, days
     kills_per_day = minutes_per_day / minutes_per_kill
 
     level, xp, streak = 1, 0, 0
-    gold = {"combats": 0.0, "quêtes": 0.0, "raid": 0.0, "daily": 0.0}
+    gold = {"combats": 0.0, "quêtes": 0.0, "raid": 0.0, "daily": 0.0, "défi": 0.0}
     milestones = (5, 10, 25, 50, 75, 80, 100)
     days_to: dict[int, int | None] = {m: None for m in milestones}
     checkpoints = (1, 7, 30, 90, 180, 365)
@@ -167,6 +169,7 @@ def simulate(world: World, minutes_per_day: float, minutes_per_kill: float, days
             gold["raid"] += scale_reward(round(RAID_GOLD_BASE), level, reference_level=1)
         streak += 1
         gold["daily"] += daily_reward_gold(level, streak)
+        gold["défi"] += first_of_day_gold(level)
 
         result = prog.apply_level_up(
             current_level=level, current_xp=xp, gained_xp=int(gained),

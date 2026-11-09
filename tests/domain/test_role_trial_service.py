@@ -96,3 +96,12 @@ def test_un_essai_tank_ne_soigne_pas():
     run = rts.run_trial("tank", variant, player_id=1, name="p", stats=st, passives=healer, seed=1)
     logs = " ".join(" ".join(t.player_actions) for t in run.result.turn_logs)
     assert "💚" not in logs and run.score > 0
+
+
+def test_le_premier_defi_de_la_journee_rapporte_un_peu_d_or():
+    from app.domain.services.daily_reward_service import daily_gold
+
+    assert rts.first_of_day_gold(20) == 100
+    assert rts.first_of_day_gold(0) == rts.FIRST_OF_DAY_GOLD_PER_LEVEL     # niveau 1 au moins
+    # « Petite » : au plus la moitié de la solde /daily du même niveau, sans série.
+    assert all(rts.first_of_day_gold(lv) * 2 <= daily_gold(lv, 0) for lv in (1, 20, 50, 100))

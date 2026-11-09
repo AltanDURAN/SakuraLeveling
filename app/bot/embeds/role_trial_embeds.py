@@ -8,6 +8,7 @@ import discord
 from discord.utils import escape_markdown
 
 from app.domain.services import role_trial_service as rts
+from app.shared.enums import GOLD_EMOJI
 from app.shared.formatters import format_int
 
 _MEDALS = {1: "🥇", 2: "🥈", 3: "🥉"}
@@ -33,12 +34,26 @@ def _place(place: int) -> str:
     return "1er" if place == 1 else f"{place}e"
 
 
-def build_day_embed(day: date, mine: dict | None = None, week: dict | None = None) -> discord.Embed:
+def first_of_day_line(mine: dict | None = None, first_gold: int | None = None) -> str:
+    """La petite récompense du premier défi de la journée : la règle (annonce
+    publique), ce qu'elle rapporte au joueur, ou qu'il l'a déjà prise."""
+    if mine:
+        return "✅ Récompense du premier défi de la journée prise : à demain !"
+    if first_gold:
+        return f"🎁 Ton premier défi de la journée te rapporte **{format_int(first_gold)}** {GOLD_EMOJI}."
+    return (f"🎁 Le premier défi de ta journée, quel que soit le rôle, rapporte un peu d'or "
+            f"({rts.FIRST_OF_DAY_GOLD_PER_LEVEL} × ton niveau).")
+
+
+def build_day_embed(day: date, mine: dict | None = None, week: dict | None = None,
+                    first_gold: int | None = None) -> discord.Embed:
     """Programme du jour ; avec `mine` ({rôle: (score, essais, place, total)})
-    et `week` ({clé: (place, score) | None}), les scores du joueur."""
+    et `week` ({clé: (place, score) | None}), les scores du joueur ;
+    `first_gold` = ce que lui rapporterait son premier défi de la journée."""
     embed = discord.Embed(
         title=f"🎯 Défis du jour — {_day_label(day)}",
-        description="Trois épreuves, une par rôle : `/defi role:` pour tenter ta chance.",
+        description=("Trois épreuves, une par rôle : `/defi role:` pour tenter ta chance.\n"
+                     + first_of_day_line(mine, first_gold)),
         color=discord.Color.teal(),
     )
     for role in rts.ROLES:
@@ -83,6 +98,8 @@ def build_attempt_embed(outcome) -> discord.Embed:
         lines.append(f"Ton record du jour reste **{format_int(outcome.best)}**.")
     lines.append(f"Place du jour : **{_place(outcome.day_rank)}** sur {outcome.day_count} · "
                  f"essai n°{outcome.attempts}")
+    if outcome.gold:
+        lines.append(f"🎁 Premier défi de la journée : **+{format_int(outcome.gold)}** {GOLD_EMOJI}")
     embed = discord.Embed(
         title=f"{rts.ROLE_LABELS[role]} — {variant.name}",
         description="\n".join(lines),

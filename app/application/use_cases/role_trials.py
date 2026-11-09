@@ -38,11 +38,13 @@ class AttemptOutcome:
     day_count: int
     actions: int
     survived: bool
+    gold: int = 0           # récompense du premier défi de la journée (0 sinon)
 
 
 def run_attempt(session: Session, profile: PlayerProfile, role: str, now: datetime) -> AttemptOutcome:
     """Joue un essai DÉTERMINISTE (même build ⇒ même score) et garde le
-    meilleur score du jour. L'appelant vérifie `rts.is_closed(now)`."""
+    meilleur score du jour ; le premier défi de la journée rapporte un peu
+    d'or. L'appelant vérifie `rts.is_closed(now)`."""
     player_id = profile.player.id
     day = rts.trial_day(now)
     variant = rts.variant_of_day(day, role)
@@ -55,19 +57,41 @@ def run_attempt(session: Session, profile: PlayerProfile, role: str, now: dateti
         seed=rts.attempt_seed(day, role, player_id),
     )
     repo = RoleTrialRepository(session)
-    record_event(session, kinds.ROLE_TRIAL, player_id=player_id, ref=role, qty=round(run.score),
-                 data={"variant": variant.code})
-    best, improved, attempts = repo.record(player_id, day, role, variant.code, run.score)
-    if attempts == 1:   # défi RELEVÉ : le premier essai du rôle aujourd'hui
-        _quest_hook(session, player_id, role)
-    board = repo.day_scores(day, role)
+    # Tout ou rien, et VALIDÉ à la sortie. ⚠️ Avant le 09/11/2026, seule la
+    # quête du premier essai d'un rôle validait la transaction : un meilleur
+    # score obtenu plus tard dans la journée s'affichait (« nouveau record »)
+    # mais n'était jamais enregistré — la semaine comptait le premier essai.
+    with atomic(session):
+        record_event(session, kinds.ROLE_TRIAL, player_id=player_id, ref=role, qty=round(run.score),
+                     data={"variant": variant.code})
+        best, improved, attempts = repo.record(player_id, day, role, variant.code, run.score)
+        gold = 0
+        if attempts == 1:   # défi RELEVÉ : le premier essai du rôle aujourd'hui
+            gold = _first_of_day_reward(session, profile, day)
+            _quest_hook(session, player_id, role)
+        board = repo.day_scores(day, role)
     rank = next((i + 1 for i, (pid, _) in enumerate(board) if pid == player_id), len(board))
     return AttemptOutcome(role, variant, run.score, best, improved, attempts, rank,
-                          len(board), run.actions, run.survived)
+                          len(board), run.actions, run.survived, gold)
+
+
+def _first_of_day_reward(session: Session, profile: PlayerProfile, day: date) -> int:
+    """Le PREMIER défi de la journée, tous rôles confondus, rapporte un peu
+    d'or. Compté APRÈS l'écriture de l'essai, dans la même transaction : deux
+    essais lancés en même temps ne sont pas payés deux fois (SQLite n'a qu'un
+    écrivain à la fois, le second voit l'essai du premier)."""
+    player_id = profile.player.id
+    if len(RoleTrialRepository(session).player_day(player_id, day)) != 1:
+        return 0
+    gold = rts.first_of_day_gold(profile.progression.level)
+    PlayerRepository(session).add_gold(player_id, gold, source="defi")
+    PlayerCareerStatsRepository(session).add(player_id, gold_earned=gold)
+    return gold
 
 
 def _quest_hook(session: Session, player_id: int, role: str) -> None:
-    """Quêtes « relever un défi » (quotidienne et hebdo) — au mieux."""
+    """Quêtes « relever un défi » (quotidienne et hebdo) — au mieux, dans un
+    point de sauvegarde : une quête en panne n'emporte ni l'essai ni l'or."""
     import logging
 
     try:
@@ -76,8 +100,9 @@ def _quest_hook(session: Session, player_id: int, role: str) -> None:
         from app.infrastructure.db.repositories.daily_quest_repository import DailyQuestRepository
         from app.infrastructure.db.repositories.weekly_quest_repository import WeeklyQuestRepository
 
-        DailyQuestProgressService(DailyQuestRepository(session)).on_role_trial(player_id, role)
-        WeeklyQuestProgressService(WeeklyQuestRepository(session)).on_role_trial(player_id, role)
+        with session.begin_nested():
+            DailyQuestProgressService(DailyQuestRepository(session)).on_role_trial(player_id, role)
+            WeeklyQuestProgressService(WeeklyQuestRepository(session)).on_role_trial(player_id, role)
     except Exception:  # noqa: BLE001 — une quête ne doit jamais bloquer un défi
         logging.getLogger(__name__).warning("quest hook (défi) failed", exc_info=True)
 

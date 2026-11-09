@@ -584,6 +584,8 @@ LE MANA DES COMPÉTENCES 💧
     • Essais illimités, mais même build = même score : pour faire mieux,
       change d'équipement, d'arbre, de points de stats ou de /tactique.
       Ton meilleur score du jour est gardé.
+    • Ton PREMIER défi de la journée, quel que soit le rôle et le score, te
+      rapporte un peu d'or : 5 × ton niveau (une fois par jour).
     • Pas de coût en mana dans les défis : on y compare les rôles, pas les
       réserves.
     • La semaine (lundi → dimanche) compte tes 5 meilleurs jours, par rôle.
@@ -645,9 +647,10 @@ LE MANA DES COMPÉTENCES 💧
                          ×5, apparitions ×2.
         🌞 Éclipse solaire  une éclipse de Soleil visible de Paris : ×5
                          plus forts, gains ×10, essences ×10, apparitions ×3.
-    Le bot prévient quelques heures avant et au lever de l'événement. À
-    plusieurs, c'est le moment de farmer : seul, un monstre de pleine lune
-    est souvent trop fort. (Les effets exacts sont réglés par les admins.)
+    Le bot prévient dans le salon général quelques heures avant, au lever
+    de l'événement et à sa fin. À plusieurs, c'est le moment de farmer :
+    seul, un monstre de pleine lune est souvent trop fort. (Les effets
+    exacts sont réglés par les admins.)
 
 /offrande
     L'OFFRANDE COMMUNE : tout le serveur verse de l'or dans une même jauge.

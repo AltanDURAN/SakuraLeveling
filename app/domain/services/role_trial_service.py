@@ -22,7 +22,10 @@ Décidé avec l'auteur le 25/10/2026 (étape 2 de la refonte des rôles) :
     meilleur de la semaine (les scores bruts des rôles n'ont pas la même
     échelle : ~20 000 de dégâts contre ~5 000 de soins) ;
   • résultats le dimanche à `RESULTS_HOUR` h (Paris) : titres exclusifs de la
-    semaine et or pour le podium (`REWARD_GOLD_PER_LEVEL` × niveau).
+    semaine et or pour le podium (`REWARD_GOLD_PER_LEVEL` × niveau) ;
+  • le PREMIER défi relevé de la journée, quel que soit le rôle, rapporte un
+    peu d'or (`FIRST_OF_DAY_GOLD_PER_LEVEL` × niveau — 09/11/2026, demande de
+    l'auteur), quel que soit le score.
 
 Mesuré avec les builds de rôle (`scripts/reference_roles.py`) : chaque
 spécialiste gagne SON épreuve, dans chaque variante, aux niveaux 30 / 60 / 100
@@ -61,6 +64,11 @@ RESULTS_HOUR = 20
 BEST_DAYS = 5
 #: Or du podium de chaque classement, × niveau du joueur.
 REWARD_GOLD_PER_LEVEL: tuple[int, ...] = (100, 60, 30)
+#: Petite récompense du PREMIER défi de la journée (09/11/2026, demande de
+#: l'auteur), × niveau du joueur : autant que la quête « Routine matinale »,
+#: ~2 victoires de zone à son niveau. Simulé (`simulate_season`) : 4 % de
+#: l'or d'une saison, pour qui en relève un chaque jour.
+FIRST_OF_DAY_GOLD_PER_LEVEL = 5
 
 #: Titres exclusifs de la semaine (cf. titles.json).
 WEEKLY_TITLES: dict[str, str] = {
@@ -261,6 +269,11 @@ def reward_gold(place: int, level: int) -> int:
     if place >= len(REWARD_GOLD_PER_LEVEL):
         return 0
     return REWARD_GOLD_PER_LEVEL[place] * max(1, int(level))
+
+
+def first_of_day_gold(level: int) -> int:
+    """Or du premier défi relevé dans la journée (une fois par jour)."""
+    return FIRST_OF_DAY_GOLD_PER_LEVEL * max(1, int(level))
 
 
 # ------------------------------------------------------------- un essai --

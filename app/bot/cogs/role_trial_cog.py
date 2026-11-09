@@ -4,7 +4,8 @@ Remplace les duels JcJ (décision de l'auteur, 25/10/2026). Règles dans
 `role_trial_service`, persistance et clôture dans `use_cases/role_trials`.
 
   • `/defi`            : programme du jour, tes scores, ta semaine ;
-  • `/defi role:<…>`   : un essai (résultat immédiat, déterministe) ;
+  • `/defi role:<…>`   : un essai (résultat immédiat, déterministe) — le
+                         premier de la journée rapporte un peu d'or ;
   • minuit (Paris)     : programme du jour posté dans le salon des défis ;
   • dimanche 20 h      : clôture — or du podium, titres de la semaine, annonce.
 """
@@ -69,7 +70,8 @@ class RoleTrialCog(BetaChannelOnlyMixin, commands.Cog):
                 mine[role] = (score, attempts, place, len(board))
             standings = role_trials.week_standings(session, rts.week_start(day))
             week = role_trials.player_week(standings, pid)
-        return day, mine, week, rts.is_closed(now)
+            first_gold = rts.first_of_day_gold(profile.progression.level)
+        return day, mine, week, first_gold, rts.is_closed(now)
 
     def _attempt(self, user, role: str):
         now = datetime.now(UTC)
@@ -90,8 +92,8 @@ class RoleTrialCog(BetaChannelOnlyMixin, commands.Cog):
                    role: app_commands.Choice[str] | None = None) -> None:
         await interaction.response.defer()
         if role is None:
-            day, mine, week, closed = await asyncio.to_thread(self._overview, interaction.user)
-            embed = build_day_embed(day, mine, week)
+            day, mine, week, first_gold, closed = await asyncio.to_thread(self._overview, interaction.user)
+            embed = build_day_embed(day, mine, week, first_gold)
             if closed:
                 embed.description = ("🏁 Les résultats de la semaine sont tombés : "
                                      "nouveaux défis à minuit.")

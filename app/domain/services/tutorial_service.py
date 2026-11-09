@@ -116,7 +116,8 @@ STEPS: tuple[TutorialStep, ...] = (
         "quetes", "📋", "Contrats et défis",
         "La guilde affiche chaque jour des **quêtes** taillées pour toi : trois par jour, trois par "
         "semaine. Il y a aussi les **défis** de rôle — DPS, Tank, Soutien — où tout le serveur se "
-        "mesure, et ton record à la **Tour** rapporte une récompense chaque jour.",
+        "mesure (ton premier défi de la journée rapporte un peu d'or), et ton record à la **Tour** "
+        "rapporte une récompense chaque jour.",
         ("Tes quêtes : **`/quetes`** et **`/quetes_hebdo`**.",
          "Les défis du jour : **`/defi`** · la tour : **`/tour`** · les classements : **`/classement`**."),
     ),
