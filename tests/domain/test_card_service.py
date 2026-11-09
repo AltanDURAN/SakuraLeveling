@@ -175,3 +175,67 @@ def test_le_bonus_contre_un_monstre_change_les_degats_du_moteur():
         return result.contributions[0].damage_dealt
 
     assert fight(50) > fight(0) * 1.3
+
+
+# ------------------------------------------------------ réglages (site admin) --
+def test_les_reglages_par_defaut_sont_valables_et_se_relisent():
+    assert cs.validate_params(cs.DEFAULT_PARAMS) == []
+    assert cs.params_from_dict(cs.params_to_dict(cs.DEFAULT_PARAMS)) == cs.DEFAULT_PARAMS
+    # Un champ absent ou illisible garde sa valeur par défaut.
+    partial = cs.params_from_dict({"booster_price": "abc", "pity_boosters": 25, "petals": {"rare": 30}})
+    assert partial.booster_price == cs.BOOSTER_PRICE and partial.pity_boosters == 25
+    assert partial.petals["rare"] == 30 and partial.petals["epic"] == cs.PETALS["epic"]
+    assert cs.params_from_dict(None) == cs.DEFAULT_PARAMS
+
+
+def test_un_reglage_invalide_est_refuse():
+    bad = cs.CardParams(normal_rates={"common": 50}, brillante_pct=150, craft_mult=0)
+    problems = cs.validate_params(bad)
+    assert any("100 %" in p for p in problems)
+    assert any("brillante" in p for p in problems)
+    assert any("Fabriquer" in p for p in problems)
+
+
+def test_les_taux_et_la_pitie_suivent_les_reglages():
+    only_epic = cs.CardParams(normal_rates={"epic": 100}, hit_rates={"legendary": 100}, brillante_pct=0)
+    pulls, since = cs.open_booster(POOL, random.Random(1), 0, params=only_epic)
+    assert [p.rarity for p in pulls] == ["epic"] * 4 + ["legendary"] and since == 0
+    no_pity = cs.CardParams(normal_rates={"common": 100}, hit_rates={"rare": 100}, pity_boosters=0)
+    pulls, since = cs.open_booster(POOL, random.Random(2), 500, params=no_pity)
+    assert not any(p.pity for p in pulls) and since == 501
+    assert cs.boosters_before_pity(10, no_pity) is None
+    assert cs.boosters_before_pity(10, cs.CardParams(pity_boosters=12)) == 2
+    # Un taux à zéro ne sort jamais, même au bout du tirage.
+    rng = random.Random(3)
+    assert {cs._roll({"common": 0.0, "rare": 1.0, "mythic": 0.0}, rng) for _ in range(500)} == {"rare"}
+
+
+def test_petales_fabrication_et_chances_selon_les_reglages():
+    params = cs.CardParams(petals={**cs.PETALS, "rare": 40}, brillante_petal_mult=3, craft_mult=7)
+    assert cs.petals_for("rare", True, params) == 120 and cs.craft_cost("rare", params) == 280
+    assert round(1 / cs.per_booster("legendary")) == 16 and round(1 / cs.per_booster("epic")) == 4
+    assert cs.per_booster("mythic", cs.CardParams(normal_rates={"common": 100}, hit_rates={"rare": 100})) == 0
+    assert cs.lowest_hit() == "rare"
+    # Recycler un booster de doublons rapporte ~150 pétales avec les réglages de l'auteur.
+    assert 120 < cs.expected_petals() < 180
+
+
+def test_la_simulation_signale_un_album_impossible():
+    cards = [_card("a", number=1), _card("b", "rare", number=2), _card("m", "mythic", number=3)]
+    never = cs.CardParams(normal_rates={"common": 100}, hit_rates={"rare": 100})
+    sim = cs.simulate_album(cards, never, runs=5, rng=random.Random(1), max_boosters=50)
+    assert sim.capped == 5 and sim.full == 50
+    sim = cs.simulate_album(cards[:2], cs.DEFAULT_PARAMS, runs=5, rng=random.Random(1))
+    assert sim.capped == 0 and sim.mythic is None and sim.full <= 5
+
+
+def test_la_validation_connait_les_chapitres_et_les_effets():
+    card = _card("a", number=1, effect={"type": "monstre", "mob": "a", "damage_pct": 3, "drop_pct": 5})
+    assert cs.validate([card], {"a"}, chapters={"clairiere"}) == []
+    assert any("chapitre inconnu" in p for p in cs.validate([card], {"a"}, chapters={"autre"}))
+    bad = replace(card, code="Mauvais Code", effect={"type": "monstre", "mob": "a", "damage_pct": 2.5})
+    problems = cs.validate([bad], {"a"}, chapters={"clairiere"})
+    assert any("minuscules" in p for p in problems) and any("entier" in p for p in problems)
+    boss = _card("t", "legendary", number=1, category="boss",
+                 effect={"type": "boss", "boss": "titan", "guards": ["nope"], "damage_pct": 10})
+    assert any("garde inconnu" in p for p in cs.validate([boss], {"a"}, {"titan"}, chapters={"clairiere"}))

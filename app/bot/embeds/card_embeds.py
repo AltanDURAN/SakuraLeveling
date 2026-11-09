@@ -8,6 +8,7 @@ import discord
 from discord.utils import escape_markdown
 
 from app.domain.services import card_service as cs
+from app.infrastructure.cards import card_loader
 from app.shared.enums import GOLD_EMOJI
 from app.shared.formatters import format_int
 
@@ -24,9 +25,34 @@ def _pct(value: float) -> str:
 
 def per_booster(rarity: str) -> float:
     """Chance d'avoir au moins une carte de cette rareté dans un booster."""
-    normal = cs.NORMAL_RATES.get(rarity, 0) / sum(cs.NORMAL_RATES.values())
-    hit = cs.HIT_RATES.get(rarity, 0) / sum(cs.HIT_RATES.values())
-    return 1 - (1 - normal) ** (cs.BOOSTER_SIZE - 1) * (1 - hit)
+    return cs.per_booster(rarity, card_loader.params())
+
+
+def _one_in(rarity: str) -> str:
+    chance = per_booster(rarity)
+    return f"1 sur {format_int(round(1 / chance))}" if chance > 0 else "jamais"
+
+
+def _effect_lines(cards: list[cs.CardDef]) -> list[str]:
+    """Les effets, résumés d'après les cartes de la série."""
+    def values(category: str, key: str) -> str:
+        found = sorted({int((c.effect or {}).get(key, 0)) for c in cards if c.category == category})
+        if not found:
+            return ""
+        return f"+{found[0]} %" if len(found) == 1 else f"+{found[0]} à {found[-1]} %"
+
+    lines = []
+    if any(c.category == "monstre" for c in cards):
+        lines.append(f"• **monstre** : {values('monstre', 'damage_pct')} de dégâts et "
+                     f"{values('monstre', 'drop_pct')} de butin contre lui ;")
+    if any(c.category == "boss" for c in cards):
+        lines.append(f"• **world boss** : {values('boss', 'damage_pct')} de dégâts contre lui et ses gardes ;")
+    if any(c.category in ("personnage", "divinite") for c in cards):
+        lines.append("• **personnages et divinités** : un petit bonus de leur domaine ;")
+    for card in cards:
+        if card.category == "mythique":
+            lines.append(f"• **{card.name}** : {cs.effect_text(card)}.")
+    return lines
 
 
 def rarity_line(rarity: str) -> str:
@@ -39,50 +65,54 @@ def color_of(rarity: str) -> discord.Color:
 
 # ------------------------------------------------------------- le guide --
 def build_cards_guide(footer: str) -> discord.Embed:
-    price = format_int(cs.BOOSTER_PRICE)
+    params = card_loader.params()
+    cards = card_loader.list_cards()
+    price = format_int(params.booster_price)
+    mythics = sum(1 for c in cards if c.rarity == "mythic")
+    rare_line = ("et une seule **mythique**. " if mythics == 1 else
+                 f"et {mythics} **mythiques**. " if mythics else "")
     embed = discord.Embed(
         title="🎴 Les cartes du Grand Cerisier",
         description=(
             f"Sorn a ouvert un comptoir : des **boosters de cartes** à collectionner. "
-            f"**61 cartes** — les monstres des zones, les personnages, les divinités, les world boss… "
-            f"et une seule **mythique**. Chaque carte a un **petit effet** dans l'aventure dès que tu la possèdes.\n"
+            f"**{len(cards)} cartes** — les monstres des zones, les personnages, les divinités, les world boss… "
+            f"{rare_line}Chaque carte a un **petit effet** dans l'aventure dès que tu la possèdes.\n"
             f"Les ouvertures sont **publiques** : tout le salon voit tes cartes se retourner."
         ),
         color=COLOR,
     )
+    gift = " — le premier est **offert**" if params.first_free else ""
     embed.add_field(name="🎴 Le booster", inline=False, value=(
-        f"**{cs.BOOSTER_SIZE} cartes** pour **{price} or** — le premier est **offert**. Elles se retournent de la "
-        "moins rare à la plus rare : la dernière est toujours **rare ou mieux**."
+        f"**{cs.BOOSTER_SIZE} cartes** pour **{price} or**{gift}. Elles se retournent de la "
+        f"moins rare à la plus rare : la dernière est toujours **{cs.RARITY_LABELS[cs.lowest_hit(params)].lower()} "
+        "ou mieux**."
     ))
-    normal = " · ".join(f"{cs.RARITY_LABELS[r]} {_pct(v)}" for r, v in cs.NORMAL_RATES.items())
-    hit = " · ".join(f"{cs.RARITY_LABELS[r]} {_pct(v)}" for r, v in cs.HIT_RATES.items())
-    odds = " · ".join(f"{rarity_line(r)} 1 sur {round(1 / per_booster(r))}" for r in ("epic", "legendary", "mythic"))
+    normal = " · ".join(f"{cs.RARITY_LABELS[r]} {_pct(v)}" for r, v in params.normal_rates.items() if v)
+    hit = " · ".join(f"{cs.RARITY_LABELS[r]} {_pct(v)}" for r, v in params.hit_rates.items() if v)
+    odds = " · ".join(f"{rarity_line(r)} {_one_in(r)}" for r in ("epic", "legendary", "mythic"))
     embed.add_field(name="🎲 Les taux", inline=False, value=(
         f"**Cartes 1 à {cs.BOOSTER_SIZE - 1}** : {normal}\n"
         f"**Carte {cs.BOOSTER_SIZE}** : {hit}\n"
         f"**Dans un booster** : {odds}"
     ))
-    embed.add_field(name="✨ Brillantes et légendaire garanti", inline=False, value=(
-        f"Chaque carte a **{_pct(cs.BRILLANTE_PCT)}** de chances de sortir **brillante** : même effet, pur prestige. "
-        "La mythique est **toujours** brillante.\n"
-        f"Un **légendaire** tombe au plus tard au **{cs.PITY_BOOSTERS}e booster** sans légendaire ni mythique — "
-        "et celui-là est brillant."
+    pity = (f"Un **légendaire** tombe au plus tard au **{params.pity_boosters}e booster** sans légendaire ni "
+            "mythique — et celui-là est brillant." if params.pity_boosters else "")
+    embed.add_field(name="✨ Brillantes" + (" et légendaire garanti" if pity else ""), inline=False, value=(
+        f"Chaque carte a **{_pct(params.brillante_pct)}** de chances de sortir **brillante** : une version "
+        "**pleine carte holographique**, même effet, pur prestige. La mythique est **toujours** brillante."
+        + (f"\n{pity}" if pity else "")
     ))
-    petals = " · ".join(f"{cs.RARITY_LABELS[r]} {format_int(v)}" for r, v in cs.PETALS.items())
+    petals = " · ".join(f"{cs.RARITY_LABELS[r]} {format_int(params.petals.get(r, 0))}" for r in cs.RARITIES)
     embed.add_field(name="🌸 Doublons et pétales", inline=False, value=(
         "Garde-les pour les **échanger** (`/echange`, `/brocante`) ou **recycle-les** en pétales depuis `/album` "
-        f"(on garde toujours un exemplaire) : {petals} — ×{cs.BRILLANTE_PETAL_MULT} pour une brillante.\n"
-        f"Avec des pétales, **fabrique** une carte qui te manque ({cs.CRAFT_MULT} fois son recyclage). "
+        f"(on garde toujours un exemplaire) : {petals} — ×{params.brillante_petal_mult} pour une brillante.\n"
+        f"Avec des pétales, **fabrique** une carte qui te manque ({params.craft_mult} fois son recyclage). "
         "Jamais une brillante : la mythique se tire ou s'échange."
     ))
     embed.add_field(name="⚔️ Les effets", inline=False, value=(
         "Une carte possédée (normale ou brillante, une seule fois) joue en **combat de zone** et au **world boss** — "
-        "jamais à la tour, aux défis ni aux épreuves :\n"
-        "• **monstre** : + dégâts et + butin contre lui ;\n"
-        "• **world boss** : +10 % de dégâts contre lui et ses gardes ;\n"
-        "• **personnages et divinités** : un petit bonus de leur domaine ;\n"
-        "• **le Grand Cerisier** : +2 % d'or et d'XP en zone."
-    ))
+        "jamais à la tour, aux défis ni aux épreuves :\n" + "\n".join(_effect_lines(cards))
+    )[:1024])
     embed.add_field(name="📖 L'album et les titres", inline=False, value=(
         "`/album` : ta collection page par page, avec la silhouette des cartes qui te manquent. "
         "Titres à **25, 50, 75 et 100 %** de l'album, et un titre pour l'album **tout brillant**."
@@ -136,8 +166,10 @@ def build_result_embed(name: str, result) -> discord.Embed:
     if after is not None:
         grown = f"**{before.owned} → {after.owned}**" if after.owned > before.owned else f"**{after.owned}**"
         embed.add_field(name="📖 Album", value=f"{grown} / {after.total} · ✨ {after.brillantes}", inline=True)
-    embed.add_field(name="🟠 Légendaire garanti",
-                    value=f"dans {cs.boosters_before_pity(result.since_top)} booster(s) au plus tard", inline=True)
+    pity_left = (result.pity_left if result.pity_left is not None
+                 else cs.boosters_before_pity(result.since_top, card_loader.params()))
+    if pity_left is not None:
+        embed.add_field(name="🟠 Légendaire garanti", value=f"dans {pity_left} booster(s) au plus tard", inline=True)
     if result.free and not result.gold_spent:
         paid = "🎁 Offert par Sorn !"
     else:
@@ -173,21 +205,24 @@ def build_album_embed(owner: str, coll, chapter: str, page: int, pages: int, *, 
                      "(bouton « Recycler »)")
     if own and coll.free_booster:
         lines.append("🎁 Ton premier booster est **offert** : `/booster` dans le salon des cartes.")
+    series = card_loader.get_series()
     embed = discord.Embed(
-        title=f"📖 Album de {owner} — {cs.CHAPTER_LABELS.get(chapter, chapter)}",
+        title=f"📖 Album de {owner} — {card_loader.get_chapter(chapter).label}",
         description="\n".join(lines),
         color=COLOR,
     )
     embed.set_image(url=f"attachment://{ALBUM_FILE}")
-    embed.set_footer(text=f"Page {page}/{pages} · Série 1 « Le Grand Cerisier »")
+    embed.set_footer(text=f"Page {page}/{pages} · Série {series.number} « {series.name} »")
     return embed
 
 
 def build_card_embed(card, coll, *, own: bool) -> discord.Embed:
     normal, brillante = coll.normal.get(card.code, 0), coll.brillante.get(card.code, 0)
     title = f"#{card.number:02d} {card.name}" + (" ✨" if brillante or card.always_brillante else "")
-    embed = discord.Embed(title=title, description=f"**{cs.effect_text(card)}**\n*{card.flavor}*",
-                          color=color_of(card.rarity))
+    description = f"**{cs.effect_text(card)}**\n*{card.flavor}*"
+    if brillante or card.always_brillante:
+        description += "\n✨ *Brillante : la version pleine carte holographique.*"
+    embed = discord.Embed(title=title, description=description, color=color_of(card.rarity))
     embed.add_field(name="Rareté", value=rarity_line(card.rarity), inline=True)
     embed.add_field(name=cs.CATEGORIES.get(card.category, card.category), value=card.title or "—", inline=True)
     if normal or brillante:
@@ -198,7 +233,7 @@ def build_card_embed(card, coll, *, own: bool) -> discord.Embed:
             held.append(f"{brillante} brillante(s)")
         embed.add_field(name="Exemplaires", value=" · ".join(held), inline=True)
     elif cs.craftable(card):
-        cost = cs.craft_cost(card.rarity)
+        cost = cs.craft_cost(card.rarity, coll.params)
         value = f"🌸 {format_int(cost)} pétales"
         if own:
             value += f" (tu en as {format_int(coll.petals)})"

@@ -1,0 +1,21 @@
+{% macro n(v) %}{{ "{:,}".format(v|int).replace(",", " ") }}{% endmacro %}
+{% macro gold(boosters) %}{{ n([0, boosters - free]|max * params.booster_price) }}{% endmacro %}
+<h2 class="form-section-title">🧪 Un joueur seul, avec ces réglages</h2>
+{% if errors %}
+  {% for e in errors %}<p style="color:var(--danger); margin:.2rem 0;">⚠️ {{ e }}</p>{% endfor %}
+{% else %}
+<p class="form-section-help" style="margin:0 0 .6rem;">{{ sim.runs }} parcours simulés : sans échange, il recycle tous ses doublons et fabrique la carte manquante la plus chère dès qu'il peut.
+  Pas encore enregistré.</p>
+<div class="table-wrapper">
+  <table class="data-table">
+    <thead><tr><th></th><th>Boosters</th><th>Or</th></tr></thead>
+    <tbody>
+      <tr><td>La moitié de l'album (médiane)</td><td class="num">{{ n(sim.half) }}</td><td class="num">{{ gold(sim.half) }}</td></tr>
+      <tr><td>L'album complet (médiane)</td><td class="num">{{ n(sim.full) }}</td><td class="num">{{ gold(sim.full) }}</td></tr>
+      <tr><td>10 % des joueurs vont au-delà de</td><td class="num">{{ n(sim.full_p90) }}</td><td class="num">{{ gold(sim.full_p90) }}</td></tr>
+      {% if sim.mythic %}<tr><td>Première mythique (médiane)</td><td class="num">{{ n(sim.mythic) }}</td><td class="num">{{ gold(sim.mythic) }}</td></tr>{% endif %}
+    </tbody>
+  </table>
+</div>
+{% if sim.capped %}<p style="color:var(--danger); margin:.5rem 0 0;">⚠️ {{ sim.capped }} parcours sur {{ sim.runs }} n'ont pas fini l'album en 3 000 boosters : une carte est-elle introuvable (taux à 0) ?</p>{% endif %}
+{% endif %}

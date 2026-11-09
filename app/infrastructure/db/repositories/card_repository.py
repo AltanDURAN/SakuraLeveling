@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.infrastructure.cards.card_loader import parse_item_code
@@ -77,3 +77,30 @@ class CardRepository:
 
     def states(self) -> dict[int, PlayerCardStateModel]:
         return {row.player_id: row for row in self.session.execute(select(PlayerCardStateModel)).scalars()}
+
+    def holdings(self) -> list[tuple[int, str, bool, int]]:
+        """(joueur, carte, brillante, exemplaires) pour tout le serveur."""
+        rows = self.session.execute(
+            select(PlayerInventoryItemModel.player_id, ItemDefinitionModel.code, PlayerInventoryItemModel.quantity)
+            .join(ItemDefinitionModel, ItemDefinitionModel.id == PlayerInventoryItemModel.item_definition_id)
+            .where(ItemDefinitionModel.category == ItemCategory.CARD.value,
+                   PlayerInventoryItemModel.quantity > 0)
+        ).all()
+        out = []
+        for player_id, code, quantity in rows:
+            parsed = parse_item_code(code)
+            if parsed is not None:
+                out.append((player_id, parsed[0], parsed[1], int(quantity)))
+        return out
+
+    def booster_gold(self) -> int:
+        """Or dépensé en boosters depuis le début de la saison (journal)."""
+        from app.infrastructure.db.models.monitoring_model import GameEventModel
+
+        try:
+            total = self.session.execute(
+                select(func.coalesce(func.sum(GameEventModel.gold), 0)).where(GameEventModel.kind == "booster")
+            ).scalar_one()
+        except Exception:  # noqa: BLE001 - journal absent : pas de chiffre
+            return 0
+        return -int(total or 0)

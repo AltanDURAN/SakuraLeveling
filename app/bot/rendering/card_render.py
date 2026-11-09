@@ -3,25 +3,37 @@ l'album, le résultat d'un booster et son animation d'ouverture (GIF).
 
 Même direction artistique que la bannière /profil : cadre à la couleur de la
 rareté (celles de l'équipement), Bangers pour les noms, pétales en filigrane.
-Une BRILLANTE porte un reflet holographique et des éclats ; la mythique l'est
-toujours. Les faces sont gardées en mémoire (PNG compressés) et refaites quand
-l'image de la carte change.
+
+Une BRILLANTE est « PLEINE CARTE » et holographique (demande de l'auteur,
+10/11/2026) : l'illustration couvre toute la carte (celle de l'auteur,
+`<code>_fullart.png`, sinon l'image de la carte sur le décor de son
+chapitre), le texte passe sur un panneau de verre dépoli, et un FOIL la
+recouvre — prisme arc-en-ciel gravé de fines lignes, reflet de lumière,
+paillettes, bord irisé. Animée (`card_gif`), le prisme glisse et le reflet
+passe comme quand on incline la carte. La mythique l'est toujours.
+
+Les faces sont gardées en mémoire (PNG compressés) et refaites dès que la
+carte change (texte, image, décor, réglages de la série).
 
 L'ouverture : les cartes arrivent face cachée, chacune s'allume à la couleur
 de sa rareté avant de se retourner, de la moins rare à la plus rare — la
 dernière se fait attendre ; éclat de lumière pour un légendaire, pétales et
-tremblement pour la mythique, reflet qui passe sur une brillante.
+tremblement pour la mythique, et une brillante scintille (son foil prend la
+lumière).
 """
 
 from __future__ import annotations
 
 import colorsys
 import io
+import json
 import math
 import random
 from collections import OrderedDict
 from collections.abc import Callable
+from dataclasses import asdict
 from functools import lru_cache
+from pathlib import Path
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
@@ -35,15 +47,6 @@ BANGERS = ASSETS / "fonts" / "Bangers-Regular.ttf"
 W, H = 360, 504
 RADIUS = 22
 PANEL = (24, 20, 34)
-BACK_FILE = card_loader.CARD_ART / "_dos.png"
-#: Décor du cadre de l'image, par chapitre (sinon un dégradé).
-LANDSCAPES = {
-    "clairiere": "clairiere_sinistre.png",
-    "cimetiere": "cimetiere_abandonne_lumiere.png",
-    "berceau": "berceau_cataclysmique.png",
-    "divinites": "horizon_celeste.png",
-    "legendes": "fracture_elementaire.png",
-}
 #: Taille d'envoi maximale (Discord, sans boost : 10 Mo).
 MAX_GIF_BYTES = 9_000_000
 GOLD = (255, 214, 120)
@@ -140,9 +143,8 @@ def _open(data: bytes) -> Image.Image:
 # ---------------------------------------------------------------- la face --
 def _art_window(card: cs.CardDef, size: tuple[int, int]) -> Image.Image:
     color = _color(card.rarity)
-    landscape = LANDSCAPES.get(card.chapter)
-    path = ASSETS / "landscapes" / landscape if landscape else None
-    if path is not None and path.is_file():
+    path = card_loader.decor_path(card.chapter)
+    if path is not None:
         with Image.open(path) as source:
             window = _cover(source.convert("RGB"), size).convert("RGBA")
         window = Image.blend(window, Image.new("RGBA", size, (*_shade(color, 0.35), 255)), 0.45)
@@ -169,40 +171,11 @@ def _art_window(card: cs.CardDef, size: tuple[int, int]) -> Image.Image:
     return window
 
 
-def _holo(phase: float, size: tuple[int, int] = (W, H)) -> Image.Image:
-    """Reflet holographique : arc-en-ciel en diagonale et bande de lumière."""
-    small = Image.new("RGB", (48, 48))
-    for y in range(48):
-        for x in range(48):
-            r, g, b = colorsys.hsv_to_rgb(((x + y) / 96 + phase) % 1.0, 0.5, 1.0)
-            small.putpixel((x, y), (int(r * 255), int(g * 255), int(b * 255)))
-    layer = small.resize(size, Image.BILINEAR).convert("RGBA")
-    layer.putalpha(52)
-    w, h = size
-    band = Image.new("L", size, 0)
-    center = int(phase % 1.0 * (w + h)) - h // 2
-    ImageDraw.Draw(band).polygon([(center, 0), (center + 60, 0), (center + 60 - h, h), (center - h, h)], fill=110)
-    shine = Image.new("RGBA", size, (255, 255, 255, 0))
-    shine.putalpha(band.filter(ImageFilter.GaussianBlur(16)))
-    layer.alpha_composite(shine)
-    return layer
-
-
-def _sparkles(image: Image.Image, seed: int, count: int = 6) -> None:
-    rng = random.Random(seed)
-    draw = ImageDraw.Draw(image)
-    w, h = image.size
-    for _ in range(count):
-        _star(draw, rng.uniform(20, w - 20), rng.uniform(20, h - 20), rng.uniform(5, 11),
-              (255, 255, 255, rng.randint(170, 240)))
-
-
-def _face(card: cs.CardDef, brillante: bool, holo_phase: float = 0.3) -> Image.Image:
+def _normal_face(card: cs.CardDef) -> Image.Image:
     color = _color(card.rarity)
     image = _gradient((W, H), _shade(color, 1.15), _shade(color, 0.55))
     draw = ImageDraw.Draw(image)
-    draw.rounded_rectangle((0, 0, W - 1, H - 1), radius=RADIUS, outline=GOLD if brillante else _shade(color, 1.4),
-                           width=4 if brillante else 3)
+    draw.rounded_rectangle((0, 0, W - 1, H - 1), radius=RADIUS, outline=_shade(color, 1.4), width=3)
     draw.rounded_rectangle((12, 12, W - 13, H - 13), radius=16, fill=PANEL)
     # Nom et numéro
     name_font = _fit(draw, card.name, W - 96, 32, 18)
@@ -238,36 +211,322 @@ def _face(card: cs.CardDef, brillante: bool, holo_phase: float = 0.3) -> Image.I
         draw.text((26, 422 + 16 * i), line, font=flavor_font, fill=(190, 180, 210))
     # Pied
     element = ELEMENT_LABELS.get(card.element, "") if card.element else ""
-    draw.text((26, H - 28), f"Série 1 · {card.number}/61", font=try_font(12), anchor="lm", fill=(150, 140, 170))
-    if brillante:
-        _star(draw, W - 108, H - 28, 9, GOLD)
-        draw.text((W - 96, H - 28), "BRILLANTE", font=try_font(12, bold=True), anchor="lm", fill=GOLD)
-    elif element:
+    draw.text((26, H - 28), _footer(card), font=try_font(12), anchor="lm", fill=(150, 140, 170))
+    if element:
         draw.text((W - 26, H - 28), element, font=try_font(12, bold=True), anchor="rm", fill=(170, 160, 195))
-    if brillante:
-        image.alpha_composite(_holo(holo_phase))
-        _sparkles(image, card.number, 7)
-        if card.rarity == "mythic":
-            draw_sakura_petals(image, seed=card.number + 7, count=10, size_range=(18, 34))
     image.putalpha(ImageChops.multiply(image.getchannel("A"), _rounded_mask((W, H), RADIUS)))
     return image
 
 
-def _art_stamp(card: cs.CardDef) -> float:
+def _footer(card: cs.CardDef) -> str:
+    series = card_loader.get_series()
+    return f"Série {series.number} · {card.number}/{series.total}"
+
+
+# ------------------------------------------------- la brillante (foil) --
+#: La phase du foil sur l'image fixe (album, résultat d'un booster).
+STILL_PHASE = 0.3
+#: Images de l'animation d'une brillante (en boucle).
+HOLO_FRAMES = 16
+HOLO_FRAME_MS = 80
+#: Panneau de verre dépoli du texte.
+FOIL_PANEL = (18, 352, W - 19, H - 19)
+#: Part de transparence au-delà de laquelle une image est un « personnage
+#: détouré » (posé sur le décor) plutôt qu'une illustration (qui couvre tout).
+SPRITE_TRANSPARENCY = 0.25
+INK = (20, 10, 30)
+
+
+@lru_cache(maxsize=8)
+def _rainbow_strip(length: int, period: int, sat: float) -> Image.Image:
+    strip = Image.new("RGB", (length, 4))
+    pixels = strip.load()
+    for x in range(length):
+        r, g, b = colorsys.hsv_to_rgb((x / period) % 1.0, sat, 1.0)
+        for y in range(4):
+            pixels[x, y] = (int(r * 255), int(g * 255), int(b * 255))
+    return strip
+
+
+def _rainbow(size: tuple[int, int], phase: float, period: int = 170, slope: float = 0.6,
+             sat: float = 0.9) -> Image.Image:
+    """Bandes arc-en-ciel en diagonale, décalées de `phase` (0 → 1 = une période)."""
+    w, h = size
+    length = w + int(abs(slope) * h) + period + 8
+    dx = (phase % 1.0) * period + (abs(slope) * h if slope < 0 else 0)
+    return _rainbow_strip(length, period, sat).transform(size, Image.AFFINE, (1, slope, dx, 0, 0, 2),
+                                                         resample=Image.BILINEAR)
+
+
+def _prism(size: tuple[int, int], phase: float) -> Image.Image:
+    """Deux arcs-en-ciel croisés qui glissent en sens contraire : le moiré
+    d'un foil qu'on incline."""
+    return Image.blend(_rainbow(size, phase, 170, 0.6), _rainbow(size, -phase * 0.7 + 0.3, 260, -1.3), 0.4)
+
+
+@lru_cache(maxsize=4)
+def _etched(size: tuple[int, int], spacing: int = 3, angle: float = -28) -> Image.Image:
+    """Les fines lignes gravées du foil (masque)."""
+    w, h = size
+    d = int(math.hypot(w, h)) + 8
+    big = Image.new("L", (d, d), 0)
+    draw = ImageDraw.Draw(big)
+    for i, y in enumerate(range(0, d, spacing)):
+        draw.line((0, y, d, y), fill=255 if i % 2 == 0 else 70, width=1)
+    big = big.rotate(angle, resample=Image.BILINEAR)
+    left, top = (d - w) // 2, (d - h) // 2
+    return big.crop((left, top, left + w, top + h))
+
+
+@lru_cache(maxsize=4)
+def _glare_band(size: tuple[int, int], width: int = 70) -> Image.Image:
+    w, h = size
+    span = w * 3 + h
+    slant = h * 0.45
+    c = span // 2
+
+    def band(half: float, alpha: int, blur: int) -> Image.Image:
+        layer = Image.new("L", (span, h), 0)
+        ImageDraw.Draw(layer).polygon([(c - half, 0), (c + half, 0), (c + half + slant, h), (c - half + slant, h)],
+                                      fill=alpha)
+        return layer.filter(ImageFilter.GaussianBlur(blur))
+    return ImageChops.lighter(band(width * 1.6, 70, 26), band(width * 0.35, 150, 9))
+
+
+def _glare(size: tuple[int, int], phase: float) -> Image.Image:
+    """Le reflet de lumière (masque) : il traverse la carte quand `phase` va de 0 à 1."""
+    w, h = size
+    band = _glare_band(size)
+    center = -0.8 * w + (phase % 1.0) * 2.6 * w
+    left = int(band.width // 2 - center)
+    return band.crop((left, 0, left + w, h))
+
+
+def _glitter(image: Image.Image, seed: int, phase: float, count: int = 150) -> None:
+    """Paillettes qui scintillent chacune à son rythme."""
+    rng = random.Random(seed)
+    draw = ImageDraw.Draw(image)
+    w, h = image.size
+    for _ in range(count):
+        x, y = rng.uniform(6, w - 6), rng.uniform(6, h - 6)
+        offset, speed, size = rng.random(), rng.choice((1, 1, 2)), rng.choice((1.5, 2, 2, 2.5, 3, 4.5))
+        hue = rng.random()
+        t = max(0.0, math.cos(2 * math.pi * (phase * speed + offset))) ** 6
+        if t < 0.12:
+            continue
+        r, g, b = colorsys.hsv_to_rgb(hue, 0.25, 1.0)
+        rad = size * (0.6 + 0.7 * t)
+        k = rad * 0.16
+        draw.polygon([(x - rad, y), (x - k, y - k), (x, y - rad), (x + k, y - k), (x + rad, y), (x + k, y + k),
+                      (x, y + rad), (x - k, y + k)], fill=(int(r * 255), int(g * 255), int(b * 255), int(255 * t)))
+
+
+def _foil(rgb: Image.Image, phase: float, sprite: Image.Image | None, strength: float = 0.62) -> Image.Image:
+    """Le foil holographique sur l'illustration : prisme gravé + reflet. Le
+    personnage détouré en prend moins (il reste lisible)."""
+    size = rgb.size
+    prism = _prism(size, phase)
+    tinted = ImageChops.screen(ImageChops.soft_light(rgb, prism), Image.blend(prism, Image.new("RGB", size), 0.72))
+    mask = _etched(size).point(lambda v: int(255 * strength * (0.35 + 0.65 * v / 255)))
+    if sprite is not None:
+        mask = ImageChops.subtract(mask, sprite.point(lambda v: int(v * strength * 0.5)))
+    out = Image.composite(tinted, rgb, mask)
+    light = _glare(size, phase)
+    return ImageChops.screen(out, Image.merge("RGB", (light, light, light)))
+
+
+def _foil_border(image: Image.Image, phase: float) -> None:
+    w, h = image.size
+    bright = ImageChops.screen(_rainbow((w, h), phase * 1.3 + 0.35, period=150, slope=0.9, sat=0.7),
+                               Image.new("RGB", (w, h), (80, 70, 80)))
+    light = _glare((w, h), phase)
+    bright = ImageChops.screen(bright, Image.merge("RGB", (light, light, light)))
+    ring = Image.new("L", (w, h), 0)
+    draw = ImageDraw.Draw(ring)
+    draw.rounded_rectangle((0, 0, w - 1, h - 1), radius=RADIUS, fill=255)
+    draw.rounded_rectangle((7, 7, w - 8, h - 8), radius=16, fill=0)
+    image.paste(bright, (0, 0), ring)
+    draw = ImageDraw.Draw(image)
+    draw.rounded_rectangle((7, 7, w - 8, h - 8), radius=16, outline=(255, 236, 170), width=2)
+    draw.rounded_rectangle((9, 9, w - 10, h - 10), radius=15, outline=(40, 20, 50), width=1)
+
+
+def _is_sprite(image: Image.Image) -> bool:
+    """Un personnage détouré (beaucoup de transparence), pas une illustration."""
+    hist = image.getchannel("A").histogram()
+    return hist[0] / max(1, sum(hist)) >= SPRITE_TRANSPARENCY
+
+
+def _backdrop(card: cs.CardDef, size: tuple[int, int]) -> Image.Image:
+    """Le fond d'une brillante : le décor du chapitre, sinon un halo de la rareté."""
+    color = _color(card.rarity)
+    path = card_loader.decor_path(card.chapter)
+    if path is not None:
+        with Image.open(path) as source:
+            backdrop = _cover(source.convert("RGB"), size).convert("RGBA")
+        return Image.blend(backdrop, Image.new("RGBA", size, (*_shade(color, 0.3), 255)), 0.3)
+    backdrop = _gradient(size, _shade(color, 0.7), _shade(color, 0.12))
+    halo = Image.new("L", size, 0)
+    ImageDraw.Draw(halo).ellipse((-60, 40, size[0] + 60, 400), fill=150)
+    backdrop.alpha_composite(Image.merge("RGBA", (*Image.new("RGB", size, _shade(color, 1.4)).split(),
+                                                  halo.filter(ImageFilter.GaussianBlur(60)))))
+    draw_sakura_petals(backdrop, seed=card.number, count=10, size_range=(26, 50))
+    return backdrop
+
+
+def _shifted_cover(art: Image.Image, size: tuple[int, int], shift: int = 36) -> Image.Image:
+    """L'illustration couvre la carte, un peu descendue (le nom ne mange pas
+    la tête) ; le haut découvert est une extension floue de l'image."""
+    cover = _cover(art, size)
+    out = cover.filter(ImageFilter.GaussianBlur(14))
+    out.alpha_composite(cover.crop((0, 0, size[0], size[1] - shift)), (0, shift))
+    return out
+
+
+def _full_art(card: cs.CardDef) -> tuple[Image.Image, Image.Image | None]:
+    """L'illustration pleine carte (RGB) et, pour un personnage détouré, son
+    masque (le foil le touche moins)."""
+    size = (W, H)
+    own = card_loader.full_art_path(card)
+    if own is not None:                          # l'illustration pleine carte de l'auteur
+        with Image.open(own) as source:
+            art = source.convert("RGBA")
+        canvas = _backdrop(card, size)
+        canvas.alpha_composite(_cover(art, size))
+        return canvas.convert("RGB"), None
+    canvas = _backdrop(card, size)
     path = card_loader.art_path(card)
+    if path is None:
+        draw = ImageDraw.Draw(canvas)
+        draw.text((W / 2, H / 2 - 40), "?", font=_bangers(200), anchor="mm", fill=(255, 255, 255, 120))
+        return canvas.convert("RGB"), None
+    with Image.open(path) as source:
+        art = source.convert("RGBA")
+    if not _is_sprite(art):                      # illustration : elle couvre tout
+        canvas.alpha_composite(_shifted_cover(art, size))
+        return canvas.convert("RGB"), None
+    art.thumbnail((W - 24, 300), Image.LANCZOS)  # personnage détouré, en grand sur le décor
+    x, y = (W - art.width) // 2, 360 - art.height
+    alpha = art.getchannel("A")
+    placed = Image.new("L", size, 0)
+    placed.paste(alpha, (x, y))
+    rim = placed.filter(ImageFilter.GaussianBlur(10)).point(lambda v: int(v * 0.75))
+    canvas.alpha_composite(Image.merge("RGBA", (*Image.new("RGB", size, (255, 232, 248)).split(), rim)))
+    shadow = Image.new("L", size, 0)
+    ImageDraw.Draw(shadow).ellipse((x + art.width * 0.12, 342, x + art.width * 0.88, 372), fill=170)
+    canvas.alpha_composite(Image.merge("RGBA", (*Image.new("RGB", size, (0, 0, 0)).split(),
+                                                shadow.filter(ImageFilter.GaussianBlur(8)))))
+    canvas.alpha_composite(art, (x, y))
+    return canvas.convert("RGB"), placed
+
+
+_BASES: OrderedDict[tuple, tuple[Image.Image, Image.Image | None]] = OrderedDict()
+
+
+def _foil_base(card: cs.CardDef) -> tuple[Image.Image, Image.Image | None]:
+    """L'illustration pleine carte, gardée pour les images de l'animation."""
+    key = _render_key(card, True)
+    hit = _BASES.get(key)
+    if hit is None:
+        hit = _BASES[key] = _full_art(card)
+        while len(_BASES) > 4:
+            _BASES.popitem(last=False)
+    else:
+        _BASES.move_to_end(key)
+    return hit
+
+
+def _brillante_face(card: cs.CardDef, phase: float = STILL_PHASE,
+                    base: tuple[Image.Image, Image.Image | None] | None = None) -> Image.Image:
+    color = _color(card.rarity)
+    rgb, sprite = base or _foil_base(card)
+    image = _foil(rgb, phase, sprite).convert("RGBA")
+    _glitter(image, card.number, phase)
+    shade = Image.linear_gradient("L").resize((W, 120)).point(lambda v: int((255 - v) * 0.75))
+    top = Image.new("RGBA", (W, H), (10, 6, 18, 0))
+    mask = Image.new("L", (W, H), 0)
+    mask.paste(shade, (0, 0))
+    top.putalpha(mask)
+    image.alpha_composite(top)
+    if card.rarity == "mythic":
+        draw_sakura_petals(image, seed=card.number + 7, count=12, size_range=(18, 34))
+    # Panneau de verre dépoli
+    box = FOIL_PANEL
+    glass = image.crop(box).filter(ImageFilter.GaussianBlur(7))
+    glass = Image.blend(glass, Image.new("RGBA", glass.size, (14, 8, 24, 255)), 0.58)
+    image.paste(glass, box[:2], _rounded_mask(glass.size, 14))
+    draw = ImageDraw.Draw(image)
+    draw.rounded_rectangle(box, radius=14, outline=(255, 226, 150, 210), width=1)
+    # Nom, numéro, sous-titre, rareté
+    name_font = _fit(draw, card.name, W - 110, 36, 20)
+    draw.text((24, 40), card.name, font=name_font, anchor="lm", fill=(255, 255, 255), stroke_width=3, stroke_fill=INK)
+    draw.text((W - 24, 40), f"#{card.number:02d}", font=_bangers(24), anchor="rm", fill=_shade(color, 1.35),
+              stroke_width=3, stroke_fill=INK)
+    label = cs.RARITY_LABELS.get(card.rarity, "").upper()
+    label_font = try_font(13, bold=True)
+    room = W - 49 - draw.textlength(label, font=label_font) - 12
+    subtitle = card.title
+    while subtitle and draw.textlength(subtitle, font=label_font) > room:
+        subtitle = subtitle[:-1]
+    if subtitle != card.title:
+        subtitle = subtitle.rstrip() + "…"
+    draw.text((25, 68), subtitle, font=label_font, anchor="lm", fill=(240, 235, 250), stroke_width=2, stroke_fill=INK)
+    draw.text((W - 24, 68), label, font=label_font, anchor="rm", fill=_shade(color, 1.35), stroke_width=2,
+              stroke_fill=INK)
+    # Effet, ambiance, pied
+    effect_font = try_font(15, bold=True)
+    lines = _wrap(draw, cs.effect_text(card), effect_font, box[2] - box[0] - 24, 3)
+    for i, line in enumerate(lines):
+        draw.text((box[0] + 12, box[1] + 12 + 19 * i), line, font=effect_font, fill=(255, 250, 255))
+    flavor_font = try_font(12)
+    flavor_top = box[1] + 16 + 19 * len(lines)
+    for i, line in enumerate(_wrap(draw, card.flavor, flavor_font, box[2] - box[0] - 24, 2)):
+        draw.text((box[0] + 12, flavor_top + 15 * i), line, font=flavor_font, fill=(220, 210, 236))
+    draw.text((box[0] + 12, box[3] - 14), _footer(card), font=try_font(12), anchor="lm", fill=(190, 180, 210))
+    _star(draw, box[2] - 96, box[3] - 14, 8, GOLD)
+    draw.text((box[2] - 84, box[3] - 14), "BRILLANTE", font=try_font(12, bold=True), anchor="lm", fill=GOLD)
+    _foil_border(image, phase)
+    image.putalpha(ImageChops.multiply(image.getchannel("A"), _rounded_mask((W, H), RADIUS)))
+    return image
+
+
+def _face(card: cs.CardDef, brillante: bool) -> Image.Image:
+    return _brillante_face(card) if brillante else _normal_face(card)
+
+
+# ------------------------------------------------------ mémoire des faces --
+def _stamp(path: Path | None) -> tuple[str, float]:
+    if path is None:
+        return ("", 0.0)
     try:
-        return path.stat().st_mtime if path else 0.0
+        return (str(path), path.stat().st_mtime)
     except OSError:
-        return 0.0
+        return (str(path), 0.0)
+
+
+def _render_key(card: cs.CardDef, brillante: bool) -> tuple:
+    """Tout ce qui change l'image d'une carte : sa fiche, ses images, le décor
+    de son chapitre et la série (numéro, nombre de cartes)."""
+    series = card_loader.get_series()
+    return (json.dumps(asdict(card), sort_keys=True, ensure_ascii=False), brillante,
+            _stamp(card_loader.art_path(card)), _stamp(card_loader.full_art_path(card) if brillante else None),
+            _stamp(card_loader.decor_path(card.chapter)), series.number, series.total)
+
+
+def render_version(card: cs.CardDef, brillante: bool = False) -> str:
+    """Empreinte courte de l'image d'une carte (pour les liens du site admin)."""
+    import hashlib
+
+    return hashlib.sha1(repr(_render_key(card, brillante)).encode()).hexdigest()[:12]
 
 
 _FACES: OrderedDict[tuple, bytes] = OrderedDict()
-#: Faces gardées en mémoire (PNG compressés, ~100 Ko chacune).
+#: Faces gardées en mémoire (PNG compressés, ~100 à 250 Ko chacune).
 FACE_CACHE = 160
 
 
-def _face_png(card: cs.CardDef, brillante: bool, stamp: float) -> bytes:
-    key = (card.code, card.number, card.rarity, card.name, brillante, stamp)
+def _face_png(card: cs.CardDef, brillante: bool) -> bytes:
+    key = _render_key(card, brillante)
     data = _FACES.get(key)
     if data is None:
         data = _FACES[key] = _png(_face(card, brillante))
@@ -280,30 +539,56 @@ def _face_png(card: cs.CardDef, brillante: bool, stamp: float) -> bytes:
 
 def card_face(card: cs.CardDef, brillante: bool = False, size: tuple[int, int] | None = None) -> Image.Image:
     """La face de la carte (RGBA), à sa taille ou réduite."""
-    image = _open(_face_png(card, brillante or card.always_brillante, _art_stamp(card)))
+    image = _open(_face_png(card, brillante or card.always_brillante))
     return image if size is None else image.resize(size, Image.LANCZOS)
 
 
 def card_png(card: cs.CardDef, brillante: bool = False) -> bytes:
-    return _face_png(card, brillante or card.always_brillante, _art_stamp(card))
+    return _face_png(card, brillante or card.always_brillante)
 
 
-def card_gif(card: cs.CardDef, frames: int = 14) -> bytes:
-    """Une brillante qui scintille : le reflet passe sur la carte (en boucle)."""
-    images = [_face(card, True, holo_phase=i / frames).convert("RGB") for i in range(frames)]
-    palette = images[0].quantize(colors=255, method=Image.Quantize.MEDIANCUT)
-    quantized = [img.quantize(palette=palette, dither=Image.Dither.NONE) for img in images]
+def holo_frames(card: cs.CardDef, frames: int = HOLO_FRAMES, size: tuple[int, int] | None = None) -> list[Image.Image]:
+    """Les images d'une brillante qui scintille (une période du foil)."""
+    base = _foil_base(card)
+    images = [_brillante_face(card, i / frames, base) for i in range(frames)]
+    return images if size is None else [image.resize(size, Image.LANCZOS) for image in images]
+
+
+_GIFS: OrderedDict[tuple, bytes] = OrderedDict()
+#: Animations gardées en mémoire (~1,5 à 2 Mo chacune).
+GIF_CACHE = 6
+
+
+def card_gif(card: cs.CardDef, frames: int = HOLO_FRAMES) -> bytes:
+    """Une brillante qui scintille, en boucle : le prisme glisse, le reflet
+    passe, les paillettes s'allument."""
+    key = (_render_key(card, True), frames)
+    data = _GIFS.get(key)
+    if data is not None:
+        _GIFS.move_to_end(key)
+        return data
+    images = [image.convert("RGB") for image in holo_frames(card, frames)]
+    picks = sorted({0, len(images) // 3, 2 * len(images) // 3})
+    source = Image.new("RGB", (W * len(picks), H))
+    for k, index in enumerate(picks):
+        source.paste(images[index], (k * W, 0))
+    palette = source.quantize(colors=256, method=Image.Quantize.MEDIANCUT)
+    quantized = [image.quantize(palette=palette, dither=Image.Dither.NONE) for image in images]
     buffer = io.BytesIO()
     quantized[0].save(buffer, format="GIF", save_all=True, append_images=quantized[1:],
-                      duration=90, loop=0, optimize=False)
-    return buffer.getvalue()
+                      duration=HOLO_FRAME_MS, loop=0, optimize=False)
+    data = _GIFS[key] = buffer.getvalue()
+    while len(_GIFS) > GIF_CACHE:
+        _GIFS.popitem(last=False)
+    return data
 
 
 # ------------------------------------------------------------------ le dos --
 @lru_cache(maxsize=4)
-def _back_png(size: tuple[int, int]) -> bytes:
-    if BACK_FILE.is_file():
-        with Image.open(BACK_FILE) as source:
+def _back_png(size: tuple[int, int], stamp: tuple[str, float] = ("", 0.0)) -> bytes:
+    back = Path(stamp[0]) if stamp[0] else None
+    if back is not None and back.is_file():
+        with Image.open(back) as source:
             image = _cover(source.convert("RGBA"), size)
     else:
         image = _gradient(size, (64, 34, 92), (18, 12, 32))
@@ -326,7 +611,8 @@ def _back_png(size: tuple[int, int]) -> bytes:
 
 
 def card_back(size: tuple[int, int] = (W, H)) -> Image.Image:
-    return _open(_back_png(size))
+    back = card_loader.BACK_FILE
+    return _open(_back_png(size, _stamp(back) if back.is_file() else ("", 0.0)))
 
 
 # ----------------------------------------------------------------- l'album --
@@ -475,6 +761,11 @@ def compose_many(opened, limit: int = 15) -> bytes:
 
 
 # --------------------------------------------------------- l'animation GIF --
+#: Une brillante qui vient de se retourner scintille (demi-période du foil).
+SHIMMER_FRAMES = 8
+SHIMMER_MS = 70
+
+
 def _glow(color, alpha: int) -> Image.Image:
     pad = 28
     size = (SMALL[0] + 2 * pad, SMALL[1] + 2 * pad)
@@ -624,13 +915,12 @@ def animate_booster(opened) -> bytes | None:
                         draw_sakura_petals(image, seed=40 + k, count=18, size_range=(22, 44))
                     gif.push(frame(over=petals), 110)
         if card.brillante:
-            for k in range(3):
-                def shine(image, k=k, x=x, y=y, i=i):
-                    face = faces[i].copy()
-                    face.alpha_composite(_holo(0.15 + k * 0.3, SMALL))
-                    face.putalpha(faces[i].getchannel("A"))
-                    image.alpha_composite(face, (x, y))
-                gif.push(frame(over=shine), 80)
+            # Le foil prend la lumière : le prisme glisse, le reflet passe.
+            shimmer = holo_frames(card.card, SHIMMER_FRAMES * 2, SMALL)[:SHIMMER_FRAMES]
+            for still in shimmer:
+                def shine(image, still=still, x=x, y=y):
+                    image.alpha_composite(still, (x, y))
+                gif.push(frame(over=shine, hide=i), SHIMMER_MS)
     # 3. Le résultat, avec les rubans « NOUVELLE ! ».
     gif.push(final, 4000)
     data = gif.bytes()
@@ -647,5 +937,5 @@ def animation_seconds(opened) -> float:
         if card.card.rarity in cs.TOP_RARITIES:
             total += 0.36 + (0.44 if card.card.rarity == "mythic" else 0)
         if card.brillante:
-            total += 0.24
+            total += SHIMMER_FRAMES * SHIMMER_MS / 1000
     return total + 1.5

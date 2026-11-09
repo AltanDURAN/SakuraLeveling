@@ -3,7 +3,7 @@
 {% set section_titles = {
     'inventory': '🎒 Inventaire', 'equipment': '🛡️ Équipement', 'titles': '🏷️ Titres',
     'affinities': '✨ Affinités & essences', 'skills': '🌳 Build', 'defis': '🎯 Défis',
-    'career': '📈 Carrière'
+    'career': '📈 Carrière', 'cartes': '🎴 Cartes'
 } %}
 {% block title %}{{ p.display_name }} — {{ section_titles.get(section, 'Fiche joueur') }}{% endblock %}
 
@@ -131,6 +131,7 @@
             <a href="/admin/players/{{ p.id }}/affinities{{ eq }}" class="pcard-link">✨ Affinités</a>
             <a href="/admin/players/{{ p.id }}/skills{{ eq }}" class="pcard-link">🌳 Build</a>
             <a href="/admin/players/{{ p.id }}/defis{{ eq }}" class="pcard-link">🎯 Défis</a>
+            <a href="/admin/players/{{ p.id }}/cartes{{ eq }}" class="pcard-link">🎴 Cartes</a>
         </div>
 
         <!-- Actions -->
@@ -293,6 +294,50 @@
                 {% endfor %}</tbody>
             </table></div>
             {% else %}<div class="empty-state"><p>Aucun défi tenté cette semaine.</p></div>{% endif %}
+
+        {% elif section == 'cartes' %}
+            {% if card_saved %}<div style="margin:.4rem 0 .8rem; padding:.5rem .8rem; border-radius:10px; background:rgba(80,200,120,.15); border:1px solid rgba(80,200,120,.4);">✅ Enregistré.</div>{% endif %}
+            <div class="pcard-grid">
+                <div class="pfield"><span>📖 Album</span><strong>{{ album.album.owned }}/{{ album.album.total }} ({{ album.album.percent }} %)</strong></div>
+                <div class="pfield"><span>✨ Brillantes</span><strong>{{ album.album.brillantes }}</strong></div>
+                <div class="pfield"><span>🌸 Pétales</span><strong>{{ album.petals }}</strong></div>
+                <div class="pfield"><span>🎴 Boosters ouverts</span><strong>{{ album.boosters_opened }}</strong></div>
+                <div class="pfield"><span>🟠 Légendaire garanti</span><strong>{% if pity_left %}dans {{ pity_left }} booster(s){% else %}—{% endif %}</strong></div>
+                <div class="pfield"><span>🎁 Booster offert</span><strong>{{ 'à prendre' if album.free_booster else 'pris' }}</strong></div>
+            </div>
+            {% if edit %}
+            <form class="pedit-add" method="post" action="/admin/players/{{ p.id }}/cartes/give" style="margin-top:1rem;">
+                <select name="card" required>
+                    <option value="">— donner une carte —</option>
+                    {% for c in all_cards %}<option value="{{ c.code }}">#{{ '%02d' % c.number }} {{ c.name }}</option>{% endfor %}
+                </select>
+                <label style="display:flex; gap:.3rem; align-items:center;"><input type="checkbox" name="brillante" value="1"> brillante</label>
+                <input type="number" name="quantity" value="1" min="1" title="exemplaires">
+                <button type="submit" class="btn btn-primary">+ Donner</button>
+            </form>
+            <form class="pedit-add" method="post" action="/admin/players/{{ p.id }}/cartes/state">
+                <label>🌸 Pétales <input type="number" name="petals" min="0" value="{{ album.petals }}"></label>
+                <label>Boosters sans légendaire <input type="number" name="since_top" min="0" value="{{ album.since_top }}"></label>
+                <label style="display:flex; gap:.3rem; align-items:center;"><input type="checkbox" name="free_booster" value="1" {% if album.free_booster %}checked{% endif %}> booster offert à prendre</label>
+                <button type="submit" class="btn">Corriger</button>
+            </form>
+            {% endif %}
+            {% if owned_cards %}
+            <div class="table-wrapper" style="margin-top:1rem;"><table class="data-table">
+                <thead><tr><th>Carte</th><th>Rareté</th><th>Normales</th><th>Brillantes</th>{% if edit %}<th></th>{% endif %}</tr></thead>
+                <tbody>{% for o in owned_cards %}
+                    <tr><td>#{{ '%02d' % o.card.number }} {{ o.card.name }}</td><td>{{ o.emoji }} {{ o.rarity }}</td>
+                        <td>{{ o.normal or '—' }}</td><td>{{ o.brillante or '—' }}</td>
+                        {% if edit %}<td style="white-space:nowrap;">
+                            {% for shiny, qty in [(0, o.normal), (1, o.brillante)] %}{% if qty %}
+                            <form method="post" action="/admin/players/{{ p.id }}/cartes/remove" style="display:inline;"
+                                  onsubmit="return confirm('Retirer {{ qty }} exemplaire(s){{ ' brillant(s)' if shiny else '' }} de {{ o.card.name }} ?');">
+                                <input type="hidden" name="card" value="{{ o.card.code }}">{% if shiny %}<input type="hidden" name="brillante" value="1">{% endif %}
+                                <button class="btn btn-small btn-del" title="retirer">✕{{ ' ✨' if shiny else '' }}</button></form>
+                            {% endif %}{% endfor %}</td>{% endif %}</tr>
+                {% endfor %}</tbody>
+            </table></div>
+            {% else %}<div class="empty-state"><p>Aucune carte.</p></div>{% endif %}
         {% endif %}
         {% endif %}
     </div>{# .pcard #}

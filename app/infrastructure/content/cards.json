@@ -1,7 +1,93 @@
 {
-  "_comment": "Cartes à collectionner, Série 1 « Le Grand Cerisier » (09/11/2026). La rareté suit la puissance dans le jeu. Effets : monstre (contre lui), boss (au raid, gardes compris), bonus (clés de card_service.BONUS_TEXTS). Image : assets/cards/<code>.png, sinon l'image du monstre / le portrait du personnage.",
+  "_comment": "Cartes à collectionner, Série 1 « Le Grand Cerisier » (09/11/2026). Modifiable depuis le site admin (Objets › Cartes) : le bot relit ce fichier dès qu'il change. params = réglages des boosters (card_service.CardParams) ; chapters = pages de l'album (decor = assets/landscapes) ; cards : la rareté suit la puissance dans le jeu. Effets : monstre (contre lui), boss (au raid, gardes compris), bonus (clés de card_service.BONUS_TEXTS). Image : assets/cards/<code>.png (l'auteur), sinon l'image du monstre / le portrait du personnage, sinon l'ébauche assets/cards/ebauches/<code>.png ; brillante pleine carte : assets/cards/<code>_fullart.png.",
   "series": 1,
   "name": "Le Grand Cerisier",
+  "params": {
+    "booster_price": 2000,
+    "first_free": true,
+    "normal_rates": {
+      "common": 68.0,
+      "uncommon": 24.0,
+      "rare": 6.0,
+      "epic": 1.6,
+      "legendary": 0.38,
+      "mythic": 0.02
+    },
+    "hit_rates": {
+      "rare": 72.7,
+      "epic": 22.0,
+      "legendary": 5.0,
+      "mythic": 0.3
+    },
+    "brillante_pct": 4.0,
+    "pity_boosters": 40,
+    "petals": {
+      "common": 5,
+      "uncommon": 10,
+      "rare": 25,
+      "epic": 80,
+      "legendary": 400,
+      "mythic": 2000
+    },
+    "brillante_petal_mult": 5,
+    "craft_mult": 10
+  },
+  "chapters": [
+    {
+      "code": "clairiere",
+      "name": "Clairière sinistre",
+      "emoji": "🌿",
+      "decor": "clairiere_sinistre.png"
+    },
+    {
+      "code": "cimetiere",
+      "name": "Cimetière abandonné",
+      "emoji": "🪦",
+      "decor": "cimetiere_abandonne_lumiere.png"
+    },
+    {
+      "code": "berceau",
+      "name": "Berceau cataclysmique",
+      "emoji": "🔥",
+      "decor": "berceau_cataclysmique.png"
+    },
+    {
+      "code": "sanctuaire",
+      "name": "Sanctuaire primordial",
+      "emoji": "🌳",
+      "decor": ""
+    },
+    {
+      "code": "eclipse",
+      "name": "Éclipse éternelle",
+      "emoji": "🌘",
+      "decor": ""
+    },
+    {
+      "code": "cimes",
+      "name": "Cimes des Wyrms",
+      "emoji": "🐉",
+      "decor": ""
+    },
+    {
+      "code": "personnages",
+      "name": "Personnages",
+      "emoji": "🏘️",
+      "decor": ""
+    },
+    {
+      "code": "divinites",
+      "name": "Divinités",
+      "emoji": "🙏",
+      "decor": "horizon_celeste.png"
+    },
+    {
+      "code": "legendes",
+      "name": "Légendes",
+      "emoji": "👑",
+      "decor": "fracture_elementaire.png"
+    }
+  ],
   "cards": [
     {
       "number": 1,

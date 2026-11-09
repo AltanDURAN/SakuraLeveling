@@ -12,6 +12,7 @@ import discord
 
 from app.bot.rules_gate import GatedView
 from app.domain.services import card_service as cs
+from app.infrastructure.cards import card_loader
 from app.shared.formatters import format_int
 
 OPEN_PREFIX = "cards:open:"
@@ -22,13 +23,28 @@ def _cog(interaction: discord.Interaction):
     return interaction.client.get_cog("CardsCog")
 
 
+def _emoji(text: str) -> str | None:
+    """L'emoji d'un chapitre (réglé sur le site) seulement s'il en a l'air :
+    Discord refuse tout le menu pour un emoji invalide."""
+    text = (text or "").strip()
+    looks = any(0x1F000 <= ord(ch) <= 0x1FAFF or 0x2600 <= ord(ch) <= 0x27BF or 0x2B00 <= ord(ch) <= 0x2BFF
+                for ch in text)
+    return text if text and looks and all(ord(ch) > 0x2000 for ch in text) else None
+
+
 class BoosterButtons(GatedView):
-    """Ouvrir 1, 5 ou 10 boosters, ou voir son album. Persistants."""
+    """Ouvrir 1, 5 ou 10 boosters, ou voir son album. Persistants. Le prix
+    affiché suit les réglages (relu à chaque message)."""
 
     def __init__(self) -> None:
         super().__init__(timeout=None)
+        try:
+            price = card_loader.params().booster_price
+        except Exception:  # noqa: BLE001 - un contenu illisible n'empêche pas les boutons
+            price = cs.BOOSTER_PRICE
+        self.open_one.label = f"Ouvrir un booster · {format_int(price)} or"
 
-    @discord.ui.button(label=f"Ouvrir un booster · {format_int(cs.BOOSTER_PRICE)} or", emoji="🎴",
+    @discord.ui.button(label="Ouvrir un booster", emoji="🎴",
                        style=discord.ButtonStyle.success, custom_id=f"{OPEN_PREFIX}1")
     async def open_one(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         await _cog(interaction).open_boosters(interaction, 1)
@@ -59,7 +75,7 @@ class AlbumView(discord.ui.View):
         self.owner = owner
         self.own = own
         self.coll = coll
-        self.chapters = [code for code, _ in cs.CHAPTERS if any(c.chapter == code for c in coll.cards)]
+        self.chapters = [c.code for c in card_loader.chapters() if any(card.chapter == c.code for card in coll.cards)]
         self.index = max(0, min(chapter, len(self.chapters) - 1))
         self.message: discord.Message | None = None
         self._build()
@@ -89,9 +105,9 @@ class AlbumView(discord.ui.View):
             recycle.callback = self._recycle
             self.add_item(recycle)
         chapters = discord.ui.Select(placeholder="Aller au chapitre…", row=1, options=[
-            discord.SelectOption(label=cs.chapter_name(code), value=str(i), emoji=cs.CHAPTER_LABELS[code].split(" ")[0],
-                                 default=i == self.index)
-            for i, code in enumerate(self.chapters)])
+            discord.SelectOption(label=card_loader.get_chapter(code).name[:100], value=str(i),
+                                 emoji=_emoji(card_loader.get_chapter(code).emoji), default=i == self.index)
+            for i, code in enumerate(self.chapters)][:25])
         chapters.callback = self._goto
         self.add_item(chapters)
         cards = discord.ui.Select(placeholder="Voir une carte…", row=2, options=[
@@ -99,7 +115,7 @@ class AlbumView(discord.ui.View):
                 label=f"#{c.number:02d} {c.name}"[:100], value=c.code,
                 emoji=cs.CARD_RARITY_EMOJIS.get(c.rarity),
                 description=(cs.RARITY_LABELS.get(c.rarity, "") + (" · à toi" if self.coll.owns(c.code) else ""))[:100])
-            for c in self.chapter_cards()])
+            for c in self.chapter_cards()][:25])
         cards.callback = self._show_card
         self.add_item(cards)
 
@@ -178,7 +194,7 @@ class CraftView(discord.ui.View):
         super().__init__(timeout=300)
         self.album = album
         self.card = card
-        cost = cs.craft_cost(card.rarity)
+        cost = cs.craft_cost(card.rarity, album.coll.params)
         self.craft.label = f"Fabriquer · {format_int(cost)} pétales"
         self.craft.disabled = album.coll.petals < cost
 

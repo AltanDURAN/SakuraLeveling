@@ -847,9 +847,10 @@ WORLD BOSS — /boss moi, /boss historique, /bestiaire boss
       Rare 72,7 % · Épique 22 % · Légendaire 5 % · Mythique 0,3 %. En gros :
       une épique tous les 4 boosters, une légendaire tous les 16, la
       mythique une fois sur 260.
-    • BRILLANTES ✨ : chaque carte a 4 % de chances de sortir brillante (même
-      effet, pur prestige, elle scintille). La mythique est TOUJOURS
-      brillante.
+    • BRILLANTES ✨ : chaque carte a 4 % de chances de sortir brillante : une
+      version PLEINE CARTE HOLOGRAPHIQUE (l'illustration couvre toute la
+      carte, reflets arc-en-ciel et paillettes qui bougent dans l'album).
+      Même effet, pur prestige. La mythique est TOUJOURS brillante.
     • LÉGENDAIRE GARANTI : au plus tard au 40e booster sans légendaire ni
       mythique — et celui-là est brillant.
     • EFFETS : dès que tu possèdes une carte (normale ou brillante, une seule
@@ -874,6 +875,9 @@ WORLD BOSS — /boss moi, /boss historique, /bestiaire boss
       brillante. Avec des pétales, FABRIQUE une carte qui te manque (10 fois
       son recyclage : 50 / 100 / 250 / 800 / 4 000). Jamais une brillante :
       la mythique se tire ou s'échange.
+    (Les chiffres ci-dessus sont les réglages de départ : l'équipe peut les
+    ajuster, le guide épinglé du salon des cartes affiche toujours les
+    vrais.)
 
 /album [joueur]
     TON ALBUM : une page par chapitre (les 6 zones, Personnages, Divinités,

@@ -1,0 +1,184 @@
+{% extends "admin/base.html" %}
+{% block title %}{% if is_new %}Nouvelle carte{% else %}{{ entry.name }}{% endif %} — Cartes — Sakura Admin{% endblock %}
+{% block content %}
+<style>
+  .cform { display:grid; grid-template-columns:minmax(0, 1.25fr) minmax(300px, 1fr); gap:1.4rem; align-items:start; }
+  @media (max-width: 980px) { .cform { grid-template-columns:1fr; } }
+  .cgrid2 { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:.8rem; }
+  .cside { position:sticky; top:1rem; display:flex; flex-direction:column; gap:1rem; }
+  .cfaces { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+  .cfaces figure { margin:0; text-align:center; font-size:.8rem; color:var(--text-soft); }
+  .cfaces img, .cpreview img { width:100%; border-radius:12px; background:var(--bg-soft); display:block; }
+  .cpreview img { margin-top:.5rem; }
+  .notice { margin:.6rem 0; padding:.6rem .9rem; border-radius:10px; background:rgba(80,200,120,.15); border:1px solid rgba(80,200,120,.4); }
+  .alert { margin:.4rem 0; padding:.6rem .9rem; border-radius:10px; background:rgba(220,80,100,.12); border:1px solid rgba(220,80,100,.4); }
+  .bonus-row { display:grid; grid-template-columns:minmax(0, 1fr) 7rem; gap:.5rem; margin-bottom:.4rem; }
+  .imgrow { display:flex; gap:.6rem; align-items:center; flex-wrap:wrap; }
+  .holdings { display:flex; gap:.8rem; flex-wrap:wrap; font-size:.9rem; color:var(--text-soft); }
+  button[disabled] { opacity:.45; cursor:not-allowed; }
+  [x-cloak] { display:none !important; }
+</style>
+<section class="form-page" x-data="{
+    kind: '{{ effect.get('type', 'monstre') }}', flavor: {{ (entry.flavor or '')|tojson|forceescape }},
+    previewUrl: '', busy: false, error: '',
+    async preview() {
+      this.busy = true; this.error = '';
+      try {
+        const r = await fetch('/admin/cards/preview', { method: 'POST', body: new FormData(this.$refs.form) });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
+        this.previewUrl = URL.createObjectURL(await r.blob());
+      } catch (e) { this.error = 'Aperçu impossible (' + e.message + ')'; }
+      this.busy = false;
+    } }">
+  <p style="margin:0 0 .4rem;"><a href="/admin/cards">← Toutes les cartes</a> · <a href="/admin/cards/settings">⚙️ Réglages des boosters</a></p>
+  <h1>{% if is_new %}＋ Nouvelle carte{% else %}🎴 #{{ '%02d' % entry.number }} {{ entry.name }}{% endif %}</h1>
+  {% if saved == 'created' %}<div class="notice">✅ Carte créée : elle se tire déjà dans les boosters.</div>
+  {% elif saved == 'card' %}<div class="notice">✅ Carte enregistrée — le bot la redessine tout seul.</div>
+  {% elif saved == 'art' %}<div class="notice">✅ Image mise à jour.</div>{% endif %}
+  {% for e in errors %}<div class="alert">⚠️ {{ e }}</div>{% endfor %}
+  {% if not is_new %}
+  <div class="holdings">
+    <span>👥 {{ holdings[0] }} joueur(s) l'ont</span><span>✨ {{ holdings[1] }} en brillante</span><span>📦 {{ holdings[2] }} exemplaire(s)</span>
+  </div>
+  {% endif %}
+
+  <div class="cform" style="margin-top:1rem;">
+    <div>
+      <form method="post" action="{% if is_new %}/admin/cards/new{% else %}/admin/cards/{{ entry.code }}{% endif %}" x-ref="form">
+        {% if not is_new %}<input type="hidden" name="current_code" value="{{ entry.code }}">{% endif %}
+        <div class="form-section">
+          <h2 class="form-section-title">La carte</h2>
+          <div class="cgrid2">
+            <label class="field"><span class="field-label">Nom</span>
+              <input class="input" name="name" value="{{ entry.name }}" maxlength="40" required></label>
+            <label class="field"><span class="field-label">Code {% if not is_new %}(fixe : lié aux exemplaires){% endif %}</span>
+              <input class="input" name="code" value="{{ entry.code }}" {% if not is_new %}readonly{% else %}placeholder="déduit du nom"{% endif %}
+                     pattern="[a-z0-9_]*"></label>
+            <label class="field"><span class="field-label">Numéro (place dans l'album, 1 à {{ count + (1 if is_new else 0) }})</span>
+              <input class="input" type="number" name="number" min="1" max="{{ count + (1 if is_new else 0) }}" value="{{ entry.number }}"></label>
+            <label class="field"><span class="field-label">Sous-titre</span>
+              <input class="input" name="title" value="{{ entry.title }}" maxlength="60" placeholder="Forgeron, la zone…"></label>
+            <label class="field"><span class="field-label">Rareté</span>
+              <select class="input" name="rarity">{% for r in rarities %}<option value="{{ r }}" {% if r == entry.rarity %}selected{% endif %}>{{ rarity_emojis[r] }} {{ rarity_labels[r] }}</option>{% endfor %}</select></label>
+            <label class="field"><span class="field-label">Catégorie</span>
+              <select class="input" name="category">{% for code, label in categories.items() %}<option value="{{ code }}" {% if code == entry.category %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+            <label class="field"><span class="field-label">Chapitre de l'album</span>
+              <select class="input" name="chapter">{% for ch in chapters %}<option value="{{ ch.code }}" {% if ch.code == entry.chapter %}selected{% endif %}>{{ ch.emoji }} {{ ch.name }}</option>{% endfor %}</select></label>
+            <label class="field"><span class="field-label">Élément (pied de la carte)</span>
+              <select class="input" name="element"><option value="">— neutre —</option>{% for code, label in elements.items() %}<option value="{{ code }}" {% if code == entry.element %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+            <label class="field" style="grid-column:1 / -1;"><span class="field-label">Source (monstre, boss ou portrait de PNJ) — donne son image à la carte si tu n'en envoies pas</span>
+              <input class="input" name="source" value="{{ entry.source }}" list="sources" placeholder="code du monstre, du boss ou du portrait"></label>
+            <datalist id="sources">
+              {% for m in mobs %}<option value="{{ m.code }}">👹 {{ m.name }}</option>{% endfor %}
+              {% for b in bosses %}<option value="{{ b.code }}">👑 {{ b.name }}</option>{% endfor %}
+              {% for p in npcs %}<option value="{{ p }}">👤 portrait {{ p }}</option>{% endfor %}
+            </datalist>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h2 class="form-section-title">L'effet <small style="font-weight:400; color:var(--text-soft);">(dès qu'on possède la carte, en zone et au world boss)</small></h2>
+          <label class="field" style="max-width:320px;"><span class="field-label">Type</span>
+            <select class="input" name="effect_type" x-model="kind">
+              <option value="monstre">👹 Contre un monstre (dégâts + butin)</option>
+              <option value="boss">👑 Contre un world boss et ses gardes</option>
+              <option value="bonus">✨ Bonus (personnages, divinités, mythique)</option>
+            </select></label>
+          <div class="cgrid2" x-show="kind === 'monstre'" x-cloak style="margin-top:.6rem;">
+            <label class="field"><span class="field-label">Monstre</span>
+              <select class="input" name="mob"><option value="">— la source —</option>
+                {% for m in mobs %}<option value="{{ m.code }}" {% if m.code == effect.get('mob') %}selected{% endif %}>{{ m.name }} ({{ m.family }})</option>{% endfor %}</select></label>
+            <label class="field"><span class="field-label">+ % de dégâts contre lui</span>
+              <input class="input" type="number" min="0" max="1000" name="damage_pct" value="{{ effect.get('damage_pct', 0) }}"></label>
+            <label class="field"><span class="field-label">+ % de butin sur lui</span>
+              <input class="input" type="number" min="0" max="1000" name="drop_pct" value="{{ effect.get('drop_pct', 0) }}"></label>
+          </div>
+          <div class="cgrid2" x-show="kind === 'boss'" x-cloak style="margin-top:.6rem;">
+            <label class="field"><span class="field-label">World boss</span>
+              <select class="input" name="boss"><option value="">— la source —</option>
+                {% for b in bosses %}<option value="{{ b.code }}" {% if b.code == effect.get('boss') %}selected{% endif %}>{{ b.name }}</option>{% endfor %}</select></label>
+            <label class="field"><span class="field-label">+ % de dégâts contre lui (et ses gardes)</span>
+              <input class="input" type="number" min="0" max="1000" name="boss_damage_pct" value="{{ effect.get('damage_pct', 0) }}"></label>
+            <label class="field" style="grid-column:1 / -1;"><span class="field-label">Ses gardes (Ctrl/Cmd + clic pour en choisir plusieurs)</span>
+              <select class="input" name="guards" multiple size="5">
+                {% set guards = effect.get('guards', []) %}
+                {% for m in mobs|selectattr('code', 'in', guards) %}<option value="{{ m.code }}" selected>{{ m.name }} ({{ m.family }})</option>{% endfor %}
+                {% for m in mobs|rejectattr('code', 'in', guards) %}<option value="{{ m.code }}">{{ m.name }} ({{ m.family }})</option>{% endfor %}
+              </select></label>
+          </div>
+          <div x-show="kind === 'bonus'" x-cloak style="margin-top:.6rem;">
+            {% for key, value in bonuses %}
+            <div class="bonus-row">
+              <select class="input" name="bonus_key_{{ loop.index0 }}"><option value="">— aucun —</option>
+                {% for k, text in bonus_texts.items() %}<option value="{{ k }}" {% if k == key %}selected{% endif %}>{{ text.replace('{v}', 'X') }}</option>{% endfor %}</select>
+              <input class="input" type="number" min="0" max="1000" name="bonus_value_{{ loop.index0 }}" value="{{ value }}" placeholder="X">
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h2 class="form-section-title">Texte d'ambiance</h2>
+          <textarea class="input textarea" name="flavor" rows="3" maxlength="240" x-model="flavor"></textarea>
+          <p class="form-section-help" style="margin:.3rem 0 0;"><span x-text="flavor.length"></span>/240 — deux lignes sur la carte, le reste est coupé.</p>
+        </div>
+
+        <div class="form-actions" style="display:flex; gap:.5rem; flex-wrap:wrap;">
+          <button type="submit" class="btn btn-primary">{% if is_new %}Créer la carte{% else %}Enregistrer{% endif %}</button>
+          <button type="button" class="btn" x-on:click="preview()" x-bind:disabled="busy">👁️ Aperçu avant d'enregistrer</button>
+        </div>
+      </form>
+
+      {% if not is_new %}
+      <div class="form-section" style="margin-top:1.2rem;">
+        <h2 class="form-section-title">Images</h2>
+        <p class="form-section-help" style="margin:0 0 .6rem;">Utilisée en ce moment : <strong>{{ images.origin }}</strong>{% if images.path %} <code>{{ images.path }}</code>{% endif %}.
+          PNG, JPG ou WebP, 8 Mo au plus (réduite à 1 024 px). Ton image passe avant tout le reste.</p>
+        <form method="post" action="/admin/cards/{{ entry.code }}/art/carte" enctype="multipart/form-data" class="imgrow">
+          <strong style="min-width:13rem;">🖼️ Image de la carte</strong>
+          <input type="file" name="image" accept="image/png,image/jpeg,image/webp" required>
+          <button class="btn btn-small btn-primary" type="submit">Envoyer</button>
+          {% if images.own %}<button class="btn btn-small btn-ghost" type="submit" formaction="/admin/cards/{{ entry.code }}/art/carte/delete" formenctype="application/x-www-form-urlencoded" formnovalidate onclick="return confirm('Retirer ton image ? La carte reprend l\'image du monstre, le portrait ou l\'ébauche.')">Retirer</button>{% endif %}
+        </form>
+        <form method="post" action="/admin/cards/{{ entry.code }}/art/fullart" enctype="multipart/form-data" class="imgrow" style="margin-top:.7rem;">
+          <strong style="min-width:13rem;">🌈 Pleine carte (brillante)</strong>
+          <input type="file" name="image" accept="image/png,image/jpeg,image/webp" required>
+          <button class="btn btn-small btn-primary" type="submit">Envoyer</button>
+          {% if images.fullart %}<button class="btn btn-small btn-ghost" type="submit" formaction="/admin/cards/{{ entry.code }}/art/fullart/delete" formenctype="application/x-www-form-urlencoded" formnovalidate onclick="return confirm('Retirer l\'illustration pleine carte ?')">Retirer</button>{% endif %}
+        </form>
+        <p class="form-section-help" style="margin:.5rem 0 0;">Pleine carte : une illustration complète au format portrait (5 × 7, 720 × 1 008 px idéal) qui couvre toute la brillante.
+          Sans elle, la brillante est composée avec l'image de la carte (agrandie sur le décor du chapitre si elle est détourée).</p>
+      </div>
+
+      <form method="post" action="/admin/cards/{{ entry.code }}/delete" style="margin-top:1.2rem;"
+            onsubmit="return confirm('Supprimer {{ entry.name }} ? Les numéros des cartes suivantes se décalent.');">
+        <button class="btn" type="submit" style="background:var(--danger); color:#fff;" {% if holdings[0] %}disabled title="Des joueurs l'ont : elle ne peut pas être supprimée."{% endif %}>🗑️ Supprimer la carte</button>
+        {% if holdings[0] %}<span class="form-section-help">Impossible : des joueurs l'ont.</span>{% endif %}
+      </form>
+      {% endif %}
+    </div>
+
+    <aside class="cside">
+      {% if not is_new %}
+      <div class="form-section">
+        <h2 class="form-section-title">Dans le jeu</h2>
+        <div class="cfaces">
+          <figure><img src="/admin/cards/{{ entry.code }}/face.png?v={{ images.version }}" alt="normale"><figcaption>Normale</figcaption></figure>
+          <figure><img src="/admin/cards/{{ entry.code }}/face.png?brillante=1&v={{ images.shiny_version }}" alt="brillante">
+            <figcaption>Brillante · <a href="/admin/cards/{{ entry.code }}/holo.gif?v={{ images.shiny_version }}" target="_blank">▶ animée</a></figcaption></figure>
+        </div>
+      </div>
+      {% endif %}
+      <div class="form-section cpreview">
+        <h2 class="form-section-title">Aperçu du formulaire</h2>
+        <p class="form-section-help" style="margin:0;">Normale | brillante, avec ce qui est saisi, sans rien enregistrer.</p>
+        <button type="button" class="btn btn-small" style="margin-top:.5rem;" x-on:click="preview()" x-bind:disabled="busy"
+                x-text="busy ? 'Dessin…' : '👁️ Dessiner l\'aperçu'"></button>
+        <p x-show="error" x-text="error" x-cloak style="color:var(--danger);"></p>
+        <img x-show="previewUrl" x-bind:src="previewUrl" x-cloak alt="aperçu">
+      </div>
+    </aside>
+  </div>
+</section>
+{% endblock %}

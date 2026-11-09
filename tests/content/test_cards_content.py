@@ -30,7 +30,8 @@ def test_la_serie_est_valide_et_ses_references_existent():
     mobs = mobs if isinstance(mobs, list) else mobs["mobs"]
     bosses = _json("boss_definitions.json")
     bosses = bosses if isinstance(bosses, list) else bosses.get("bosses", list(bosses.values()))
-    problems = cs.validate(card_loader.list_cards(), {m["code"] for m in mobs}, {b["code"] for b in bosses})
+    problems = cs.validate(card_loader.list_cards(), {m["code"] for m in mobs}, {b["code"] for b in bosses},
+                           chapters={c.code for c in card_loader.get_series().chapters})
     assert problems == []
 
 
@@ -48,8 +49,18 @@ def test_chaque_monstre_des_zones_ouvertes_a_sa_carte_l_elite_est_epique():
 
 def test_une_page_d_album_par_chapitre_en_grille_trois_par_trois():
     per_chapter = Counter(c.chapter for c in card_loader.list_cards())
-    assert set(per_chapter) == {code for code, _ in cs.CHAPTERS}
+    assert set(per_chapter) == {c.code for c in card_loader.get_series().chapters}
     assert max(per_chapter.values()) <= 9
+
+
+def test_les_reglages_et_les_chapitres_sont_dans_le_contenu():
+    """Le site admin les modifie dans cards.json ; livrés aux valeurs de l'auteur."""
+    data = _json("cards.json")
+    assert cs.params_from_dict(data["params"]) == cs.DEFAULT_PARAMS
+    assert cs.validate_params(card_loader.params()) == []
+    assert [c["code"] for c in data["chapters"]] == [c.code for c in cs.DEFAULT_CHAPTERS]
+    for chapter in card_loader.get_series().chapters:
+        assert not chapter.decor or card_loader.decor_path(chapter.code) is not None, chapter.code
 
 
 def test_chaque_effet_bonus_est_branche():
@@ -67,6 +78,12 @@ def test_objets_d_inventaire_une_normale_et_une_brillante_la_mythique_brillante_
     assert card_loader.parse_item_code("potion_soin") is None
     mythic = next(c for c in cards if c.rarity == "mythic")
     assert card_loader.variants(mythic) == [True]
+
+
+def test_chaque_carte_a_une_image():
+    """L'image de l'auteur, du monstre, le portrait ou l'ébauche : jamais de « ? »."""
+    for card in card_loader.list_cards():
+        assert card_loader.art_path(card) is not None, card.code
 
 
 def test_les_monstres_dessines_ont_leur_image_de_carte():

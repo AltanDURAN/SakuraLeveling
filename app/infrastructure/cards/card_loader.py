@@ -5,10 +5,18 @@ normale `carte_<code>` et la brillante `carte_<code>_brillante` ; la mythique
 n'a que la brillante. Comme des objets, elles s'échangent (/echange) et se
 vendent à la brocante sans code de plus. `seed_content` les crée.
 
-Image d'une carte (`art_path`) : pour un monstre, son image (`assets/mobs`,
-d'après `mobs.json`), sinon l'ébauche `assets/cards/<code>.png` ; pour les
-autres, `assets/cards/<code>.png` — c'est là que se remplacent leurs visuels —
-sinon le portrait du personnage (`assets/npcs`).
+Le fichier porte aussi les RÉGLAGES des boosters (`params` → `CardParams`)
+et les CHAPITRES de l'album (`chapters`), modifiés depuis le site admin
+(Objets › Cartes) : le bot les relit dès que le fichier change.
+
+Image d'une carte (`art_path`), dans cet ordre :
+  1. `assets/cards/<code>.png` — l'image de l'auteur (déposée à la main ou
+     envoyée depuis le site), elle passe avant tout ;
+  2. pour un monstre, son image de jeu (`assets/mobs`, d'après `mobs.json`) ;
+     pour un personnage, son portrait (`assets/npcs/<source>.png`) ;
+  3. l'ébauche générée (`assets/cards/ebauches/<code>.png`), en attendant.
+La BRILLANTE est « pleine carte » : `assets/cards/<code>_fullart.png` si
+l'auteur en a fait une, sinon elle est composée à partir de l'image.
 """
 
 from __future__ import annotations
@@ -17,12 +25,24 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from app.domain.services.card_service import RARITIES, CardDef
+from app.domain.services.card_service import (
+    DEFAULT_CHAPTERS,
+    RARITIES,
+    CardDef,
+    CardParams,
+    Chapter,
+    params_from_dict,
+)
 
 CONTENT_PATH = Path(__file__).resolve().parents[1] / "content" / "cards.json"
 MOBS_PATH = Path(__file__).resolve().parents[1] / "content" / "mobs.json"
 ASSETS = Path(__file__).resolve().parents[3] / "assets"
 CARD_ART = ASSETS / "cards"
+#: Les ébauches générées (Cloudflare, 09/11/2026), en attendant les images de l'auteur.
+DRAFT_ART = CARD_ART / "ebauches"
+LANDSCAPES = ASSETS / "landscapes"
+FULL_ART_SUFFIX = "_fullart"
+BACK_FILE = CARD_ART / "_dos.png"
 
 ITEM_PREFIX = "carte_"
 BRILLANTE_SUFFIX = "_brillante"
@@ -33,6 +53,12 @@ class CardSeries:
     number: int
     name: str
     cards: tuple[CardDef, ...]
+    params: CardParams = CardParams()
+    chapters: tuple[Chapter, ...] = DEFAULT_CHAPTERS
+
+    @property
+    def total(self) -> int:
+        return len(self.cards)
 
 
 _cache: dict[str, tuple[float, object]] = {}
@@ -60,14 +86,46 @@ def _card(raw: dict) -> CardDef:
     )
 
 
+def _chapter(raw: dict) -> Chapter:
+    return Chapter(code=str(raw.get("code", "")), name=str(raw.get("name", "") or raw.get("code", "")),
+                   emoji=str(raw.get("emoji", "") or ""), decor=str(raw.get("decor", "") or ""))
+
+
 def _load() -> CardSeries:
-    data = json.loads(CONTENT_PATH.read_text(encoding="utf-8"))
+    try:
+        data = json.loads(CONTENT_PATH.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        data = {}
     cards = tuple(sorted((_card(raw) for raw in data.get("cards", [])), key=lambda c: c.number))
-    return CardSeries(int(data.get("series", 1)), data.get("name", ""), cards)
+    raw_chapters = data.get("chapters")
+    chapters = (tuple(_chapter(c) for c in raw_chapters if c.get("code"))
+                if isinstance(raw_chapters, list) and raw_chapters else DEFAULT_CHAPTERS)
+    return CardSeries(int(data.get("series", 1)), data.get("name", ""), cards,
+                      params_from_dict(data.get("params")), chapters)
 
 
 def get_series() -> CardSeries:
     return _cached(CONTENT_PATH, "series", _load)
+
+
+def clear_cache() -> None:
+    _cache.clear()
+
+
+def params() -> CardParams:
+    """Les réglages des boosters (prix, taux, brillantes, pitié, pétales)."""
+    return get_series().params
+
+
+def chapters() -> list[Chapter]:
+    """Les pages de l'album, dans l'ordre (seulement celles qui ont des cartes)."""
+    series = get_series()
+    used = {c.chapter for c in series.cards}
+    return [c for c in series.chapters if c.code in used]
+
+
+def get_chapter(code: str) -> Chapter:
+    return next((c for c in get_series().chapters if c.code == code), Chapter(code, code))
 
 
 def list_cards() -> list[CardDef]:
@@ -123,19 +181,46 @@ def _mob_images() -> dict[str, str]:
     return _cached(MOBS_PATH, "mob_images", build)
 
 
-def art_path(card: CardDef) -> Path | None:
-    """L'image de la carte (None : pas encore d'image)."""
-    own = CARD_ART / f"{card.code}.png"
-    candidates: list[Path] = []
+def _art_candidates(card: CardDef) -> list[tuple[str, Path]]:
+    """(origine, chemin) des images possibles d'une carte, par priorité."""
+    candidates = [("carte", CARD_ART / f"{card.code}.png")]
     if card.category == "monstre":
-        # L'image du monstre d'abord : quand l'auteur dessine le monstre, la
-        # carte la prend (l'ébauche de assets/cards ne sert qu'en attendant).
         image = _mob_images().get(card.source, "")
         if image:
-            candidates.append(ASSETS / "mobs" / image)
-        candidates.append(own)
-    else:
-        candidates.append(own)
-        if card.category == "personnage":
-            candidates.append(ASSETS / "npcs" / f"{card.source}.png")
-    return next((p for p in candidates if p.is_file()), None)
+            candidates.append(("monstre", ASSETS / "mobs" / image))
+    elif card.category == "personnage" and card.source:
+        candidates.append(("portrait", ASSETS / "npcs" / f"{card.source}.png"))
+    candidates.append(("ebauche", DRAFT_ART / f"{card.code}.png"))
+    return candidates
+
+
+def art_path(card: CardDef) -> Path | None:
+    """L'image de la carte (None : pas encore d'image)."""
+    return next((p for _, p in _art_candidates(card) if p.is_file()), None)
+
+
+def art_origin(card: CardDef) -> str:
+    """D'où vient l'image : carte, monstre, portrait, ebauche ou aucune."""
+    return next((origin for origin, p in _art_candidates(card) if p.is_file()), "aucune")
+
+
+def own_art_path(card: CardDef) -> Path:
+    """Où va l'image de l'auteur (celle qui passe avant tout)."""
+    return CARD_ART / f"{card.code}.png"
+
+
+def full_art_path(card: CardDef) -> Path | None:
+    """L'illustration « pleine carte » de la brillante, si l'auteur en a fait une."""
+    path = own_full_art_path(card)
+    return path if path.is_file() else None
+
+
+def own_full_art_path(card: CardDef) -> Path:
+    return CARD_ART / f"{card.code}{FULL_ART_SUFFIX}.png"
+
+
+def decor_path(chapter: str) -> Path | None:
+    """Le décor du chapitre (derrière l'image des cartes), s'il existe."""
+    decor = get_chapter(chapter).decor
+    path = LANDSCAPES / decor if decor else None
+    return path if path is not None and path.is_file() else None

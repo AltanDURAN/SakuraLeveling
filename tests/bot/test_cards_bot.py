@@ -1,11 +1,13 @@
 """Cartes à collectionner côté Discord : textes dans les limites, images,
 /inventaire sans cartes, échanges à plusieurs pages, guide épinglé."""
 
+import asyncio
+import dataclasses
 import io
 from types import SimpleNamespace
 
 import discord
-from PIL import Image
+from PIL import Image, ImageChops, ImageStat
 
 from app.application.use_cases.cards import BoosterResult, Collection, OpenedCard
 from app.bot.embeds import card_embeds
@@ -132,3 +134,43 @@ def test_le_guide_du_salon_des_cartes_porte_les_boutons(monkeypatch):
         return {item.custom_id for item in guide.view().children}
     import asyncio
     assert {"cards:open:1", "cards:open:5", "cards:open:10", "cards:album"} == asyncio.run(custom_ids())
+
+
+def test_la_brillante_est_pleine_carte_holographique_et_animee():
+    card = CARDS["slime_titan"]
+    normal = Image.open(io.BytesIO(card_render.card_png(card))).convert("RGB")
+    shiny = Image.open(io.BytesIO(card_render.card_png(card, True))).convert("RGB")
+    assert normal.size == shiny.size == (card_render.W, card_render.H)
+    # Pleine carte : l'illustration remplace le cadre sombre de la normale.
+    band = (40, 80, card_render.W - 40, 300)
+    assert sum(ImageStat.Stat(ImageChops.difference(normal.crop(band), shiny.crop(band))).mean) / 3 > 20
+    frames = card_render.holo_frames(card, 4)
+    assert len(frames) == 4 and frames[0].tobytes() != frames[2].tobytes(), "le foil doit bouger"
+    gif = card_render.card_gif(card)
+    animation = Image.open(io.BytesIO(gif))
+    assert animation.n_frames == card_render.HOLO_FRAMES and animation.info.get("loop") == 0
+    assert len(gif) < 4_000_000
+    assert card_render.card_gif(card) is gif, "l'animation est gardée en mémoire"
+
+
+def test_une_carte_modifiee_est_redessinee():
+    card = CARDS["borak"]
+    renamed = dataclasses.replace(card, name="Borak le Grand")
+    assert card_render.render_version(card) != card_render.render_version(renamed)
+    assert card_render.card_png(card) != card_render.card_png(renamed)
+    assert card_render.render_version(card) == card_render.render_version(CARDS["borak"])
+
+
+def test_les_boutons_et_le_guide_suivent_les_reglages(monkeypatch):
+    from app.bot.views.card_views import BoosterButtons
+
+    params = cs.CardParams(booster_price=3500, first_free=False, pity_boosters=0)
+    monkeypatch.setattr(card_loader, "params", lambda: params)
+
+    async def label():
+        return BoosterButtons().open_one.label
+    assert "3 500" in asyncio.run(label())
+    embed = card_embeds.build_cards_guide("📌 pied")
+    assert "3 500 or" in embed.fields[0].value and "offert" not in embed.fields[0].value
+    assert not any("garanti" in f.name for f in embed.fields)
+    assert _size(embed) <= 6000 and all(len(f.value) <= 1024 for f in embed.fields)

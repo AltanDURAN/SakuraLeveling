@@ -197,7 +197,7 @@ class CardsCog(commands.Cog):
     @staticmethod
     def _first_chapter(coll: cards_uc.Collection) -> int:
         """La première page où il manque une carte (sinon la première)."""
-        chapters = [code for code, _ in cs.CHAPTERS if any(c.chapter == code for c in coll.cards)]
+        chapters = [c.code for c in card_loader.chapters() if any(card.chapter == c.code for card in coll.cards)]
         for index, code in enumerate(chapters):
             if any(c.chapter == code and not coll.owns(c.code) for c in coll.cards):
                 return index
@@ -210,7 +210,7 @@ class CardsCog(commands.Cog):
         shiny = sum(1 for c in cards if coll.brillante.get(c.code))
         subtitle = f"{owned}/{len(cards)} cartes · {shiny} brillante(s)"
         png = await asyncio.to_thread(card_render.compose_album_page, cards, coll.normal, coll.brillante,
-                                      cs.chapter_name(chapter), subtitle)
+                                      card_loader.get_chapter(chapter).name, subtitle)
         embed = card_embeds.build_album_embed(view.owner, coll, chapter, view.index + 1, len(view.chapters),
                                               own=view.own)
         return embed, file_from(png, card_embeds.ALBUM_FILE)

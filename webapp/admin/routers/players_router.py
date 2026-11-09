@@ -371,6 +371,70 @@ async def players_defis(player_id: int, request: Request, edit: int = 0, user: A
     return get_templates().TemplateResponse(request, "admin/players/card.html", context=ctx)
 
 
+@router.get("/{player_id}/cartes", response_class=HTMLResponse)
+async def players_cards(player_id: int, request: Request, edit: int = 0, saved: str = "",
+                        user: AdminUser = Depends(require_admin)):
+    """Cartes à collectionner : album, pétales, pitié, booster offert ; en
+    édition, donner / retirer une carte et corriger l'état."""
+    from app.application.use_cases import cards as cards_uc
+    from app.domain.services import card_service as cs
+
+    with get_db_session() as session:
+        ctx, _ = await _base_ctx(session, user, player_id, "cartes")
+        ctx["edit"] = bool(edit)
+        coll = cards_uc.collection(session, player_id)
+        ctx["album"] = coll
+        ctx["pity_left"] = cs.boosters_before_pity(coll.since_top, coll.params)
+        ctx["owned_cards"] = [
+            {"card": c, "normal": coll.normal.get(c.code, 0), "brillante": coll.brillante.get(c.code, 0),
+             "emoji": cs.CARD_RARITY_EMOJIS.get(c.rarity, ""), "rarity": cs.RARITY_LABELS.get(c.rarity, c.rarity)}
+            for c in coll.cards if coll.owns(c.code)]
+        ctx["all_cards"] = coll.cards
+        ctx["card_saved"] = saved
+    return get_templates().TemplateResponse(request, "admin/players/card.html", context=ctx)
+
+
+@router.post("/{player_id}/cartes/give")
+async def cards_give(player_id: int, request: Request, user: AdminUser = Depends(require_admin)):
+    from app.application.use_cases import cards as cards_uc
+
+    form = await request.form()
+    code = str(form.get("card", "")).strip()
+    try:
+        with get_db_session() as session:
+            cards_uc.admin_give_card(session, player_id, code, bool(form.get("brillante")),
+                                     _form_int(form, "quantity", 1))
+    except ValueError:
+        _logger.warning("carte %s non donnée au joueur %s", code, player_id, exc_info=True)
+    _logger.info("Admin %s a donné la carte %s au joueur %s", user.discord_id, code, player_id)
+    return RedirectResponse(f"/admin/players/{player_id}/cartes?edit=1&saved=give", status_code=303)
+
+
+@router.post("/{player_id}/cartes/remove")
+async def cards_remove(player_id: int, request: Request, user: AdminUser = Depends(require_admin)):
+    from app.application.use_cases import cards as cards_uc
+
+    form = await request.form()
+    code = str(form.get("card", "")).strip()
+    with get_db_session() as session:
+        cards_uc.admin_remove_card(session, player_id, code, bool(form.get("brillante")))
+    _logger.info("Admin %s a retiré la carte %s au joueur %s", user.discord_id, code, player_id)
+    return RedirectResponse(f"/admin/players/{player_id}/cartes?edit=1&saved=remove", status_code=303)
+
+
+@router.post("/{player_id}/cartes/state")
+async def cards_state(player_id: int, request: Request, user: AdminUser = Depends(require_admin)):
+    from app.application.use_cases import cards as cards_uc
+
+    form = await request.form()
+    with get_db_session() as session:
+        cards_uc.admin_set_state(session, player_id, petals=max(0, _form_int(form, "petals", 0)),
+                                 free_booster=bool(form.get("free_booster")),
+                                 since_top=max(0, _form_int(form, "since_top", 0)))
+    _logger.info("Admin %s a corrigé l'état des cartes du joueur %s", user.discord_id, player_id)
+    return RedirectResponse(f"/admin/players/{player_id}/cartes?edit=1&saved=state", status_code=303)
+
+
 @router.get("/{player_id}/career", response_class=HTMLResponse)
 async def players_career(player_id: int, request: Request, edit: int = 0, user: AdminUser = Depends(require_admin)):
     with get_db_session() as session:

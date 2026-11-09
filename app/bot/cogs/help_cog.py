@@ -50,7 +50,7 @@ CATEGORIES: list[tuple[str, str, str, set[str]]] = [
      "Le marchand et ses outils, la voyante, ton apparence, la monnaie et le commerce entre joueurs.",
      {"marchand", "voyante", "apparence", "payer", "echange", "brocante"}),
     ("🎴", "Cartes à collectionner",
-     "Les boosters de Sorn (salon des cartes) et ton album : 61 cartes, chacune avec un petit effet.",
+     "Les boosters de Sorn (salon des cartes) et ton album : chaque carte a un petit effet.",
      {"booster", "album"}),
     ("🏆", "Classements & utilitaires",
      "Compare-toi aux autres et trouve de l'aide.",
