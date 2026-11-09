@@ -131,8 +131,10 @@ def _star(draw, cx: float, cy: float, r: float, fill) -> None:
 
 
 def _png(image: Image.Image) -> bytes:
+    # Sans `optimize` : 2 % plus lourd, mais 4 à 5 fois plus rapide à écrire
+    # (une ouverture de booster dessine jusqu'à 5 faces).
     buffer = io.BytesIO()
-    image.save(buffer, format="PNG", optimize=True)
+    image.save(buffer, format="PNG", compress_level=6)
     return buffer.getvalue()
 
 
@@ -547,10 +549,12 @@ def card_png(card: cs.CardDef, brillante: bool = False) -> bytes:
     return _face_png(card, brillante or card.always_brillante)
 
 
-def holo_frames(card: cs.CardDef, frames: int = HOLO_FRAMES, size: tuple[int, int] | None = None) -> list[Image.Image]:
-    """Les images d'une brillante qui scintille (une période du foil)."""
+def holo_frames(card: cs.CardDef, frames: int = HOLO_FRAMES, size: tuple[int, int] | None = None,
+                count: int | None = None) -> list[Image.Image]:
+    """Les images d'une brillante qui scintille : une période du foil en
+    `frames` images (seulement les `count` premières si demandé)."""
     base = _foil_base(card)
-    images = [_brillante_face(card, i / frames, base) for i in range(frames)]
+    images = [_brillante_face(card, i / frames, base) for i in range(min(count or frames, frames))]
     return images if size is None else [image.resize(size, Image.LANCZOS) for image in images]
 
 
@@ -916,7 +920,7 @@ def animate_booster(opened) -> bytes | None:
                     gif.push(frame(over=petals), 110)
         if card.brillante:
             # Le foil prend la lumière : le prisme glisse, le reflet passe.
-            shimmer = holo_frames(card.card, SHIMMER_FRAMES * 2, SMALL)[:SHIMMER_FRAMES]
+            shimmer = holo_frames(card.card, SHIMMER_FRAMES * 2, SMALL, count=SHIMMER_FRAMES)
             for still in shimmer:
                 def shine(image, still=still, x=x, y=y):
                     image.alpha_composite(still, (x, y))
