@@ -71,7 +71,7 @@ PETALS: dict[str, int] = {
     "common": 5, "uncommon": 10, "rare": 25, "epic": 80, "legendary": 400, "mythic": 2000,
 }
 BRILLANTE_PETAL_MULT = 5
-CRAFT_MULT = 10
+CRAFT_MULT = 20
 #: Titres de l'album (% des cartes possédées).
 ALBUM_MILESTONES: tuple[int, ...] = (25, 50, 75, 100)
 #: Au plus, d'un coup (le message de résultat doit rester lisible).

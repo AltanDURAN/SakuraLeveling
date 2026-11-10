@@ -872,9 +872,9 @@ WORLD BOSS — /boss moi, /boss historique, /bestiaire boss
       recycle-les en PÉTALES depuis /album (tu gardes toujours un exemplaire
       de chaque carte et de chaque brillante) : commune 5, peu commune 10,
       rare 25, épique 80, légendaire 400, mythique 2 000 — ×5 pour une
-      brillante. Avec des pétales, FABRIQUE une carte qui te manque (10 fois
-      son recyclage : 50 / 100 / 250 / 800 / 4 000). Jamais une brillante :
-      la mythique se tire ou s'échange.
+      brillante. Avec des pétales, FABRIQUE une carte qui te manque (20 fois
+      son recyclage : 100 / 200 / 500 / 1 600 / 8 000). Jamais une
+      brillante : la mythique se tire ou s'échange.
     (Les chiffres ci-dessus sont les réglages de départ : l'équipe peut les
     ajuster, le guide épinglé du salon des cartes affiche toujours les
     vrais.)
