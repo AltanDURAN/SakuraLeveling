@@ -27,6 +27,12 @@ CHANNEL_GENERAL = "general"
 CHANNEL_EVENTS = "events"
 CHANNELS: dict[str, str] = {CHANNEL_GENERAL: "Salon général", CHANNEL_EVENTS: "Salon des événements"}
 
+#: Un coffre que personne n'ouvre disparaît au bout de ce délai (minutes,
+#: compté depuis son apparition). Sans limite, il restait actif pour toujours
+#: et aucun autre coffre ne paraissait : un coffre du 24/08/2026 en a bloqué
+#: deux mois et demi (constaté le 10/11/2026).
+CHEST_LIFETIME_MINUTES = 24 * 60
+
 _DEFAULTS: dict[str, dict] = {
     "chest": {
         "enabled": False,
@@ -38,6 +44,7 @@ _DEFAULTS: dict[str, dict] = {
         # Scaling du gain selon le niveau du gagnant : mult = 1 + niveau × pct/100.
         # 0 = pas de scaling. Ex : 2 → niveau 50 = ×2, niveau 100 = ×3.
         "level_scaling_pct": 2,
+        "expire_after_minutes": CHEST_LIFETIME_MINUTES,
     },
     "little_girl": {
         "enabled": False,
@@ -108,6 +115,15 @@ def channel_of(event_type: str) -> str:
     """« general » ou « events » — une valeur inconnue vaut le général."""
     where = get_config(event_type).get("channel")
     return where if where in CHANNELS else CHANNEL_GENERAL
+
+
+def chest_lifetime_minutes() -> int:
+    """Durée de vie d'un coffre non ouvert (au moins 5 minutes)."""
+    raw = get_config("chest").get("expire_after_minutes", CHEST_LIFETIME_MINUTES)
+    try:
+        return max(5, int(raw))
+    except (TypeError, ValueError):
+        return CHEST_LIFETIME_MINUTES
 
 
 def is_enabled(event_type: str) -> bool:

@@ -113,6 +113,15 @@
                         <code>0</code> = pas de scaling · <code>2</code> → niveau 50 = ×2, niveau 100 = ×3.
                     </span>
                 </label>
+                <label class="field">
+                    <span class="field-label">Disparaît s'il n'est pas ouvert après (minutes)</span>
+                    <input type="number" name="expire_after_minutes" class="input" min="5"
+                           value="{{ config.expire_after_minutes }}">
+                    <span class="field-hint">
+                        Compté depuis son apparition (1 440 = 24 h). Tant qu'un coffre est là, aucun autre
+                        n'apparaît : un coffre oublié bloquerait tous les suivants.
+                    </span>
+                </label>
             </div>
         </div>
 

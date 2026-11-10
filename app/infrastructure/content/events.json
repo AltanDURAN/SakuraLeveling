@@ -35,7 +35,8 @@
         "weight": 10
       }
     ],
-    "level_scaling_pct": 2
+    "level_scaling_pct": 2,
+    "expire_after_minutes": 1440
   },
   "little_girl": {
     "enabled": true,

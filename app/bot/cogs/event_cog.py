@@ -256,6 +256,7 @@ class EventCog(commands.Cog):
                     await self._resolve_little_girl(event_id)
                 elif event_type == "sacred_forge":
                     await self._close_sacred_forge(event_id)
+            await self._expire_stale_chest()
         except Exception:  # noqa: BLE001
             _logger.exception("event resolve_loop failed")
 
@@ -384,7 +385,8 @@ class EventCog(commands.Cog):
             ev = repo.get_active_by_type("chest")
             if ev is None or (message and ev.message_id != message.id):
                 await interaction.followup.send(
-                    "⏳ Trop tard — ce coffre a déjà été ouvert !", ephemeral=True
+                    "⏳ Trop tard — ce coffre a déjà été ouvert, ou il s'est volatilisé !",
+                    ephemeral=True,
                 )
                 return
 
@@ -424,6 +426,40 @@ class EventCog(commands.Cog):
                 await message.edit(embed=done, view=None, attachments=message.attachments)
         except Exception:  # noqa: BLE001
             _logger.exception("chest message edit failed")
+
+    async def _expire_stale_chest(self) -> None:
+        """Un coffre que personne n'a ouvert disparaît au bout de
+        `expire_after_minutes` (compté depuis son apparition, réglable sur le
+        site) : le suivant peut alors paraître. Sans ça, un coffre oublié
+        bloquait tous les autres pour toujours."""
+        lifetime = timedelta(minutes=cfg.chest_lifetime_minutes())
+        with get_db_session() as session:
+            repo = EventRepository(session)
+            ev = repo.get_active_by_type("chest")
+            if ev is None:
+                return
+            created = ev.created_at.replace(tzinfo=None) if ev.created_at.tzinfo else ev.created_at
+            if created + lifetime > _now():
+                return
+            event_id, channel_id, message_id = ev.id, ev.channel_id, ev.message_id
+            if not repo.expire_unclaimed(event_id):
+                return                       # ouvert à la dernière seconde
+        _logger.info("coffre %s expiré : personne ne l'a ouvert", event_id)
+        if not channel_id or not message_id:
+            return
+        try:
+            channel = self.bot.get_channel(channel_id)
+            if channel is None:
+                return
+            message = await channel.fetch_message(message_id)
+            embed = discord.Embed(
+                title="💨 Le coffre s'est volatilisé…",
+                description="Personne ne l'a ouvert à temps. Un autre apparaîtra bientôt — ouvre l'œil !",
+                color=discord.Color.dark_grey(),
+            )
+            await message.edit(embed=embed, view=None, attachments=message.attachments)
+        except discord.HTTPException:
+            _logger.info("message du coffre %s introuvable", event_id)
 
     def _grant_chest_reward(self, session, player_id: int, result) -> str:
         if result.kind == "gold" and result.gold_amount > 0:

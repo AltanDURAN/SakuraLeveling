@@ -40,3 +40,16 @@ def test_choisir_le_salon_d_un_evenement(client, events_copy):
     client.post("/admin/events/sacred_forge", data={**FORGE, "channel": "ailleurs"})
     client.post("/admin/events/sacred_forge", data=FORGE)
     assert cfg.channel_of("sacred_forge") == cfg.CHANNEL_EVENTS
+
+
+def test_regler_la_duree_de_vie_du_coffre(client, events_copy):
+    assert 'name="expire_after_minutes"' in client.get("/admin/events/chest/edit").text
+    assert "disparaît après 24 h" in client.get("/admin/events").text
+    form = {"enabled": "on", "cadence_times": "1", "cadence_per_days": "1", "level_scaling_pct": "2",
+            "expire_after_minutes": "360", "loot_kind": "gold", "loot_gold": "100", "loot_weight": "10",
+            "loot_item_code": "", "loot_quantity": "1"}
+    assert client.post("/admin/events/chest", data=form, follow_redirects=False).status_code == 303
+    assert cfg.chest_lifetime_minutes() == 360
+    assert "disparaît après 6 h" in client.get("/admin/events").text
+    client.post("/admin/events/chest", data={**form, "expire_after_minutes": "0"})
+    assert cfg.chest_lifetime_minutes() == 5                     # plancher : jamais « tout de suite »

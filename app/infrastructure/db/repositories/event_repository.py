@@ -114,6 +114,22 @@ class EventRepository:
         commit(self.session)
         return (result.rowcount or 0) == 1
 
+    def expire_unclaimed(self, event_id: int) -> bool:
+        """Ferme un coffre que personne n'a ouvert (statut « expired »).
+        ATOMIQUE face à `claim_chest_winner` : un seul des deux l'emporte.
+        Retourne True si le coffre vient d'expirer."""
+        result = self.session.execute(
+            update(ActiveEventModel)
+            .where(
+                ActiveEventModel.id == event_id,
+                ActiveEventModel.status == "active",
+                ActiveEventModel.winner_player_id.is_(None),
+            )
+            .values(status="expired")
+        )
+        commit(self.session)
+        return (result.rowcount or 0) == 1
+
     # ---------- participations ----------
 
     def upsert_participation(
