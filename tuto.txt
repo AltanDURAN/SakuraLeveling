@@ -680,13 +680,8 @@ LE MANA DES COMPÉTENCES 💧
       petite surprise (or, potions, élixirs, matériaux, boosters offerts…).
       On n'ouvre que la case DU JOUR : une case pas ouverte le jour même est
       perdue.
-    • 🎅 NOËL : un cadeau à ouvrir du 25 au 31 décembre. Le Père Noël
-      regarde comment tu as traité la PETITE FILLE jusqu'au réveillon :
-          moins de 50 % d'aide          → 50 % du cadeau
-          au moins 50 % d'aide          → 100 %
-          toujours aidée                → 150 %
-          jamais croisée                → 100 %
-      Le bouton « Mon cadeau » te dit où tu en es avant le 25.
+    • 🎅 NOËL : le Père Noël passe dans la nuit du 24 au 25 décembre ; un
+      cadeau pour chacun, à ouvrir du 25 au 31 décembre.
     • 🍬 SEMAINE DES SUCRES D'ORGE (18 → 24 décembre) : chaque monstre vaincu
       en zone donne 1 sucre d'orge à chaque survivant (une meute : un par
       monstre).
@@ -1001,13 +996,15 @@ INTERFACE WEB D'ADMINISTRATION
     événement.
     ⚠️ Les fichiers de contenu lus au démarrage (arbre, artisans, zones,
     événements) demandent un REDÉMARRAGE du bot après modification.
-    FÊTES (Monde › Fêtes, sans redémarrage) : calendrier de l'Avent (dates,
-    récompense de chaque case), cadeau de Noël (récompenses, parts selon la
-    gentillesse), objets d'événement (sucres d'orge : objet, dates, nombre
-    par monstre), BOUTIQUES D'ÉVÉNEMENT (monnaie, dates, articles, prix,
-    limite par joueur — on en crée autant qu'on veut), Nouvel An (jour,
-    durée, message, @everyone). Tout est vérifié avant d'écrire. Pour tester
-    sur la bêta : avancer les dates, essayer, puis les remettre.
+    FÊTES (Monde › Fêtes, sans redémarrage) : tout se règle en VOYANT le
+    résultat. Le calendrier de l'Avent s'affiche tel que les joueurs le
+    verront : clique une case pour choisir ce qu'elle contient, et regarde
+    l'image exacte du bot pour n'importe quel jour. Noël : le cadeau et ce
+    qu'il devient selon la gentillesse (secret pour les joueurs). Objets et
+    BOUTIQUES D'ÉVÉNEMENT (on en crée autant qu'on veut) avec ce qu'un
+    joueur peut s'offrir. Nouvel An. Chaque message Discord est montré en
+    aperçu avant d'enregistrer (Ctrl+S) ; tout est vérifié avant d'écrire.
+    Pour tester sur la bêta : avancer les dates, essayer, puis les remettre.
     RYTHME (Monde › Rythme, sans redémarrage) : délai entre deux monstres
     (fixe ou tiré dans une plage), délai après une fuite, temps pour
     rejoindre (et pour une élite), délai avant le bouton Lancer, heures

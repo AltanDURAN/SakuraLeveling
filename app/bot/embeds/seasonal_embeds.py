@@ -1,9 +1,18 @@
 """Textes des événements saisonniers (décembre 2026) : le panneau épinglé du
 salon des événements, les écrans privés (Avent, cadeau de Noël, boutique)
 et les annonces (ouverture de l'Avent, sucres d'orge, matin de Noël,
-boutique, Nouvel An)."""
+boutique, Nouvel An).
+
+⚠️ SECRET (décision de l'auteur, 10/11/2026) : aucun texte ne dit aux joueurs
+que la taille du cadeau de Noël vient de leurs choix face à la PETITE FILLE —
+ils l'aideraient pour ça. Avant Noël, rien ne laisse entendre que le cadeau
+dépend de quoi que ce soit ; à l'ouverture, un simple verdict (« tu as été
+sage »), jamais sa cause. Test : `test_seasonal_bot.py`.
+"""
 
 from __future__ import annotations
+
+from datetime import timedelta
 
 import discord
 
@@ -16,11 +25,12 @@ COLOR = discord.Color.from_rgb(196, 40, 56)
 GREEN = discord.Color.from_rgb(36, 128, 72)
 GOLD = discord.Color.from_rgb(232, 186, 82)
 
-KINDNESS_LABELS = {
-    ss.UNKNOWN: "🤷 Le Père Noël ne t'a pas encore vu à l'œuvre",
-    ss.NAUGHTY: "😈 Pas très sage…",
-    ss.NICE: "😇 Sage",
-    ss.ANGEL: "👼 Un cœur d'or",
+#: Verdict du Père Noël à l'ouverture du cadeau — jamais sa cause (secret).
+VERDICTS = {
+    ss.ANGEL: "👼 Le Père Noël a un faible pour toi cette année : ton cadeau déborde !",
+    ss.NICE: "😇 Tu as été sage cette année : voici ton cadeau.",
+    ss.UNKNOWN: "🎄 Le Père Noël n'oublie personne : voici ton cadeau.",
+    ss.NAUGHTY: "😈 Le Père Noël a hésité… ton cadeau est un peu maigre cette année.",
 }
 
 
@@ -32,14 +42,8 @@ def _lines(granted) -> str:
     return "\n".join(f"{g.emoji} {g.text}" for g in granted) or "—"
 
 
-def kindness_text(k: ss.Kindness) -> str:
-    label = KINDNESS_LABELS.get(k.tier, k.tier)
-    if not k.total:
-        detail = "tu n'as encore jamais croisé la petite fille"
-    else:
-        detail = (f"{k.helps} aide{'s' if k.helps > 1 else ''}, {k.ignores} refus "
-                  f"({round(100 * (k.ratio or 0))} % d'aide)")
-    return f"{label} — {detail} → **cadeau à {k.pct} %**"
+def verdict(k: ss.Kindness) -> str:
+    return VERDICTS.get(k.tier, VERDICTS[ss.NICE])
 
 
 # --------------------------------------------------------------- panneau
@@ -59,8 +63,8 @@ def build_panel_embed(content: ss.SeasonalContent, now_happening: ss.Happening) 
         lines.append(f"🍬 **{drop.name}** — chaque monstre vaincu en zone donne {drop.per_kill} × objet "
                      f"d'événement, jusqu'au {_day(drop.end)} au soir.")
     if h.christmas_open and content.christmas is not None:
-        lines.append(f"🎅 **{content.christmas.name}** — ton cadeau t'attend jusqu'au "
-                     f"{_day(content.christmas.claim_until)} : plus tu as aidé la petite fille, plus il est gros.")
+        lines.append(f"🎅 **{content.christmas.name}** — le Père Noël est passé : ton cadeau t'attend jusqu'au "
+                     f"{_day(content.christmas.claim_until)}.")
     for shop in h.shops:
         lines.append(f"{shop.emoji} **{shop.name}** — ouvert jusqu'au {_day(shop.closes)}.")
     if not lines:
@@ -69,13 +73,6 @@ def build_panel_embed(content: ss.SeasonalContent, now_happening: ss.Happening) 
     if h.upcoming:
         embed.add_field(name="📅 À venir",
                         value="\n".join(f"• {label} — {format_date_fr(d)}" for d, label in h.upcoming[:6]),
-                        inline=False)
-    if content.christmas is not None and content.christmas.enabled and not h.christmas_open \
-            and any(label.startswith("🎅") for _, label in h.upcoming):
-        embed.add_field(name="🎅 Sois sage…",
-                        value=("Le Père Noël compte chaque fois que tu **aides** (ou ignores) la petite fille : "
-                               "moins de la moitié du temps, ton cadeau sera réduit de moitié ; toujours aidée, "
-                               "il sera une fois et demie plus gros. Le bouton « Mon cadeau » te dit où tu en es."),
                         inline=False)
     embed.set_footer(text=PANEL_FOOTER)
     return embed
@@ -106,26 +103,20 @@ def build_advent_embed(status, player_name: str, granted=None) -> discord.Embed:
 
 # ------------------------------------------------------------------ Noël
 def build_christmas_embed(status, granted=None) -> discord.Embed:
+    """L'écran du cadeau. Rien sur ce qui en fixe la taille (secret)."""
     c = status.christmas
     embed = discord.Embed(title=f"🎅 {c.name}", color=GREEN)
-    embed.add_field(name="Ta gentillesse", value=kindness_text(status.kindness), inline=False)
-    rules = c.kindness
-    embed.add_field(name="Comment le Père Noël décide", value=(
-        f"Il regarde tes choix face à la **petite fille** jusqu'au réveillon :\n"
-        f"• moins de {rules.nice_from_pct} % d'aide → {rules.naughty_pct} % du cadeau\n"
-        f"• au moins {rules.nice_from_pct} % → {rules.nice_pct} %\n"
-        f"• toujours aidée → **{rules.angel_pct} %**\n"
-        f"• jamais croisée → {rules.unknown_pct} %"), inline=False)
     if granted:
-        embed.description = f"🎁 Tu ouvres ton cadeau… et tu reçois :\n{_lines(granted)}"
+        embed.description = f"{verdict(status.kindness)}\n\n🎁 Tu reçois :\n{_lines(granted)}"
     elif status.claimed:
         embed.description = "✅ Tu as déjà ouvert ton cadeau. Joyeux Noël !"
     elif status.open:
         embed.description = (f"Le Père Noël est passé ! Ton cadeau t'attend jusqu'au "
                              f"**{format_date_fr(c.claim_until)}**.")
     elif ss.paris_day() < c.gift_day:
-        embed.description = (f"Les cadeaux s'ouvrent le **{format_date_fr(c.gift_day)}**. D'ici là, sois sage : "
-                             "aide la petite fille quand elle passe !")
+        eve = c.gift_day - timedelta(days=1)
+        embed.description = (f"Le Père Noël passera dans la nuit du **{_day(eve)}** au **{_day(c.gift_day)}** : "
+                             f"un cadeau pour chacun, à ouvrir jusqu'au {_day(c.claim_until)}.")
     else:
         embed.description = "Le Père Noël est reparti. À l'année prochaine !"
     return embed
@@ -176,8 +167,7 @@ def build_drop_announcement(drop: ss.EventDrop, item_name: str) -> discord.Embed
 
 def build_christmas_announcement(christmas: ss.Christmas, shops) -> discord.Embed:
     text = ("Le Père Noël est passé au pied du Grand Cerisier ! Ouvre ton cadeau avec le bouton **Mon cadeau "
-            f"de Noël** (jusqu'au {_day(christmas.claim_until)}) : plus tu as aidé la petite fille, plus il est "
-            "gros.")
+            f"de Noël**, jusqu'au {_day(christmas.claim_until)}.")
     for shop in shops:
         text += (f"\n\n{shop.emoji} **{shop.name}** ouvre ses portes jusqu'au {_day(shop.closes)}"
                  + (f" — {shop.intro}" if shop.intro else "."))
@@ -198,11 +188,13 @@ def build_shop_announcement(shop: ss.EventShop) -> discord.Embed:
 
 def build_new_year_announcement(new_year: ss.NewYear, deities) -> discord.Embed:
     end = new_year.window()[1]
+    local = end.astimezone(ss.PARIS)
+    until = "minuit" if (local.hour, local.minute) == (0, 0) else f"<t:{int(end.timestamp())}:t>"
     blessings = "\n".join(f"{d.emoji} **{d.name}** — {d.blessing}" for d in deities)
     embed = discord.Embed(
         title=f"🎆 {new_year.title}",
         description=(f"{new_year.message}\n\n{blessings}\n\n"
-                     f"Jusqu'à <t:{int(end.timestamp())}:t>, toutes ces bénédictions s'additionnent. "
+                     f"Jusqu'à {until}, toutes ces bénédictions s'additionnent. "
                      "Belle année à toutes et à tous, et bonne chasse !"),
         color=GOLD)
     embed.set_footer(text=PANEL_FOOTER)

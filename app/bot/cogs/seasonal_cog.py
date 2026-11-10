@@ -8,7 +8,8 @@ l'Avent, cadeau de Noël, sucres d'orge, atelier des lutins, Nouvel An.
     d'une boutique, minuit du Nouvel An (@everyone si réglé) ;
   • `/evenement` : le même panneau, en privé, partout où les commandes sont
     permises ;
-  • les écrans privés : calendrier (image), cadeau (gentillesse), boutique.
+  • les écrans privés : calendrier (image), cadeau, boutique — sans jamais
+    dire que le cadeau dépend de la petite fille (secret de l'auteur).
 
 Règles : `seasonal_service` ; écritures : `use_cases/seasonal` (atomiques).
 Les sucres d'orge tombent dans `EncounterService.apply_rewards`, les

@@ -16,7 +16,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 from app.bot.rendering.emoji_text import draw_text_with_emojis
 from app.bot.rendering.pillow_utils import try_font
 from app.domain.services import seasonal_service as ss
-from app.shared.paths import ASSETS_DIR
+from app.shared.paths import ASSETS_DIR, ITEMS_ASSETS_DIR
 
 BANGERS = ASSETS_DIR / "fonts" / "Bangers-Regular.ttf"
 WIDTH, COLS = 1000, 6
@@ -27,9 +27,11 @@ GOLD = (255, 212, 110)
 RED, GREEN = (150, 28, 44), (26, 104, 60)
 SNOW = (235, 242, 255)
 
-#: Emoji d'une récompense (première de la case) sur sa porte ouverte.
+#: Image d'un objet qui n'en a pas dans assets/items (aussi sur le site admin).
+ITEM_PICTURES = {"booster_offert": ASSETS_DIR / "cards" / "_dos.png"}
+#: Emoji d'un objet sans image (aussi sur le site admin).
 ITEM_EMOJIS = {"booster_offert": "🎴", "sucre_d_orge": "🍬", "sablier_fidelite": "⏳",
-               "parchemin_oubli": "📜"}
+               "parchemin_oubli": "📜", "jeton_arbre": "🎟️"}
 
 
 @lru_cache(maxsize=16)
@@ -40,21 +42,67 @@ def _bangers(size: int):
         return try_font(size, bold=True)
 
 
+def item_emoji(code: str, category: str = "") -> str:
+    """L'emoji d'un objet (quand il n'a pas d'image)."""
+    if code in ITEM_EMOJIS:
+        return ITEM_EMOJIS[code]
+    if code.startswith(("potion", "grande_potion")):
+        return "🧪"
+    if code.startswith("elixir"):
+        return "⚗️"
+    if code.startswith("fond_"):
+        return "🖼️"
+    if code.startswith("cadre_"):
+        return "💍"
+    if code.startswith("titre_"):
+        return "🏷️"
+    if code.startswith("sceau_"):
+        return "🔏"
+    if code.startswith("cor_chasse"):
+        return "📯"
+    if category == "resource":
+        return "🧱"
+    return "🎁"
+
+
 def reward_emoji(rewards) -> str:
     if not rewards:
         return "🎁"
     r = rewards[0]
-    if r.kind != ss.ITEM:
-        return "💰"
-    if r.item in ITEM_EMOJIS:
-        return ITEM_EMOJIS[r.item]
-    if r.item.startswith(("potion", "grande_potion")):
-        return "🧪"
-    if r.item.startswith("elixir"):
-        return "⚗️"
-    if r.item.startswith(("fond_", "cadre_", "titre_")):
-        return "🎀"
-    return "🎁"
+    return "💰" if r.kind != ss.ITEM else item_emoji(r.item)
+
+
+def item_picture_path(code: str):
+    """Le fichier image d'un objet, ou None."""
+    path = ITEM_PICTURES.get(code) or ITEMS_ASSETS_DIR / f"{code}.png"
+    return path if code and path.exists() else None
+
+
+@lru_cache(maxsize=64)
+def _item_picture(code: str, size: int) -> Image.Image | None:
+    """L'image de l'objet (assets/items), ramenée dans un carré `size`."""
+    path = item_picture_path(code)
+    if path is None:
+        return None
+    try:
+        with Image.open(path) as source:
+            image = source.convert("RGBA")
+    except OSError:
+        return None
+    image.thumbnail((size, size), Image.Resampling.LANCZOS)
+    return image
+
+
+def _icon(layer: Image.Image, reward, center: tuple[int, int], size: int) -> None:
+    """Une récompense sur sa porte : l'image de l'objet, sinon son emoji."""
+    cx, cy = center
+    picture = _item_picture(reward.item, size) if reward.kind == ss.ITEM else None
+    if picture is not None:
+        layer.alpha_composite(picture, (cx - picture.width // 2, cy - picture.height // 2))
+        return
+    emoji = "💰" if reward.kind != ss.ITEM else item_emoji(reward.item)
+    draw_text_with_emojis(layer, (cx - size // 2, cy - size // 2), emoji, _bangers(size), emoji_size=size,
+                          shadow=None)
 
 
 def _background(height: int) -> Image.Image:
@@ -84,7 +132,7 @@ def _centered(draw, box, text, font, fill, shadow=(0, 0, 0, 170)):
     draw.text((x, y), text, font=font, fill=fill)
 
 
-def _door(layer: Image.Image, box, n: int, state: str, emoji: str) -> None:
+def _door(layer: Image.Image, box, n: int, state: str, rewards) -> None:
     draw = ImageDraw.Draw(layer)
     x0, y0, x1, y1 = box
     if state == ss.TODAY:
@@ -97,9 +145,14 @@ def _door(layer: Image.Image, box, n: int, state: str, emoji: str) -> None:
     elif state == ss.OPENED:
         draw.rounded_rectangle(box, 14, fill=(44, 32, 26), outline=(214, 170, 90), width=3)
         draw.rounded_rectangle((x0 + 8, y0 + 8, x1 - 8, y1 - 8), 10, fill=(70, 50, 36))
-        size = 54
-        draw_text_with_emojis(layer, (x0 + (x1 - x0 - size) // 2, y0 + (y1 - y0 - size) // 2 + 4), emoji,
-                              _bangers(size), emoji_size=size, shadow=None)
+        shown = list(rewards)[:2] or [ss.Reward(ss.ITEM, item="", qty=1)]
+        cy = (y0 + y1) // 2 + 6
+        if len(shown) == 1:
+            _icon(layer, shown[0], ((x0 + x1) // 2, cy), 62)
+        else:
+            third = (x1 - x0) // 4
+            _icon(layer, shown[0], ((x0 + x1) // 2 - third + 6, cy), 46)
+            _icon(layer, shown[1], ((x0 + x1) // 2 + third - 6, cy), 46)
         draw.text((x0 + 14, y0 + 10), str(n), font=_bangers(26), fill=GOLD)
         _centered(draw, (x1 - 40, y0 + 8, x1 - 10, y0 + 36), "✓", try_font(22, bold=True), (140, 230, 150), None)
     elif state == ss.MISSED:
@@ -133,7 +186,7 @@ def render_advent(status, player_name: str = "") -> bytes:
         col, row = i % COLS, i // COLS
         x0 = MARGIN + col * (DOOR_W + GAP)
         y0 = TOP + row * (DOOR_H + GAP)
-        _door(image, (x0, y0, x0 + DOOR_W, y0 + DOOR_H), n, state, reward_emoji(advent.rewards(n)))
+        _door(image, (x0, y0, x0 + DOOR_W, y0 + DOOR_H), n, state, advent.rewards(n))
     buffer = io.BytesIO()
     image.convert("RGB").save(buffer, format="PNG", optimize=False, compress_level=6)
     return buffer.getvalue()

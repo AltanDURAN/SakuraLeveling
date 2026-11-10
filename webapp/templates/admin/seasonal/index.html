@@ -1,276 +1,968 @@
 {% extends "admin/base.html" %}
 {% block title %}Fêtes — Sakura Admin{% endblock %}
 {% block content %}
-<script type="application/json" id="seasonal-data">{{ data_json|safe }}</script>
-<script type="application/json" id="seasonal-items">{{ items_json|safe }}</script>
-<style>
-  .sz-row { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin:.25rem 0; }
-  .sz-row .input { width:auto; min-width:0; }
-  .sz-day { display:grid; grid-template-columns: 7.5rem 1fr; gap:.6rem; align-items:start;
-            padding:.45rem 0; border-bottom:1px solid var(--border, rgba(127,127,127,.18)); }
-  .sz-day:last-child { border-bottom:0; }
-  .sz-card { border:1px solid var(--border, rgba(127,127,127,.25)); border-radius:12px; padding:.8rem 1rem; margin:.6rem 0; }
-  .sz-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:.7rem; }
-  .sz-pill { display:inline-block; padding:.1rem .55rem; border-radius:999px; font-size:.82rem;
-             background:rgba(127,127,127,.15); }
-  .sz-ok { background:rgba(80,200,120,.18); }
-  .sz-now { background:rgba(232,186,82,.22); }
-  .sz-x { background:var(--danger, #c0392b); color:#fff; }
-  @media (max-width: 700px) { .sz-day { grid-template-columns: 1fr; } }
-</style>
-<section class="form-page" x-data="seasonalEditor()">
-  <h1>🎉 Fêtes &amp; événements saisonniers</h1>
-  <p style="color:var(--muted); max-width:80ch;">
-    Calendrier de l'Avent, Noël (cadeau selon la gentillesse, objets d'événement, boutique d'événement) et Nouvel An.
-    Les annonces et le panneau épinglé partent dans le <strong>salon des événements</strong>. Le bot relit ces réglages
-    <strong>sans redémarrage</strong>. Pour tester sur la bêta : avance les dates, essaie, puis remets-les.
-  </p>
+<script type="application/json" id="sz-data">{{ data_json|safe }}</script>
+<script type="application/json" id="sz-items">{{ items_json|safe }}</script>
+<script type="application/json" id="sz-meta">{{ meta_json|safe }}</script>
 
-  {% if saved %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(80,200,120,.15);border:1px solid rgba(80,200,120,.4);">✅ Enregistré.</div>{% endif %}
-  {% for e in errors %}<div style="margin:.4rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(220,80,100,.12);border:1px solid rgba(220,80,100,.4);">⚠️ {{ e }}</div>{% endfor %}
-  {% for e in status.problems %}<div style="margin:.4rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(220,80,100,.12);border:1px solid rgba(220,80,100,.4);">⚠️ Fichier actuel : {{ e }}</div>{% endfor %}
-
-  {% set h = status.happening %}
-  <div class="form-section">
-    <h2 class="form-section-title">En ce moment</h2>
-    <p style="margin:.2rem 0;">
-      {% if h.new_year %}<span class="sz-pill sz-now">🎆 Nouvel An : toutes les divinités</span>{% endif %}
-      {% if h.advent_day %}<span class="sz-pill sz-now">🎄 Avent : case {{ h.advent_day }}</span>{% endif %}
-      {% for d in h.drops %}<span class="sz-pill sz-now">🍬 {{ d.name }}</span>{% endfor %}
-      {% if h.christmas_open %}<span class="sz-pill sz-now">🎅 Cadeaux de Noël ouverts</span>{% endif %}
-      {% for s in h.shops %}<span class="sz-pill sz-now">{{ s.emoji }} {{ s.name }}</span>{% endfor %}
-      {% if not h.anything %}<span style="color:var(--muted);">Rien en cours.</span>{% endif %}
-    </p>
-    <div class="table-wrapper" style="margin-top:.6rem;">
-      <table class="data-table">
-        <thead><tr><th>Annonce (salon des événements)</th><th>Quand (Paris)</th><th>État</th></tr></thead>
-        <tbody>
-          {% for a in status.announcements %}
-          <tr><td><code>{{ a.key }}</code></td><td>{{ a.at.strftime("%d/%m/%Y %H:%M") }}</td>
-            <td>{% if a.posted %}<span class="sz-pill sz-ok">postée</span>{% elif a.late %}<span class="sz-pill">passée</span>{% else %}<span class="sz-pill">à venir</span>{% endif %}</td></tr>
-          {% else %}<tr><td colspan="3" style="color:var(--muted);">Aucune annonce prévue.</td></tr>{% endfor %}
-        </tbody>
-      </table>
+{# ---------------------------------------------------------------- macros #}
+{% macro item_picker(obj, key, big=False) -%}
+<div class="sz-picker{{ ' sz-picker-big' if big }}" x-data="{ open: false, q: '' }" @click.outside="open = false" @keydown.escape="open = false">
+  <button type="button" class="sz-picker-btn" title="Changer d'objet" @click="open = !open; q = ''; $nextTick(() => { if (open) $refs.q.focus() })">
+    <span class="sz-ic" x-html="icon({{ obj }}.{{ key }})"></span>
+    <span class="sz-picker-name" x-text="nameOf({{ obj }}.{{ key }})"></span>
+    <span class="sz-caret">{{ 'changer ▾' if big else '▾' }}</span>
+  </button>
+  <div class="sz-pop" x-show="open" x-transition.opacity.duration.120ms x-cloak>
+    <input class="input sz-pop-search" x-ref="q" x-model="q" placeholder="Chercher un objet…">
+    <div class="sz-pop-list">
+      <template x-for="g in groups(q)" :key="g.name">
+        <div>
+          <div class="sz-pop-group" x-text="g.name"></div>
+          <template x-for="it in g.items" :key="it.code">
+            <button type="button" class="sz-pop-item" :class="{ 'is-on': it.code === {{ obj }}.{{ key }} }"
+                    @click="{{ obj }}.{{ key }} = it.code; open = false">
+              <span class="sz-ic" x-html="icon(it.code)"></span>
+              <span x-text="it.name"></span>
+            </button>
+          </template>
+        </div>
+      </template>
+      <div class="sz-muted" x-show="!groups(q).length" style="padding:.6rem;">Aucun objet.</div>
     </div>
-    <p class="form-section-help" style="margin:.6rem 0 0;">
-      Cases de l'Avent ouvertes :
-      {% for key, count in status.stats.advent|dictsort %}<span class="sz-pill">{{ key[8:10] }}/{{ key[5:7] }} : {{ count }}</span> {% else %}aucune.{% endfor %}
-      · Cadeaux de Noël :
-      {% for tier, count in status.stats.tiers.items() %}<span class="sz-pill">{{ tier_labels.get(tier, tier) }} : {{ count }}</span> {% else %}aucun.{% endfor %}
-      {% for code, sales in status.stats.shops.items() %}{% if sales %}· {{ code }} :
-        {% for item, s in sales.items() %}<span class="sz-pill">{{ item }} × {{ s[0] }} ({{ s[1] }} joueur{{ 's' if s[1] > 1 else '' }})</span> {% endfor %}{% endif %}{% endfor %}
-    </p>
+  </div>
+</div>
+{%- endmacro %}
+
+{% macro reward_editor(list) -%}
+<div class="sz-rewards">
+  <template x-for="(r, ri) in {{ list }}" :key="ri">
+    <div class="sz-reward">
+      <span class="sz-ic sz-ic-lg" x-html="r.kind === 'item' ? icon(r.item) : icon('$gold')"></span>
+      <div class="sz-reward-body">
+        <div class="sz-seg">
+          <button type="button" :class="{ 'is-on': r.kind === 'item' }" @click="setKind(r, 'item')">Objet</button>
+          <button type="button" :class="{ 'is-on': r.kind === 'gold_per_level' }" @click="setKind(r, 'gold_per_level')">Or × niveau</button>
+          <button type="button" :class="{ 'is-on': r.kind === 'gold' }" @click="setKind(r, 'gold')">Or fixe</button>
+        </div>
+        <template x-if="r.kind === 'item'">
+          <div class="sz-line">
+            {{ item_picker('r', 'item') }}
+            <div class="sz-step">
+              <button type="button" @click="r.qty = Math.max(1, (+r.qty || 1) - 1)">−</button>
+              <input type="number" min="1" x-model.number="r.qty">
+              <button type="button" @click="r.qty = (+r.qty || 0) + 1">+</button>
+            </div>
+          </div>
+        </template>
+        <template x-if="r.kind !== 'item'">
+          <div class="sz-line">
+            <div class="sz-step">
+              <button type="button" @click="r.amount = Math.max(1, (+r.amount || 1) - 5)">−</button>
+              <input type="number" min="1" x-model.number="r.amount">
+              <button type="button" @click="r.amount = (+r.amount || 0) + 5">+</button>
+            </div>
+            <span class="sz-muted" x-text="r.kind === 'gold_per_level' ? ('or par niveau · ≈ ' + fmt(r.amount * level) + ' or au niveau ' + level) : 'or, quel que soit le niveau'"></span>
+          </div>
+        </template>
+      </div>
+      <button type="button" class="sz-del" @click="{{ list }}.splice(ri, 1)" title="Retirer">✕</button>
+    </div>
+  </template>
+  <div class="sz-line">
+    <button type="button" class="sz-add" @click="{{ list }}.push({ kind: 'item', item: 'potion_soin', qty: 1 })">＋ Objet</button>
+    <button type="button" class="sz-add" @click="{{ list }}.push({ kind: 'gold_per_level', amount: 10 })">＋ Or</button>
+  </div>
+</div>
+{%- endmacro %}
+
+{% macro discord(expr) -%}
+<div class="dc" x-html="{{ expr }}"></div>
+{%- endmacro %}
+
+<style>
+  @font-face { font-family: 'Bangers'; src: url('/assets/fonts/Bangers-Regular.ttf') format('truetype'); font-display: swap; }
+  [x-cloak] { display: none !important; }
+  .sz { --sz-red: #b8323f; --sz-green: #23784a; --sz-gold: #ffd46e; --sz-night: #0e183a; display:flex; flex-direction:column; gap:1rem; }
+  .sz-muted { color: var(--text-faint); font-size: .86rem; }
+  .sz-hero { display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; flex-wrap:wrap;
+             padding: 1.3rem 1.5rem; border-radius: var(--radius-lg); color:#fff;
+             background: radial-gradient(circle at 15% 20%, rgba(255,255,255,.18) 0 2px, transparent 3px) 0 0/46px 46px,
+                         radial-gradient(circle at 70% 60%, rgba(255,255,255,.14) 0 1.5px, transparent 2.5px) 0 0/31px 31px,
+                         linear-gradient(120deg, #7a1f3d, #b8323f 45%, #23784a); box-shadow: var(--shadow-md); }
+  .sz-hero h1 { margin:0; font-family:'Bangers', var(--font); letter-spacing:1px; font-size: 2.3rem; color: var(--sz-gold);
+                text-shadow: 2px 2px 0 rgba(60,10,20,.6); }
+  .sz-hero p { margin:.3rem 0 0; max-width: 70ch; opacity:.92; }
+  .sz-badges { display:flex; gap:.4rem; flex-wrap:wrap; }
+  .sz-badge { padding:.25rem .7rem; border-radius:999px; font-size:.82rem; font-weight:600; background: rgba(255,255,255,.18);
+              border:1px solid rgba(255,255,255,.3); }
+  .sz-badge.is-live { background: var(--sz-gold); color:#4a2a00; border-color: transparent; }
+  .sz-card { background: var(--bg-elev); border:1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.2rem;
+             box-shadow: var(--shadow-sm); }
+  .sz-card h3 { margin:0 0 .6rem; font-size:1.02rem; display:flex; align-items:center; gap:.5rem; }
+  .sz-card h3 .sz-muted { font-weight:400; margin-left:auto; }
+  .sz-alert { padding:.7rem 1rem; border-radius: var(--radius); background: rgba(227,73,106,.10); border:1px solid rgba(227,73,106,.35); }
+  .sz-alert li { margin:.15rem 0; }
+  .sz-secret { padding:.6rem .9rem; border-radius: var(--radius); background: var(--violet-soft); border:1px dashed var(--violet); font-size:.9rem; }
+  /* frise */
+  .sz-tl { position:relative; }
+  .sz-tl-row { display:grid; grid-template-columns: 11rem 1fr; align-items:center; gap:.6rem; margin:.28rem 0; }
+  .sz-tl-label { font-size:.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sz-tl-track { position:relative; height: 26px; background: var(--bg-soft); border-radius: 8px; }
+  .sz-tl-bar { position:absolute; top:3px; bottom:3px; border-radius:6px; color:#fff; font-size:.74rem; font-weight:600;
+               display:flex; align-items:center; padding:0 .45rem; white-space:nowrap; overflow:hidden; cursor:pointer;
+               box-shadow: 0 1px 3px rgba(0,0,0,.18); transition: filter .12s; }
+  .sz-tl-bar:hover { filter: brightness(1.12); }
+  .sz-tl-bar.is-off { opacity:.35; }
+  .sz-tl-axis { display:grid; grid-template-columns: 11rem 1fr; gap:.6rem; font-size:.74rem; color: var(--text-faint); }
+  .sz-tl-ticks { position:relative; height: 16px; }
+  .sz-tl-ticks span { position:absolute; transform: translateX(-50%); }
+  .sz-tl-today { position:absolute; top:0; bottom:0; width:2px; background: var(--accent); border-radius:2px; pointer-events:none; }
+  .sz-tl-today::after { content:'aujourd’hui'; position:absolute; top:-15px; left:4px; font-size:.68rem; color: var(--accent); white-space:nowrap; }
+  /* onglets */
+  .sz-tabs { display:flex; gap:.4rem; flex-wrap:wrap; position:sticky; top:0; z-index:5; padding:.4rem 0; background: var(--bg); }
+  .sz-tab { border:1px solid var(--border); background: var(--bg-elev); color: var(--text); border-radius:999px;
+            padding:.45rem .95rem; font-weight:600; cursor:pointer; display:flex; gap:.45rem; align-items:center; }
+  .sz-tab:hover { border-color: var(--border-strong); }
+  .sz-tab.is-on { background: var(--accent); border-color: var(--accent); color:#fff; box-shadow: var(--shadow-sm); }
+  .sz-dot { font-size:.7rem; font-weight:700; padding:.05rem .45rem; border-radius:999px; background: var(--bg-soft); color: var(--text-soft); }
+  .sz-tab.is-on .sz-dot { background: rgba(255,255,255,.25); color:#fff; }
+  .sz-dot.is-live { background: var(--sz-gold); color:#4a2a00; }
+  .sz-cols { display:grid; grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr); gap:1rem; align-items:start; }
+  .sz-cols-2 { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:1rem; align-items:start; }
+  .sz-sticky { position:sticky; top: 3.6rem; }
+  @media (max-width: 980px) { .sz-cols, .sz-cols-2 { grid-template-columns: 1fr; } .sz-sticky { position:static; } }
+  .sz-fields { display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:.7rem; }
+  .sz-fields .field { margin:0; }
+  .sz-line { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+  .sz-toggle { display:inline-flex; align-items:center; gap:.5rem; cursor:pointer; user-select:none; font-weight:600; }
+  .sz-toggle input { display:none; }
+  .sz-toggle .sw { width:38px; height:22px; border-radius:999px; background: var(--border-strong); position:relative; transition: background .15s; }
+  .sz-toggle .sw::after { content:''; position:absolute; top:3px; left:3px; width:16px; height:16px; border-radius:50%; background:#fff; transition: left .15s; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .sz-toggle input:checked + .sw { background: var(--success); }
+  .sz-toggle input:checked + .sw::after { left:19px; }
+  /* le calendrier */
+  .sz-board { border-radius: 18px; padding: 18px 18px 20px; color:#fff; position:relative; overflow:hidden;
+              background: radial-gradient(circle at 20% 30%, rgba(235,242,255,.55) 0 1.4px, transparent 2px) 0 0/53px 53px,
+                          radial-gradient(circle at 60% 70%, rgba(235,242,255,.35) 0 1.8px, transparent 2.6px) 0 0/37px 37px,
+                          linear-gradient(180deg, #0e183a, #08281f); box-shadow: var(--shadow-md); }
+  .sz-board-title { font-family:'Bangers', var(--font); color: var(--sz-gold); font-size: 2.4rem; text-align:center; letter-spacing:1px;
+                    text-shadow: 3px 3px 0 rgba(60,10,20,.85); line-height:1.1; }
+  .sz-board-sub { text-align:center; font-size:.88rem; opacity:.85; margin:.15rem 0 .8rem; }
+  .sz-doors { display:grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+  .sz-tl-label small { display:none; color: var(--text-faint); font-size:.72rem; }
+  @media (max-width: 640px) {
+    .sz-doors { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .sz-door-date, .sz-tl-ticks span, .sz-tl-bar span { display:none; }
+    .sz-tl-row, .sz-tl-axis { grid-template-columns: 7.2rem 1fr; }
+    .sz-tl-label small { display:block; }
+    .sz-board-title { font-size: 1.8rem; }
+    .sz-hero h1 { font-size: 1.8rem; }
+  }
+
+  .sz-door { position:relative; border:2px solid #d9a948; border-radius:12px; padding:0; cursor:pointer; overflow:hidden;
+             background:#3a2a1f; color:#fff; display:flex; flex-direction:column; min-height: 104px; text-align:center;
+             transition: transform .12s, box-shadow .12s; font: inherit; }
+  .sz-door:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,.35); }
+  .sz-door-top { position:relative; height: 30px; display:flex; align-items:center; justify-content:space-between; padding:0 7px;
+                 background: linear-gradient(90deg, transparent 46%, #deb254 46% 54%, transparent 54%), var(--sz-green); }
+  .sz-door.is-red .sz-door-top { background: linear-gradient(90deg, transparent 46%, #deb254 46% 54%, transparent 54%), var(--sz-red); }
+  .sz-door-num { font-family:'Bangers', var(--font); font-size: 1.35rem; text-shadow: 1px 1px 0 rgba(0,0,0,.6); }
+  .sz-door-date { font-size:.66rem; opacity:.9; text-shadow: 0 1px 1px rgba(0,0,0,.6); }
+  .sz-door-body { flex:1; display:flex; align-items:center; justify-content:center; gap:4px; padding: 6px 4px 0;
+                  background: radial-gradient(circle at 50% 45%, #5a4030, #3a2a1f 70%); }
+  .sz-door-label { font-size:.74rem; font-weight:700; color: var(--sz-gold); padding: 2px 4px 6px; background:#3a2a1f; min-height: 1.3em; }
+  .sz-door.is-sel { border-color: var(--sz-gold); box-shadow: 0 0 0 3px var(--sz-gold), 0 0 22px rgba(255,212,110,.75); transform: translateY(-3px); }
+  .sz-door.is-empty .sz-door-body { background: repeating-linear-gradient(45deg, #4a3226, #4a3226 8px, #3a2a1f 8px, #3a2a1f 16px); }
+  .sz-door-empty { font-size:.75rem; color:#ffb4b4; font-weight:700; }
+  .sz-door-add { border:2px dashed rgba(255,212,110,.55); background: transparent; color: var(--sz-gold); border-radius:12px; cursor:pointer; min-height:104px; font-size:1.6rem; }
+  .sz-door-add:hover { background: rgba(255,212,110,.08); }
+  /* icônes d'objets */
+  .sz-ic { display:inline-flex; align-items:center; justify-content:center; width: 26px; height: 26px; font-size: 20px; flex: none; }
+  .sz-ic img { max-width:100%; max-height:100%; object-fit:contain; }
+  .sz-ic-lg { width: 44px; height: 44px; font-size: 32px; }
+  .sz-ic-door { width: 46px; height: 46px; font-size: 34px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.5)); }
+  .sz-door-body .sz-ic-door + .sz-ic-door { width: 34px; height: 34px; font-size: 26px; }
+  /* panneau d'édition */
+  .sz-panel-head { display:flex; align-items:center; gap:.6rem; margin-bottom:.7rem; }
+  .sz-panel-title { font-family:'Bangers', var(--font); font-size: 1.7rem; letter-spacing:.5px; color: var(--accent); line-height:1; }
+  .sz-nav { border:1px solid var(--border); background: var(--bg-soft); border-radius:10px; width:34px; height:34px; cursor:pointer; color: var(--text); }
+  .sz-nav:disabled { opacity:.35; cursor:default; }
+  .sz-rewards { display:flex; flex-direction:column; gap:.55rem; }
+  .sz-reward { display:flex; gap:.7rem; align-items:flex-start; padding:.65rem .7rem; border-radius: 12px; background: var(--bg-soft); border:1px solid var(--border); }
+  .sz-reward-body { flex:1; display:flex; flex-wrap:wrap; align-items:center; gap:.45rem .7rem; min-width:0; }
+  .sz-seg { display:inline-flex; background: var(--bg-elev); border:1px solid var(--border); border-radius:999px; padding:2px; width:max-content; max-width:100%; flex-wrap:wrap; }
+  .sz-seg button { border:0; background:transparent; color: var(--text-soft); padding:.22rem .7rem; border-radius:999px; cursor:pointer; font-size:.8rem; font-weight:600; }
+  .sz-seg button.is-on { background: var(--accent); color:#fff; }
+  .sz-step { display:inline-flex; align-items:center; border:1px solid var(--border); border-radius:10px; overflow:hidden; background: var(--bg-elev); }
+  .sz-step button { border:0; background: var(--bg-soft); color: var(--text); width:30px; height:32px; cursor:pointer; font-size:1rem; }
+  .sz-step input { width: 4.6rem; border:0; text-align:center; height:32px; background:transparent; color: var(--text); font: inherit; -moz-appearance:textfield; }
+  .sz-step input::-webkit-outer-spin-button, .sz-step input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .sz-del { border:0; background: transparent; color: var(--text-faint); cursor:pointer; font-size:1rem; padding:.2rem .35rem; border-radius:8px; }
+  .sz-del:hover { color:#fff; background: var(--danger); }
+  .sz-add { border:1px dashed var(--border-strong); background: transparent; color: var(--accent); border-radius:10px; padding:.4rem .8rem; cursor:pointer; font-weight:600; }
+  .sz-add:hover { background: var(--accent-soft); }
+  .sz-btn { border:1px solid var(--border); background: var(--bg-elev); color: var(--text); border-radius:10px; padding:.4rem .8rem; cursor:pointer; font-weight:600; }
+  .sz-btn:hover { border-color: var(--border-strong); }
+  .sz-btn:disabled { opacity:.45; cursor:default; }
+  /* sélecteur d'objet */
+  .sz-picker { position:relative; }
+  .sz-picker-btn { display:inline-flex; align-items:center; gap:.45rem; border:1px solid var(--border); background: var(--bg-elev); color: var(--text);
+                   border-radius:10px; padding:.25rem .6rem .25rem .35rem; cursor:pointer; max-width: 100%; min-height: 34px; }
+  .sz-picker-name { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 15rem; }
+  .sz-caret { color: var(--text-faint); font-size:.8rem; }
+  .sz-pop { position:absolute; z-index:30; top: calc(100% + 4px); left:0; width: min(360px, 86vw); background: var(--bg-elev);
+            border:1px solid var(--border-strong); border-radius:12px; box-shadow: var(--shadow-lg); padding:.5rem; }
+  .sz-pop-search { width:100%; margin-bottom:.4rem; }
+  .sz-pop-list { max-height: 300px; overflow:auto; }
+  .sz-pop-group { font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color: var(--text-faint); padding:.4rem .4rem .15rem; }
+  .sz-pop-item { display:flex; align-items:center; gap:.5rem; width:100%; border:0; background:transparent; color: var(--text); padding:.3rem .4rem; border-radius:8px; cursor:pointer; text-align:left; }
+  .sz-pop-item:hover { background: var(--bg-soft); }
+  .sz-pop-item.is-on { background: var(--accent-soft); }
+  /* chiffres */
+  .sz-chips { display:flex; gap:.45rem; flex-wrap:wrap; }
+  .sz-chip { display:inline-flex; align-items:center; gap:.35rem; padding:.3rem .7rem; border-radius:999px; background: var(--bg-soft); border:1px solid var(--border); font-size:.84rem; }
+  .sz-chip.is-warn { background: rgba(227,73,106,.12); border-color: rgba(227,73,106,.4); }
+  /* Noël */
+  .sz-tiers { display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:.7rem; }
+  .sz-tier { border-radius: 14px; padding:.75rem .8rem; border:1px solid var(--border); background: var(--bg-soft); cursor:pointer; transition: transform .12s; }
+  .sz-tier:hover { transform: translateY(-2px); }
+  .sz-tier.is-on { outline: 3px solid var(--accent); }
+  .sz-tier-head { display:flex; align-items:baseline; justify-content:space-between; gap:.4rem; margin-bottom:.45rem; }
+  .sz-tier-name { font-weight:700; }
+  .sz-tier-pct { font-family:'Bangers', var(--font); font-size: 1.5rem; letter-spacing:.5px; }
+  .sz-tier ul { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.2rem; font-size:.86rem; }
+  .sz-tier li { display:flex; align-items:center; gap:.35rem; }
+  .sz-gauge { position:relative; height: 34px; border-radius: 10px; overflow:hidden; display:flex; margin:.5rem 0 .25rem; font-size:.78rem; font-weight:700; color:#fff; }
+  .sz-gauge > div { display:flex; align-items:center; justify-content:center; white-space:nowrap; overflow:hidden; }
+  /* boutique */
+  .sz-shops { display:flex; gap:.4rem; flex-wrap:wrap; margin-bottom:.6rem; }
+  .sz-offers { display:grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap:.7rem; }
+  .sz-offer { position:relative; border-radius: 14px; border:1px solid var(--border); background: linear-gradient(180deg, var(--bg-soft), var(--bg-elev));
+              padding:.7rem; display:flex; flex-direction:column; gap:.45rem; align-items:center; text-align:center; }
+  .sz-offer .sz-del { position:absolute; top:4px; right:4px; z-index:2; }
+  .sz-picker-big { width:100%; }
+  .sz-picker-big .sz-picker-btn { flex-direction:column; width:100%; border:0; background:transparent; padding:.2rem; gap:.3rem; }
+  .sz-picker-big .sz-picker-btn:hover { background: var(--bg-soft); }
+  .sz-picker-big .sz-ic { width: 72px; height: 72px; font-size: 52px; filter: drop-shadow(0 3px 4px rgba(0,0,0,.18)); }
+  .sz-picker-big .sz-picker-name { font-weight:700; font-size:.92rem; white-space:normal; max-width:none; min-height: 2.4em; display:flex; align-items:center; }
+  .sz-picker-big .sz-caret { font-size:.72rem; }
+  .sz-offer-row { display:flex; align-items:center; gap:.35rem; font-size:.78rem; color: var(--text-soft); }
+  .sz-offer-row input { width: 4.2rem; padding-left:.45rem; padding-right:.3rem; }
+  .sz-bar { height: 10px; border-radius: 999px; background: var(--bg-soft); overflow:hidden; border:1px solid var(--border); }
+  .sz-bar > div { height:100%; border-radius:999px; background: linear-gradient(90deg, var(--accent), var(--violet)); }
+  /* aperçu Discord */
+  .dc { background:#313338; border-radius: 12px; padding: .9rem 1rem; color:#dbdee1; font-family: 'gg sans', 'Noto Sans', var(--font); font-size:.93rem; line-height:1.38; }
+  .dc-msg { display:flex; gap:.8rem; }
+  .dc-avatar { width:40px; height:40px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-size:22px;
+               background: linear-gradient(135deg, #f7a8c9, #b692e0); }
+  .dc-author { font-weight:600; color:#f2f3f5; }
+  .dc-tag { font-size:.62rem; background:#5865f2; color:#fff; border-radius:3px; padding:1px 4px; margin-left:4px; vertical-align: 2px; font-weight:700; }
+  .dc-mention { background: rgba(88,101,242,.3); color:#c9cdfb; border-radius:3px; padding:0 2px; }
+  .dc-embed { margin-top:.35rem; background:#2b2d31; border-left:4px solid #b8323f; border-radius:4px; padding:.6rem .9rem .7rem; max-width: 520px; }
+  .dc-title { font-weight:700; color:#f2f3f5; margin-bottom:.3rem; }
+  .dc-desc strong, .dc-field strong { color:#f2f3f5; }
+  .dc-desc code, .dc-field code { background:#1e1f22; border-radius:3px; padding:0 3px; font-size:.85em; }
+  .dc-fields { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:.4rem .8rem; margin-top:.45rem; }
+  .dc-field { grid-column: span 3; }
+  .dc-field.is-inline { grid-column: span 1; }
+  .dc-field-name { font-weight:700; color:#f2f3f5; font-size:.86rem; margin-bottom:.1rem; }
+  .dc-footer { margin-top:.5rem; font-size:.75rem; color:#949ba4; }
+  .dc-emoji { width: 1.25em; height:1.25em; vertical-align: -.25em; }
+  .dc-ts { background: rgba(255,255,255,.06); border-radius:3px; padding:0 3px; }
+  .dc-error { color:#ffb4b4; font-size:.86rem; }
+  .sz-shot { width:100%; max-width: 760px; margin: 0 auto; border-radius: 12px; display:block; box-shadow: var(--shadow-sm); }
+  .sz-loading { opacity:.55; transition: opacity .2s; }
+  /* barre d'enregistrement */
+  .sz-savebar { position:sticky; bottom:0; z-index:20; display:flex; align-items:center; gap:.8rem; flex-wrap:wrap; padding:.7rem 1rem;
+                border-radius: var(--radius-lg) var(--radius-lg) 0 0; background: var(--bg-elev); border:1px solid var(--border); box-shadow: var(--shadow-lg); }
+  .sz-state { display:flex; align-items:center; gap:.45rem; font-weight:600; }
+  .sz-state i { width:10px; height:10px; border-radius:50%; background: var(--success); display:inline-block; }
+  .sz-state.is-dirty i { background: var(--warn); box-shadow: 0 0 0 4px rgba(217,148,84,.2); }
+  .sz-toast { position:fixed; right: 1.2rem; bottom: 5.5rem; z-index:50; padding:.7rem 1rem; border-radius:12px; color:#fff; box-shadow: var(--shadow-lg); font-weight:600; }
+  .sz-table { width:100%; border-collapse:collapse; font-size:.88rem; }
+  .sz-table td, .sz-table th { padding:.4rem .5rem; border-bottom:1px solid var(--border); text-align:left; }
+  .sz-pill { display:inline-block; padding:.1rem .55rem; border-radius:999px; font-size:.78rem; background: var(--bg-soft); border:1px solid var(--border); }
+  .sz-pill.is-ok { background: rgba(78,168,137,.18); border-color: rgba(78,168,137,.45); }
+  .sz-minibars { display:flex; align-items:flex-end; gap:3px; height: 70px; }
+  .sz-minibars div { flex:1; background: linear-gradient(180deg, var(--accent), var(--violet)); border-radius: 3px 3px 0 0; min-height: 2px; position:relative; }
+</style>
+
+<section class="sz" x-data="fetes()" x-init="init()" @keydown.window.ctrl.s.prevent="save()" @keydown.window.meta.s.prevent="save()">
+
+  <header class="sz-hero">
+    <div>
+      <h1>🎉 Fêtes du Grand Cerisier</h1>
+      <p>Calendrier de l'Avent, Noël, objets et boutiques d'événement, Nouvel An. Tout est en direct ici : ce que tu vois est ce que verront les joueurs.
+         Le bot suit <strong>sans redémarrage</strong> ; pour tester sur la bêta, avance les dates puis remets-les.</p>
+    </div>
+    <div class="sz-badges">
+      <template x-for="b in liveBadges()" :key="b.label"><span class="sz-badge" :class="{ 'is-live': b.live }" x-text="b.label"></span></template>
+    </div>
+  </header>
+
+  {% if saved %}<div class="sz-card" style="border-color: rgba(78,168,137,.5);">✅ Enregistré.</div>{% endif %}
+  {% for e in status.problems %}<div class="sz-alert">⚠️ Fichier actuel : {{ e }}</div>{% endfor %}
+  {% if errors %}<div class="sz-alert"><strong>Rien n'a été enregistré :</strong><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+  <div class="sz-alert" x-show="errors.length" x-cloak>
+    <strong>Rien n'a été enregistré — à corriger :</strong>
+    <ul><template x-for="e in errors" :key="e"><li x-text="e"></li></template></ul>
   </div>
 
-  <form method="post" action="/admin/seasonal" @submit="$refs.payload.value = JSON.stringify(data)">
-    <input type="hidden" name="content" x-ref="payload">
+  {# ------------------------------------------------------------ la frise #}
+  <div class="sz-card">
+    <h3>🗓️ Le mois des fêtes <span class="sz-muted">clique une barre pour la régler</span></h3>
+    <div class="sz-tl">
+      <div class="sz-tl-axis"><span></span>
+        <div class="sz-tl-ticks"><template x-for="t in timeline().ticks" :key="t.left"><span :style="'left:' + t.left + '%'" x-text="t.label"></span></template></div>
+      </div>
+      <template x-for="row in timeline().rows" :key="row.key">
+        <div class="sz-tl-row">
+          <span class="sz-tl-label"><span x-text="row.label"></span><small x-text="row.dates"></small></span>
+          <div class="sz-tl-track">
+            <div class="sz-tl-bar" :class="{ 'is-off': !row.enabled }" :style="'left:' + row.left + '%; width:' + row.width + '%; background:' + row.color"
+                 @click="go(row.tab, row.ref)" :title="row.dates"><span x-text="row.dates"></span></div>
+            <template x-if="timeline().today !== null"><div class="sz-tl-today" :style="'left:' + timeline().today + '%'"></div></template>
+          </div>
+        </div>
+      </template>
+      <div class="sz-muted" x-show="!timeline().rows.length">Aucun événement daté.</div>
+    </div>
+  </div>
 
-    {# ------------------------------------------------------------- Avent #}
-    <div class="form-section">
-      <h2 class="form-section-title">🎄 Calendrier de l'Avent</h2>
-      <template x-if="!data.advent"><button type="button" class="btn" @click="data.advent = newAdvent()">Créer le calendrier</button></template>
-      <template x-if="data.advent">
-        <div>
-          <p class="form-section-help" style="margin:0 0 .6rem;">Une case par jour, à ouvrir <strong>le jour même</strong> (une case manquée est perdue). Petites récompenses : c'est le début de l'aventure.</p>
-          <div class="sz-grid">
-            <label class="field" style="flex-direction:row;align-items:center;gap:8px;"><input type="checkbox" x-model="data.advent.enabled"><span class="field-label" style="margin:0;">Activé</span></label>
+  <nav class="sz-tabs">
+    <template x-for="t in tabs()" :key="t.id">
+      <button type="button" class="sz-tab" :class="{ 'is-on': tab === t.id }" @click="go(t.id)">
+        <span x-text="t.icon"></span><span x-text="t.label"></span>
+        <span class="sz-dot" :class="{ 'is-live': t.state === 'en cours' }" x-show="t.state" x-text="t.state"></span>
+      </button>
+    </template>
+  </nav>
+
+  {# ============================================================== AVENT #}
+  <div x-show="tab === 'avent'" x-cloak>
+    <template x-if="!data.advent">
+      <div class="sz-card"><button type="button" class="sz-btn" @click="data.advent = newAdvent()">🎄 Créer un calendrier de l'Avent</button></div>
+    </template>
+    <template x-if="data.advent">
+      <div style="display:flex; flex-direction:column; gap:1rem;">
+        <div class="sz-card">
+          <div class="sz-fields" style="align-items:end;">
+            <label class="sz-toggle"><input type="checkbox" x-model="data.advent.enabled"><span class="sw"></span>Activé</label>
             <label class="field"><span class="field-label">Nom</span><input class="input" x-model="data.advent.name"></label>
             <label class="field"><span class="field-label">Première case</span><input class="input" type="date" x-model="data.advent.start"></label>
+            <div class="field"><span class="field-label">Nombre de cases</span>
+              <div class="sz-step">
+                <button type="button" @click="if (data.advent.days.length > 1) { data.advent.days.pop(); sel = Math.min(sel, data.advent.days.length - 1) }">−</button>
+                <input type="number" :value="data.advent.days.length" readonly>
+                <button type="button" @click="data.advent.days.push([{ kind: 'gold_per_level', amount: 10 }])">+</button>
+              </div>
+            </div>
           </div>
+        </div>
+
+        <div class="sz-cols">
+          <div style="display:flex; flex-direction:column; gap:1rem; min-width:0;">
+            <div class="sz-board">
+              <div class="sz-board-title" x-text="(data.advent.name || '').toUpperCase()"></div>
+              <div class="sz-board-sub">Clique une case pour régler ce qu'elle contient · une case s'ouvre le jour même, sinon elle est perdue</div>
+              <div class="sz-doors">
+                <template x-for="(day, di) in data.advent.days" :key="di">
+                  <button type="button" class="sz-door" :class="{ 'is-sel': di === sel, 'is-empty': !day.length, 'is-red': di % 2 === 0 }" @click="sel = di">
+                    <span class="sz-door-top"><span class="sz-door-num" x-text="di + 1"></span><span class="sz-door-date" x-text="shortDate(data.advent.start, di)"></span></span>
+                    <span class="sz-door-body">
+                      <template x-for="(r, ri) in day.slice(0, 2)" :key="ri"><span class="sz-ic sz-ic-door" x-html="r.kind === 'item' ? icon(r.item) : icon('$gold')"></span></template>
+                      <template x-if="!day.length"><span class="sz-door-empty">vide !</span></template>
+                    </span>
+                    <span class="sz-door-label" x-text="doorLabel(day)"></span>
+                  </button>
+                </template>
+              </div>
+            </div>
+            <div class="sz-chips">
+              <template x-for="c in adventSummary()" :key="c.text"><span class="sz-chip" :class="{ 'is-warn': c.warn }" x-text="c.text"></span></template>
+            </div>
+          </div>
+
+          <aside class="sz-card sz-sticky" x-show="data.advent.days.length">
+            <div class="sz-panel-head">
+              <button type="button" class="sz-nav" :disabled="sel <= 0" @click="sel--">◀</button>
+              <div style="flex:1;">
+                <div class="sz-panel-title" x-text="'Case ' + (sel + 1)"></div>
+                <div class="sz-muted" x-text="longDate(data.advent.start, sel)"></div>
+              </div>
+              <button type="button" class="sz-nav" :disabled="sel >= data.advent.days.length - 1" @click="sel++">▶</button>
+            </div>
+            {{ reward_editor('data.advent.days[sel]') }}
+            <div class="sz-line" style="margin-top:.8rem; padding-top:.7rem; border-top:1px solid var(--border);">
+              <button type="button" class="sz-btn" @click="clip = clone(data.advent.days[sel]); toast('📋 Case ' + (sel + 1) + ' copiée')">📋 Copier</button>
+              <button type="button" class="sz-btn" :disabled="!clip" @click="data.advent.days[sel] = clone(clip)">📥 Coller ici</button>
+              <span class="sz-muted">Petites récompenses : c'est le début de l'aventure.</span>
+            </div>
+          </aside>
+        </div>
+
+        <div class="sz-card">
+          <h3>👁️ Ce que voit un joueur <span class="sz-muted">image exacte générée par le bot</span></h3>
+          <div class="sz-line" style="margin-bottom:.6rem;">
+            <span>Jour simulé : <strong x-text="pvDay + ' (' + longDate(data.advent.start, pvDay - 1) + ')'"></strong></span>
+            <input type="range" min="1" :max="data.advent.days.length" x-model.number="pvDay" style="flex:1; min-width: 180px;">
+            <span class="sz-muted">les cases d'avant sont ouvertes, celle du jour attend</span>
+          </div>
+          <div class="dc-error" x-show="adventError" x-text="adventError"></div>
+          <img class="sz-shot" :class="{ 'sz-loading': adventBusy }" :src="adventPng" x-show="adventPng" alt="Aperçu du calendrier">
+        </div>
+      </div>
+    </template>
+  </div>
+
+  {# =============================================================== NOËL #}
+  <div x-show="tab === 'noel'" x-cloak>
+    <template x-if="!data.christmas">
+      <div class="sz-card"><button type="button" class="sz-btn" @click="data.christmas = newChristmas()">🎅 Créer Noël</button></div>
+    </template>
+    <template x-if="data.christmas">
+      <div style="display:flex; flex-direction:column; gap:1rem;">
+        <div class="sz-secret">🔒 <strong>Secret :</strong> les joueurs ne savent pas que la taille du cadeau vient de leurs choix face à la <strong>petite fille</strong> (aider / ignorer). Aucun texte du bot ne le dit — à l'ouverture, ils ne voient qu'un verdict (« tu as été sage… »).</div>
+        <div class="sz-cols">
           <div class="sz-card">
-            <template x-for="(day, di) in data.advent.days" :key="di">
-              <div class="sz-day">
-                <div><strong x-text="'Case ' + (di + 1)"></strong><br><small style="color:var(--muted);" x-text="dayLabel(data.advent.start, di)"></small></div>
-                <div>
-                  <template x-for="(r, ri) in day" :key="'r' + ri">
-                    <div class="sz-row">
-                      <select class="input" x-model="r.kind" @change="normalize(r)">
-                        <option value="gold_per_level">Or × niveau</option><option value="gold">Or fixe</option><option value="item">Objet</option>
-                      </select>
-                      <template x-if="r.kind !== 'item'"><input class="input" type="number" min="1" style="width:7rem" x-model.number="r.amount"></template>
-                      <template x-if="r.kind === 'item'">
-                        <span class="sz-row" style="margin:0;">
-                          <select class="input" x-model="r.item">
-                            <template x-for="it in items" :key="it.code"><option :value="it.code" :selected="it.code === r.item" x-text="it.name + ' (' + it.code + ')'"></option></template>
-                          </select>
-                          × <input class="input" type="number" min="1" style="width:5rem" x-model.number="r.qty">
-                        </span>
-                      </template>
-                      <button type="button" class="btn btn-small sz-x" @click="day.splice(ri, 1)" title="Retirer">✕</button>
-                    </div>
-                  </template>
-                  <button type="button" class="btn btn-small" @click="day.push({kind:'gold_per_level', amount:10})">+ récompense</button>
-                </div>
+            <h3>🎁 Le cadeau à 100 %</h3>
+            <div class="sz-fields" style="align-items:end; margin-bottom:.8rem;">
+              <label class="sz-toggle"><input type="checkbox" x-model="data.christmas.enabled"><span class="sw"></span>Activé</label>
+              <label class="field"><span class="field-label">Le Père Noël passe le</span><input class="input" type="date" x-model="data.christmas.gift_day"></label>
+              <label class="field"><span class="field-label">À ouvrir jusqu'au</span><input class="input" type="date" x-model="data.christmas.claim_until"></label>
+            </div>
+            {{ reward_editor('data.christmas.rewards') }}
+          </div>
+          <div class="sz-card sz-sticky">
+            <h3>💬 À l'ouverture <span class="sz-muted">message réel du bot</span></h3>
+            {{ discord('dc.gift') }}
+          </div>
+        </div>
+        <div class="sz-card">
+          <h3>⚖️ Selon la gentillesse
+            <span class="sz-muted" style="display:flex; align-items:center; gap:.5rem;">niveau du joueur <strong x-text="level"></strong>
+              <input type="range" min="1" max="100" x-model.number="level"></span></h3>
+          <div class="sz-tiers">
+            <template x-for="t in tierCards()" :key="t.id">
+              <div class="sz-tier" :class="{ 'is-on': giftTier === t.id }" @click="giftTier = t.id" :style="'border-color:' + t.color">
+                <div class="sz-tier-head"><span class="sz-tier-name" x-text="t.emoji + ' ' + t.label"></span><span class="sz-tier-pct" :style="'color:' + t.color" x-text="t.pct + ' %'"></span></div>
+                <ul>
+                  <template x-for="(line, li) in t.lines" :key="li"><li><span class="sz-ic" x-html="line.icon"></span><span x-text="line.text"></span></li></template>
+                  <li class="sz-muted" x-show="!t.lines.length">rien</li>
+                </ul>
               </div>
             </template>
-            <div class="sz-row" style="margin-top:.6rem;">
-              <button type="button" class="btn btn-small" @click="data.advent.days.push([{kind:'gold_per_level', amount:10}])">+ une case</button>
-              <button type="button" class="btn btn-small" @click="data.advent.days.pop()" x-show="data.advent.days.length">− la dernière case</button>
+          </div>
+          <div style="margin-top:1rem;">
+            <div class="sz-muted">Ratio d'aide à la petite fille jusqu'au réveillon :</div>
+            <div class="sz-gauge">
+              <div :style="'width:' + data.christmas.kindness.nice_from_pct + '%; background:#b8323f'" x-text="'😈 < ' + data.christmas.kindness.nice_from_pct + ' % → ' + data.christmas.kindness.naughty_pct + ' %'"></div>
+              <div :style="'flex:1; background:#23784a'" x-text="'😇 ≥ ' + data.christmas.kindness.nice_from_pct + ' % → ' + data.christmas.kindness.nice_pct + ' %'"></div>
+              <div style="width: 16%; background:#c89a2c;" x-text="'👼 100 % → ' + data.christmas.kindness.angel_pct + ' %'"></div>
+            </div>
+            <div class="sz-fields" style="margin-top:.6rem;">
+              <label class="field"><span class="field-label">« Sage » à partir de (% d'aide)</span><input class="input" type="range" min="1" max="100" x-model.number="data.christmas.kindness.nice_from_pct"></label>
+              <label class="field"><span class="field-label">😈 Pas très sage (% du cadeau)</span><input class="input" type="number" min="0" x-model.number="data.christmas.kindness.naughty_pct"></label>
+              <label class="field"><span class="field-label">😇 Sage (%)</span><input class="input" type="number" min="0" x-model.number="data.christmas.kindness.nice_pct"></label>
+              <label class="field"><span class="field-label">👼 Toujours aidée (%)</span><input class="input" type="number" min="0" x-model.number="data.christmas.kindness.angel_pct"></label>
+              <label class="field"><span class="field-label">🤷 Jamais croisée (%)</span><input class="input" type="number" min="0" x-model.number="data.christmas.kindness.unknown_pct"></label>
+            </div>
+          </div>
+        </div>
+        <div class="sz-card">
+          <h3>📣 Annonce du matin de Noël <span class="sz-muted">salon des événements</span></h3>
+          {{ discord('dc.christmas') }}
+        </div>
+      </div>
+    </template>
+  </div>
+
+  {# ================================================== OBJETS D'ÉVÉNEMENT #}
+  <div x-show="tab === 'objets'" x-cloak>
+    <div style="display:flex; flex-direction:column; gap:1rem;">
+      <p class="sz-muted" style="margin:0;">Pendant la période, <strong>chaque monstre de zone vaincu</strong> donne l'objet à chaque survivant (une meute : un par monstre ; les morts n'ont rien).</p>
+      <template x-for="(d, i) in data.drops" :key="i">
+        <div class="sz-card">
+          <div class="sz-cols-2">
+            <div>
+              <div class="sz-line" style="margin-bottom:.7rem;">
+                <span class="sz-ic sz-ic-lg" x-html="icon(d.item)"></span>
+                <input class="input" x-model="d.name" style="font-weight:700; flex:1; min-width: 12rem;">
+                <label class="sz-toggle"><input type="checkbox" x-model="d.enabled"><span class="sw"></span></label>
+                <button type="button" class="sz-del" title="Retirer" @click="data.drops.splice(i, 1)">✕</button>
+              </div>
+              <div class="sz-fields">
+                <div class="field"><span class="field-label">Objet donné</span>{{ item_picker('d', 'item') }}</div>
+                <div class="field"><span class="field-label">Par monstre</span>
+                  <div class="sz-step"><button type="button" @click="d.per_kill = Math.max(1, (+d.per_kill || 1) - 1)">−</button><input type="number" min="1" x-model.number="d.per_kill"><button type="button" @click="d.per_kill = (+d.per_kill || 0) + 1">+</button></div></div>
+                <label class="field"><span class="field-label">Du</span><input class="input" type="date" x-model="d.start"></label>
+                <label class="field"><span class="field-label">Au (compris)</span><input class="input" type="date" x-model="d.end"></label>
+                <label class="field"><span class="field-label">Code</span><input class="input" x-model="d.code"></label>
+              </div>
+              <label class="field" style="margin-top:.6rem;"><span class="field-label">Texte de l'annonce (vide = texte par défaut)</span><textarea class="input" rows="3" x-model="d.announce"></textarea></label>
+              <div style="margin-top:.7rem;">
+                <div class="sz-muted" style="margin-bottom:.3rem;">Ce qu'un joueur en récolte (sur <span x-text="days(d.start, d.end)"></span> jours, + Avent et cadeau à 100 %) :</div>
+                <div class="sz-chips"><template x-for="p in income(d.item)" :key="p.label"><span class="sz-chip"><span class="sz-ic" x-html="icon(d.item)"></span><span x-text="p.label + ' ≈ ' + fmt(p.total)"></span></span></template></div>
+              </div>
+            </div>
+            <div>
+              <div style="margin-bottom:.4rem;"><strong>📣 Son annonce</strong> <span class="sz-muted">le premier jour, salon des événements</span></div>
+              <div class="dc" x-show="dc.drops[d.code]" x-html="dc.drops[d.code]"></div>
             </div>
           </div>
         </div>
       </template>
+      <div><button type="button" class="sz-add" @click="data.drops.push(newDrop())">＋ Un objet d'événement</button></div>
     </div>
+  </div>
 
-    {# --------------------------------------------------------------- Noël #}
-    <div class="form-section">
-      <h2 class="form-section-title">🎅 Noël — le cadeau</h2>
-      <template x-if="!data.christmas"><button type="button" class="btn" @click="data.christmas = newChristmas()">Créer Noël</button></template>
-      <template x-if="data.christmas">
-        <div>
-          <div class="sz-grid">
-            <label class="field" style="flex-direction:row;align-items:center;gap:8px;"><input type="checkbox" x-model="data.christmas.enabled"><span class="field-label" style="margin:0;">Activé</span></label>
-            <label class="field"><span class="field-label">Nom</span><input class="input" x-model="data.christmas.name"></label>
-            <label class="field"><span class="field-label">Jour du cadeau</span><input class="input" type="date" x-model="data.christmas.gift_day"></label>
-            <label class="field"><span class="field-label">À ouvrir jusqu'au</span><input class="input" type="date" x-model="data.christmas.claim_until"></label>
-          </div>
-          <p class="form-section-help" style="margin:.8rem 0 .3rem;">Le cadeau à <strong>100 %</strong> ; il est mis à l'échelle selon la gentillesse (or et quantités, arrondis, jamais moins de 1).</p>
-          <div class="sz-card">
-            <template x-for="(r, ri) in data.christmas.rewards" :key="ri">
-              <div class="sz-row">
-                <select class="input" x-model="r.kind" @change="normalize(r)">
-                  <option value="gold_per_level">Or × niveau</option><option value="gold">Or fixe</option><option value="item">Objet</option>
-                </select>
-                <template x-if="r.kind !== 'item'"><input class="input" type="number" min="1" style="width:7rem" x-model.number="r.amount"></template>
-                <template x-if="r.kind === 'item'">
-                  <span class="sz-row" style="margin:0;">
-                    <select class="input" x-model="r.item">
-                      <template x-for="it in items" :key="it.code"><option :value="it.code" :selected="it.code === r.item" x-text="it.name + ' (' + it.code + ')'"></option></template>
-                    </select>
-                    × <input class="input" type="number" min="1" style="width:5rem" x-model.number="r.qty">
-                  </span>
-                </template>
-                <button type="button" class="btn btn-small sz-x" @click="data.christmas.rewards.splice(ri, 1)">✕</button>
-              </div>
-            </template>
-            <button type="button" class="btn btn-small" @click="data.christmas.rewards.push({kind:'item', item:'booster_offert', qty:1})">+ récompense</button>
-          </div>
-          <h3 style="margin:.9rem 0 .3rem;">Gentillesse (ratio d'aide à la petite fille, jusqu'au réveillon)</h3>
-          <div class="sz-grid">
-            <label class="field"><span class="field-label">« Sage » à partir de (% d'aide)</span><input class="input" type="number" min="1" max="100" x-model.number="data.christmas.kindness.nice_from_pct"></label>
-            <label class="field"><span class="field-label">Pas très sage : part du cadeau (%)</span><input class="input" type="number" min="0" x-model.number="data.christmas.kindness.naughty_pct"></label>
-            <label class="field"><span class="field-label">Sage (%)</span><input class="input" type="number" min="0" x-model.number="data.christmas.kindness.nice_pct"></label>
-            <label class="field"><span class="field-label">Toujours aidée (%)</span><input class="input" type="number" min="0" x-model.number="data.christmas.kindness.angel_pct"></label>
-            <label class="field"><span class="field-label">Jamais croisée (%)</span><input class="input" type="number" min="0" x-model.number="data.christmas.kindness.unknown_pct"></label>
-          </div>
-        </div>
-      </template>
-    </div>
-
-    {# ----------------------------------------------- objets d'événement #}
-    <div class="form-section">
-      <h2 class="form-section-title">🍬 Objets d'événement</h2>
-      <p class="form-section-help" style="margin:0 0 .4rem;">Pendant la période, <strong>chaque monstre de zone vaincu</strong> donne l'objet à chaque survivant (meute : un par monstre).</p>
-      <template x-for="(d, i) in data.drops" :key="i">
-        <div class="sz-card">
-          <div class="sz-grid">
-            <label class="field" style="flex-direction:row;align-items:center;gap:8px;"><input type="checkbox" x-model="d.enabled"><span class="field-label" style="margin:0;">Activé</span></label>
-            <label class="field"><span class="field-label">Code (unique)</span><input class="input" x-model="d.code"></label>
-            <label class="field"><span class="field-label">Nom</span><input class="input" x-model="d.name"></label>
-            <label class="field"><span class="field-label">Objet</span>
-              <select class="input" x-model="d.item"><template x-for="it in items" :key="it.code"><option :value="it.code" :selected="it.code === d.item" x-text="it.name"></option></template></select></label>
-            <label class="field"><span class="field-label">Par monstre</span><input class="input" type="number" min="1" x-model.number="d.per_kill"></label>
-            <label class="field"><span class="field-label">Du</span><input class="input" type="date" x-model="d.start"></label>
-            <label class="field"><span class="field-label">Au (compris)</span><input class="input" type="date" x-model="d.end"></label>
-          </div>
-          <label class="field" style="margin-top:.5rem;"><span class="field-label">Texte de l'annonce (vide = texte par défaut)</span><textarea class="input" rows="2" x-model="d.announce"></textarea></label>
-          <button type="button" class="btn btn-small sz-x" style="margin-top:.4rem;" @click="data.drops.splice(i, 1)">Retirer</button>
-        </div>
-      </template>
-      <button type="button" class="btn btn-small" @click="data.drops.push(newDrop())">+ un objet d'événement</button>
-    </div>
-
-    {# --------------------------------------------- boutiques d'événement #}
-    <div class="form-section">
-      <h2 class="form-section-title">🎁 Boutiques d'événement</h2>
-      <p class="form-section-help" style="margin:0 0 .4rem;">Une monnaie (un objet), des dates d'ouverture, des articles avec un prix et une limite <strong>par joueur</strong> (0 = sans limite).</p>
+  {# ============================================== BOUTIQUES D'ÉVÉNEMENT #}
+  <div x-show="tab === 'boutiques'" x-cloak>
+    <div class="sz-shops">
       <template x-for="(s, i) in data.shops" :key="i">
+        <button type="button" class="sz-tab" :class="{ 'is-on': shopSel === i }" @click="shopSel = i"><span x-text="s.emoji"></span><span x-text="s.name"></span></button>
+      </template>
+      <button type="button" class="sz-add" @click="data.shops.push(newShop()); shopSel = data.shops.length - 1">＋ Nouvelle boutique</button>
+    </div>
+    <template x-if="data.shops[shopSel]">
+      <div style="display:flex; flex-direction:column; gap:1rem;" x-data="{ get s() { return data.shops[shopSel] } }">
         <div class="sz-card">
-          <div class="sz-grid">
-            <label class="field" style="flex-direction:row;align-items:center;gap:8px;"><input type="checkbox" x-model="s.enabled"><span class="field-label" style="margin:0;">Activée</span></label>
-            <label class="field"><span class="field-label">Code (unique)</span><input class="input" x-model="s.code"></label>
-            <label class="field"><span class="field-label">Nom</span><input class="input" x-model="s.name"></label>
-            <label class="field"><span class="field-label">Emoji</span><input class="input" x-model="s.emoji" style="width:5rem"></label>
-            <label class="field"><span class="field-label">Monnaie</span>
-              <select class="input" x-model="s.currency"><template x-for="it in items" :key="it.code"><option :value="it.code" :selected="it.code === s.currency" x-text="it.name"></option></template></select></label>
+          <div class="sz-line" style="margin-bottom:.7rem;">
+            <input class="input" x-model="s.emoji" style="width:3.6rem; text-align:center; font-size:1.3rem;">
+            <input class="input" x-model="s.name" style="font-weight:700; flex:1; min-width: 12rem;">
+            <label class="sz-toggle"><input type="checkbox" x-model="s.enabled"><span class="sw"></span>Ouverte aux dates</label>
+            <button type="button" class="sz-btn" @click="if (confirm('Retirer cette boutique ?')) { data.shops.splice(shopSel, 1); shopSel = 0 }">🗑️ Retirer</button>
+          </div>
+          <div class="sz-fields">
+            <div class="field"><span class="field-label">Monnaie</span>{{ item_picker('s', 'currency') }}</div>
             <label class="field"><span class="field-label">Ouvre le</span><input class="input" type="date" x-model="s.opens"></label>
             <label class="field"><span class="field-label">Ferme le (compris)</span><input class="input" type="date" x-model="s.closes"></label>
+            <label class="field"><span class="field-label">Code</span><input class="input" x-model="s.code"></label>
           </div>
-          <label class="field" style="margin-top:.5rem;"><span class="field-label">Présentation</span><textarea class="input" rows="2" x-model="s.intro"></textarea></label>
-          <div class="table-wrapper" style="margin-top:.5rem;">
-            <table class="data-table">
-              <thead><tr><th>Article</th><th>Prix</th><th>Limite / joueur</th><th></th></tr></thead>
-              <tbody>
-                <template x-for="(o, oi) in s.offers" :key="oi">
-                  <tr>
-                    <td><select class="input" x-model="o.item"><template x-for="it in items" :key="it.code"><option :value="it.code" :selected="it.code === o.item" x-text="it.name + ' (' + it.code + ')'"></option></template></select></td>
-                    <td><input class="input" type="number" min="1" style="width:6rem" x-model.number="o.price"></td>
-                    <td><input class="input" type="number" min="0" style="width:6rem" x-model.number="o.limit"></td>
-                    <td><button type="button" class="btn btn-small sz-x" @click="s.offers.splice(oi, 1)">✕</button></td>
-                  </tr>
-                </template>
-              </tbody>
-            </table>
+          <label class="field" style="margin-top:.6rem;"><span class="field-label">Présentation</span><textarea class="input" rows="2" x-model="s.intro"></textarea></label>
+        </div>
+        <div class="sz-cols">
+          <div class="sz-card">
+            <h3>🛍️ Les articles <span class="sz-muted">prix en <span x-text="nameOf(s.currency)"></span> · limite par joueur (0 = sans)</span></h3>
+            <div class="sz-offers">
+              <template x-for="(o, oi) in s.offers" :key="oi">
+                <div class="sz-offer">
+                  <button type="button" class="sz-del" @click="s.offers.splice(oi, 1)" title="Retirer">✕</button>
+                  {{ item_picker('o', 'item', big=True) }}
+                  <div class="sz-offer-row">
+                    <span class="sz-ic" style="width:20px;height:20px;font-size:16px;" x-html="icon(s.currency)"></span>
+                    <input class="input" type="number" min="1" x-model.number="o.price" title="Prix">
+                    <span title="Limite par joueur (0 = sans limite)">max</span>
+                    <input class="input" type="number" min="0" x-model.number="o.limit" title="Limite par joueur (0 = sans limite)">
+                  </div>
+                </div>
+              </template>
+              <button type="button" class="sz-door-add" style="color: var(--accent); border-color: var(--border-strong);" @click="s.offers.push({ item: 'potion_soin', price: 5, limit: 0 })">＋</button>
+            </div>
           </div>
-          <div class="sz-row" style="margin-top:.4rem;">
-            <button type="button" class="btn btn-small" @click="s.offers.push({item:'potion_soin', price:5, limit:0})">+ un article</button>
-            <button type="button" class="btn btn-small sz-x" @click="data.shops.splice(i, 1)">Retirer la boutique</button>
+          <div style="display:flex; flex-direction:column; gap:1rem;">
+            <div class="sz-card">
+              <h3>📊 Qui peut s'offrir quoi</h3>
+              <div class="sz-muted" style="margin-bottom:.5rem;" x-text="'Tout acheter (limites comprises) : ' + fmt(catalogCost(s)) + ' × ' + nameOf(s.currency)"></div>
+              <template x-for="p in income(s.currency)" :key="p.label">
+                <div style="margin:.45rem 0;">
+                  <div class="sz-line" style="justify-content:space-between;"><span x-text="p.label + ' (' + p.kills + ' monstres / jour)'"></span><strong x-text="fmt(p.total) + ' → ' + pctOf(p.total, catalogCost(s)) + ' %'"></strong></div>
+                  <div class="sz-bar"><div :style="'width:' + Math.min(100, pctOf(p.total, catalogCost(s))) + '%'"></div></div>
+                </div>
+              </template>
+              <div class="sz-muted" x-show="!income(s.currency).some(p => p.total)">Aucun objet d'événement ni récompense ne donne cette monnaie.</div>
+            </div>
+            <div class="sz-card">
+              <h3>💬 Dans Discord <span class="sz-muted">écran /evenement › boutique</span></h3>
+              {{ discord('dc.shop') }}
+            </div>
           </div>
         </div>
-      </template>
-      <button type="button" class="btn btn-small" @click="data.shops.push(newShop())">+ une boutique d'événement</button>
-    </div>
+      </div>
+    </template>
+    <div class="sz-card" x-show="!data.shops.length">Aucune boutique d'événement : crée la première !</div>
+  </div>
 
-    {# ----------------------------------------------------------- Nouvel An #}
-    <div class="form-section">
-      <h2 class="form-section-title">🎆 Nouvel An</h2>
-      <template x-if="!data.new_year"><button type="button" class="btn" @click="data.new_year = newNewYear()">Créer le Nouvel An</button></template>
-      <template x-if="data.new_year">
-        <div>
-          <p class="form-section-help" style="margin:0 0 .5rem;">À minuit (Paris), le bot souhaite la bonne année et <strong>toutes les divinités de l'offrande</strong> bénissent le serveur pendant la durée choisie (chacune une seule fois, même si l'offrande en a déjà invoqué une).</p>
-          <div class="sz-grid">
-            <label class="field" style="flex-direction:row;align-items:center;gap:8px;"><input type="checkbox" x-model="data.new_year.enabled"><span class="field-label" style="margin:0;">Activé</span></label>
+  {# ========================================================== NOUVEL AN #}
+  <div x-show="tab === 'nouvel_an'" x-cloak>
+    <template x-if="!data.new_year">
+      <div class="sz-card"><button type="button" class="sz-btn" @click="data.new_year = newNewYear()">🎆 Créer le Nouvel An</button></div>
+    </template>
+    <template x-if="data.new_year">
+      <div class="sz-cols">
+        <div class="sz-card">
+          <h3>🎆 Le passage à la nouvelle année</h3>
+          <p class="sz-muted" style="margin-top:0;">À minuit (Paris), le bot souhaite la bonne année et <strong>toutes les divinités de l'offrande</strong> bénissent le serveur ensemble, pendant la durée choisie.</p>
+          <div class="sz-fields" style="align-items:end;">
+            <label class="sz-toggle"><input type="checkbox" x-model="data.new_year.enabled"><span class="sw"></span>Activé</label>
             <label class="field"><span class="field-label">Jour</span><input class="input" type="date" x-model="data.new_year.day"></label>
-            <label class="field"><span class="field-label">Durée (heures)</span><input class="input" type="number" min="1" max="72" x-model.number="data.new_year.hours"></label>
-            <label class="field"><span class="field-label">Titre de l'annonce</span><input class="input" x-model="data.new_year.title"></label>
-            <label class="field" style="flex-direction:row;align-items:center;gap:8px;"><input type="checkbox" x-model="data.new_year.mention_everyone"><span class="field-label" style="margin:0;">Mentionner @everyone</span></label>
+            <div class="field"><span class="field-label">Durée (heures)</span>
+              <div class="sz-step"><button type="button" @click="data.new_year.hours = Math.max(1, (+data.new_year.hours || 1) - 1)">−</button><input type="number" min="1" max="72" x-model.number="data.new_year.hours"><button type="button" @click="data.new_year.hours = Math.min(72, (+data.new_year.hours || 0) + 1)">+</button></div></div>
+            <label class="sz-toggle"><input type="checkbox" x-model="data.new_year.mention_everyone"><span class="sw"></span>@everyone</label>
           </div>
-          <label class="field" style="margin-top:.5rem;"><span class="field-label">Message (la liste des bénédictions est ajoutée dessous)</span><textarea class="input" rows="3" x-model="data.new_year.message"></textarea></label>
+          <label class="field" style="margin-top:.6rem;"><span class="field-label">Titre</span><input class="input" x-model="data.new_year.title"></label>
+          <label class="field" style="margin-top:.6rem;"><span class="field-label">Message (la liste des bénédictions s'ajoute dessous)</span><textarea class="input" rows="5" x-model="data.new_year.message"></textarea></label>
         </div>
-      </template>
-    </div>
+        <div class="sz-card sz-sticky">
+          <h3>💬 À minuit <span class="sz-muted">salon des événements</span></h3>
+          {{ discord('dc.newYear') }}
+        </div>
+      </div>
+    </template>
+  </div>
 
-    <div style="position:sticky; bottom:0; padding:.7rem 0; background:var(--bg, inherit);">
-      <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
-      <span style="color:var(--muted); margin-left:.6rem;">Tout est vérifié avant d'écrire : rien n'est enregistré s'il reste un problème.</span>
+  {# ============================================================= SUIVI #}
+  <div x-show="tab === 'suivi'" x-cloak>
+    <div class="sz-cols">
+      <div class="sz-card">
+        <h3>📌 Le panneau épinglé <span class="sz-muted" style="display:flex; gap:.4rem; align-items:center;">au <input class="input" type="date" x-model="panelDate" style="width:auto;"></span></h3>
+        {{ discord('dc.panel') }}
+        <h3 style="margin-top:1rem;">📣 Annonces du salon des événements</h3>
+        {{ discord('dc.advent') }}
+      </div>
+      <div style="display:flex; flex-direction:column; gap:1rem;">
+        <div class="sz-card">
+          <h3>📅 Annonces <span class="sz-muted">version enregistrée</span></h3>
+          <table class="sz-table">
+            <tbody>
+              {% for a in status.announcements %}
+              <tr><td><code>{{ a.key }}</code></td><td>{{ a.at.strftime("%d/%m %H:%M") }}</td>
+                <td>{% if a.posted %}<span class="sz-pill is-ok">postée</span>{% elif a.late %}<span class="sz-pill">passée</span>{% else %}<span class="sz-pill">à venir</span>{% endif %}</td></tr>
+              {% else %}<tr><td class="sz-muted">Aucune annonce prévue.</td></tr>{% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="sz-card">
+          <h3>🎄 Cases ouvertes</h3>
+          {% set adv = status.stats.advent %}
+          {% if adv %}
+            {% set top = adv.values()|max %}
+            <div class="sz-minibars">{% for key, count in adv|dictsort %}<div title="{{ key[8:10] }}/{{ key[5:7] }} : {{ count }}" style="height: {{ (100 * count / top)|round|int }}%;"></div>{% endfor %}</div>
+            <div class="sz-muted">{{ adv.values()|sum }} cases ouvertes en tout</div>
+          {% else %}<div class="sz-muted">Aucune pour l'instant.</div>{% endif %}
+          <h3 style="margin-top:1rem;">🎅 Cadeaux ouverts</h3>
+          <div class="sz-chips">{% for tier, count in status.stats.tiers.items() %}<span class="sz-chip">{{ tier_labels.get(tier, tier) }} : {{ count }}</span>{% else %}<span class="sz-muted">Aucun pour l'instant.</span>{% endfor %}</div>
+          <h3 style="margin-top:1rem;">🛍️ Ventes</h3>
+          {% set ns = namespace(any=false) %}
+          {% for code, sales in status.stats.shops.items() %}{% for item, s in sales.items() %}{% set ns.any = true %}<span class="sz-chip" style="margin:.15rem;">{{ item }} × {{ s[0] }} ({{ s[1] }})</span>{% endfor %}{% endfor %}
+          {% if not ns.any %}<div class="sz-muted">Aucune pour l'instant.</div>{% endif %}
+        </div>
+      </div>
     </div>
-  </form>
+  </div>
+
+  {# ============================================ barre d'enregistrement #}
+  <div class="sz-savebar">
+    <span class="sz-state" :class="{ 'is-dirty': dirty() }"><i></i><span x-text="dirty() ? 'Modifications non enregistrées' : 'Tout est enregistré'"></span></span>
+    <span class="sz-muted">Ctrl+S · tout est vérifié avant d'écrire</span>
+    <span style="flex:1;"></span>
+    <button type="button" class="sz-btn" x-show="dirty()" @click="if (confirm('Annuler toutes les modifications non enregistrées ?')) location.reload()">Annuler</button>
+    <button type="button" class="btn btn-primary" :disabled="saving" @click="save()" x-text="saving ? 'Enregistrement…' : '💾 Enregistrer'"></button>
+  </div>
+
+  <div class="sz-toast" x-show="toastText" x-transition x-cloak :style="'background:' + (toastBad ? 'var(--danger)' : 'var(--success)')" x-text="toastText"></div>
 </section>
+
 <script>
-  function seasonalEditor() {
-    const data = JSON.parse(document.getElementById('seasonal-data').textContent || '{}');
+  function fetes() {
+    const read = (id) => JSON.parse(document.getElementById(id).textContent || 'null');
+    const data = read('sz-data') || {};
+    const items = read('sz-items') || [];
+    const meta = read('sz-meta') || {};
+    const byCode = Object.fromEntries(items.map((it) => [it.code, it]));
+    const KINDNESS = { nice_from_pct: 50, naughty_pct: 50, nice_pct: 100, angel_pct: 150, unknown_pct: 100 };
     data.drops = data.drops || [];
     data.shops = data.shops || [];
-    for (const s of data.shops) { s.offers = s.offers || []; }
-    if (data.christmas) { data.christmas.rewards = data.christmas.rewards || []; data.christmas.kindness = Object.assign({nice_from_pct: 50, naughty_pct: 50, nice_pct: 100, angel_pct: 150, unknown_pct: 100}, data.christmas.kindness || {}); }
+    data.shops.forEach((s) => { s.offers = s.offers || []; });
+    if (data.christmas) { data.christmas.rewards = data.christmas.rewards || []; data.christmas.kindness = Object.assign({}, KINDNESS, data.christmas.kindness || {}); }
     if (data.advent) { data.advent.days = data.advent.days || []; }
+    const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const DAY = 86400000;
+    const toDate = (iso) => (iso ? new Date(iso + 'T12:00:00') : null);
+    const iso = (d) => d.toISOString().slice(0, 10);
+
     return {
-      data,
-      items: JSON.parse(document.getElementById('seasonal-items').textContent || '[]'),
-      normalize(r) {
-        if (r.kind === 'item') { delete r.amount; r.item = r.item || 'potion_soin'; r.qty = r.qty || 1; }
+      data, items, meta,
+      saved: JSON.stringify(data),
+      tab: 'avent', sel: 0, clip: null, pvDay: 1, level: 20, giftTier: 'nice', shopSel: 0,
+      panelDate: meta.today, errors: [], saving: false, toastText: '', toastBad: false,
+      adventPng: '', adventBusy: false, adventError: '',
+      dc: { gift: '', christmas: '', shop: '', newYear: '', panel: '', advent: '', drops: {} },
+      _timers: {},
+
+      init() {
+        const hash = location.hash.replace('#', '');
+        if (this.tabs().some((t) => t.id === hash)) this.tab = hash;
+        const today = this.meta.today;
+        if (this.data.advent && this.data.advent.start) {
+          const n = Math.round((toDate(today) - toDate(this.data.advent.start)) / DAY) + 1;
+          if (n >= 1 && n <= this.data.advent.days.length) { this.sel = n - 1; this.pvDay = n; }
+        }
+        this.$watch('data', () => this.refreshSoon(), { deep: true });
+        this.$watch('tab', () => { location.hash = this.tab; this.refreshSoon(0); });
+        this.$watch('pvDay', () => this.debounce('advent', () => this.refreshAdvent(), 250));
+        this.$watch('level', () => this.debounce('gift', () => this.refreshEmbed('gift'), 300));
+        this.$watch('giftTier', () => this.refreshEmbed('gift'));
+        this.$watch('shopSel', () => this.refreshEmbed('shop'));
+        this.$watch('panelDate', () => this.refreshEmbed('panel'));
+        window.addEventListener('beforeunload', (e) => { if (this.dirty()) { e.preventDefault(); e.returnValue = ''; } });
+        this.refreshSoon(0);
+      },
+
+      /* ---------------------------------------------------- utilitaires */
+      clone(v) { return JSON.parse(JSON.stringify(v ?? null)); },
+      fmt(n) { return Number(Math.round(n || 0)).toLocaleString('fr-FR'); },
+      pctOf(a, b) { return b ? Math.round(100 * a / b) : 0; },
+      dirty() { return JSON.stringify(this.data) !== this.saved; },
+      debounce(key, fn, ms) { clearTimeout(this._timers[key]); this._timers[key] = setTimeout(fn, ms); },
+      toast(text, bad = false) { this.toastText = text; this.toastBad = bad; this.debounce('toast', () => { this.toastText = ''; }, 2600); },
+      go(tab, ref) { this.tab = tab; if (tab === 'boutiques' && ref !== undefined) this.shopSel = ref; window.scrollTo({ top: 0, behavior: 'smooth' }); },
+      icon(code) {
+        if (code === '$gold') return '<img src="/assets/others/piece_or.png" alt="or">';
+        const it = byCode[code];
+        if (!it) return '<span title="objet inconnu">❔</span>';
+        return it.img ? `<img src="${esc(it.img)}" alt="${esc(it.name)}" loading="lazy">` : esc(it.emoji);
+      },
+      nameOf(code) { return byCode[code] ? byCode[code].name : (code ? code + ' (inconnu)' : 'Choisir…'); },
+      groups(q) {
+        const query = (q || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        const out = [];
+        for (const it of this.items) {
+          const hay = (it.name + ' ' + it.code).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+          if (query && !hay.includes(query)) continue;
+          let g = out.find((x) => x.name === it.group);
+          if (!g) { g = { name: it.group, items: [] }; out.push(g); }
+          g.items.push(it);
+        }
+        return out;
+      },
+      setKind(r, kind) {
+        if (r.kind === kind) return;
+        r.kind = kind;
+        if (kind === 'item') { delete r.amount; r.item = r.item || 'potion_soin'; r.qty = r.qty || 1; }
         else { delete r.item; delete r.qty; r.amount = r.amount || 10; }
       },
-      dayLabel(start, i) {
-        if (!start) return '';
-        const d = new Date(start + 'T12:00:00'); d.setDate(d.getDate() + i);
-        return d.toLocaleDateString('fr-FR', {weekday: 'short', day: 'numeric', month: 'short'});
+      shortDate(start, i) { const d = toDate(start); if (!d) return ''; d.setDate(d.getDate() + i); return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }); },
+      longDate(start, i) { const d = toDate(start); if (!d) return 'date à choisir'; d.setDate(d.getDate() + i); return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }); },
+      days(a, b) { const x = toDate(a), y = toDate(b); return x && y ? Math.max(0, Math.round((y - x) / DAY) + 1) : 0; },
+      doorLabel(day) {
+        if (!day.length) return '';
+        const r = day[0];
+        let t = r.kind === 'item' ? (r.qty > 1 ? '×' + r.qty : (byCode[r.item] ? '' : '?')) : (r.kind === 'gold_per_level' ? r.amount + '/niv' : this.fmt(r.amount));
+        if (day.length > 1) t += (t ? ' ' : '') + '+' + (day.length - 1);
+        return t;
       },
-      newAdvent() { return {enabled: true, name: "Calendrier de l'Avent", start: '', days: [[{kind: 'gold_per_level', amount: 10}]]}; },
-      newChristmas() { return {enabled: true, name: 'Noël', gift_day: '', claim_until: '', rewards: [], kindness: {nice_from_pct: 50, naughty_pct: 50, nice_pct: 100, angel_pct: 150, unknown_pct: 100}}; },
-      newDrop() { return {code: 'evenement_' + (this.data.drops.length + 1), name: "Objet d'événement", enabled: true, item: 'sucre_d_orge', per_kill: 1, start: '', end: '', announce: ''}; },
-      newShop() { return {code: 'boutique_' + (this.data.shops.length + 1), name: "Boutique d'événement", emoji: '🎁', enabled: true, currency: 'sucre_d_orge', opens: '', closes: '', intro: '', offers: []}; },
-      newNewYear() { return {enabled: true, day: '', hours: 24, title: 'Bonne année !', message: '', mention_everyone: true}; },
+
+      /* ------------------------------------------------------- l'Avent */
+      adventSummary() {
+        const a = this.data.advent;
+        if (!a) return [];
+        let boosters = 0, perLevel = 0, flat = 0, items = 0, empty = 0;
+        a.days.forEach((day) => {
+          if (!day.length) empty++;
+          day.forEach((r) => {
+            if (r.kind === 'item') { items += +r.qty || 0; if (r.item === 'booster_offert') boosters += +r.qty || 0; }
+            else if (r.kind === 'gold_per_level') perLevel += +r.amount || 0; else flat += +r.amount || 0;
+          });
+        });
+        const out = [
+          { text: `🎴 ${boosters} booster${boosters > 1 ? 's' : ''} offert${boosters > 1 ? 's' : ''}` },
+          { text: `💰 ${perLevel} × niveau en tout (≈ ${this.fmt(perLevel * this.level + flat)} or au niveau ${this.level})` },
+          { text: `🎁 ${items} objets` },
+        ];
+        if (empty) out.push({ text: `⚠️ ${empty} case${empty > 1 ? 's' : ''} vide${empty > 1 ? 's' : ''}`, warn: true });
+        return out;
+      },
+      async refreshAdvent() {
+        if (!this.data.advent || !this.data.advent.days.length) { this.adventPng = ''; return; }
+        this.adventBusy = true;
+        try {
+          const res = await fetch('/admin/seasonal/preview/advent.png', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ advent: this.data.advent, day: this.pvDay }) });
+          if (!res.ok) {
+            const out = await res.json().catch(() => ({}));
+            this.adventError = out.error || `Aperçu impossible (erreur ${res.status}).`;
+            return;
+          }
+          this.adventError = '';
+          const blob = await res.blob();
+          if (this.adventPng) URL.revokeObjectURL(this.adventPng);
+          this.adventPng = URL.createObjectURL(blob);
+        } catch (e) { this.adventError = 'Aperçu impossible (réseau).'; }
+        finally { this.adventBusy = false; }
+      },
+
+      /* ----------------------------------------------------------- Noël */
+      scaled(v, pct) { v = +v || 0; return pct <= 0 || v <= 0 ? 0 : Math.max(1, Math.floor(v * pct / 100 + 0.5)); },
+      tierCards() {
+        const c = this.data.christmas;
+        if (!c) return [];
+        const k = c.kindness;
+        const tiers = [
+          { id: 'naughty', emoji: '😈', label: 'Pas très sage', pct: +k.naughty_pct, color: '#b8323f' },
+          { id: 'nice', emoji: '😇', label: 'Sage', pct: +k.nice_pct, color: '#23784a' },
+          { id: 'angel', emoji: '👼', label: "Cœur d'or", pct: +k.angel_pct, color: '#c89a2c' },
+          { id: 'unknown', emoji: '🤷', label: 'Jamais croisée', pct: +k.unknown_pct, color: '#7d6c8f' },
+        ];
+        return tiers.map((t) => ({ ...t, lines: c.rewards.map((r) => {
+          if (r.kind === 'item') { const q = this.scaled(r.qty, t.pct); return q ? { icon: this.icon(r.item), text: `${q} × ${this.nameOf(r.item)}` } : null; }
+          const a = this.scaled(r.amount, t.pct);
+          const gold = r.kind === 'gold_per_level' ? a * this.level : a;
+          return a ? { icon: this.icon('$gold'), text: `${this.fmt(gold)} or` + (r.kind === 'gold_per_level' ? ` (${a}/niv)` : '') } : null;
+        }).filter(Boolean) }));
+      },
+
+      /* -------------------------------------------- objets et boutiques */
+      income(code) {
+        if (!code) return [];
+        const drops = this.data.drops.filter((d) => d.enabled && d.item === code);
+        let bonus = 0;
+        (this.data.advent ? this.data.advent.days : []).forEach((day) => day.forEach((r) => { if (r.kind === 'item' && r.item === code) bonus += +r.qty || 0; }));
+        (this.data.christmas ? this.data.christmas.rewards : []).forEach((r) => { if (r.kind === 'item' && r.item === code) bonus += +r.qty || 0; });
+        return (this.meta.profiles || []).map(([label, kills]) => ({ label, kills,
+          total: drops.reduce((sum, d) => sum + this.days(d.start, d.end) * kills * (+d.per_kill || 0), 0) + bonus }));
+      },
+      catalogCost(s) { return (s.offers || []).reduce((sum, o) => sum + (+o.price || 0) * Math.max(1, +o.limit || 0), 0); },
+
+      /* --------------------------------------------------------- frise */
+      timeline() {
+        const rows = [];
+        const add = (key, label, start, end, color, tab, enabled, ref) => {
+          const a = toDate(start), b = toDate(end || start);
+          if (a && b && b >= a) rows.push({ key, label, a, b, color, tab, enabled, ref });
+        };
+        const d = this.data;
+        if (d.advent && d.advent.start) {
+          const end = toDate(d.advent.start); end.setDate(end.getDate() + Math.max(0, d.advent.days.length - 1));
+          add('advent', '🎄 ' + (d.advent.name || 'Avent'), d.advent.start, iso(end), '#b8323f', 'avent', d.advent.enabled);
+        }
+        d.drops.forEach((x, i) => add('drop' + i, '🍬 ' + (x.name || x.code), x.start, x.end, '#d6457a', 'objets', x.enabled));
+        if (d.christmas) add('xmas', '🎅 Cadeau de ' + (d.christmas.name || 'Noël'), d.christmas.gift_day, d.christmas.claim_until, '#23784a', 'noel', d.christmas.enabled);
+        d.shops.forEach((s, i) => add('shop' + i, (s.emoji || '🎁') + ' ' + (s.name || s.code), s.opens, s.closes, '#c89a2c', 'boutiques', s.enabled, i));
+        if (d.new_year && d.new_year.day) add('ny', '🎆 Nouvel An', d.new_year.day, d.new_year.day, '#7b4fc4', 'nouvel_an', d.new_year.enabled);
+        if (!rows.length) return { rows: [], ticks: [], today: null };
+        const min = new Date(Math.min(...rows.map((r) => r.a)) - DAY), max = new Date(Math.max(...rows.map((r) => r.b)) + 2 * DAY);
+        const span = (max - min) / DAY;
+        const pos = (date) => 100 * ((date - min) / DAY) / span;
+        const ticks = [];
+        for (let t = new Date(min); t <= max; t = new Date(+t + DAY)) {
+          if (t.getDate() === 1 || t.getDate() % 5 === 0) ticks.push({ left: pos(t) + 50 / span, label: t.getDate() === 1 ? t.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : String(t.getDate()) });
+        }
+        const today = toDate(this.meta.today);
+        const fmtD = (x) => x.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+        return {
+          rows: rows.map((r) => ({ ...r, left: pos(r.a), width: Math.max(5.5, 100 * ((r.b - r.a) / DAY + 1) / span),
+                                   dates: +r.a === +r.b ? fmtD(r.a) : `${fmtD(r.a)} → ${fmtD(r.b)}` })),
+          ticks, today: today >= min && today <= max ? pos(today) + 50 / span : null,
+        };
+      },
+      tabState(start, end, enabled) {
+        if (enabled === false) return 'désactivé';
+        const t = toDate(this.meta.today), a = toDate(start), b = toDate(end || start);
+        if (!a) return '';
+        if (t < a) return 'à venir';
+        return t <= b ? 'en cours' : 'terminé';
+      },
+      groupState(list, start, end) {
+        const states = list.map((x) => this.tabState(x[start], x[end], x.enabled));
+        return ['en cours', 'à venir', 'terminé'].find((s) => states.includes(s)) || '';
+      },
+      tabs() {
+        const d = this.data;
+        const adventEnd = d.advent && d.advent.start ? iso(new Date(+toDate(d.advent.start) + (d.advent.days.length - 1) * DAY)) : null;
+        return [
+          { id: 'avent', icon: '🎄', label: 'Avent', state: d.advent ? this.tabState(d.advent.start, adventEnd, d.advent.enabled) : '' },
+          { id: 'noel', icon: '🎅', label: 'Noël', state: d.christmas ? this.tabState(d.christmas.gift_day, d.christmas.claim_until, d.christmas.enabled) : '' },
+          { id: 'objets', icon: '🍬', label: "Objets d'événement", state: this.groupState(d.drops, 'start', 'end') },
+          { id: 'boutiques', icon: '🎁', label: 'Boutiques', state: this.groupState(d.shops, 'opens', 'closes') },
+          { id: 'nouvel_an', icon: '🎆', label: 'Nouvel An', state: d.new_year ? this.tabState(d.new_year.day, d.new_year.day, d.new_year.enabled) : '' },
+          { id: 'suivi', icon: '📌', label: 'Panneau & suivi', state: '' },
+        ];
+      },
+      liveBadges() {
+        return this.tabs().filter((t) => t.state === 'en cours').map((t) => ({ label: t.icon + ' ' + t.label + ' en cours', live: true }))
+          .concat(this.tabs().filter((t) => t.state === 'à venir').slice(0, 1).map((t) => ({ label: 'Prochain : ' + t.icon + ' ' + t.label, live: false })));
+      },
+
+      /* ------------------------------------------------ aperçus Discord */
+      refreshSoon(ms = 450) {
+        this.debounce('refresh', () => {
+          if (this.tab === 'avent') this.refreshAdvent();
+          if (this.tab === 'noel') { this.refreshEmbed('gift'); this.refreshEmbed('christmas'); }
+          if (this.tab === 'boutiques') this.refreshEmbed('shop');
+          if (this.tab === 'nouvel_an') this.refreshEmbed('newYear');
+          if (this.tab === 'suivi') { this.refreshEmbed('panel'); this.refreshEmbed('advent'); }
+          if (this.tab === 'objets') this.data.drops.forEach((d) => this.previewDrop(d.code));
+        }, ms);
+      },
+      async embed(body) {
+        try {
+          const res = await fetch('/admin/seasonal/preview/embed', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: this.data, level: this.level, ...body }) });
+          const out = await res.json();
+          return out.error ? `<div class="dc-error">${esc(out.error)}</div>` : this.discordHtml(out);
+        } catch (e) { return '<div class="dc-error">Aperçu impossible (réseau).</div>'; }
+      },
+      async refreshEmbed(slot) {
+        const shop = this.data.shops[this.shopSel];
+        const bodies = {
+          gift: { kind: 'gift', ref: this.giftTier }, christmas: { kind: 'christmas' },
+          shop: { kind: 'shop', ref: shop ? shop.code : '', balance: shop ? this.income(shop.currency)[0]?.total || 0 : 0 },
+          newYear: { kind: 'new_year' }, panel: { kind: 'panel', date: this.panelDate }, advent: { kind: 'advent' },
+        };
+        this.dc[slot] = await this.embed(bodies[slot]);
+      },
+      async previewDrop(code) { this.dc.drops = { ...this.dc.drops, [code]: await this.embed({ kind: 'drop', ref: code }) }; },
+      md(text) {
+        let s = esc(text);
+        s = s.replace(/&lt;t:(\d+):([tTdDfFR])&gt;/g, (m, ts, f) => {
+          const d = new Date(+ts * 1000);
+          const out = f === 't' ? d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+            : f === 'R' ? 'dans un moment' : d.toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+          return `<span class="dc-ts">${out}</span>`;
+        });
+        s = s.replace(/&lt;a?:(\w+):\d+&gt;/g, (m, name) => (name === 'piece_or' ? '<img class="dc-emoji" src="/assets/others/piece_or.png" alt="or">' : ':' + name + ':'));
+        s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+        s = s.replace(/@everyone/g, '<span class="dc-mention">@everyone</span>');
+        return s.replace(/\n/g, '<br>');
+      },
+      discordHtml(msg) {
+        const parts = [];
+        if (msg.content) parts.push(`<div>${this.md(msg.content)}</div>`);
+        for (const e of msg.embeds || []) {
+          const color = '#' + (e.color ?? 0xb8323f).toString(16).padStart(6, '0');
+          const fields = (e.fields || []).map((f) => `<div class="dc-field ${f.inline ? 'is-inline' : ''}"><div class="dc-field-name">${this.md(f.name)}</div><div>${this.md(f.value)}</div></div>`).join('');
+          parts.push(`<div class="dc-embed" style="border-left-color:${color}">`
+            + (e.title ? `<div class="dc-title">${this.md(e.title)}</div>` : '')
+            + (e.description ? `<div class="dc-desc">${this.md(e.description)}</div>` : '')
+            + (fields ? `<div class="dc-fields">${fields}</div>` : '')
+            + (e.image ? '<div class="dc-footer">🖼️ + l\'image du calendrier</div>' : '')
+            + (e.footer && e.footer.text ? `<div class="dc-footer">${this.md(e.footer.text)}</div>` : '') + '</div>');
+        }
+        return `<div class="dc-msg"><div class="dc-avatar">🌸</div><div style="min-width:0; flex:1;"><div class="dc-author">Sakura <span class="dc-tag">APP</span></div>${parts.join('')}</div></div>`;
+      },
+
+      /* ----------------------------------------------------- nouveaux */
+      newAdvent() { return { enabled: true, name: "Calendrier de l'Avent", start: '', days: Array.from({ length: 24 }, () => [{ kind: 'gold_per_level', amount: 10 }]) }; },
+      newChristmas() { return { enabled: true, name: 'Noël', gift_day: '', claim_until: '', rewards: [], kindness: { ...KINDNESS } }; },
+      newDrop() { return { code: 'evenement_' + (this.data.drops.length + 1), name: "Objet d'événement", enabled: true, item: 'sucre_d_orge', per_kill: 1, start: '', end: '', announce: '' }; },
+      newShop() { return { code: 'boutique_' + (this.data.shops.length + 1), name: "Boutique d'événement", emoji: '🎁', enabled: true, currency: 'sucre_d_orge', opens: '', closes: '', intro: '', offers: [] }; },
+      newNewYear() { return { enabled: true, day: '', hours: 24, title: 'Bonne année !', message: '', mention_everyone: true }; },
+
+      /* -------------------------------------------------- enregistrer */
+      async save() {
+        if (this.saving) return;
+        this.saving = true;
+        try {
+          const res = await fetch('/admin/seasonal/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.data) });
+          const out = await res.json();
+          if (out.ok) { this.saved = JSON.stringify(this.data); this.errors = []; this.toast('✅ Enregistré — le bot suit tout de suite'); }
+          else { this.errors = out.errors || ['Enregistrement refusé.']; this.toast('⚠️ Rien n\'a été enregistré', true); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+        } catch (e) { this.toast('⚠️ Réseau indisponible : rien n\'a été enregistré', true); }
+        finally { this.saving = false; }
+      },
     };
   }
 </script>

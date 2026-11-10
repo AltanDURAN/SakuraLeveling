@@ -148,7 +148,47 @@ def test_les_ecrans_prives(content):
     embed = se.build_advent_embed(status, "Alice")
     assert "case **3**" in embed.description and embed.footer.text.endswith("1 / 24 cases ouvertes")
     assert render_advent(status, "Alice")[:4] == b"\x89PNG"
-    k = ss.kindness(1, 2)
-    assert "Pas très sage" in se.kindness_text(k) and "50 %" in se.kindness_text(k)
     panel = se.build_panel_embed(content, ss.happening(content, _paris(2026, 12, 20)))
     assert "Sucres d'orge" in panel.description and "case **20**" in panel.description
+
+
+def _texts(embed) -> str:
+    parts = [embed.title or "", embed.description or "", embed.footer.text or ""]
+    parts += [f"{f.name} {f.value}" for f in embed.fields]
+    return " ".join(parts).lower()
+
+
+def test_aucun_texte_ne_trahit_le_secret_de_la_petite_fille(content, monkeypatch):
+    """Décision de l'auteur (10/11/2026) : les joueurs ne doivent pas savoir que
+    le cadeau de Noël dépend de leurs choix face à la petite fille — ils
+    l'aideraient pour ça. Avant Noël, rien ne laisse même entendre que le
+    cadeau dépend de quoi que ce soit."""
+    from pathlib import Path
+
+    from app.application.use_cases.seasonal import ChristmasStatus
+
+    c = content.christmas
+    seen = []
+    for day in (_paris(2026, 11, 20), _paris(2026, 12, 1), _paris(2026, 12, 20), _paris(2026, 12, 24, 23)):
+        monkeypatch.setattr(ss, "paris_day", lambda now=None, _d=day: _d.date())
+        before = [se.build_panel_embed(content, ss.happening(content, day)), se.build_advent_announcement(content.advent),
+                  se.build_drop_announcement(content.drops[0], "Sucre d'orge")]
+        status = ChristmasStatus(c, False, False, ss.kindness(1, 3), c.gift_for(ss.kindness(1, 3)), 10, {})
+        before.append(se.build_christmas_embed(status))
+        for embed in before:
+            text = _texts(embed)
+            assert "petite fille" not in text and "aid" not in text and "sage" not in text, text
+            seen.append(text)
+    monkeypatch.setattr(ss, "paris_day", lambda now=None: _paris(2026, 12, 26).date())
+    after = [se.build_christmas_announcement(c, content.shops),
+             se.build_panel_embed(content, ss.happening(content, _paris(2026, 12, 26)))]
+    for tier, k in (("naughty", ss.kindness(1, 3)), ("angel", ss.kindness(3, 0)), ("unknown", ss.kindness(0, 0))):
+        status = ChristmasStatus(c, True, False, k, c.gift_for(k), 10, {})
+        after.append(se.build_christmas_embed(status, granted=status.lines))
+        after.append(se.build_christmas_embed(ChristmasStatus(c, True, True, k, (), 10, {})))
+    for embed in after:
+        text = _texts(embed)
+        assert "petite fille" not in text and "aid" not in text and "%" not in text, text
+    tuto = Path("tuto.txt").read_text(encoding="utf-8")
+    section = tuto[tuto.index("/evenement"):tuto.index("/evenement") + 2500]
+    assert "petite fille" not in section.lower() and "% d'aide" not in tuto
