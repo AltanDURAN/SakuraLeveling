@@ -1051,7 +1051,9 @@ INTERFACE WEB D'ADMINISTRATION
     Lance tout de suite le combat en attente, ou l'annule.
 
 /event spawn <type>
-    Fait apparaître un événement : coffre, petite fille, forge sacrée.
+    Fait apparaître un événement : coffre, petite fille, forge sacrée — dans
+    le salon général (le salon des événements est gardé pour les gros ; le
+    salon de chaque événement se règle sur le site, rubrique Événements).
 
 /boss_admin spawn <boss> · /boss_admin stop
     Fait apparaître un world boss, ou l'arrête sans récompense. Un boss ne

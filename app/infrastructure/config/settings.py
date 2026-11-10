@@ -21,8 +21,10 @@ class Settings(BaseSettings):
     # avec les .env existants qui n'ont pas encore l'ID. Si 0/None, fallback
     # vers encounter_channel_id (les bosses sortent dans le même canal).
     boss_channel_id: int = 0
-    # Channel des événements non-combat (coffre, petite fille, forge sacrée).
-    # Défaut = salon général. Override possible via EVENT_CHANNEL_ID dans .env.
+    # Salon des GROS événements (EVENT_CHANNEL_ID). Les petits — coffre, petite
+    # fille, forge sacrée — paraissent dans le salon général
+    # (`rank_announce_channel_id`) : réglage `channel` de chaque événement dans
+    # events.json (décision de l'auteur, 10/11/2026). Défaut = salon général.
     event_channel_id: int = 1485329709201096796
     # Rôle mentionné à chaque événement (EVENT_PING_ROLE_ID). 0 = pas de mention.
     event_ping_role_id: int = 0

@@ -547,6 +547,11 @@ Demande de l'auteur : le premier message des salons du world boss (`settings.bos
 - **Tenue** ([`channel_guides_cog.py`](app/bot/cogs/channel_guides_cog.py)) : toutes les 30 min (dès le démarrage), le guide est retrouvé à son pied de page `GUIDE_FOOTER` (épinglés, puis tête du salon), posté et épinglé s'il manque (la notice « a épinglé un message » est retirée), réécrit si son texte a changé (`same_panel` du règlement), réépinglé s'il ne l'est plus.
 - Tests : [`test_channel_guides.py`](tests/bot/test_channel_guides.py).
 
+## Événements (coffre, petite fille, forge sacrée)
+
+- Réglés dans [`events.json`](app/infrastructure/content/events.json) (activation, cadence, image, réglages propres ; site › Événements), apparus par `EventCog.spawn_event` (au moins 1 h entre deux, un seul actif par type), rôle mentionné si `EVENT_PING_ROLE_ID`, MP aux joueurs qui ont la case `notify_events`.
+- **Salon** (10/11/2026, décision de l'auteur) : les PETITS événements (les trois actuels) paraissent dans le salon GÉNÉRAL (`rank_announce_channel_id`) ; le salon des événements (`EVENT_CHANNEL_ID`, 1485367878395101225 sur le VPS) est gardé pour les GROS. Réglage `channel` de chaque événement (`general` / `events`, défaut le général — `event_config_loader.channel_of`, `event_cog.event_channel_id`), choisi sur le site, lu à chaque apparition (sans redémarrage). Un événement déjà paru reste dans son salon (`active_events.channel_id`). Tests : [`test_event_channels.py`](tests/bot/test_event_channels.py), [`test_admin_events.py`](tests/webapp/test_admin_events.py).
+
 ## Parcours d'arrivée et accès aux salons (`/admin acces`) — 08/11/2026
 
 Demande de l'auteur : en arrivant, on ne voit que l'accueil et le règlement ; le règlement accepté ouvre le tutoriel ; le tutoriel fini OU passé ouvre l'aventure ; chaque rang gagné à l'épreuve ouvre sa zone. La présélection et l'« Onboarding » natifs de Discord ne conviennent pas (mode Communauté, ≥ 7 salons par défaut dont 5 ouverts à tous, rien sur le tutoriel ni les rangs).

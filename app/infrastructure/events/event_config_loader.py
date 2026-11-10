@@ -19,10 +19,19 @@ CONTENT_PATH = (
 # Types connus + valeurs par défaut (fusionnées avec le JSON à la lecture).
 EVENT_TYPES = ("chest", "little_girl", "sacred_forge")
 
+#: Où paraît un événement (réglage `channel` de chacun). Les PETITS — coffre,
+#: petite fille, forge sacrée — dans le salon GÉNÉRAL ; le salon des
+#: événements (`settings.event_channel_id`) est gardé pour les GROS
+#: événements (décision de l'auteur, 10/11/2026).
+CHANNEL_GENERAL = "general"
+CHANNEL_EVENTS = "events"
+CHANNELS: dict[str, str] = {CHANNEL_GENERAL: "Salon général", CHANNEL_EVENTS: "Salon des événements"}
+
 _DEFAULTS: dict[str, dict] = {
     "chest": {
         "enabled": False,
         "label": "Coffre au trésor",
+        "channel": CHANNEL_GENERAL,
         "cadence": {"times": 1, "per_days": 1},
         "image": "chest.png",
         "loot": [],
@@ -33,6 +42,7 @@ _DEFAULTS: dict[str, dict] = {
     "little_girl": {
         "enabled": False,
         "label": "La petite fille",
+        "channel": CHANNEL_GENERAL,
         "cadence": {"times": 1, "per_days": 1},
         "image": "little_girl.png",
         "trap_probability": 50,
@@ -47,6 +57,7 @@ _DEFAULTS: dict[str, dict] = {
     "sacred_forge": {
         "enabled": False,
         "label": "La forge sacrée",
+        "channel": CHANNEL_GENERAL,
         "cadence": {"times": 1, "per_days": 3},
         "image": "sacred_forge.png",
         "max_level": 10,
@@ -91,6 +102,12 @@ def get_config(event_type: str) -> dict:
 
 def all_configs() -> dict[str, dict]:
     return {t: get_config(t) for t in EVENT_TYPES}
+
+
+def channel_of(event_type: str) -> str:
+    """« general » ou « events » — une valeur inconnue vaut le général."""
+    where = get_config(event_type).get("channel")
+    return where if where in CHANNELS else CHANNEL_GENERAL
 
 
 def is_enabled(event_type: str) -> bool:

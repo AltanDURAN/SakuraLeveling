@@ -70,8 +70,21 @@ def _now() -> datetime:
     return datetime.now(UTC).replace(tzinfo=None)
 
 
-def _event_channel(bot: commands.Bot):
-    return bot.get_channel(settings.event_channel_id)
+def event_channel_id(event_type: str) -> int:
+    """Salon où paraît un événement : le GÉNÉRAL pour les petits (coffre,
+    petite fille, forge sacrée), le salon des événements pour les gros —
+    réglage `channel` de l'événement (events.json, site › Événements)."""
+    if cfg.channel_of(event_type) == cfg.CHANNEL_EVENTS:
+        return settings.event_channel_id
+    return settings.rank_announce_channel_id or settings.event_channel_id
+
+
+def _event_channel(bot: commands.Bot, event_type: str):
+    channel_id = event_channel_id(event_type)
+    channel = bot.get_channel(channel_id)
+    if channel is None:
+        _logger.warning("salon de l'événement %s introuvable (%s)", event_type, channel_id)
+    return channel
 
 
 def _image_file(image_name: str) -> discord.File | None:
@@ -323,9 +336,8 @@ class EventCog(commands.Cog):
             _logger.exception("notification d'événement échouée")
 
     async def _spawn_chest(self) -> discord.Message | None:
-        channel = _event_channel(self.bot)
+        channel = _event_channel(self.bot, "chest")
         if channel is None:
-            _logger.warning("event channel introuvable (%s)", settings.event_channel_id)
             return None
         config = cfg.get_config("chest")
         with get_db_session() as session:
@@ -427,9 +439,8 @@ class EventCog(commands.Cog):
     # ---------------- petite fille ----------------
 
     async def _spawn_little_girl(self) -> discord.Message | None:
-        channel = _event_channel(self.bot)
+        channel = _event_channel(self.bot, "little_girl")
         if channel is None:
-            _logger.warning("event channel introuvable (%s)", settings.event_channel_id)
             return None
         config = cfg.get_config("little_girl")
         minutes = max(1, int(config.get("resolve_after_minutes", 5)))
@@ -634,9 +645,8 @@ class EventCog(commands.Cog):
     # ---------------- forge sacrée ----------------
 
     async def _spawn_sacred_forge(self) -> discord.Message | None:
-        channel = _event_channel(self.bot)
+        channel = _event_channel(self.bot, "sacred_forge")
         if channel is None:
-            _logger.warning("event channel introuvable (%s)", settings.event_channel_id)
             return None
         config = cfg.get_config("sacred_forge")
         minutes = max(1, int(config.get("window_minutes", 5)))

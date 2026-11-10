@@ -58,6 +58,7 @@ async def events_list(request: Request, user: AdminUser = Depends(require_admin)
                 "enabled": bool(c.get("enabled")),
                 "implemented": t in _IMPLEMENTED,
                 "summary": _summary(t, c),
+                "channel": cfg.CHANNELS[cfg.channel_of(t)],
                 "image": c.get("image", ""),
             }
         )
@@ -83,6 +84,8 @@ async def events_edit_form(
             "label": _TYPE_LABELS.get(event_type, event_type),
             "implemented": event_type in _IMPLEMENTED,
             "config": config,
+            "channels": cfg.CHANNELS,
+            "channel": cfg.channel_of(event_type),
             # Description par défaut proposée par le module de génération.
             "gen_prompt": image_gen.build_prompt_for(
                 "event", code=event_type,
@@ -134,6 +137,10 @@ async def events_update(
         "times": max(0, parse_int(form.get("cadence_times"), 1)),
         "per_days": max(1, parse_int(form.get("cadence_per_days"), 1)),
     }
+    # Salon : le général pour les petits événements, le salon des événements
+    # pour les gros (lu à chaque apparition : pas besoin de redémarrer).
+    if form.get("channel") in cfg.CHANNELS:
+        current["channel"] = form.get("channel")
 
     # Image (optionnelle)
     push_paths = ["app/infrastructure/content/events.json"]

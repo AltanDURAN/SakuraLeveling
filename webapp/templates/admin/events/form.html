@@ -38,6 +38,18 @@
                 Ex : 1 fois / 1 jour ≈ un spawn par jour · 1 fois / 3 jours = un tous les 3 jours.
                 Au moins <strong>1 h</strong> sépare toujours deux événements, tous types confondus.
             </p>
+            <label class="field">
+                <span class="field-label">Salon</span>
+                <select name="channel" class="input">
+                    {% for code, name in channels.items() %}
+                    <option value="{{ code }}" {% if channel == code %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <p class="field-hint">
+                Les petits événements (coffre, petite fille, forge sacrée) paraissent dans le salon général ;
+                le salon des événements est gardé pour les gros. Pris en compte dès la prochaine apparition.
+            </p>
         </div>
 
         <div class="form-section">

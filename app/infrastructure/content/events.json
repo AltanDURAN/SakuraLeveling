@@ -2,6 +2,7 @@
   "chest": {
     "enabled": true,
     "label": "Coffre au trésor",
+    "channel": "general",
     "cadence": {
       "times": 1,
       "per_days": 1
@@ -39,6 +40,7 @@
   "little_girl": {
     "enabled": true,
     "label": "La petite fille",
+    "channel": "general",
     "cadence": {
       "times": 1,
       "per_days": 1
@@ -56,6 +58,7 @@
   "sacred_forge": {
     "enabled": true,
     "label": "La forge sacrée",
+    "channel": "general",
     "cadence": {
       "times": 1,
       "per_days": 3
