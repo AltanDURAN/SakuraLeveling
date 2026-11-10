@@ -55,6 +55,7 @@ _COG_MODULES = [
     "app.bot.cogs.tower_cog",
     "app.bot.cogs.offering_cog",
     "app.bot.cogs.lunar_cog",
+    "app.bot.cogs.seasonal_cog",
     "app.bot.cogs.cards_cog",
     "app.bot.cogs.tutorial_cog",
     "app.bot.cogs.rules_cog",

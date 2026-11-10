@@ -116,3 +116,10 @@ def pick_deity(deities: list[Deity], last_code: str | None = None,
 def effect_value(deity: Deity | None, effect: str) -> float:
     """Ampleur de `effect` si la divinité active le porte, sinon 0."""
     return deity.value if deity is not None and deity.effect == effect else 0.0
+
+
+def blessings_value(deities, effect: str) -> float:
+    """Ampleur de `effect` parmi les divinités qui bénissent le serveur (le
+    Nouvel An les réunit toutes) : la plus forte, une même bénédiction ne se
+    cumule pas."""
+    return max((d.value for d in deities if d is not None and d.effect == effect), default=0.0)

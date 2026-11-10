@@ -55,13 +55,13 @@ class TowerTicketsUseCase:
         return row.used if row is not None and row.day == today else 0
 
     def status(self, player_id: int, now: datetime | None = None) -> TicketStatus:
-        from app.application.use_cases.offering import active_blessing
-        from app.domain.services.offering_service import effect_value
+        from app.application.use_cases.offering import active_blessings
+        from app.domain.services.offering_service import blessings_value
 
         features = self._features(player_id)
-        # Bénédiction de Thalos (offrande commune) : +1 ticket aujourd'hui.
-        allowance = daily_allowance(features) + int(effect_value(active_blessing(self.session, now),
-                                                                 "tower_tickets"))
+        # Bénédiction de Thalos (offrande commune, ou le Nouvel An) : +1 ticket.
+        allowance = daily_allowance(features) + int(blessings_value(active_blessings(self.session, now),
+                                                                    "tower_tickets"))
         used = self._used_today(player_id, self._today(now))
         return TicketStatus(
             available=max(0, allowance - used),

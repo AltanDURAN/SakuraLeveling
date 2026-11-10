@@ -1,0 +1,277 @@
+{% extends "admin/base.html" %}
+{% block title %}Fêtes — Sakura Admin{% endblock %}
+{% block content %}
+<script type="application/json" id="seasonal-data">{{ data_json|safe }}</script>
+<script type="application/json" id="seasonal-items">{{ items_json|safe }}</script>
+<style>
+  .sz-row { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin:.25rem 0; }
+  .sz-row .input { width:auto; min-width:0; }
+  .sz-day { display:grid; grid-template-columns: 7.5rem 1fr; gap:.6rem; align-items:start;
+            padding:.45rem 0; border-bottom:1px solid var(--border, rgba(127,127,127,.18)); }
+  .sz-day:last-child { border-bottom:0; }
+  .sz-card { border:1px solid var(--border, rgba(127,127,127,.25)); border-radius:12px; padding:.8rem 1rem; margin:.6rem 0; }
+  .sz-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:.7rem; }
+  .sz-pill { display:inline-block; padding:.1rem .55rem; border-radius:999px; font-size:.82rem;
+             background:rgba(127,127,127,.15); }
+  .sz-ok { background:rgba(80,200,120,.18); }
+  .sz-now { background:rgba(232,186,82,.22); }
+  .sz-x { background:var(--danger, #c0392b); color:#fff; }
+  @media (max-width: 700px) { .sz-day { grid-template-columns: 1fr; } }
+</style>
+<section class="form-page" x-data="seasonalEditor()">
+  <h1>🎉 Fêtes &amp; événements saisonniers</h1>
+  <p style="color:var(--muted); max-width:80ch;">
+    Calendrier de l'Avent, Noël (cadeau selon la gentillesse, objets d'événement, boutique d'événement) et Nouvel An.
+    Les annonces et le panneau épinglé partent dans le <strong>salon des événements</strong>. Le bot relit ces réglages
+    <strong>sans redémarrage</strong>. Pour tester sur la bêta : avance les dates, essaie, puis remets-les.
+  </p>
+
+  {% if saved %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(80,200,120,.15);border:1px solid rgba(80,200,120,.4);">✅ Enregistré.</div>{% endif %}
+  {% for e in errors %}<div style="margin:.4rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(220,80,100,.12);border:1px solid rgba(220,80,100,.4);">⚠️ {{ e }}</div>{% endfor %}
+  {% for e in status.problems %}<div style="margin:.4rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(220,80,100,.12);border:1px solid rgba(220,80,100,.4);">⚠️ Fichier actuel : {{ e }}</div>{% endfor %}
+
+  {% set h = status.happening %}
+  <div class="form-section">
+    <h2 class="form-section-title">En ce moment</h2>
+    <p style="margin:.2rem 0;">
+      {% if h.new_year %}<span class="sz-pill sz-now">🎆 Nouvel An : toutes les divinités</span>{% endif %}
+      {% if h.advent_day %}<span class="sz-pill sz-now">🎄 Avent : case {{ h.advent_day }}</span>{% endif %}
+      {% for d in h.drops %}<span class="sz-pill sz-now">🍬 {{ d.name }}</span>{% endfor %}
+      {% if h.christmas_open %}<span class="sz-pill sz-now">🎅 Cadeaux de Noël ouverts</span>{% endif %}
+      {% for s in h.shops %}<span class="sz-pill sz-now">{{ s.emoji }} {{ s.name }}</span>{% endfor %}
+      {% if not h.anything %}<span style="color:var(--muted);">Rien en cours.</span>{% endif %}
+    </p>
+    <div class="table-wrapper" style="margin-top:.6rem;">
+      <table class="data-table">
+        <thead><tr><th>Annonce (salon des événements)</th><th>Quand (Paris)</th><th>État</th></tr></thead>
+        <tbody>
+          {% for a in status.announcements %}
+          <tr><td><code>{{ a.key }}</code></td><td>{{ a.at.strftime("%d/%m/%Y %H:%M") }}</td>
+            <td>{% if a.posted %}<span class="sz-pill sz-ok">postée</span>{% elif a.late %}<span class="sz-pill">passée</span>{% else %}<span class="sz-pill">à venir</span>{% endif %}</td></tr>
+          {% else %}<tr><td colspan="3" style="color:var(--muted);">Aucune annonce prévue.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="form-section-help" style="margin:.6rem 0 0;">
+      Cases de l'Avent ouvertes :
+      {% for key, count in status.stats.advent|dictsort %}<span class="sz-pill">{{ key[8:10] }}/{{ key[5:7] }} : {{ count }}</span> {% else %}aucune.{% endfor %}
+      · Cadeaux de Noël :
+      {% for tier, count in status.stats.tiers.items() %}<span class="sz-pill">{{ tier_labels.get(tier, tier) }} : {{ count }}</span> {% else %}aucun.{% endfor %}
+      {% for code, sales in status.stats.shops.items() %}{% if sales %}· {{ code }} :
+        {% for item, s in sales.items() %}<span class="sz-pill">{{ item }} × {{ s[0] }} ({{ s[1] }} joueur{{ 's' if s[1] > 1 else '' }})</span> {% endfor %}{% endif %}{% endfor %}
+    </p>
+  </div>
+
+  <form method="post" action="/admin/seasonal" @submit="$refs.payload.value = JSON.stringify(data)">
+    <input type="hidden" name="content" x-ref="payload">
+
+    {# ------------------------------------------------------------- Avent #}
+    <div class="form-section">
+      <h2 class="form-section-title">🎄 Calendrier de l'Avent</h2>
+      <template x-if="!data.advent"><button type="button" class="btn" @click="data.advent = newAdvent()">Créer le calendrier</button></template>
+      <template x-if="data.advent">
+        <div>
+          <p class="form-section-help" style="margin:0 0 .6rem;">Une case par jour, à ouvrir <strong>le jour même</strong> (une case manquée est perdue). Petites récompenses : c'est le début de l'aventure.</p>
+          <div class="sz-grid">
+            <label class="field" style="flex-direction:row;align-items:center;gap:8px;"><input type="checkbox" x-model="data.advent.enabled"><span class="field-label" style="margin:0;">Activé</span></label>
+            <label class="field"><span class="field-label">Nom</span><input class="input" x-model="data.advent.name"></label>
+            <label class="field"><span class="field-label">Première case</span><input class="input" type="date" x-model="data.advent.start"></label>
+          </div>
+          <div class="sz-card">
+            <template x-for="(day, di) in data.advent.days" :key="di">
+              <div class="sz-day">
+                <div><strong x-text="'Case ' + (di + 1)"></strong><br><small style="color:var(--muted);" x-text="dayLabel(data.advent.start, di)"></small></div>
+                <div>
+                  <template x-for="(r, ri) in day" :key="'r' + ri">
+                    <div class="sz-row">
+                      <select class="input" x-model="r.kind" @change="normalize(r)">
+                        <option value="gold_per_level">Or × niveau</option><option value="gold">Or fixe</option><option value="item">Objet</option>
+                      </select>
+                      <template x-if="r.kind !== 'item'"><input class="input" type="number" min="1" style="width:7rem" x-model.number="r.amount"></template>
+                      <template x-if="r.kind === 'item'">
+                        <span class="sz-row" style="margin:0;">
+                          <select class="input" x-model="r.item">
+                            <template x-for="it in items" :key="it.code"><option :value="it.code" :selected="it.code === r.item" x-text="it.name + ' (' + it.code + ')'"></option></template>
+                          </select>
+                          × <input class="input" type="number" min="1" style="width:5rem" x-model.number="r.qty">
+                        </span>
+                      </template>
+                      <button type="button" class="btn btn-small sz-x" @click="day.splice(ri, 1)" title="Retirer">✕</button>
+                    </div>
+                  </template>
+                  <button type="button" class="btn btn-small" @click="day.push({kind:'gold_per_level', amount:10})">+ récompense</button>
+                </div>
+              </div>
+            </template>
+            <div class="sz-row" style="margin-top:.6rem;">
+              <button type="button" class="btn btn-small" @click="data.advent.days.push([{kind:'gold_per_level', amount:10}])">+ une case</button>
+              <button type="button" class="btn btn-small" @click="data.advent.days.pop()" x-show="data.advent.days.length">− la dernière case</button>
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    {# --------------------------------------------------------------- Noël #}
+    <div class="form-section">
+      <h2 class="form-section-title">🎅 Noël — le cadeau</h2>
+      <template x-if="!data.christmas"><button type="button" class="btn" @click="data.christmas = newChristmas()">Créer Noël</button></template>
+      <template x-if="data.christmas">
+        <div>
+          <div class="sz-grid">
+            <label class="field" style="flex-direction:row;align-items:center;gap:8px;"><input type="checkbox" x-model="data.christmas.enabled"><span class="field-label" style="margin:0;">Activé</span></label>
+            <label class="field"><span class="field-label">Nom</span><input class="input" x-model="data.christmas.name"></label>
+            <label class="field"><span class="field-label">Jour du cadeau</span><input class="input" type="date" x-model="data.christmas.gift_day"></label>
+            <label class="field"><span class="field-label">À ouvrir jusqu'au</span><input class="input" type="date" x-model="data.christmas.claim_until"></label>
+          </div>
+          <p class="form-section-help" style="margin:.8rem 0 .3rem;">Le cadeau à <strong>100 %</strong> ; il est mis à l'échelle selon la gentillesse (or et quantités, arrondis, jamais moins de 1).</p>
+          <div class="sz-card">
+            <template x-for="(r, ri) in data.christmas.rewards" :key="ri">
+              <div class="sz-row">
+                <select class="input" x-model="r.kind" @change="normalize(r)">
+                  <option value="gold_per_level">Or × niveau</option><option value="gold">Or fixe</option><option value="item">Objet</option>
+                </select>
+                <template x-if="r.kind !== 'item'"><input class="input" type="number" min="1" style="width:7rem" x-model.number="r.amount"></template>
+                <template x-if="r.kind === 'item'">
+                  <span class="sz-row" style="margin:0;">
+                    <select class="input" x-model="r.item">
+                      <template x-for="it in items" :key="it.code"><option :value="it.code" :selected="it.code === r.item" x-text="it.name + ' (' + it.code + ')'"></option></template>
+                    </select>
+                    × <input class="input" type="number" min="1" style="width:5rem" x-model.number="r.qty">
+                  </span>
+                </template>
+                <button type="button" class="btn btn-small sz-x" @click="data.christmas.rewards.splice(ri, 1)">✕</button>
+              </div>
+            </template>
+            <button type="button" class="btn btn-small" @click="data.christmas.rewards.push({kind:'item', item:'booster_offert', qty:1})">+ récompense</button>
+          </div>
+          <h3 style="margin:.9rem 0 .3rem;">Gentillesse (ratio d'aide à la petite fille, jusqu'au réveillon)</h3>
+          <div class="sz-grid">
+            <label class="field"><span class="field-label">« Sage » à partir de (% d'aide)</span><input class="input" type="number" min="1" max="100" x-model.number="data.christmas.kindness.nice_from_pct"></label>
+            <label class="field"><span class="field-label">Pas très sage : part du cadeau (%)</span><input class="input" type="number" min="0" x-model.number="data.christmas.kindness.naughty_pct"></label>
+            <label class="field"><span class="field-label">Sage (%)</span><input class="input" type="number" min="0" x-model.number="data.christmas.kindness.nice_pct"></label>
+            <label class="field"><span class="field-label">Toujours aidée (%)</span><input class="input" type="number" min="0" x-model.number="data.christmas.kindness.angel_pct"></label>
+            <label class="field"><span class="field-label">Jamais croisée (%)</span><input class="input" type="number" min="0" x-model.number="data.christmas.kindness.unknown_pct"></label>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    {# ----------------------------------------------- objets d'événement #}
+    <div class="form-section">
+      <h2 class="form-section-title">🍬 Objets d'événement</h2>
+      <p class="form-section-help" style="margin:0 0 .4rem;">Pendant la période, <strong>chaque monstre de zone vaincu</strong> donne l'objet à chaque survivant (meute : un par monstre).</p>
+      <template x-for="(d, i) in data.drops" :key="i">
+        <div class="sz-card">
+          <div class="sz-grid">
+            <label class="field" style="flex-direction:row;align-items:center;gap:8px;"><input type="checkbox" x-model="d.enabled"><span class="field-label" style="margin:0;">Activé</span></label>
+            <label class="field"><span class="field-label">Code (unique)</span><input class="input" x-model="d.code"></label>
+            <label class="field"><span class="field-label">Nom</span><input class="input" x-model="d.name"></label>
+            <label class="field"><span class="field-label">Objet</span>
+              <select class="input" x-model="d.item"><template x-for="it in items" :key="it.code"><option :value="it.code" :selected="it.code === d.item" x-text="it.name"></option></template></select></label>
+            <label class="field"><span class="field-label">Par monstre</span><input class="input" type="number" min="1" x-model.number="d.per_kill"></label>
+            <label class="field"><span class="field-label">Du</span><input class="input" type="date" x-model="d.start"></label>
+            <label class="field"><span class="field-label">Au (compris)</span><input class="input" type="date" x-model="d.end"></label>
+          </div>
+          <label class="field" style="margin-top:.5rem;"><span class="field-label">Texte de l'annonce (vide = texte par défaut)</span><textarea class="input" rows="2" x-model="d.announce"></textarea></label>
+          <button type="button" class="btn btn-small sz-x" style="margin-top:.4rem;" @click="data.drops.splice(i, 1)">Retirer</button>
+        </div>
+      </template>
+      <button type="button" class="btn btn-small" @click="data.drops.push(newDrop())">+ un objet d'événement</button>
+    </div>
+
+    {# --------------------------------------------- boutiques d'événement #}
+    <div class="form-section">
+      <h2 class="form-section-title">🎁 Boutiques d'événement</h2>
+      <p class="form-section-help" style="margin:0 0 .4rem;">Une monnaie (un objet), des dates d'ouverture, des articles avec un prix et une limite <strong>par joueur</strong> (0 = sans limite).</p>
+      <template x-for="(s, i) in data.shops" :key="i">
+        <div class="sz-card">
+          <div class="sz-grid">
+            <label class="field" style="flex-direction:row;align-items:center;gap:8px;"><input type="checkbox" x-model="s.enabled"><span class="field-label" style="margin:0;">Activée</span></label>
+            <label class="field"><span class="field-label">Code (unique)</span><input class="input" x-model="s.code"></label>
+            <label class="field"><span class="field-label">Nom</span><input class="input" x-model="s.name"></label>
+            <label class="field"><span class="field-label">Emoji</span><input class="input" x-model="s.emoji" style="width:5rem"></label>
+            <label class="field"><span class="field-label">Monnaie</span>
+              <select class="input" x-model="s.currency"><template x-for="it in items" :key="it.code"><option :value="it.code" :selected="it.code === s.currency" x-text="it.name"></option></template></select></label>
+            <label class="field"><span class="field-label">Ouvre le</span><input class="input" type="date" x-model="s.opens"></label>
+            <label class="field"><span class="field-label">Ferme le (compris)</span><input class="input" type="date" x-model="s.closes"></label>
+          </div>
+          <label class="field" style="margin-top:.5rem;"><span class="field-label">Présentation</span><textarea class="input" rows="2" x-model="s.intro"></textarea></label>
+          <div class="table-wrapper" style="margin-top:.5rem;">
+            <table class="data-table">
+              <thead><tr><th>Article</th><th>Prix</th><th>Limite / joueur</th><th></th></tr></thead>
+              <tbody>
+                <template x-for="(o, oi) in s.offers" :key="oi">
+                  <tr>
+                    <td><select class="input" x-model="o.item"><template x-for="it in items" :key="it.code"><option :value="it.code" :selected="it.code === o.item" x-text="it.name + ' (' + it.code + ')'"></option></template></select></td>
+                    <td><input class="input" type="number" min="1" style="width:6rem" x-model.number="o.price"></td>
+                    <td><input class="input" type="number" min="0" style="width:6rem" x-model.number="o.limit"></td>
+                    <td><button type="button" class="btn btn-small sz-x" @click="s.offers.splice(oi, 1)">✕</button></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+          <div class="sz-row" style="margin-top:.4rem;">
+            <button type="button" class="btn btn-small" @click="s.offers.push({item:'potion_soin', price:5, limit:0})">+ un article</button>
+            <button type="button" class="btn btn-small sz-x" @click="data.shops.splice(i, 1)">Retirer la boutique</button>
+          </div>
+        </div>
+      </template>
+      <button type="button" class="btn btn-small" @click="data.shops.push(newShop())">+ une boutique d'événement</button>
+    </div>
+
+    {# ----------------------------------------------------------- Nouvel An #}
+    <div class="form-section">
+      <h2 class="form-section-title">🎆 Nouvel An</h2>
+      <template x-if="!data.new_year"><button type="button" class="btn" @click="data.new_year = newNewYear()">Créer le Nouvel An</button></template>
+      <template x-if="data.new_year">
+        <div>
+          <p class="form-section-help" style="margin:0 0 .5rem;">À minuit (Paris), le bot souhaite la bonne année et <strong>toutes les divinités de l'offrande</strong> bénissent le serveur pendant la durée choisie (chacune une seule fois, même si l'offrande en a déjà invoqué une).</p>
+          <div class="sz-grid">
+            <label class="field" style="flex-direction:row;align-items:center;gap:8px;"><input type="checkbox" x-model="data.new_year.enabled"><span class="field-label" style="margin:0;">Activé</span></label>
+            <label class="field"><span class="field-label">Jour</span><input class="input" type="date" x-model="data.new_year.day"></label>
+            <label class="field"><span class="field-label">Durée (heures)</span><input class="input" type="number" min="1" max="72" x-model.number="data.new_year.hours"></label>
+            <label class="field"><span class="field-label">Titre de l'annonce</span><input class="input" x-model="data.new_year.title"></label>
+            <label class="field" style="flex-direction:row;align-items:center;gap:8px;"><input type="checkbox" x-model="data.new_year.mention_everyone"><span class="field-label" style="margin:0;">Mentionner @everyone</span></label>
+          </div>
+          <label class="field" style="margin-top:.5rem;"><span class="field-label">Message (la liste des bénédictions est ajoutée dessous)</span><textarea class="input" rows="3" x-model="data.new_year.message"></textarea></label>
+        </div>
+      </template>
+    </div>
+
+    <div style="position:sticky; bottom:0; padding:.7rem 0; background:var(--bg, inherit);">
+      <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
+      <span style="color:var(--muted); margin-left:.6rem;">Tout est vérifié avant d'écrire : rien n'est enregistré s'il reste un problème.</span>
+    </div>
+  </form>
+</section>
+<script>
+  function seasonalEditor() {
+    const data = JSON.parse(document.getElementById('seasonal-data').textContent || '{}');
+    data.drops = data.drops || [];
+    data.shops = data.shops || [];
+    for (const s of data.shops) { s.offers = s.offers || []; }
+    if (data.christmas) { data.christmas.rewards = data.christmas.rewards || []; data.christmas.kindness = Object.assign({nice_from_pct: 50, naughty_pct: 50, nice_pct: 100, angel_pct: 150, unknown_pct: 100}, data.christmas.kindness || {}); }
+    if (data.advent) { data.advent.days = data.advent.days || []; }
+    return {
+      data,
+      items: JSON.parse(document.getElementById('seasonal-items').textContent || '[]'),
+      normalize(r) {
+        if (r.kind === 'item') { delete r.amount; r.item = r.item || 'potion_soin'; r.qty = r.qty || 1; }
+        else { delete r.item; delete r.qty; r.amount = r.amount || 10; }
+      },
+      dayLabel(start, i) {
+        if (!start) return '';
+        const d = new Date(start + 'T12:00:00'); d.setDate(d.getDate() + i);
+        return d.toLocaleDateString('fr-FR', {weekday: 'short', day: 'numeric', month: 'short'});
+      },
+      newAdvent() { return {enabled: true, name: "Calendrier de l'Avent", start: '', days: [[{kind: 'gold_per_level', amount: 10}]]}; },
+      newChristmas() { return {enabled: true, name: 'Noël', gift_day: '', claim_until: '', rewards: [], kindness: {nice_from_pct: 50, naughty_pct: 50, nice_pct: 100, angel_pct: 150, unknown_pct: 100}}; },
+      newDrop() { return {code: 'evenement_' + (this.data.drops.length + 1), name: "Objet d'événement", enabled: true, item: 'sucre_d_orge', per_kill: 1, start: '', end: '', announce: ''}; },
+      newShop() { return {code: 'boutique_' + (this.data.shops.length + 1), name: "Boutique d'événement", emoji: '🎁', enabled: true, currency: 'sucre_d_orge', opens: '', closes: '', intro: '', offers: []}; },
+      newNewYear() { return {enabled: true, day: '', hours: 24, title: 'Bonne année !', message: '', mention_everyone: true}; },
+    };
+  }
+</script>
+{% endblock %}

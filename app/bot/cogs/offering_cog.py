@@ -36,6 +36,16 @@ def _bar(value: int, target: int, width: int = 16) -> str:
     return "▰" * filled + "▱" * (width - filled)
 
 
+def _new_year_until():
+    """Fin des bénédictions du Nouvel An si elles sont en cours, sinon None."""
+    from app.application.use_cases import seasonal
+
+    try:
+        return seasonal.new_year_window()[1] if seasonal.new_year_active() else None
+    except Exception:  # noqa: BLE001 — un réglage illisible ne casse pas /offrande
+        return None
+
+
 def build_offering_embed(state: offering.OfferingStatus) -> discord.Embed:
     embed = discord.Embed(
         title="🙏 L'Offrande",
@@ -58,6 +68,12 @@ def build_offering_embed(state: offering.OfferingStatus) -> discord.Embed:
         until = state.blessing_until.astimezone(_PARIS).strftime("%d/%m à %H h %M")
         embed.add_field(name="✨ Bénédiction en cours",
                         value=f"{state.blessing.label}\n{state.blessing.blessing} — jusqu'au {until}",
+                        inline=False)
+    festive = _new_year_until()
+    if festive is not None:
+        embed.add_field(name="🎆 Nouvel An",
+                        value=("Pour fêter la nouvelle année, **toutes les divinités** bénissent le serveur "
+                               f"en même temps, jusqu'au {festive.astimezone(_PARIS).strftime('%d/%m à %H h %M')}."),
                         inline=False)
     if state.top:
         embed.add_field(name="Donateurs de cette jauge",

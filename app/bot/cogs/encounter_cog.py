@@ -309,12 +309,12 @@ class EncounterCog(commands.Cog):
     def _pack_chance() -> float:
         """Part des apparitions qui sont des meutes (Morrigane, bénédiction
         de l'offrande commune, la relève)."""
-        from app.application.use_cases.offering import active_blessing
-        from app.domain.services.offering_service import effect_value
+        from app.application.use_cases.offering import active_blessings
+        from app.domain.services.offering_service import blessings_value
 
         try:
             with get_db_session() as session:
-                blessed = effect_value(active_blessing(session), "pack_chance_pct") / 100
+                blessed = blessings_value(active_blessings(session), "pack_chance_pct") / 100
         except Exception:  # noqa: BLE001 — une bénédiction illisible ne bloque pas le spawn
             blessed = 0.0
         return max(get_pacing().zones.pack_chance_pct / 100, blessed)

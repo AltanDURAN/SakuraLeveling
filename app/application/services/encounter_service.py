@@ -559,14 +559,20 @@ class EncounterService:
                 get_essences_range_for_family,
             )
             # Bénédiction de l'offrande commune (tout le serveur, 24 h).
-            from app.application.use_cases.offering import active_blessing
-            from app.domain.services.offering_service import effect_value
+            # Le Nouvel An (événements saisonniers) les réunit toutes.
+            from app.application.use_cases.offering import active_blessings
+            from app.domain.services.offering_service import blessings_value
 
-            blessing = active_blessing(session)
-            blessed_xp = 1 + effect_value(blessing, "xp_pct") / 100
-            blessed_materials = int(effect_value(blessing, "material_bonus"))
-            blessed_gear = 1 + effect_value(blessing, "gear_drop_pct") / 100
-            blessed_essences = int(effect_value(blessing, "essence_bonus"))
+            blessings = active_blessings(session)
+            # Objets d'événement (sucres d'orge…) : chaque monstre vaincu en
+            # donne à chaque survivant, sans tirage (événements saisonniers).
+            from app.application.use_cases.seasonal import event_drops
+
+            festive_drops = event_drops()
+            blessed_xp = 1 + blessings_value(blessings, "xp_pct") / 100
+            blessed_materials = int(blessings_value(blessings, "material_bonus"))
+            blessed_gear = 1 + blessings_value(blessings, "gear_drop_pct") / 100
+            blessed_essences = int(blessings_value(blessings, "essence_bonus"))
 
             for participant in encounter.participants.values():
                 contribution = contributions_by_id.get(participant.player_id)
@@ -654,6 +660,7 @@ class EncounterService:
                 ) else 0)
 
                 dropped: dict[str, int] = {}
+                festive: dict[str, int] = {}
                 gear_drop: list[tuple[str, str]] = []
                 essence_gains: list[EssenceGain] = []
                 unlocked: list = []       # titres débloqués, montrés au récapitulatif
@@ -662,6 +669,8 @@ class EncounterService:
                 # facteur de meute sinon (pack_service.loot_roll).
                 for state, definition in zip(states, definitions):
                     kill_repository.increment(participant.player_id, definition.code)
+                    for item_code, per_kill in festive_drops:
+                        festive[item_code] = festive.get(item_code, 0) + per_kill
                     if pack_service.loot_roll(size):
                         # Chasseur Légendaire : multiplicateur drop rate spécifique
                         # à ce mob, multiplicatif (ne casse pas la rareté).
@@ -797,6 +806,19 @@ class EncounterService:
                 if items_total > 0:
                     _wqp.on_items_dropped(participant.player_id, items_total)
                     _dqp.on_items_dropped(participant.player_id, items_total)
+                # Objets d'événement : hors quêtes de butin (ils ne tombent
+                # qu'une semaine, les quêtes ne doivent pas en dépendre).
+                for item_code, quantity in festive.items():
+                    item = item_repository.get_by_code(item_code)
+                    if item is None:
+                        continue
+                    item_names[item_code] = item.name
+                    inventory_repository.add_item(
+                        player_id=participant.player_id,
+                        item_definition_id=item.id,
+                        quantity=quantity,
+                    )
+                    dropped_items.append((item_code, quantity))
 
                 rewards.append(
                     PlayerReward(

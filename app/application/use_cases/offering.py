@@ -92,6 +92,22 @@ def active_blessing(session: Session, now: datetime | None = None) -> osvc.Deity
     return offering_loader.get_deity(row.deity_code)
 
 
+def active_blessings(session: Session, now: datetime | None = None) -> list[osvc.Deity]:
+    """Les divinités qui bénissent le serveur en ce moment : celle de
+    l'offrande commune et, pendant le NOUVEL AN (événements saisonniers),
+    TOUTES — chacune une seule fois. À lire avec `osvc.blessings_value`."""
+    found: dict[str, osvc.Deity] = {}
+    deity = active_blessing(session, now)
+    if deity is not None:
+        found[deity.code] = deity
+    from app.application.use_cases import seasonal
+
+    if seasonal.new_year_active(now):
+        for d in offering_loader.list_deities():
+            found.setdefault(d.code, d)
+    return list(found.values())
+
+
 def blessing_window(session: Session) -> tuple[datetime, datetime] | None:
     """(début, fin) de la bénédiction en cours ou passée la plus récente."""
     row = session.get(OfferingStateModel, 1)

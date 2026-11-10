@@ -57,6 +57,8 @@ from app.infrastructure.monitoring.telemetry import record as record_event
 
 CONSUMABLE_CATEGORY = "consumable"
 EFFECT_HEAL_PERCENT = EFFECT_HEAL   # compat
+#: « Booster offert » : il s'ouvre chez Sorn (`/booster`), pas avec /utiliser.
+EFFECT_BOOSTER = "booster"
 
 
 @dataclass
@@ -132,6 +134,12 @@ class UseConsumableUseCase:
 
         bonuses = item.stat_bonuses or {}
         effect = bonuses.get("effect")
+        if effect == EFFECT_BOOSTER:
+            return UseConsumableResult(
+                success=False, item_name=item.name,
+                message=(f"🎴 **{item.name}** s'ouvre au comptoir de Sorn, dans le salon des cartes "
+                         "(`/booster`) : il passe avant ton or."),
+            )
         if effect not in (EFFECT_HEAL, EFFECT_MANA, EFFECT_ELIXIR, *tools.TOOL_EFFECTS) or (
                 effect == EFFECT_ELIXIR and elixir_of(bonuses) is None):
             return UseConsumableResult(

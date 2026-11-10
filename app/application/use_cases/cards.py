@@ -43,6 +43,8 @@ class Collection:
     since_top: int
     free_booster: bool          # le booster offert est encore à prendre
     params: cs.CardParams = cs.DEFAULT_PARAMS
+    #: Boosters offerts en réserve (objet `booster_offert` : Avent, Noël…).
+    gift_boosters: int = 0
 
     def owns(self, code: str) -> bool:
         return self.normal.get(code, 0) > 0 or self.brillante.get(code, 0) > 0
@@ -77,7 +79,31 @@ def collection(session: Session, player_id: int) -> Collection:
         since_top=state.since_top if state else 0,
         free_booster=params.first_free and not (state and state.free_booster_used),
         params=params,
+        gift_boosters=gift_boosters(session, player_id)[1],
     )
+
+
+#: Objet « booster offert » (calendrier de l'Avent, cadeau de Noël, boutiques
+#: d'événement…) : ouvert au comptoir de Sorn AVANT de payer en or.
+GIFT_BOOSTER_ITEM = "booster_offert"
+
+
+def gift_boosters(session: Session, player_id: int) -> tuple[int | None, int]:
+    """(identifiant de l'objet « booster offert », combien le joueur en a)."""
+    from sqlalchemy import select
+
+    from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel
+    from app.infrastructure.db.repositories.item_repository import ItemRepository
+
+    item = ItemRepository(session).get_by_code(GIFT_BOOSTER_ITEM)
+    if item is None:
+        return None, 0
+    qty = session.execute(
+        select(PlayerInventoryItemModel.quantity).where(
+            PlayerInventoryItemModel.player_id == player_id,
+            PlayerInventoryItemModel.item_definition_id == item.id)
+    ).scalar_one_or_none()
+    return item.id, int(qty or 0)
 
 
 def owned_cards(session: Session, player_id: int) -> list[cs.CardDef]:
@@ -133,6 +159,8 @@ class BoosterResult:
     titles: list[str] = field(default_factory=list)
     #: Le légendaire garanti arrive au plus tard dans N boosters (None : pas de garantie).
     pity_left: int | None = None
+    #: Boosters offerts (objet) utilisés pour cette ouverture.
+    gifts: int = 0
 
     @property
     def cards(self) -> list[OpenedCard]:
@@ -143,8 +171,11 @@ class BoosterResult:
         return max(self.cards, key=lambda c: (cs.rarity_index(c.card.rarity), c.brillante), default=None)
 
 
-def booster_price(count: int, free_available: bool, params: cs.CardParams = cs.DEFAULT_PARAMS) -> int:
-    return params.booster_price * max(0, count - (1 if free_available else 0))
+def booster_price(count: int, free_available: bool, params: cs.CardParams = cs.DEFAULT_PARAMS,
+                  gifts: int = 0) -> int:
+    """Or à payer pour `count` boosters : le premier de la saison et les
+    boosters offerts passent avant l'or."""
+    return params.booster_price * max(0, count - (1 if free_available else 0) - max(0, gifts))
 
 
 def open_boosters(session: Session, player_id: int, count: int = 1, *,
@@ -167,7 +198,9 @@ def open_boosters(session: Session, player_id: int, count: int = 1, *,
         params = card_loader.params()
         state = repo.state(player_id)
         free = params.first_free and not state.free_booster_used
-        price = booster_price(count, free, params)
+        gift_item, gifts_owned = gift_boosters(session, player_id)
+        gifts = min(gifts_owned, max(0, count - (1 if free else 0)))
+        price = booster_price(count, free, params, gifts)
         gold = profile.resources.gold
         if gold < price:
             missing = price - gold
@@ -176,6 +209,8 @@ def open_boosters(session: Session, player_id: int, count: int = 1, *,
                                  gold_left=gold)
         if price:
             players.add_gold(player_id, -price, source="cartes")
+        if gifts:
+            InventoryRepository(session).remove_item(player_id, gift_item, gifts, commit=False)
         normal, brillante = repo.owned(player_id)
         before = cs.album(cards, normal, brillante)
         bonus = cs.card_bonuses([c for c in cards if normal.get(c.code) or brillante.get(c.code)])
@@ -207,11 +242,11 @@ def open_boosters(session: Session, player_id: int, count: int = 1, *,
         titles = _check_titles(session, player_id, after)
         result = BoosterResult(True, boosters=opened, gold_spent=price, free=free, gold_left=gold - price,
                                album_before=before, album_after=after, since_top=state.since_top, titles=titles,
-                               pity_left=cs.boosters_before_pity(state.since_top, params))
+                               pity_left=cs.boosters_before_pity(state.since_top, params), gifts=gifts)
         best = result.best
         record_event(session, kinds.BOOSTER, player_id=player_id, qty=count, gold=-price,
                      ref=best.card.code if best else None,
-                     data={"best": best.card.rarity if best else "", "free": free,
+                     data={"best": best.card.rarity if best else "", "free": free, "gifts": gifts,
                            "new": sum(c.new for c in result.cards),
                            "brillantes": sum(c.brillante for c in result.cards)})
         return result

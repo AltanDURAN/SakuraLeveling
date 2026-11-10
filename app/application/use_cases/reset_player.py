@@ -42,6 +42,7 @@ from app.infrastructure.db.models.tower_progress_model import PlayerTowerProgres
 from app.infrastructure.db.models.records_model import PlayerRecordModel, RecordHolderModel
 from app.infrastructure.db.models.tower_ticket_model import PlayerTowerTicketModel
 from app.infrastructure.db.models.card_model import PlayerCardStateModel
+from app.infrastructure.db.models.seasonal_model import EventShopPurchaseModel, SeasonalClaimModel
 from app.infrastructure.db.unit_of_work import commit
 from app.infrastructure.db.models.monitoring_model import (
     GameEventModel,
@@ -130,6 +131,10 @@ class ResetPlayerUseCase:
             # Cartes à collectionner : pétales, pitié, booster offert (les
             # cartes elles-mêmes partent avec l'inventaire).
             PlayerCardStateModel,
+            # Événements saisonniers : cases de l'Avent, cadeau de Noël,
+            # achats en boutique d'événement.
+            SeasonalClaimModel,
+            EventShopPurchaseModel,
             OfferingContributionModel,
             PlayerTutorialModel,
             # Records : ses exploits, et les records qu'il détenait.

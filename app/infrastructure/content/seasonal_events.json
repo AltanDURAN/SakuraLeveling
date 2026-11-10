@@ -1,0 +1,324 @@
+{
+  "_comment": "Événements saisonniers (calendrier de l'Avent, Noël, objets d'événement, boutiques d'événement, Nouvel An) — réglables depuis le site (Monde › Événements saisonniers). Dates = jours de Paris, bornes comprises. Récompense : {kind: gold, amount} (or fixe), {kind: gold_per_level, amount} (or × niveau) ou {kind: item, item, qty}. Relu par le bot sans redémarrage.",
+  "advent": {
+    "enabled": true,
+    "name": "Calendrier de l'Avent",
+    "start": "2026-12-01",
+    "days": [
+      [
+        {
+          "kind": "item",
+          "item": "booster_offert",
+          "qty": 1
+        }
+      ],
+      [
+        {
+          "kind": "item",
+          "item": "potion_soin",
+          "qty": 3
+        }
+      ],
+      [
+        {
+          "kind": "gold_per_level",
+          "amount": 10
+        }
+      ],
+      [
+        {
+          "kind": "item",
+          "item": "gel_e",
+          "qty": 3
+        }
+      ],
+      [
+        {
+          "kind": "item",
+          "item": "potion_mana",
+          "qty": 2
+        }
+      ],
+      [
+        {
+          "kind": "item",
+          "item": "booster_offert",
+          "qty": 1
+        }
+      ],
+      [
+        {
+          "kind": "gold_per_level",
+          "amount": 10
+        }
+      ],
+      [
+        {
+          "kind": "item",
+          "item": "elixir_force",
+          "qty": 1
+        }
+      ],
+      [
+        {
+          "kind": "item",
+          "item": "dent_de_gobelin",
+          "qty": 3
+        }
+      ],
+      [
+        {
+          "kind": "item",
+          "item": "potion_soin_superieure",
+          "qty": 2
+        }
+      ],
+      [
+        {
+          "kind": "gold_per_level",
+          "amount": 15
+        }
+      ],
+      [
+        {
+          "kind": "item",
+          "item": "elixir_recuperation",
+          "qty": 1
+        }
+      ],
+      [
+        {
+          "kind": "item",
+          "item": "booster_offert",
+          "qty": 1
+        }
+      ],
+      [
+        {
+          "kind": "item",
+          "item": "fragment_d_me",
+          "qty": 3
+        }
+      ],
+      [
+        {
+          "kind": "gold_per_level",
+          "amount": 15
+        }
+      ],
+      [
+        {
+          "kind": "item",
+          "item": "elixir_garde",
+          "qty": 1
+        }
+      ],
+      [
+        {
+          "kind": "item",
+          "item": "potion_soin_superieure",
+          "qty": 2
+        }
+      ],
+      [
+        {
+          "kind": "item",
+          "item": "sucre_d_orge",
+          "qty": 10
+        }
+      ],
+      [
+        {
+          "kind": "gold_per_level",
+          "amount": 20
+        }
+      ],
+      [
+        {
+          "kind": "item",
+          "item": "booster_offert",
+          "qty": 1
+        }
+      ],
+      [
+        {
+          "kind": "item",
+          "item": "elixir_vitalite",
+          "qty": 1
+        }
+      ],
+      [
+        {
+          "kind": "item",
+          "item": "potion_soin_totale",
+          "qty": 1
+        }
+      ],
+      [
+        {
+          "kind": "gold_per_level",
+          "amount": 20
+        }
+      ],
+      [
+        {
+          "kind": "item",
+          "item": "booster_offert",
+          "qty": 2
+        },
+        {
+          "kind": "gold_per_level",
+          "amount": 30
+        }
+      ]
+    ]
+  },
+  "christmas": {
+    "enabled": true,
+    "name": "Noël",
+    "gift_day": "2026-12-25",
+    "claim_until": "2026-12-31",
+    "rewards": [
+      {
+        "kind": "gold_per_level",
+        "amount": 150
+      },
+      {
+        "kind": "item",
+        "item": "booster_offert",
+        "qty": 3
+      },
+      {
+        "kind": "item",
+        "item": "sucre_d_orge",
+        "qty": 20
+      },
+      {
+        "kind": "item",
+        "item": "potion_soin_totale",
+        "qty": 2
+      },
+      {
+        "kind": "item",
+        "item": "elixir_force",
+        "qty": 1
+      },
+      {
+        "kind": "item",
+        "item": "elixir_garde",
+        "qty": 1
+      },
+      {
+        "kind": "item",
+        "item": "elixir_vitalite",
+        "qty": 1
+      }
+    ],
+    "kindness": {
+      "nice_from_pct": 50,
+      "naughty_pct": 50,
+      "nice_pct": 100,
+      "angel_pct": 150,
+      "unknown_pct": 100
+    }
+  },
+  "drops": [
+    {
+      "code": "sucres_d_orge",
+      "name": "Semaine des sucres d'orge",
+      "enabled": true,
+      "item": "sucre_d_orge",
+      "per_kill": 1,
+      "start": "2026-12-18",
+      "end": "2026-12-24",
+      "announce": "Les monstres des zones ont fait le plein de friandises : jusqu'au 24 décembre au soir, chaque monstre vaincu donne un sucre d'orge à chaque survivant. Gardez-les bien : l'atelier des lutins ouvre le 25 !"
+    }
+  ],
+  "shops": [
+    {
+      "code": "atelier_lutins",
+      "name": "L'atelier des lutins",
+      "emoji": "🎁",
+      "enabled": true,
+      "currency": "sucre_d_orge",
+      "opens": "2026-12-25",
+      "closes": "2026-12-31",
+      "intro": "Les lutins du Grand Cerisier ont installé leur atelier au pied de l'arbre. Ici, pas d'or : on paie en sucres d'orge !",
+      "offers": [
+        {
+          "item": "fond_nuit_de_noel",
+          "price": 120,
+          "limit": 1
+        },
+        {
+          "item": "cadre_houx",
+          "price": 80,
+          "limit": 1
+        },
+        {
+          "item": "titre_givre",
+          "price": 60,
+          "limit": 1
+        },
+        {
+          "item": "booster_offert",
+          "price": 25,
+          "limit": 6
+        },
+        {
+          "item": "sablier_fidelite",
+          "price": 30,
+          "limit": 1
+        },
+        {
+          "item": "parchemin_oubli",
+          "price": 40,
+          "limit": 1
+        },
+        {
+          "item": "potion_soin_totale",
+          "price": 10,
+          "limit": 5
+        },
+        {
+          "item": "potion_soin_superieure",
+          "price": 4,
+          "limit": 10
+        },
+        {
+          "item": "potion_mana",
+          "price": 4,
+          "limit": 10
+        },
+        {
+          "item": "elixir_force",
+          "price": 8,
+          "limit": 5
+        },
+        {
+          "item": "elixir_garde",
+          "price": 8,
+          "limit": 5
+        },
+        {
+          "item": "elixir_vitalite",
+          "price": 8,
+          "limit": 5
+        },
+        {
+          "item": "elixir_recuperation",
+          "price": 8,
+          "limit": 5
+        }
+      ]
+    }
+  ],
+  "new_year": {
+    "enabled": true,
+    "day": "2027-01-01",
+    "hours": 24,
+    "title": "Bonne année 2027 !",
+    "message": "Tout au long de l'année, vous avez porté vos offrandes aux divinités du Grand Cerisier. Pour célébrer le passage à la nouvelle année, elles vous offrent **toutes** leur bénédiction en même temps, jusqu'à minuit :",
+    "mention_everyone": true
+  }
+}

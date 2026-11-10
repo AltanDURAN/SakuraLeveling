@@ -670,6 +670,34 @@ LE MANA DES COMPÉTENCES 💧
     • Elle coûte 1 500 or au départ. Chaque remplissage rend la suivante
       plus chère (+75 or × le nombre de jauges déjà remplies, puis +4 %) ;
       chaque jour sans remplissage la fait redescendre de 2 %.
+    • Au NOUVEL AN (24 premières heures de l'année, heure de Paris), TOUTES
+      les divinités bénissent le serveur en même temps (cf. /evenement).
+
+/evenement
+    LES FÊTES DU GRAND CERISIER — ce qui se passe en ce moment et ce qui
+    vient (aussi en tête du salon des événements, avec ses boutons) :
+    • 🎄 CALENDRIER DE L'AVENT (1er → 24 décembre) : une case par jour, une
+      petite surprise (or, potions, élixirs, matériaux, boosters offerts…).
+      On n'ouvre que la case DU JOUR : une case pas ouverte le jour même est
+      perdue.
+    • 🎅 NOËL : un cadeau à ouvrir du 25 au 31 décembre. Le Père Noël
+      regarde comment tu as traité la PETITE FILLE jusqu'au réveillon :
+          moins de 50 % d'aide          → 50 % du cadeau
+          au moins 50 % d'aide          → 100 %
+          toujours aidée                → 150 %
+          jamais croisée                → 100 %
+      Le bouton « Mon cadeau » te dit où tu en es avant le 25.
+    • 🍬 SEMAINE DES SUCRES D'ORGE (18 → 24 décembre) : chaque monstre vaincu
+      en zone donne 1 sucre d'orge à chaque survivant (une meute : un par
+      monstre).
+    • 🎁 L'ATELIER DES LUTINS (25 → 31 décembre) : une boutique où l'on paie
+      en sucres d'orge — cosmétiques de Noël introuvables ailleurs (fond Nuit
+      de Noël, cadre Houx, titre Givre), boosters offerts, potions, élixirs…
+      Chaque article a une limite par joueur.
+    • 🎆 NOUVEL AN : le 1er janvier, de minuit à minuit, toutes les divinités
+      de l'offrande bénissent le serveur en même temps.
+    (Dates et récompenses sont les réglages de départ : l'équipe peut les
+    ajuster, /evenement affiche toujours les vrais.)
 
 /bestiaire monstres
     Le bestiaire À DÉCOUVRIR : un monstre que tu n'as jamais vaincu en combat
@@ -875,6 +903,8 @@ WORLD BOSS — /boss moi, /boss historique, /bestiaire boss
       brillante. Avec des pétales, FABRIQUE une carte qui te manque (20 fois
       son recyclage : 100 / 200 / 500 / 1 600 / 8 000). Jamais une
       brillante : la mythique se tire ou s'échange.
+    • BOOSTER OFFERT : un objet (calendrier de l'Avent, cadeau de Noël,
+      boutiques d'événement…) qui s'ouvre au comptoir de Sorn AVANT ton or.
     (Les chiffres ci-dessus sont les réglages de départ : l'équipe peut les
     ajuster, le guide épinglé du salon des cartes affiche toujours les
     vrais.)
@@ -971,6 +1001,13 @@ INTERFACE WEB D'ADMINISTRATION
     événement.
     ⚠️ Les fichiers de contenu lus au démarrage (arbre, artisans, zones,
     événements) demandent un REDÉMARRAGE du bot après modification.
+    FÊTES (Monde › Fêtes, sans redémarrage) : calendrier de l'Avent (dates,
+    récompense de chaque case), cadeau de Noël (récompenses, parts selon la
+    gentillesse), objets d'événement (sucres d'orge : objet, dates, nombre
+    par monstre), BOUTIQUES D'ÉVÉNEMENT (monnaie, dates, articles, prix,
+    limite par joueur — on en crée autant qu'on veut), Nouvel An (jour,
+    durée, message, @everyone). Tout est vérifié avant d'écrire. Pour tester
+    sur la bêta : avancer les dates, essayer, puis les remettre.
     RYTHME (Monde › Rythme, sans redémarrage) : délai entre deux monstres
     (fixe ou tiré dans une plage), délai après une fuite, temps pour
     rejoindre (et pour une élite), délai avant le bouton Lancer, heures

@@ -40,12 +40,13 @@ SEASON_START = "season"       # qty = numéro de la saison (reset de saison : le
 BOOSTER = "booster"           # qty = boosters ouverts, gold = −prix, data.best/new/brillantes/free
 CARD_RECYCLE = "card_recycle" # qty = cartes recyclées, data.petals
 CARD_CRAFT = "card_craft"     # ref = carte fabriquée, data.petals
+SEASONAL = "seasonal"         # ref = advent:<case> | christmas | shop:<boutique>:<objet>
 
 #: Ce qui compte comme « le joueur joue » (temps de jeu, heures actives).
 ACTIVITY_KINDS = frozenset({
     INTERACTION, COMBAT, SHOP_BUY, FUSION, BREW, CONSUMABLE, QUEST, DAILY,
     RANK_TRIAL, TOWER, ROLE_TRIAL, BOSS_FIGHT, MARKET_SALE, TRANSFER, OFFERING, SEER,
-    BOOSTER, CARD_RECYCLE, CARD_CRAFT,
+    BOOSTER, CARD_RECYCLE, CARD_CRAFT, SEASONAL,
 })
 
 # --------------------------------------------------------------- sources d'or

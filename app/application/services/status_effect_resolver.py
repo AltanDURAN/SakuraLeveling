@@ -48,8 +48,22 @@ def resolve_regen_boosts(session: Session, player_id: int) -> list:
     state = session.get(OfferingStateModel, 1)
     deity = get_deity(state.deity_code) if state is not None else None
     window = blessing_window(session)
+    sylve_window = None
     if deity is not None and deity.effect == "regen_mult" and window is not None:
         windows.append((window[0], window[1], deity.value))
+        sylve_window = window
+    # Nouvel An (événements saisonniers) : toutes les divinités, Sylve
+    # comprise — sans compter deux fois les minutes déjà bénies par l'offrande.
+    from app.application.use_cases.seasonal import new_year_window
+    from app.domain.services.seasonal_service import window_minus
+    from app.infrastructure.offering.offering_loader import list_deities
+
+    festive = new_year_window()
+    regen = max((d.value for d in list_deities() if d.effect == "regen_mult"), default=0)
+    # Une fenêtre pas encore commencée ne compte pour aucune régénération.
+    if festive is not None and regen and festive[0] <= datetime.now(UTC):
+        for start, end in window_minus(festive, sylve_window):
+            windows.append((start, end, regen))
     # Carte de Sylve (cartes à collectionner) : une fenêtre permanente.
     from app.application.use_cases.cards import player_card_bonuses
 

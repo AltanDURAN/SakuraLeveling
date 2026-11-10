@@ -2401,5 +2401,150 @@
     "family": "",
     "level_requirement": 1,
     "passive": "devouring_void"
+  },
+  {
+    "code": "booster_offert",
+    "name": "Booster offert",
+    "description": "Un booster de cartes offert : il s'ouvre au comptoir de Sorn, dans le salon des cartes (/booster), avant de payer en or.",
+    "category": "consumable",
+    "rarity": "rare",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "effect": "booster"
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1,
+    "passive": ""
+  },
+  {
+    "code": "sucre_d_orge",
+    "name": "Sucre d'orge",
+    "description": "Friandise de Noël : du 18 au 24 décembre, chaque monstre vaincu en zone en donne un. Se dépense à l'atelier des lutins, du 25 au 31 décembre (/evenement).",
+    "category": "resource",
+    "rarity": "rare",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": null,
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1,
+    "passive": ""
+  },
+  {
+    "code": "fond_nuit_de_noel",
+    "name": "Fond — Nuit de Noël",
+    "description": "Cosmétique de Noël (atelier des lutins) : change le fond de ta bannière /profil, une nuit d'hiver sous la neige. Aucun effet en combat. À choisir avec /apparence.",
+    "category": "cosmetic",
+    "rarity": "legendary",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "cosmetic": "fond",
+      "top": [
+        16,
+        30,
+        66
+      ],
+      "bottom": [
+        10,
+        44,
+        34
+      ],
+      "petals": [
+        [
+          255,
+          255,
+          255,
+          95
+        ],
+        [
+          215,
+          235,
+          255,
+          85
+        ],
+        [
+          255,
+          225,
+          225,
+          70
+        ]
+      ]
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1,
+    "passive": ""
+  },
+  {
+    "code": "cadre_houx",
+    "name": "Cadre — Houx",
+    "description": "Cosmétique de Noël (atelier des lutins) : un anneau de houx rouge et vert autour de ton avatar sur /profil. Aucun effet en combat. À choisir avec /apparence.",
+    "category": "cosmetic",
+    "rarity": "legendary",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "cosmetic": "cadre",
+      "color": [
+        214,
+        40,
+        56
+      ],
+      "ring2": [
+        46,
+        150,
+        80
+      ],
+      "glow": true
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1,
+    "passive": ""
+  },
+  {
+    "code": "titre_givre",
+    "name": "Titre — Givre",
+    "description": "Cosmétique de Noël (atelier des lutins) : ton titre couleur de givre, scintillant, sur /profil. Aucun effet en combat. À choisir avec /apparence.",
+    "category": "cosmetic",
+    "rarity": "epic",
+    "stackable": true,
+    "max_stack": null,
+    "sell_price": 0,
+    "buy_price": null,
+    "icon": null,
+    "stat_bonuses": {
+      "cosmetic": "titre",
+      "color": [
+        196,
+        232,
+        255
+      ],
+      "glow": true
+    },
+    "equipment_slot": null,
+    "requires_two_hands": false,
+    "family": "",
+    "level_requirement": 1,
+    "passive": ""
   }
 ]

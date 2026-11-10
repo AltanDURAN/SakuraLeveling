@@ -170,10 +170,16 @@ def build_result_embed(name: str, result) -> discord.Embed:
                  else cs.boosters_before_pity(result.since_top, card_loader.params()))
     if pity_left is not None:
         embed.add_field(name="🟠 Légendaire garanti", value=f"dans {pity_left} booster(s) au plus tard", inline=True)
-    if result.free and not result.gold_spent:
-        paid = "🎁 Offert par Sorn !"
+    offered = []
+    if result.free:
+        offered.append("le premier offert")
+    if result.gifts:
+        s = "s" if result.gifts > 1 else ""
+        offered.append(f"{result.gifts} booster{s} offert{s}")
+    if not result.gold_spent and offered:
+        paid = "🎁 Offert par Sorn !" if not result.gifts else f"🎁 Offert ! ({' + '.join(offered)})"
     else:
-        paid = f"−**{format_int(result.gold_spent)}** {GOLD_EMOJI}" + (" (le premier offert)" if result.free else "")
+        paid = f"−**{format_int(result.gold_spent)}** {GOLD_EMOJI}" + (f" ({' + '.join(offered)})" if offered else "")
         paid += f" · il te reste {format_int(result.gold_left)} {GOLD_EMOJI}"
     embed.add_field(name="Prix", value=paid, inline=True)
     if result.titles:
@@ -205,6 +211,10 @@ def build_album_embed(owner: str, coll, chapter: str, page: int, pages: int, *, 
                      "(bouton « Recycler »)")
     if own and coll.free_booster:
         lines.append("🎁 Ton premier booster est **offert** : `/booster` dans le salon des cartes.")
+    if own and coll.gift_boosters:
+        s = "s" if coll.gift_boosters > 1 else ""
+        lines.append(f"🎁 Tu as **{coll.gift_boosters}** booster{s} offert{s} : ils s'ouvrent avant ton or "
+                     "(`/booster`, salon des cartes).")
     series = card_loader.get_series()
     embed = discord.Embed(
         title=f"📖 Album de {owner} — {card_loader.get_chapter(chapter).label}",

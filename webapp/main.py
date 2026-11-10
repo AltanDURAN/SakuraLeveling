@@ -56,6 +56,7 @@ from webapp.admin.routers.quests_router import router as admin_quests_router
 from webapp.admin.routers.world_bosses_router import router as admin_world_bosses_router
 from webapp.admin.routers.offering_router import router as admin_offering_router
 from webapp.admin.routers.cards_router import router as admin_cards_router
+from webapp.admin.routers.seasonal_router import router as admin_seasonal_router
 from webapp.admin.routers.pacing_router import router as admin_pacing_router
 from webapp.admin.routers.monitoring_router import router as admin_monitoring_router
 from webapp.admin.routers.skill_builder_router import (
@@ -132,6 +133,7 @@ app.include_router(admin_quests_router)
 app.include_router(admin_world_bosses_router)
 app.include_router(admin_offering_router)
 app.include_router(admin_cards_router)
+app.include_router(admin_seasonal_router)
 app.include_router(admin_pacing_router)
 app.include_router(admin_monitoring_router)
 app.include_router(admin_dashboard_router)

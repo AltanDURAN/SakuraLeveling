@@ -30,6 +30,7 @@ def invalidate_content_caches() -> None:
         ("app.infrastructure.weekly_quests.quest_loader", "clear_cache"),
         ("app.infrastructure.offering.offering_loader", "clear_cache"),
         ("app.infrastructure.cards.card_loader", "clear_cache"),
+        ("app.infrastructure.seasonal.seasonal_loader", "clear_cache"),
     ]
     import importlib
 

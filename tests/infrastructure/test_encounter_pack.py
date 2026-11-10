@@ -92,3 +92,38 @@ def test_la_pleine_lune_multiplie_xp_or_et_le_note_au_recap(session, patch_get_d
     summary = EncounterService().apply_rewards(enc, result)
     assert (summary.rewards[0].xp, summary.rewards[0].gold) == (150, 300)
     assert summary.lunar_note.startswith("🌕 Pleine lune")
+
+
+def test_les_objets_d_evenement_tombent_pour_chaque_monstre_vaincu(session, patch_get_db_session, monkeypatch):
+    """Semaine des sucres d'orge : chaque monstre de la meute en donne un à
+    chaque survivant, sans tirage, et ils s'affichent au récapitulatif."""
+    from app.application.use_cases import seasonal
+    from app.infrastructure.db.repositories.item_repository import ItemRepository
+
+    monkeypatch.setattr(seasonal, "event_drops", lambda now=None: [("sucre_d_orge", 1)])
+    ItemRepository(session).create(
+        code="sucre_d_orge", name="Sucre d'orge", description="", category="resource", rarity="rare",
+        stackable=True, max_stack=None, sell_price=0, buy_price=None, icon=None, stat_bonuses=None,
+        equipment_slot=None, requires_two_hands=False, family="", level_requirement=1, passive="")
+    session.commit()
+    pid = _create_player(session, discord_id=111, name="Alice")
+    _seed_mob(session, code="loup", gold=100, xp=50)
+    _seed_mob(session, code="ours", gold=100, xp=50)
+    enc = _build_encounter([EncounterParticipant(
+        user_id=111, player_id=pid, display_name="Alice", avatar_url="",
+        current_hp=80, max_hp=100, stats=_make_stats())], mob_code="loup")
+    enc.pack = [EncounterMobState(code="ours", name="Ours", image_name="", current_hp=0, max_hp=87,
+                                  attack=9, defense=5, speed=5, crit_chance=0, crit_damage=100,
+                                  dodge=0, hp_regeneration=0)]
+    result = PartyBattleResult(
+        victory=True, turns=9, mob_name="Loup et Ours", mob_image_name="", mob_remaining_hp=0,
+        surviving_players=["Alice"], defeated_players=[], xp_gained=0, gold_gained=0, summary="",
+        turn_logs=[], contributions=[PlayerContribution(
+            player_id=pid, user_id=111, name="Alice", damage_dealt=200, survived=True,
+            final_hp=80, max_hp=100)])
+
+    reward = EncounterService().apply_rewards(enc, result).rewards[0]
+
+    assert ("sucre_d_orge", 2) in reward.items and reward.item_names["sucre_d_orge"] == "Sucre d'orge"
+    assert seasonal.item_quantity(session, pid, "sucre_d_orge") == 2
+
