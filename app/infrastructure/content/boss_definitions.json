@@ -180,7 +180,7 @@
     "code": "stone_colossus",
     "name": "Guerrière Fantôme",
     "description": "Une guerrière tombée il y a des siècles, revenue hanter le champ de bataille. Son armure spectrale ignore les frappes faibles et renvoie une part des coups.",
-    "image_name": "chevalier_de_l_eclipse.png",
+    "image_name": "boss_stone_colossus.png",
     "tier": "medium_hard",
     "level": 60,
     "spawn_weight": 3,
