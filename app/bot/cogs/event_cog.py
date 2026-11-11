@@ -26,6 +26,7 @@ from discord.ext import commands, tasks
 from app.application.services.player_stats_resolver import resolve_player_stats
 from app.application.services.status_effect_resolver import resolve_regen_boosts
 from app.bot.checks.admin_check import admin_only
+from app.bot.embeds import event_embeds
 from app.domain.services.chest_loot_service import ChestLootService
 from app.domain.services.gear_service import FORGE_MAX_LEVEL as MAX_ITEM_LEVEL, gear_label, gear_stats
 from app.domain.services.health_regeneration_service import HealthRegenerationService
@@ -348,14 +349,7 @@ class EventCog(commands.Cog):
             session.commit()
             event_id = ev.id
 
-        embed = discord.Embed(
-            title="🎁 Un coffre au trésor apparaît !",
-            description=(
-                "Un coffre mystérieux se matérialise… **Le premier qui l'ouvre "
-                "rafle le butin !** Serez-vous le plus rapide ?"
-            ),
-            color=discord.Color.gold(),
-        )
+        embed = event_embeds.chest_spawn_embed()
         file = _image_file(config.get("image", ""))
         if file is not None:
             embed.set_image(url=f"attachment://{file.filename}")
@@ -417,11 +411,7 @@ class EventCog(commands.Cog):
         )
         # Édite le message public : coffre ouvert, plus de bouton.
         try:
-            done = discord.Embed(
-                title="🎁 Coffre ouvert !",
-                description=f"{winner_mention} a été le plus rapide et remporte **{reward_text}** !",
-                color=discord.Color.dark_gold(),
-            )
+            done = event_embeds.chest_opened_embed(winner_mention, reward_text)
             if message:
                 await message.edit(embed=done, view=None, attachments=message.attachments)
         except Exception:  # noqa: BLE001
@@ -452,11 +442,7 @@ class EventCog(commands.Cog):
             if channel is None:
                 return
             message = await channel.fetch_message(message_id)
-            embed = discord.Embed(
-                title="💨 Le coffre s'est volatilisé…",
-                description="Personne ne l'a ouvert à temps. Un autre apparaîtra bientôt — ouvre l'œil !",
-                color=discord.Color.dark_grey(),
-            )
+            embed = event_embeds.chest_expired_embed()
             await message.edit(embed=embed, view=None, attachments=message.attachments)
         except discord.HTTPException:
             _logger.info("message du coffre %s introuvable", event_id)
@@ -488,17 +474,7 @@ class EventCog(commands.Cog):
             session.commit()
             event_id = ev.id
 
-        embed = discord.Embed(
-            title="👧 Une petite fille apparaît…",
-            description=(
-                "Une petite fille en pleurs surgit au détour du chemin et implore "
-                "de l'aide. Mais dans ces terres maudites, tout n'est pas ce qu'il "
-                "paraît… **Aider** ou **ignorer** ?\n\n"
-                f"⏳ Le sort de chacun sera scellé dans **{minutes} minutes**. "
-                "Tout le monde peut participer."
-            ),
-            color=discord.Color.purple(),
-        )
+        embed = event_embeds.girl_spawn_embed(minutes)
         file = _image_file(config.get("image", ""))
         if file is not None:
             embed.set_image(url=f"attachment://{file.filename}")
@@ -584,20 +560,16 @@ class EventCog(commands.Cog):
                 self._apply_girl_consequence(session, profile, consequence)
                 tag = self._girl_outcome_tag(consequence, part.choice)
                 lines.append(f"<@{profile.player.discord_id}> · {tag}")
+            # L'issue, pour l'historique de la page Événements du site.
+            choices = [part.choice for part in participations]
+            repo.set_payload(event_id, {"trap": is_trap, "help": choices.count(CHOICE_HELP),
+                                        "ignore": choices.count(CHOICE_IGNORE)})
             session.commit()
 
         await self._edit_girl_result(channel_id, message_id, is_trap, lines)
 
     def _girl_outcome_tag(self, consequence, choice: str) -> str:
-        if consequence.grant_title:
-            return "🛡️ **titre Ma survie avant tout !**"
-        if consequence.buff_multiplier > 0:
-            return f"😇 buff +{round((consequence.buff_multiplier - 1) * 100)}% ({consequence.buff_hours}h)"
-        if consequence.debuff_multiplier > 0:
-            return f"💔 debuff ÷{round(1 / consequence.debuff_multiplier) if consequence.debuff_multiplier else 2} ({consequence.debuff_hours}h)"
-        if consequence.gold_loss > 0 or consequence.halve_hp:
-            return f"😈 −{format_int(consequence.gold_loss)} or & moitié PV"
-        return "🚶 rien"
+        return event_embeds.girl_outcome_tag(consequence)
 
     def _apply_girl_consequence(self, session, profile, consequence) -> None:
         player_id = profile.player.id
@@ -646,34 +618,7 @@ class EventCog(commands.Cog):
             if channel is None:
                 return
             message = await channel.fetch_message(message_id)
-            if is_trap:
-                title = "😈 C'était un piège !"
-                desc = (
-                    "La « petite fille » était un **monstre déguisé** venu piéger "
-                    "les âmes charitables. Ceux qui l'ont aidée l'ont payé cher ; "
-                    "ceux qui l'ont ignorée ont eu le nez creux."
-                )
-                color = discord.Color.dark_red()
-            else:
-                title = "😇 C'était une vraie petite fille."
-                desc = (
-                    "Une enfant réellement perdue. Ceux qui l'ont aidée sont "
-                    "bénis ; ceux qui l'ont ignorée le regrettent amèrement."
-                )
-                color = discord.Color.green()
-            embed = discord.Embed(title=title, description=desc, color=color)
-            if lines:
-                embed.add_field(
-                    name="Sort des participants",
-                    value="\n".join(lines[:20]),
-                    inline=False,
-                )
-            else:
-                embed.add_field(
-                    name="Sort des participants",
-                    value="Personne n'a participé…",
-                    inline=False,
-                )
+            embed = event_embeds.girl_result_embed(is_trap, lines)
             await message.edit(embed=embed, view=None, attachments=message.attachments)
         except Exception:  # noqa: BLE001
             _logger.exception("little girl result edit failed")
@@ -695,17 +640,7 @@ class EventCog(commands.Cog):
             session.commit()
             event_id = ev.id
 
-        embed = discord.Embed(
-            title="🔨 La forge sacrée s'embrase !",
-            description=(
-                "Une forge légendaire apparaît, brûlant d'une flamme divine. "
-                "Pendant **{m} minutes**, chacun peut y **renforcer un seul de ses "
-                "pièces** (une seule fois). Chaque niveau ajoute +1 % aux stats de "
-                "la pièce — jusqu'au **niveau {lv}**.\n\nClique **Forger** "
-                "et choisis ta pièce !"
-            ).format(m=minutes, lv=max_level),
-            color=discord.Color.orange(),
-        )
+        embed = event_embeds.forge_spawn_embed(minutes, max_level)
         file = _image_file(config.get("image", ""))
         if file is not None:
             embed.set_image(url=f"attachment://{file.filename}")
@@ -836,14 +771,7 @@ class EventCog(commands.Cog):
             if channel is None:
                 return
             message = await channel.fetch_message(message_id)
-            embed = discord.Embed(
-                title="🔥 La forge sacrée s'est éteinte.",
-                description=(
-                    f"La flamme divine s'éteint. **{forged_count}** aventurier(s) "
-                    "ont renforcé un équipement."
-                ),
-                color=discord.Color.dark_orange(),
-            )
+            embed = event_embeds.forge_closed_embed(forged_count)
             await message.edit(embed=embed, view=None, attachments=message.attachments)
         except Exception:  # noqa: BLE001
             _logger.exception("sacred forge close edit failed")

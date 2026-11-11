@@ -996,8 +996,17 @@ INTERFACE WEB D'ADMINISTRATION
     utilisable aussi sur téléphone). Les « Actions rapides » permettent aussi
     de demander au bot de faire apparaître un monstre, un boss ou un
     événement.
-    ⚠️ Les fichiers de contenu lus au démarrage (arbre, artisans, zones,
-    événements) demandent un REDÉMARRAGE du bot après modification.
+    ⚠️ Les fichiers de contenu lus au démarrage (arbre, artisans, zones)
+    demandent un REDÉMARRAGE du bot après modification.
+    ÉVÉNEMENTS (Monde › Événements, sans redémarrage) : le coffre, la petite
+    fille et la forge sacrée sur une page. Le message Discord est montré tel
+    que le bot l'écrira, à chaque étape (apparition, coffre ouvert ou
+    volatilisé, vraie petite fille ou piège, forge éteinte) ; on glisse une
+    image dessus pour la changer. Réglages avec leurs chiffres en direct :
+    fréquence (« en moyenne tous les 3 jours »), salon, butin du coffre (objets
+    choisis en image, chances en %, or moyen au niveau choisi), les quatre
+    issues de la petite fille, niveau maximum de la forge. Ce qui s'est passé
+    en vrai sur 30 jours, et un bouton pour le faire apparaître tout de suite.
     FÊTES (Monde › Fêtes, sans redémarrage) : tout se règle en VOYANT le
     résultat. Le calendrier de l'Avent s'affiche tel que les joueurs le
     verront : clique une case pour choisir ce qu'elle contient, et regarde
