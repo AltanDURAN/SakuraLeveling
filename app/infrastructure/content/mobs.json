@@ -530,7 +530,7 @@
     "hp_regeneration": 0,
     "spawn_weight": 40,
     "loot_table": [],
-    "image_name": "",
+    "image_name": "loup_sacre.png",
     "element": "vent",
     "gear_item_code": "croc_du_loup_sacre"
   },
@@ -552,7 +552,7 @@
     "hp_regeneration": 0,
     "spawn_weight": 30,
     "loot_table": [],
-    "image_name": "",
+    "image_name": "cerf_esprit.png",
     "element": "plante",
     "gear_item_code": "ramure_d_esprit"
   },
@@ -574,7 +574,7 @@
     "hp_regeneration": 0,
     "spawn_weight": 25,
     "loot_table": [],
-    "image_name": "",
+    "image_name": "serpent_des_racines.png",
     "element": "plante",
     "gear_item_code": "ecaille_racine"
   },
@@ -596,7 +596,7 @@
     "hp_regeneration": 0,
     "spawn_weight": 20,
     "loot_table": [],
-    "image_name": "",
+    "image_name": "ours_colosse.png",
     "element": "terre",
     "gear_item_code": "pelisse_du_colosse"
   },
@@ -618,7 +618,7 @@
     "hp_regeneration": 0,
     "spawn_weight": 15,
     "loot_table": [],
-    "image_name": "",
+    "image_name": "golem_de_mousse.png",
     "element": "terre",
     "gear_item_code": "coeur_de_mousse"
   },
@@ -640,7 +640,7 @@
     "hp_regeneration": 0,
     "spawn_weight": 10,
     "loot_table": [],
-    "image_name": "",
+    "image_name": "aigle_tempete.png",
     "element": "vent",
     "gear_item_code": "plume_d_orage"
   },
@@ -662,7 +662,7 @@
     "hp_regeneration": 0,
     "spawn_weight": 40,
     "loot_table": [],
-    "image_name": "",
+    "image_name": "chauve_souris_geante.png",
     "element": "tenebre",
     "gear_item_code": "aile_de_nuit"
   },
@@ -684,7 +684,7 @@
     "hp_regeneration": 0,
     "spawn_weight": 30,
     "loot_table": [],
-    "image_name": "",
+    "image_name": "goule.png",
     "element": "tenebre",
     "gear_item_code": "griffes_de_goule"
   },
@@ -706,7 +706,7 @@
     "hp_regeneration": 0,
     "spawn_weight": 25,
     "loot_table": [],
-    "image_name": "",
+    "image_name": "loup_garou.png",
     "element": "",
     "gear_item_code": "fourrure_de_pleine_lune"
   },
@@ -728,7 +728,7 @@
     "hp_regeneration": 0,
     "spawn_weight": 20,
     "loot_table": [],
-    "image_name": "",
+    "image_name": "sorciere_de_sang.png",
     "element": "tenebre",
     "gear_item_code": "capuche_de_sang"
   },
@@ -750,7 +750,7 @@
     "hp_regeneration": 0,
     "spawn_weight": 15,
     "loot_table": [],
-    "image_name": "",
+    "image_name": "chevalier_de_l_eclipse.png",
     "element": "glace",
     "gear_item_code": "ecu_de_l_eclipse"
   },

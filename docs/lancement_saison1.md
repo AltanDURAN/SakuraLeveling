@@ -2,6 +2,10 @@
 
 À dérouler dans l'ordre. Chaque étape dit comment la vérifier. Le lancement se fait depuis Discord : c'est `/admin lancer_saison`, et personne d'autre que toi ne doit le lancer.
 
+**Date retenue : lundi 1er décembre 2026 à 20 h** (décision de l'auteur, 10-11/11/2026), le jour où s'ouvre le calendrier de l'Avent.
+
+Déjà fait le 11/11/2026 : SSH sans mot de passe + pare-feu + fail2ban (`scripts/harden_vps.sh`), bot renommé « Sakura Leveling », salons bêta supprimés, invitation permanente `https://discord.gg/jxEwV9x5pR` (`DISCORD_INVITE_URL`, page d'accueil du site), ébauches de 11 monstres des zones C/B/A (Cloudflare Flux, à remplacer par les tiennes quand tu veux ; les 9 autres monstres, les décors des zones C/B/A, 3 boss, l'arène, Hana et 4 objets de Noël attendent le quota gratuit de Cloudflare, ~38 images par jour), répétition du reset sur une copie de la vraie base (8 joueurs remis au niveau 1, 0 or, inventaires vides, panneau des fêtes conservé).
+
 ## J-7 : la bêta est terminée
 
 - [ ] `.venv/bin/python -m pytest` : tout passe.
@@ -9,8 +13,9 @@
 - [ ] Rythme relu dans Monde › Rythme (temps pour rejoindre, délai entre deux combats). Les heures calmes restent désactivées (0 → 0) : ceux qui jouent la nuit doivent pouvoir farmer.
 - [ ] Après tout changement du moteur, de l'arbre ou des niveaux, contenus recalibrés : `scripts/restat_mobs.py`, `scripts/restat_bosses.py`, `scripts/calibrate_rank_trials.py`, `scripts/build_tower.py`.
 - [ ] `tuto.txt`, `/help` et `/demarrer` relus.
-- [ ] Serveur Discord prêt : annonces, mode Communauté, salons bêta cachés, bot renommé. Le règlement est posté par le bot (texte : `app/infrastructure/content/rules.json`, à relire).
-- [ ] Images : monstres, décors, boss, arène, portrait de Hana.
+- [ ] Serveur Discord prêt : annonces J-7 (24/11) et J-1 (30/11), mode Communauté (si tu le veux). Le règlement est posté par le bot (texte : `app/infrastructure/content/rules.json`, à relire).
+- [ ] Images : les ébauches sont en place ; remplace celles que tu veux (site › Mobs, Zones, World Bosses).
+- [ ] Fêtes de décembre (site › Monde › Fêtes) : si tu as avancé des dates pour tester pendant la bêta, **remets-les** (Avent le 01/12, sucres d'orge du 18 au 24/12, cadeau et atelier du 25 au 31/12, Nouvel An le 01/01/2027). La frise en haut de la page doit montrer décembre.
 
 ## J-1 : déploiement et sauvegardes
 
@@ -24,9 +29,11 @@ ssh sakura-vps "cd /home/ubuntu/SakuraLeveling && bash scripts/deploy_vps.sh"
 - [ ] Le déploiement finit sans erreur, le journal affiche tous les cogs chargés.
 - [ ] Sauvegarde hors serveur récente : `scripts/backup_db_offsite.sh` (ou `scp sakura-vps:~/sakura-backups/lita_v2_latest.db ./`).
 - [ ] La sauvegarde quotidienne tourne (`ls ~/sakura-backups/` sur le VPS, fichier du jour présent).
-- [ ] Répétition sur une copie : `scripts/season_reset.py` en aperçu donne les bons chiffres.
+- [ ] Répétition sur une copie : `scripts/season_reset.py` en aperçu donne les bons chiffres (faite une première fois le 11/11/2026, réussie). Pour la refaire sans risque : `sqlite3 lita_v2.db ".backup /tmp/repet/copie.db"` puis `DATABASE_URL=sqlite:////tmp/repet/copie.db .venv/bin/python -m scripts.season_reset --confirm "SAISON 1"`, et efface `/tmp/repet` ensuite.
 
 ## Jour J : le lancement
+
+Le calendrier de l'Avent s'ouvre à minuit, avant le lancement de 20 h : le bot poste son annonce dans #événements à 0 h. Ce que les joueurs ouvrent avant 20 h est effacé par le reset ; ils rouvrent la case 1 après le lancement, le même jour. L'annonce n'est pas reposée (elle est gardée en base).
 
 Depuis Discord, dans n'importe quel salon :
 
@@ -49,6 +56,7 @@ Vérifications :
 - [ ] Un compte de test ne voit que l'accueil et le règlement. Il accepte le règlement : Rang F, le tutoriel s'ouvre. `/tuto` (la Tour, puis une zone), puis fin ou « Passer » : Aventurier, le général s'ouvre. `/profil` : niveau 1, 0 or, Rang F.
 - [ ] Un monstre apparaît dans la Clairière sinistre ; le bouton Lancer démarre le combat ; le récapitulatif s'affiche, avec le niveau gagné.
 - [ ] `/arbre`, `/stats`, `/forgeron`, `/marchand`, `/quetes` répondent.
+- [ ] `/evenement` : la case 1 du calendrier de l'Avent s'ouvre ; le panneau épinglé de #événements est à jour.
 
 Recours sans le bot (s'il ne répond plus) : `.venv/bin/python -m scripts.season_reset`, puis `--saison 1 --confirm "SAISON 1"`, bot arrêté.
 
@@ -69,6 +77,7 @@ Les rôles Discord reviennent tout seuls au démarrage : le bot rend à chacun c
 - [ ] Le premier raid arrive le lundi où au moins quatre joueurs actifs ont atteint le niveau 15 (`/boss moi` le rappelle aux joueurs).
 - [ ] Mesurer la cadence réelle des combats et relancer le simulateur avec `--cycle`.
 - [ ] Pendant la saison, un déploiement annule les combats en attente (une note s'affiche) : préférer les heures creuses.
+- [ ] Décembre : les sucres d'orge tombent du 18 au 24, le cadeau et l'atelier des lutins ouvrent le 25, le Nouvel An bénit le serveur le 1er janvier (annonces automatiques dans #événements). La lune de sang du 23/12 est annoncée par le bot dans le général 3 h avant.
 
 ## La durée de la saison
 
