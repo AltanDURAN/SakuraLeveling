@@ -266,7 +266,7 @@
     "code": "shadow_wraith",
     "name": "Démon Zombie",
     "description": "Un démon mort depuis des siècles que la corruption fait encore marcher. Sa chair morte ne sent plus la douleur : les coups critiques ne lui font pas plus de mal que les autres, et il se nourrit de vos blessures.",
-    "image_name": "ogre_demoniaque.png",
+    "image_name": "boss_shadow_wraith.png",
     "tier": "hard",
     "level": 80,
     "spawn_weight": 2,
