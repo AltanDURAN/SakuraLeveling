@@ -89,7 +89,7 @@
     "code": "gobelin_warlord",
     "name": "Seigneur de Guerre Gobelin",
     "description": "Le chef d'une horde sanguinaire. Plus il est blessé, plus sa rage l'amplifie, et il appelle des renforts.",
-    "image_name": "gobelin_geant.png",
+    "image_name": "boss_gobelin_warlord.png",
     "tier": "medium",
     "level": 40,
     "spawn_weight": 8,
