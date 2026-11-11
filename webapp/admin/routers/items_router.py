@@ -28,6 +28,7 @@ from app.shared.enums import (
     ItemRarity,
 )
 from app.shared.image_tools import prepare_item_image
+from webapp.admin import item_sources
 from app.shared.paths import ITEMS_ASSETS_DIR
 from webapp.admin import content_sync, git_sync, image_gen
 from webapp.admin.auth import AdminUser, require_admin
@@ -216,23 +217,32 @@ async def items_list(
     with get_db_session() as session:
         # Les cartes à collectionner se gèrent dans cards.json, pas ici.
         items = [i for i in ItemRepository(session).list_all() if i.category != ItemCategory.CARD.value]
+        # D'où vient chaque objet (monstre qui le porte, famille, butin, Elna,
+        # Sorn, fêtes) : affiché sur la carte, filtrable par famille de monstre.
+        sources = item_sources.load(session, {i.code: i.name for i in items})
     items.sort(key=lambda i: (i.category, i.name))
 
     cards = []
     for it in items:
         search = " ".join([
             it.name or "", ITEM_CATEGORY_LABELS.get(it.category, it.category),
-            ITEM_RARITY_LABELS.get(it.rarity, it.rarity), it.family or "",
+            ITEM_RARITY_LABELS.get(it.rarity, it.rarity), it.family or "", sources.search_text(it.code),
         ]).lower()
         cards.append({
             "item": it, "state": _item_card_state(it), "search": search,
             "stat_bonuses": it.stat_bonuses or {},
+            "sources": sources.by_item.get(it.code, []),
+            "families": " ".join(sources.families_of(it.code)),
+            "order": sources.order.get(it.code, {}),
         })
 
     return get_templates().TemplateResponse(
         request, "admin/items/list.html",
         context={
             "user": user, "cards": cards,
+            "mob_families": [{**f, "count": sum(1 for c in cards if f["code"] in c["families"].split())}
+                             for f in sources.families],
+            "no_monster": sum(1 for c in cards if not c["families"]),
             "all_families": sorted({i.family for i in items if i.family}),
             # Une pièce par passif : on indique où chacun est déjà posé.
             "all_passives": [

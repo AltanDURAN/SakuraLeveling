@@ -53,6 +53,15 @@
   .etile .rm { position:absolute; top:.15rem; right:.3rem; cursor:pointer; opacity:.45; font-weight:800; font-size:.78rem; line-height:1; }
   .etile .rm:hover { opacity:1; color:var(--danger); }
   .etile .pct { font-size:.66rem; color:var(--muted); }
+  /* D'où vient l'objet (11/11/2026) : monstre qui le porte, famille, butin, Elna, Sorn, fêtes */
+  .ic-src { list-style:none; margin:0; padding:.55rem .85rem .7rem; display:flex; flex-direction:column; gap:.3rem;
+            border-top:1px dashed var(--border); font-size:.84rem; line-height:1.35; }
+  .ic-src li { display:flex; gap:.45rem; align-items:flex-start; padding:.1rem .3rem; border-radius:8px; cursor:help; }
+  .ic-src li.hl { background:rgba(226,107,164,.14); }
+  .ic-src .i { flex:0 0 1.3rem; text-align:center; }
+  .ic-src .d { color:var(--muted); }
+  .ic-src .more { color:var(--muted); font-size:.78rem; padding-left:2rem; cursor:default; }
+  .ic-src.none { color:var(--muted); font-style:italic; }
   [x-cloak] { display:none !important; }
 </style>
 
@@ -124,11 +133,16 @@ function itemCard(el){
   }
 }
 document.addEventListener('alpine:init', () => {
-  Alpine.store('ifilter', { q:'', cat:'',
+  Alpine.store('ifilter', { q:'', cat:'', fam:'',
     match(el){ const q=this.q.toLowerCase();
       const okQ = !q || (el.dataset.search||'').includes(q);
       const okC = !this.cat || el.dataset.category===this.cat;
-      return okQ && okC; } });
+      const fams = ' ' + (el.dataset.families||'') + ' ';
+      const okF = !this.fam || (this.fam==='__aucun__' ? !fams.trim() : fams.includes(' '+this.fam+' '));
+      return okQ && okC && okF; },
+    // Famille choisie : son matériau d'abord, puis les pièces du monstre le plus faible au plus fort.
+    orderOf(el){ if(!this.fam || this.fam==='__aucun__') return 0;
+      const o = JSON.parse(el.dataset.order||'{}'); return (this.fam in o) ? o[this.fam] : 999; } });
 });
 </script>
 
@@ -271,8 +285,16 @@ document.addEventListener('alpine:init', () => {
 
   <div x-data class="form-row" style="gap:.7rem; margin-bottom:1rem; align-items:flex-end;">
     <label class="field" style="flex:1; min-width:220px;">
-      <span class="field-label">Rechercher (nom, type, rareté, panoplie)</span>
-      <input type="search" class="input" placeholder="épée, ceinture, épique, slime…" x-model="$store.ifilter.q">
+      <span class="field-label">Rechercher (nom, type, rareté, monstre)</span>
+      <input type="search" class="input" placeholder="épée, ceinture, épique, gobelin, Elna…" x-model="$store.ifilter.q">
+    </label>
+    <label class="field" style="max-width:340px;">
+      <span class="field-label">Famille de monstre</span>
+      <select class="input" x-model="$store.ifilter.fam">
+        <option value="">Toutes les familles</option>
+        {% for f in mob_families %}<option value="{{ f.code }}">{{ f.label }} ({{ f.count }}) — {{ f.place }}</option>{% endfor %}
+        <option value="__aucun__">Lâché par aucun monstre ({{ no_monster }})</option>
+      </select>
     </label>
     <label class="field" style="max-width:250px;">
       <span class="field-label">Type</span>
@@ -287,7 +309,7 @@ document.addEventListener('alpine:init', () => {
     <!-- Carte de création -->
     <div class="item-card2" id="new" :class="{'is-open':open}" data-new="1"
          data-item='{{ {"code":"","name":"","description":"","category":"resource","rarity":"common","family":"","passive":"","equipment_slot":"","requires_two_hands":false,"stackable":true,"max_stack":none,"sell_price":0,"buy_price":none,"stats":{},"icon":""}|tojson }}'
-         x-data="itemCard($el)" x-show="!$store.ifilter.q && !$store.ifilter.cat">
+         x-data="itemCard($el)" x-show="!$store.ifilter.q && !$store.ifilter.cat && !$store.ifilter.fam">
       <div class="newcard" x-show="!open" x-on:click="open=true">➕ Nouvel objet</div>
       {{ editor(none, "/admin/items", true) }}
     </div>
@@ -296,8 +318,10 @@ document.addEventListener('alpine:init', () => {
     {% set it = card.item %}
     <div class="item-card2" id="item-{{ it.code }}" :class="{'is-open':open}"
          data-category="{{ it.category }}" data-search="{{ card.search }}"
+         data-families="{{ card.families }}"
+         data-order='{{ card.order|tojson }}'
          data-item='{{ card.state|tojson }}'
-         x-data="itemCard($el)" x-show="$store.ifilter.match($el)">
+         x-data="itemCard($el)" x-show="$store.ifilter.match($el)" :style="{ order: $store.ifilter.orderOf($el) }">
 
       <div class="ic-head">
         <div class="ic-portrait">
@@ -325,7 +349,21 @@ document.addEventListener('alpine:init', () => {
         </div>
       </div>
 
-      <div style="padding:0 .85rem .85rem; display:flex; gap:.5rem;">
+      {% if card.sources %}
+      <ul class="ic-src" aria-label="D'où vient cet objet">
+        {% for src in card.sources[:4] %}
+        <li title="{{ src.tip }}" {% if src.family %}:class="{ hl: $store.ifilter.fam === {{ src.family|tojson|forceescape }} }"{% endif %}>
+          <span class="i">{{ src.icon }}</span>
+          <span><strong>{{ src.text }}</strong>{% if src.detail %} <span class="d">· {{ src.detail }}</span>{% endif %}</span>
+        </li>
+        {% endfor %}
+        {% if card.sources|length > 4 %}<li class="more">+ {{ card.sources|length - 4 }} autre{{ 's' if card.sources|length > 5 }} source{{ 's' if card.sources|length > 5 }}</li>{% endif %}
+      </ul>
+      {% else %}
+      <div class="ic-src none">Ni monstre, ni Elna, ni Sorn : on ne le trouve nulle part.</div>
+      {% endif %}
+
+      <div style="padding:.6rem .85rem .85rem; display:flex; gap:.5rem;">
         <button type="button" class="btn btn-small" style="flex:1;" x-on:click="open=!open" x-text="open ? 'Fermer' : 'Éditer'"></button>
         <form method="post" action="/admin/items/{{ it.code }}/delete" style="margin:0;"
               onsubmit="return confirm('Supprimer « {{ it.name }} » ? (retire aussi des inventaires, sets, shop, crafts)')">
