@@ -2,14 +2,42 @@
 
 {% block title %}{% if edit_code %}Éditer {{ edit_code }}{% else %}Nouveau world boss{% endif %} — Sakura Admin{% endblock %}
 
+{% from "admin/world_bosses/_images.html" import wb_styles, wb_slots, wb_previews, wb_toast, wb_script %}
 {% block content %}
 {% set fd = form_data or {} %}
 <section class="form-page">
     <a href="/admin/world-bosses" class="breadcrumb">← World Bosses</a>
     <h1>{% if edit_code %}Éditer <code>{{ edit_code }}</code>{% else %}Nouveau world boss{% endif %}</h1>
-    <div class="form-section-help" style="background: #fff5d5; padding: 0.8rem 1.2rem; border-radius: 8px;">
-        ⚠️ Modifie <code>boss_definitions.json</code>. Restart du bot requis.
+    {% if created %}<div class="form-section-help" style="background:rgba(78,168,137,.15); padding:.8rem 1.2rem; border-radius:8px;">
+        ✅ Boss créé. Dépose maintenant son image et son arène ci-dessous.</div>{% endif %}
+    {% if saved %}<div class="form-section-help" style="background:rgba(78,168,137,.15); padding:.8rem 1.2rem; border-radius:8px;">
+        ✅ Enregistré.</div>{% endif %}
+    <div class="form-section-help" style="background: var(--bg-soft); padding: 0.8rem 1.2rem; border-radius: 8px;">
+        Modifie <code>boss_definitions.json</code> ; le bot le relit tout seul (au prochain boss — celui en cours garde ses stats).
     </div>
+
+    {% if edit_code and boss %}
+    {{ wb_styles() }}
+    {{ wb_script() }}
+    <script type="application/json" id="wb-data">{{ {"bosses": [boss], "common": {}, "maxMb": max_mb}|tojson }}</script>
+    <div class="form-section" x-data="wbImages(JSON.parse(document.getElementById('wb-data').textContent))">
+        <h2 class="form-section-title">Images</h2>
+        <template x-for="b in bosses" :key="b.code">
+            <div class="wb-card" style="box-shadow:none;">
+                {{ wb_previews(scene=True, banner=False) }}
+                <div class="wb-side">
+                    {{ wb_slots() }}
+                    {{ wb_previews(scene=False, banner=True) }}
+                    <div class="wb-actions">
+                        <button type="button" class="wb-link" x-show="b.arena_origin === 'propre'"
+                                @click="removeArena(b)">Retirer son arène</button>
+                    </div>
+                </div>
+            </div>
+        </template>
+        {{ wb_toast() }}
+    </div>
+    {% endif %}
 
     <form method="post" action="{% if edit_code %}/admin/world-bosses/{{ edit_code }}{% else %}/admin/world-bosses{% endif %}" class="form-grid">
         <div class="form-section">
@@ -40,14 +68,12 @@
             </label>
             <div class="form-row">
                 <label class="field">
-                    <span class="field-label">Image (asset local)</span>
-                    <input type="text" name="image_name" class="input" value="{{ fd.get('image_name', 'boss_default.png') }}" placeholder="boss_default.png">
-                </label>
-                <label class="field">
                     <span class="field-label">Poids de spawn</span>
                     <input type="number" name="spawn_weight" class="input" value="{{ fd.get('spawn_weight', 100) }}">
+                    <span class="field-hint">Ne sert qu'au tirage sans niveaux (le boss de la semaine suit le niveau du serveur).</span>
                 </label>
             </div>
+            {% if not edit_code %}<p class="field-hint">L'image et l'arène se déposent une fois le boss créé.</p>{% endif %}
         </div>
 
         <div class="form-section">
@@ -86,11 +112,18 @@
         </div>
 
         <div class="form-actions">
+            {% if edit_code %}
+            <button type="submit" form="wb-delete" class="btn btn-ghost" style="margin-right:auto; color:var(--danger);">🗑️ Supprimer</button>
+            {% endif %}
             <a href="/admin/world-bosses" class="btn btn-ghost">Annuler</a>
             <button type="submit" class="btn btn-primary">
                 {% if edit_code %}Enregistrer{% else %}Créer le boss{% endif %}
             </button>
         </div>
     </form>
+    {% if edit_code %}
+    <form id="wb-delete" method="post" action="/admin/world-bosses/{{ edit_code }}/delete"
+          onsubmit="return confirm('Supprimer ce boss de boss_definitions.json ? Ses images restent sur le disque.');"></form>
+    {% endif %}
 </section>
 {% endblock %}

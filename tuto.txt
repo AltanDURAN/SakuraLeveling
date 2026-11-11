@@ -1007,6 +1007,13 @@ INTERFACE WEB D'ADMINISTRATION
     Pour tester sur la bêta : avancer les dates, essayer, puis les remettre.
     IMAGES : sur toutes les pages du site, un clic sur une image l'affiche
     en grand (← → pour passer aux autres, Échap pour fermer).
+    WORLD BOSS (Monde › World Bosses, sans redémarrage) : chaque boss tel
+    que les joueurs le voient — une image de la vidéo de l'assaut et la
+    bannière du raid, dessinées par le bot. On y GLISSE son image (fond
+    blanc retiré tout seul ; elle sert aussi au bestiaire et à sa carte) et
+    son ARÈNE (le décor de la vidéo, en portrait 4:5), ou la salle commune
+    des boss qui n'ont pas la leur. Plusieurs images d'un coup : elles se
+    rangent d'après leur nom (« slime_titan.png », « arene_slime_titan.png »).
     RYTHME (Monde › Rythme, sans redémarrage) : délai entre deux monstres
     (fixe ou tiré dans une plage), délai après une fuite, temps pour
     rejoindre (et pour une élite), délai avant le bouton Lancer, heures

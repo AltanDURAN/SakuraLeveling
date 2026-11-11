@@ -190,6 +190,10 @@ def _art_candidates(card: CardDef) -> list[tuple[str, Path]]:
             candidates.append(("monstre", ASSETS / "mobs" / image))
     elif card.category == "personnage" and card.source:
         candidates.append(("portrait", ASSETS / "npcs" / f"{card.source}.png"))
+    elif card.category == "boss" and card.source:
+        # L'image PROPRE du boss (déposée sur le site, World Bosses) ; pas
+        # celle qu'il emprunte à un monstre en attendant.
+        candidates.append(("boss", ASSETS / "mobs" / f"boss_{card.source}.png"))
     candidates.append(("ebauche", DRAFT_ART / f"{card.code}.png"))
     return candidates
 

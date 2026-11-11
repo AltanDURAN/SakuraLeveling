@@ -23,7 +23,7 @@ from PIL import Image, ImageDraw, ImageEnhance
 
 from app.bot.rendering import combat_fx
 from app.bot.rendering.fight_animation import WIDTH, Animation, _values, animate_fight
-from app.bot.rendering.fight_scene import FRAME_H, FRAME_W, Scene, build_scene
+from app.bot.rendering.fight_scene import FRAME_H, FRAME_W, Scene, _player_key, build_scene
 from app.shared.formatters import format_int
 from app.shared.paths import GENERATED_ENCOUNTERS_DIR, LANDSCAPES_ASSETS_DIR
 
@@ -49,15 +49,34 @@ PHASE_MS = 1500
 OUTRO_MS = 2600
 
 
-def arena_path(code: str, element: str = "") -> str:
-    """Le décor de l'assaut : l'arène du boss, la salle commune, ou en
-    attendant le décor de zone de son élément assombri (préparé une fois)."""
-    for name in (f"arene_{code}.png", "arene_boss.png"):
+#: Arène commune : celle de tout boss qui n'a pas la sienne.
+COMMON_ARENA = "arene_boss.png"
+#: D'où vient l'arène d'un boss (cf. `arena_source`).
+ARENA_OWN, ARENA_COMMON, ARENA_ZONE = "propre", "commune", "zone"
+
+
+def own_arena_name(code: str) -> str:
+    return f"arene_{code}.png"
+
+
+def arena_source(code: str, element: str = "") -> tuple[str, Path]:
+    """(origine, fichier) de l'arène : la sienne, la salle commune, ou en
+    attendant le décor de zone de son élément (non assombri ici)."""
+    for origin, name in ((ARENA_OWN, own_arena_name(code)), (ARENA_COMMON, COMMON_ARENA)):
         if (LANDSCAPES_ASSETS_DIR / name).exists():
-            return str(LANDSCAPES_ASSETS_DIR / name)
+            return origin, LANDSCAPES_ASSETS_DIR / name
     source = LANDSCAPES_ASSETS_DIR / _ELEMENT_DECORS.get(element, "berceau_cataclysmique.png")
     if not source.exists():
         source = LANDSCAPES_ASSETS_DIR / "berceau_cataclysmique.png"
+    return ARENA_ZONE, source
+
+
+def arena_path(code: str, element: str = "") -> str:
+    """Le décor de l'assaut : l'arène du boss, la salle commune, ou en
+    attendant le décor de zone de son élément assombri (préparé une fois)."""
+    origin, source = arena_source(code, element)
+    if origin != ARENA_ZONE:
+        return str(source)
     out = GENERATED_ENCOUNTERS_DIR / f"arene_repli_{source.stem}.png"
     if not out.exists():
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -124,6 +143,38 @@ def phase_number(name: str, phases: list[dict]) -> int:
     return 2
 
 
+def assault_scene(*, boss: dict, guards: list[dict], boss_index: int, players: list[dict],
+                  phases: list[dict], background_path: str) -> Scene:
+    """La scène d'un assaut : l'arène, le boss au centre en grand, ses gardes
+    devant lui, la barre géante marquée des phases. UNE source pour la vidéo
+    et l'aperçu du site admin."""
+    mobs = [*guards[:boss_index], boss, *guards[boss_index:]]
+    slots = list(GUARD_SLOTS[: len(guards)])
+    left = [s for s in slots if s["x"] < 0][:boss_index]
+    right = [s for s in slots if s["x"] > 0][: len(guards) - boss_index]
+    formation = [*left, BOSS_SLOT, *right]
+    ticks = tuple(sorted(float(ph.get("below_pct", 0)) / 100 for ph in phases if ph.get("below_pct")))
+    return build_scene(mob=None, players=players, background_path=background_path,
+                       mobs=mobs, formation=formation, boss_index=boss_index, phase_ticks=ticks)
+
+
+def preview_frame(*, boss: dict, guards: list[dict], players: list[dict], phases: list[dict],
+                  background_path: str, boss_hp_pct: float = 0.62) -> Image.Image:
+    """Une image de l'assaut, telle que la vidéo la montre (site admin) :
+    gardes de part et d'autre (cf. `assault_enemies`), boss entamé."""
+    boss_index = (len(guards) + 1) // 2
+    scene = assault_scene(boss=boss, guards=guards, boss_index=boss_index, players=players,
+                          phases=phases, background_path=background_path)
+    mobs = [*guards[:boss_index], boss, *guards[boss_index:]]
+    enemies = {f"e{i}": (int(m["max_hp"]), int(m["max_hp"]), 0) for i, m in enumerate(mobs)}
+    enemies[f"e{boss_index}"] = (int(int(boss["max_hp"]) * boss_hp_pct), int(boss["max_hp"]), 0)
+    players_hp = {_player_key(p, i): (int(p.get("current_hp", p["max_hp"])), int(p["max_hp"]))
+                  for i, p in enumerate(players)}
+    img = scene.static().copy()
+    scene.draw_bars(img, enemies, players_hp)
+    return img
+
+
 def render_boss_video(*, boss: dict, guards: list[dict], boss_index: int, players: list[dict],
                       logs: list, boss_hp_before: int, phases: list[dict], out_path: str | Path,
                       background_path: str, width: int = WIDTH) -> Animation:
@@ -131,14 +182,8 @@ def render_boss_video(*, boss: dict, guards: list[dict], boss_index: int, player
     max_hp, code} ; `players` : {player_id, name, avatar_url, max_hp} ;
     `logs` : les tours du combat."""
     mobs = [*guards[:boss_index], boss, *guards[boss_index:]]
-    slots = list(GUARD_SLOTS[: len(guards)])
-    left = [s for s in slots if s["x"] < 0][:boss_index]
-    right = [s for s in slots if s["x"] > 0][: len(guards) - boss_index]
-    formation = [*left, BOSS_SLOT, *right]
-    ticks = tuple(sorted(float(ph.get("below_pct", 0)) / 100 for ph in phases if ph.get("below_pct")))
-    scene: Scene = build_scene(mob=None, players=players, background_path=background_path,
-                               mobs=mobs, formation=formation, boss_index=boss_index,
-                               phase_ticks=ticks)
+    scene = assault_scene(boss=boss, guards=guards, boss_index=boss_index, players=players,
+                          phases=phases, background_path=background_path)
     start_enemies = {f"e{i}": (int(m["max_hp"]), int(m["max_hp"]), 0) for i, m in enumerate(mobs)}
     start_enemies[f"e{boss_index}"] = (int(boss_hp_before), int(boss["max_hp"]), 0)
     start_players = {f"p{p['player_id']}": (int(p["max_hp"]), int(p["max_hp"])) for p in players}

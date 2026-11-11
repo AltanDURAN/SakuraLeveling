@@ -45,6 +45,7 @@ SIMULATION_RUNS = 150
 ART_KINDS = {"carte": "l'image de la carte", "fullart": "l'illustration pleine carte", "dos": "le dos"}
 ORIGINS = {
     "carte": "🖼️ Image de la carte", "monstre": "👹 Image du monstre", "portrait": "👤 Portrait du personnage",
+    "boss": "🐉 Image du boss",
     "ebauche": "✏️ Ébauche générée", "aucune": "❌ Aucune image",
 }
 

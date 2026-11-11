@@ -1,0 +1,105 @@
+{% extends "admin/base.html" %}
+{% from "admin/world_bosses/_images.html" import wb_styles, wb_slots, wb_previews, wb_toast, wb_script %}
+
+{% block title %}World Bosses — Sakura Admin{% endblock %}
+
+{% block content %}
+{{ wb_styles() }}
+{{ wb_script() }}
+<script type="application/json" id="wb-data">{{ {"bosses": bosses, "common": common, "maxMb": max_mb}|tojson }}</script>
+
+<section x-data="wbImages(JSON.parse(document.getElementById('wb-data').textContent))"
+         @dragover.prevent="pageOver = true" @drop.prevent="dropAll($event)"
+         @dragleave="if (!$event.relatedTarget) pageOver = false">
+    <div class="wb-head">
+        <div>
+            <h1>🐉 World Bosses</h1>
+            <p class="wb-intro">
+                Chaque boss tel que les joueurs le voient : une image de la vidéo de l'assaut et la bannière du raid,
+                dessinées par le code du bot. <strong>Glisse une image sur un boss</strong> : son image (bannière, vidéo,
+                bestiaire, carte) ou son arène (le décor de la vidéo). Dans la vidéo et sur la bannière, le boss est
+                teinté par son élément, comme les monstres. Tout vaut <strong>tout de suite</strong>, sans redémarrer le bot
+                — le boss en cours compris.
+            </p>
+        </div>
+        <a href="/admin/world-bosses/new" class="btn btn-primary">＋ Nouveau boss</a>
+    </div>
+
+    <div class="wb-drop" :class="{ over: pageOver }">
+        <div>
+            <strong>📥 Dépose toutes tes images ici d'un coup</strong>
+            <p>Elles se rangent seules si le fichier porte le code ou le nom du boss (« slime_titan.png »,
+               « Titan Visqueux.png ») ; pour une arène, commence par « arene_ » (« arene_slime_titan.png ») ;
+               « arene_boss.png » est la salle commune. Sinon, glisse chaque image sur son boss.</p>
+        </div>
+        <label class="btn btn-secondary">📂 Choisir des fichiers…
+            <input type="file" multiple accept="image/png,image/jpeg,image/webp,image/gif" hidden @change="pickAll($event)">
+        </label>
+    </div>
+
+    <div class="wb-list">
+        <template x-for="b in bosses" :key="b.code">
+            <article class="wb-card">
+                {{ wb_previews(scene=True, banner=False) }}
+                <div class="wb-side">
+                    <div class="wb-title">
+                        <h2 x-text="b.name"></h2>
+                        <span class="wb-meta">
+                            <span x-text="'Niveau ' + b.level"></span> · <span x-text="b.element_label"></span>
+                            <template x-if="b.guards"><span> · gardes : <span x-text="b.guards"></span></span></template>
+                        </span>
+                    </div>
+                    {{ wb_slots() }}
+                    {{ wb_previews(scene=False, banner=True) }}
+                    <div class="wb-actions">
+                        <a class="btn btn-ghost btn-small" :href="b.edit_url">✏️ Stats et textes</a>
+                        <a class="btn btn-ghost btn-small" x-show="b.card_url" :href="b.card_url">🎴 Sa carte</a>
+                        <button type="button" class="wb-link" x-show="b.arena_origin === 'propre'"
+                                @click="removeArena(b)">Retirer son arène</button>
+                    </div>
+                </div>
+            </article>
+        </template>
+
+        <article class="wb-card">
+            <figure class="wb-preview is-scene">
+                <template x-if="common.exists"><img :src="common.url" alt="Salle commune"></template>
+                <template x-if="!common.exists">
+                    <div class="wb-checker" style="aspect-ratio:1080/1350; border-radius:12px; display:flex;
+                         align-items:center; justify-content:center; color:var(--text-soft); text-align:center; padding:1rem;">
+                        Pas encore de salle commune
+                    </div>
+                </template>
+                <figcaption>🏛️ La salle commune</figcaption>
+            </figure>
+            <div class="wb-side">
+                <div class="wb-title"><h2>🏛️ Salle commune</h2></div>
+                <p class="wb-meta" style="margin:0;">
+                    L'arène de tout boss qui n'a pas la sienne. Sans elle, chaque boss combat devant le décor de zone de son
+                    élément, assombri (en attendant).
+                </p>
+                <div class="wb-slots">
+                    <label class="wb-slot" :class="{ over: over === key(null, 'arena'), busy: busy[key(null, 'arena')] }"
+                           @dragover.prevent.stop="over = key(null, 'arena')" @dragleave="over = ''"
+                           @drop.prevent.stop="drop($event, null, 'arena')">
+                        <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" @change="pick($event, null, 'arena')">
+                        <span class="wb-thumb is-arena wb-checker"><img x-show="common.url" :src="common.url" alt=""></span>
+                        <span class="wb-slot-text">
+                            <strong>🏟️ Salle commune</strong>
+                            <span class="wb-badge" :class="common.exists ? 'is-propre' : 'is-zone'"
+                                  x-text="common.exists ? '✅ En place' : '⏳ Pas encore'"></span>
+                            <small>Portrait 4:5 (idéal 1080 × 1350).</small>
+                        </span>
+                        <span class="wb-spin" x-show="busy[key(null, 'arena')]" x-cloak>⏳ envoi…</span>
+                    </label>
+                </div>
+                <div class="wb-actions">
+                    <button type="button" class="wb-link" x-show="common.exists" @click="removeArena(null)">Retirer la salle commune</button>
+                </div>
+            </div>
+        </article>
+    </div>
+
+    {{ wb_toast() }}
+</section>
+{% endblock %}

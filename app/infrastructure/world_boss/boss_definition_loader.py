@@ -1,8 +1,8 @@
 """Loader des définitions de world boss (cache module-level).
 
-Pattern identique à `skill_tree_loader` : on parse le JSON une seule fois
-au premier appel et on garde le résultat en mémoire. Pour rafraîchir
-(édition à chaud du JSON), appeler `clear_cache()`.
+Le JSON est relu dès qu'il change (date de modification) : une image ou une
+fiche modifiée depuis le site vaut au prochain boss SANS redémarrer le bot
+(11/11/2026). `clear_cache()` force la relecture (tests).
 """
 
 import json
@@ -22,6 +22,7 @@ CONTENT_PATH = (
 
 
 _definitions_cache: list[BossDefinition] | None = None
+_cache_mtime: float | None = None
 
 
 def _load() -> list[BossDefinition]:
@@ -56,10 +57,19 @@ def _load() -> list[BossDefinition]:
     ]
 
 
+def _mtime() -> float | None:
+    try:
+        return CONTENT_PATH.stat().st_mtime
+    except OSError:
+        return None
+
+
 def list_definitions() -> list[BossDefinition]:
-    global _definitions_cache
-    if _definitions_cache is None:
+    global _definitions_cache, _cache_mtime
+    mtime = _mtime()
+    if _definitions_cache is None or mtime != _cache_mtime:
         _definitions_cache = _load()
+        _cache_mtime = mtime
     return _definitions_cache
 
 
@@ -89,5 +99,6 @@ def pick_random_definition(
 
 def clear_cache() -> None:
     """Force le re-chargement du JSON (utile pour les tests)."""
-    global _definitions_cache
+    global _definitions_cache, _cache_mtime
     _definitions_cache = None
+    _cache_mtime = None

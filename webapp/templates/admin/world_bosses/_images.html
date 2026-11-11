@@ -1,0 +1,283 @@
+{#
+  Images des world boss (11/11/2026) : partagé par la galerie et la fiche.
+
+  Le composant Alpine `wbImages(cfg)` tient la liste des boss (`bosses`,
+  états calculés par `world_bosses_router._state`) ; chaque dépôt part tout
+  de suite (`POST /admin/world-bosses/<code>/image`) et la réponse remplace
+  l'état du boss, ce qui recharge ses aperçus (`version`).
+
+  `wb_styles()` et `wb_script()` une fois par page ; `wb_slots()` dans une
+  portée où `b` est un boss.
+#}
+
+{% macro wb_styles() %}
+<style>
+  [x-cloak] { display:none !important; }
+  .wb-head { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap; }
+  .wb-intro { color:var(--text-soft); max-width:82ch; margin:.2rem 0 0; line-height:1.5; }
+  .wb-drop { margin:1rem 0 1.4rem; padding:1rem 1.2rem; border:2px dashed var(--border-strong); border-radius:var(--radius-lg);
+             background:var(--bg-soft); display:flex; gap:1rem; align-items:center; justify-content:space-between; flex-wrap:wrap;
+             transition:border-color .15s, background .15s; }
+  .wb-drop.over { border-color:var(--accent); background:var(--accent-soft); }
+  .wb-drop p { margin:.25rem 0 0; color:var(--text-soft); font-size:.88rem; line-height:1.45; max-width:90ch; }
+  .wb-list { display:flex; flex-direction:column; gap:1.2rem; }
+  .wb-card { display:grid; grid-template-columns:minmax(200px, 270px) 1fr; gap:1.2rem; padding:1rem;
+             background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); }
+  .wb-side { display:flex; flex-direction:column; gap:.8rem; min-width:0; }
+  .wb-title { display:flex; align-items:baseline; gap:.6rem; flex-wrap:wrap; }
+  .wb-title h2 { margin:0; font-size:1.3rem; }
+  .wb-meta { color:var(--text-soft); font-size:.88rem; }
+  .wb-preview { position:relative; margin:0; }
+  .wb-preview img { display:block; width:100%; border-radius:12px; background:var(--bg-soft); cursor:zoom-in; }
+  .wb-preview.is-scene img { aspect-ratio:1080/1350; object-fit:cover; }
+  .wb-preview.is-banner { max-width:620px; }
+  .wb-preview.is-banner img { aspect-ratio:1280/760; object-fit:cover; }
+  .wb-preview figcaption { font-size:.78rem; color:var(--text-soft); margin-top:.3rem; }
+  .wb-preview .wb-wait { position:absolute; inset:0 0 1.4rem 0; display:flex; align-items:center; justify-content:center;
+                         background:rgba(20,10,25,.45); color:#fff; border-radius:12px; font-weight:600; }
+  .wb-slots { display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:.7rem; }
+  .wb-slot { position:relative; display:flex; gap:.8rem; align-items:center; padding:.7rem; cursor:pointer;
+             border:2px dashed var(--border-strong); border-radius:14px; background:var(--bg-soft);
+             transition:border-color .15s, background .15s, transform .15s; }
+  .wb-slot:hover { border-color:var(--accent); }
+  .wb-slot.over { border-color:var(--accent); background:var(--accent-soft); transform:scale(1.01); }
+  .wb-slot.busy { opacity:.65; pointer-events:none; }
+  .wb-slot input[type=file] { display:none; }
+  .wb-thumb { flex:0 0 auto; width:92px; height:92px; border-radius:10px; overflow:hidden; display:flex;
+              align-items:center; justify-content:center; font-size:2rem; color:var(--text-faint); }
+  .wb-thumb img { max-width:100%; max-height:100%; display:block; }
+  .wb-thumb.is-arena { width:74px; height:92px; }
+  .wb-thumb.is-arena img { width:100%; height:100%; object-fit:cover; }
+  .wb-checker { background-color:#e9e3ec;
+                background-image:linear-gradient(45deg,#d6cdd9 25%,transparent 25%),linear-gradient(-45deg,#d6cdd9 25%,transparent 25%),
+                                 linear-gradient(45deg,transparent 75%,#d6cdd9 75%),linear-gradient(-45deg,transparent 75%,#d6cdd9 75%);
+                background-size:16px 16px; background-position:0 0,0 8px,8px -8px,-8px 0; }
+  .wb-slot-text { display:flex; flex-direction:column; gap:.25rem; min-width:0; }
+  .wb-slot-text small { color:var(--text-soft); font-size:.78rem; line-height:1.35; }
+  .wb-badge { align-self:flex-start; font-size:.74rem; padding:.08rem .5rem; border-radius:999px; border:1px solid var(--border-strong); }
+  .wb-badge.is-propre { background:rgba(78,168,137,.16); border-color:rgba(78,168,137,.5); }
+  .wb-badge.is-empruntee, .wb-badge.is-zone { background:rgba(217,148,84,.16); border-color:rgba(217,148,84,.5); }
+  .wb-badge.is-aucune { background:rgba(227,73,106,.14); border-color:rgba(227,73,106,.45); }
+  .wb-badge.is-commune { background:var(--violet-soft); border-color:var(--violet); }
+  .wb-spin { position:absolute; right:.7rem; top:.6rem; font-size:.8rem; color:var(--text-soft); }
+  .wb-actions { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
+  .wb-link { background:none; border:0; padding:0; color:var(--text-soft); text-decoration:underline; cursor:pointer; font-size:.82rem; }
+  .wb-toast { position:fixed; right:1.2rem; bottom:1.2rem; z-index:60; max-width:min(440px, calc(100vw - 2.4rem));
+              padding:.8rem 1rem; border-radius:12px; box-shadow:var(--shadow-lg); border:1px solid; line-height:1.45; font-size:.9rem; }
+  .wb-toast.ok { background:#eaf7f1; border-color:#8fd0b5; color:#1d4a3a; }
+  .wb-toast.err { background:#fdecef; border-color:#f0a3b4; color:#6b1d2e; }
+  [data-theme=dark] .wb-toast.ok { background:#163229; color:#c9f0de; border-color:#2f6e57; }
+  [data-theme=dark] .wb-toast.err { background:#3a1621; color:#ffd2dc; border-color:#7a2f43; }
+  [data-theme=dark] .wb-checker { background-color:#3a3340;
+                background-image:linear-gradient(45deg,#2c2633 25%,transparent 25%),linear-gradient(-45deg,#2c2633 25%,transparent 25%),
+                                 linear-gradient(45deg,transparent 75%,#2c2633 75%),linear-gradient(-45deg,transparent 75%,#2c2633 75%); }
+  @media (max-width: 760px) {
+    .wb-card { grid-template-columns:1fr; }
+    .wb-preview.is-scene { max-width:320px; }
+  }
+</style>
+{% endmacro %}
+
+{% macro wb_slots() %}
+<div class="wb-slots">
+    <label class="wb-slot" :class="{ over: over === key(b, 'boss'), busy: busy[key(b, 'boss')] }"
+           @dragover.prevent.stop="over = key(b, 'boss')" @dragleave="over = ''"
+           @drop.prevent.stop="drop($event, b, 'boss')">
+        <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" @change="pick($event, b, 'boss')">
+        <span class="wb-thumb wb-checker">
+            <img x-show="b.image_url" :src="b.image_url" alt="">
+            <span x-show="!b.image_url">?</span>
+        </span>
+        <span class="wb-slot-text">
+            <strong>🐉 Image du boss</strong>
+            <span class="wb-badge" :class="'is-' + b.image_origin" x-text="imageBadge(b)"></span>
+            <small>Glisse une image ici, ou clique. Un PNG au fond transparent de préférence ; un fond blanc est retiré tout seul.</small>
+        </span>
+        <span class="wb-spin" x-show="busy[key(b, 'boss')]" x-cloak>⏳ envoi…</span>
+    </label>
+    <label class="wb-slot" :class="{ over: over === key(b, 'arena'), busy: busy[key(b, 'arena')] }"
+           @dragover.prevent.stop="over = key(b, 'arena')" @dragleave="over = ''"
+           @drop.prevent.stop="drop($event, b, 'arena')">
+        <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" @change="pick($event, b, 'arena')">
+        <span class="wb-thumb is-arena wb-checker">
+            <img x-show="b.arena_url" :src="b.arena_url" alt="">
+        </span>
+        <span class="wb-slot-text">
+            <strong>🏟️ Arène de l'assaut</strong>
+            <span class="wb-badge" :class="'is-' + b.arena_origin" x-text="arenaBadge(b)"></span>
+            <small>Le décor de la vidéo, en portrait 4:5 (idéal 1080 × 1350) : le centre d'une image plus large est gardé.</small>
+        </span>
+        <span class="wb-spin" x-show="busy[key(b, 'arena')]" x-cloak>⏳ envoi…</span>
+    </label>
+</div>
+{% endmacro %}
+
+{% macro wb_previews(scene=True, banner=True) %}
+{% if scene %}
+<figure class="wb-preview is-scene">
+    <img :src="sceneUrl(b)" loading="lazy" :alt="'Assaut contre ' + b.name">
+    <span class="wb-wait" x-show="busy[key(b, 'boss')] || busy[key(b, 'arena')]" x-cloak>⏳</span>
+    <figcaption>🎬 La vidéo de l'assaut (une image)</figcaption>
+</figure>
+{% endif %}
+{% if banner %}
+<figure class="wb-preview is-banner">
+    <img :src="bannerUrl(b)" loading="lazy" :alt="'Bannière du raid : ' + b.name">
+    <span class="wb-wait" x-show="busy[key(b, 'boss')]" x-cloak>⏳</span>
+    <figcaption>🖼️ La bannière du raid, dans le salon du boss (clique pour agrandir)</figcaption>
+</figure>
+{% endif %}
+{% endmacro %}
+
+{% macro wb_toast() %}
+<div class="wb-toast" :class="toast && toast.kind" x-show="toast" x-cloak x-transition @click="toast = null">
+    <span x-text="toast && toast.text"></span>
+</div>
+{% endmacro %}
+
+{% macro wb_script() %}
+<script>
+function wbImages(cfg) {
+    return {
+        bosses: cfg.bosses,
+        common: cfg.common,
+        maxBytes: (cfg.maxMb || 8) * 1024 * 1024,
+        busy: {},
+        over: '',
+        pageOver: false,
+        toast: null,
+        _toastTimer: null,
+
+        key(b, slot) { return (b ? b.code : '_') + ':' + slot; },
+        sceneUrl(b) { return `/admin/world-bosses/${b.code}/scene.jpg?v=${b.version}`; },
+        bannerUrl(b) { return `/admin/world-bosses/${b.code}/banner.png?v=${b.version}`; },
+        imageBadge(b) {
+            if (b.image_origin === 'propre') return '✅ Son image';
+            if (b.image_origin === 'empruntee')
+                return b.borrowed_from ? `⚠️ Empruntée à « ${b.borrowed_from} »` : '⚠️ Empruntée à un monstre';
+            return '❌ Aucune image';
+        },
+        arenaBadge(b) {
+            if (b.arena_origin === 'propre') return '✅ Son arène';
+            if (b.arena_origin === 'commune') return '🏛️ La salle commune';
+            return '⏳ Décor de zone, en attendant';
+        },
+        say(kind, text) {
+            this.toast = { kind, text };
+            clearTimeout(this._toastTimer);
+            this._toastTimer = setTimeout(() => { this.toast = null; }, kind === 'ok' ? 6000 : 12000);
+        },
+        apply(j) {
+            if (j.common) this.common = j.common;
+            if (j.bosses) {
+                for (const fresh of j.bosses) {
+                    const i = this.bosses.findIndex(x => x.code === fresh.code);
+                    if (i >= 0) this.bosses[i] = fresh;
+                }
+            }
+            if (j.boss) {
+                const i = this.bosses.findIndex(x => x.code === j.boss.code);
+                if (i >= 0) this.bosses[i] = j.boss;
+            }
+        },
+        async post(url, body) {
+            const r = await fetch(url, { method: 'POST', body });
+            const j = await r.json().catch(() => ({}));
+            if (!r.ok || !j.ok) throw new Error(j.error || `Le serveur a répondu ${r.status}.`);
+            this.apply(j);
+            return j;
+        },
+        async send(b, slot, file) {
+            if (!file) return;
+            if (!/^image\//.test(file.type)) { this.say('err', `« ${file.name} » n'est pas une image.`); return; }
+            if (file.size > this.maxBytes) {
+                this.say('err', `« ${file.name} » est trop lourde (${(file.size / 1048576).toFixed(1)} Mo, max ${cfg.maxMb} Mo).`);
+                return;
+            }
+            const k = this.key(b, slot);
+            this.busy[k] = true;
+            const fd = new FormData();
+            fd.append('image', file);
+            fd.append('slot', slot);
+            try {
+                const j = await this.post(b ? `/admin/world-bosses/${b.code}/image` : '/admin/world-bosses/arena-commune', fd);
+                const what = slot === 'arena' ? (b ? `L'arène de ${b.name}` : 'La salle commune') : `L'image de ${b.name}`;
+                this.say('ok', `${what} est enregistrée.` + (j.notes && j.notes.length ? ' ' + j.notes.join(' ') : ''));
+            } catch (e) {
+                this.say('err', e.message);
+            } finally {
+                delete this.busy[k];
+            }
+        },
+        drop(ev, b, slot) {
+            this.over = '';
+            this.pageOver = false;
+            const files = [...(ev.dataTransfer ? ev.dataTransfer.files : [])];
+            if (files.length > 1) this.say('err', 'Une seule image par emplacement : la première est gardée.');
+            this.send(b, slot, files[0]);
+        },
+        pick(ev, b, slot) {
+            this.send(b, slot, ev.target.files[0]);
+            ev.target.value = '';
+        },
+        async removeArena(b) {
+            const label = b ? `l'arène de ${b.name}` : 'la salle commune';
+            if (!confirm(`Retirer ${label} ?`)) return;
+            const k = this.key(b, 'arena');
+            this.busy[k] = true;
+            try {
+                await this.post(b ? `/admin/world-bosses/${b.code}/arena/delete` : '/admin/world-bosses/arena-commune/delete',
+                                new FormData());
+                this.say('ok', b ? `${b.name} reprend ${this.common.exists ? 'la salle commune' : 'le décor de zone de son élément'}.`
+                                 : 'Salle commune retirée.');
+            } catch (e) {
+                this.say('err', e.message);
+            } finally {
+                delete this.busy[k];
+            }
+        },
+
+        // ---- plusieurs images d'un coup, rangées d'après le nom du fichier
+        norm(s) {
+            return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+                .replace(/\.[a-z0-9]+$/, '').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+        },
+        match(filename) {
+            let n = this.norm(filename);
+            let slot = 'boss';
+            const arena = n.match(/^(arene|arena|decor)(_|$)(.*)$/);
+            if (arena) { slot = 'arena'; n = arena[3]; }
+            if (slot === 'arena' && ['', 'boss', 'commune', 'salle', 'salle_commune'].includes(n)) return { b: null, slot };
+            if (n.startsWith('boss_')) n = n.slice(5);
+            const exact = this.bosses.find(b => n === b.code || n === this.norm(b.name));
+            if (exact) return { b: exact, slot };
+            const loose = this.bosses.filter(b => n.includes(b.code) || n.includes(this.norm(b.name)));
+            return loose.length === 1 ? { b: loose[0], slot } : null;
+        },
+        async sendAll(files) {
+            const unknown = [];
+            let done = 0;
+            for (const f of files) {
+                const m = this.match(f.name);
+                if (!m) { unknown.push(f.name); continue; }
+                await this.send(m.b, m.slot, f);
+                done += 1;
+            }
+            if (unknown.length) {
+                this.say('err', `Pas reconnue${unknown.length > 1 ? 's' : ''} : ${unknown.join(', ')} — glisse-la directement sur le bon boss.`
+                                + (done ? ` (${done} autre${done > 1 ? 's' : ''} rangée${done > 1 ? 's' : ''})` : ''));
+            }
+        },
+        dropAll(ev) {
+            this.pageOver = false;
+            this.over = '';
+            this.sendAll([...(ev.dataTransfer ? ev.dataTransfer.files : [])]);
+        },
+        pickAll(ev) {
+            this.sendAll([...ev.target.files]);
+            ev.target.value = '';
+        },
+    };
+}
+</script>
+{% endmacro %}

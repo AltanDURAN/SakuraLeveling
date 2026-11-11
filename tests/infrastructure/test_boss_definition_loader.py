@@ -89,3 +89,24 @@ def test_each_boss_has_an_element():
     }
     for code, elem in expected.items():
         assert get_definition(code).element == elem
+
+
+def test_le_fichier_est_relu_quand_il_change(tmp_path, monkeypatch):
+    """Une fiche ou une image changée sur le site vaut sans redémarrer le bot."""
+    import json
+    import os
+
+    from app.infrastructure.world_boss import boss_definition_loader as loader
+
+    copy = tmp_path / "boss_definitions.json"
+    copy.write_text(loader.CONTENT_PATH.read_text(encoding="utf-8"), encoding="utf-8")
+    monkeypatch.setattr(loader, "CONTENT_PATH", copy)
+    clear_cache()
+    assert get_definition("slime_titan").image_name != "boss_slime_titan.png"
+    data = json.loads(copy.read_text(encoding="utf-8"))
+    next(b for b in data if b["code"] == "slime_titan")["image_name"] = "boss_slime_titan.png"
+    copy.write_text(json.dumps(data), encoding="utf-8")
+    stat = copy.stat()
+    os.utime(copy, (stat.st_atime, stat.st_mtime + 5))
+    assert get_definition("slime_titan").image_name == "boss_slime_titan.png"
+    clear_cache()

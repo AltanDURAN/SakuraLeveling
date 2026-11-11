@@ -94,3 +94,21 @@ def test_les_monstres_dessines_ont_leur_image_de_carte():
     for card in card_loader.list_cards():
         if card.category == "monstre" and card.source in drawn:
             assert card_loader.art_path(card) is not None, card.code
+
+
+def test_un_boss_prete_son_image_propre_a_sa_carte(tmp_path, monkeypatch):
+    """L'image déposée sur le site (boss_<code>.png) passe avant l'ébauche ;
+    celle qu'il emprunte à un monstre en attendant, jamais."""
+    card = card_loader.get_card("slime_titan")
+    assert card is not None and card.category == "boss"
+    assets = tmp_path / "assets"
+    (assets / "mobs").mkdir(parents=True)
+    (assets / "cards" / "ebauches").mkdir(parents=True)
+    monkeypatch.setattr(card_loader, "ASSETS", assets)
+    monkeypatch.setattr(card_loader, "CARD_ART", assets / "cards")
+    monkeypatch.setattr(card_loader, "DRAFT_ART", assets / "cards" / "ebauches")
+    (assets / "cards" / "ebauches" / "slime_titan.png").write_bytes(b"x")
+    (assets / "mobs" / "slime.png").write_bytes(b"x")
+    assert card_loader.art_origin(card) == "ebauche"
+    (assets / "mobs" / "boss_slime_titan.png").write_bytes(b"x")
+    assert card_loader.art_origin(card) == "boss"

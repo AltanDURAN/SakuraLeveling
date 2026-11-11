@@ -1,78 +1,372 @@
-"""Admin : WORLD BOSS (boss_definitions.json) — liste, création, édition,
-suppression. Les capacités se recalculent avec `scripts/restat_bosses.py`.
-Découpé de `content_router.py` le 26/10/2026 (roadmap N6).
+"""Admin : WORLD BOSS (boss_definitions.json) — galerie, images, création,
+édition, suppression. Les capacités se recalculent avec
+`scripts/restat_bosses.py`. Découpé de `content_router.py` le 26/10/2026
+(roadmap N6).
+
+Images (11/11/2026, demande de l'auteur : « que je dépose les images des
+boss ») : la page montre chaque boss tel que les joueurs le voient — une
+image de la VIDÉO de l'assaut et la BANNIÈRE du raid, rendues par le code du
+bot — et l'on y GLISSE l'image du boss (détourée si elle est sur fond blanc,
+rangée en `assets/mobs/boss_<code>.png`) ou son ARÈNE (le décor de la vidéo,
+`assets/landscapes/arene_<code>.png` ; sinon la salle commune
+`arene_boss.png`). Le fichier des boss et le boss en cours (base) suivent
+tout de suite : pas de redémarrage du bot.
 """
 
 from __future__ import annotations
 
+import io
+import logging
+import math
+import tempfile
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
+from PIL import Image
+from sqlalchemy import update
 
-from webapp.admin.auth import AdminUser, require_admin
+from app.bot.rendering import boss_fight_video as bfv
+from app.bot.rendering import fight_scene
+from app.infrastructure.db.models.world_boss_model import WorldBossModel
+from app.infrastructure.db.session import get_db_session
+from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
+from app.shared.image_tools import MOB_MAX_SIDE, cut_out_white, has_white_background, shrink
+from webapp.admin import git_sync, scene_helpers
 from webapp.admin._shared import get_templates
+from webapp.admin.auth import AdminUser, require_admin
 from webapp.admin.json_writer import append_to_list, load_json as _writer_load
-from webapp.admin.routers._content_common import _load_json, _parse_int, _parse_kv_pairs, _filter_rows, _render, _fmt_kv_pairs, _delete_from_list
+from webapp.admin.routers._content_common import _load_json, _parse_int, _parse_kv_pairs, _fmt_kv_pairs, _delete_from_list
+from webapp.admin.uploads import MAX_UPLOAD_BYTES
+
+_logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin", tags=["admin-world-bosses"])
 
+_FILE = "boss_definitions.json"
+#: PV du boss sur les aperçus (entamé : on voit la barre et ses phases).
+PREVIEW_HP_PCT = 0.62
+#: En dessous, une arène en paysage est trop rognée : on prévient.
+ARENA_VISIBLE_WARN = 0.75
+#: Au-delà de cet agrandissement, l'arène devient floue : on prévient.
+ARENA_UPSCALE_WARN = 1.15
+
+
+def own_image_name(code: str) -> str:
+    """L'image PROPRE d'un boss (celle que dépose l'auteur)."""
+    return f"boss_{code}.png"
+
+
+def _mobs_dir() -> Path:
+    return fight_scene.MOBS_ASSETS_DIR          # là où le bot lit les images (patchable en test)
+
+
+def _arena_dir() -> Path:
+    return bfv.LANDSCAPES_ASSETS_DIR
+
+
+def _mtime(path: Path | None) -> int:
+    try:
+        return int(path.stat().st_mtime) if path is not None else 0
+    except OSError:
+        return 0
+
+
+def _bosses() -> list[dict]:
+    data = _load_json(_FILE) or []
+    return sorted(data, key=lambda b: (int(b.get("level", 0) or 0), b.get("name", "")))
+
+
+def _boss(code: str) -> dict | None:
+    return next((b for b in _load_json(_FILE) or [] if b.get("code") == code), None)
+
+
+def _mob_names_by_image() -> dict[str, str]:
+    raw = _writer_load("mobs.json", default=[]) or []
+    mobs = raw if isinstance(raw, list) else raw.get("mobs", [])
+    return {m.get("image_name"): m.get("name", "") for m in mobs if m.get("image_name")}
+
+
+def _card_codes() -> set[str]:
+    raw = _writer_load("cards.json", default={}) or {}
+    return {c.get("code") for c in raw.get("cards", [])} if isinstance(raw, dict) else set()
+
+
+def _guards_label(guards: list[dict]) -> str:
+    counts: dict[str, int] = {}
+    for g in guards or []:
+        counts[g.get("name", "Garde")] = counts.get(g.get("name", "Garde"), 0) + 1
+    return " · ".join(f"{name} ×{n}" if n > 1 else name for name, n in counts.items())
+
+
+def _state(b: dict, mob_names: dict[str, str] | None = None, cards: set[str] | None = None) -> dict:
+    """Ce que la page montre d'un boss : son image, son arène, d'où elles viennent."""
+    code, element = b.get("code", ""), b.get("element", "") or ""
+    image = b.get("image_name", "") or ""
+    image_path = _mobs_dir() / image if image else None
+    has_image = bool(image_path and image_path.is_file())
+    if not has_image:
+        image_origin = "aucune"
+    elif image == own_image_name(code):
+        image_origin = "propre"
+    else:
+        image_origin = "empruntee"
+    arena_origin, arena_path = bfv.arena_source(code, element)
+    names = mob_names if mob_names is not None else _mob_names_by_image()
+    version = f"{_mtime(image_path)}-{_mtime(arena_path)}"
+    return {
+        "code": code, "name": b.get("name", code), "level": int(b.get("level", 0) or 0),
+        "tier": b.get("tier", ""), "element": element,
+        "element_label": f"{ELEMENT_EMOJIS.get(element, '')} {ELEMENT_LABELS.get(element, element)}".strip()
+                         if element else "Neutre",
+        "guards": _guards_label(b.get("guards") or []),
+        "image": image, "image_origin": image_origin,
+        "image_url": f"/assets/mobs/{image}?v={_mtime(image_path)}" if has_image else "",
+        "borrowed_from": names.get(image, "") if image_origin == "empruntee" else "",
+        "arena_origin": arena_origin, "arena_name": arena_path.name,
+        "arena_url": f"/assets/landscapes/{arena_path.name}?v={_mtime(arena_path)}" if arena_path.is_file() else "",
+        "version": version,
+        "edit_url": f"/admin/world-bosses/{code}/edit",
+        "card_url": f"/admin/cards/{code}" if code in (cards if cards is not None else _card_codes()) else "",
+    }
+
+
+def _common_arena() -> dict:
+    path = _arena_dir() / bfv.COMMON_ARENA
+    return {"exists": path.is_file(),
+            "url": f"/assets/landscapes/{bfv.COMMON_ARENA}?v={_mtime(path)}" if path.is_file() else ""}
+
 
 @router.get("/world-bosses", response_class=HTMLResponse)
-async def world_bosses_list(
-    request: Request,
-    user: AdminUser = Depends(require_admin),
-    q: str | None = None,
-    tier: str | None = None,
-):
-    data = _load_json("boss_definitions.json") or []
-    rows = []
-    tiers: set[str] = set()
-    for b in data:
-        if b.get("tier"):
-            tiers.add(b["tier"])
-        mods = b.get("modifiers") or {}
-        mods_str = ", ".join(f"{k}={v}" for k, v in mods.items()) or "—"
-        rows.append({
-            "code": b.get("code", ""),
-            "name": b.get("name", ""),
-            "tier": b.get("tier", "—"),
-            "max_hp": b.get("max_hp", 0),
-            "attack": b.get("attack", 0),
-            "defense": b.get("defense", 0),
-            "speed": b.get("speed", 0),
-            "spawn_weight": b.get("spawn_weight", 0),
-            "modifiers": mods_str,
-            "__edit_url__": f"/admin/world-bosses/{b.get('code', '')}/edit",
-            "__delete_url__": f"/admin/world-bosses/{b.get('code', '')}/delete",
-        })
-    filtered = _filter_rows(rows, q, {"tier": tier})
-    return _render(
-        request, user,
-        title="World Bosses", icon="🐉",
-        new_url="/admin/world-bosses/new", new_label="Nouveau boss",
-        source_label="Définitions : app/infrastructure/content/boss_definitions.json — ⚠️ restart bot requis",
-        filter_q=q or "",
-        filter_groups=[{
-            "name": "tier",
-            "current": tier or "",
-            "placeholder": "Tous les tiers",
-            "options": [(t, t) for t in sorted(tiers)],
-        }],
-        columns=[
-            {"label": "Code", "key": "code"},
-            {"label": "Nom", "key": "name"},
-            {"label": "Tier", "key": "tier"},
-            {"label": "PV", "key": "max_hp"},
-            {"label": "Atk", "key": "attack"},
-            {"label": "Def", "key": "defense"},
-            {"label": "Vit", "key": "speed"},
-            {"label": "Poids", "key": "spawn_weight"},
-            {"label": "Modifiers", "key": "modifiers"},
-        ],
-        rows=filtered,
+async def world_bosses_list(request: Request, user: AdminUser = Depends(require_admin)):
+    names, cards = _mob_names_by_image(), _card_codes()
+    states = [_state(b, names, cards) for b in _bosses()]
+    return get_templates().TemplateResponse(
+        request, "admin/world_bosses/list.html",
+        context={"user": user, "bosses": states, "common": _common_arena(),
+                 "max_mb": MAX_UPLOAD_BYTES // (1024 * 1024)},
     )
 
 
+# ------------------------------------------------------------------ images --
+def _open(data: bytes) -> Image.Image:
+    if not data:
+        raise ValueError("Aucune image reçue.")
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise ValueError(f"Image trop lourde ({len(data) // (1024 * 1024)} Mo, "
+                         f"max {MAX_UPLOAD_BYTES // (1024 * 1024)} Mo).")
+    try:
+        with Image.open(io.BytesIO(data)) as source:
+            source.seek(0)
+            return source.convert("RGBA")
+    except (OSError, ValueError, EOFError):
+        raise ValueError("Image illisible (formats acceptés : PNG, JPG, WebP, GIF).") from None
+
+
+def prepare_boss_image(image: Image.Image) -> tuple[Image.Image, list[str]]:
+    """L'image d'un boss telle qu'on la range : détourée si elle est sur fond
+    blanc, recadrée sur le personnage, au plus `MOB_MAX_SIDE` px."""
+    notes: list[str] = []
+    image = shrink(image.convert("RGBA"), 2 * MOB_MAX_SIDE)
+    if has_white_background(image):
+        image = cut_out_white(image)
+        notes.append("Fond blanc retiré.")
+    box = image.getchannel("A").getbbox()
+    if box and box != (0, 0, *image.size):
+        image = image.crop(box)
+    image = shrink(image, MOB_MAX_SIDE)
+    if image.getchannel("A").getextrema()[0] == 255:
+        notes.append("⚠️ Pas de fond transparent : le boss apparaîtra dans un rectangle. "
+                     "Dépose de préférence un PNG détouré.")
+    return image, notes
+
+
+def prepare_arena(image: Image.Image) -> tuple[Image.Image, list[str]]:
+    """L'arène telle qu'on la range : réduite juste assez pour couvrir le
+    cadre de la vidéo (portrait, `FRAME_W` × `FRAME_H`), jamais rognée ici."""
+    notes: list[str] = []
+    image = image.convert("RGB")
+    w, h = image.size
+    scale = max(fight_scene.FRAME_W / w, fight_scene.FRAME_H / h)
+    if scale < 1:
+        image = image.resize((math.ceil(w * scale), math.ceil(h * scale)), Image.LANCZOS)
+    frame_ratio = fight_scene.FRAME_W / fight_scene.FRAME_H
+    visible = min(frame_ratio / (w / h), (w / h) / frame_ratio)
+    if visible < ARENA_VISIBLE_WARN:
+        notes.append(f"⚠️ La vidéo est en portrait (4:5) : seul le centre de l'image se voit "
+                     f"(~{round(visible * 100)} %).")
+    if scale > ARENA_UPSCALE_WARN:
+        notes.append(f"⚠️ Image petite ({w} × {h}) : elle sera agrandie, donc un peu floue "
+                     f"(idéal : au moins {fight_scene.FRAME_W} × {fight_scene.FRAME_H}).")
+    return image, notes
+
+
+def _write_png(image: Image.Image, path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f".{path.name}.tmp")
+    image.save(tmp, "PNG", compress_level=6)
+    tmp.replace(path)
+
+
+def _sync_instances(code: str, image_name: str) -> None:
+    """Le boss en cours (et l'historique) prend la nouvelle image tout de
+    suite : la bannière et la vidéo lisent l'instance en base."""
+    try:
+        with get_db_session(atomic=True) as session:
+            session.execute(update(WorldBossModel).where(WorldBossModel.code == code)
+                            .values(image_name=image_name))
+    except Exception:  # noqa: BLE001 — base absente (démo) : le fichier suffit
+        _logger.warning("image du boss %s non reportée en base", code, exc_info=True)
+
+
+def _store(code: str | None, slot: str, data: bytes) -> list[str]:
+    """Range l'image (`slot` : boss | arena ; `code` None = salle commune)
+    et renvoie les remarques. Lève ValueError si l'image est refusée."""
+    image = _open(data)
+    if slot == "boss":
+        ready, notes = prepare_boss_image(image)
+        name = own_image_name(code)
+        _write_png(ready, _mobs_dir() / name)
+        if (_boss(code) or {}).get("image_name") != name:
+            from webapp.admin.json_writer import find_in_list_by_key, update_in_list_by_key
+            entry = find_in_list_by_key(_FILE, code)
+            if entry is not None:
+                update_in_list_by_key(_FILE, code, {**entry, "image_name": name})
+        _sync_instances(code, name)
+        git_sync.push_content([f"assets/mobs/{name}"], f"admin: image du boss {code}")
+        return notes
+    ready, notes = prepare_arena(image)
+    name = bfv.own_arena_name(code) if code else bfv.COMMON_ARENA
+    _write_png(ready, _arena_dir() / name)
+    git_sync.push_content([f"assets/landscapes/{name}"],
+                          f"admin: arène du boss {code}" if code else "admin: salle commune des boss")
+    return notes
+
+
+async def _upload(request: Request, code: str | None, slot: str):
+    form = await request.form()
+    upload = form.get("image")
+    data = await upload.read() if upload is not None and hasattr(upload, "read") else b""
+    try:
+        notes = await run_in_threadpool(_store, code, slot, data)
+    except ValueError as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+    return {"ok": True, "notes": notes, **_after_change(code)}
+
+
+def _after_change(code: str | None) -> dict:
+    """La réponse d'un dépôt : le boss modifié, ou TOUS les boss quand la
+    salle commune change (elle est l'arène de ceux qui n'ont pas la leur)."""
+    if code:
+        return {"common": _common_arena(), "boss": _state(_boss(code))}
+    names, cards = _mob_names_by_image(), _card_codes()
+    return {"common": _common_arena(), "bosses": [_state(b, names, cards) for b in _bosses()]}
+
+
+@router.post("/world-bosses/arena-commune")
+async def common_arena_upload(request: Request, user: AdminUser = Depends(require_admin)):
+    """La salle commune : l'arène de tout boss qui n'a pas la sienne."""
+    return await _upload(request, None, "arena")
+
+
+@router.post("/world-bosses/arena-commune/delete")
+async def common_arena_delete(user: AdminUser = Depends(require_admin)):
+    path = _arena_dir() / bfv.COMMON_ARENA
+    if path.is_file():
+        path.unlink()
+        await run_in_threadpool(git_sync.push_content, [f"assets/landscapes/{bfv.COMMON_ARENA}"],
+                                "admin: salle commune des boss retirée")
+    return {"ok": True, **_after_change(None)}
+
+
+@router.post("/world-bosses/{code}/image")
+async def boss_image_upload(code: str, request: Request, user: AdminUser = Depends(require_admin)):
+    """Dépose l'image du boss (`slot=boss`) ou son arène (`slot=arena`)."""
+    if _boss(code) is None:
+        return JSONResponse({"ok": False, "error": f"Boss `{code}` introuvable."}, status_code=404)
+    slot = str((await request.form()).get("slot") or "boss")
+    if slot not in ("boss", "arena"):
+        return JSONResponse({"ok": False, "error": "Emplacement inconnu."}, status_code=400)
+    return await _upload(request, code, slot)
+
+
+@router.post("/world-bosses/{code}/arena/delete")
+async def boss_arena_delete(code: str, user: AdminUser = Depends(require_admin)):
+    """Retire l'arène propre du boss : il reprend la salle commune."""
+    boss = _boss(code)
+    if boss is None:
+        return JSONResponse({"ok": False, "error": f"Boss `{code}` introuvable."}, status_code=404)
+    path = _arena_dir() / bfv.own_arena_name(code)
+    if path.is_file():
+        path.unlink()
+        await run_in_threadpool(git_sync.push_content, [f"assets/landscapes/{path.name}"],
+                                f"admin: arène du boss {code} retirée")
+    return {"ok": True, **_after_change(code)}
+
+
+# ----------------------------------------------------------------- aperçus --
+def _scene_jpeg(b: dict) -> bytes:
+    element = b.get("element", "") or ""
+    boss = {"code": b.get("code", ""), "name": b.get("name", ""), "image_name": b.get("image_name", ""),
+            "element": element, "max_hp": int(b.get("max_hp", 1) or 1)}
+    guards = [{"code": g.get("code", ""), "name": g.get("name", "Garde"), "image_name": g.get("image_name", ""),
+               "element": element, "max_hp": int(g.get("max_hp", 1) or 1)} for g in b.get("guards") or []]
+    image = bfv.preview_frame(boss=boss, guards=guards, players=scene_helpers.demo_players(),
+                              phases=b.get("phases") or [],
+                              background_path=bfv.arena_path(boss["code"], element),
+                              boss_hp_pct=PREVIEW_HP_PCT)
+    buf = io.BytesIO()
+    image.convert("RGB").save(buf, "JPEG", quality=86)
+    return buf.getvalue()
+
+
+def _banner_png(b: dict) -> bytes:
+    from app.bot.rendering.world_boss_banner import Contributor, RaidBannerData, compose_raid_banner
+    from app.bot.runtime.raid_banner_builder import RAID_DAYS, _weakness_label, next_assault_label
+
+    element = b.get("element", "") or ""
+    max_hp = int(b.get("max_hp", 1) or 1)
+    data = RaidBannerData(
+        boss_name=b.get("name", ""), image_name=b.get("image_name", "") or "",
+        current_hp=int(max_hp * PREVIEW_HP_PCT), max_hp=max_hp,
+        element_label=ELEMENT_LABELS.get(element, "") if element else "",
+        element_emoji=ELEMENT_EMOJIS.get(element, "") if element else "",
+        week_label="Semaine 49", day_index=3, day_total=RAID_DAYS, warriors=3, assaults=7,
+        next_assault=next_assault_label(),
+        contributors=[Contributor("Altan", int(max_hp * 0.17), int(max_hp * 0.02), 0),
+                      Contributor("Kaori", int(max_hp * 0.12), int(max_hp * 0.09), 0),
+                      Contributor("Rin", int(max_hp * 0.09), int(max_hp * 0.01), int(max_hp * 0.05))],
+        attack=int(b.get("attack", 0) or 0), defense=int(b.get("defense", 0) or 0),
+        speed=int(b.get("speed", 0) or 0), crit_chance=int(b.get("crit_chance", 0) or 0),
+        weaknesses=_weakness_label(element), element_code=element, registered=2)
+    with tempfile.TemporaryDirectory() as folder:
+        out = Path(folder) / "banniere.png"
+        compose_raid_banner(str(out), data)
+        return out.read_bytes()
+
+
+async def _preview(code: str, render, media_type: str):
+    boss = _boss(code)
+    if boss is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Boss `{code}` introuvable.")
+    data = await run_in_threadpool(render, boss)
+    return Response(data, media_type=media_type, headers={"Cache-Control": "no-store"})
+
+
+@router.get("/world-bosses/{code}/scene.jpg")
+async def boss_scene_preview(code: str, user: AdminUser = Depends(require_admin)):
+    """Une image de la VIDÉO de l'assaut (code du bot) : arène, boss, gardes."""
+    return await _preview(code, _scene_jpeg, "image/jpeg")
+
+
+@router.get("/world-bosses/{code}/banner.png")
+async def boss_banner_preview(code: str, user: AdminUser = Depends(require_admin)):
+    """La BANNIÈRE du raid (code du bot), boss entamé et trois combattants d'exemple."""
+    return await _preview(code, _banner_png, "image/png")
+
+
+# ------------------------------------------------------------------ fiches --
 @router.get("/world-bosses/new", response_class=HTMLResponse)
 async def bosses_new_form(request: Request, user: AdminUser = Depends(require_admin)):
     return get_templates().TemplateResponse(
@@ -120,7 +414,8 @@ async def bosses_create(request: Request, user: AdminUser = Depends(require_admi
         "lore": fd.get("lore", "").strip(),
     }
     append_to_list("boss_definitions.json", entry)
-    return RedirectResponse(f"/admin/world-bosses?q={code}", status_code=303)
+    # Tout de suite sur sa fiche : c'est là (ou sur la galerie) qu'on dépose ses images.
+    return RedirectResponse(f"/admin/world-bosses/{code}/edit?created=1", status_code=303)
 
 
 def _scalar_modifiers(modifiers: dict | None) -> dict:
@@ -132,7 +427,8 @@ def _scalar_modifiers(modifiers: dict | None) -> dict:
 
 @router.get("/world-bosses/{code}/edit", response_class=HTMLResponse)
 async def bosses_edit_form(
-    code: str, request: Request, user: AdminUser = Depends(require_admin),
+    code: str, request: Request, saved: int = 0, created: int = 0,
+    user: AdminUser = Depends(require_admin),
 ):
     from webapp.admin.json_writer import find_in_list_by_key
     entry = find_in_list_by_key("boss_definitions.json", code)
@@ -157,7 +453,9 @@ async def bosses_edit_form(
     }
     return get_templates().TemplateResponse(
         request, "admin/world_bosses/form.html",
-        context={"user": user, "errors": {}, "form_data": fd, "edit_code": code},
+        context={"user": user, "errors": {}, "form_data": fd, "edit_code": code, "boss": _state(entry),
+                 "saved": bool(saved), "created": bool(created),
+                 "max_mb": MAX_UPLOAD_BYTES // (1024 * 1024)},
     )
 
 
@@ -178,7 +476,7 @@ async def bosses_update(
         "code": code,
         "name": fd.get("name", "").strip(),
         "description": fd.get("description", "").strip(),
-        "image_name": fd.get("image_name", "").strip(),
+        "image_name": fd.get("image_name", existing.get("image_name", "")).strip(),
         "tier": fd.get("tier", "intro").strip() or "intro",
         "spawn_weight": _parse_int(fd.get("spawn_weight"), 100),
         "max_hp": _parse_int(fd.get("max_hp"), 10000),
@@ -192,7 +490,7 @@ async def bosses_update(
         "lore": fd.get("lore", "").strip(),
     }
     update_in_list_by_key("boss_definitions.json", code, entry)
-    return RedirectResponse(f"/admin/world-bosses?q={code}", status_code=303)
+    return RedirectResponse(f"/admin/world-bosses/{code}/edit?saved=1", status_code=303)
 
 
 @router.post("/world-bosses/{code}/delete")
