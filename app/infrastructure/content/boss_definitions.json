@@ -356,7 +356,7 @@
     "code": "ancient_dragon",
     "name": "Dragon Ancestral",
     "description": "Le sommet de l'évolution. Inflige des coups dévastateurs, renvoie les frappes, invoque des drakelings, se régénère et entre en rage à la fin.",
-    "image_name": "gobelin_superieur.png",
+    "image_name": "boss_ancient_dragon.png",
     "tier": "endgame",
     "level": 100,
     "spawn_weight": 1,
