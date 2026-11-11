@@ -138,6 +138,35 @@ def test_spawn_uses_definition_stats(session):
     assert result.boss.hp_regeneration == 0
 
 
+def test_l_element_du_boss_est_tire_a_chaque_apparition(session):
+    """11/11/2026, décision de l'auteur : un boss peut être de n'importe quel
+    élément, tiré au hasard à son apparition (sa fiche n'en impose plus)."""
+    from app.application.use_cases.world_boss import roll_boss_element
+    from app.shared.enums import ALL_ELEMENTS
+
+    valid = {e.value for e in ALL_ELEMENTS}
+    titan = get_boss_definition("slime_titan")
+    assert titan.element == ""
+    rng = random.Random(4)
+    seen = {roll_boss_element(titan, rng) for _ in range(200)}
+    assert seen == valid                                             # les 8 sortent
+    assert roll_boss_element(titan, rng, element="feu") == "feu"     # demandé par un admin
+    assert roll_boss_element(titan, rng, element="n_importe") in valid
+
+    repo = WorldBossRepository(session)
+    result = SpawnWorldBossUseCase(repo).execute(boss_code="slime_titan", element="glace")
+    assert result.boss.element == "glace" and "Glace" in result.message
+    assert repo.get_active().element == "glace"                      # gardé pour toute la semaine
+
+
+def test_l_apparition_de_la_semaine_tire_aussi_l_element(session):
+    from app.shared.enums import ALL_ELEMENTS
+
+    decision = SpawnRandomWorldBossUseCase(world_boss_repository=WorldBossRepository(session)).execute(
+        force=True, rng=random.Random(0))
+    assert decision.boss.element in {e.value for e in ALL_ELEMENTS}
+
+
 def test_join_then_leave(session):
     _seed_mob(session)
     SpawnWorldBossUseCase(

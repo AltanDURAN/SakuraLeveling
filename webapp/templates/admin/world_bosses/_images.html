@@ -6,8 +6,10 @@
   de suite (`POST /admin/world-bosses/<code>/image`) et la réponse remplace
   l'état du boss, ce qui recharge ses aperçus (`version`).
 
-  `wb_styles()` et `wb_script()` une fois par page ; `wb_slots()` dans une
-  portée où `b` est un boss.
+  `wb_styles()` et `wb_script()` une fois par page ; `wb_slots()` et
+  `wb_elements()` dans une portée où `b` est un boss. Le boss change
+  d'élément à chaque apparition : `wb_elements()` choisit la teinte des
+  aperçus (`b.preview_element`, gardée quand l'état du boss est rafraîchi).
 #}
 
 {% macro wb_styles() %}
@@ -71,6 +73,16 @@
   [data-theme=dark] .wb-checker { background-color:#3a3340;
                 background-image:linear-gradient(45deg,#2c2633 25%,transparent 25%),linear-gradient(-45deg,#2c2633 25%,transparent 25%),
                                  linear-gradient(45deg,transparent 75%,#2c2633 75%),linear-gradient(-45deg,transparent 75%,#2c2633 75%); }
+  .wb-elements { display:flex; flex-direction:column; gap:.35rem; }
+  .wb-elements-head { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; font-size:.88rem; color:var(--text-soft); }
+  .wb-badge.is-live { background:rgba(78,168,137,.16); border-color:rgba(78,168,137,.5); color:var(--text); }
+  .wb-el-row { display:flex; gap:.3rem; align-items:center; flex-wrap:wrap; }
+  .wb-el-row > span { font-size:.8rem; color:var(--text-soft); margin-right:.2rem; }
+  .wb-el { width:2.1rem; height:2.1rem; border-radius:999px; border:1px solid var(--border-strong); background:var(--bg-soft);
+           font-size:1.05rem; line-height:1; cursor:pointer; padding:0; transition:transform .12s, border-color .12s, background .12s; }
+  .wb-el:hover { border-color:var(--accent); transform:translateY(-1px); }
+  .wb-el.on { border:2px solid var(--accent); background:var(--accent-soft); }
+  .wb-el:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
   @media (max-width: 760px) {
     .wb-card { grid-template-columns:1fr; }
     .wb-preview.is-scene { max-width:320px; }
@@ -100,7 +112,7 @@
            @drop.prevent.stop="drop($event, b, 'arena')">
         <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" @change="pick($event, b, 'arena')">
         <span class="wb-thumb is-arena wb-checker">
-            <img x-show="b.arena_url" :src="b.arena_url" alt="">
+            <img x-show="arenaUrl(b)" :src="arenaUrl(b)" alt="">
         </span>
         <span class="wb-slot-text">
             <strong>🏟️ Arène de l'assaut</strong>
@@ -109,6 +121,23 @@
         </span>
         <span class="wb-spin" x-show="busy[key(b, 'arena')]" x-cloak>⏳ envoi…</span>
     </label>
+</div>
+{% endmacro %}
+
+{% macro wb_elements() %}
+<div class="wb-elements">
+    <div class="wb-elements-head">
+        <span x-text="b.element ? 'Élément imposé : ' + b.element_label : '🎲 Élément tiré au hasard à chaque apparition'"></span>
+        <span class="wb-badge is-live" x-show="b.live_element" x-text="'En ce moment : ' + b.live_label"></span>
+    </div>
+    <div class="wb-el-row" role="group" aria-label="Teinte des aperçus" x-show="!b.element">
+        <span>Aperçu en</span>
+        <template x-for="e in elements" :key="e.code">
+            <button type="button" class="wb-el" :class="{ on: b.preview_element === e.code }"
+                    :title="e.label" :aria-label="e.label" :aria-pressed="b.preview_element === e.code"
+                    @click="b.preview_element = e.code" x-text="e.emoji"></button>
+        </template>
+    </div>
 </div>
 {% endmacro %}
 
@@ -141,6 +170,7 @@ function wbImages(cfg) {
     return {
         bosses: cfg.bosses,
         common: cfg.common,
+        elements: cfg.elements || [],
         maxBytes: (cfg.maxMb || 8) * 1024 * 1024,
         busy: {},
         over: '',
@@ -149,8 +179,9 @@ function wbImages(cfg) {
         _toastTimer: null,
 
         key(b, slot) { return (b ? b.code : '_') + ':' + slot; },
-        sceneUrl(b) { return `/admin/world-bosses/${b.code}/scene.jpg?v=${b.version}`; },
-        bannerUrl(b) { return `/admin/world-bosses/${b.code}/banner.png?v=${b.version}`; },
+        sceneUrl(b) { return `/admin/world-bosses/${b.code}/scene.jpg?v=${b.version}&element=${b.preview_element || ''}`; },
+        bannerUrl(b) { return `/admin/world-bosses/${b.code}/banner.png?v=${b.version}&element=${b.preview_element || ''}`; },
+        arenaUrl(b) { return (b.zone_arenas || {})[b.preview_element] || b.arena_url; },
         imageBadge(b) {
             if (b.image_origin === 'propre') return '✅ Son image';
             if (b.image_origin === 'empruntee')
@@ -167,18 +198,16 @@ function wbImages(cfg) {
             clearTimeout(this._toastTimer);
             this._toastTimer = setTimeout(() => { this.toast = null; }, kind === 'ok' ? 6000 : 12000);
         },
+        replace(fresh) {
+            const i = this.bosses.findIndex(x => x.code === fresh.code);
+            if (i < 0) return;
+            if (!fresh.element) fresh.preview_element = this.bosses[i].preview_element;   // la teinte choisie reste
+            this.bosses[i] = fresh;
+        },
         apply(j) {
             if (j.common) this.common = j.common;
-            if (j.bosses) {
-                for (const fresh of j.bosses) {
-                    const i = this.bosses.findIndex(x => x.code === fresh.code);
-                    if (i >= 0) this.bosses[i] = fresh;
-                }
-            }
-            if (j.boss) {
-                const i = this.bosses.findIndex(x => x.code === j.boss.code);
-                if (i >= 0) this.bosses[i] = j.boss;
-            }
+            for (const fresh of j.bosses || []) this.replace(fresh);
+            if (j.boss) this.replace(j.boss);
         },
         async post(url, body) {
             const r = await fetch(url, { method: 'POST', body });

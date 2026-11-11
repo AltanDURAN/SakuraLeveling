@@ -1,12 +1,12 @@
 {% extends "admin/base.html" %}
-{% from "admin/world_bosses/_images.html" import wb_styles, wb_slots, wb_previews, wb_toast, wb_script %}
+{% from "admin/world_bosses/_images.html" import wb_styles, wb_slots, wb_elements, wb_previews, wb_toast, wb_script %}
 
 {% block title %}World Bosses — Sakura Admin{% endblock %}
 
 {% block content %}
 {{ wb_styles() }}
 {{ wb_script() }}
-<script type="application/json" id="wb-data">{{ {"bosses": bosses, "common": common, "maxMb": max_mb}|tojson }}</script>
+<script type="application/json" id="wb-data">{{ {"bosses": bosses, "common": common, "elements": elements, "maxMb": max_mb}|tojson }}</script>
 
 <section x-data="wbImages(JSON.parse(document.getElementById('wb-data').textContent))"
          @dragover.prevent="pageOver = true" @drop.prevent="dropAll($event)"
@@ -17,9 +17,10 @@
             <p class="wb-intro">
                 Chaque boss tel que les joueurs le voient : une image de la vidéo de l'assaut et la bannière du raid,
                 dessinées par le code du bot. <strong>Glisse une image sur un boss</strong> : son image (bannière, vidéo,
-                bestiaire, carte) ou son arène (le décor de la vidéo). Dans la vidéo et sur la bannière, le boss est
-                teinté par son élément, comme les monstres. Tout vaut <strong>tout de suite</strong>, sans redémarrer le bot
-                — le boss en cours compris.
+                bestiaire, carte) ou son arène (le décor de la vidéo). Son élément est <strong>tiré au hasard à chaque
+                apparition</strong> ; dans la vidéo et sur la bannière, le boss en prend la teinte, comme les monstres —
+                choisis-en une sous son nom pour voir l'aperçu. Une image en noir et blanc se teinte le mieux.
+                Tout vaut <strong>tout de suite</strong>, sans redémarrer le bot — le boss en cours compris.
             </p>
         </div>
         <a href="/admin/world-bosses/new" class="btn btn-primary">＋ Nouveau boss</a>
@@ -45,10 +46,11 @@
                     <div class="wb-title">
                         <h2 x-text="b.name"></h2>
                         <span class="wb-meta">
-                            <span x-text="'Niveau ' + b.level"></span> · <span x-text="b.element_label"></span>
+                            <span x-text="'Niveau ' + b.level"></span>
                             <template x-if="b.guards"><span> · gardes : <span x-text="b.guards"></span></span></template>
                         </span>
                     </div>
+                    {{ wb_elements() }}
                     {{ wb_slots() }}
                     {{ wb_previews(scene=False, banner=True) }}
                     <div class="wb-actions">

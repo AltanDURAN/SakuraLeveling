@@ -1159,9 +1159,9 @@
   },
   {
     "code": "tueur_stone_colossus",
-    "name": "Tueur du Colosse de Pierre",
+    "name": "Tueur de la Guerrière Fantôme",
     "icon": "⚔️",
-    "description": "A participé à la victoire contre Colosse de Pierre. +3 dégâts critiques.",
+    "description": "A participé à la victoire contre la Guerrière Fantôme. +3 dégâts critiques.",
     "condition_type": "world_boss_kill",
     "condition_target": "stone_colossus",
     "condition_value": 1,
@@ -1174,9 +1174,9 @@
   },
   {
     "code": "tueur_shadow_wraith",
-    "name": "Tueur du Spectre des Ténèbres",
+    "name": "Tueur du Démon Zombie",
     "icon": "⚔️",
-    "description": "A participé à la victoire contre Spectre des Ténèbres. +3 dégâts critiques.",
+    "description": "A participé à la victoire contre le Démon Zombie. +3 dégâts critiques.",
     "condition_type": "world_boss_kill",
     "condition_target": "shadow_wraith",
     "condition_value": 1,

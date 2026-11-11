@@ -90,7 +90,8 @@ class AdminBridgeCog(commands.Cog):
             if cog is None:
                 return False, "WorldBossCog non chargé."
             if action == "spawn_boss":
-                return await cog.admin_spawn_boss(str(payload.get("boss_code", "")))
+                return await cog.admin_spawn_boss(str(payload.get("boss_code", "")),
+                                                  element=payload.get("element") or None)
             return await cog.admin_stop_boss()
 
         if action == "spawn_event":

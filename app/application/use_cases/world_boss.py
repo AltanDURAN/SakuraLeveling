@@ -50,6 +50,7 @@ from app.infrastructure.world_boss.boss_definition_loader import (
 )
 from app.domain.services.monitoring import kinds
 from app.infrastructure.monitoring.telemetry import record as record_event
+from app.shared.enums import ALL_ELEMENTS, ELEMENT_EMOJIS, ELEMENT_LABELS
 
 
 BOSS_FIGHT_COOLDOWN_KEY = "world_boss_fight"
@@ -83,8 +84,29 @@ def _normalize_utc(dt: datetime) -> datetime:
     return dt
 
 
+def roll_boss_element(
+    definition: BossDefinition, rng: random.Random | None = None, element: str | None = None,
+) -> str:
+    """L'élément du boss pour CETTE apparition (11/11/2026, décision de
+    l'auteur) : celui demandé par un admin, sinon celui qu'impose sa fiche
+    (champ vide par défaut), sinon tiré au hasard parmi les 8 éléments — un
+    même boss change d'élément d'une semaine à l'autre."""
+    valid = [e.value for e in ALL_ELEMENTS]
+    for chosen in (element, definition.element):
+        if chosen and chosen in valid:
+            return chosen
+    return (rng or random).choice(valid)
+
+
+def element_label(element: str) -> str:
+    """« 🔥 Feu » (vide pour un boss neutre)."""
+    if not element:
+        return ""
+    return f"{ELEMENT_EMOJIS.get(element, '')} {ELEMENT_LABELS.get(element, element)}".strip()
+
+
 def _create_boss_from_definition(
-    repo: WorldBossRepository, definition: BossDefinition
+    repo: WorldBossRepository, definition: BossDefinition, element: str = "",
 ) -> WorldBoss:
     return repo.create(
         code=definition.code,
@@ -98,7 +120,7 @@ def _create_boss_from_definition(
         crit_damage=definition.crit_damage,
         dodge=definition.dodge,
         hp_regeneration=0,
-        element=definition.element,
+        element=element,
     )
 
 
@@ -116,14 +138,16 @@ class SpawnWorldBossUseCase:
     """Spawn manuel d'un world boss à partir de son code (BossDefinition JSON).
 
     Refuse s'il y a déjà un boss actif. La définition vient de
-    `app/infrastructure/content/boss_definitions.json` — édition à chaud
-    possible (clear le cache du loader).
+    `app/infrastructure/content/boss_definitions.json` (relue dès qu'elle
+    change). `element` : l'élément voulu (tests) ; sinon tiré au hasard.
     """
 
     def __init__(self, world_boss_repository: WorldBossRepository) -> None:
         self.world_boss_repository = world_boss_repository
 
-    def execute(self, boss_code: str) -> SpawnBossResult:
+    def execute(
+        self, boss_code: str, element: str | None = None, rng: random.Random | None = None,
+    ) -> SpawnBossResult:
         existing = self.world_boss_repository.get_active()
         if existing is not None:
             return SpawnBossResult(
@@ -140,10 +164,13 @@ class SpawnWorldBossUseCase:
                 success=False, message=f"❌ Boss `{boss_code}` introuvable."
             )
 
-        boss = _create_boss_from_definition(self.world_boss_repository, definition)
+        boss = _create_boss_from_definition(
+            self.world_boss_repository, definition, roll_boss_element(definition, rng, element))
+        label = element_label(boss.element)
         return SpawnBossResult(
             success=True,
-            message=(f"⚡ **{boss.name}** apparaît avec **{format_int(boss.max_hp)}** PV !"),
+            message=(f"⚡ **{boss.name}**{f' ({label})' if label else ''} apparaît avec "
+                     f"**{format_int(boss.max_hp)}** PV !"),
             boss=boss,
         )
 
@@ -239,7 +266,8 @@ class SpawnRandomWorldBossUseCase:
         if definition is None:
             return AutoSpawnDecision(False, "serveur_pas_pret")
 
-        boss = _create_boss_from_definition(self.world_boss_repository, definition)
+        boss = _create_boss_from_definition(
+            self.world_boss_repository, definition, roll_boss_element(definition, rng))
         return AutoSpawnDecision(
             spawned=True, reason="ok", boss=boss,
         )

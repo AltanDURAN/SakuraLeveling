@@ -40,6 +40,7 @@ def test_un_boss_abattu_montre_sa_fiche_ses_mecaniques_et_les_victoires():
     assert embed.title == f"👑 {first.name}" and victories.value == "**2**"
     assert all(phase["name"] in text for phase in first.phases) and first.ultimate["name"] in text
     assert "_" not in " ".join(mechanics_lines(first))                  # aucun nom technique
+    assert "tiré au hasard à chaque apparition" in text                 # l'élément change chaque semaine
     assert file.filename == first.image_name and f"👑 1/{len(bosses)} vaincus" in embed.footer.text
     assert all(len(f.value) <= 1024 for f in embed.fields) and len(embed) <= 6000
 

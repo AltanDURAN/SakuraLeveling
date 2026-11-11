@@ -256,6 +256,13 @@
                     {% for b in bosses %}<option value="{{ b.code }}">{{ b.name }} ({{ b.code }})</option>{% endfor %}
                 </select>
             </label>
+            <label class="field">
+                <span class="field-label">Élément</span>
+                <select name="element" class="input">
+                    <option value="">🎲 Au hasard (comme chaque semaine)</option>
+                    {% for e in elements %}<option value="{{ e.code }}">{{ e.label }}</option>{% endfor %}
+                </select>
+            </label>
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Faire spawner</button>
                 <button type="submit" class="btn" formaction="/admin/actions/bot/stop_boss"

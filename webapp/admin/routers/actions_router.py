@@ -37,6 +37,7 @@ from app.infrastructure.db.repositories.player_status_effect_repository import (
 from app.infrastructure.db.session import get_db_session
 from webapp.admin.auth import AdminUser, require_admin
 from webapp.admin._shared import get_templates
+from app.shared.enums import ALL_ELEMENTS, ELEMENT_EMOJIS, ELEMENT_LABELS
 
 
 _logger = logging.getLogger(__name__)
@@ -119,6 +120,9 @@ async def actions_page(
             "items": [{"code": it.code, "name": it.name} for it in items],
             "mobs": sorted(mobs, key=lambda m: (m["family"], m["name"])),
             "bosses": bosses,
+            "elements": [{"code": e.value, "label": f"{ELEMENT_EMOJIS.get(e.value, '')} "
+                                                    f"{ELEMENT_LABELS.get(e.value, e.value)}".strip()}
+                         for e in ALL_ELEMENTS],
             "events": events,
             "bot_commands": bot_commands,
             "cooldown_keys": [
@@ -408,6 +412,8 @@ async def bot_action(action: str, request: Request, user: AdminUser = Depends(re
         if not code:
             return _redirect(error="Choisis un boss à faire spawner")
         payload["boss_code"] = code
+        if (form.get("element") or "").strip():
+            payload["element"] = form.get("element").strip()
     elif action == "spawn_event":
         event_type = (form.get("event_type") or "").strip()
         if not event_type:

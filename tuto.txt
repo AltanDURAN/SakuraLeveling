@@ -715,7 +715,9 @@ WORLD BOSS — /boss moi, /boss historique, /bestiaire boss
     dernier assaut de la semaine, un boss encore debout repart : chacun
     touche sa part selon les PV qu'on lui a retirés, sans butin ni titre.
     L'assaut se joue en vidéo dans le salon du boss, puis laisse place à son
-    bilan. Ce qui t'attend :
+    bilan. Son ÉLÉMENT est tiré au hasard à chaque apparition : le même boss
+    peut être de feu une semaine, de glace la suivante (élément et faiblesses
+    sur son message). Ce qui t'attend :
       • ses GARDES (2) : on les abat d'abord — tant qu'il en reste un, le boss
         ne prend que la moitié des dégâts. Ils reviennent à chaque assaut ;
       • ses PHASES : sous 75 %, 50 % et 25 % de ses PV, il change (poison,
@@ -1014,6 +1016,9 @@ INTERFACE WEB D'ADMINISTRATION
     son ARÈNE (le décor de la vidéo, en portrait 4:5), ou la salle commune
     des boss qui n'ont pas la leur. Plusieurs images d'un coup : elles se
     rangent d'après leur nom (« slime_titan.png », « arene_slime_titan.png »).
+    L'élément d'un boss change à chaque apparition : « Aperçu en 💧🔥… »
+    montre sa teinte dans chacun (une image en noir et blanc se teinte le
+    mieux).
     RYTHME (Monde › Rythme, sans redémarrage) : délai entre deux monstres
     (fixe ou tiré dans une plage), délai après une fuite, temps pour
     rejoindre (et pour une élite), délai avant le bouton Lancer, heures
@@ -1098,9 +1103,10 @@ INTERFACE WEB D'ADMINISTRATION
     le salon général (le salon des événements est gardé pour les gros ; le
     salon de chaque événement se règle sur le site, rubrique Événements).
 
-/boss_admin spawn <boss> · /boss_admin stop
-    Fait apparaître un world boss, ou l'arrête sans récompense. Un boss ne
-    regagne jamais ses PV.
+/boss_admin spawn <boss> [élément] · /boss_admin stop
+    Fait apparaître un world boss (élément au choix, sinon tiré au hasard
+    comme chaque semaine), ou l'arrête sans récompense. Un boss ne regagne
+    jamais ses PV.
 
 --------------------------------------------------------------------------------
 2.3 — BOUTIQUE

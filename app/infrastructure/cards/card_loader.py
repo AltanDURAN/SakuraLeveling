@@ -36,6 +36,7 @@ from app.domain.services.card_service import (
 
 CONTENT_PATH = Path(__file__).resolve().parents[1] / "content" / "cards.json"
 MOBS_PATH = Path(__file__).resolve().parents[1] / "content" / "mobs.json"
+BOSSES_PATH = Path(__file__).resolve().parents[1] / "content" / "boss_definitions.json"
 ASSETS = Path(__file__).resolve().parents[3] / "assets"
 CARD_ART = ASSETS / "cards"
 #: Les ébauches générées (Cloudflare, 09/11/2026), en attendant les images de l'auteur.
@@ -181,6 +182,16 @@ def _mob_images() -> dict[str, str]:
     return _cached(MOBS_PATH, "mob_images", build)
 
 
+def _boss_images() -> dict[str, str]:
+    def build():
+        try:
+            data = json.loads(BOSSES_PATH.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return {}
+        return {b.get("code", ""): b.get("image_name", "") or "" for b in data if isinstance(b, dict)}
+    return _cached(BOSSES_PATH, "boss_images", build)
+
+
 def _art_candidates(card: CardDef) -> list[tuple[str, Path]]:
     """(origine, chemin) des images possibles d'une carte, par priorité."""
     candidates = [("carte", CARD_ART / f"{card.code}.png")]
@@ -195,6 +206,12 @@ def _art_candidates(card: CardDef) -> list[tuple[str, Path]]:
         # celle qu'il emprunte à un monstre en attendant.
         candidates.append(("boss", ASSETS / "mobs" / f"boss_{card.source}.png"))
     candidates.append(("ebauche", DRAFT_ART / f"{card.code}.png"))
+    if card.category == "boss" and card.source:
+        # En DERNIER recours, l'image que le boss emprunte à un monstre en
+        # attendant la sienne : jamais de « ? » (un boss renommé perd son ébauche).
+        image = _boss_images().get(card.source, "")
+        if image:
+            candidates.append(("emprunt", ASSETS / "mobs" / image))
     return candidates
 
 
@@ -204,7 +221,7 @@ def art_path(card: CardDef) -> Path | None:
 
 
 def art_origin(card: CardDef) -> str:
-    """D'où vient l'image : carte, monstre, portrait, ebauche ou aucune."""
+    """D'où vient l'image : carte, monstre, portrait, boss, ebauche, emprunt ou aucune."""
     return next((origin for origin, p in _art_candidates(card) if p.is_file()), "aucune")
 
 

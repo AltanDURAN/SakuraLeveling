@@ -7,7 +7,7 @@
     "tier": "intro",
     "level": 20,
     "spawn_weight": 100,
-    "element": "eau",
+    "element": "",
     "max_hp": 5000,
     "attack": 110,
     "defense": 9,
@@ -93,7 +93,7 @@
     "tier": "medium",
     "level": 40,
     "spawn_weight": 8,
-    "element": "feu",
+    "element": "",
     "max_hp": 9000,
     "attack": 212,
     "defense": 16,
@@ -178,13 +178,13 @@
   },
   {
     "code": "stone_colossus",
-    "name": "Colosse de Pierre",
-    "description": "Une statue runique animée par d'antiques magies. Inébranlable face aux frappes faibles, sa carapace renvoie une part des coups.",
-    "image_name": "gobelin_runique.png",
+    "name": "Guerrière Fantôme",
+    "description": "Une guerrière tombée il y a des siècles, revenue hanter le champ de bataille. Son armure spectrale ignore les frappes faibles et renvoie une part des coups.",
+    "image_name": "chevalier_de_l_eclipse.png",
     "tier": "medium_hard",
     "level": 60,
     "spawn_weight": 3,
-    "element": "terre",
+    "element": "",
     "max_hp": 148000,
     "attack": 350,
     "defense": 23,
@@ -196,12 +196,12 @@
       "damage_immunity_threshold": 27,
       "reflect_pct": 15
     },
-    "lore": "Une statue runique animée par d'antiques magies, flanquée de deux sentinelles de pierre. Sa carapace ignore les frappes faibles et renvoie une part des coups. Blessé, ses coups fissurent l'armure, l'Avalanche étourdit, puis son cœur de lave s'embrase. Le Séisme frappe tout le groupe, sauf si un tank le provoque.",
+    "lore": "Une guerrière tombée il y a des siècles, revenue hanter le champ de bataille où elle est morte, gardée par deux gargouilles de son tombeau. Son armure spectrale ignore les frappes faibles et renvoie une part des coups. Blessée, sa lame brise les armures, son cri d'outre-tombe pétrifie (étourdissement), puis elle se bat comme au jour de sa mort. Sa Danse des lames frappe tout le groupe, sauf si un tank la provoque.",
     "loot_table": [],
     "phases": [
       {
         "below_pct": 75,
-        "name": "Fissures",
+        "name": "Lame brisante",
         "text": "chaque coup brise l'armure de sa cible.",
         "abilities": {
           "armor_break": {
@@ -212,7 +212,7 @@
       },
       {
         "below_pct": 50,
-        "name": "Avalanche",
+        "name": "Cri d'outre-tombe",
         "text": "ses coups peuvent étourdir.",
         "abilities": {
           "stun": {
@@ -222,21 +222,21 @@
       },
       {
         "below_pct": 25,
-        "name": "Cœur de lave",
-        "text": "la roche se fend, le feu jaillit.",
+        "name": "Dernier serment",
+        "text": "elle se bat comme au jour de sa mort.",
         "attack_pct": 25
       }
     ],
     "ultimate": {
-      "name": "le Séisme",
+      "name": "la Danse des lames",
       "every": 7,
       "multiplier": 2.2,
-      "charge": "Le sol se met à trembler…"
+      "charge": "Elle lève son épée spectrale vers le ciel…"
     },
     "guards": [
       {
         "code": "gargouille",
-        "name": "Sentinelle de pierre",
+        "name": "Gargouille du tombeau",
         "image_name": "gargouille.png",
         "family": "mort-vivant",
         "max_hp": 3253,
@@ -249,7 +249,7 @@
       },
       {
         "code": "gargouille",
-        "name": "Sentinelle de pierre",
+        "name": "Gargouille du tombeau",
         "image_name": "gargouille.png",
         "family": "mort-vivant",
         "max_hp": 3253,
@@ -264,13 +264,13 @@
   },
   {
     "code": "shadow_wraith",
-    "name": "Spectre des Ténèbres",
-    "description": "Une entité incorporelle qui glisse entre les coups. Les coups critiques traversent sa forme étherée, et il mute en s'affaiblissant.",
-    "image_name": "gobelin_assassin.png",
+    "name": "Démon Zombie",
+    "description": "Un démon mort depuis des siècles que la corruption fait encore marcher. Sa chair morte ne sent plus la douleur : les coups critiques ne lui font pas plus de mal que les autres, et il se nourrit de vos blessures.",
+    "image_name": "ogre_demoniaque.png",
     "tier": "hard",
     "level": 80,
     "spawn_weight": 2,
-    "element": "tenebre",
+    "element": "",
     "max_hp": 82000,
     "attack": 473,
     "defense": 30,
@@ -281,12 +281,12 @@
     "modifiers": {
       "crit_immunity": true
     },
-    "lore": "Une entité incorporelle qui glisse entre les coups : les critiques traversent sa forme éthérée. Deux âmes captives la servent. Blessée, elle draine la vie, possède ses proies (étourdissement) puis ouvre l'Abîme. La Nuit sans fin s'abat sur tout le groupe, sauf si un tank la provoque.",
+    "lore": "Un démon mort depuis des siècles que la corruption fait encore marcher. Sa chair morte ne sent plus la douleur : les critiques ne lui font pas plus de mal que les autres coups, et ses gestes désarticulés trompent les lames. Deux âmes damnées le servent. Blessé, il dévore la vie de ses proies, les broie d'une étreinte (étourdissement) puis cède à sa faim. Sa Pestilence s'abat sur tout le groupe, sauf si un tank le provoque.",
     "loot_table": [],
     "phases": [
       {
         "below_pct": 75,
-        "name": "Nuit tombante",
+        "name": "Faim dévorante",
         "text": "il se nourrit de vos blessures.",
         "abilities": {
           "lifesteal": {
@@ -296,7 +296,7 @@
       },
       {
         "below_pct": 50,
-        "name": "Possession",
+        "name": "Étreinte putride",
         "text": "ses coups peuvent étourdir.",
         "abilities": {
           "stun": {
@@ -306,21 +306,21 @@
       },
       {
         "below_pct": 25,
-        "name": "Abîme",
-        "text": "les ténèbres le rendent fou.",
+        "name": "Pourriture",
+        "text": "la corruption le rend fou.",
         "attack_pct": 25
       }
     ],
     "ultimate": {
-      "name": "la Nuit sans fin",
+      "name": "la Pestilence",
       "every": 7,
       "multiplier": 1.8,
-      "charge": "Les ténèbres engloutissent la lumière…"
+      "charge": "Une nuée putride s'échappe de ses entrailles…"
     },
     "guards": [
       {
         "code": "fantome",
-        "name": "Âme captive",
+        "name": "Âme damnée",
         "image_name": "fantome.png",
         "family": "mort-vivant",
         "abilities": {
@@ -336,7 +336,7 @@
       },
       {
         "code": "fantome",
-        "name": "Âme captive",
+        "name": "Âme damnée",
         "image_name": "fantome.png",
         "family": "mort-vivant",
         "abilities": {
@@ -360,7 +360,7 @@
     "tier": "endgame",
     "level": 100,
     "spawn_weight": 1,
-    "element": "lumiere",
+    "element": "",
     "max_hp": 66000,
     "attack": 585,
     "defense": 37,

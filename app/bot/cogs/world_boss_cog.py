@@ -71,6 +71,7 @@ from app.infrastructure.world_boss.boss_definition_loader import (
     get_definition as get_boss_definition,
     list_definitions,
 )
+from app.shared.enums import ALL_ELEMENTS, ELEMENT_EMOJIS, ELEMENT_LABELS
 from app.shared.formatters import format_int
 from discord.utils import escape_markdown
 from app.bot.rules_gate import GatedView
@@ -365,12 +366,19 @@ class WorldBossCog(commands.Cog):
         name="spawn",
         description="[Admin] Spawn manuel d'un world boss défini",
     )
-    @app_commands.describe(boss_code="Code du boss (autocomplete)")
+    @app_commands.describe(boss_code="Code du boss (autocomplete)",
+                           element="Son élément (sinon tiré au hasard, comme chaque semaine)")
+    @app_commands.choices(element=[
+        app_commands.Choice(name=f"{ELEMENT_EMOJIS.get(e.value, '')} {ELEMENT_LABELS.get(e.value, e.value)}".strip(),
+                            value=e.value)
+        for e in ALL_ELEMENTS
+    ])
     @admin_only
     async def boss_spawn(
         self,
         interaction: discord.Interaction,
         boss_code: str,
+        element: app_commands.Choice[str] | None = None,
     ) -> None:
         await interaction.response.defer(ephemeral=True)
 
@@ -378,7 +386,7 @@ class WorldBossCog(commands.Cog):
             use_case = SpawnWorldBossUseCase(
                 world_boss_repository=WorldBossRepository(session),
             )
-            result = use_case.execute(boss_code=boss_code)
+            result = use_case.execute(boss_code=boss_code, element=element.value if element else None)
 
         if not result.success or result.boss is None:
             await interaction.followup.send(result.message, ephemeral=True)
@@ -649,15 +657,16 @@ class WorldBossCog(commands.Cog):
 
     # ---------- API publique pour le pont admin web ----------
 
-    async def admin_spawn_boss(self, boss_code: str) -> tuple[bool, str]:
+    async def admin_spawn_boss(self, boss_code: str, element: str | None = None) -> tuple[bool, str]:
         """Spawn d'un boss demandé depuis l'admin WEB (via AdminBridgeCog).
-        Même chemin que `/boss spawn`, sans interaction Discord."""
+        Même chemin que `/boss spawn`, sans interaction Discord ; sans
+        `element`, il est tiré au hasard."""
         if not boss_code:
             return False, "Code de boss manquant."
         with get_db_session() as session:
             result = SpawnWorldBossUseCase(
                 world_boss_repository=WorldBossRepository(session),
-            ).execute(boss_code=boss_code)
+            ).execute(boss_code=boss_code, element=element or None)
         if not result.success or result.boss is None:
             return False, result.message
         message = await self._post_boss_message(result.boss)

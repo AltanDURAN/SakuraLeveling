@@ -86,8 +86,8 @@ class _FakeBossCog:
     def __init__(self):
         self.calls = []
 
-    async def admin_spawn_boss(self, boss_code):
-        self.calls.append(("spawn", boss_code))
+    async def admin_spawn_boss(self, boss_code, element=None):
+        self.calls.append(("spawn", boss_code) if element is None else ("spawn", boss_code, element))
         return True, f"boss {boss_code} spawné"
 
     async def admin_stop_boss(self):
@@ -153,6 +153,9 @@ def test_dispatch_boss_actions():
     assert ok and "slime_titan" in msg
     assert _run(bridge, "stop_boss")[0] is True
     assert boss.calls == [("spawn", "slime_titan"), ("stop",)]
+    # L'élément choisi sur le site (sinon tiré au hasard par le bot).
+    _run(bridge, "spawn_boss", {"boss_code": "slime_titan", "element": "feu"})
+    assert boss.calls[-1] == ("spawn", "slime_titan", "feu")
 
 
 def test_dispatch_spawn_event_ok_and_failure():

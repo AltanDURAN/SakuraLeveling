@@ -31,7 +31,7 @@ from app.bot.rendering import boss_fight_video as bfv
 from app.bot.rendering import fight_scene
 from app.infrastructure.db.models.world_boss_model import WorldBossModel
 from app.infrastructure.db.session import get_db_session
-from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
+from app.shared.enums import ALL_ELEMENTS, ELEMENT_EMOJIS, ELEMENT_LABELS
 from app.shared.image_tools import MOB_MAX_SIDE, cut_out_white, has_white_background, shrink
 from webapp.admin import git_sync, scene_helpers
 from webapp.admin._shared import get_templates
@@ -100,9 +100,61 @@ def _guards_label(guards: list[dict]) -> str:
     return " · ".join(f"{name} ×{n}" if n > 1 else name for name, n in counts.items())
 
 
-def _state(b: dict, mob_names: dict[str, str] | None = None, cards: set[str] | None = None) -> dict:
+ELEMENT_CODES = [e.value for e in ALL_ELEMENTS]
+
+
+def _element_label(element: str) -> str:
+    return f"{ELEMENT_EMOJIS.get(element, '')} {ELEMENT_LABELS.get(element, element)}".strip() if element else ""
+
+
+def elements() -> list[dict]:
+    """Les 8 éléments, pour choisir la teinte des aperçus."""
+    return [{"code": e, "emoji": ELEMENT_EMOJIS.get(e, ""), "label": ELEMENT_LABELS.get(e, e)}
+            for e in ELEMENT_CODES]
+
+
+def _live_boss() -> tuple[str, str]:
+    """(code, élément) du boss en cours — son élément a été tiré à son
+    apparition. ("", "") s'il n'y en a pas (ou pas de base : démo)."""
+    try:
+        from app.infrastructure.db.repositories.world_boss_repository import WorldBossRepository
+        with get_db_session() as session:
+            boss = WorldBossRepository(session).get_active()
+            return (boss.code, boss.element or "") if boss is not None else ("", "")
+    except Exception:  # noqa: BLE001
+        return "", ""
+
+
+def _preview_element(b: dict, requested: str = "", live: tuple[str, str] | None = None) -> str:
+    """La teinte d'un aperçu : celle demandée, sinon l'élément imposé par la
+    fiche, sinon celui du boss en cours, sinon le premier élément."""
+    if requested in ELEMENT_CODES:
+        return requested
+    forced = b.get("element", "") or ""
+    if forced in ELEMENT_CODES:
+        return forced
+    live_code, live_element = live if live is not None else _live_boss()
+    if live_code == b.get("code") and live_element in ELEMENT_CODES:
+        return live_element
+    return ELEMENT_CODES[0]
+
+
+def _zone_arenas(code: str) -> dict[str, str]:
+    out = {}
+    for element in ELEMENT_CODES:
+        path = bfv.arena_source(code, element)[1]
+        if path.is_file():
+            out[element] = f"/assets/landscapes/{path.name}?v={_mtime(path)}"
+    return out
+
+
+def _state(b: dict, mob_names: dict[str, str] | None = None, cards: set[str] | None = None,
+           live: tuple[str, str] | None = None) -> dict:
     """Ce que la page montre d'un boss : son image, son arène, d'où elles viennent."""
     code, element = b.get("code", ""), b.get("element", "") or ""
+    live = live if live is not None else _live_boss()
+    live_element = live[1] if live[0] == code else ""
+    preview = _preview_element(b, live=live)
     image = b.get("image_name", "") or ""
     image_path = _mobs_dir() / image if image else None
     has_image = bool(image_path and image_path.is_file())
@@ -112,20 +164,24 @@ def _state(b: dict, mob_names: dict[str, str] | None = None, cards: set[str] | N
         image_origin = "propre"
     else:
         image_origin = "empruntee"
-    arena_origin, arena_path = bfv.arena_source(code, element)
+    arena_origin, arena_path = bfv.arena_source(code, preview)
     names = mob_names if mob_names is not None else _mob_names_by_image()
     version = f"{_mtime(image_path)}-{_mtime(arena_path)}"
     return {
         "code": code, "name": b.get("name", code), "level": int(b.get("level", 0) or 0),
         "tier": b.get("tier", ""), "element": element,
-        "element_label": f"{ELEMENT_EMOJIS.get(element, '')} {ELEMENT_LABELS.get(element, element)}".strip()
-                         if element else "Neutre",
+        # Vide = tiré au hasard à chaque apparition (11/11/2026, décision de l'auteur).
+        "element_label": _element_label(element) or "🎲 Au hasard à chaque apparition",
+        "live_element": live_element, "live_label": _element_label(live_element),
+        "preview_element": preview,
         "guards": _guards_label(b.get("guards") or []),
         "image": image, "image_origin": image_origin,
         "image_url": f"/assets/mobs/{image}?v={_mtime(image_path)}" if has_image else "",
         "borrowed_from": names.get(image, "") if image_origin == "empruntee" else "",
         "arena_origin": arena_origin, "arena_name": arena_path.name,
         "arena_url": f"/assets/landscapes/{arena_path.name}?v={_mtime(arena_path)}" if arena_path.is_file() else "",
+        # Sans arène, le décor de repli dépend de l'élément : un par teinte d'aperçu.
+        "zone_arenas": _zone_arenas(code) if arena_origin == bfv.ARENA_ZONE else {},
         "version": version,
         "edit_url": f"/admin/world-bosses/{code}/edit",
         "card_url": f"/admin/cards/{code}" if code in (cards if cards is not None else _card_codes()) else "",
@@ -141,10 +197,11 @@ def _common_arena() -> dict:
 @router.get("/world-bosses", response_class=HTMLResponse)
 async def world_bosses_list(request: Request, user: AdminUser = Depends(require_admin)):
     names, cards = _mob_names_by_image(), _card_codes()
-    states = [_state(b, names, cards) for b in _bosses()]
+    live = _live_boss()
+    states = [_state(b, names, cards, live) for b in _bosses()]
     return get_templates().TemplateResponse(
         request, "admin/world_bosses/list.html",
-        context={"user": user, "bosses": states, "common": _common_arena(),
+        context={"user": user, "bosses": states, "common": _common_arena(), "elements": elements(),
                  "max_mb": MAX_UPLOAD_BYTES // (1024 * 1024)},
     )
 
@@ -220,6 +277,15 @@ def _sync_instances(code: str, image_name: str) -> None:
         _logger.warning("image du boss %s non reportée en base", code, exc_info=True)
 
 
+def _rename_instances(code: str, name: str) -> None:
+    """Un boss renommé : le boss en cours et l'historique prennent le nouveau nom."""
+    try:
+        with get_db_session(atomic=True) as session:
+            session.execute(update(WorldBossModel).where(WorldBossModel.code == code).values(name=name))
+    except Exception:  # noqa: BLE001
+        _logger.warning("nom du boss %s non reporté en base", code, exc_info=True)
+
+
 def _store(code: str | None, slot: str, data: bytes) -> list[str]:
     """Range l'image (`slot` : boss | arena ; `code` None = salle commune)
     et renvoie les remarques. Lève ValueError si l'image est refusée."""
@@ -260,8 +326,8 @@ def _after_change(code: str | None) -> dict:
     salle commune change (elle est l'arène de ceux qui n'ont pas la leur)."""
     if code:
         return {"common": _common_arena(), "boss": _state(_boss(code))}
-    names, cards = _mob_names_by_image(), _card_codes()
-    return {"common": _common_arena(), "bosses": [_state(b, names, cards) for b in _bosses()]}
+    names, cards, live = _mob_names_by_image(), _card_codes(), _live_boss()
+    return {"common": _common_arena(), "bosses": [_state(b, names, cards, live) for b in _bosses()]}
 
 
 @router.post("/world-bosses/arena-commune")
@@ -306,8 +372,7 @@ async def boss_arena_delete(code: str, user: AdminUser = Depends(require_admin))
 
 
 # ----------------------------------------------------------------- aperçus --
-def _scene_jpeg(b: dict) -> bytes:
-    element = b.get("element", "") or ""
+def _scene_jpeg(b: dict, element: str) -> bytes:
     boss = {"code": b.get("code", ""), "name": b.get("name", ""), "image_name": b.get("image_name", ""),
             "element": element, "max_hp": int(b.get("max_hp", 1) or 1)}
     guards = [{"code": g.get("code", ""), "name": g.get("name", "Garde"), "image_name": g.get("image_name", ""),
@@ -321,11 +386,10 @@ def _scene_jpeg(b: dict) -> bytes:
     return buf.getvalue()
 
 
-def _banner_png(b: dict) -> bytes:
+def _banner_png(b: dict, element: str) -> bytes:
     from app.bot.rendering.world_boss_banner import Contributor, RaidBannerData, compose_raid_banner
     from app.bot.runtime.raid_banner_builder import RAID_DAYS, _weakness_label, next_assault_label
 
-    element = b.get("element", "") or ""
     max_hp = int(b.get("max_hp", 1) or 1)
     data = RaidBannerData(
         boss_name=b.get("name", ""), image_name=b.get("image_name", "") or "",
@@ -346,24 +410,25 @@ def _banner_png(b: dict) -> bytes:
         return out.read_bytes()
 
 
-async def _preview(code: str, render, media_type: str):
+async def _preview(code: str, render, media_type: str, element: str = ""):
     boss = _boss(code)
     if boss is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Boss `{code}` introuvable.")
-    data = await run_in_threadpool(render, boss)
+    data = await run_in_threadpool(render, boss, _preview_element(boss, element))
     return Response(data, media_type=media_type, headers={"Cache-Control": "no-store"})
 
 
 @router.get("/world-bosses/{code}/scene.jpg")
-async def boss_scene_preview(code: str, user: AdminUser = Depends(require_admin)):
-    """Une image de la VIDÉO de l'assaut (code du bot) : arène, boss, gardes."""
-    return await _preview(code, _scene_jpeg, "image/jpeg")
+async def boss_scene_preview(code: str, element: str = "", user: AdminUser = Depends(require_admin)):
+    """Une image de la VIDÉO de l'assaut (code du bot) : arène, boss, gardes,
+    teintés par `element` (le boss en change à chaque apparition)."""
+    return await _preview(code, _scene_jpeg, "image/jpeg", element)
 
 
 @router.get("/world-bosses/{code}/banner.png")
-async def boss_banner_preview(code: str, user: AdminUser = Depends(require_admin)):
+async def boss_banner_preview(code: str, element: str = "", user: AdminUser = Depends(require_admin)):
     """La BANNIÈRE du raid (code du bot), boss entamé et trois combattants d'exemple."""
-    return await _preview(code, _banner_png, "image/png")
+    return await _preview(code, _banner_png, "image/png", element)
 
 
 # ------------------------------------------------------------------ fiches --
@@ -454,6 +519,7 @@ async def bosses_edit_form(
     return get_templates().TemplateResponse(
         request, "admin/world_bosses/form.html",
         context={"user": user, "errors": {}, "form_data": fd, "edit_code": code, "boss": _state(entry),
+                 "elements": elements(),
                  "saved": bool(saved), "created": bool(created),
                  "max_mb": MAX_UPLOAD_BYTES // (1024 * 1024)},
     )
@@ -490,6 +556,8 @@ async def bosses_update(
         "lore": fd.get("lore", "").strip(),
     }
     update_in_list_by_key("boss_definitions.json", code, entry)
+    if entry["name"] and entry["name"] != existing.get("name"):
+        _rename_instances(code, entry["name"])
     return RedirectResponse(f"/admin/world-bosses/{code}/edit?saved=1", status_code=303)
 
 

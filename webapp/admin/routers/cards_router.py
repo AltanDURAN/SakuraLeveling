@@ -46,7 +46,8 @@ ART_KINDS = {"carte": "l'image de la carte", "fullart": "l'illustration pleine c
 ORIGINS = {
     "carte": "🖼️ Image de la carte", "monstre": "👹 Image du monstre", "portrait": "👤 Portrait du personnage",
     "boss": "🐉 Image du boss",
-    "ebauche": "✏️ Ébauche générée", "aucune": "❌ Aucune image",
+    "ebauche": "✏️ Ébauche générée", "emprunt": "⏳ Image empruntée par le boss, en attendant",
+    "aucune": "❌ Aucune image",
 }
 
 

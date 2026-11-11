@@ -30,6 +30,14 @@ def _footer(idx: int, total: int, progress: str) -> str:
     return " · ".join(part for part in parts if part)
 
 
+def element_line(boss: BossDefinition) -> str:
+    """Un boss change d'élément à chaque apparition (11/11/2026), sauf si sa
+    fiche en impose un."""
+    if boss.element:
+        return _element_line(boss.element)
+    return "Élément : 🎲 **tiré au hasard à chaque apparition** (il est annoncé avec le boss)"
+
+
 def mechanics_lines(boss: BossDefinition) -> list[str]:
     """Phases, attaque ultime, gardes et particularités, en clair."""
     lines = []
@@ -56,7 +64,7 @@ def build_boss_embed(boss: BossDefinition, idx: int, total: int, items: dict | N
     embed.add_field(name="🏆 Raid", value=f"Pour une équipe de niveau **{boss.level}**", inline=victories is not None)
     if victories is not None:
         embed.add_field(name="⚔️ Tes victoires", value=f"**{format_int(victories)}**", inline=True)
-    embed.add_field(name="Identité", value=_element_line(boss.element), inline=False)
+    embed.add_field(name="Identité", value=element_line(boss), inline=False)
     embed.add_field(
         name="📊 Stats",
         value=(

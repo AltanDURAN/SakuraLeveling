@@ -2,7 +2,7 @@
 
 {% block title %}{% if edit_code %}Éditer {{ edit_code }}{% else %}Nouveau world boss{% endif %} — Sakura Admin{% endblock %}
 
-{% from "admin/world_bosses/_images.html" import wb_styles, wb_slots, wb_previews, wb_toast, wb_script %}
+{% from "admin/world_bosses/_images.html" import wb_styles, wb_slots, wb_elements, wb_previews, wb_toast, wb_script %}
 {% block content %}
 {% set fd = form_data or {} %}
 <section class="form-page">
@@ -19,13 +19,14 @@
     {% if edit_code and boss %}
     {{ wb_styles() }}
     {{ wb_script() }}
-    <script type="application/json" id="wb-data">{{ {"bosses": [boss], "common": {}, "maxMb": max_mb}|tojson }}</script>
+    <script type="application/json" id="wb-data">{{ {"bosses": [boss], "common": {}, "elements": elements, "maxMb": max_mb}|tojson }}</script>
     <div class="form-section" x-data="wbImages(JSON.parse(document.getElementById('wb-data').textContent))">
         <h2 class="form-section-title">Images</h2>
         <template x-for="b in bosses" :key="b.code">
             <div class="wb-card" style="box-shadow:none;">
                 {{ wb_previews(scene=True, banner=False) }}
                 <div class="wb-side">
+                    {{ wb_elements() }}
                     {{ wb_slots() }}
                     {{ wb_previews(scene=False, banner=True) }}
                     <div class="wb-actions">

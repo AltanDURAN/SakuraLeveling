@@ -78,17 +78,18 @@ def test_phases_ultime_et_gardes_charges():
         assert len(boss.guards) == 2 and all(g["max_hp"] > 0 and g["attack"] > 0 for g in boss.guards)
 
 
-def test_each_boss_has_an_element():
+def test_aucun_boss_n_impose_son_element():
+    """L'élément d'un boss est tiré au hasard à chaque apparition (11/11/2026,
+    décision de l'auteur) : aucune fiche n'en impose un."""
     clear_cache()
-    expected = {
-        "slime_titan": "eau",
-        "gobelin_warlord": "feu",
-        "stone_colossus": "terre",
-        "shadow_wraith": "tenebre",
-        "ancient_dragon": "lumiere",
-    }
-    for code, elem in expected.items():
-        assert get_definition(code).element == elem
+    for code in ("slime_titan", "gobelin_warlord", "stone_colossus", "shadow_wraith", "ancient_dragon"):
+        assert get_definition(code).element == ""
+
+
+def test_les_boss_renommes():
+    clear_cache()
+    assert get_definition("stone_colossus").name == "Guerrière Fantôme"
+    assert get_definition("shadow_wraith").name == "Démon Zombie"
 
 
 def test_le_fichier_est_relu_quand_il_change(tmp_path, monkeypatch):

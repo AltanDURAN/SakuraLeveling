@@ -59,6 +59,10 @@ def test_la_galerie_montre_chaque_boss_et_d_ou_vient_son_image(client, content):
     assert titan["image_origin"] == "empruntee" and titan["borrowed_from"]
     assert titan["image_url"].startswith("/assets/mobs/slime.png")
     assert titan["card_url"] == "/admin/cards/slime_titan" and titan["guards"]
+    # Son élément est tiré à chaque apparition : on choisit la teinte de l'aperçu.
+    assert titan["element"] == "" and "hasard" in titan["element_label"]
+    assert titan["preview_element"] in {e["code"] for e in data["elements"]} and len(data["elements"]) == 8
+    assert titan["arena_origin"] == "zone" and set(titan["zone_arenas"]) <= {e["code"] for e in data["elements"]}
     assert [b["level"] for b in data["bosses"]] == sorted(b["level"] for b in data["bosses"])
 
 
@@ -69,6 +73,12 @@ def test_les_apercus_sont_dessines_par_le_code_du_bot(client, content):
     banner = client.get("/admin/world-bosses/slime_titan/banner.png")
     assert banner.status_code == 200 and banner.content[:4] == b"\x89PNG"
     assert client.get("/admin/world-bosses/inconnu/scene.jpg").status_code == 404
+    # Une teinte par élément (la vidéo du bot teinte le boss par l'élément tiré).
+    fire = client.get("/admin/world-bosses/slime_titan/scene.jpg?element=feu").content
+    ice = client.get("/admin/world-bosses/slime_titan/scene.jpg?element=glace").content
+    assert fire != ice
+    assert client.get("/admin/world-bosses/slime_titan/banner.png?element=feu").status_code == 200
+    assert client.get("/admin/world-bosses/slime_titan/scene.jpg?element=n_importe").status_code == 200
 
 
 def test_deposer_l_image_d_un_boss(client, content, assets):
@@ -131,3 +141,28 @@ def test_la_fiche_montre_les_images_et_l_enregistrement_les_garde(client, conten
     r = client.post("/admin/world-bosses/gobelin_warlord", data={"name": "Seigneur renommé"}, follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"].endswith("/edit?saved=1")
     assert _bosses(content)["gobelin_warlord"]["image_name"] == before       # le formulaire n'efface pas l'image
+
+
+def test_faire_apparaitre_un_boss_d_un_element_choisi(client, content):
+    """Monde › Actions : l'élément se choisit, sinon il est tiré au hasard."""
+    from app.infrastructure.db.repositories.admin_command_repository import AdminCommandRepository
+    from app.infrastructure.db.session import get_db_session
+
+    page = client.get("/admin/actions")
+    assert page.status_code == 200 and 'name="element"' in page.text and "Au hasard" in page.text
+    r = client.post("/admin/actions/bot/spawn_boss", data={"boss_code": "slime_titan", "element": "feu"},
+                    follow_redirects=False)
+    assert r.status_code == 303
+    with get_db_session() as session:
+        last = AdminCommandRepository(session).list_recent(1)[0]
+    assert last.action == "spawn_boss" and '"element": "feu"' in last.payload_json
+
+
+def test_renommer_un_boss_renomme_le_boss_en_cours(client, content, monkeypatch):
+    renamed = []
+    monkeypatch.setattr("webapp.admin.routers.world_bosses_router._rename_instances",
+                        lambda code, name: renamed.append((code, name)))
+    client.post("/admin/world-bosses/gobelin_warlord", data={"name": "Seigneur renommé"}, follow_redirects=False)
+    assert renamed == [("gobelin_warlord", "Seigneur renommé")]
+    client.post("/admin/world-bosses/gobelin_warlord", data={"name": "Seigneur renommé"}, follow_redirects=False)
+    assert len(renamed) == 1                                               # nom inchangé : rien à faire
