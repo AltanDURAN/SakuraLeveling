@@ -953,3 +953,30 @@ code {
   .form-page form[style*="grid-template-columns"] .field[style*="grid-column"] { grid-column: auto !important; }
   .form-page [style*="display:flex"] { flex-wrap: wrap; }
 }
+
+/* ---- Visionneuse d'images (admin.js) ---- */
+img.zoom-in { cursor: zoom-in; }
+html.zoom-lock { overflow: hidden; }
+.zoom-box { position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center;
+            background: rgba(14, 10, 18, .86); backdrop-filter: blur(4px); padding: 3vh 4vw; }
+.zoom-box.is-open { display: flex; animation: zoom-fade .14s ease-out; }
+@keyframes zoom-fade { from { opacity: 0; } to { opacity: 1; } }
+.zoom-figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: .7rem; max-width: 100%; }
+.zoom-stage { display: flex; align-items: center; justify-content: center; }
+.zoom-stage img { display: block; border-radius: 12px; box-shadow: 0 18px 50px rgba(0, 0, 0, .55);
+                  object-fit: contain; image-rendering: auto;
+                  background: repeating-conic-gradient(#d9d6df 0 25%, #f4f2f7 0 50%) 0 0 / 22px 22px; }
+.zoom-box figcaption { display: flex; flex-wrap: wrap; gap: .4rem 1rem; align-items: center; justify-content: center;
+                       color: #efe6f3; font-size: .9rem; max-width: 90vw; }
+.zoom-name { font-weight: 700; overflow-wrap: anywhere; }
+.zoom-size, .zoom-count { color: #b9a9c2; font-variant-numeric: tabular-nums; }
+.zoom-box a { color: #ffb3d6; text-decoration: none; font-weight: 600; }
+.zoom-box a:hover { text-decoration: underline; }
+.zoom-close, .zoom-nav { position: absolute; border: 0; cursor: pointer; color: #fff; background: rgba(255, 255, 255, .12);
+                         border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.zoom-close { top: 16px; right: 16px; width: 42px; height: 42px; font-size: 1.15rem; }
+.zoom-nav { top: 50%; transform: translateY(-50%); width: 50px; height: 50px; font-size: 2rem; line-height: 1; }
+.zoom-prev { left: 14px; } .zoom-next { right: 14px; }
+.zoom-close:hover, .zoom-nav:hover { background: rgba(255, 255, 255, .24); }
+.zoom-nav[hidden], .zoom-link[hidden] { display: none; }
+@media (max-width: 640px) { .zoom-nav { width: 40px; height: 40px; font-size: 1.6rem; } }

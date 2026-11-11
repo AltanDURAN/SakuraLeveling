@@ -1005,6 +1005,8 @@ INTERFACE WEB D'ADMINISTRATION
     joueur peut s'offrir. Nouvel An. Chaque message Discord est montré en
     aperçu avant d'enregistrer (Ctrl+S) ; tout est vérifié avant d'écrire.
     Pour tester sur la bêta : avancer les dates, essayer, puis les remettre.
+    IMAGES : sur toutes les pages du site, un clic sur une image l'affiche
+    en grand (← → pour passer aux autres, Échap pour fermer).
     RYTHME (Monde › Rythme, sans redémarrage) : délai entre deux monstres
     (fixe ou tiré dans une plage), délai après une fuite, temps pour
     rejoindre (et pour une élite), délai avant le bouton Lancer, heures

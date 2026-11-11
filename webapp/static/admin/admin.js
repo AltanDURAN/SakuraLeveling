@@ -143,3 +143,132 @@ function imageField(cfg) {
         },
     };
 }
+
+// Sakura Admin — visionneuse d'images (demande de l'auteur, 11/11/2026) :
+// un clic sur une image l'affiche en grand. ← → passent aux autres images de
+// la page, Échap (ou un clic à côté) ferme. Laissées tranquilles : les images
+// d'un bouton ou d'un sélecteur, des éditeurs où l'on fait glisser (scènes,
+// images en lot), les petites icônes, et tout ce qui porte `data-no-zoom`.
+// Une image dans un lien (carte, fiche) garde le lien dans la visionneuse.
+(function () {
+    const MIN_SIDE = 28;
+    let box = null, current = null, list = [];
+
+    function draggable(el) {
+        for (let node = el; node && node !== document.body; node = node.parentElement) {
+            if (node.hasAttribute("draggable") && node.getAttribute("draggable") !== "false") return true;
+            for (const attr of node.attributes) {
+                if (/^(x-on:|@)(mousedown|pointerdown|touchstart|dragstart)/.test(attr.name)) return true;
+            }
+        }
+        return false;
+    }
+
+    function zoomable(img) {
+        if (!(img instanceof HTMLImageElement) || !img.currentSrc && !img.src) return false;
+        if (img.closest("[data-no-zoom], button, label, .zoom-box, select")) return false;
+        const r = img.getBoundingClientRect();
+        if (r.width < MIN_SIDE && r.height < MIN_SIDE) return false;
+        if (getComputedStyle(img).pointerEvents === "none") return false;
+        return !draggable(img);
+    }
+
+    function build() {
+        box = document.createElement("div");
+        box.className = "zoom-box";
+        box.setAttribute("role", "dialog");
+        box.setAttribute("aria-modal", "true");
+        box.innerHTML =
+            '<button type="button" class="zoom-close" aria-label="Fermer">✕</button>' +
+            '<button type="button" class="zoom-nav zoom-prev" aria-label="Image précédente">‹</button>' +
+            '<button type="button" class="zoom-nav zoom-next" aria-label="Image suivante">›</button>' +
+            '<figure class="zoom-figure"><div class="zoom-stage"><img alt=""></div>' +
+            '<figcaption><span class="zoom-name"></span><span class="zoom-size"></span>' +
+            '<span class="zoom-count"></span><a class="zoom-open" target="_blank" rel="noopener">Ouvrir l\'original ↗</a>' +
+            '<a class="zoom-link">Ouvrir la fiche →</a></figcaption></figure>';
+        document.body.appendChild(box);
+        box.addEventListener("click", (e) => {
+            if (e.target === box || e.target.classList.contains("zoom-stage")) close();
+        });
+        box.querySelector(".zoom-close").addEventListener("click", close);
+        box.querySelector(".zoom-prev").addEventListener("click", () => step(-1));
+        box.querySelector(".zoom-next").addEventListener("click", () => step(1));
+        box.querySelector(".zoom-stage img").addEventListener("load", fit);
+        window.addEventListener("resize", () => { if (box.classList.contains("is-open")) fit(); });
+    }
+
+    function fit() {
+        const img = box.querySelector(".zoom-stage img");
+        const nw = img.naturalWidth || 1, nh = img.naturalHeight || 1;
+        // Agrandie jusqu'à remplir l'écran (×3 au plus pour une petite icône).
+        const scale = Math.min(window.innerWidth * 0.9 / nw, window.innerHeight * 0.8 / nh, 3);
+        img.style.width = Math.round(nw * scale) + "px";
+        img.style.height = Math.round(nh * scale) + "px";
+        box.querySelector(".zoom-size").textContent = nw + " × " + nh + " px";
+    }
+
+    function show(img) {
+        if (!box) build();
+        current = img;
+        const src = img.currentSrc || img.src;
+        const view = box.querySelector(".zoom-stage img");
+        view.src = src;
+        view.alt = img.alt || "";
+        let name = img.alt || "";
+        if (!name) {
+            try { name = decodeURIComponent(new URL(src, location.href).pathname.split("/").pop()); } catch (e) { name = ""; }
+        }
+        box.querySelector(".zoom-name").textContent = name;
+        box.querySelector(".zoom-open").href = src;
+        const link = img.closest("a[href]");
+        const go = box.querySelector(".zoom-link");
+        go.hidden = !link;
+        if (link) go.href = link.href;
+        const i = list.indexOf(img);
+        box.querySelector(".zoom-count").textContent = list.length > 1 ? (i + 1) + " / " + list.length : "";
+        box.querySelectorAll(".zoom-nav").forEach((b) => { b.hidden = list.length < 2; });
+        box.classList.add("is-open");
+        document.documentElement.classList.add("zoom-lock");
+        if (view.complete) fit();
+    }
+
+    function step(delta) {
+        if (list.length < 2) return;
+        const i = (list.indexOf(current) + delta + list.length) % list.length;
+        show(list[i]);
+    }
+
+    function close() {
+        if (!box) return;
+        box.classList.remove("is-open");
+        document.documentElement.classList.remove("zoom-lock");
+        current = null;
+    }
+
+    // Phase de CAPTURE : passe avant les clics de la page (ouvrir une fiche,
+    // suivre un lien), qui n'ont donc pas lieu quand on agrandit l'image.
+    document.addEventListener("click", (e) => {
+        const img = e.target;
+        if (!(img instanceof HTMLImageElement) || !zoomable(img)) return;
+        if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey) return;   // Ctrl+clic : le lien s'ouvre
+        e.preventDefault();
+        e.stopPropagation();
+        list = Array.from(document.querySelectorAll("img")).filter((el) => el.offsetParent !== null && zoomable(el));
+        show(img);
+    }, true);
+
+    document.addEventListener("mouseover", (e) => {
+        const img = e.target;
+        if (img instanceof HTMLImageElement && !img.dataset.zoomChecked) {
+            img.dataset.zoomChecked = "1";
+            if (zoomable(img)) img.classList.add("zoom-in");
+        }
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (!box || !box.classList.contains("is-open")) return;
+        if (e.key === "Escape") { close(); e.preventDefault(); }
+        else if (e.key === "ArrowLeft") { step(-1); e.preventDefault(); }
+        else if (e.key === "ArrowRight") { step(1); e.preventDefault(); }
+    });
+})();
