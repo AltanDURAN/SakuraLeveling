@@ -41,6 +41,22 @@ def test_une_image_deja_transparente_n_est_pas_retouchee():
     assert prepare_item_image(image).getpixel((30, 30))[3] == 255
 
 
+def test_un_dessin_qui_touche_le_bas_garde_son_fond_blanc_detecte():
+    """11/11/2026 (Démon Zombie, dessin au crayon coupé en bas) : un coin pris
+    par le dessin ne doit pas empêcher de retirer le papier."""
+    image = Image.new("RGBA", (300, 400), (255, 255, 255, 255))
+    draw = ImageDraw.Draw(image)
+    draw.rectangle([60, 120, 299, 399], fill=(90, 90, 95, 255), outline=(10, 10, 10, 255), width=4)
+    assert has_white_background(image)
+    out = cut_out_white(image)
+    assert out.getpixel((10, 10))[3] == 0 and out.getpixel((200, 300))[3] == 255
+    # Un fond sombre, ou un objet qui remplit presque tout le cadre : rien.
+    assert not has_white_background(Image.new("RGBA", (300, 400), (30, 30, 30, 255)))
+    full = Image.new("RGBA", (300, 400), (255, 255, 255, 255))
+    ImageDraw.Draw(full).rectangle([0, 0, 299, 330], fill=(90, 90, 95, 255))
+    assert not has_white_background(full)
+
+
 def test_la_reduction_n_agrandit_jamais():
     assert shrink(Image.new("RGB", (100, 50)), 512).size == (100, 50)
     assert shrink(Image.new("RGB", (2048, 1024)), 512).size == (512, 256)

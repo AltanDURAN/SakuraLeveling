@@ -12,6 +12,10 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageStat
 
 #: Un pixel est du fond s'il est au moins aussi clair que ça sur ses trois couleurs.
 WHITE_LEVEL = 232
+#: Part du pourtour qui doit être blanche pour parler de fond blanc : un dessin
+#: peut toucher un ou deux bords (personnage coupé en bas). Seul le blanc RELIÉ
+#: au bord est retiré, le reste de l'image n'est jamais touché.
+WHITE_BORDER_SHARE = 0.5
 #: Blanc ENFERMÉ dans l'objet (centre d'un anneau, d'une sangle, d'un cadre) :
 #: c'est le fond vu au travers s'il est franc, assez grand et cerné de sombre
 #: (ces images ont un contour encré). Un reflet sur une dent ou une plume
@@ -38,11 +42,20 @@ def shrink(image: Image.Image, max_side: int) -> Image.Image:
 
 
 def has_white_background(image: Image.Image) -> bool:
-    """Fond blanc opaque : les quatre coins sont blancs et sans transparence."""
+    """Fond blanc opaque : au moins `WHITE_BORDER_SHARE` du pourtour est blanc
+    et sans transparence. (Jusqu'au 11/11/2026 : les quatre coins — un dessin
+    coupé en bas, qui touchait un coin, gardait tout son papier.)"""
     rgba = image.convert("RGBA")
     w, h = rgba.size
-    corners = [rgba.getpixel((x, y)) for x in (1, w - 2) for y in (1, h - 2)]
-    return all(a > 200 and min(r, g, b) >= WHITE_LEVEL for r, g, b, a in corners)
+    if w < 4 or h < 4:
+        return False
+    step = max(1, max(w, h) // 200)
+    # Un pixel en retrait : un scan a parfois un liseré sombre sur le bord.
+    points = [(x, y) for x in range(1, w - 1, step) for y in (1, h - 2)] + \
+             [(x, y) for y in range(1, h - 1, step) for x in (1, w - 2)]
+    pixels = rgba.load()
+    white = sum(1 for p in points if pixels[p][3] > 200 and min(pixels[p][:3]) >= WHITE_LEVEL)
+    return white >= WHITE_BORDER_SHARE * len(points)
 
 
 def _background_mask(rgb: Image.Image) -> Image.Image:
