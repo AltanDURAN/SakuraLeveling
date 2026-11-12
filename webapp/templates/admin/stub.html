@@ -1,20 +1,14 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head %}
 
-{% block title %}{{ entity_label }} — À venir{% endblock %}
+{% block title %}{{ entity_label }} — Sakura Admin{% endblock %}
 
 {% block content %}
 <section class="stub-page">
-    <a href="/admin" class="breadcrumb">← Dashboard</a>
-    <div class="stub-card">
-        <h1>{{ entity_label }}</h1>
-        <p class="stub-desc">{{ entity_description }}</p>
-        <div class="stub-badge">🚧 À venir</div>
-        <p class="stub-help">
-            Cette section n'est pas encore implémentée en interface web. Pour
-            le moment, modifier ces données passe par les JSON dans
-            <code>app/infrastructure/content/</code> + reseed ou via les
-            commandes <code>/admin</code> du bot Discord.
-        </p>
+    {{ page_head(entity_label, "🚧", sub=entity_description) }}
+    <div class="notice is-warn">
+        Cette section n'a pas encore de page sur le site. En attendant, ces données se modifient dans
+        <code>app/infrastructure/content/</code> (puis un reseed) ou avec les commandes <code>/admin</code> du bot.
     </div>
 </section>
 {% endblock %}

@@ -1,30 +1,13 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
 
-{% block title %}Actions admin — Sakura Admin{% endblock %}
+{% block title %}Actions — Sakura Admin{% endblock %}
 
 {% block content %}
 <section class="form-page">
-    <a href="/admin" class="breadcrumb">← Dashboard</a>
-    <h1>⚡ Actions rapides</h1>
-    <p class="form-section-help">
-        Toute l'administration depuis le site, en deux familles :
-        les actions <strong>sur les joueurs</strong> (or, XP, niveau, points,
-        items, PV, cooldowns, effets, reset) écrivent directement en
-        base — effet immédiat, visible par le joueur à sa prochaine commande ;
-        les actions <strong>du bot</strong> (spawns, arrêt de combat) lui sont
-        transmises et exécutées en quelques secondes.
-    </p>
-
-    {% if flash_message %}
-        <div class="form-section" style="background: var(--accent-soft); border-color: var(--accent);">
-            ✅ {{ flash_message }}
-        </div>
-    {% endif %}
-    {% if flash_error %}
-        <div class="form-section" style="background: #fce4e7; border-color: var(--danger); color: var(--danger);">
-            ❌ {{ flash_error }}
-        </div>
-    {% endif %}
+    {{ page_head("Actions rapides", "⚡", sub="Deux familles : les actions <strong>sur les joueurs</strong> (or, XP, niveau, points, objets, PV, attentes, effets, reset) écrivent en base, effet immédiat ; les actions <strong>du bot</strong> (faire apparaître, arrêter) lui sont transmises et exécutées en quelques secondes.") }}
+    {% if flash_message %}<div class="notice is-ok">✅ {{ flash_message }}</div>{% endif %}
+    {% if flash_error %}<div class="notice is-danger">❌ {{ flash_error }}</div>{% endif %}
 
     {% set target_field %}
         <label class="field">
@@ -93,10 +76,10 @@
         </form>
 
         <form method="post" action="/admin/actions/give_skill_points" class="form-section">
-            <h2 class="form-section-title">🌳 Skill points — donner / retirer</h2>
+            <h2 class="form-section-title">🌳 Points d'arbre — donner / retirer</h2>
             <div class="form-row">{{ target_field }}{{ action_field }}
                 <label class="field">
-                    <span class="field-label">Skill points</span>
+                    <span class="field-label">Points d'arbre</span>
                     <input type="number" name="amount" class="input" value="5" min="1" required>
                 </label>
             </div>
@@ -109,7 +92,7 @@
             <h2 class="form-section-title">📦 Item — donner / retirer</h2>
             <div class="form-row">{{ target_field }}{{ action_field }}
                 <label class="field">
-                    <span class="field-label">Item</span>
+                    <span class="field-label">Objet</span>
                     <input list="items-list" name="item_code" class="input"
                            placeholder="ex: iron_sword" required>
                 </label>
@@ -209,7 +192,7 @@
                 niveaux de forge et participations aux événements.
             </p>
             <div class="form-actions">
-                <button type="submit" class="btn" style="background: var(--danger); color:#fff;">Réinitialiser</button>
+                <button type="submit" class="btn btn-danger">Réinitialiser</button>
             </div>
         </form>
     </div>
@@ -223,7 +206,7 @@
     <div class="entity-grid" style="grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));">
 
         <form method="post" action="/admin/actions/bot/spawn_encounter" class="form-section">
-            <h2 class="form-section-title">👾 Faire spawner un monstre</h2>
+            <h2 class="form-section-title">👾 Faire apparaître un monstre</h2>
             <label class="field">
                 <span class="field-label">Monstre — laisse vide pour un tirage aléatoire</span>
                 <select name="mob_code" class="input">
@@ -233,7 +216,7 @@
                     {% endfor %}
                 </select>
             </label>
-            <div class="form-actions"><button type="submit" class="btn btn-primary">Faire spawner</button></div>
+            <div class="form-actions"><button type="submit" class="btn btn-primary">Faire apparaître</button></div>
         </form>
 
         <form method="post" action="/admin/actions/bot/stop_encounter" class="form-section">
@@ -243,7 +226,7 @@
                 <strong>Résoudre</strong> lance immédiatement le combat sans attendre la fin du recrutement.
             </p>
             <div class="form-actions">
-                <button type="submit" class="btn" style="background: var(--danger); color:#fff;">Arrêter le combat</button>
+                <button type="submit" class="btn btn-danger">Arrêter le combat</button>
                 <button type="submit" class="btn" formaction="/admin/actions/bot/resolve_encounter">Résoudre maintenant</button>
             </div>
         </form>
@@ -264,9 +247,8 @@
                 </select>
             </label>
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Faire spawner</button>
-                <button type="submit" class="btn" formaction="/admin/actions/bot/stop_boss"
-                        style="background: var(--danger); color:#fff;">Arrêter le boss actif</button>
+                <button type="submit" class="btn btn-primary">Faire apparaître</button>
+                <button type="submit" class="btn btn-danger" formaction="/admin/actions/bot/stop_boss">Arrêter le boss actif</button>
             </div>
         </form>
 
@@ -281,7 +263,7 @@
                 </select>
             </label>
             <p class="field-hint">Le spawn manuel fonctionne même si l'événement est désactivé dans sa config.</p>
-            <div class="form-actions"><button type="submit" class="btn btn-primary">Faire spawner</button></div>
+            <div class="form-actions"><button type="submit" class="btn btn-primary">Faire apparaître</button></div>
         </form>
     </div>
 

@@ -95,3 +95,49 @@ def test_toutes_les_pages_admin_s_affichent(client):
             failures.append((path, status))
     assert checked > 30
     assert failures == []
+
+
+def test_chaque_page_suit_le_standard(client):
+    """Standard des pages (11/11/2026, demande de l'auteur : homogénéiser le
+    site) : fil d'Ariane tiré du menu, en-tête commun, aucun ancien lien
+    « ← Dashboard », aucun avertissement de redémarrage obsolète."""
+    from app.infrastructure.encounters.farm_zone_loader import list_zones
+
+    subs = {**SUBS, "player_id": str(client.player_id),
+            "channel_id": str(list_zones()[0]["channel_id"])}
+    # Pages « fiche » ou « outil » qui portent leur propre en-tête.
+    own_header = ("/admin/players", "/admin/skill-tree")
+    problems = []
+    for route in client.app_routes:
+        path = route.path
+        if "GET" not in getattr(route, "methods", set()) or not path.startswith("/admin/"):
+            continue
+        if any(x in path for x in ("auth/", "logout", "login", ".png", ".jpg", ".gif", "/data", "refresh", "mob-content")):
+            continue
+        for key, value in subs.items():
+            path = path.replace("{" + key + "}", value)
+        if "{" in path:
+            continue
+        r = client.get(path)
+        if r.status_code != 200 or "text/html" not in r.headers.get("content-type", ""):
+            continue
+        html = r.text
+        if 'class="crumbs"' not in html and path != "/admin/":           # l'accueil n'en a pas
+            problems.append((path, "pas de fil d'Ariane"))
+        if "page-head" not in html and not path.startswith(own_header):
+            problems.append((path, "pas d'en-tête standard"))
+        if "← Dashboard" in html or "Restart du bot requis" in html or "restart bot requis" in html:
+            problems.append((path, "ancien en-tête ou avertissement"))
+    assert problems == [], "\n".join(f"{p} : {why}" for p, why in problems)
+
+
+def test_le_menu_est_la_seule_source_des_pages():
+    """L'accueil, le menu et le fil d'Ariane lisent tous webapp/admin/nav.py."""
+    from webapp.admin.nav import NAV, locate
+
+    hrefs = [it.href for g in NAV for it in g.items]
+    assert len(hrefs) == len(set(hrefs))
+    group, item = locate("/admin/items/images")
+    assert item.label == "Images en lot"                         # le plus long préfixe
+    assert locate("/admin/world-bosses/slime_titan/edit")[1].href == "/admin/world-bosses"
+    assert locate("/admin/nulle-part") == (None, None)

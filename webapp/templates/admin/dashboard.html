@@ -1,63 +1,26 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head %}
 
-{% block title %}Dashboard — Sakura Admin{% endblock %}
-
-{% macro card(href, icon, title, desc, count=None) %}
-<a class="entity-card entity-card--active" href="{{ href }}">
-    <div class="entity-icon">{{ icon }}</div>
-    <div class="entity-body">
-        <h2>{{ title }}</h2>
-        <p>{{ desc }}</p>
-        {% if count is not none %}<span class="entity-count">{{ count }}</span>{% endif %}
-    </div>
-</a>
-{% endmacro %}
+{% block title %}Accueil — Sakura Admin{% endblock %}
 
 {% block content %}
 <section class="dashboard">
-    <header class="dashboard-header">
-        <h1>🌸 Dashboard</h1>
-        <p class="dashboard-sub">Centre de pilotage du contenu de SakuraLeveling.</p>
-    </header>
-
-    <h2 class="dashboard-section">📊 Surveillance</h2>
+    {{ page_head("Sakura Admin", "🌸", sub="Tout le jeu se règle ici : chaque carte mène à une page du menu, dans le même ordre.") }}
+    {# Les cartes viennent du MENU (webapp/admin/nav.py) : une page ajoutée au menu apparaît ici. #}
+    {% for g in admin_nav %}
+    <h2 class="dashboard-section">{{ g.label }}</h2>
     <div class="entity-grid">
-        {{ card('/admin/monitoring', '🧭', "Vue d'ensemble", 'Activité, économie, combats, progression : l’état du jeu en un coup d’œil.', 'ouvrir') }}
-        {{ card('/admin/monitoring/alerts', '🚨', 'Alertes', 'Comportements suspects, équilibrage, économie, rétention — avec leurs seuils.', 'surveiller') }}
-        {{ card('/admin/monitoring/players', '👥', 'Joueurs suivis', 'Chaque joueur comparé aux autres : temps de jeu, rythme, investissement.', 'comparer') }}
-        {{ card('/admin/monitoring/report', '📰', 'Rapport de la semaine', 'La semaine contre la précédente, faits marquants.', 'lire') }}
+        {% for it in g.items %}
+        <a class="entity-card entity-card--active" href="{{ it.href }}">
+            <div class="entity-icon">{{ it.icon }}</div>
+            <div class="entity-body">
+                <h2>{{ it.label }}</h2>
+                <p>{{ it.desc }}</p>
+                {% if it.count and counts.get(it.count) %}<span class="entity-count">{{ counts[it.count] }}</span>{% endif %}
+            </div>
+        </a>
+        {% endfor %}
     </div>
-
-    <h2 class="dashboard-section">👥 Joueurs</h2>
-    <div class="entity-grid">
-        {{ card('/admin/players', '👥', 'Joueurs', 'Profils : voir, éditer, reset complet.', players_count ~ ' joueur(s)') }}
-        {{ card('/admin/roles', '🎭', 'Rôles Discord', 'Rôles du serveur + attribution aux membres.', 'gérer') }}
-        {{ card('/admin/actions', '⚡', 'Actions admin', 'Donner or / xp / niveau / items / skill points.', 'outils') }}
-    </div>
-
-    <h2 class="dashboard-section">🗺️ Monde</h2>
-    <div class="entity-grid">
-        {{ card('/admin/mobs', '👹', 'Mobs', 'Monstres : stats, drops, familles, élément, image.', mobs_count ~ ' mob(s)') }}
-        {{ card('/admin/zones', '🗺️', 'Zones de farm', 'Salon, familles, décor, essences par kill.', zones_count ~ ' zone(s) · ' ~ planned_zones_count ~ ' prévue(s)') }}
-        {{ card('/admin/familles', '🧬', 'Familles', 'Vue famille → mobs, zone, drop commun (éditable).', families_count ~ ' famille(s)') }}
-        {{ card('/admin/world-bosses', '🐉', 'World Bosses', 'Boss hebdo, stats et modifiers.', bosses_count ~ ' boss') }}
-        {{ card('/admin/scenes', '🎬', 'Scènes', 'Placement des monstres par zone × élément.', 'composer') }}
-        {{ card('/admin/events', '🎲', 'Événements', 'Coffre, petite fille, forge : cadence et loot.', events_count ~ ' actif(s)') }}
-    </div>
-
-    <h2 class="dashboard-section">📦 Objets & économie</h2>
-    <div class="entity-grid">
-        {{ card('/admin/items', '📦', 'Items', 'Armes, armures, ressources, consommables.', items_count ~ ' item(s)') }}
-        {{ card('/admin/shop', '🏪', 'Shop', 'Items en vente + prix.', shop_count ~ ' au shop') }}
-        {{ card('/admin/cards', '🎴', 'Cartes', 'Boosters de Sorn : réglages, cartes, images, album.', 'gérer') }}
-        {{ card('/admin/seasonal', '🎉', 'Fêtes', "Avent, Noël, sucres d'orge, boutiques d'événement, Nouvel An.", 'régler') }}
-    </div>
-
-    <h2 class="dashboard-section">📈 Progression</h2>
-    <div class="entity-grid">
-        {{ card('/admin/skill-tree/builder', '🌳', 'Arbre de compétences', 'Builder visuel : cases, effets, formes, liens.', skill_nodes_count ~ ' case(s)') }}
-        {{ card('/admin/titles', '🏷️', 'Titres', 'Titres exclusifs / déblocables et effets.', titles_count ~ ' titre(s)') }}
-        {{ card('/admin/quests', '📜', 'Quêtes', 'Quotidiennes et hebdomadaires.', quests_count ~ ' quête(s)') }}
-    </div>
+    {% endfor %}
 </section>
 {% endblock %}

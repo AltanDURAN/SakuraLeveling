@@ -1,16 +1,14 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
 
-{% block title %}Shop — Sakura Admin{% endblock %}
+{% block title %}Boutique — Sakura Admin{% endblock %}
 
 {% block content %}
 <section class="list-page">
-    <header class="list-header">
-        <div>
-            <a href="/admin" class="breadcrumb">← Dashboard</a>
-            <h1>🏪 Shop <span class="count-pill">{{ rows|length }}</span></h1>
-        </div>
-        <a href="/admin/shop/new" class="btn btn-primary">+ Nouvel item au shop</a>
-    </header>
+    {% call page_head("Boutique de Sorn", "🏪", count=rows|length,
+                      sub="Ce que Sorn vend (<code>/marchand</code>) : outils et cosmétiques. Une modification vaut tout de suite.") %}
+        <a href="/admin/shop/new" class="btn btn-primary">＋ Ajouter un objet</a>
+    {% endcall %}
 
     <form class="filter-bar" method="get" action="/admin/shop">
         <input type="text" name="q" value="{{ filter_q }}"
@@ -22,7 +20,7 @@
             <option value="0" {% if filter_enabled == "0" %}selected{% endif %}>Désactivés seulement</option>
         </select>
         {% if filter_q or filter_enabled %}
-            <a href="/admin/shop" class="btn btn-ghost">Reset</a>
+            <a href="/admin/shop" class="btn btn-ghost">Réinitialiser</a>
         {% endif %}
     </form>
 
@@ -38,7 +36,7 @@
                     <th data-sort-key="max">Vente max</th>
                     <th data-sort-key="min">Vente min</th>
                     <th data-sort-key="stock">Stock</th>
-                    <th data-sort-key="thr">Threshold</th>
+                    <th data-sort-key="thr">Seuil</th>
                     <th data-sort-key="en">Actif</th>
                     <th></th>
                 </tr>
@@ -58,7 +56,7 @@
                     <td>
                         <a href="/admin/shop/{{ r.id }}/edit" class="btn btn-small">Éditer</a>
                         <form method="post" action="/admin/shop/{{ r.id }}/delete" style="display:inline" onsubmit="return confirm('Supprimer {{ r.item_code }} du shop ?');">
-                            <button type="submit" class="btn btn-small btn-ghost" style="color: var(--danger);">×</button>
+                            <button type="submit" class="btn btn-small btn-danger">Supprimer</button>
                         </form>
                     </td>
                 </tr>

@@ -1,4 +1,6 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
+{% set crumbs = [(zone.name, "/admin/zones/" ~ zone.channel_id ~ "/edit"), ("Décor " ~ label, none)] %}
 {% block title %}Décor {{ label }} — {{ zone.name }} — Sakura Admin{% endblock %}
 {% from "admin/_image_field.html" import image_field %}
 {% block content %}
@@ -27,10 +29,8 @@
   }"
   x-on:mousemove.window="onMove($event)" x-on:mouseup.window="dragging=false">
 
-  <a href="/admin/zones/{{ zone.channel_id }}/edit" class="breadcrumb">← {{ zone.name }}</a>
-  <h1>{{ emoji }} Décor {{ label }} — {{ zone.name }}</h1>
-  <p style="color:var(--muted); margin:.2rem 0 0;">Le décor du spawn quand un monstre de cette zone sort sous l'élément <strong>{{ label }}</strong>. Cadre les pixels utiles, pose la ligne de sol, choisis la fenêtre horaire.</p>
-  {% if saved %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(80,200,120,.15);border:1px solid rgba(80,200,120,.4);">✅ Décor enregistré.</div>{% endif %}
+  {{ page_head("Décor " ~ label, emoji, sub="Le décor quand un monstre de « " ~ zone.name ~ " » sort sous l'élément <strong>" ~ label ~ "</strong>. Cadre les pixels utiles, pose la ligne de sol, choisis la fenêtre horaire.") }}
+  {% if saved %}<div class="notice is-ok">✅ Décor enregistré.</div>{% endif %}
 
   <div style="display:flex; gap:1.6rem; flex-wrap:wrap; align-items:flex-start;">
     <div style="flex:0 0 auto;">
@@ -69,7 +69,7 @@
                        current='', asset_dir='landscapes',
                        field_name='background_file',
                        default_prompt=gen_prompt|default(''),
-                       label="…ou uploader / générer un décor (≤ 8 Mo)") }}
+                       label="…ou envoyer / générer un décor (≤ 8 Mo)") }}
         <label class="field"><span class="field-label">Zoom — <span x-text="Math.round(100/cropW)+'%'"></span></span>
           <input type="range" min="0.05" max="1" step="0.01" x-model.number="cropW" x-on:input="clamp()"></label>
       </div>

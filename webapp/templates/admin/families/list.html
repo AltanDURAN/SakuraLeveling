@@ -1,4 +1,5 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
 {% block title %}Familles — Sakura Admin{% endblock %}
 {% block content %}
 <style>
@@ -10,18 +11,11 @@
   .drop-line { padding:.5rem .7rem; border:1px solid var(--border); border-radius:10px; background:var(--bg-soft); font-size:.9rem; }
 </style>
 <section class="list-page">
-  <header class="list-header">
-    <div>
-      <a href="/admin" class="breadcrumb">← Dashboard</a>
-      <h1>🧬 Familles <span class="count-pill">{{ families|length }}</span></h1>
-    </div>
-    <a href="/admin/mobs" class="btn btn-ghost">Gérer les monstres</a>
-  </header>
-  <p style="color:var(--muted); max-width:76ch; margin:0 0 1rem;">
-    Une famille regroupe les monstres partageant le même champ « famille ». Chaque famille lâche
-    <strong>une ressource commune garantie</strong> : clique une famille pour choisir l'item et
-    régler la quantité <strong>min/max par monstre</strong> (ex : gobelin 1-2 dents, gobelin géant 2-4).
-  </p>
+  {% call page_head("Familles", "🧬", count=families|length,
+                    sub="Une famille regroupe les monstres de même « famille ». Chacune lâche <strong>un matériau commun garanti</strong> : clique une famille pour choisir l'objet et la quantité <strong>min/max par monstre</strong> (ex : gobelin 1-2 dents, gobelin géant 2-4).") %}
+    <a href="/admin/mobs" class="btn btn-ghost">👾 Monstres</a>
+  {% endcall %}
+  {{ reload_note("family_drops.json") }}
 
   <div class="fam-grid">
     {% for f in families %}

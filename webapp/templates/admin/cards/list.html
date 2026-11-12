@@ -1,10 +1,9 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
 {% block title %}Cartes — Sakura Admin{% endblock %}
 {% macro n(v) %}{{ "{:,}".format(v|int).replace(",", " ") }}{% endmacro %}
 {% block content %}
 <style>
-  .cards-head { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap; }
-  .cards-actions { display:flex; gap:.5rem; flex-wrap:wrap; }
   .cstats { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:.6rem; margin:1rem 0; }
   .cstat { background:var(--bg-soft); border:1px solid var(--border); border-radius:var(--radius); padding:.6rem .8rem; }
   .cstat span { display:block; font-size:.75rem; color:var(--text-soft); text-transform:uppercase; letter-spacing:.03em; }
@@ -20,30 +19,18 @@
   .ctile .t2 { font-size:.8rem; color:var(--text-soft); line-height:1.3; }
   .ctile .t3 { font-size:.75rem; color:var(--text-soft); display:flex; gap:.45rem; flex-wrap:wrap; }
   .rchip { font-size:.72rem; padding:.05rem .45rem; border-radius:999px; border:1px solid var(--border); white-space:nowrap; }
-  .notice { margin:.6rem 0; padding:.6rem .9rem; border-radius:10px; background:rgba(80,200,120,.15); border:1px solid rgba(80,200,120,.4); }
-  [x-cloak] { display:none !important; }
 </style>
 <section x-data="{ q: '', chapter: '', rarity: '', shiny: false,
                    show(el){ const d = el.dataset;
                      return (!this.q || d.search.includes(this.q.toLowerCase()))
                          && (!this.chapter || d.chapter === this.chapter)
                          && (!this.rarity || d.rarity === this.rarity); } }">
-  <div class="cards-head">
-    <div>
-      <h1>🎴 Cartes à collectionner</h1>
-      <p style="color:var(--text-soft); max-width:80ch; margin:.2rem 0 0;">
-        Série {{ series.number }} « {{ series.name }} » : {{ series.total }} cartes, vendues en boosters par Sorn
-        ({{ n(series.params.booster_price) }} or{% if series.params.first_free %}, le premier offert{% endif %}).
-        Tout se règle ici et le bot le prend en compte <strong>sans redémarrage</strong>.
-      </p>
-    </div>
-    <div class="cards-actions">
-      <a class="btn" href="/admin/cards/settings">⚙️ Réglages des boosters</a>
-      <a class="btn btn-primary" href="/admin/cards/new">＋ Nouvelle carte</a>
-    </div>
-  </div>
-
-  {% if saved == 'deleted' %}<div class="notice">🗑️ Carte supprimée.</div>{% endif %}
+  {% set cards_sub %}Série {{ series.number }} « {{ series.name }} », vendue en boosters par Sorn ({{ n(series.params.booster_price) }} or{% if series.params.first_free %}, le premier offert{% endif %}). Tout se règle ici, <strong>sans redémarrer</strong> le bot.{% endset %}
+  {% call page_head("Cartes à collectionner", "🎴", count=series.total, sub=cards_sub) %}
+    <a class="btn btn-ghost" href="/admin/cards/settings">⚙️ Réglages des boosters</a>
+    <a class="btn btn-primary" href="/admin/cards/new">＋ Nouvelle carte</a>
+  {% endcall %}
+  {% if saved == 'deleted' %}<div class="notice is-ok">🗑️ Carte supprimée.</div>{% endif %}
 
   {% if stats %}
   <div class="cstats">

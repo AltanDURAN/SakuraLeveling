@@ -619,6 +619,18 @@ Demande de l'auteur : stats, suivis, rapports et alertes pour équilibrer le jeu
 - **Démo** : `python -m scripts.monitoring_demo --db /tmp/demo.db` — 46 joueurs fictifs, 45 jours, profils variés et cas suspects plantés ; `DATABASE_URL=sqlite:////tmp/demo.db python -m webapp.main` pour voir les pages. Refuse la vraie base.
 - **Tests** : [`test_monitoring.py`](tests/domain/test_monitoring.py), [`test_monitoring_journal.py`](tests/infrastructure/test_monitoring_journal.py), [`test_admin_monitoring.py`](tests/webapp/test_admin_monitoring.py).
 
+## Standard des pages du site admin — 12/11/2026
+
+Demande de l'auteur : homogénéiser toutes les pages (61 pages passées en revue dans Chrome, clair / sombre / téléphone). Toute nouvelle page suit ce standard ; [`test_admin_pages_smoke.py`](tests/webapp/test_admin_pages_smoke.py) le vérifie sur chaque page (`test_chaque_page_suit_le_standard`).
+
+- **Menu = source unique** : [`webapp/admin/nav.py`](webapp/admin/nav.py) (`NAV` : groupes → pages, icône, phrase, compteur ; `locate(chemin)`). Le menu du haut, le FIL D'ARIANE et les cartes de l'ACCUEIL le lisent (globals Jinja `admin_nav` / `admin_locate`, posés dans `webapp/main.py`). Une page ajoutée au menu apparaît partout. Libellés en français (Accueil, Monstres, Objets, Boutique…).
+- **Fil d'Ariane automatique** (`base.html`) : 🏠 › Groupe › Page ; une page le prolonge par `{% set crumbs = [("Nom", "/lien" ou none)] %}` HORS de ses blocs (il est dessiné avant le contenu). Le groupe n'est pas répété s'il porte le nom de la page.
+- **En-tête** : macro `page_head(titre, icône, count=, code=, sub=, hero=)` de [`_ui.html`](webapp/templates/admin/_ui.html), actions à droite par `{% call %}`. Un NOM, jamais un code seul (le code en puce `code-chip`). `hero=` (un fond CSS) = bandeau illustré des pages vitrines (Événements, Fêtes). ⚠️ Un `sub` qui contient du HTML et une valeur qui sort d'une macro (Markup) : le construire dans un `{% set x %}…{% endset %}` (la concaténation `~` avec du Markup échappe le reste — vu sur Cartes).
+- **Avis** : `.notice.is-info|is-ok|is-warn|is-danger` (messages après enregistrement, erreurs) ; `reload_note(fichier, live=)` dit d'où viennent les réglages et s'il faut redémarrer — seuls l'arbre de compétences et un NOUVEAU salon de zone le demandent (titres et quêtes relus sans redémarrage depuis le 12/11/2026).
+- **Composants** (admin.css, section « STANDARD DES PAGES ») : `.btn-danger` (toute suppression : « Supprimer »), `.chips` / `.chip.is-on` (filtres), `.tabs` / `.tab.is-on` (onglets, `.is-sticky`), `.tiles` / `.tile`, `.panel`, `.muted`, `.savebar` / `.save-state` + `.toast` (`.is-bad`) pour les pages qui enregistrent sans recharger, `.dc-*` (aperçu d'un message Discord). `--muted` / `--card` existent désormais (14 pages s'en servaient sans qu'ils soient définis).
+- ⚠️ **JSON dans un attribut** `x-data="…"` / `x-show="…"` entre guillemets doubles : `|tojson|forceescape` (sinon le premier `"` du JSON referme l'attribut — l'éditeur de formation et le filtre des Rôles étaient cassés).
+- Changer `?v=` d'`admin.css` / `admin.js` dans `base.html` (et de `monitoring.css`) à chaque modification.
+
 ## Workflow type pour ajouter une nouvelle stat de combat
 
 1. Ajouter le champ dans `app/domain/value_objects/stats.py`

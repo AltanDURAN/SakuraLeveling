@@ -1,16 +1,17 @@
 {% extends "admin/base.html" %}
 {% block title %}{% block page_title %}Surveillance{% endblock %} — Sakura Admin{% endblock %}
-{% block head %}<link rel="stylesheet" href="/static/admin/monitoring.css">{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/admin/monitoring.css?v=20261112">{% endblock %}
 {% block scripts %}<script src="/static/admin/monitoring.js" defer></script>{% endblock %}
 {% block content %}
 <section class="mon">
-    <header class="mon-head">
-        <div>
+    {# Même en-tête que toutes les pages (admin.css « page-head »), filtres à droite. #}
+    <header class="page-head mon-head">
+        <div class="page-head-main">
             <h1>{% block mon_title %}📊 Surveillance{% endblock %}</h1>
-            <p>{% block mon_sub %}{% endblock %}</p>
+            <p class="page-sub">{% block mon_sub %}{% endblock %}</p>
         </div>
         {% block filters %}
-        <div class="mon-filters">
+        <div class="page-head-actions mon-filters">
             <nav class="pill-group" aria-label="Période">
                 {% for d, label in periods %}
                 <a href="?days={{ d }}{% if f.admins %}&admins=1{% endif %}" class="{% if f.days == d %}is-on{% endif %}">{{ label }}</a>

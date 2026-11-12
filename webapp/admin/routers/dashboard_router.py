@@ -71,21 +71,24 @@ async def dashboard(
         1 for t in event_config_loader.EVENT_TYPES if event_config_loader.is_enabled(t)
     )
 
+    def plural(n: int, one: str, many: str) -> str:
+        return f"{n} {one if n <= 1 else many}"
+
+    quests = _count_json_top_level("daily_quests.json") + _count_json_top_level("weekly_quests.json")
+    # Clés = `NavItem.count` (webapp/admin/nav.py) : l'accueil reprend le menu.
+    counts = {
+        "players": plural(players_count, "joueur", "joueurs"),
+        "mobs": plural(mobs_count, "monstre", "monstres"),
+        "zones": f"{plural(zones_count, 'zone', 'zones')} · {planned_zones_count} prévue(s)",
+        "families": plural(families_count, "famille", "familles"),
+        "bosses": plural(_count_json_top_level("boss_definitions.json"), "boss", "boss"),
+        "events": f"{events_count} activé(s) sur {len(event_config_loader.EVENT_TYPES)}",
+        "items": plural(items_count, "objet", "objets"),
+        "shop": plural(shop_count, "article", "articles"),
+        "skill_nodes": plural(skill_nodes_count, "case", "cases"),
+        "titles": plural(_count_json_top_level("titles.json"), "titre", "titres"),
+        "quests": plural(quests, "modèle", "modèles"),
+    }
     return get_templates().TemplateResponse(
-        request, "admin/dashboard.html",
-        context={
-            "user": user,
-            "items_count": items_count,
-            "mobs_count": mobs_count,
-            "skill_nodes_count": skill_nodes_count,
-            "titles_count": _count_json_top_level("titles.json"),
-            "quests_count": _count_json_top_level("daily_quests.json") + _count_json_top_level("weekly_quests.json"),
-            "bosses_count": _count_json_top_level("boss_definitions.json"),
-            "shop_count": shop_count,
-            "players_count": players_count,
-            "zones_count": zones_count,
-            "families_count": families_count,
-            "planned_zones_count": planned_zones_count,
-            "events_count": events_count,
-        },
+        request, "admin/dashboard.html", context={"user": user, "counts": counts},
     )

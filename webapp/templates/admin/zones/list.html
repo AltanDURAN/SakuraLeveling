@@ -1,22 +1,15 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
 
 {% block title %}Zones de farm — Sakura Admin{% endblock %}
 
 {% block content %}
 <section class="list-page">
-    <header class="list-header">
-        <div>
-            <a href="/admin" class="breadcrumb">← Dashboard</a>
-            <h1>🗺️ Zones de farm <span class="count-pill">{{ zones|length }}</span></h1>
-        </div>
-        <a href="/admin/zones/new" class="btn btn-primary">+ Nouvelle zone</a>
-    </header>
-
-    <p style="color: var(--muted); margin: 0 0 1rem;">
-        Chaque zone = un salon de spawn + les familles qui y apparaissent + un
-        décor + une fourchette d'essences par kill. ⚠️ Le bot doit être
-        redémarré pour appliquer les changements de zone.
-    </p>
+    {% call page_head("Zones de farm", "🗺️", count=zones|length,
+                      sub="Chaque zone = un salon de spawn, les familles qui y apparaissent, un décor par élément et une fourchette d'essences par victoire.") %}
+        <a href="/admin/zones/new" class="btn btn-primary">＋ Nouvelle zone</a>
+    {% endcall %}
+    {{ reload_note("farm_zones.json", detail="Seul un salon <strong>nouveau</strong> demande de redémarrer le bot (il doit se mettre à l'écouter).") }}
 
     {% if zones %}
     <div class="table-wrapper">
@@ -63,7 +56,7 @@
                         <form method="post" action="/admin/zones/{{ z.channel_id }}/delete"
                               style="display:inline; margin-left:0.3rem;"
                               onsubmit="return confirm('⚠️ Supprimer la zone « {{ z.name }} » ?\n\nLes familles concernées retomberont sur la zone de base. Irréversible.');">
-                            <button type="submit" class="btn btn-small" style="background: var(--danger); color: white;">Suppr.</button>
+                            <button type="submit" class="btn btn-small btn-danger">Supprimer</button>
                         </form>
                     </td>
                 </tr>

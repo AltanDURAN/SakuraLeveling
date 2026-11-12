@@ -1,4 +1,5 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
 {% block title %}Monstres — Sakura Admin{% endblock %}
 
 {% from "admin/_image_field.html" import image_field %}
@@ -39,8 +40,6 @@
               background:var(--bg,#1b1b24); border:1px solid var(--border); border-radius:10px; margin-top:.25rem; box-shadow:0 8px 24px rgba(0,0,0,.3); }
   .item-opt { display:flex; align-items:center; gap:.5rem; padding:.35rem .5rem; cursor:pointer; }
   .item-opt:hover { background:rgba(255,120,180,.14); }
-  .toast { padding:.6rem .9rem; border-radius:10px; margin-bottom:1rem; }
-  [x-cloak] { display:none !important; }
   .stats-tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:.5rem; }
   @media (max-width:560px){ .stats-tiles{ grid-template-columns:repeat(2,1fr); } }
   .stat-tile { display:flex; flex-direction:column; align-items:center; gap:.1rem; padding:.45rem .3rem;
@@ -173,26 +172,21 @@ document.addEventListener('alpine:init', () => {
 </script>
 
 <section class="list-page">
-  <header class="list-header">
-    <div>
-      <a href="/admin" class="breadcrumb">← Dashboard</a>
-      <h1>👾 Monstres <span class="count-pill">{{ cards|length }}</span></h1>
-    </div>
-    <a href="/admin/mobs/new" class="btn btn-primary">+ Nouveau monstre</a>
-  </header>
-
-  {% if saved %}<div class="toast" style="background:rgba(80,200,120,.15);border:1px solid rgba(80,200,120,.4);">✅ Monstre <strong>{{ saved }}</strong> enregistré.</div>{% endif %}
-  {% if err %}<div class="toast" style="background:rgba(230,90,90,.15);border:1px solid rgba(230,90,90,.4);">⚠️ Échec de l'upload d'image (format/poids). Le reste a été enregistré.</div>{% endif %}
+  {% call page_head("Monstres", "👾", count=cards|length, sub="Stats, élément, famille, pièce portée et image de chaque monstre. Clique une carte pour la modifier ; tout vaut au prochain monstre, sans redémarrer.") %}
+    <a href="/admin/mobs/new" class="btn btn-primary">＋ Nouveau monstre</a>
+  {% endcall %}
+  {% if saved %}<div class="notice is-ok">✅ Monstre <strong>{{ saved }}</strong> enregistré.</div>{% endif %}
+  {% if err %}<div class="notice is-warn">⚠️ Échec de l'envoi de l'image (format ou poids). Le reste a été enregistré.</div>{% endif %}
 
   <div x-data class="form-row" style="gap:.7rem; margin-bottom:1rem; align-items:flex-end;">
     <label class="field" style="flex:1; min-width:220px;">
       <span class="field-label">Rechercher (nom, famille, élément)</span>
       <input type="search" class="input" placeholder="gobelin, eau, mort-vivant…" x-model="$store.mfilter.q">
     </label>
-    <div style="display:flex; flex-wrap:wrap; gap:.35rem;">
-      <button type="button" class="btn btn-small" :class="$store.mfilter.fam==='' ? 'btn-primary':'btn-ghost'" x-on:click="$store.mfilter.fam=''">Toutes</button>
+    <div class="chips">
+      <button type="button" class="chip" :class="{ 'is-on': $store.mfilter.fam === '' }" x-on:click="$store.mfilter.fam=''">Toutes</button>
       {% for fam in all_families %}
-      <button type="button" class="btn btn-small" :class="$store.mfilter.fam==='{{ fam }}' ? 'btn-primary':'btn-ghost'" x-on:click="$store.mfilter.fam='{{ fam }}'">{{ fam }}</button>
+      <button type="button" class="chip" :class="{ 'is-on': $store.mfilter.fam === '{{ fam }}' }" x-on:click="$store.mfilter.fam='{{ fam }}'">{{ fam }}</button>
       {% endfor %}
     </div>
   </div>
@@ -257,7 +251,7 @@ document.addEventListener('alpine:init', () => {
                 x-text="open ? 'Fermer' : 'Éditer'"></button>
         <form method="post" action="/admin/mobs/{{ m.code }}/delete" style="margin:0;"
               onsubmit="return confirm('Supprimer {{ m.name }} ? (retire aussi les kills)')">
-          <button type="submit" class="btn btn-small" style="background:var(--danger); color:#fff;">Suppr.</button>
+          <button type="submit" class="btn btn-small btn-danger">Supprimer</button>
         </form>
       </div>
 
@@ -272,7 +266,7 @@ document.addEventListener('alpine:init', () => {
               {{ image_field(kind='mob', code=m.code, current=m.image_name,
                              asset_dir='mobs', field_name='image_file',
                              default_prompt=card.gen_prompt,
-                             label="Uploader (PNG/JPG/WebP/GIF ≤ 8 Mo)") }}
+                             label="Envoyer une image (PNG/JPG/WebP/GIF ≤ 8 Mo)") }}
               <input type="hidden" name="image_name" :value="imageName">
             </div>
             <div class="form-section">
@@ -393,7 +387,7 @@ document.addEventListener('alpine:init', () => {
                 <input type="number" min="1" class="input" x-model.number="row.min_quantity"></label>
               <label class="field mini" style="width:70px;"><span class="field-label">max</span>
                 <input type="number" min="1" class="input" x-model.number="row.max_quantity"></label>
-              <button type="button" class="btn btn-small" style="background:var(--danger);color:#fff;" x-on:click="removeRow(i)">✕</button>
+              <button type="button" class="btn btn-small btn-danger" x-on:click="removeRow(i)">✕</button>
             </div>
           </template>
           <p x-show="rows.length===0" class="form-section-help">Aucun drop.</p>

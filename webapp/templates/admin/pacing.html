@@ -1,4 +1,5 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
 {% block title %}Rythme du jeu — Sakura Admin{% endblock %}
 {% block content %}
 {% set z = pacing.zones %}
@@ -16,15 +17,11 @@
     perDay(c){ return this.perHour(c) * (24 - this.quietHours()) * this.zones; },
     fmt(n, d = 1){ return Number(n).toLocaleString('fr-FR', {maximumFractionDigits: d}); }
   }">
-  <h1>⏱️ Rythme du jeu</h1>
-  <p style="color:var(--muted); max-width:78ch;">
-    Le tempo des apparitions de monstres dans les zones et le rendez-vous du raid.
-    Les réglages sont pris en compte par le bot <strong>sans redémarrage</strong>
-    (le délai s'applique à partir du prochain monstre).
-  </p>
+  {{ page_head("Rythme du jeu", "⏱️", sub="Le tempo des apparitions de monstres dans les zones, les événements de la lune et le rendez-vous du raid.") }}
+  {{ reload_note("pacing.json", detail="Le délai s'applique à partir du prochain monstre.") }}
 
-  {% if saved %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(80,200,120,.15);border:1px solid rgba(80,200,120,.4);">✅ Enregistré.</div>{% endif %}
-  {% for e in errors %}<div style="margin:.4rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(220,80,100,.12);border:1px solid rgba(220,80,100,.4);">⚠️ {{ e }}</div>{% endfor %}
+  {% if saved %}<div class="notice is-ok">✅ Enregistré.</div>{% endif %}
+  {% for e in errors %}<div class="notice is-danger">⚠️ {{ e }}</div>{% endfor %}
 
   <form method="post" action="/admin/pacing/zones" class="form-section">
     <h2 class="form-section-title">🗺️ Monstres de zone</h2>

@@ -1,4 +1,6 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
+{% set crumbs = [("Nouvelle carte", none)] if is_new else [("#%02d %s" % (entry.number, entry.name), none)] %}
 {% block title %}{% if is_new %}Nouvelle carte{% else %}{{ entry.name }}{% endif %} — Cartes — Sakura Admin{% endblock %}
 {% block content %}
 <style>
@@ -10,13 +12,10 @@
   .cfaces figure { margin:0; text-align:center; font-size:.8rem; color:var(--text-soft); }
   .cfaces img, .cpreview img { width:100%; border-radius:12px; background:var(--bg-soft); display:block; }
   .cpreview img { margin-top:.5rem; }
-  .notice { margin:.6rem 0; padding:.6rem .9rem; border-radius:10px; background:rgba(80,200,120,.15); border:1px solid rgba(80,200,120,.4); }
-  .alert { margin:.4rem 0; padding:.6rem .9rem; border-radius:10px; background:rgba(220,80,100,.12); border:1px solid rgba(220,80,100,.4); }
   .bonus-row { display:grid; grid-template-columns:minmax(0, 1fr) 7rem; gap:.5rem; margin-bottom:.4rem; }
   .imgrow { display:flex; gap:.6rem; align-items:center; flex-wrap:wrap; }
   .holdings { display:flex; gap:.8rem; flex-wrap:wrap; font-size:.9rem; color:var(--text-soft); }
   button[disabled] { opacity:.45; cursor:not-allowed; }
-  [x-cloak] { display:none !important; }
 </style>
 <section class="form-page" x-data="{
     kind: '{{ effect.get('type', 'monstre') }}', flavor: {{ (entry.flavor or '')|tojson|forceescape }},
@@ -31,12 +30,12 @@
       } catch (e) { this.error = 'Aperçu impossible (' + e.message + ')'; }
       this.busy = false;
     } }">
-  <p style="margin:0 0 .4rem;"><a href="/admin/cards">← Toutes les cartes</a> · <a href="/admin/cards/settings">⚙️ Réglages des boosters</a></p>
-  <h1>{% if is_new %}＋ Nouvelle carte{% else %}🎴 #{{ '%02d' % entry.number }} {{ entry.name }}{% endif %}</h1>
-  {% if saved == 'created' %}<div class="notice">✅ Carte créée : elle se tire déjà dans les boosters.</div>
-  {% elif saved == 'card' %}<div class="notice">✅ Carte enregistrée — le bot la redessine tout seul.</div>
-  {% elif saved == 'art' %}<div class="notice">✅ Image mise à jour.</div>{% endif %}
-  {% for e in errors %}<div class="alert">⚠️ {{ e }}</div>{% endfor %}
+  {% if is_new %}{{ page_head("Nouvelle carte", "🎴", sub="Elle se tire dans les boosters dès qu'elle est créée.") }}
+  {% else %}{{ page_head(entry.name, "🎴", count="#%02d" % entry.number, code=entry.code) }}{% endif %}
+  {% if saved == 'created' %}<div class="notice is-ok">✅ Carte créée : elle se tire déjà dans les boosters.</div>
+  {% elif saved == 'card' %}<div class="notice is-ok">✅ Carte enregistrée — le bot la redessine tout seul.</div>
+  {% elif saved == 'art' %}<div class="notice is-ok">✅ Image mise à jour.</div>{% endif %}
+  {% for e in errors %}<div class="notice is-danger">⚠️ {{ e }}</div>{% endfor %}
   {% if not is_new %}
   <div class="holdings">
     <span>👥 {{ holdings[0] }} joueur(s) l'ont</span><span>✨ {{ holdings[1] }} en brillante</span><span>📦 {{ holdings[2] }} exemplaire(s)</span>
@@ -153,7 +152,7 @@
 
       <form method="post" action="/admin/cards/{{ entry.code }}/delete" style="margin-top:1.2rem;"
             onsubmit="return confirm('Supprimer {{ entry.name }} ? Les numéros des cartes suivantes se décalent.');">
-        <button class="btn" type="submit" style="background:var(--danger); color:#fff;" {% if holdings[0] %}disabled title="Des joueurs l'ont : elle ne peut pas être supprimée."{% endif %}>🗑️ Supprimer la carte</button>
+        <button class="btn btn-danger" type="submit" {% if holdings[0] %}disabled title="Des joueurs l'ont : elle ne peut pas être supprimée."{% endif %}>🗑️ Supprimer la carte</button>
         {% if holdings[0] %}<span class="form-section-help">Impossible : des joueurs l'ont.</span>{% endif %}
       </form>
       {% endif %}

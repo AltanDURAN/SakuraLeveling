@@ -1,20 +1,14 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
 {% block title %}Rôles par rôle — Sakura Admin{% endblock %}
 {% block content %}
 <section class="list-page" x-data="{ q: '', editing: null }">
-    <header class="list-header">
-        <div>
-            <a href="/admin" class="breadcrumb">← Dashboard</a>
-            <h1>🏷️ Rôles <span class="count-pill">{{ roles|length }}</span></h1>
-        </div>
-    </header>
-
-    <div class="topnav" style="margin-bottom:1rem;">
-        <a href="/admin/roles/by-role" class="topnav-link" style="font-weight:700;">Par rôle</a>
-        <a href="/admin/roles/by-member" class="topnav-link">Par membre</a>
-    </div>
-
-    {% if error %}<div class="field-error" style="margin-bottom:1rem;">⚠️ {{ error }}</div>{% endif %}
+    {{ page_head("Rôles Discord", "🏷️", count=roles|length, sub="Les rôles du serveur : qui les porte, et en donner ou en retirer.") }}
+    <nav class="tabs">
+        <a href="/admin/roles/by-role" class="tab is-on">Par rôle</a>
+        <a href="/admin/roles/by-member" class="tab">Par membre</a>
+    </nav>
+    {% if error %}<div class="notice is-danger">⚠️ {{ error }}</div>{% endif %}
 
     <!-- Créer un rôle -->
     <form method="post" action="/admin/roles/create" class="filter-bar">
@@ -22,7 +16,7 @@
         <input type="color" name="color" value="#5865f2" class="input" style="max-width:60px;padding:2px;" title="Couleur">
         <label class="text-muted" style="font-size:0.85rem;"><input type="checkbox" name="hoist"> Afficher séparément</label>
         <label class="text-muted" style="font-size:0.85rem;"><input type="checkbox" name="mentionable"> Mentionnable</label>
-        <button type="submit" class="btn btn-primary">+ Créer</button>
+        <button type="submit" class="btn btn-primary">＋ Créer</button>
     </form>
 
     <div class="filter-bar">
@@ -31,7 +25,7 @@
 
     <div>
     {% for r in roles %}
-        <div class="role-row" x-show="q==='' || {{ r.name|lower|tojson }}.includes(q.toLowerCase())">
+        <div class="role-row" x-show="q==='' || {{ r.name|lower|tojson|forceescape }}.includes(q.toLowerCase())">
             <div class="role-row-head">
                 <span class="role-swatch" style="background:{{ r.color }};"></span>
                 <strong style="color:{{ r.color }};">{{ r.name }}</strong>
@@ -42,7 +36,7 @@
                     <button class="btn btn-small" x-on:click="editing = (editing === '{{ r.id }}' ? null : '{{ r.id }}')">✏️ Éditer</button>
                     <form method="post" action="/admin/roles/{{ r.id }}/delete" style="display:inline;"
                           onsubmit="return confirm('Supprimer le rôle {{ r.name }} ? (irréversible)');">
-                        <button type="submit" class="btn btn-small" style="background:var(--danger);color:#fff;">🗑</button>
+                        <button type="submit" class="btn btn-small btn-danger" title="Supprimer le rôle">🗑</button>
                     </form>
                 {% endif %}
             </div>

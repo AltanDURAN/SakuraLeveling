@@ -1,7 +1,5 @@
-"""Loader des définitions de titres (cache module-level).
-
-Pattern identique à `boss_definition_loader` et `skill_tree_loader`.
-"""
+"""Loader des définitions de titres : cache relu dès que `titles.json`
+change (site admin, 11/11/2026) — comme `boss_definition_loader`."""
 
 import json
 from pathlib import Path
@@ -18,6 +16,7 @@ CONTENT_PATH = (
 
 
 _cache: list[TitleDefinition] | None = None
+_cache_mtime: float | None = None
 
 
 def _load() -> list[TitleDefinition]:
@@ -39,10 +38,20 @@ def _load() -> list[TitleDefinition]:
     ]
 
 
+def _mtime() -> float | None:
+    try:
+        return CONTENT_PATH.stat().st_mtime
+    except OSError:
+        return None
+
+
 def list_definitions() -> list[TitleDefinition]:
-    global _cache
-    if _cache is None:
+    """Relu dès que le fichier change (site admin) : sans redémarrer le bot."""
+    global _cache, _cache_mtime
+    mtime = _mtime()
+    if _cache is None or mtime != _cache_mtime:
         _cache = _load()
+        _cache_mtime = mtime
     return _cache
 
 
@@ -61,5 +70,6 @@ def list_for_condition(condition_type: str) -> list[TitleDefinition]:
 
 
 def clear_cache() -> None:
-    global _cache
+    global _cache, _cache_mtime
     _cache = None
+    _cache_mtime = None

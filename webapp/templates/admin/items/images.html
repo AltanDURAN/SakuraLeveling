@@ -1,4 +1,5 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
 {% block title %}Images en lot — Sakura Admin{% endblock %}
 
 {% block content %}
@@ -55,12 +56,7 @@
 </style>
 
 <section class="list-page" data-no-zoom>
-  <header class="list-header">
-    <div>
-      <a href="/admin/items" class="breadcrumb">← Objets</a>
-      <h1>🖼️ Images en lot <span class="count-pill">{{ tiles|length }}</span></h1>
-    </div>
-  </header>
+  {{ page_head("Images en lot", "🖼️", count=tiles|length) }}
 
   <p class="bi-help">
     Lâche toutes tes images d'un coup. Une image nommée comme l'objet (<code>lance_des_kobolds.png</code>, ou son nom

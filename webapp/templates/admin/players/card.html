@@ -5,7 +5,8 @@
     'affinities': '✨ Affinités & essences', 'skills': '🌳 Build', 'defis': '🎯 Défis',
     'career': '📈 Carrière', 'cartes': '🎴 Cartes'
 } %}
-{% block title %}{{ p.display_name }} — {{ section_titles.get(section, 'Fiche joueur') }}{% endblock %}
+{% set crumbs = [(p.display_name, "/admin/players/" ~ p.id ~ "/view"), (section_titles[section], none)] if section in section_titles else [(p.display_name, none)] %}
+{% block title %}{{ p.display_name }} — {{ section_titles.get(section, 'Fiche joueur') }} — Sakura Admin{% endblock %}
 
 {% macro bar(label, cur, max, cls, regen=None) %}
 <div class="pbar">
@@ -94,7 +95,7 @@
                 <label>Or<input type="number" name="gold" min="0" value="{{ p.gold }}"></label>
                 <label>Points d'arbre<input type="number" name="skill_points" min="0" value="{{ p.skill_points }}"></label>
                 <label>Points de stats (réserve)<input type="number" name="stat_points" min="0" value="{{ p.stat_points }}"></label>
-                <label>Daily streak<input type="number" name="daily_streak" min="0" value="{{ p.daily_streak }}"></label>
+                <label>Série /daily<input type="number" name="daily_streak" min="0" value="{{ p.daily_streak }}"></label>
                 <label>PV courant<input type="number" name="current_hp" min="0" value="{{ bars.hp.cur }}"></label>
                 <label>Mana courant<input type="number" name="current_mana" min="0" value="{{ bars.mana.cur }}"></label>
             </div>
@@ -139,7 +140,7 @@
             {{ edit_toggle() }}
             <form method="post" action="/admin/players/{{ p.id }}/reset"
                   onsubmit="return confirm('⚠️ RESET complet de {{ p.display_name }} ?\n\nNiveau, or, inventaire, équipement, kills, titres, affinités… tout est remis à zéro (identité Discord conservée). Irréversible.');">
-                <button type="submit" class="btn" style="background: var(--danger); color: #fff;">♻️ Reset</button>
+                <button type="submit" class="btn btn-danger">♻️ Réinitialiser</button>
             </form>
         </div>
 

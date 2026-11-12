@@ -1,5 +1,7 @@
 {% extends "admin/base.html" %}
-{% block title %}Famille {{ family }} — Sakura Admin{% endblock %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
+{% set crumbs = [(family|capitalize, none)] %}
+{% block title %}{{ family|capitalize }} — Familles — Sakura Admin{% endblock %}
 {% block content %}
 <style>
   .mem-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:.8rem; }
@@ -12,7 +14,6 @@
   .mm input { text-align:center; }
   .mm .field-label { font-size:.68rem; }
   .res-emoji { font-size:1.05rem; }
-  [x-cloak]{display:none!important;}
 </style>
 <script>window.FAM_RES = {{ resources|tojson }};</script>
 
@@ -38,17 +39,14 @@
       finally{ this.creating=false; }
     }
   }">
-  <a href="/admin/familles" class="breadcrumb">← Familles</a>
-  <h1 style="text-transform:capitalize;">🧬 {{ family }} <span class="count-pill">{{ members|length }} monstre(s)</span></h1>
-  <p style="color:var(--muted); max-width:78ch;">Choisis la ressource commune, puis règle la quantité <strong>garantie</strong> (min/max) que lâche chaque monstre à sa mort.</p>
-
-  {% if saved %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(80,200,120,.15);border:1px solid rgba(80,200,120,.4);">✅ Drops de la famille enregistrés.</div>{% endif %}
+  {{ page_head(family|capitalize, "🧬", count=members|length ~ " monstre(s)", sub="Choisis le matériau commun, puis la quantité <strong>garantie</strong> (min/max) que lâche chaque monstre à sa mort.") }}
+  {% if saved %}<div class="notice is-ok">✅ Matériau de la famille enregistré : il tombe dès le prochain combat.</div>{% endif %}
 
   <form method="post" action="/admin/familles/{{ family }}" style="display:flex; flex-direction:column; gap:1.1rem;">
     <div class="form-section">
       <h2 class="form-section-title">Ressource commune</h2>
       <label class="field" style="max-width:420px;">
-        <span class="field-label">Item {{ res_emoji }} droppé par tous les membres de la famille</span>
+        <span class="field-label">Objet {{ res_emoji }} lâché par tous les membres de la famille</span>
         <select class="input" name="item_code" x-model="itemCode">
           <option value="">— Aucun drop de famille —</option>
           <template x-for="r in resources" :key="r.code">

@@ -1,15 +1,15 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
 
-{% block title %}{% if edit_code %}Éditer {{ edit_code }}{% else %}Nouveau titre{% endif %} — Sakura Admin{% endblock %}
+{% set crumbs = [((form_data or {}).get('name') or edit_code, none)] if edit_code else [("Nouveau titre", none)] %}
+{% block title %}{% if edit_code %}{{ (form_data or {}).get('name') or edit_code }}{% else %}Nouveau titre{% endif %} — Titres — Sakura Admin{% endblock %}
 
 {% block content %}
 {% set fd = form_data or {} %}
 <section class="form-page">
-    <a href="/admin/titles" class="breadcrumb">← Titres</a>
-    <h1>{% if edit_code %}Éditer <code>{{ edit_code }}</code>{% else %}Nouveau titre{% endif %}</h1>
-    <div class="form-section-help" style="background: #fff5d5; padding: 0.8rem 1.2rem; border-radius: 8px;">
-        ⚠️ Modifie <code>titles.json</code>. Restart du bot requis.
-    </div>
+    {% if edit_code %}{{ page_head(fd.get('name') or edit_code, fd.get('icon') or "🏷️", code=edit_code, sub="Condition de déblocage et effets du titre.") }}
+    {% else %}{{ page_head("Nouveau titre", "🏷️", sub="Un titre se débloque quand le joueur atteint sa condition ; ses effets jouent tant qu'il le possède.") }}{% endif %}
+    {{ reload_note("titles.json") }}
 
     <form method="post" action="{% if edit_code %}/admin/titles/{{ edit_code }}{% else %}/admin/titles{% endif %}" class="form-grid">
         <div class="form-section">

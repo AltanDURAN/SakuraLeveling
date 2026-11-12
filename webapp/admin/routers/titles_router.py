@@ -52,7 +52,8 @@ async def titles_list(
         request, user,
         title="Titres", icon="🏷️",
         new_url="/admin/titles/new", new_label="Nouveau titre",
-        source_label="Définitions : app/infrastructure/content/titles.json — ⚠️ restart bot requis après ajout",
+        subtitle="Les titres que les joueurs débloquent, leur condition et leurs effets.",
+        source_file="titles.json",
         filter_q=q or "",
         filter_groups=[{
             "name": "condition_type",
@@ -61,7 +62,7 @@ async def titles_list(
             "options": [(c, c) for c in sorted(cond_types)],
         }],
         columns=[
-            {"label": "Icon", "key": "icon"},
+            {"label": "Icône", "key": "icon"},
             {"label": "Code", "key": "code"},
             {"label": "Nom", "key": "name"},
             {"label": "Condition", "key": "condition_type"},

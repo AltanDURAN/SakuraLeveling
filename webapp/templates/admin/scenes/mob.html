@@ -1,5 +1,7 @@
 {% extends "admin/base.html" %}
-{% block title %}{{ mob.name }} · {{ label }} — placement — Sakura Admin{% endblock %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
+{% set crumbs = [(mob.name, none)] %}
+{% block title %}{{ mob.name }} · {{ label }} — Scènes — Sakura Admin{% endblock %}
 {% block content %}
 {% set tp = top_panel %}{% set bp = bottom_panel %}
 <section class="form-page"
@@ -34,22 +36,19 @@
   }"
   x-on:mousemove.window="onMove($event)" x-on:mouseup.window="dragging=false">
 
-  <a href="/admin/scenes" class="breadcrumb">← Scènes</a>
-  <h1>{% if mob.image_name %}<img src="/assets/mobs/{{ mob.image_name }}" style="height:1.3em;vertical-align:middle;">{% endif %}
-      {{ mob.name }} — {{ emoji }} {{ label }}</h1>
-  <p style="color:var(--muted); margin:.2rem 0 0;">Placement du monstre <strong>pour cet élément</strong>. Le décor vient du spot partagé de la zone (édité séparément).</p>
+  {{ page_head(mob.name ~ " — " ~ label, emoji, code=mob.code, sub="Placement du monstre <strong>pour cet élément</strong>. Le décor vient de la zone (réglé à part).") }}
 
   <!-- onglets élément (= éléments de la zone) -->
-  <div style="display:flex; flex-wrap:wrap; gap:.35rem; margin:.6rem 0 1rem;">
+  <div class="tabs">
     {% for t in tabs %}
-    <a href="/admin/scenes/mob/{{ mob.code }}/{{ t.code }}" class="btn {{ 'btn-primary' if t.code==element else 'btn-ghost' }}"
-       style="padding:.3rem .6rem;{% if t.weight == 0 %}opacity:.55;{% endif %}"
+    <a href="/admin/scenes/mob/{{ mob.code }}/{{ t.code }}" class="tab {{ 'is-on' if t.code==element }}"
+       {% if t.weight == 0 %}style="opacity:.55;"{% endif %}
        title="{% if t.weight > 0 %}poids de spawn {{ t.weight }}{% else %}poids 0 — ne spawnera pas sous cet élément (réglable sur la fiche du monstre){% endif %}">{{ t.emoji }} {{ t.label }}{% if t.time=='day' %} ☀️{% elif t.time=='night' %} 🌙{% endif %}{% if t.placed %} ✅{% endif %}</a>
     {% else %}<span style="color:var(--muted);">Cette zone n'a pas d'éléments (ajoute-les dans <a href="/admin/zones/{{ zone_channel }}/edit">la zone</a>).</span>{% endfor %}
   </div>
 
-  {% if saved %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(80,200,120,.15);border:1px solid rgba(80,200,120,.4);">✅ Placement {{ label }} enregistré.</div>{% endif %}
-  {% if not has_spot %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(240,180,80,.15);border:1px solid rgba(240,180,80,.4);">⚠️ Pas encore de décor pour ce spot. <a href="/admin/zones/{{ zone_channel }}/spot/{{ element }}">Compose le décor {{ label }} de la zone</a> (fond gris en attendant).</div>{% endif %}
+  {% if saved %}<div class="notice is-ok">✅ Placement {{ label }} enregistré.</div>{% endif %}
+  {% if not has_spot %}<div class="notice is-warn">⚠️ Pas encore de décor pour ce spot. <a href="/admin/zones/{{ zone_channel }}/spot/{{ element }}">Compose le décor {{ label }} de la zone</a> (fond gris en attendant).</div>{% endif %}
 
   <div style="display:flex; gap:1.6rem; flex-wrap:wrap; align-items:flex-start;">
     <div style="flex:0 0 auto;">
@@ -88,7 +87,7 @@
         <input type="hidden" name="shadow" :value="shadow?'1':'0'">
       </div>
       <div class="form-section">
-        <h2 class="form-section-title">Spawn ({{ label }})</h2>
+        <h2 class="form-section-title">Apparition ({{ label }})</h2>
         {% if weight > 0 %}
         <p style="margin:0; color:var(--muted);">Poids de spawn actuel : <strong>{{ weight }}</strong>.</p>
         {% elif has_weights %}

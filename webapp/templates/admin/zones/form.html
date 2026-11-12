@@ -1,14 +1,16 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
 
-{% block title %}{% if zone %}Éditer une zone{% else %}Nouvelle zone{% endif %} — Sakura Admin{% endblock %}
+{% set crumbs = [(zone.name or "Zone sans nom", none)] if zone else [("Nouvelle zone", none)] %}
+{% block title %}{% if zone %}{{ zone.name }}{% else %}Nouvelle zone{% endif %} — Zones — Sakura Admin{% endblock %}
 
 {% from "admin/_image_field.html" import image_field %}
 {% block content %}
 {% set fd = form_data if form_data is defined else {} %}
 {% set families_str = fd.get('families', (zone.families | join(', ')) if zone else '') %}
 <section class="form-page">
-    <a href="/admin/zones" class="breadcrumb">← Zones</a>
-    <h1>{% if zone %}Éditer la zone{% else %}Nouvelle zone{% endif %}</h1>
+    {% if zone %}{{ page_head(zone.name or "Zone sans nom", "🗺️", code=zone.channel_id, sub="Salon, familles, décors par élément et essences de la zone.") }}
+    {% else %}{{ page_head("Nouvelle zone", "🗺️", sub="Un salon Discord où apparaissent des monstres : choisis ses familles et son décor.") }}{% endif %}
 
     <form method="post"
           action="{% if zone %}/admin/zones/{{ zone.channel_id }}{% else %}/admin/zones{% endif %}"
@@ -33,7 +35,7 @@
                     {% if errors.get('channel_id') %}<span class="field-error">{{ errors['channel_id'] }}</span>{% endif %}
                 </label>
                 <label class="field">
-                    <span class="field-label">Décor — nom d'asset (ou upload ci-dessous)</span>
+                    <span class="field-label">Décor — nom du fichier (ou envoie-le ci-dessous)</span>
                     <input type="text" name="background" class="input"
                            value="{{ fd.get('background', zone.background if zone else '') }}"
                            placeholder="clairiere_sinistre.png">
@@ -43,7 +45,7 @@
             {{ image_field(kind='landscape', code=(cur_bg.rsplit('.',1)[0] if cur_bg else (fd.get('name','') or (zone.name if zone else ''))|lower|replace(' ','_')),
                            current=cur_bg, asset_dir='landscapes', field_name='background_file',
                            default_prompt=gen_prompt|default(''),
-                           label="Uploader un décor (PNG/JPG/WebP, ≤ 8 Mo)") }}
+                           label="Envoyer un décor (PNG/JPG/WebP, ≤ 8 Mo)") }}
             {% if errors.get('background_file') %}<span class="field-error">{{ errors['background_file'] }}</span>{% endif %}
         </div>
 
@@ -117,7 +119,7 @@
                 <a href="/admin/zones/{{ zone.channel_id }}/spot/{{ s.element }}" class="btn btn-small">Composer le décor</a>
                 <form method="post" action="/admin/zones/{{ zone.channel_id }}/spot/{{ s.element }}/delete"
                       onsubmit="return confirm('Retirer l\'élément {{ element_labels.get(s.element, s.element) }} de cette zone ?');" style="margin:0;">
-                    <button type="submit" class="btn btn-small" style="background:var(--danger); color:#fff;">Retirer</button>
+                    <button type="submit" class="btn btn-small btn-danger">Retirer</button>
                 </form>
             </div>
             {% endfor %}

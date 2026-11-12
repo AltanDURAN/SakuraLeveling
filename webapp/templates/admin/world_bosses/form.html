@@ -1,20 +1,18 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
 
-{% block title %}{% if edit_code %}Éditer {{ edit_code }}{% else %}Nouveau world boss{% endif %} — Sakura Admin{% endblock %}
+{% set crumbs = [((form_data or {}).get('name') or edit_code, none)] if edit_code else [("Nouveau boss", none)] %}
+{% block title %}{% if edit_code %}{{ (form_data or {}).get('name') or edit_code }}{% else %}Nouveau world boss{% endif %} — World Bosses — Sakura Admin{% endblock %}
 
 {% from "admin/world_bosses/_images.html" import wb_styles, wb_slots, wb_elements, wb_previews, wb_toast, wb_script %}
 {% block content %}
 {% set fd = form_data or {} %}
 <section class="form-page">
-    <a href="/admin/world-bosses" class="breadcrumb">← World Bosses</a>
-    <h1>{% if edit_code %}Éditer <code>{{ edit_code }}</code>{% else %}Nouveau world boss{% endif %}</h1>
-    {% if created %}<div class="form-section-help" style="background:rgba(78,168,137,.15); padding:.8rem 1.2rem; border-radius:8px;">
-        ✅ Boss créé. Dépose maintenant son image et son arène ci-dessous.</div>{% endif %}
-    {% if saved %}<div class="form-section-help" style="background:rgba(78,168,137,.15); padding:.8rem 1.2rem; border-radius:8px;">
-        ✅ Enregistré.</div>{% endif %}
-    <div class="form-section-help" style="background: var(--bg-soft); padding: 0.8rem 1.2rem; border-radius: 8px;">
-        Modifie <code>boss_definitions.json</code> ; le bot le relit tout seul (au prochain boss — celui en cours garde ses stats).
-    </div>
+    {% if edit_code %}{{ page_head(fd.get('name') or edit_code, "🐉", code=edit_code, sub="Images, arène, stats et textes du boss.") }}
+    {% else %}{{ page_head("Nouveau world boss", "🐉", sub="Crée le boss, puis dépose son image et son arène sur sa fiche.") }}{% endif %}
+    {% if created %}<div class="notice is-ok">✅ Boss créé. Dépose maintenant son image et son arène ci-dessous.</div>{% endif %}
+    {% if saved %}<div class="notice is-ok">✅ Enregistré.</div>{% endif %}
+    {{ reload_note("boss_definitions.json", detail="Les stats valent au prochain boss ; celui en cours garde les siennes.") }}
 
     {% if edit_code and boss %}
     {{ wb_styles() }}
@@ -55,7 +53,7 @@
                     {% if errors.get('name') %}<span class="field-error">{{ errors['name'] }}</span>{% endif %}
                 </label>
                 <label class="field">
-                    <span class="field-label">Tier</span>
+                    <span class="field-label">Palier</span>
                     <select name="tier" class="input">
                         {% for t in ['intro', 'beginner', 'intermediate', 'advanced', 'endgame'] %}
                             <option value="{{ t }}" {% if fd.get('tier', 'intro') == t %}selected{% endif %}>{{ t }}</option>
@@ -69,7 +67,7 @@
             </label>
             <div class="form-row">
                 <label class="field">
-                    <span class="field-label">Poids de spawn</span>
+                    <span class="field-label">Poids d'apparition</span>
                     <input type="number" name="spawn_weight" class="input" value="{{ fd.get('spawn_weight', 100) }}">
                     <span class="field-hint">Ne sert qu'au tirage sans niveaux (le boss de la semaine suit le niveau du serveur).</span>
                 </label>

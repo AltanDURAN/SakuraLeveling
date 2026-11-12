@@ -87,15 +87,14 @@ async def quests_list(
         icon="📜",
         new_url=f"/admin/quests/new?scope={scope}",
         new_label=f"Nouvelle quête {'hebdo' if scope == 'weekly' else 'quotidienne'}",
-        source_label=(
-            f"Définitions : app/infrastructure/content/{filename} "
-            f"— ⚠️ restart bot requis après ajout."
-        ),
+        subtitle=("Des MODÈLES : chaque joueur reçoit une quête adaptée (cible de sa zone, quantité à son niveau, "
+                  "objectif de son rôle) au moment du tirage."),
+        source_file=filename,
         filter_q=q or "",
         filter_groups=[{
             "name": "tier",
             "current": tier or "",
-            "placeholder": "Tous les tiers",
+            "placeholder": "Toutes les difficultés",
             "options": [(t, t) for t in tiers],
         }, {
             "name": "scope",
@@ -106,13 +105,13 @@ async def quests_list(
         columns=[
             {"label": "Code", "key": "code"},
             {"label": "Nom", "key": "name"},
-            {"label": "Tier", "key": "tier"},
+            {"label": "Difficulté", "key": "tier"},
             {"label": "Objectif", "key": "objective_type"},
             {"label": "Cible", "key": "objective_target"},
             {"label": "Unités (échelle)", "key": "objective_quantity"},
             {"label": "Or", "key": "reward_gold"},
             {"label": "XP", "key": "reward_xp"},
-            {"label": "Items", "key": "reward_items"},
+            {"label": "Objets", "key": "reward_items"},
         ],
         rows=filtered,
     )

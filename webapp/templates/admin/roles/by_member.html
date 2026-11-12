@@ -1,20 +1,14 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
 {% block title %}Rôles par membre — Sakura Admin{% endblock %}
 {% block content %}
 <section class="list-page" x-data="{ q: '', roleFilter: '' }">
-    <header class="list-header">
-        <div>
-            <a href="/admin" class="breadcrumb">← Dashboard</a>
-            <h1>🧑‍🤝‍🧑 Rôles <span class="count-pill">{{ members|length }} membres</span></h1>
-        </div>
-    </header>
-
-    <div class="topnav" style="margin-bottom:1rem;">
-        <a href="/admin/roles/by-role" class="topnav-link">Par rôle</a>
-        <a href="/admin/roles/by-member" class="topnav-link" style="font-weight:700;">Par membre</a>
-    </div>
-
-    {% if error %}<div class="field-error" style="margin-bottom:1rem;">⚠️ {{ error }}</div>{% endif %}
+    {{ page_head("Rôles Discord", "🏷️", count=members|length ~ " membres", sub="Les membres du serveur et leurs rôles.") }}
+    <nav class="tabs">
+        <a href="/admin/roles/by-role" class="tab">Par rôle</a>
+        <a href="/admin/roles/by-member" class="tab is-on">Par membre</a>
+    </nav>
+    {% if error %}<div class="notice is-danger">⚠️ {{ error }}</div>{% endif %}
 
     <!-- Recherche / filtre -->
     <div class="filter-bar">
@@ -29,8 +23,8 @@
         <thead><tr><th>Membre</th><th>Rôles</th></tr></thead>
         <tbody>
         {% for m in members %}
-            <tr x-show="(q==='' || {{ m.name|lower|tojson }}.includes(q.toLowerCase()) || {{ m.username|lower|tojson }}.includes(q.toLowerCase()))
-                        && (roleFilter==='' || {{ m.roles|map(attribute='id')|list|tojson }}.includes(roleFilter))">
+            <tr x-show="(q==='' || {{ m.name|lower|tojson|forceescape }}.includes(q.toLowerCase()) || {{ m.username|lower|tojson|forceescape }}.includes(q.toLowerCase()))
+                        && (roleFilter==='' || {{ m.roles|map(attribute="id")|list|tojson|forceescape }}.includes(roleFilter))">
                 <td style="white-space:nowrap;">
                     <img src="{{ m.avatar }}" width="24" height="24" style="border-radius:50%;vertical-align:middle;margin-right:6px;" loading="lazy">
                     <strong>{{ m.name }}</strong>{% if m.bot %} 🤖{% endif %}

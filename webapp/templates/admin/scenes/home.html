@@ -1,15 +1,11 @@
 {% extends "admin/base.html" %}
-{% block title %}Scènes de spawn — Sakura Admin{% endblock %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
+{% block title %}Scènes — Sakura Admin{% endblock %}
 {% block content %}
 <section class="form-page">
-    <h1>🎬 Scènes — placement des monstres</h1>
-    <p style="color:var(--muted); max-width:74ch;">
-        Ici tu règles <strong>la position, la taille et l'ombre</strong> du monstre pour chaque
-        élément de sa zone (WYSIWYG). Le <strong>décor</strong> d'un élément se compose dans
-        <a href="/admin/zones">Zones</a> ; les <strong>poids de spawn</strong> élémentaires se
-        règlent sur la <a href="/admin/mobs">fiche du monstre</a>.
-    </p>
-    <p><a href="/admin/scenes/formations" class="btn btn-primary">🐺 Formations des meutes (plusieurs monstres)</a></p>
+    {% call page_head("Scènes", "🎬", sub="La <strong>position, la taille et l'ombre</strong> de chaque monstre sur le décor de chaque élément de sa zone, en voyant le rendu. Le <strong>décor</strong> d'un élément se compose dans <a href=\"/admin/zones\">Zones</a> ; les <strong>chances d'apparition</strong> par élément se règlent sur la <a href=\"/admin/mobs\">fiche du monstre</a>.") %}
+        <a href="/admin/scenes/formations" class="btn btn-primary">🐺 Formations des meutes</a>
+    {% endcall %}
 
     <div class="form-section">
         <h2 class="form-section-title">Monstres</h2>

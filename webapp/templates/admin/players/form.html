@@ -1,18 +1,15 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
 
-{% block title %}Éditer {{ profile.player.display_name }} — Sakura Admin{% endblock %}
+{% set crumbs = [(profile.player.display_name, "/admin/players/" ~ profile.player.id ~ "/view"), ("Modifier", none)] %}
+{% block title %}{{ profile.player.display_name }} — modifier — Sakura Admin{% endblock %}
 
 {% block content %}
 <section class="form-page">
     {# Cohérence avec les 8 pages sœurs (inventaire, équipement, titres…) :
        on revient à la FICHE du joueur, pas à la liste — l'enregistrement y
        redirige déjà. #}
-    <a href="/admin/players/{{ profile.player.id }}/view" class="breadcrumb">← Retour à la fiche</a>
-    <h1>Éditer <code>{{ profile.player.display_name }}</code> <span style="color: var(--text-faint); font-size: 0.7em;">(Discord {{ profile.player.discord_id }})</span></h1>
-    <p class="form-section-help">
-        Modifie directement la DB. Le bot Discord verra les changements à la
-        prochaine commande (les caches sont par requête, pas globaux).
-    </p>
+    {{ page_head(profile.player.display_name, "✏️", code=profile.player.discord_id, sub="Écrit directement en base : le joueur le voit à sa prochaine commande.") }}
 
     <form method="post" action="/admin/players/{{ profile.player.id }}" class="form-grid">
         <div class="form-section">
@@ -27,7 +24,7 @@
                     <input type="number" name="xp" class="input" value="{{ profile.progression.xp }}" min="0">
                 </label>
                 <label class="field">
-                    <span class="field-label">Skill points</span>
+                    <span class="field-label">Points d'arbre</span>
                     <input type="number" name="skill_points" class="input" value="{{ profile.progression.skill_points }}" min="0">
                 </label>
             </div>
@@ -41,7 +38,7 @@
                     <input type="number" name="gold" class="input" value="{{ profile.resources.gold }}" min="0">
                 </label>
                 <label class="field">
-                    <span class="field-label">Daily streak</span>
+                    <span class="field-label">Série /daily</span>
                     <input type="number" name="daily_streak" class="input" value="{{ profile.resources.daily_streak }}" min="0">
                 </label>
             </div>

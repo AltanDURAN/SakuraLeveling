@@ -1,6 +1,6 @@
 {% extends "admin/base.html" %}
 
-{% block title %}Builder d'arbre — Sakura Admin{% endblock %}
+{% block title %}Arbre de compétences — Sakura Admin{% endblock %}
 
 {% block content %}
 <style>
@@ -13,7 +13,6 @@
 .bt-root:fullscreen .bt-head { display:none; }
 .bt-head { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
 .bt-head h1 { margin:0; font-size:1.35rem; }
-.bt-head .crumb { font-size:.8rem; color:var(--text-faint); text-decoration:none; }
 
 .bt-bar { display:flex; align-items:center; gap:6px; flex-wrap:wrap;
   background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius); padding:6px 8px; }
@@ -171,7 +170,7 @@ html.bt-noscroll, html.bt-noscroll body { overflow:hidden; }
   .bt-root { --bt-w:calc(100vw - 12px); gap:6px; }
   .bt-head { gap:8px; }
   .bt-head h1 { font-size:1.05rem; }
-  .bt-head .crumb { display:none; }
+  .bt-head .muted { display:none; }
   .bt-bar { gap:4px; padding:5px; }
   .bt-bar .lbl { display:none; }
   .bt-sep { display:none; }
@@ -225,8 +224,8 @@ html.bt-noscroll, html.bt-noscroll body { overflow:hidden; }
 
 <div class="bt-root" id="bt-root">
   <div class="bt-head">
-    <a href="/admin" class="crumb">← Admin</a>
-    <h1>Builder d'arbre de compétences</h1>
+    <h1>🌳 Arbre de compétences</h1>
+    <span class="muted">⚠️ Enregistré dans <code>skill_tree.json</code> : <strong>redémarre le bot</strong> pour l'appliquer.</span>
   </div>
 
   <div class="bt-bar" role="toolbar" aria-label="Outils du builder">

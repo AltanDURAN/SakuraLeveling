@@ -1,10 +1,10 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
+{% set crumbs = [("Réglages des boosters", none)] %}
 {% block title %}Réglages des boosters — Cartes — Sakura Admin{% endblock %}
 {% macro n(v) %}{{ "{:,}".format(v|int).replace(",", " ") }}{% endmacro %}
 {% block content %}
 <style>
-  .notice { margin:.6rem 0; padding:.6rem .9rem; border-radius:10px; background:rgba(80,200,120,.15); border:1px solid rgba(80,200,120,.4); }
-  .alert { margin:.4rem 0; padding:.6rem .9rem; border-radius:10px; background:rgba(220,80,100,.12); border:1px solid rgba(220,80,100,.4); }
   .sgrid { display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:.8rem; }
   .rates input { width:6.5rem; text-align:right; }
   .rates td, .rates th { white-space:nowrap; }
@@ -44,12 +44,9 @@
       return t; },
     fmt(x){ return Number(x).toLocaleString('fr-FR', { maximumFractionDigits: 2 }); },
     ok(o){ return Math.abs(this.sum(o) - 100) <= 0.01; } }">
-  <p style="margin:0 0 .4rem;"><a href="/admin/cards">← Toutes les cartes</a></p>
-  <h1>⚙️ Réglages des boosters</h1>
-  <p style="color:var(--text-soft); max-width:80ch;">Pris en compte par le bot <strong>sans redémarrage</strong> (le guide épinglé du salon des cartes se met à jour dans la demi-heure).
-    Un booster contient toujours {{ booster_size }} cartes, 10 boosters au plus d'un coup. Défauts : décisions du 09/11/2026.</p>
-  {% if saved %}<div class="notice">✅ Enregistré.</div>{% endif %}
-  {% for e in errors %}<div class="alert">⚠️ {{ e }}</div>{% endfor %}
+  {{ page_head("Réglages des boosters", "⚙️", sub="Pris en compte par le bot <strong>sans redémarrer</strong> (le guide épinglé du salon des cartes se met à jour dans la demi-heure). Un booster contient toujours " ~ booster_size ~ " cartes, 10 boosters au plus d'un coup. Défauts : décisions du 09/11/2026.") }}
+  {% if saved %}<div class="notice is-ok">✅ Enregistré.</div>{% endif %}
+  {% for e in errors %}<div class="notice is-danger">⚠️ {{ e }}</div>{% endfor %}
 
   <form method="post" action="/admin/cards/settings/params" id="params-form">
     <div class="form-section">

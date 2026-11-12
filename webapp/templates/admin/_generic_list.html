@@ -1,4 +1,5 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, reload_note %}
 
 {# Template générique pour les listings read-only (entités JSON-backed).
    Le router passe :
@@ -7,7 +8,8 @@
      - columns : list[(label, key, formatter)] où formatter est optionnel
      - rows : list[dict] dont les clés correspondent aux `key` des columns
      - filter_q : str — valeur du filtre texte courant
-     - source_label : str | None — texte sous l'header (ex: "Définitions dans skill_tree.json")
+     - subtitle : str | None — la phrase d'explication sous le titre
+     - source_file : str | None — le fichier de contenu (avis de rechargement standard)
      - filter_groups : list[dict] | None — filtres select supplémentaires :
          [{name, current, options: list[(value, label)]}]
      - detail_html : dict[row_key, str] | None — HTML détaillé déplié par ligne
@@ -17,18 +19,10 @@
 
 {% block content %}
 <section class="list-page">
-    <header class="list-header">
-        <div>
-            <a href="/admin" class="breadcrumb">← Dashboard</a>
-            <h1>{{ icon }} {{ title }} <span class="count-pill">{{ rows|length }}</span></h1>
-            {% if source_label %}
-                <p class="form-section-help" style="margin: 0;">{{ source_label }}</p>
-            {% endif %}
-        </div>
-        {% if new_url %}
-            <a href="{{ new_url }}" class="btn btn-primary">+ {{ new_label or 'Nouveau' }}</a>
-        {% endif %}
-    </header>
+    {% call page_head(title, icon, count=rows|length, sub=subtitle|default(none)) %}
+        {% if new_url %}<a href="{{ new_url }}" class="btn btn-primary">＋ {{ new_label or 'Nouveau' }}</a>{% endif %}
+    {% endcall %}
+    {% if source_file is defined and source_file %}{{ reload_note(source_file) }}{% endif %}
 
     <form class="filter-bar" method="get">
         <input type="text" name="q" value="{{ filter_q or '' }}"
@@ -43,7 +37,7 @@
         </select>
         {% endfor %}
         {% if filter_q or (filter_groups and (filter_groups | selectattr('current') | list)) %}
-            <a href="?" class="btn btn-ghost">Reset</a>
+            <a href="?" class="btn btn-ghost">Réinitialiser</a>
         {% endif %}
     </form>
 
@@ -77,7 +71,7 @@
                                 <form method="post" action="{{ row['__delete_url__'] }}"
                                       style="display:inline; margin-left:0.3rem;"
                                       onsubmit="return confirm('⚠️ Supprimer définitivement cette entrée ?\n\nElle disparaîtra du JSON. Irréversible (sauf reseed).');">
-                                    <button type="submit" class="btn btn-small" style="background: var(--danger); color: white;">Suppr.</button>
+                                    <button type="submit" class="btn btn-small btn-danger">Supprimer</button>
                                 </form>
                             {% endif %}
                         </td>

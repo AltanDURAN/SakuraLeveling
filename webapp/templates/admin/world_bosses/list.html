@@ -1,4 +1,5 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
 {% from "admin/world_bosses/_images.html" import wb_styles, wb_slots, wb_elements, wb_previews, wb_toast, wb_script %}
 
 {% block title %}World Bosses — Sakura Admin{% endblock %}
@@ -11,20 +12,9 @@
 <section x-data="wbImages(JSON.parse(document.getElementById('wb-data').textContent))"
          @dragover.prevent="pageOver = true" @drop.prevent="dropAll($event)"
          @dragleave="if (!$event.relatedTarget) pageOver = false">
-    <div class="wb-head">
-        <div>
-            <h1>🐉 World Bosses</h1>
-            <p class="wb-intro">
-                Chaque boss tel que les joueurs le voient : une image de la vidéo de l'assaut et la bannière du raid,
-                dessinées par le code du bot. <strong>Glisse une image sur un boss</strong> : son image (bannière, vidéo,
-                bestiaire, carte) ou son arène (le décor de la vidéo). Son élément est <strong>tiré au hasard à chaque
-                apparition</strong> ; dans la vidéo et sur la bannière, le boss en prend la teinte, comme les monstres —
-                choisis-en une sous son nom pour voir l'aperçu. Une image en noir et blanc se teinte le mieux.
-                Tout vaut <strong>tout de suite</strong>, sans redémarrer le bot — le boss en cours compris.
-            </p>
-        </div>
+    {% call page_head("World Bosses", "🐉", count=bosses|length, sub="Chaque boss tel que les joueurs le voient : une image de la vidéo de l'assaut et la bannière du raid, dessinées par le code du bot. <strong>Glisse une image sur un boss</strong> : son image (bannière, vidéo, bestiaire, carte) ou son arène (le décor de la vidéo). Son élément est <strong>tiré au hasard à chaque apparition</strong> ; dans la vidéo et sur la bannière, le boss en prend la teinte — choisis-en une sous son nom pour voir l'aperçu. Une image en noir et blanc se teinte le mieux. Tout vaut <strong>tout de suite</strong>, sans redémarrer le bot.") %}
         <a href="/admin/world-bosses/new" class="btn btn-primary">＋ Nouveau boss</a>
-    </div>
+    {% endcall %}
 
     <div class="wb-drop" :class="{ over: pageOver }">
         <div>

@@ -1,4 +1,5 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
 {% block title %}Événements — Sakura Admin{% endblock %}
 {% block content %}
 {#
@@ -10,20 +11,7 @@
 <script type="application/json" id="ev-data">{{ data|tojson }}</script>
 
 <style>
-  @font-face { font-family: 'Bangers'; src: url('/assets/fonts/Bangers-Regular.ttf') format('truetype'); font-display: swap; }
-  [x-cloak] { display:none !important; }
   .ev { display:flex; flex-direction:column; gap:1rem; padding-bottom: 1rem; }
-  .ev-muted { color: var(--text-faint); font-size:.86rem; }
-  .ev-hero { display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; flex-wrap:wrap; padding:1.3rem 1.5rem;
-             border-radius: var(--radius-lg); color:#fff; box-shadow: var(--shadow-md);
-             background: radial-gradient(circle at 12% 25%, rgba(255,255,255,.16) 0 2px, transparent 3px) 0 0/44px 44px,
-                         radial-gradient(circle at 70% 65%, rgba(255,255,255,.12) 0 1.5px, transparent 2.5px) 0 0/29px 29px,
-                         linear-gradient(120deg, #2c1a4d, #6b2f7d 48%, #c27b2e); }
-  .ev-hero h1 { margin:0; font-family:'Bangers', var(--font); letter-spacing:1px; font-size:2.3rem; color:#ffd46e; text-shadow:2px 2px 0 rgba(40,10,50,.6); }
-  .ev-hero p { margin:.3rem 0 0; max-width:72ch; opacity:.92; }
-  .ev-badges { display:flex; gap:.4rem; flex-wrap:wrap; }
-  .ev-badge { padding:.25rem .7rem; border-radius:999px; font-size:.82rem; font-weight:600; background:rgba(255,255,255,.17); border:1px solid rgba(255,255,255,.3); }
-  .ev-badge.is-live { background:#ffd46e; color:#4a2a00; border-color:transparent; }
 
   /* les trois événements */
   .ev-picks { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:.8rem; }
@@ -45,15 +33,8 @@
   @media (max-width: 1100px) { .ev-grid { grid-template-columns:1fr; } }
   .ev-sticky { position:sticky; top:.6rem; display:flex; flex-direction:column; gap:.8rem; }
   @media (max-width: 1100px) { .ev-sticky { position:static; } }
-  .ev-card { background: var(--bg-elev); border:1px solid var(--border); border-radius: var(--radius-lg); padding:1rem 1.2rem; box-shadow: var(--shadow-sm); }
-  .ev-card h3 { margin:0 0 .7rem; font-size:1.02rem; display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
-  .ev-card h3 .ev-muted { font-weight:400; margin-left:auto; }
   .ev-col { display:flex; flex-direction:column; gap:1rem; min-width:0; }
   .ev-row { display:flex; gap:.6rem; align-items:center; flex-wrap:wrap; }
-  .ev-chips { display:flex; gap:.35rem; flex-wrap:wrap; }
-  .ev-chip { border:1px solid var(--border); background: var(--bg-soft); color: var(--text); border-radius:999px; padding:.3rem .75rem;
-             font-size:.84rem; font-weight:600; cursor:pointer; }
-  .ev-chip.is-on { background: var(--accent); border-color: var(--accent); color:#fff; }
   .ev-num { width:5.2rem; text-align:center; }
   .ev-num.is-wide { width:7.5rem; }
   .ev-sentence { display:flex; gap:.45rem; align-items:center; flex-wrap:wrap; font-size:.95rem; }
@@ -123,17 +104,6 @@
   .ev-stat small { display:block; color: var(--text-soft); font-size:.78rem; margin-top:.15rem; }
 
   /* aperçu Discord */
-  .dc { background:#313338; border-radius:12px; padding:.9rem 1rem; color:#dbdee1; font-family:'gg sans','Noto Sans', var(--font); font-size:.93rem; line-height:1.38; }
-  .dc-msg { display:flex; gap:.8rem; }
-  .dc-avatar { width:40px; height:40px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-size:22px; background:linear-gradient(135deg,#f7a8c9,#b692e0); }
-  .dc-author { font-weight:600; color:#f2f3f5; }
-  .dc-tag { font-size:.62rem; background:#5865f2; color:#fff; border-radius:3px; padding:1px 4px; margin-left:4px; vertical-align:2px; font-weight:700; }
-  .dc-mention { background:rgba(88,101,242,.3); color:#c9cdfb; border-radius:3px; padding:0 2px; }
-  .dc-embed { margin-top:.35rem; background:#2b2d31; border-left:4px solid #b8323f; border-radius:4px; padding:.6rem .9rem .75rem; max-width:440px; }
-  .dc-title { font-weight:700; color:#f2f3f5; margin-bottom:.3rem; }
-  .dc-desc strong, .dc-field strong { color:#f2f3f5; }
-  .dc-field { margin-top:.45rem; }
-  .dc-field-name { font-weight:700; color:#f2f3f5; font-size:.86rem; margin-bottom:.1rem; }
   .dc-img { position:relative; margin-top:.6rem; border-radius:6px; overflow:hidden; background:#1e1f22; }
   .dc-img img { display:block; width:100%; max-height:300px; object-fit:cover; }
   .dc-attach { margin-top:.35rem; max-width:440px; position:relative; border-radius:8px; overflow:hidden; }
@@ -142,39 +112,22 @@
              background:rgba(20,10,30,.72); color:#fff; font-weight:700; opacity:0; transition:opacity .15s; cursor:pointer; }
   .dc-img:hover .dc-drop, .dc-attach:hover .dc-drop, .dc-drop.is-over { opacity:1; }
   .dc-noimg { padding:1.6rem 1rem; text-align:center; color:#949ba4; border:2px dashed #4e5058; border-radius:8px; cursor:pointer; margin-top:.6rem; }
-  .dc-btns { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.5rem; }
-  .dc-b { border-radius:4px; padding:.42rem .9rem; font-size:.88rem; font-weight:600; color:#fff; display:inline-flex; gap:.35rem; align-items:center; }
-  .dc-b.success { background:#248046; } .dc-b.primary { background:#5865f2; } .dc-b.secondary { background:#4e5058; } .dc-b.danger { background:#da373c; }
-  .dc-error { color:#ffb4b4; font-size:.86rem; }
   .dc-wait { opacity:.55; transition: opacity .2s; }
 
-  .ev-savebar { position:sticky; bottom:0; z-index:20; display:flex; align-items:center; gap:.8rem; flex-wrap:wrap; padding:.7rem 1rem;
-                border-radius: var(--radius-lg) var(--radius-lg) 0 0; background: var(--bg-elev); border:1px solid var(--border); box-shadow: var(--shadow-lg); }
-  .ev-state { display:flex; align-items:center; gap:.45rem; font-weight:600; }
-  .ev-state i { width:10px; height:10px; border-radius:50%; background: var(--success); display:inline-block; }
-  .ev-state.is-dirty i { background: var(--warn); box-shadow:0 0 0 4px rgba(217,148,84,.2); }
-  .ev-toast { position:fixed; right:1.2rem; bottom:5.5rem; z-index:50; padding:.7rem 1rem; border-radius:12px; color:#fff; box-shadow: var(--shadow-lg); font-weight:600; max-width:min(440px, calc(100vw - 2.4rem)); }
 </style>
 
 <section class="ev" x-data="eventsPage()" x-init="init()"
          @keydown.window.ctrl.s.prevent="save()" @keydown.window.meta.s.prevent="save()">
 
   {# ================================================================ en-tête #}
-  <header class="ev-hero">
-    <div>
-      <a href="/admin" class="breadcrumb" style="color:#fff; opacity:.8;">← Dashboard</a>
-      <h1>🎲 Événements</h1>
-      <p>Les petits événements du serveur apparaissent tout seuls, au hasard, dans le salon choisi : un coffre, une
-         petite fille, la forge sacrée. Le bot relit ces réglages à chaque passage : rien à redémarrer.</p>
-    </div>
-    <div class="ev-badges">
-      <span class="ev-badge" x-text="'≈ ' + fmt(totalPerDay(), 1) + ' événement' + (totalPerDay() >= 2 ? 's' : '') + ' par jour'"></span>
-      <span class="ev-badge">1 h minimum entre deux</span>
-      <template x-for="e in events" :key="e.type">
-        <span class="ev-badge is-live" x-show="hist(e.type).active" x-text="e.emoji + ' ' + e.label + ' en cours'"></span>
-      </template>
-    </div>
-  </header>
+  {% call page_head("Événements", "🎲", hero="linear-gradient(120deg, #2c1a4d, #6b2f7d 48%, #c27b2e)",
+                    sub="Les petits événements du serveur apparaissent tout seuls, au hasard, dans le salon choisi : un coffre, une petite fille, la forge sacrée. Le bot relit ces réglages à chaque passage : <strong>rien à redémarrer</strong>.") %}
+    <span class="hero-badge" x-text="'≈ ' + fmt(totalPerDay(), 1) + ' événement' + (totalPerDay() >= 2 ? 's' : '') + ' par jour'"></span>
+    <span class="hero-badge">1 h minimum entre deux</span>
+    <template x-for="e in events" :key="e.type">
+      <span class="hero-badge is-live" x-show="hist(e.type).active" x-text="e.emoji + ' ' + e.label + ' en cours'"></span>
+    </template>
+  {% endcall %}
 
   {# =================================================== les trois événements #}
   <div class="ev-picks">
@@ -186,10 +139,10 @@
         </div>
         <div class="ev-pick-body">
           <span class="ev-pick-title"><span x-text="e.emoji"></span><span x-text="e.label"></span>
-            <span class="ev-muted" x-show="isDirty(e.type)" x-cloak>· modifié</span></span>
-          <span class="ev-muted" x-text="e.pitch"></span>
+            <span class="muted" x-show="isDirty(e.type)" x-cloak>· modifié</span></span>
+          <span class="muted" x-text="e.pitch"></span>
           <span style="font-size:.86rem;" x-text="cfg(e.type).enabled ? cadencePhrase(e.type) : 'N\'apparaît plus tout seul'"></span>
-          <span class="ev-muted" x-text="lastPhrase(e.type)"></span>
+          <span class="muted" x-text="lastPhrase(e.type)"></span>
         </div>
       </button>
     </template>
@@ -199,20 +152,20 @@
   <div class="ev-grid">
     {# =============================================== aperçu (colonne fixe) #}
     <div class="ev-sticky">
-      <div class="ev-card">
-        <h3>👀 Ce que voient les joueurs <span class="ev-muted" x-text="channelLabel()"></span></h3>
-        <div class="ev-chips" style="margin-bottom:.7rem;">
+      <div class="panel">
+        <h3>👀 Ce que voient les joueurs <span class="muted" x-text="channelLabel()"></span></h3>
+        <div class="chips" style="margin-bottom:.7rem;">
           <template x-for="s in ev.states" :key="s.code">
-            <button type="button" class="ev-chip" :class="{ 'is-on': view.state === s.code }" @click="view.state = s.code; refresh()" x-text="s.label"></button>
+            <button type="button" class="chip" :class="{ 'is-on': view.state === s.code }" @click="view.state = s.code; refresh()" x-text="s.label"></button>
           </template>
         </div>
         <div class="ev-row" style="margin-bottom:.7rem;" x-show="needsLevel()">
-          <span class="ev-muted">Joueur de niveau</span>
+          <span class="muted">Joueur de niveau</span>
           <input type="range" class="ev-range" min="1" max="100" x-model.number="view.level" @input="refresh()" style="flex:1; min-width:120px;">
           <strong x-text="view.level" style="min-width:2.2rem; text-align:right;"></strong>
         </div>
         <div class="ev-row" style="margin-bottom:.7rem;" x-show="sel === 'chest' && view.state === 'opened'">
-          <span class="ev-muted">Récompense tirée</span>
+          <span class="muted">Récompense tirée</span>
           <select class="input" style="flex:1; min-width:0;" x-model.number="view.row" @change="refresh()">
             <template x-for="(r, i) in cfg('chest').loot" :key="i">
               <option :value="i" x-text="rewardLabel(r) + ' — ' + fmt(chance('chest', i), 1) + ' %'"></option>
@@ -254,17 +207,17 @@
           </div>
         </div>
         <input type="file" x-ref="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden @change="pickImage($event)">
-        <p class="ev-muted" style="margin:.6rem 0 0;" x-show="view.state !== 'spawn'">
+        <p class="muted" style="margin:.6rem 0 0;" x-show="view.state !== 'spawn'">
           Le bot modifie le même message : l'image reste, le texte et les boutons changent.</p>
-        <p class="ev-muted" style="margin:.6rem 0 0;" x-show="uploading">⏳ Envoi de l'image…</p>
+        <p class="muted" style="margin:.6rem 0 0;" x-show="uploading">⏳ Envoi de l'image…</p>
       </div>
     </div>
 
     {# ====================================================== réglages #}
     <div class="ev-col">
       {# ------------------------------------------------------- apparition #}
-      <div class="ev-card">
-        <h3>🎯 Apparition <span class="ev-muted" x-text="ev.emoji + ' ' + ev.label"></span></h3>
+      <div class="panel">
+        <h3>🎯 Apparition <span class="muted" x-text="ev.emoji + ' ' + ev.label"></span></h3>
         <div style="display:flex; flex-direction:column; gap:.9rem;">
           <label class="ev-switch">
             <input type="checkbox" x-model="cfg(sel).enabled"><i></i>
@@ -275,16 +228,16 @@
             <span>fois tous les</span>
             <input type="number" class="input ev-num" min="1" max="365" x-model.number="cfg(sel).cadence.per_days">
             <span x-text="cfg(sel).cadence.per_days > 1 ? 'jours' : 'jour'"></span>
-            <span class="ev-muted" x-text="'→ ' + cadencePhrase(sel)"></span>
+            <span class="muted" x-text="'→ ' + cadencePhrase(sel)"></span>
           </div>
           <div>
-            <div class="ev-muted" style="margin-bottom:.35rem;">Salon</div>
-            <div class="ev-chips">
+            <div class="muted" style="margin-bottom:.35rem;">Salon</div>
+            <div class="chips">
               <template x-for="ch in data.channel_list" :key="ch.code">
-                <button type="button" class="ev-chip" :class="{ 'is-on': cfg(sel).channel === ch.code }" @click="cfg(sel).channel = ch.code" x-text="ch.name"></button>
+                <button type="button" class="chip" :class="{ 'is-on': cfg(sel).channel === ch.code }" @click="cfg(sel).channel = ch.code" x-text="ch.name"></button>
               </template>
             </div>
-            <p class="ev-muted" style="margin:.35rem 0 0;">Les petits événements vont dans le salon général ; le salon des événements est gardé pour les gros.</p>
+            <p class="muted" style="margin:.35rem 0 0;">Les petits événements vont dans le salon général ; le salon des événements est gardé pour les gros.</p>
           </div>
           <div class="ev-note" x-html="nextPhrase()"></div>
           <div class="ev-row">
@@ -293,15 +246,15 @@
             <template x-if="hist(sel).active && hist(sel).active.link">
               <a class="btn btn-ghost btn-small" :href="hist(sel).active.link" target="_blank" rel="noopener">Voir le message ↗</a>
             </template>
-            <span class="ev-muted" x-show="isDirty(sel)">Pense à enregistrer avant : il apparaîtra avec les réglages enregistrés.</span>
+            <span class="muted" x-show="isDirty(sel)">Pense à enregistrer avant : il apparaîtra avec les réglages enregistrés.</span>
           </div>
         </div>
       </div>
 
       {# ---------------------------------------------------------- coffre #}
       <template x-if="sel === 'chest'">
-        <div class="ev-card">
-          <h3>🎁 Le butin <span class="ev-muted">un seul tirage : le premier qui ouvre gagne UNE récompense</span></h3>
+        <div class="panel">
+          <h3>🎁 Le butin <span class="muted">un seul tirage : le premier qui ouvre gagne UNE récompense</span></h3>
           <div class="ev-loot">
             <template x-for="(r, i) in cfg('chest').loot" :key="i">
               <div class="ev-lrow">
@@ -313,14 +266,14 @@
                 <div class="ev-what">
                   <template x-if="r.kind === 'gold'">
                     <span class="ev-row"><input type="number" class="input ev-num is-wide" min="1" x-model.number="r.gold_amount"><span>or</span>
-                      <span class="ev-muted" x-text="'→ ' + fmtInt(scaled(r.gold_amount)) + ' au niveau ' + view.level"></span></span>
+                      <span class="muted" x-text="'→ ' + fmtInt(scaled(r.gold_amount)) + ' au niveau ' + view.level"></span></span>
                   </template>
                   <template x-if="r.kind === 'item'">
                     <span class="ev-row" style="flex:1; min-width:0; flex-wrap:nowrap;">
                       <input type="number" class="input ev-num" min="1" x-model.number="r.quantity" title="Quantité"><span>×</span>
                       <div class="ev-picker" x-data="{ open: false, q: '' }" @click.outside="open = false" @keydown.escape="open = false">
                         <button type="button" class="ev-picker-btn" @click="open = !open; q = ''; $nextTick(() => { if (open) $refs.q.focus() })">
-                          <span class="ev-ic" x-html="itemIcon(r.item_code)"></span><span class="n" x-text="itemName(r.item_code)"></span><span class="ev-muted">▾</span>
+                          <span class="ev-ic" x-html="itemIcon(r.item_code)"></span><span class="n" x-text="itemName(r.item_code)"></span><span class="muted">▾</span>
                         </button>
                         <div class="ev-pop" x-show="open" x-cloak x-transition.opacity.duration.100ms>
                           <input class="input" x-ref="q" x-model="q" placeholder="Chercher un objet…">
@@ -330,18 +283,18 @@
                                 <span class="ev-ic" x-html="itemIcon(it.code)"></span><span x-text="it.name"></span>
                               </button>
                             </template>
-                            <div class="ev-muted" x-show="!findItems(q).length" style="padding:.5rem;">Aucun objet.</div>
+                            <div class="muted" x-show="!findItems(q).length" style="padding:.5rem;">Aucun objet.</div>
                           </div>
                         </div>
                       </div>
                     </span>
                   </template>
-                  <template x-if="r.kind === 'nothing'"><span class="ev-muted">Coffre vide : la déception fait partie du jeu.</span></template>
+                  <template x-if="r.kind === 'nothing'"><span class="muted">Coffre vide : la déception fait partie du jeu.</span></template>
                 </div>
                 <div class="ev-odds" :title="'Poids ' + r.weight + ' sur ' + totalWeight()">
                   <strong x-text="fmt(chance('chest', i), 1) + ' %'"></strong>
                   <div class="ev-bar"><div :style="{ width: chance('chest', i) + '%' }"></div></div>
-                  <span class="ev-row" style="gap:.3rem;"><span class="ev-muted">poids</span>
+                  <span class="ev-row" style="gap:.3rem;"><span class="muted">poids</span>
                     <input type="number" class="input ev-num" min="1" style="width:4.2rem;" x-model.number="r.weight"></span>
                 </div>
                 <button type="button" class="ev-x" title="Retirer" @click="cfg('chest').loot.splice(i, 1)">✕</button>
@@ -350,7 +303,7 @@
           </div>
           <div class="ev-row" style="margin-top:.6rem;">
             <button type="button" class="btn btn-small" @click="cfg('chest').loot.push({ kind: 'gold', gold_amount: 100, weight: 10 })">＋ Une récompense</button>
-            <span class="ev-muted">Un poids deux fois plus grand = deux fois plus de chances.</span>
+            <span class="muted">Un poids deux fois plus grand = deux fois plus de chances.</span>
           </div>
           <div class="ev-stats" style="margin-top:1rem;">
             <div class="ev-stat"><div class="ev-big" x-text="fmtInt(expectedGold())"></div><small x-text="'or en moyenne par coffre, au niveau ' + view.level"></small></div>
@@ -360,18 +313,18 @@
           <div style="display:flex; flex-direction:column; gap:.7rem; margin-top:1rem;">
             <div class="ev-sentence"><span>Le gain grossit de</span>
               <input type="number" class="input ev-num" min="0" max="100" x-model.number="cfg('chest').level_scaling_pct"><span>% par niveau du gagnant</span>
-              <span class="ev-muted" x-text="cfg('chest').level_scaling_pct ? '(0 = pareil pour tous)' : '— le même pour tous'"></span></div>
+              <span class="muted" x-text="cfg('chest').level_scaling_pct ? '(0 = pareil pour tous)' : '— le même pour tous'"></span></div>
             <div class="ev-sentence"><span>Il disparaît s'il n'est pas ouvert au bout de</span>
               <input type="number" class="input ev-num" min="0.1" step="0.5" :value="lifetimeHours()" @input="setLifetime($event.target.value)"><span>h</span></div>
-            <p class="ev-muted" style="margin:0;">Tant qu'un coffre est là, aucun autre n'apparaît : sans limite, un coffre oublié bloquait tous les suivants.</p>
+            <p class="muted" style="margin:0;">Tant qu'un coffre est là, aucun autre n'apparaît : sans limite, un coffre oublié bloquait tous les suivants.</p>
           </div>
         </div>
       </template>
 
       {# ---------------------------------------------------- petite fille #}
       <template x-if="sel === 'little_girl'">
-        <div class="ev-card">
-          <h3>👧 Le choix <span class="ev-muted" x-text="'conséquences pour un joueur de niveau ' + view.level"></span></h3>
+        <div class="panel">
+          <h3>👧 Le choix <span class="muted" x-text="'conséquences pour un joueur de niveau ' + view.level"></span></h3>
           <div style="margin-bottom:.9rem;">
             <div class="ev-row" style="justify-content:space-between; font-size:.9rem;">
               <span x-text="'😇 Vraie petite fille : ' + (100 - cfg('little_girl').trap_probability) + ' %'"></span>
@@ -411,18 +364,18 @@
           </div>
           <div class="ev-sentence" style="margin-top:.9rem;"><span>Le sort de chacun est scellé au bout de</span>
             <input type="number" class="input ev-num" min="1" max="120" x-model.number="cfg('little_girl').resolve_after_minutes"><span>minutes</span>
-            <span class="ev-muted">— chacun peut changer d'avis jusque-là.</span></div>
+            <span class="muted">— chacun peut changer d'avis jusque-là.</span></div>
           <div class="ev-note is-secret" style="margin-top:.8rem;">🤫 Ses aides comptent aussi pour le cadeau de Noël — jamais dit aux joueurs.</div>
         </div>
       </template>
 
       {# ---------------------------------------------------- forge sacrée #}
       <template x-if="sel === 'sacred_forge'">
-        <div class="ev-card">
-          <h3>🔨 La forge <span class="ev-muted">chaque joueur renforce UNE de ses pièces, une fois</span></h3>
+        <div class="panel">
+          <h3>🔨 La forge <span class="muted">chaque joueur renforce UNE de ses pièces, une fois</span></h3>
           <div class="ev-sentence"><span>Une pièce peut monter jusqu'au niveau</span>
             <input type="number" class="input ev-num" min="1" :max="data.forge.max" x-model.number="cfg('sacred_forge').max_level">
-            <span class="ev-muted" x-text="'(au plus ' + data.forge.max + ')'"></span></div>
+            <span class="muted" x-text="'(au plus ' + data.forge.max + ')'"></span></div>
           <div class="ev-levels" style="margin:1rem 0 1.6rem;">
             <template x-for="n in data.forge.max" :key="n">
               <div :class="{ 'is-on': n <= cfg('sacred_forge').max_level }" :style="{ height: (25 + n * 7.5) + '%' }" :title="'Niveau ' + n + ' : +' + fmt(n * data.forge.bonus_pct, 0) + ' %'"><span x-text="n"></span></div>
@@ -435,8 +388,8 @@
       </template>
 
       {# ------------------------------------------------------- historique #}
-      <div class="ev-card">
-        <h3>📊 Ce qui s'est passé <span class="ev-muted">30 derniers jours</span></h3>
+      <div class="panel">
+        <h3>📊 Ce qui s'est passé <span class="muted">30 derniers jours</span></h3>
         <div class="ev-stats">
           <div class="ev-stat"><div class="ev-big" x-text="hist(sel).month"></div><small x-text="'apparition' + (hist(sel).month > 1 ? 's' : '') + ' (' + hist(sel).total + ' depuis le début)'"></small></div>
           <template x-if="sel === 'chest'">
@@ -456,7 +409,7 @@
           </template>
         </div>
         <template x-if="sel === 'chest' && hist('chest').winners.length">
-          <p class="ev-muted" style="margin:.7rem 0 0;" x-text="'Les plus rapides : ' + hist('chest').winners.map(w => w.name + ' (' + w.count + ')').join(', ')"></p>
+          <p class="muted" style="margin:.7rem 0 0;" x-text="'Les plus rapides : ' + hist('chest').winners.map(w => w.name + ' (' + w.count + ')').join(', ')"></p>
         </template>
         <div class="ev-note is-warn" style="margin-top:.7rem;" x-show="ignored()" x-text="ignored()"></div>
       </div>
@@ -465,14 +418,14 @@
   </template>
 
   {# ============================================== barre d'enregistrement #}
-  <div class="ev-savebar">
-    <span class="ev-state" :class="{ 'is-dirty': anyDirty() }"><i></i><span x-text="anyDirty() ? 'Modifications non enregistrées' : 'Tout est enregistré'"></span></span>
-    <span class="ev-muted">Ctrl+S · vaut dès le prochain passage du bot</span>
+  <div class="savebar">
+    <span class="save-state" :class="{ 'is-dirty': anyDirty() }"><i></i><span x-text="anyDirty() ? 'Modifications non enregistrées' : 'Tout est enregistré'"></span></span>
+    <span class="muted">Ctrl+S · vaut dès le prochain passage du bot</span>
     <span style="flex:1;"></span>
     <button type="button" class="btn btn-ghost" x-show="anyDirty()" @click="if (confirm('Annuler les modifications non enregistrées ?')) location.reload()">Annuler</button>
     <button type="button" class="btn btn-primary" :disabled="saving" @click="save()" x-text="saving ? 'Enregistrement…' : '💾 Enregistrer'"></button>
   </div>
-  <div class="ev-toast" x-show="toast" x-transition x-cloak @click="toast = ''" :style="{ background: toastBad ? 'var(--danger)' : 'var(--success)' }" x-text="toast"></div>
+  <div class="toast" :class="{ 'is-bad': toastBad }" x-show="toast" x-transition x-cloak @click="toast = ''" x-text="toast"></div>
 </section>
 
 <script>

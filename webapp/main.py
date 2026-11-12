@@ -110,6 +110,10 @@ from app.shared.paths import ASSETS_DIR as _ASSETS_DIR  # noqa: E402
 _ASSETS_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/assets", StaticFiles(directory=str(_ASSETS_DIR)), name="assets")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+# Le menu du site admin : une seule source pour le menu, le fil d'Ariane et l'accueil.
+from webapp.admin import nav as _admin_nav  # noqa: E402
+templates.env.globals["admin_nav"] = _admin_nav.NAV
+templates.env.globals["admin_locate"] = _admin_nav.locate
 
 # Routers admin — montés avant les routes publiques pour que /admin/* matche
 # en priorité (sinon /admin/{slug} du dashboard router gobble nos sous-routes).

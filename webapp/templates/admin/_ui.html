@@ -1,0 +1,36 @@
+{#
+  Standard des pages du site admin (11/11/2026). Chaque page :
+    1. reçoit son FIL D'ARIANE de base.html, tiré du menu (🏠 › Groupe › Page) ;
+       elle peut le prolonger : {% set crumbs = [("Clairière", "/admin/zones/1/edit"), ("Décor plante", none)] %}
+    2. ouvre sur `page_head` : icône + nom (jamais un code seul), compteur,
+       code en puce, phrase d'explication, actions à droite ;
+    3. dit d'où viennent ses réglages et s'il faut redémarrer (`reload_note`) ;
+    4. montre ses messages avec `notice` (info / ok / warn / danger).
+  Composants CSS : admin.css, section « STANDARD DES PAGES ».
+#}
+
+{# `hero` (un fond CSS) en fait un bandeau illustré : pages vitrines (Événements, Fêtes). #}
+{% macro page_head(title, icon='', count=none, code=none, sub=none, hero=none) -%}
+<header class="page-head{{ ' is-hero' if hero }}"{% if hero %} style="--hero: {{ hero }}"{% endif %}>
+  <div class="page-head-main">
+    <h1>{% if icon %}<span>{{ icon }}</span>{% endif %}<span>{{ title }}</span>
+      {%- if count is not none %} <span class="count-pill">{{ count }}</span>{% endif %}
+      {%- if code %} <code class="code-chip">{{ code }}</code>{% endif %}</h1>
+    {% if sub %}<p class="page-sub">{{ sub|safe }}</p>{% endif %}
+  </div>
+  {% if caller is defined %}<div class="page-head-actions">{{ caller() }}</div>{% endif %}
+</header>
+{%- endmacro %}
+
+{% macro notice(kind='info') -%}
+<div class="notice is-{{ kind }}">{{ caller() }}</div>
+{%- endmacro %}
+
+{# D'où viennent les réglages de la page et quand ils s'appliquent. #}
+{% macro reload_note(file, live=true, detail=none) -%}
+<div class="notice is-{{ 'info' if live else 'warn' }}">
+  {% if live %}📝 Écrit dans <code>{{ file }}</code> : le bot le relit tout seul, <strong>sans redémarrer</strong>.
+  {%- else %}⚠️ Écrit dans <code>{{ file }}</code> : <strong>redémarre le bot</strong> pour l'appliquer.{% endif %}
+  {% if detail %} {{ detail|safe }}{% endif %}
+</div>
+{%- endmacro %}

@@ -1,4 +1,5 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
 {% block title %}Fêtes — Sakura Admin{% endblock %}
 {% block content %}
 <script type="application/json" id="sz-data">{{ data_json|safe }}</script>
@@ -28,7 +29,7 @@
           </template>
         </div>
       </template>
-      <div class="sz-muted" x-show="!groups(q).length" style="padding:.6rem;">Aucun objet.</div>
+      <div class="muted" x-show="!groups(q).length" style="padding:.6rem;">Aucun objet.</div>
     </div>
   </div>
 </div>
@@ -62,7 +63,7 @@
               <input type="number" min="1" x-model.number="r.amount">
               <button type="button" @click="r.amount = (+r.amount || 0) + 5">+</button>
             </div>
-            <span class="sz-muted" x-text="r.kind === 'gold_per_level' ? ('or par niveau · ≈ ' + fmt(r.amount * level) + ' or au niveau ' + level) : 'or, quel que soit le niveau'"></span>
+            <span class="muted" x-text="r.kind === 'gold_per_level' ? ('or par niveau · ≈ ' + fmt(r.amount * level) + ' or au niveau ' + level) : 'or, quel que soit le niveau'"></span>
           </div>
         </template>
       </div>
@@ -81,28 +82,8 @@
 {%- endmacro %}
 
 <style>
-  @font-face { font-family: 'Bangers'; src: url('/assets/fonts/Bangers-Regular.ttf') format('truetype'); font-display: swap; }
-  [x-cloak] { display: none !important; }
   .sz { --sz-red: #b8323f; --sz-green: #23784a; --sz-gold: #ffd46e; --sz-night: #0e183a; display:flex; flex-direction:column; gap:1rem; }
-  .sz-muted { color: var(--text-faint); font-size: .86rem; }
-  .sz-hero { display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; flex-wrap:wrap;
-             padding: 1.3rem 1.5rem; border-radius: var(--radius-lg); color:#fff;
-             background: radial-gradient(circle at 15% 20%, rgba(255,255,255,.18) 0 2px, transparent 3px) 0 0/46px 46px,
-                         radial-gradient(circle at 70% 60%, rgba(255,255,255,.14) 0 1.5px, transparent 2.5px) 0 0/31px 31px,
-                         linear-gradient(120deg, #7a1f3d, #b8323f 45%, #23784a); box-shadow: var(--shadow-md); }
-  .sz-hero h1 { margin:0; font-family:'Bangers', var(--font); letter-spacing:1px; font-size: 2.3rem; color: var(--sz-gold);
-                text-shadow: 2px 2px 0 rgba(60,10,20,.6); }
-  .sz-hero p { margin:.3rem 0 0; max-width: 70ch; opacity:.92; }
-  .sz-badges { display:flex; gap:.4rem; flex-wrap:wrap; }
-  .sz-badge { padding:.25rem .7rem; border-radius:999px; font-size:.82rem; font-weight:600; background: rgba(255,255,255,.18);
-              border:1px solid rgba(255,255,255,.3); }
-  .sz-badge.is-live { background: var(--sz-gold); color:#4a2a00; border-color: transparent; }
-  .sz-card { background: var(--bg-elev); border:1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.2rem;
-             box-shadow: var(--shadow-sm); }
-  .sz-card h3 { margin:0 0 .6rem; font-size:1.02rem; display:flex; align-items:center; gap:.5rem; }
-  .sz-card h3 .sz-muted { font-weight:400; margin-left:auto; }
-  .sz-alert { padding:.7rem 1rem; border-radius: var(--radius); background: rgba(227,73,106,.10); border:1px solid rgba(227,73,106,.35); }
-  .sz-alert li { margin:.15rem 0; }
+  .notice li { margin:.15rem 0; }
   .sz-secret { padding:.6rem .9rem; border-radius: var(--radius); background: var(--violet-soft); border:1px dashed var(--violet); font-size:.9rem; }
   /* frise */
   .sz-tl { position:relative; }
@@ -120,13 +101,9 @@
   .sz-tl-today { position:absolute; top:0; bottom:0; width:2px; background: var(--accent); border-radius:2px; pointer-events:none; }
   .sz-tl-today::after { content:'aujourd’hui'; position:absolute; top:-15px; left:4px; font-size:.68rem; color: var(--accent); white-space:nowrap; }
   /* onglets */
-  .sz-tabs { display:flex; gap:.4rem; flex-wrap:wrap; position:sticky; top:0; z-index:5; padding:.4rem 0; background: var(--bg); }
-  .sz-tab { border:1px solid var(--border); background: var(--bg-elev); color: var(--text); border-radius:999px;
-            padding:.45rem .95rem; font-weight:600; cursor:pointer; display:flex; gap:.45rem; align-items:center; }
-  .sz-tab:hover { border-color: var(--border-strong); }
-  .sz-tab.is-on { background: var(--accent); border-color: var(--accent); color:#fff; box-shadow: var(--shadow-sm); }
+  .tabs.is-sticky { position:sticky; top:0; z-index:5; padding:.4rem 0; background: var(--bg); margin-bottom:0; }
   .sz-dot { font-size:.7rem; font-weight:700; padding:.05rem .45rem; border-radius:999px; background: var(--bg-soft); color: var(--text-soft); }
-  .sz-tab.is-on .sz-dot { background: rgba(255,255,255,.25); color:#fff; }
+  .tab.is-on .sz-dot { background: rgba(255,255,255,.25); color:#fff; }
   .sz-dot.is-live { background: var(--sz-gold); color:#4a2a00; }
   .sz-cols { display:grid; grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr); gap:1rem; align-items:start; }
   .sz-cols-2 { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:1rem; align-items:start; }
@@ -157,7 +134,6 @@
     .sz-tl-row, .sz-tl-axis { grid-template-columns: 7.2rem 1fr; }
     .sz-tl-label small { display:block; }
     .sz-board-title { font-size: 1.8rem; }
-    .sz-hero h1 { font-size: 1.8rem; }
   }
 
   .sz-door { position:relative; border:2px solid #d9a948; border-radius:12px; padding:0; cursor:pointer; overflow:hidden;
@@ -252,34 +228,9 @@
   .sz-bar { height: 10px; border-radius: 999px; background: var(--bg-soft); overflow:hidden; border:1px solid var(--border); }
   .sz-bar > div { height:100%; border-radius:999px; background: linear-gradient(90deg, var(--accent), var(--violet)); }
   /* aperçu Discord */
-  .dc { background:#313338; border-radius: 12px; padding: .9rem 1rem; color:#dbdee1; font-family: 'gg sans', 'Noto Sans', var(--font); font-size:.93rem; line-height:1.38; }
-  .dc-msg { display:flex; gap:.8rem; }
-  .dc-avatar { width:40px; height:40px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-size:22px;
-               background: linear-gradient(135deg, #f7a8c9, #b692e0); }
-  .dc-author { font-weight:600; color:#f2f3f5; }
-  .dc-tag { font-size:.62rem; background:#5865f2; color:#fff; border-radius:3px; padding:1px 4px; margin-left:4px; vertical-align: 2px; font-weight:700; }
-  .dc-mention { background: rgba(88,101,242,.3); color:#c9cdfb; border-radius:3px; padding:0 2px; }
-  .dc-embed { margin-top:.35rem; background:#2b2d31; border-left:4px solid #b8323f; border-radius:4px; padding:.6rem .9rem .7rem; max-width: 520px; }
-  .dc-title { font-weight:700; color:#f2f3f5; margin-bottom:.3rem; }
-  .dc-desc strong, .dc-field strong { color:#f2f3f5; }
-  .dc-desc code, .dc-field code { background:#1e1f22; border-radius:3px; padding:0 3px; font-size:.85em; }
-  .dc-fields { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:.4rem .8rem; margin-top:.45rem; }
-  .dc-field { grid-column: span 3; }
-  .dc-field.is-inline { grid-column: span 1; }
-  .dc-field-name { font-weight:700; color:#f2f3f5; font-size:.86rem; margin-bottom:.1rem; }
-  .dc-footer { margin-top:.5rem; font-size:.75rem; color:#949ba4; }
-  .dc-emoji { width: 1.25em; height:1.25em; vertical-align: -.25em; }
-  .dc-ts { background: rgba(255,255,255,.06); border-radius:3px; padding:0 3px; }
-  .dc-error { color:#ffb4b4; font-size:.86rem; }
   .sz-shot { width:100%; max-width: 760px; margin: 0 auto; border-radius: 12px; display:block; box-shadow: var(--shadow-sm); }
   .sz-loading { opacity:.55; transition: opacity .2s; }
   /* barre d'enregistrement */
-  .sz-savebar { position:sticky; bottom:0; z-index:20; display:flex; align-items:center; gap:.8rem; flex-wrap:wrap; padding:.7rem 1rem;
-                border-radius: var(--radius-lg) var(--radius-lg) 0 0; background: var(--bg-elev); border:1px solid var(--border); box-shadow: var(--shadow-lg); }
-  .sz-state { display:flex; align-items:center; gap:.45rem; font-weight:600; }
-  .sz-state i { width:10px; height:10px; border-radius:50%; background: var(--success); display:inline-block; }
-  .sz-state.is-dirty i { background: var(--warn); box-shadow: 0 0 0 4px rgba(217,148,84,.2); }
-  .sz-toast { position:fixed; right: 1.2rem; bottom: 5.5rem; z-index:50; padding:.7rem 1rem; border-radius:12px; color:#fff; box-shadow: var(--shadow-lg); font-weight:600; }
   .sz-table { width:100%; border-collapse:collapse; font-size:.88rem; }
   .sz-table td, .sz-table th { padding:.4rem .5rem; border-bottom:1px solid var(--border); text-align:left; }
   .sz-pill { display:inline-block; padding:.1rem .55rem; border-radius:999px; font-size:.78rem; background: var(--bg-soft); border:1px solid var(--border); }
@@ -290,28 +241,22 @@
 
 <section class="sz" x-data="fetes()" x-init="init()" @keydown.window.ctrl.s.prevent="save()" @keydown.window.meta.s.prevent="save()">
 
-  <header class="sz-hero">
-    <div>
-      <h1>🎉 Fêtes du Grand Cerisier</h1>
-      <p>Calendrier de l'Avent, Noël, objets et boutiques d'événement, Nouvel An. Tout est en direct ici : ce que tu vois est ce que verront les joueurs.
-         Le bot suit <strong>sans redémarrage</strong> ; pour tester sur la bêta, avance les dates puis remets-les.</p>
-    </div>
-    <div class="sz-badges">
-      <template x-for="b in liveBadges()" :key="b.label"><span class="sz-badge" :class="{ 'is-live': b.live }" x-text="b.label"></span></template>
-    </div>
-  </header>
+  {% call page_head("Fêtes du Grand Cerisier", "🎉", hero="linear-gradient(120deg, #7a1f3d, #b8323f 45%, #23784a)",
+                    sub="Calendrier de l'Avent, Noël, objets et boutiques d'événement, Nouvel An. Ce que tu vois ici est ce que verront les joueurs. Le bot suit <strong>sans redémarrer</strong> ; pour tester sur la bêta, avance les dates puis remets-les.") %}
+    <template x-for="b in liveBadges()" :key="b.label"><span class="hero-badge" :class="{ 'is-live': b.live }" x-text="b.label"></span></template>
+  {% endcall %}
 
-  {% if saved %}<div class="sz-card" style="border-color: rgba(78,168,137,.5);">✅ Enregistré.</div>{% endif %}
-  {% for e in status.problems %}<div class="sz-alert">⚠️ Fichier actuel : {{ e }}</div>{% endfor %}
-  {% if errors %}<div class="sz-alert"><strong>Rien n'a été enregistré :</strong><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
-  <div class="sz-alert" x-show="errors.length" x-cloak>
+  {% if saved %}<div class="notice is-ok">✅ Enregistré.</div>{% endif %}
+  {% for e in status.problems %}<div class="notice is-danger">⚠️ Fichier actuel : {{ e }}</div>{% endfor %}
+  {% if errors %}<div class="notice is-danger"><strong>Rien n'a été enregistré :</strong><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+  <div class="notice is-danger" x-show="errors.length" x-cloak>
     <strong>Rien n'a été enregistré — à corriger :</strong>
     <ul><template x-for="e in errors" :key="e"><li x-text="e"></li></template></ul>
   </div>
 
   {# ------------------------------------------------------------ la frise #}
-  <div class="sz-card">
-    <h3>🗓️ Le mois des fêtes <span class="sz-muted">clique une barre pour la régler</span></h3>
+  <div class="panel">
+    <h3>🗓️ Le mois des fêtes <span class="muted">clique une barre pour la régler</span></h3>
     <div class="sz-tl">
       <div class="sz-tl-axis"><span></span>
         <div class="sz-tl-ticks"><template x-for="t in timeline().ticks" :key="t.left"><span :style="'left:' + t.left + '%'" x-text="t.label"></span></template></div>
@@ -326,13 +271,13 @@
           </div>
         </div>
       </template>
-      <div class="sz-muted" x-show="!timeline().rows.length">Aucun événement daté.</div>
+      <div class="muted" x-show="!timeline().rows.length">Aucun événement daté.</div>
     </div>
   </div>
 
-  <nav class="sz-tabs">
+  <nav class="tabs is-sticky">
     <template x-for="t in tabs()" :key="t.id">
-      <button type="button" class="sz-tab" :class="{ 'is-on': tab === t.id }" @click="go(t.id)">
+      <button type="button" class="tab" :class="{ 'is-on': tab === t.id }" @click="go(t.id)">
         <span x-text="t.icon"></span><span x-text="t.label"></span>
         <span class="sz-dot" :class="{ 'is-live': t.state === 'en cours' }" x-show="t.state" x-text="t.state"></span>
       </button>
@@ -342,11 +287,11 @@
   {# ============================================================== AVENT #}
   <div x-show="tab === 'avent'" x-cloak>
     <template x-if="!data.advent">
-      <div class="sz-card"><button type="button" class="sz-btn" @click="data.advent = newAdvent()">🎄 Créer un calendrier de l'Avent</button></div>
+      <div class="panel"><button type="button" class="sz-btn" @click="data.advent = newAdvent()">🎄 Créer un calendrier de l'Avent</button></div>
     </template>
     <template x-if="data.advent">
       <div style="display:flex; flex-direction:column; gap:1rem;">
-        <div class="sz-card">
+        <div class="panel">
           <div class="sz-fields" style="align-items:end;">
             <label class="sz-toggle"><input type="checkbox" x-model="data.advent.enabled"><span class="sw"></span>Activé</label>
             <label class="field"><span class="field-label">Nom</span><input class="input" x-model="data.advent.name"></label>
@@ -384,12 +329,12 @@
             </div>
           </div>
 
-          <aside class="sz-card sz-sticky" x-show="data.advent.days.length">
+          <aside class="panel sz-sticky" x-show="data.advent.days.length">
             <div class="sz-panel-head">
               <button type="button" class="sz-nav" :disabled="sel <= 0" @click="sel--">◀</button>
               <div style="flex:1;">
                 <div class="sz-panel-title" x-text="'Case ' + (sel + 1)"></div>
-                <div class="sz-muted" x-text="longDate(data.advent.start, sel)"></div>
+                <div class="muted" x-text="longDate(data.advent.start, sel)"></div>
               </div>
               <button type="button" class="sz-nav" :disabled="sel >= data.advent.days.length - 1" @click="sel++">▶</button>
             </div>
@@ -397,17 +342,17 @@
             <div class="sz-line" style="margin-top:.8rem; padding-top:.7rem; border-top:1px solid var(--border);">
               <button type="button" class="sz-btn" @click="clip = clone(data.advent.days[sel]); toast('📋 Case ' + (sel + 1) + ' copiée')">📋 Copier</button>
               <button type="button" class="sz-btn" :disabled="!clip" @click="data.advent.days[sel] = clone(clip)">📥 Coller ici</button>
-              <span class="sz-muted">Petites récompenses : c'est le début de l'aventure.</span>
+              <span class="muted">Petites récompenses : c'est le début de l'aventure.</span>
             </div>
           </aside>
         </div>
 
-        <div class="sz-card">
-          <h3>👁️ Ce que voit un joueur <span class="sz-muted">image exacte générée par le bot</span></h3>
+        <div class="panel">
+          <h3>👁️ Ce que voit un joueur <span class="muted">image exacte générée par le bot</span></h3>
           <div class="sz-line" style="margin-bottom:.6rem;">
             <span>Jour simulé : <strong x-text="pvDay + ' (' + longDate(data.advent.start, pvDay - 1) + ')'"></strong></span>
             <input type="range" min="1" :max="data.advent.days.length" x-model.number="pvDay" style="flex:1; min-width: 180px;">
-            <span class="sz-muted">les cases d'avant sont ouvertes, celle du jour attend</span>
+            <span class="muted">les cases d'avant sont ouvertes, celle du jour attend</span>
           </div>
           <div class="dc-error" x-show="adventError" x-text="adventError"></div>
           <img class="sz-shot" :class="{ 'sz-loading': adventBusy }" :src="adventPng" x-show="adventPng" alt="Aperçu du calendrier">
@@ -419,13 +364,13 @@
   {# =============================================================== NOËL #}
   <div x-show="tab === 'noel'" x-cloak>
     <template x-if="!data.christmas">
-      <div class="sz-card"><button type="button" class="sz-btn" @click="data.christmas = newChristmas()">🎅 Créer Noël</button></div>
+      <div class="panel"><button type="button" class="sz-btn" @click="data.christmas = newChristmas()">🎅 Créer Noël</button></div>
     </template>
     <template x-if="data.christmas">
       <div style="display:flex; flex-direction:column; gap:1rem;">
         <div class="sz-secret">🔒 <strong>Secret :</strong> les joueurs ne savent pas que la taille du cadeau vient de leurs choix face à la <strong>petite fille</strong> (aider / ignorer). Aucun texte du bot ne le dit — à l'ouverture, ils ne voient qu'un verdict (« tu as été sage… »).</div>
         <div class="sz-cols">
-          <div class="sz-card">
+          <div class="panel">
             <h3>🎁 Le cadeau à 100 %</h3>
             <div class="sz-fields" style="align-items:end; margin-bottom:.8rem;">
               <label class="sz-toggle"><input type="checkbox" x-model="data.christmas.enabled"><span class="sw"></span>Activé</label>
@@ -434,14 +379,14 @@
             </div>
             {{ reward_editor('data.christmas.rewards') }}
           </div>
-          <div class="sz-card sz-sticky">
-            <h3>💬 À l'ouverture <span class="sz-muted">message réel du bot</span></h3>
+          <div class="panel sz-sticky">
+            <h3>💬 À l'ouverture <span class="muted">message réel du bot</span></h3>
             {{ discord('dc.gift') }}
           </div>
         </div>
-        <div class="sz-card">
+        <div class="panel">
           <h3>⚖️ Selon la gentillesse
-            <span class="sz-muted" style="display:flex; align-items:center; gap:.5rem;">niveau du joueur <strong x-text="level"></strong>
+            <span class="muted" style="display:flex; align-items:center; gap:.5rem;">niveau du joueur <strong x-text="level"></strong>
               <input type="range" min="1" max="100" x-model.number="level"></span></h3>
           <div class="sz-tiers">
             <template x-for="t in tierCards()" :key="t.id">
@@ -449,13 +394,13 @@
                 <div class="sz-tier-head"><span class="sz-tier-name" x-text="t.emoji + ' ' + t.label"></span><span class="sz-tier-pct" :style="'color:' + t.color" x-text="t.pct + ' %'"></span></div>
                 <ul>
                   <template x-for="(line, li) in t.lines" :key="li"><li><span class="sz-ic" x-html="line.icon"></span><span x-text="line.text"></span></li></template>
-                  <li class="sz-muted" x-show="!t.lines.length">rien</li>
+                  <li class="muted" x-show="!t.lines.length">rien</li>
                 </ul>
               </div>
             </template>
           </div>
           <div style="margin-top:1rem;">
-            <div class="sz-muted">Ratio d'aide à la petite fille jusqu'au réveillon :</div>
+            <div class="muted">Ratio d'aide à la petite fille jusqu'au réveillon :</div>
             <div class="sz-gauge">
               <div :style="'width:' + data.christmas.kindness.nice_from_pct + '%; background:#b8323f'" x-text="'😈 < ' + data.christmas.kindness.nice_from_pct + ' % → ' + data.christmas.kindness.naughty_pct + ' %'"></div>
               <div :style="'flex:1; background:#23784a'" x-text="'😇 ≥ ' + data.christmas.kindness.nice_from_pct + ' % → ' + data.christmas.kindness.nice_pct + ' %'"></div>
@@ -470,8 +415,8 @@
             </div>
           </div>
         </div>
-        <div class="sz-card">
-          <h3>📣 Annonce du matin de Noël <span class="sz-muted">salon des événements</span></h3>
+        <div class="panel">
+          <h3>📣 Annonce du matin de Noël <span class="muted">salon des événements</span></h3>
           {{ discord('dc.christmas') }}
         </div>
       </div>
@@ -481,9 +426,9 @@
   {# ================================================== OBJETS D'ÉVÉNEMENT #}
   <div x-show="tab === 'objets'" x-cloak>
     <div style="display:flex; flex-direction:column; gap:1rem;">
-      <p class="sz-muted" style="margin:0;">Pendant la période, <strong>chaque monstre de zone vaincu</strong> donne l'objet à chaque survivant (une meute : un par monstre ; les morts n'ont rien).</p>
+      <p class="muted" style="margin:0;">Pendant la période, <strong>chaque monstre de zone vaincu</strong> donne l'objet à chaque survivant (une meute : un par monstre ; les morts n'ont rien).</p>
       <template x-for="(d, i) in data.drops" :key="i">
-        <div class="sz-card">
+        <div class="panel">
           <div class="sz-cols-2">
             <div>
               <div class="sz-line" style="margin-bottom:.7rem;">
@@ -502,12 +447,12 @@
               </div>
               <label class="field" style="margin-top:.6rem;"><span class="field-label">Texte de l'annonce (vide = texte par défaut)</span><textarea class="input" rows="3" x-model="d.announce"></textarea></label>
               <div style="margin-top:.7rem;">
-                <div class="sz-muted" style="margin-bottom:.3rem;">Ce qu'un joueur en récolte (sur <span x-text="days(d.start, d.end)"></span> jours, + Avent et cadeau à 100 %) :</div>
+                <div class="muted" style="margin-bottom:.3rem;">Ce qu'un joueur en récolte (sur <span x-text="days(d.start, d.end)"></span> jours, + Avent et cadeau à 100 %) :</div>
                 <div class="sz-chips"><template x-for="p in income(d.item)" :key="p.label"><span class="sz-chip"><span class="sz-ic" x-html="icon(d.item)"></span><span x-text="p.label + ' ≈ ' + fmt(p.total)"></span></span></template></div>
               </div>
             </div>
             <div>
-              <div style="margin-bottom:.4rem;"><strong>📣 Son annonce</strong> <span class="sz-muted">le premier jour, salon des événements</span></div>
+              <div style="margin-bottom:.4rem;"><strong>📣 Son annonce</strong> <span class="muted">le premier jour, salon des événements</span></div>
               <div class="dc" x-show="dc.drops[d.code]" x-html="dc.drops[d.code]"></div>
             </div>
           </div>
@@ -521,13 +466,13 @@
   <div x-show="tab === 'boutiques'" x-cloak>
     <div class="sz-shops">
       <template x-for="(s, i) in data.shops" :key="i">
-        <button type="button" class="sz-tab" :class="{ 'is-on': shopSel === i }" @click="shopSel = i"><span x-text="s.emoji"></span><span x-text="s.name"></span></button>
+        <button type="button" class="tab" :class="{ 'is-on': shopSel === i }" @click="shopSel = i"><span x-text="s.emoji"></span><span x-text="s.name"></span></button>
       </template>
       <button type="button" class="sz-add" @click="data.shops.push(newShop()); shopSel = data.shops.length - 1">＋ Nouvelle boutique</button>
     </div>
     <template x-if="data.shops[shopSel]">
       <div style="display:flex; flex-direction:column; gap:1rem;" x-data="{ get s() { return data.shops[shopSel] } }">
-        <div class="sz-card">
+        <div class="panel">
           <div class="sz-line" style="margin-bottom:.7rem;">
             <input class="input" x-model="s.emoji" style="width:3.6rem; text-align:center; font-size:1.3rem;">
             <input class="input" x-model="s.name" style="font-weight:700; flex:1; min-width: 12rem;">
@@ -543,8 +488,8 @@
           <label class="field" style="margin-top:.6rem;"><span class="field-label">Présentation</span><textarea class="input" rows="2" x-model="s.intro"></textarea></label>
         </div>
         <div class="sz-cols">
-          <div class="sz-card">
-            <h3>🛍️ Les articles <span class="sz-muted">prix en <span x-text="nameOf(s.currency)"></span> · limite par joueur (0 = sans)</span></h3>
+          <div class="panel">
+            <h3>🛍️ Les articles <span class="muted">prix en <span x-text="nameOf(s.currency)"></span> · limite par joueur (0 = sans)</span></h3>
             <div class="sz-offers">
               <template x-for="(o, oi) in s.offers" :key="oi">
                 <div class="sz-offer">
@@ -562,38 +507,38 @@
             </div>
           </div>
           <div style="display:flex; flex-direction:column; gap:1rem;">
-            <div class="sz-card">
+            <div class="panel">
               <h3>📊 Qui peut s'offrir quoi</h3>
-              <div class="sz-muted" style="margin-bottom:.5rem;" x-text="'Tout acheter (limites comprises) : ' + fmt(catalogCost(s)) + ' × ' + nameOf(s.currency)"></div>
+              <div class="muted" style="margin-bottom:.5rem;" x-text="'Tout acheter (limites comprises) : ' + fmt(catalogCost(s)) + ' × ' + nameOf(s.currency)"></div>
               <template x-for="p in income(s.currency)" :key="p.label">
                 <div style="margin:.45rem 0;">
                   <div class="sz-line" style="justify-content:space-between;"><span x-text="p.label + ' (' + p.kills + ' monstres / jour)'"></span><strong x-text="fmt(p.total) + ' → ' + pctOf(p.total, catalogCost(s)) + ' %'"></strong></div>
                   <div class="sz-bar"><div :style="'width:' + Math.min(100, pctOf(p.total, catalogCost(s))) + '%'"></div></div>
                 </div>
               </template>
-              <div class="sz-muted" x-show="!income(s.currency).some(p => p.total)">Aucun objet d'événement ni récompense ne donne cette monnaie.</div>
+              <div class="muted" x-show="!income(s.currency).some(p => p.total)">Aucun objet d'événement ni récompense ne donne cette monnaie.</div>
             </div>
-            <div class="sz-card">
-              <h3>💬 Dans Discord <span class="sz-muted">écran /evenement › boutique</span></h3>
+            <div class="panel">
+              <h3>💬 Dans Discord <span class="muted">écran /evenement › boutique</span></h3>
               {{ discord('dc.shop') }}
             </div>
           </div>
         </div>
       </div>
     </template>
-    <div class="sz-card" x-show="!data.shops.length">Aucune boutique d'événement : crée la première !</div>
+    <div class="panel" x-show="!data.shops.length">Aucune boutique d'événement : crée la première !</div>
   </div>
 
   {# ========================================================== NOUVEL AN #}
   <div x-show="tab === 'nouvel_an'" x-cloak>
     <template x-if="!data.new_year">
-      <div class="sz-card"><button type="button" class="sz-btn" @click="data.new_year = newNewYear()">🎆 Créer le Nouvel An</button></div>
+      <div class="panel"><button type="button" class="sz-btn" @click="data.new_year = newNewYear()">🎆 Créer le Nouvel An</button></div>
     </template>
     <template x-if="data.new_year">
       <div class="sz-cols">
-        <div class="sz-card">
+        <div class="panel">
           <h3>🎆 Le passage à la nouvelle année</h3>
-          <p class="sz-muted" style="margin-top:0;">À minuit (Paris), le bot souhaite la bonne année et <strong>toutes les divinités de l'offrande</strong> bénissent le serveur ensemble, pendant la durée choisie.</p>
+          <p class="muted" style="margin-top:0;">À minuit (Paris), le bot souhaite la bonne année et <strong>toutes les divinités de l'offrande</strong> bénissent le serveur ensemble, pendant la durée choisie.</p>
           <div class="sz-fields" style="align-items:end;">
             <label class="sz-toggle"><input type="checkbox" x-model="data.new_year.enabled"><span class="sw"></span>Activé</label>
             <label class="field"><span class="field-label">Jour</span><input class="input" type="date" x-model="data.new_year.day"></label>
@@ -604,8 +549,8 @@
           <label class="field" style="margin-top:.6rem;"><span class="field-label">Titre</span><input class="input" x-model="data.new_year.title"></label>
           <label class="field" style="margin-top:.6rem;"><span class="field-label">Message (la liste des bénédictions s'ajoute dessous)</span><textarea class="input" rows="5" x-model="data.new_year.message"></textarea></label>
         </div>
-        <div class="sz-card sz-sticky">
-          <h3>💬 À minuit <span class="sz-muted">salon des événements</span></h3>
+        <div class="panel sz-sticky">
+          <h3>💬 À minuit <span class="muted">salon des événements</span></h3>
           {{ discord('dc.newYear') }}
         </div>
       </div>
@@ -615,53 +560,53 @@
   {# ============================================================= SUIVI #}
   <div x-show="tab === 'suivi'" x-cloak>
     <div class="sz-cols">
-      <div class="sz-card">
-        <h3>📌 Le panneau épinglé <span class="sz-muted" style="display:flex; gap:.4rem; align-items:center;">au <input class="input" type="date" x-model="panelDate" style="width:auto;"></span></h3>
+      <div class="panel">
+        <h3>📌 Le panneau épinglé <span class="muted" style="display:flex; gap:.4rem; align-items:center;">au <input class="input" type="date" x-model="panelDate" style="width:auto;"></span></h3>
         {{ discord('dc.panel') }}
         <h3 style="margin-top:1rem;">📣 Annonces du salon des événements</h3>
         {{ discord('dc.advent') }}
       </div>
       <div style="display:flex; flex-direction:column; gap:1rem;">
-        <div class="sz-card">
-          <h3>📅 Annonces <span class="sz-muted">version enregistrée</span></h3>
+        <div class="panel">
+          <h3>📅 Annonces <span class="muted">version enregistrée</span></h3>
           <table class="sz-table">
             <tbody>
               {% for a in status.announcements %}
               <tr><td><code>{{ a.key }}</code></td><td>{{ a.at.strftime("%d/%m %H:%M") }}</td>
                 <td>{% if a.posted %}<span class="sz-pill is-ok">postée</span>{% elif a.late %}<span class="sz-pill">passée</span>{% else %}<span class="sz-pill">à venir</span>{% endif %}</td></tr>
-              {% else %}<tr><td class="sz-muted">Aucune annonce prévue.</td></tr>{% endfor %}
+              {% else %}<tr><td class="muted">Aucune annonce prévue.</td></tr>{% endfor %}
             </tbody>
           </table>
         </div>
-        <div class="sz-card">
+        <div class="panel">
           <h3>🎄 Cases ouvertes</h3>
           {% set adv = status.stats.advent %}
           {% if adv %}
             {% set top = adv.values()|max %}
             <div class="sz-minibars">{% for key, count in adv|dictsort %}<div title="{{ key[8:10] }}/{{ key[5:7] }} : {{ count }}" style="height: {{ (100 * count / top)|round|int }}%;"></div>{% endfor %}</div>
-            <div class="sz-muted">{{ adv.values()|sum }} cases ouvertes en tout</div>
-          {% else %}<div class="sz-muted">Aucune pour l'instant.</div>{% endif %}
+            <div class="muted">{{ adv.values()|sum }} cases ouvertes en tout</div>
+          {% else %}<div class="muted">Aucune pour l'instant.</div>{% endif %}
           <h3 style="margin-top:1rem;">🎅 Cadeaux ouverts</h3>
-          <div class="sz-chips">{% for tier, count in status.stats.tiers.items() %}<span class="sz-chip">{{ tier_labels.get(tier, tier) }} : {{ count }}</span>{% else %}<span class="sz-muted">Aucun pour l'instant.</span>{% endfor %}</div>
+          <div class="sz-chips">{% for tier, count in status.stats.tiers.items() %}<span class="sz-chip">{{ tier_labels.get(tier, tier) }} : {{ count }}</span>{% else %}<span class="muted">Aucun pour l'instant.</span>{% endfor %}</div>
           <h3 style="margin-top:1rem;">🛍️ Ventes</h3>
           {% set ns = namespace(any=false) %}
           {% for code, sales in status.stats.shops.items() %}{% for item, s in sales.items() %}{% set ns.any = true %}<span class="sz-chip" style="margin:.15rem;">{{ item }} × {{ s[0] }} ({{ s[1] }})</span>{% endfor %}{% endfor %}
-          {% if not ns.any %}<div class="sz-muted">Aucune pour l'instant.</div>{% endif %}
+          {% if not ns.any %}<div class="muted">Aucune pour l'instant.</div>{% endif %}
         </div>
       </div>
     </div>
   </div>
 
   {# ============================================ barre d'enregistrement #}
-  <div class="sz-savebar">
-    <span class="sz-state" :class="{ 'is-dirty': dirty() }"><i></i><span x-text="dirty() ? 'Modifications non enregistrées' : 'Tout est enregistré'"></span></span>
-    <span class="sz-muted">Ctrl+S · tout est vérifié avant d'écrire</span>
+  <div class="savebar">
+    <span class="save-state" :class="{ 'is-dirty': dirty() }"><i></i><span x-text="dirty() ? 'Modifications non enregistrées' : 'Tout est enregistré'"></span></span>
+    <span class="muted">Ctrl+S · tout est vérifié avant d'écrire</span>
     <span style="flex:1;"></span>
     <button type="button" class="sz-btn" x-show="dirty()" @click="if (confirm('Annuler toutes les modifications non enregistrées ?')) location.reload()">Annuler</button>
     <button type="button" class="btn btn-primary" :disabled="saving" @click="save()" x-text="saving ? 'Enregistrement…' : '💾 Enregistrer'"></button>
   </div>
 
-  <div class="sz-toast" x-show="toastText" x-transition x-cloak :style="'background:' + (toastBad ? 'var(--danger)' : 'var(--success)')" x-text="toastText"></div>
+  <div class="toast" :class="{ 'is-bad': toastBad }" x-show="toastText" x-transition x-cloak @click="toastText = ''" x-text="toastText"></div>
 </section>
 
 <script>

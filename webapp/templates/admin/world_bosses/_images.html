@@ -14,9 +14,6 @@
 
 {% macro wb_styles() %}
 <style>
-  [x-cloak] { display:none !important; }
-  .wb-head { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap; }
-  .wb-intro { color:var(--text-soft); max-width:82ch; margin:.2rem 0 0; line-height:1.5; }
   .wb-drop { margin:1rem 0 1.4rem; padding:1rem 1.2rem; border:2px dashed var(--border-strong); border-radius:var(--radius-lg);
              background:var(--bg-soft); display:flex; gap:1rem; align-items:center; justify-content:space-between; flex-wrap:wrap;
              transition:border-color .15s, background .15s; }
@@ -64,12 +61,6 @@
   .wb-spin { position:absolute; right:.7rem; top:.6rem; font-size:.8rem; color:var(--text-soft); }
   .wb-actions { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
   .wb-link { background:none; border:0; padding:0; color:var(--text-soft); text-decoration:underline; cursor:pointer; font-size:.82rem; }
-  .wb-toast { position:fixed; right:1.2rem; bottom:1.2rem; z-index:60; max-width:min(440px, calc(100vw - 2.4rem));
-              padding:.8rem 1rem; border-radius:12px; box-shadow:var(--shadow-lg); border:1px solid; line-height:1.45; font-size:.9rem; }
-  .wb-toast.ok { background:#eaf7f1; border-color:#8fd0b5; color:#1d4a3a; }
-  .wb-toast.err { background:#fdecef; border-color:#f0a3b4; color:#6b1d2e; }
-  [data-theme=dark] .wb-toast.ok { background:#163229; color:#c9f0de; border-color:#2f6e57; }
-  [data-theme=dark] .wb-toast.err { background:#3a1621; color:#ffd2dc; border-color:#7a2f43; }
   [data-theme=dark] .wb-checker { background-color:#3a3340;
                 background-image:linear-gradient(45deg,#2c2633 25%,transparent 25%),linear-gradient(-45deg,#2c2633 25%,transparent 25%),
                                  linear-gradient(45deg,transparent 75%,#2c2633 75%),linear-gradient(-45deg,transparent 75%,#2c2633 75%); }
@@ -159,7 +150,7 @@
 {% endmacro %}
 
 {% macro wb_toast() %}
-<div class="wb-toast" :class="toast && toast.kind" x-show="toast" x-cloak x-transition @click="toast = null">
+<div class="toast" :class="{ 'is-bad': toast && toast.kind === 'err' }" x-show="toast" x-cloak x-transition @click="toast = null">
     <span x-text="toast && toast.text"></span>
 </div>
 {% endmacro %}

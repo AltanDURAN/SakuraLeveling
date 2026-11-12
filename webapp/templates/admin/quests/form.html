@@ -1,18 +1,16 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
 
-{% block title %}{% if edit_code %}Éditer {{ edit_code }}{% else %}Nouvelle quête{% endif %} — Sakura Admin{% endblock %}
+{% set crumbs = [(((form_data or {}).get('name') or edit_code), none)] if edit_code else [("Nouvelle quête", none)] %}
+{% block title %}{% if edit_code %}{{ (form_data or {}).get('name') or edit_code }}{% else %}Nouvelle quête{% endif %} — Quêtes — Sakura Admin{% endblock %}
 
 {% block content %}
 {% set fd = form_data or {} %}
 <section class="form-page">
-    <a href="/admin/quests?scope={{ scope }}" class="breadcrumb">← Quêtes</a>
-    <h1>
-        {% if edit_code %}Éditer <code>{{ edit_code }}</code>{% else %}Nouvelle quête{% endif %}
-        ({{ 'hebdomadaire' if scope == 'weekly' else 'quotidienne' }})
-    </h1>
-    <div class="form-section-help" style="background: #fff5d5; padding: 0.8rem 1.2rem; border-radius: 8px;">
-        ⚠️ Modifie <code>{{ 'weekly_quests.json' if scope == 'weekly' else 'daily_quests.json' }}</code>. Restart du bot requis.
-    </div>
+    {% set kind = 'hebdomadaire' if scope == 'weekly' else 'quotidienne' %}
+    {% if edit_code %}{{ page_head(fd.get('name') or edit_code, "📜", code=edit_code, sub="Modèle de quête " ~ kind ~ " : chaque joueur la reçoit adaptée à sa zone, son niveau et son rôle.") }}
+    {% else %}{{ page_head("Nouvelle quête " ~ kind, "📜", sub="Un modèle : la cible et la quantité s'adaptent à chaque joueur au tirage.") }}{% endif %}
+    {{ reload_note('weekly_quests.json' if scope == 'weekly' else 'daily_quests.json') }}
 
     <form method="post"
           action="{% if edit_code %}/admin/quests/{{ scope }}/{{ edit_code }}{% else %}/admin/quests{% endif %}"
@@ -33,7 +31,7 @@
                     {% if errors.get('name') %}<span class="field-error">{{ errors['name'] }}</span>{% endif %}
                 </label>
                 <label class="field">
-                    <span class="field-label">Tier</span>
+                    <span class="field-label">Difficulté</span>
                     <select name="tier" class="input">
                         {% for t in ['easy', 'medium', 'hard'] %}
                             <option value="{{ t }}" {% if fd.get('tier', 'easy') == t %}selected{% endif %}>{{ t }}</option>

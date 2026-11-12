@@ -161,6 +161,9 @@ def _item_card_state(item) -> dict:
         "max_stack": item.max_stack, "sell_price": item.sell_price or 0,
         "buy_price": item.buy_price, "stats": dict(item.stat_bonuses or {}),
         "icon": item.icon or "",
+        # Seulement si l'image existe : sinon la page demandait des centaines d'images absentes (404).
+        "image": (f"/assets/items/{item.code}.png?v={int((ITEMS_ASSETS_DIR / f'{item.code}.png').stat().st_mtime)}"
+                  if (ITEMS_ASSETS_DIR / f"{item.code}.png").is_file() else ""),
         "gen_prompt": image_gen.build_item_prompt(
             item.code, item.name, item.category, item.rarity),
     }

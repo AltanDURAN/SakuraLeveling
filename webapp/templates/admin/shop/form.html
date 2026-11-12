@@ -1,18 +1,14 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
+{% set crumbs = [(shop_item.item_definition.name, none)] if shop_item else [("Ajouter un objet", none)] %}
 
-{% block title %}{% if shop_item %}Éditer shop item{% else %}Nouvel item au shop{% endif %} — Sakura Admin{% endblock %}
+{% block title %}{% if shop_item %}{{ shop_item.item_definition.name }}{% else %}Ajouter un objet{% endif %} — Boutique — Sakura Admin{% endblock %}
 
 {% block content %}
 {% set fd = form_data if form_data is defined else {} %}
 <section class="form-page">
-    <a href="/admin/shop" class="breadcrumb">← Shop</a>
-    <h1>
-        {% if shop_item %}
-            Éditer <code>{{ shop_item.item_definition.code }}</code>
-        {% else %}
-            Nouvel item au shop
-        {% endif %}
-    </h1>
+    {% if shop_item %}{{ page_head(shop_item.item_definition.name, "🏪", code=shop_item.item_definition.code, sub="Prix et stock de l'objet chez Sorn.") }}
+    {% else %}{{ page_head("Ajouter un objet chez Sorn", "🏪", sub="Choisis l'objet, son prix et son stock.") }}{% endif %}
 
     <form method="post"
           action="{% if shop_item %}/admin/shop/{{ shop_item.id }}{% else %}/admin/shop{% endif %}"
@@ -22,14 +18,14 @@
             <h2 class="form-section-title">Identité</h2>
             {% if shop_item %}
                 <label class="field">
-                    <span class="field-label">Item</span>
+                    <span class="field-label">Objet</span>
                     <input type="text" class="input"
                            value="{{ shop_item.item_definition.name }} ({{ shop_item.item_definition.code }})"
                            disabled>
                 </label>
             {% else %}
                 <label class="field">
-                    <span class="field-label">Item à ajouter</span>
+                    <span class="field-label">Objet à ajouter</span>
                     <select name="item_code" class="input" required>
                         <option value="">— Choisir —</option>
                         {% for it in available_items %}
@@ -78,7 +74,7 @@
                            value="{{ fd.get('current_stock', shop_item.current_stock if shop_item else 0) }}">
                 </label>
                 <label class="field">
-                    <span class="field-label">Threshold</span>
+                    <span class="field-label">Seuil de stock</span>
                     <input type="number" name="stock_threshold" class="input"
                            value="{{ fd.get('stock_threshold', shop_item.stock_threshold if shop_item else 100) }}">
                 </label>

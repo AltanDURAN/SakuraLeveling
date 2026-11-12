@@ -1,9 +1,11 @@
 {% extends "admin/base.html" %}
-{% block title %}{{ zone.name }} · {{ n }} monstres — formation — Sakura Admin{% endblock %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
+{% set crumbs = [("Formations des meutes", "/admin/scenes/formations"), (zone.name ~ " · " ~ n ~ " monstres", none)] %}
+{% block title %}{{ zone.name }} · {{ n }} monstres — Formations — Sakura Admin{% endblock %}
 {% block content %}
 <section class="form-page"
   x-data="{
-    slots: {{ slots | tojson }},
+    slots: {{ slots | tojson | forceescape }},
     url: '', timer: null,
     refresh(){ const p = new URLSearchParams({t: Date.now()});
       this.slots.forEach((s, i) => { p.set('x'+i, (+s.x).toFixed(3)); p.set('y'+i, (+s.y).toFixed(3)); p.set('s'+i, (+s.scale).toFixed(3)); });
@@ -11,12 +13,11 @@
     later(){ clearTimeout(this.timer); this.timer = setTimeout(() => this.refresh(), 300); }
   }" x-init="refresh()">
 
-  <a href="/admin/scenes/formations" class="breadcrumb">← Formations</a>
-  <h1>🐺 {{ zone.name }} — {{ n }} monstres</h1>
-  <div style="display:flex; gap:.35rem; margin:.4rem 0 1rem;">
-    {% for s in sizes %}<a href="/admin/scenes/formations/{{ key }}/{{ s }}" class="btn {{ 'btn-primary' if s == n else 'btn-ghost' }}" style="padding:.3rem .6rem;">{{ s }} monstres</a>{% endfor %}
-  </div>
-  {% if saved %}<div style="margin:.6rem 0;padding:.6rem .9rem;border-radius:10px;background:rgba(80,200,120,.15);border:1px solid rgba(80,200,120,.4);">✅ Formation enregistrée.</div>{% endif %}
+  {{ page_head(zone.name, "🐺", count=n ~ " monstres", sub="La place de chaque monstre quand la meute apparaît.") }}
+  <nav class="tabs">
+    {% for s in sizes %}<a href="/admin/scenes/formations/{{ key }}/{{ s }}" class="tab {{ 'is-on' if s == n }}">{{ s }} monstres</a>{% endfor %}
+  </nav>
+  {% if saved %}<div class="notice is-ok">✅ Formation enregistrée.</div>{% endif %}
   <p style="color:var(--muted); margin:.2rem 0 1rem;">Aperçu avec {{ samples | join(', ') }} (premier décor de la zone).
      {% if not custom %}<strong>Formation par défaut</strong> : enregistre pour la personnaliser.{% endif %}</p>
 

@@ -19,6 +19,7 @@ CONTENT_PATH = (
 )
 
 _cache: list[QuestTemplate] | None = None
+_cache_mtime: float | None = None
 
 
 def _load() -> list[QuestTemplate]:
@@ -43,10 +44,20 @@ def _load() -> list[QuestTemplate]:
     ]
 
 
+def _mtime() -> float | None:
+    try:
+        return CONTENT_PATH.stat().st_mtime
+    except OSError:
+        return None
+
+
 def list_definitions() -> list[QuestTemplate]:
-    global _cache
-    if _cache is None:
+    """Relu dès que le fichier change (site admin) : sans redémarrer le bot."""
+    global _cache, _cache_mtime
+    mtime = _mtime()
+    if _cache is None or mtime != _cache_mtime:
         _cache = _load()
+        _cache_mtime = mtime
     return _cache
 
 
@@ -58,5 +69,6 @@ def get_definition(code: str) -> QuestTemplate | None:
 
 
 def clear_cache() -> None:
-    global _cache
+    global _cache, _cache_mtime
     _cache = None
+    _cache_mtime = None

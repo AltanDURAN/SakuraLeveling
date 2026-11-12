@@ -31,8 +31,6 @@
 .page-main:has(.mon) { max-width: 1240px; }
 .mon { display: flex; flex-direction: column; gap: 1.1rem; }
 .mon-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0.8rem 1.5rem; }
-.mon-head h1 { margin: 0; font-size: 1.6rem; letter-spacing: -0.01em; }
-.mon-head p { margin: 0.2rem 0 0; color: var(--text-soft); font-size: 0.92rem; }
 
 .mon-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
 .pill-group { display: inline-flex; background: var(--bg-soft); border: 1px solid var(--border); border-radius: 999px; padding: 3px; }
@@ -287,7 +285,6 @@
 .viz-tip .tip-head { opacity: 0.75; font-size: 0.74rem; margin-bottom: 0.15rem; }
 
 @media (max-width: 720px) {
-    .mon-head h1 { font-size: 1.3rem; }
     .hero-value { font-size: 2.6rem; }
     .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .kpi-value { font-size: 1.35rem; }

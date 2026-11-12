@@ -1,15 +1,10 @@
 {% extends "admin/base.html" %}
-{% block title %}Formations des meutes — Sakura Admin{% endblock %}
+{% from "admin/_ui.html" import page_head, notice, reload_note %}
+{% set crumbs = [("Formations des meutes", none)] %}
+{% block title %}Formations des meutes — Scènes — Sakura Admin{% endblock %}
 {% block content %}
 <section class="form-page">
-    <a href="/admin/scenes" class="breadcrumb">← Scènes</a>
-    <h1>🐺 Formations des meutes</h1>
-    <p style="color:var(--muted); max-width:74ch;">
-        Quand plusieurs monstres apparaissent ensemble (une <strong>meute</strong> de 2 ou 3, et
-        jusqu'à 4 plus tard), chacun prend un <strong>emplacement</strong> de la formation de sa zone :
-        position, profondeur (les plus loin sont dessinés derrière) et taille (× la taille propre du
-        monstre). Sans réglage, la formation par défaut s'applique.
-    </p>
+    {{ page_head("Formations des meutes", "🐺", sub="Quand plusieurs monstres apparaissent ensemble (une <strong>meute</strong> de 2 ou 3, et jusqu'à 4 plus tard), chacun prend un <strong>emplacement</strong> de la formation de sa zone : position, profondeur (les plus loin sont dessinés derrière) et taille (× la taille propre du monstre). Sans réglage, la formation par défaut s'applique.") }}
     <div class="form-section">
         {% for z in zones %}
         <div style="display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; margin:.4rem 0;">
