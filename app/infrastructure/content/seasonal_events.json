@@ -124,7 +124,7 @@
         {
           "kind": "item",
           "item": "sucre_d_orge",
-          "qty": 10
+          "qty": 15
         }
       ],
       [
@@ -164,11 +164,7 @@
         {
           "kind": "item",
           "item": "booster_offert",
-          "qty": 2
-        },
-        {
-          "kind": "gold_per_level",
-          "amount": 30
+          "qty": 3
         }
       ]
     ]
