@@ -20,7 +20,7 @@ import weakref
 from collections.abc import Callable
 from datetime import UTC, datetime
 
-from sqlalchemy import inspect, select
+from sqlalchemy import inspect, select, update
 from sqlalchemy.orm import Session
 
 from app.infrastructure.db.models.monitoring_model import GameEventModel
@@ -88,6 +88,39 @@ def record_now(session_factory: Callable, kind: str, **fields) -> None:
             session.commit()
     except Exception:  # noqa: BLE001
         _logger.warning("Journal de surveillance : %s non enregistré", kind, exc_info=True)
+
+
+def count(session: Session, kind: str, *, zone=None, amount: int = 1, at: datetime | None = None) -> None:
+    """Compteur par HEURE et par zone : UNE ligne (kind, zone, heure) dont `qty`
+    monte, au lieu d'une ligne par occurrence. Pour ce qui arrive des milliers
+    de fois et dont seul le nombre sert — les monstres repartis sans combattant
+    faisaient 98 % du journal (19 585 lignes sur 19 990 en onze jours, mesuré
+    le 12/11/2026). Ne valide pas la transaction ; lève en cas d'échec."""
+    if at is not None and at.tzinfo is not None:
+        at = at.astimezone(UTC).replace(tzinfo=None)
+    hour = (at or utcnow()).replace(minute=0, second=0, microsecond=0)
+    zone = str(zone)[:32] if zone else None
+    same_zone = GameEventModel.zone.is_(None) if zone is None else GameEventModel.zone == zone
+    done = session.execute(
+        update(GameEventModel)
+        .where(GameEventModel.kind == kind, GameEventModel.at == hour, same_zone)
+        .values(qty=GameEventModel.qty + int(amount))
+        .execution_options(synchronize_session=False)
+    ).rowcount
+    if not done:
+        session.add(_event(kind, zone=zone, qty=int(amount), at=hour))
+
+
+def count_now(session_factory: Callable, kind: str, *, zone=None, amount: int = 1) -> None:
+    """`count` dans sa propre transaction (jamais d'exception)."""
+    try:
+        with session_factory() as session:
+            if not _ready(session):
+                return
+            count(session, kind, zone=zone, amount=amount)
+            session.commit()
+    except Exception:  # noqa: BLE001
+        _logger.warning("Journal de surveillance : compteur %s non enregistré", kind, exc_info=True)
 
 
 class InteractionBuffer:

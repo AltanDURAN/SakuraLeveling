@@ -74,7 +74,7 @@ _logger = logging.getLogger(__name__)
 
 from app.bot.rendering.fight_animation import MAX_UPLOAD_BYTES as _VIDEO_MAX_BYTES  # noqa: E402
 from app.domain.services.monitoring import kinds
-from app.infrastructure.monitoring.telemetry import record_now
+from app.infrastructure.monitoring.telemetry import count_now
 
 
 class EncounterCog(commands.Cog):
@@ -757,8 +757,9 @@ class EncounterCog(commands.Cog):
             except discord.HTTPException:
                 await self._delete_quietly(message)     # jamais de boutons morts
             self._reschedule(channel_id, fled=True)
-            await asyncio.to_thread(record_now, get_db_session, kinds.FLEE, zone=channel_id,
-                                    ref=encounter.mob_state.code, qty=len(encounter.mobs))
+            # Un compteur par heure et par zone, pas une ligne par fuite : ces
+            # lignes faisaient 98 % du journal de surveillance.
+            await asyncio.to_thread(count_now, get_db_session, kinds.FLEE, zone=channel_id)
             return
 
         result = self.encounter_service.resolve_active_encounter(encounter)

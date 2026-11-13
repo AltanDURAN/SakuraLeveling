@@ -17,7 +17,7 @@ from dataclasses import dataclass
 
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import RedirectResponse
-from itsdangerous import BadSignature, URLSafeSerializer
+from itsdangerous import BadSignature, URLSafeTimedSerializer
 
 from app.infrastructure.config.settings import settings
 from webapp.admin.auth import build_authorize_url, make_state, store_oauth_state
@@ -37,8 +37,8 @@ class PlayerUser:
     display_name: str
 
 
-def _serializer() -> URLSafeSerializer:
-    return URLSafeSerializer(settings.admin_session_secret, salt="sakura-player-v1")
+def _serializer() -> URLSafeTimedSerializer:
+    return URLSafeTimedSerializer(settings.admin_session_secret, salt="sakura-player-v1")
 
 
 def safe_next(value: str | None) -> str | None:
@@ -50,9 +50,10 @@ def current_player(request: Request) -> PlayerUser | None:
     if not token:
         return None
     try:
-        payload = _serializer().loads(token)
+        # Durée vérifiée côté serveur, comme la session admin (cf. auth.py).
+        payload = _serializer().loads(token, max_age=60 * 60 * 24 * _SESSION_DAYS)
         return PlayerUser(int(payload["discord_id"]), str(payload.get("display_name", "")))
-    except (BadSignature, KeyError, TypeError, ValueError):
+    except (BadSignature, KeyError, TypeError, ValueError, AttributeError):
         return None
 
 

@@ -25,7 +25,7 @@ def journal(client, content, monkeypatch):
     from app.infrastructure.db.repositories.player_repository import PlayerRepository
     from app.infrastructure.db.session import get_db_session
     from app.infrastructure.encounters.farm_zone_loader import list_zones
-    from app.infrastructure.monitoring.telemetry import record
+    from app.infrastructure.monitoring.telemetry import count, record
 
     monkeypatch.setattr(monitoring_loader, "CONTENT_PATH", content / "monitoring.json")
     monitoring_loader.clear_cache()
@@ -41,7 +41,7 @@ def journal(client, content, monkeypatch):
             record(s, "combat", player_id=pid, zone=zone, ref="slime", gold=12, xp=8, qty=1, at=at,
                    data={"mobs": ["slime"], "res": "win" if k % 4 else "death", "n": 1, "turns": 9,
                          "enc": f"{zone}:{k}"})
-        record(s, "flee", zone=zone, ref="gobelin", at=now - timedelta(hours=2))
+        count(s, "flee", zone=zone, at=now - timedelta(hours=2))
         record(s, "shop_buy", player_id=pid, ref="parchemin_oubli", qty=1, gold=-150, at=now)
         record(s, "gear_drop", player_id=pid, ref="perle_de_gelee", data={"rarity": "epic"}, at=now)
         repo.add_gold(pid, 500, source="combat")

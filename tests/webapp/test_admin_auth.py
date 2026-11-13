@@ -176,3 +176,80 @@ def test_oauth_callback_rejects_missing_code(client: TestClient) -> None:
     assert response.status_code == 400, (
         f"Attendu 400 (paramètres manquants), reçu {response.status_code}"
     )
+
+
+# ----------------------------------------------------------------------------
+# 6. Une session périme CÔTÉ SERVEUR (12/11/2026)
+# ----------------------------------------------------------------------------
+def test_une_session_perimee_est_refusee(client: TestClient, monkeypatch) -> None:
+    """Le jeton porte sa date : passé le délai, il ne vaut plus rien, même si
+    le navigateur (ou celui qui l'a intercepté) le présente encore. Avant, le
+    jeton signé restait valable pour toujours."""
+    from webapp.admin import auth
+
+    token = auth._serializer().dumps(
+        {"discord_id": 999_999_999, "username": "x", "display_name": "X"})
+    client.cookies.set("sakura_admin_session", token)
+    try:
+        # Jeton frais : reconnu (403 = connecté mais pas admin).
+        assert client.get("/admin/items", follow_redirects=False).status_code == 403
+        # Le même jeton, une fois le délai dépassé : non connecté.
+        monkeypatch.setattr(auth, "SESSION_MAX_AGE", -1)
+        response = client.get("/admin/items", follow_redirects=False)
+    finally:
+        client.cookies.delete("sakura_admin_session")
+    assert response.status_code == 307
+    assert "/admin/login" in response.headers.get("location", "")
+
+
+def test_un_jeton_sans_date_de_l_ancien_format_est_refuse(client: TestClient) -> None:
+    """Les cookies émis avant le 12/11/2026 (sans date) ne sont plus acceptés."""
+    from app.infrastructure.config.settings import settings
+
+    old = URLSafeSerializer(settings.admin_session_secret, salt="sakura-admin-v1").dumps(
+        {"discord_id": 999_999_999, "username": "x", "display_name": "X"})
+    client.cookies.set("sakura_admin_session", old)
+    try:
+        response = client.get("/admin/items", follow_redirects=False)
+    finally:
+        client.cookies.delete("sakura_admin_session")
+    assert response.status_code == 307
+
+
+# ----------------------------------------------------------------------------
+# 7. AUCUNE route d'administration n'est ouverte sans session
+# ----------------------------------------------------------------------------
+def _all_routes(routes):
+    for route in routes:
+        if type(route).__name__ == "_IncludedRouter":
+            yield from _all_routes(route.original_router.routes)
+        else:
+            yield route
+
+
+def test_aucune_route_admin_n_est_ouverte_sans_session(client: TestClient) -> None:
+    """Garde-fou exhaustif : chaque route sous /admin, chaque méthode, appelée
+    sans cookie, doit renvoyer vers la connexion (ou refuser). Une route
+    ajoutée sans `Depends(require_admin)` fait échouer ce test."""
+    import re
+
+    open_routes = {"/admin/login", "/admin/auth/callback", "/admin/auth/login", "/admin/logout"}
+    checked, leaks = 0, []
+    for route in _all_routes(client.app.routes):
+        path = getattr(route, "path", "")
+        methods = getattr(route, "methods", None) or set()
+        if not path.startswith("/admin") or path in open_routes:
+            continue
+        url = re.sub(r"\{[^}]+\}", "1", path)
+        for method in sorted(methods - {"HEAD", "OPTIONS"}):
+            # Origine autorisée : c'est l'authentification qu'on teste, pas le CSRF.
+            headers = {} if method == "GET" else {"Origin": "http://localhost:8001"}
+            response = client.request(method, url, headers=headers, follow_redirects=False)
+            checked += 1
+            location = response.headers.get("location", "")
+            closed = response.status_code in (401, 403) or (
+                response.status_code in (302, 303, 307) and "/admin/login" in location)
+            if not closed:
+                leaks.append((method, path, response.status_code))
+    assert checked > 150, checked
+    assert leaks == []

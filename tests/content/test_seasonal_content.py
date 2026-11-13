@@ -37,8 +37,12 @@ def test_l_avent_reste_une_petite_recompense():
                 assert r.amount <= 30, f"case {n} : trop d'or"
             if r.kind == ss.ITEM:
                 assert ITEMS[r.item]["category"] not in GEAR, f"case {n} : pas d'équipement"
+    # Le principe (de petites récompenses), pas un compte exact : l'auteur règle
+    # les cases depuis le site (12/11/2026 : 3 boosters le 24, soit 7 en tout)
+    # et ce test ne doit pas rougir pour un booster. Au plus un tous les trois
+    # jours en moyenne.
     boosters = sum(r.qty for day in advent.days for r in day if r.kind == ss.ITEM and r.item == "booster_offert")
-    assert boosters <= 6
+    assert boosters <= advent.size // 3
 
 
 def test_le_cadeau_de_noel_suit_la_regle_de_gentillesse():

@@ -308,9 +308,9 @@ def load(session: Session, days: int = 30, include_admins: bool = False,
     hour = func.strftime("%Y-%m-%d %H:00:00", GameEventModel.at)
     flees = {}
     for zone, h, n in session.execute(
-            select(GameEventModel.zone, hour, func.count()).where(GameEventModel.at >= lo, GameEventModel.kind == kinds.FLEE)
+            select(GameEventModel.zone, hour, func.sum(GameEventModel.qty)).where(GameEventModel.at >= lo, GameEventModel.kind == kinds.FLEE)
             .group_by(GameEventModel.zone, hour)).all():
-        flees[(zone or "", datetime.strptime(h, "%Y-%m-%d %H:%M:%S"))] = int(n)
+        flees[(zone or "", datetime.strptime(h, "%Y-%m-%d %H:%M:%S"))] = int(n or 0)
     last_event_id = session.execute(select(func.max(GameEventModel.id))).scalar() or 0
     journal_start = session.execute(select(func.min(GameEventModel.at))).scalar()
     if season_start is not None and (journal_start is None or journal_start < season_start):

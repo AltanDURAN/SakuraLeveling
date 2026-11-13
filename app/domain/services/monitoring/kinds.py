@@ -12,7 +12,7 @@ from dataclasses import dataclass
 # --------------------------------------------------------------- événements
 INTERACTION = "interaction"   # ref = commande (« boss moi ») ou bouton
 COMBAT = "combat"             # un par participant ; zone = salon, ref = monstre chef
-FLEE = "flee"                 # monstre reparti sans combattant ; zone, ref
+FLEE = "flee"                 # monstres repartis sans combattant : COMPTEUR par heure et par zone (qty)
 GOLD = "gold"                 # ref = source, gold = variation RÉELLE du solde
 LEVEL_UP = "level_up"         # qty = nouveau niveau, data.from
 GEAR_DROP = "gear_drop"       # ref = pièce, data.rarity

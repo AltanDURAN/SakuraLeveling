@@ -12,7 +12,7 @@ from app.infrastructure.db.base import Base
 from app.infrastructure.db.models.monitoring_model import GameEventModel, PlayerDailySnapshotModel
 from app.infrastructure.db.models.resource_model import PlayerResourceModel
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
-from app.infrastructure.monitoring.telemetry import InteractionBuffer, record
+from app.infrastructure.monitoring.telemetry import InteractionBuffer, count, count_now, record
 from tests.infrastructure.test_use_consumable import session  # noqa: F401
 
 
@@ -135,3 +135,35 @@ def test_les_joueurs_arrives_avant_le_journal_ne_faussent_pas_la_retention(sessi
     session.commit()
     ds = dataset.load(session, days=30)
     assert set(ds.arrivals()) == {new}
+
+
+def test_les_fuites_sont_un_compteur_par_heure_et_par_zone(session):
+    """Un monstre reparti sans combattant ne coûte plus une ligne : ces lignes
+    faisaient 98 % du journal (12/11/2026). Une ligne par zone et par heure,
+    dont `qty` monte ; la Surveillance lit la somme."""
+    from datetime import UTC, datetime, timedelta
+
+    now = datetime.now(UTC).replace(tzinfo=None, minute=30, second=0, microsecond=0)
+    for _ in range(5):
+        count(session, "flee", zone=111, at=now)
+    count(session, "flee", zone=222, at=now)
+    count(session, "flee", zone=111, at=now - timedelta(hours=1))
+    count(session, "flee", zone=None, at=now)
+    count(session, "flee", zone=None, at=now)
+    session.commit()
+
+    rows = {(e.zone, e.at.hour): e.qty for e in _events(session, "flee")}
+    assert rows == {("111", now.hour): 5, ("222", now.hour): 1,
+                    ("111", (now - timedelta(hours=1)).hour): 1, (None, now.hour): 2}
+    assert all(e.at.minute == 0 for e in _events(session, "flee"))
+
+    ds = dataset.load(session, days=7)
+    hour = now.replace(minute=0)
+    assert ds.flees[("111", hour)] == 5 and ds.flees[("222", hour)] == 1 and ds.flees[("", hour)] == 2
+
+
+def test_le_compteur_ne_casse_jamais_le_jeu():
+    def broken():
+        raise RuntimeError("base en panne")
+
+    count_now(broken, "flee", zone=1)          # ne lève pas

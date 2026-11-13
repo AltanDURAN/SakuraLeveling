@@ -23,7 +23,7 @@ from typing import Any
 
 import httpx
 from fastapi import HTTPException, Request, Response, status
-from itsdangerous import BadSignature, URLSafeSerializer
+from itsdangerous import BadSignature, URLSafeTimedSerializer
 
 from app.infrastructure.config.settings import settings
 
@@ -42,9 +42,15 @@ OAUTH_SCOPES = "identify"
 _SESSION_COOKIE_NAME = "sakura_admin_session"
 _STATE_COOKIE_NAME = "sakura_oauth_state"
 
+#: Durée de vie d'une session, vérifiée CÔTÉ SERVEUR (12/11/2026). Avant, seul
+#: le navigateur oubliait le cookie au bout de 7 jours : le jeton signé, lui,
+#: restait valable pour toujours — un cookie intercepté (le site est encore en
+#: HTTP) donnait un accès admin définitif. Le jeton porte désormais sa date.
+SESSION_MAX_AGE = 60 * 60 * 24 * 7  # 7 jours
 
-def _serializer() -> URLSafeSerializer:
-    return URLSafeSerializer(
+
+def _serializer() -> URLSafeTimedSerializer:
+    return URLSafeTimedSerializer(
         settings.admin_session_secret, salt="sakura-admin-v1",
     )
 
@@ -132,7 +138,7 @@ def issue_session_cookie(response: Response, user: AdminUser) -> None:
         samesite="lax",
         # Secure piloté par settings.admin_cookie_secure (True en prod HTTPS).
         secure=settings.admin_cookie_secure,
-        max_age=60 * 60 * 24 * 7,  # 7 jours
+        max_age=SESSION_MAX_AGE,
     )
 
 
@@ -164,14 +170,16 @@ def current_user(request: Request) -> AdminUser | None:
     if not token:
         return None
     try:
-        payload = _serializer().loads(token)
-    except BadSignature:
+        # SignatureExpired hérite de BadSignature : un jeton périmé, falsifié
+        # ou d'un ancien format (sans date) vaut « non connecté ».
+        payload = _serializer().loads(token, max_age=SESSION_MAX_AGE)
+        return AdminUser(
+            discord_id=int(payload["discord_id"]),
+            username=str(payload.get("username", "")),
+            display_name=str(payload.get("display_name", "")),
+        )
+    except (BadSignature, KeyError, TypeError, ValueError, AttributeError):
         return None
-    return AdminUser(
-        discord_id=int(payload["discord_id"]),
-        username=str(payload.get("username", "")),
-        display_name=str(payload.get("display_name", "")),
-    )
 
 
 def require_admin(request: Request) -> AdminUser:

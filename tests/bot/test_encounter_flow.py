@@ -98,7 +98,7 @@ def _play(cog, encounter, message, channel=None, window_s=0):
 
 
 def _no_record(monkeypatch):
-    monkeypatch.setattr(encounter_cog, "record_now", lambda *a, **k: None)
+    monkeypatch.setattr(encounter_cog, "count_now", lambda *a, **k: None)
 
 
 def test_une_fuite_laisse_sa_fiche_jusqu_au_monstre_suivant(cog, monkeypatch):

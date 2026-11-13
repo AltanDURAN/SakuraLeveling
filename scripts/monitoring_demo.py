@@ -210,6 +210,7 @@ def simulate(n_players: int, n_days: int, rng: random.Random) -> None:
         s.sessions.sort()
 
     events: list[tuple] = []     # (at, kind, pid, discord_id, zone, ref, gold, xp, qty, data)
+    flee_hours: dict[tuple, int] = {}   # (zone, heure) → monstres repartis sans combattant
 
     def ev(at, kind, sim=None, zone=None, ref=None, gold=0, xp=0, qty=0, data=None, discord_id=None):
         events.append((at, kind, sim.pid if sim else None, discord_id or (sim.discord_id if sim else None),
@@ -314,7 +315,9 @@ def simulate(n_players: int, n_days: int, rng: random.Random) -> None:
             mob = fit[-2] if len(fit) > 1 else members[0]
         pack = 1 if rng.random() > 0.1 else rng.choice([2, 3])
         if not joined:
-            ev(t, kinds.FLEE, zone=channel, ref=mob["code"], qty=pack)
+            # Comme le bot : un compteur par heure et par zone (cf. telemetry.count).
+            hour = (channel, t.replace(minute=0, second=0, microsecond=0))
+            flee_hours[hour] = flee_hours.get(hour, 0) + 1
             continue
         key = f"{channel}:{int(t.timestamp())}"
         gap = avg_level - mob["_level"]
@@ -417,6 +420,8 @@ def simulate(n_players: int, n_days: int, rng: random.Random) -> None:
     ev(_naive(now - timedelta(days=3)), kinds.GOLD, admin_target, ref="admin", gold=60000)
     admin_target.gold += 60000
 
+    for (channel, hour), n in flee_hours.items():
+        ev(hour, kinds.FLEE, zone=channel, qty=n)
     events.sort(key=lambda e: e[0])
     times = [e[0] for e in events]
     # Arrivées sur le serveur (avant le profil).

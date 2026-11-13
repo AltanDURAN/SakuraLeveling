@@ -23,3 +23,7 @@ players_banner.png
 app/infrastructure/content/*.bak
 app/infrastructure/content/*.tmp
 assets/generated_npcs/
+
+# Copies de sauvegarde du .env (elles contiennent le token) : jamais dans git.
+.env.*
+!.env.example
