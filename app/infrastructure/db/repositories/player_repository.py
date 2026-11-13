@@ -1,6 +1,6 @@
 from datetime import datetime, UTC
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session, joinedload
 
 from app.domain.entities.player import Player
@@ -14,6 +14,7 @@ from app.infrastructure.db.repositories.element_affinity_repository import (
     ElementAffinityRepository,
 )
 from app.infrastructure.db.unit_of_work import commit as commit_session
+from app.infrastructure.db.unit_of_work import locked_write
 from app.infrastructure.monitoring.telemetry import record as record_event
 
 
@@ -124,6 +125,7 @@ class PlayerRepository:
         progression.updated_at = datetime.now(UTC)
         commit_session(self.session)
 
+    @locked_write
     def add_gold(self, player_id: int, gold: int, commit: bool = True, source: str = "") -> None:
         """`source` : d'où vient (ou où part) l'or, pour le journal de
         surveillance (`monitoring.kinds.GOLD_SOURCES`) — sans elle, le
@@ -143,6 +145,7 @@ class PlayerRepository:
                          gold=resources.gold - before)
         commit_session(self.session) if commit else self.session.flush()
 
+    @locked_write
     def set_gold(self, player_id: int, gold: int, source: str = "admin") -> None:
         resources = self.session.get(PlayerResourceModel, player_id)
         if resources is None:
@@ -234,18 +237,30 @@ class PlayerRepository:
 
         if target not in STAT_POINT_GAIN or amount <= 0:
             return False
-        progression = self.session.get(PlayerProgressionModel, player_id)
-        if progression is None or progression.stat_points < amount:
-            return False
-
-        column = {
+        column = getattr(PlayerProgressionModel, {
             "attack": "points_attack",
             "defense": "points_defense",
             "max_hp": "points_max_hp",
-        }[target]
-        setattr(progression, column, getattr(progression, column) + amount)
-        progression.stat_points -= amount
-        progression.updated_at = datetime.now(UTC)
+        }[target])
+        # UNE écriture conditionnelle : le point n'est retiré que s'il est
+        # encore là au moment d'écrire. Lire puis écrire en deux temps laissait
+        # passer deux clics simultanés (+ATK et +DEF) avec un seul point —
+        # reproduit le 13/11/2026 : 17 courses sur 200.
+        self.session.flush()
+        placed = self.session.execute(
+            update(PlayerProgressionModel)
+            .where(PlayerProgressionModel.player_id == player_id,
+                   PlayerProgressionModel.stat_points >= amount)
+            .values({column: column + amount,
+                     PlayerProgressionModel.stat_points: PlayerProgressionModel.stat_points - amount,
+                     PlayerProgressionModel.updated_at: datetime.now(UTC)})
+            .execution_options(synchronize_session=False)
+        ).rowcount
+        if not placed:
+            return False
+        cached = self.session.get(PlayerProgressionModel, player_id)
+        if cached is not None:
+            self.session.expire(cached)            # la session relira les nouvelles valeurs
         commit_session(self.session)
         return True
 

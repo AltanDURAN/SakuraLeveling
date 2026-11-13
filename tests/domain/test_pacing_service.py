@@ -84,3 +84,25 @@ def test_lecture_du_json():
     assert pacing.zones.respawn_max_minutes == 6.0 and pacing.zones.join_window_minutes == 2
     assert pacing.override(42).paused and not pacing.override(7).paused
     assert pacing.raid.fight_hour == 20 and pacing.raid.fight_minute == 0
+
+
+def test_un_fichier_mal_forme_garde_les_derniers_reglages(tmp_path, monkeypatch):
+    """Zones et raid appellent ce chargeur à chaque passage : il ne doit jamais
+    lever, même sur un fichier édité à la main avec de mauvais types."""
+    from app.infrastructure.pacing import pacing_loader
+
+    path = tmp_path / "pacing.json"
+    monkeypatch.setattr(pacing_loader, "CONTENT_PATH", path)
+    pacing_loader.clear_cache()
+    try:
+        path.write_text('{"zones": {"join_window_minutes": 4}}', encoding="utf-8")
+        assert pacing_loader.get_pacing().zones.join_window_minutes == 4
+
+        import os
+        for i, broken in enumerate(('{"zones": []}', '{"zones": "x", "raid": 3}', '[1, 2]', '{"lunar": 5}', "{pas du json")):
+            path.write_text(broken, encoding="utf-8")
+            os.utime(path, (1_000_000 + i, 1_000_000 + i))        # nouvelle date : relu
+            pacing = pacing_loader.get_pacing()                     # ne lève pas
+            assert pacing.zones.join_window_minutes >= 1 and pacing.raid is not None
+    finally:
+        pacing_loader.clear_cache()

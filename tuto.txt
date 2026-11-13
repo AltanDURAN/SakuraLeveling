@@ -162,9 +162,13 @@ LA PROGRESSION
         • Paliers de série : un titre à 7, 30 et 100 jours (voir /titre).
 
 /titre [joueur] et /titre_actif
-    Tes titres débloqués, et celui affiché sur ton profil. Tous les titres
-    débloqués appliquent leurs effets en permanence, quel que soit celui
-    affiché. Quelques exemples :
+    Le livre de tes titres, en pages (◀ ▶) : d'abord ceux que tu as
+    débloqués, puis ceux qu'il te reste à gagner, rangés par type
+    (progression, chasse par famille, titres disputés, world boss, cartes,
+    chasseurs légendaires) avec ta progression — le plus proche d'abord.
+    /titre_actif choisit celui qui s'affiche sur ton profil. Tous les
+    titres débloqués appliquent leurs effets en permanence, quel que soit
+    celui affiché. Quelques exemples :
         🟢 / 👹 Slayer de famille (100 victoires sur une famille) :
             +10 % de dégâts infligés et −10 % subis face à cette famille.
         Titres de la SEMAINE (exclusifs, remis en jeu chaque dimanche à
@@ -934,6 +938,8 @@ WORLD BOSS — /boss moi, /boss historique, /bestiaire boss
           plus ce qu'il proposait, rien ne bouge.
         • Un échange expire au bout de 5 minutes.
         • Un seul échange en attente par paire de joueurs.
+        • Au plus 25 lots (objets ou pièces différents) de chaque côté :
+          au-delà, fais un second échange.
         • Une pièce d'équipement s'échange en tant que COPIE précise (sa
           rareté, sa forge). Tu ne proposes que des pièces libres ; tu peux
           demander une pièce que l'autre porte (elle lui est retirée).

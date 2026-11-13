@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import discord
 
+from app.bot.embeds.limits import add_lines
+
 #: Boutons sous chaque message d'apparition (emoji, libellé, style Discord) — miroir
 #: des vues persistantes d'`event_cog` (vérifié par les tests).
 BUTTONS: dict[str, list[tuple[str, str, str]]] = {
@@ -96,8 +98,12 @@ def girl_result_embed(is_trap: bool, lines: list[str]) -> discord.Embed:
             ),
             color=discord.Color.green(),
         )
-    embed.add_field(name="Sort des participants",
-                    value="\n".join(lines[:20]) if lines else "Personne n'a participé…", inline=False)
+    # Tous les participants, en plusieurs champs au besoin : `lines[:20]` cachait
+    # le 21e en silence et frôlait la limite d'un champ (999 caractères sur
+    # 1 024 avec les réglages du 13/11/2026 — une perte d'or plus haute, réglable
+    # sur le site, faisait refuser le message par Discord).
+    add_lines(embed, "Sort des participants", lines, max_fields=4,
+              empty="Personne n'a participé…", more="… et {n} autre(s) participant(s)")
     return embed
 
 

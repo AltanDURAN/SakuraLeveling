@@ -19,6 +19,7 @@ from app.application.use_cases.quest_engine import (
     statuses,
 )
 from app.domain.services.progression_service import ProgressionService
+from app.infrastructure.db.unit_of_work import transactional
 from app.infrastructure.weekly_quests.quest_loader import get_definition, list_definitions
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
@@ -81,6 +82,10 @@ class ClaimAllWeeklyUseCase:
         self.inventory_repository = inventory_repository
         self.progression_service = progression_service or ProgressionService()
 
+    # Tout ou rien, sous le verrou d'écriture : avant, l'or était validé AVANT
+    # que la quête soit marquée réclamée — une panne entre les deux laissait
+    # l'or versé et la quête réclamable une seconde fois (revue du 13/11/2026).
+    @transactional
     def execute(self, discord_id: int, username: str, display_name: str) -> ClaimAllResult:
         profile = self.player_repository.get_or_create_by_discord_id(
             discord_id=discord_id, username=username, display_name=display_name)

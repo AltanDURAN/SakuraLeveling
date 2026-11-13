@@ -9,6 +9,8 @@ Chaque page est rendue à la volée à la demande, écrite sur disque dans
 
 from __future__ import annotations
 
+import asyncio
+
 import discord
 
 from app.bot.rendering.equipment_image import (
@@ -93,9 +95,13 @@ class EquipmentImageView(discord.ui.View):
         return embed, file
 
     async def _switch(self, interaction: discord.Interaction) -> None:
-        embed, file = self.render_current_page()
+        # Le rendu Pillow se fait dans un thread (il bloquait tout le bot le
+        # temps de dessiner la page — revue du 13/11/2026), après un accusé de
+        # réception : la limite de 3 s de Discord ne dépend plus du rendu.
+        await interaction.response.defer()
+        embed, file = await asyncio.to_thread(self.render_current_page)
         # Discord exige `attachments=[file]` pour remplacer le fichier joint.
-        await interaction.response.edit_message(
+        await interaction.edit_original_response(
             embed=embed, attachments=[file], view=self,
         )
 

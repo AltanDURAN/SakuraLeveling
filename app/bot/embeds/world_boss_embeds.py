@@ -5,6 +5,7 @@ import discord
 from discord.utils import escape_markdown
 
 from app.application.use_cases.world_boss import BossRewardEntry
+from app.bot.embeds.limits import add_lines
 from app.domain.entities.world_boss import WorldBoss
 from app.domain.services import element_service
 from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
@@ -132,14 +133,13 @@ def build_boss_escaped_embed(boss: WorldBoss, rewards: list[BossRewardEntry]) ->
         color=discord.Color.dark_grey(),
     )
     lines = [f"**{escape_markdown(r.display_name)}** : {format_int(r.gold)} or, {format_int(r.xp)} XP"
-             for r in sorted(rewards, key=lambda r: -r.gold)[:25]]
-    if lines:
-        embed.add_field(name="🎁 Récompenses", value="\n".join(lines)[:1024], inline=False)
+             for r in sorted(rewards, key=lambda r: -r.gold)]
+    add_lines(embed, "🎁 Récompenses", lines, max_fields=4, more="… et {n} autre(s) participant(s)")
     return embed
 
 
 def build_boss_defeated_embed(
-    boss: WorldBoss, rewards: list[BossRewardEntry]
+    boss: WorldBoss, rewards: list[BossRewardEntry], item_names: dict[str, str] | None = None,
 ) -> discord.Embed:
     embed = discord.Embed(
         title=f"🏆 {boss.name} a été vaincu !",
@@ -169,15 +169,17 @@ def build_boss_defeated_embed(
     }
     rewards_sorted = sorted(rewards, key=lambda r: (role_priority.get(r.role, 99), -r.gold))
 
+    # Un joueur ne doit jamais lire un code d'objet (`potion_soin`).
+    names = item_names or {}
     lines: list[str] = []
-    for reward in rewards_sorted[:25]:  # cap à 25 pour rester lisible
-        items_txt = ", ".join(f"{q}× {c}" for c, q in reward.items)
+    for reward in rewards_sorted:
+        parts = [f"{format_int(reward.gold)} or", f"{format_int(reward.xp)} XP"]
+        parts += [f"{q}× {names.get(c, c.replace('_', ' '))}" for c, q in reward.items]
         safe_name = escape_markdown(reward.display_name)
-        lines.append(
-            f"{role_label.get(reward.role, '🎖️')} **{safe_name}** — "
-            f"{reward.gold}g, {reward.xp}xp, {items_txt}"
-        )
-    if lines:
-        embed.add_field(name="🎁 Récompenses", value="\n".join(lines), inline=False)
+        lines.append(f"{role_label.get(reward.role, '🎖️')} **{safe_name}** — {', '.join(parts)}")
+    # Tout le monde est listé, en plusieurs champs : à 14 participants, un
+    # seul champ dépassait les 1 024 caractères et Discord refusait le message
+    # de victoire (revue du 13/11/2026).
+    add_lines(embed, "🎁 Récompenses", lines, max_fields=5, more="… et {n} autre(s) participant(s)")
 
     return embed

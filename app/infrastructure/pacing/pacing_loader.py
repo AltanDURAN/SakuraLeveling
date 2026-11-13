@@ -7,6 +7,7 @@ l'admin web est prise en compte par le bot sans redémarrage.
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import fields
 from pathlib import Path
 
@@ -18,6 +19,9 @@ CONTENT_PATH = Path(__file__).resolve().parents[1] / "content" / "pacing.json"
 
 _cache: Pacing | None = None
 _cache_mtime: float | None = None
+
+
+_logger = logging.getLogger(__name__)
 
 
 def _build(cls, raw: dict, default):
@@ -64,7 +68,16 @@ def get_pacing() -> Pacing:
                 data = json.loads(CONTENT_PATH.read_text(encoding="utf-8"))
             except (ValueError, OSError):
                 data = {}
-        _cache, _cache_mtime = parse(data), mtime
+        try:
+            parsed = parse(data)
+        except Exception:  # noqa: BLE001 — types inattendus dans un fichier édité à la main
+            # Le site valide avant d'écrire ; un fichier cassé ne peut venir que
+            # d'une édition à la main. On garde les derniers réglages lus (ou
+            # ceux par défaut) : toutes les zones et le raid appellent ce
+            # chargeur, une exception ici les arrêterait.
+            _logger.exception("pacing.json illisible : derniers réglages valides conservés")
+            parsed = _cache if _cache is not None else parse({})
+        _cache, _cache_mtime = parsed, mtime
     return _cache
 
 

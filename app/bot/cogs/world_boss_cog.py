@@ -41,6 +41,7 @@ from app.application.use_cases.world_boss import (
     SpawnWorldBossUseCase,
 )
 from app.bot.checks.admin_check import admin_only
+from app.bot.embeds.limits import fit_lines
 from app.bot.embeds.world_boss_embeds import (
     build_boss_escaped_embed,
     build_boss_defeated_embed,
@@ -206,7 +207,7 @@ class WorldBossView(GatedView):
         embed = discord.Embed(
             title=f"🛡️ Inscrits pour l'assaut de {pacing_service.fight_label(get_pacing().raid)} — {count}",
             description=(
-                "\n".join(lines) if lines
+                fit_lines(lines, budget=3900, more="… et {n} autre(s) inscrit(s)") if lines
                 else "Personne pour l'instant. Sois le premier à t'engager !"
             ),
             color=discord.Color.gold(),
@@ -1074,7 +1075,10 @@ class WorldBossCog(commands.Cog):
         if attachment is not None:
             await channel.send(content=content, file=attachment)
         else:
-            await channel.send(embed=build_boss_defeated_embed(boss, result.rewards))
+            from app.bot.embeds.inventory_embeds import item_names
+
+            names = await asyncio.to_thread(item_names, {code for r in result.rewards for code, _ in r.items})
+            await channel.send(embed=build_boss_defeated_embed(boss, result.rewards, names))
 
 
 async def setup(bot: commands.Bot) -> None:

@@ -697,8 +697,12 @@ class EventCog(commands.Cog):
                 )
                 return
             event_id = ev.id
+        # Discord limite un menu à 25 options : le dire plutôt que de cacher
+        # les autres en silence (pièces portées d'abord).
+        note = (f" _(les 25 premières sur {len(options)} : celles que tu portes d'abord — "
+                "équipe une pièce pour la faire remonter)_" if len(options) > 25 else "")
         await interaction.followup.send(
-            "Choisis l'équipement à renforcer :",
+            f"Choisis l'équipement à renforcer :{note}",
             view=ForgeSelectView(self, event_id, options[:25]),
             ephemeral=True,
         )

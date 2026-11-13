@@ -27,6 +27,12 @@ class CreateTradeResult:
     trade: Trade | None = None
 
 
+#: Lots (objets ou pièces différents) par côté d'un échange. Au-delà, le message
+#: de l'échange ne tenait plus dans les limites de Discord (un champ : 1 024
+#: caractères) et le brouillon restait bloqué — revue du 13/11/2026.
+MAX_LOTS_PER_SIDE = 25
+
+
 class CreateTradeUseCase:
     """Crée un trade en pending, après validation que :
     - les deux joueurs existent
@@ -79,6 +85,12 @@ class CreateTradeUseCase:
                 return CreateTradeResult(
                     success=False,
                     message=f"❌ L'or proposé dans {side_label} doit être ≥ 0.",
+                )
+            if len(side_offer.items) > MAX_LOTS_PER_SIDE:
+                return CreateTradeResult(
+                    success=False,
+                    message=f"❌ Un échange porte au plus {MAX_LOTS_PER_SIDE} lots de chaque côté "
+                            f"({len(side_offer.items)} dans {side_label}). Fais-en deux.",
                 )
             for item_code, quantity in side_offer.items:
                 if quantity <= 0:

@@ -131,3 +131,30 @@ def test_un_guide_desepingle_est_retrouve_en_tete_et_reepingle():
     channel = Channel(current, Message(2, author=2))
     assert asyncio.run(cog.post_or_update_guide(channel, BOT, _guide(), banner=_banner)) == "inchangé"
     assert current.pinned and len(channel.messages) == 2
+
+
+def test_une_panne_sur_un_guide_n_arrete_pas_la_boucle(monkeypatch):
+    """Une exception non rattrapée arrête une boucle `tasks.loop` jusqu'au
+    redémarrage : une panne de Discord sur un salon ne doit ni tuer la boucle
+    ni priver les autres salons de leur guide."""
+    seen = []
+
+    async def flaky(channel, bot_id, guide):
+        seen.append(guide.channel_id)
+        if guide.channel_id == 1:
+            raise RuntimeError("Discord 503")
+        return "posté"
+
+    class Bot:
+        user = type("U", (), {"id": BOT})()
+
+        def get_channel(self, channel_id):
+            return Channel()
+
+    two = [cog.Guide(1, guides.build_tower_guide(), guides.TOWER_BANNER, guides.TOWER_FILE),
+           cog.Guide(2, guides.build_tower_guide(), guides.TOWER_BANNER, guides.TOWER_FILE)]
+    monkeypatch.setattr(cog, "current_guides", lambda: two)
+    monkeypatch.setattr(cog, "post_or_update_guide", flaky)
+    holder = type("C", (), {"bot": Bot()})()
+    asyncio.run(cog.ChannelGuidesCog.refresh_loop.coro(holder))      # ne lève pas
+    assert seen == [1, 2]

@@ -28,6 +28,7 @@ from app.bot.rank_roles import current_rank
 from app.domain.services.monitoring import kinds
 from app.domain.services.monitoring.alerts import SEVERITY_LABELS
 from app.domain.services.pacing_service import PARIS
+from app.bot.embeds.limits import fit_lines
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.models.monitoring_model import GameEventModel
 from app.infrastructure.db.models.player_model import PlayerModel
@@ -166,13 +167,14 @@ class MonitoringCog(commands.Cog):
             if fresh:
                 order = list(SEVERITY_ICONS)
                 fresh.sort(key=lambda a: order.index(a[0]) if a[0] in order else 9)
-                lines = [f"🚨 **Surveillance : {len(fresh)} nouvelle{'s' if len(fresh) > 1 else ''} alerte{'s' if len(fresh) > 1 else ''}**"]
-                for severity, title, message, _ in fresh[:10]:
-                    lines.append(f"{SEVERITY_ICONS.get(severity, '•')} **{SEVERITY_LABELS.get(severity, severity)}** — {title}\n> {message[:180]}")
-                if len(fresh) > 10:
-                    lines.append(f"… et {len(fresh) - 10} autre(s).")
-                lines.append(f"👉 {settings.webapp_base_url.rstrip('/')}/admin/monitoring/alerts")
-                await self._send_to_admins("\n".join(lines)[:1990])
+                # Le lien du site vient EN TÊTE : à partir de sept alertes, la
+                # coupe à 2 000 caractères l'emportait avec la fin du message.
+                head = [f"🚨 **Surveillance : {len(fresh)} nouvelle{'s' if len(fresh) > 1 else ''} alerte{'s' if len(fresh) > 1 else ''}**",
+                        f"👉 {settings.webapp_base_url.rstrip('/')}/admin/monitoring/alerts"]
+                alerts = [f"{SEVERITY_ICONS.get(severity, '•')} **{SEVERITY_LABELS.get(severity, severity)}** — {title}\n> {message[:180]}"
+                          for severity, title, message, _ in fresh]
+                budget = 1900 - sum(len(line) + 1 for line in head)
+                await self._send_to_admins("\n".join(head) + "\n" + fit_lines(alerts, budget=budget, more="… et {n} autre(s)."))
             await self._weekly_report()
         except Exception:  # noqa: BLE001
             _logger.exception("alert_loop failed")
@@ -205,8 +207,8 @@ class MonitoringCog(commands.Cog):
             return None               # la semaine écoulée est d'avant la saison : rien à raconter
         lines = [f"📰 **Rapport de la semaine du {data['monday'].strftime('%d/%m')} au {data['sunday'].strftime('%d/%m')}**"]
         lines += [f"{icon} {text}" for icon, text in data["highlights"]] or ["Semaine calme."]
-        lines.append(f"👉 {settings.webapp_base_url.rstrip('/')}/admin/monitoring/report?week=1")
-        return "\n".join(lines)[:1990]
+        link = f"👉 {settings.webapp_base_url.rstrip('/')}/admin/monitoring/report?week=1"
+        return fit_lines(lines, budget=1900 - len(link), more="… et {n} autre(s) fait(s) marquant(s).") + "\n" + link
 
     @flush_loop.before_loop
     @snapshot_loop.before_loop

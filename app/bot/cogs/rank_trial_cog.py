@@ -54,6 +54,8 @@ def _goal(role: str, required: int) -> str:
 class RankTrialCog(BetaChannelOnlyMixin, commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
+        #: Joueurs dont l'épreuve se joue en ce moment (un essai à la fois).
+        self.running: set[int] = set()
 
     # ------------------------------------------------------------ lecture --
     def _load_state(self, interaction: discord.Interaction) -> tuple:
@@ -246,6 +248,26 @@ class _RoleButton(discord.ui.Button):
             child.disabled = True
         await interaction.response.edit_message(view=view)
 
+        # L'état est RELU au clic : l'attente n'était lue qu'à l'ouverture du
+        # panneau. En ouvrant cinq panneaux `/epreuve` avant son premier essai,
+        # un joueur avait cinq tirages au lieu d'un — et n'achetait jamais de
+        # sceau du second souffle (revue du 13/11/2026). Un seul essai à la fois.
+        if view.user.id in view.cog.running:
+            await interaction.followup.send("⏳ Ton épreuve est déjà en cours.", ephemeral=True)
+            return
+        view.cog.running.add(view.user.id)
+        try:
+            fresh, _, stats = await asyncio.to_thread(view.cog._load_state, interaction)
+            if not fresh.can_attempt or fresh.trial.rank != view.elig.trial.rank:
+                await interaction.followup.send(embed=view.cog._build_embed(fresh), ephemeral=True)
+                return
+            view.elig, view.stats = fresh, stats
+            await self._attempt(interaction)
+        finally:
+            view.cog.running.discard(view.user.id)
+
+    async def _attempt(self, interaction: discord.Interaction) -> None:
+        view = self._owner
         trial = view.elig.trial
         run = await asyncio.to_thread(
             view.cog._run, view.elig, self._role, view.player_id, view.stats, view.user,

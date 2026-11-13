@@ -37,6 +37,8 @@ from app.application.use_cases.create_trade import CreateTradeUseCase, TradeOffe
 from app.bot.embeds.trade_embeds import build_trade_embed
 from app.bot.views.trade_view import TradeResponseView
 from app.domain.services.gear_service import gear_label, gear_ref, parse_gear_ref
+from app.application.use_cases.create_trade import MAX_LOTS_PER_SIDE
+from app.bot.embeds.limits import add_lines, clip
 from app.infrastructure.db.repositories.gear_repository import GearRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
@@ -44,6 +46,7 @@ from app.infrastructure.db.repositories.player_repository import PlayerRepositor
 from app.infrastructure.db.repositories.trade_repository import TradeRepository
 from app.infrastructure.db.session import get_db_session
 from app.shared.enums import GOLD_EMOJI
+from app.shared.formatters import format_int
 
 
 SELECT_LIMIT = 25  # contrainte Discord
@@ -60,27 +63,36 @@ class TradeDraft:
     #: Libellé affiché par code (une pièce « gear:<id> » n'a pas de code lisible).
     labels: dict[str, str] = field(default_factory=dict)
 
-    def add_offered_item(self, code: str, quantity: int) -> None:
-        self._add(self.offered_items, code, quantity)
+    #: Message à montrer au prochain affichage du brouillon (lot refusé).
+    notice: str = ""
 
-    def add_requested_item(self, code: str, quantity: int) -> None:
-        self._add(self.requested_items, code, quantity)
+    def add_offered_item(self, code: str, quantity: int) -> bool:
+        return self._add(self.offered_items, code, quantity)
+
+    def add_requested_item(self, code: str, quantity: int) -> bool:
+        return self._add(self.requested_items, code, quantity)
 
     def reset(self) -> None:
         self.offered_items.clear()
         self.requested_items.clear()
         self.offered_gold = 0
         self.requested_gold = 0
+        self.notice = ""
 
-    @staticmethod
-    def _add(target_list: list[tuple[str, int]], code: str, quantity: int) -> None:
+    def _add(self, target_list: list[tuple[str, int]], code: str, quantity: int) -> bool:
+        self.notice = ""
         for idx, (existing_code, existing_qty) in enumerate(target_list):
             if existing_code == code:
                 # Une pièce d'équipement est un exemplaire : jamais ×2.
                 if parse_gear_ref(code) is None:
                     target_list[idx] = (code, existing_qty + quantity)
-                return
+                return True
+        if len(target_list) >= MAX_LOTS_PER_SIDE:
+            self.notice = (f"⚠️ Un échange porte au plus **{MAX_LOTS_PER_SIDE} lots** de chaque côté : "
+                           "ce lot n'a pas été ajouté. Soumets celui-ci, puis fais-en un second.")
+            return False
         target_list.append((code, quantity))
+        return True
 
     def is_empty(self) -> bool:
         return (
@@ -92,17 +104,17 @@ class TradeDraft:
 
 
 def _format_offer_lines(items: list[tuple[str, int]], gold: int,
-                        labels: dict[str, str] | None = None) -> str:
+                        labels: dict[str, str] | None = None) -> list[str]:
     labels = labels or {}
     parts: list[str] = []
     if gold > 0:
-        parts.append(f"{GOLD_EMOJI} **{gold}** or")
+        parts.append(f"{GOLD_EMOJI} **{format_int(gold)}** or")
     for code, quantity in items:
         if parse_gear_ref(code) is not None:
             parts.append(labels.get(code, code))
         else:
             parts.append(f"{quantity}× {labels.get(code, f'`{code}`')}")
-    return "\n".join(parts) if parts else "_Rien_"
+    return parts
 
 
 def build_draft_embed(
@@ -118,16 +130,15 @@ def build_draft_embed(
             "puis clique sur **Soumettre** pour envoyer la demande."
         ),
     )
-    embed.add_field(
-        name=f"📤 {initiator_display_name} propose",
-        value=_format_offer_lines(draft.offered_items, draft.offered_gold, draft.labels),
-        inline=True,
-    )
-    embed.add_field(
-        name=f"📥 {target_display_name} doit donner",
-        value=_format_offer_lines(draft.requested_items, draft.requested_gold, draft.labels),
-        inline=True,
-    )
+    if draft.notice:
+        embed.description += f"\n\n{draft.notice}"
+    # Plusieurs champs au besoin : tout ce qui s'échange reste visible.
+    add_lines(embed, clip(f"📤 {initiator_display_name} propose", 250),
+              _format_offer_lines(draft.offered_items, draft.offered_gold, draft.labels),
+              inline=True, max_fields=3, empty="_Rien_")
+    add_lines(embed, clip(f"📥 {target_display_name} doit donner", 250),
+              _format_offer_lines(draft.requested_items, draft.requested_gold, draft.labels),
+              inline=True, max_fields=3, empty="_Rien_")
     return embed
 
 

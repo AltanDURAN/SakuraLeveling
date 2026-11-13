@@ -4,6 +4,8 @@ from datetime import UTC, datetime
 
 import discord
 
+from app.bot.embeds.limits import add_lines, clip
+
 from app.domain.entities.trade import Trade, TradeSide, TradeStatus
 from app.domain.services.gear_service import gear_label
 from app.shared.enums import GOLD_EMOJI
@@ -20,7 +22,7 @@ _STATUS_LABELS = {
 }
 
 
-def _format_offer(items, gold: int) -> str:
+def _format_offer(items, gold: int) -> list[str]:
     parts: list[str] = []
     if gold > 0:
         parts.append(f"{GOLD_EMOJI} **{format_int(gold)}** or")
@@ -29,7 +31,7 @@ def _format_offer(items, gold: int) -> str:
             parts.append(f"**{gear_label(offer.item_name, offer.rarity or 'common')}**")
         else:
             parts.append(f"{offer.quantity}× **{offer.item_name}**")
-    return "\n".join(parts) if parts else "_Rien_"
+    return parts
 
 
 def build_trade_embed(trade: Trade) -> discord.Embed:
@@ -43,26 +45,16 @@ def build_trade_embed(trade: Trade) -> discord.Embed:
     )
 
     # Côté initiateur
-    initiator_offer_text = _format_offer(
-        trade.items_offered_by(TradeSide.INITIATOR),
-        trade.initiator_gold_offered,
-    )
-    embed.add_field(
-        name=f"📤 {trade.initiator_display_name} propose",
-        value=initiator_offer_text,
-        inline=True,
-    )
+    # Plusieurs champs au besoin (un seul dépassait les 1 024 caractères à
+    # partir de 25 lots) : tout ce qui s'échange doit rester visible.
+    add_lines(embed, clip(f"📤 {trade.initiator_display_name} propose", 250),
+              _format_offer(trade.items_offered_by(TradeSide.INITIATOR), trade.initiator_gold_offered),
+              inline=True, max_fields=3, empty="_Rien_")
 
     # Côté destinataire
-    target_offer_text = _format_offer(
-        trade.items_offered_by(TradeSide.TARGET),
-        trade.target_gold_offered,
-    )
-    embed.add_field(
-        name=f"📥 {trade.target_display_name} doit donner",
-        value=target_offer_text,
-        inline=True,
-    )
+    add_lines(embed, clip(f"📥 {trade.target_display_name} doit donner", 250),
+              _format_offer(trade.items_offered_by(TradeSide.TARGET), trade.target_gold_offered),
+              inline=True, max_fields=3, empty="_Rien_")
 
     # Discord n'affiche pas les <t:…> d'un pied de page (on y lisait
     # « Expire <t:1793747027:R> ») : l'échéance va dans la description, la

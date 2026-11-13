@@ -137,7 +137,14 @@ class ChannelGuidesCog(commands.Cog):
             if channel is None:
                 _logger.warning("salon du guide introuvable (%s)", guide.channel_id)
                 continue
-            outcome = await post_or_update_guide(channel, self.bot.user.id, guide)
+            # Une exception non rattrapée ARRÊTE une boucle `tasks.loop` jusqu'au
+            # redémarrage : une panne passagère de Discord sur un guide ne doit
+            # ni tuer la boucle ni priver les autres salons.
+            try:
+                outcome = await post_or_update_guide(channel, self.bot.user.id, guide)
+            except Exception:  # noqa: BLE001
+                _logger.exception("guide du salon %s : mise à jour impossible", guide.channel_id)
+                continue
             if outcome != "inchangé":
                 _logger.info("guide du salon %s : %s", guide.channel_id, outcome)
 

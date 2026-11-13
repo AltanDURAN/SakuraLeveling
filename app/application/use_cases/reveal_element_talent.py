@@ -16,7 +16,7 @@ from app.infrastructure.db.repositories.element_affinity_repository import (
 )
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.shared.enums import ALL_ELEMENTS
-from app.infrastructure.db.unit_of_work import commit
+from app.infrastructure.db.unit_of_work import commit, transactional
 from app.domain.services.monitoring import kinds
 from app.infrastructure.monitoring.telemetry import record as record_event
 
@@ -64,6 +64,7 @@ class RevealElementTalentUseCase:
             gold=profile.resources.gold if profile else 0,
         )
 
+    @transactional
     def execute(self, player_id: int, element: str) -> RevealResult:
         if element not in {e.value for e in ALL_ELEMENTS}:
             return RevealResult(False, "Élément inconnu.")

@@ -178,6 +178,8 @@ class FuseGearUseCase:
         # On consomme d'abord une copie PORTÉE s'il y en a une : la nouvelle
         # reprend son emplacement, le joueur n'a rien à rééquiper.
         copies.sort(key=lambda g: (not g.equipped, -g.forge_level))
+        if len(copies) < 2:          # ceinture et bretelles : `can_fuse` l'a déjà vérifié sous le verrou
+            return FusionResult(False, "❌ Il te faut deux copies de cette pièce, de la même rareté.")
         a, b = copies[0], copies[1]
         slot = a.equipped_slot or b.equipped_slot
         forge = max(a.forge_level, b.forge_level)

@@ -10,10 +10,14 @@ l'heure » (jour actif, carte de chaleur) est converti à l'heure de Paris.
 from __future__ import annotations
 
 import json
+import threading
 from collections import defaultdict
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 from functools import cached_property
+from sys import intern
+from types import MappingProxyType
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -39,7 +43,15 @@ def utc_naive(t: datetime) -> datetime:
     return t.astimezone(UTC).replace(tzinfo=None) if t.tzinfo else t
 
 
-@dataclass(frozen=True)
+#: `data` des événements qui n'en ont pas (la majorité) : UN seul objet partagé,
+#: en lecture seule, au lieu d'un dictionnaire vide par événement.
+_NO_DATA: Mapping = MappingProxyType({})
+
+
+# `slots` : pas de dictionnaire par instance. Avec les chaînes partagées
+# (`sys.intern`) et `_NO_DATA`, un événement chargé pèse ~4 fois moins — mesuré
+# le 13/11/2026 sur la base de démo : 115 000 événements sur 30 jours.
+@dataclass(frozen=True, slots=True)
 class Event:
     id: int
     at: datetime            # UTC naïf
@@ -50,7 +62,7 @@ class Event:
     gold: int
     xp: int
     qty: int
-    data: dict
+    data: Mapping
 
     @property
     def local(self) -> datetime:
@@ -295,14 +307,16 @@ def load(session: Session, days: int = 30, include_admins: bool = False,
             GameEventModel.ref, GameEventModel.gold, GameEventModel.xp, GameEventModel.qty, GameEventModel.data)
     q = (select(*cols).where(GameEventModel.at >= lo, GameEventModel.kind != kinds.FLEE)
          .order_by(GameEventModel.at, GameEventModel.id))
-    for r in session.execute(q):
+    # Par paquets : sans ça, toutes les lignes sont d'abord lues en mémoire.
+    for r in session.execute(q.execution_options(yield_per=5000)):
         if r.player_id is not None and r.player_id not in players:
             continue                          # admin exclu, ou joueur supprimé
         try:
-            data = json.loads(r.data) if r.data else {}
+            data = json.loads(r.data) if r.data else _NO_DATA
         except ValueError:
-            data = {}
-        events.append(Event(r.id, r.at, r.kind, r.player_id, r.zone, r.ref, int(r.gold or 0), int(r.xp or 0),
+            data = _NO_DATA
+        events.append(Event(r.id, r.at, intern(r.kind), r.player_id, intern(r.zone) if r.zone else None,
+                            intern(r.ref) if r.ref else None, int(r.gold or 0), int(r.xp or 0),
                             int(r.qty or 0), data))
 
     hour = func.strftime("%Y-%m-%d %H:00:00", GameEventModel.at)
@@ -342,6 +356,8 @@ def load(session: Session, days: int = 30, include_admins: bool = False,
 
 _CACHE: dict[tuple, tuple[float, Dataset]] = {}
 CACHE_SECONDS = 90
+#: Jeux de données gardés en même temps (une période, avec et sans les admins).
+CACHE_MAX = 2
 
 
 def cached(session: Session, days: int = 30, include_admins: bool = False, fresh: bool = False,
@@ -351,13 +367,29 @@ def cached(session: Session, days: int = 30, include_admins: bool = False, fresh
     import time
 
     key = (days, include_admins, history_days)
+    _evict_stale()
     hit = _CACHE.get(key)
-    if hit and not fresh and time.monotonic() - hit[0] < CACHE_SECONDS:
+    if hit and not fresh:
         return hit[1]
     ds = load(session, days=days, include_admins=include_admins, history_days=history_days)
-    _CACHE.clear() if len(_CACHE) > 8 else None
+    while len(_CACHE) >= CACHE_MAX:                 # le plus ancien d'abord
+        _CACHE.pop(min(_CACHE, key=lambda k: _CACHE[k][0]), None)
     _CACHE[key] = (time.monotonic(), ds)
+    # Un jeu de données pèse des dizaines à des centaines de Mo : il ne doit pas
+    # rester en mémoire après usage (avant, jusqu'à 9 jeux étaient gardés
+    # indéfiniment, les 90 s ne servaient qu'à décider de relire).
+    timer = threading.Timer(CACHE_SECONDS + 1, _evict_stale)
+    timer.daemon = True
+    timer.start()
     return ds
+
+
+def _evict_stale() -> None:
+    import time
+
+    now = time.monotonic()
+    for key in [k for k, (at, _) in list(_CACHE.items()) if now - at >= CACHE_SECONDS]:
+        _CACHE.pop(key, None)
 
 
 def clear_cache() -> None:

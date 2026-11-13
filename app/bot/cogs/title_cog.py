@@ -1,12 +1,12 @@
-"""Cog des titres : /title @target et /title_set <code>.
+"""Cog des titres : `/titre [joueur]` et `/titre_actif [titre]`.
 
-- /title [target]      : affiche tous les titres débloqués (incluant l'actif)
-- /title_set [title]   : choisit le titre à afficher dans /profile (cosmétique).
-                         Sans argument, désactive l'affichage du titre actuel.
+- `/titre`       : le livre des titres (débloqués, puis à débloquer avec la
+                   progression), en pages — cf. `title_embeds.py` ;
+- `/titre_actif` : choisit le titre affiché sur `/profil` (cosmétique). Sans
+                   argument, plus aucun titre n'est affiché.
 
-Les effets passifs des titres (bonus dégâts vs famille, réduction dégâts
-subis) sont actifs DÈS QUE le titre est débloqué — l'équipement via
-/title_set n'a qu'un rôle d'affichage.
+Les effets d'un titre sont actifs DÈS QU'IL EST DÉBLOQUÉ : `/titre_actif` ne
+choisit que l'affichage.
 """
 
 import discord
@@ -29,100 +29,152 @@ from app.infrastructure.titles.title_loader import (
 )
 
 from app.bot.cogs._mixins import BetaChannelOnlyMixin
+from app.bot.embeds.title_embeds import build_title_pages
+from app.bot.views.bestiaire_view import PagedBookView
+from app.domain.services.quest_generation_service import FAMILY_LABELS
+from app.domain.services.role_trial_service import RESULTS_HOUR
 
 
-def _build_progress_label(
-    title,
-    *,
-    profile,
-    session,
-) -> str:
-    """Renvoie la ligne de progression formatée à afficher pour un titre
-    NON encore débloqué. Gère tous les `condition_type` connus, y compris
-    les exclusifs (qui n'ont pas de seuil numérique mais un détenteur
-    actuel).
-    """
-    kill_repo = PlayerKillRepository(session)
-    career_repo = PlayerCareerStatsRepository(session)
-    excl = ExclusiveTitleService(session)
-    pid = profile.player.id
+#: Pseudo d'un détenteur dans une ligne : au plus tant de caractères.
+HOLDER_NAME_MAX = 24
 
-    if title.condition_type == "kills_family" and title.condition_target:
-        progress = kill_repo.get_kills_for_family(pid, title.condition_target)
-        return f"**{progress}/{title.condition_value}** {title.condition_target} tués"
 
-    if title.condition_type == "kills_total":
-        progress = kill_repo.get_total_kills(pid)
-        return f"**{progress}/{title.condition_value}** monstres tués au total"
+class TitleProgress:
+    """Où en est un joueur pour chaque titre qu'il n'a pas encore. Construit
+    UNE fois par commande : ses compteurs sont lus une seule fois (avant, les
+    victoires par monstre étaient relues pour chacun des 50 titres de chasseur)."""
 
-    if title.condition_type == "kills_mob" and title.condition_target:
-        progress = kill_repo.get_kills_per_mob(pid).get(title.condition_target, 0)
-        return f"**{progress}/{title.condition_value}** kills sur ce mob"
+    def __init__(self, session, profile) -> None:
+        self.session = session
+        self.profile = profile
+        self.pid = profile.player.id
+        self.kill_repo = PlayerKillRepository(session)
+        self.excl = ExclusiveTitleService(session)
+        self._per_mob: dict[str, int] | None = None
+        self._total: int | None = None
+        self._album = None
+        self._names: dict[int, str] = {}
 
-    if title.condition_type == "dodges_total":
-        career = career_repo.get_or_create(pid)
-        return (
-            f"**{getattr(career, 'dodges_total', 0)}/{title.condition_value}** "
-            "esquives en combat de groupe"
-        )
+    @property
+    def per_mob(self) -> dict[str, int]:
+        if self._per_mob is None:
+            self._per_mob = self.kill_repo.get_kills_per_mob(self.pid)
+        return self._per_mob
 
-    if title.condition_type == "daily_streak":
-        return (
-            f"**{profile.resources.daily_streak}/{title.condition_value}** "
-            "jours de daily streak"
-        )
+    @property
+    def total_kills(self) -> int:
+        if self._total is None:
+            self._total = self.kill_repo.get_total_kills(self.pid)
+        return self._total
 
-    if title.condition_type == "weekly_role_trial":
-        # Titre de la semaine (défis) : montrer le détenteur actuel.
-        holder_id = excl.current_holder(title.code)
-        if holder_id is None:
-            return "_Personne ne le détient cette semaine. Résultats des défis le dimanche à 20 h (/defi)._"
-        if holder_id == pid:
-            return "_Tu es le détenteur de la semaine !_"
-        holder_profile = PlayerRepository(session).get_profile_by_player_id(holder_id)
-        holder_name = (
-            holder_profile.player.display_name if holder_profile else f"#{holder_id}"
-        )
-        return f"Détenteur de la semaine : **{holder_name}** (défis, /defi)"
+    @property
+    def album(self):
+        if self._album is None:
+            from app.application.use_cases import cards
 
-    if title.condition_type == "kills_record":
-        # Titre exclusif Farmer Fou : afficher record actuel + détenteur
-        # + écart pour le viewer.
-        holder_id = excl.current_holder("farmer_fou")
-        viewer_total = kill_repo.get_total_kills(pid)
-        if holder_id is None:
-            return (
-                f"_Personne ne détient encore le record._ "
-                f"Toi : **{viewer_total}** kills."
-            )
-        holder_total = kill_repo.get_total_kills(holder_id)
-        if holder_id == pid:
-            return (
-                f"_Tu es le détenteur actuel avec_ **{holder_total}** kills."
-            )
-        holder_profile = PlayerRepository(session).get_profile_by_player_id(holder_id)
-        holder_name = (
-            holder_profile.player.display_name if holder_profile else f"#{holder_id}"
-        )
-        # On dépasse strictement, donc il faut au moins +1 par rapport au détenteur
-        gap = max(0, holder_total - viewer_total + 1)
-        return (
-            f"Détenteur : **{holder_name}** avec **{holder_total}** kills · "
-            f"toi : **{viewer_total}** (il te manque **{gap}**)"
-        )
+            self._album = cards.collection(self.session, self.pid).album
+        return self._album
 
-    if title.condition_type == "records_rank":
-        # Titres des records : rang au nombre de records détenus, chaque nuit.
-        holder_id = excl.current_holder(title.code)
-        if holder_id is None:
-            return "_Personne ne le détient. Les records sont mis à jour chaque nuit (/records)._"
-        if holder_id == pid:
-            return "_Tu le détiens jusqu'à la prochaine mise à jour, à minuit (/records)._"
-        holder_profile = PlayerRepository(session).get_profile_by_player_id(holder_id)
-        holder_name = holder_profile.player.display_name if holder_profile else f"#{holder_id}"
-        return f"Détenteur : **{holder_name}** · bats des records pour le prendre (/records)"
+    def holder_name(self, holder_id: int) -> str:
+        if holder_id not in self._names:
+            holder = PlayerRepository(self.session).get_profile_by_player_id(holder_id)
+            name = holder.player.display_name if holder else f"#{holder_id}"
+            if len(name) > HOLDER_NAME_MAX:
+                name = name[: HOLDER_NAME_MAX - 1] + "…"
+            self._names[holder_id] = name
+        return self._names[holder_id]
 
-    return f"_Condition : {title.condition_type}_"
+    @staticmethod
+    def _ratio(progress: int, goal: int) -> float:
+        return min(1.0, progress / goal) if goal and goal > 0 else 0.0
+
+    def of(self, title) -> tuple[str, float]:
+        """(ligne de progression, proximité de 0 à 1) d'un titre non débloqué."""
+        kind, target, goal = title.condition_type, title.condition_target, title.condition_value
+
+        if kind == "kills_family" and target:
+            progress = self.kill_repo.get_kills_for_family(self.pid, target)
+            family = FAMILY_LABELS.get(target, target.replace("_", " "))
+            return f"**{progress}/{goal}** victoires contre les {family}", self._ratio(progress, goal)
+
+        if kind == "kills_total":
+            return f"**{self.total_kills}/{goal}** monstres vaincus", self._ratio(self.total_kills, goal)
+
+        if kind == "kills_mob" and target:
+            progress = self.per_mob.get(target, 0)
+            return f"**{progress}/{goal}** victoires", self._ratio(progress, goal)
+
+        if kind == "dodges_total":
+            career = PlayerCareerStatsRepository(self.session).get_or_create(self.pid)
+            progress = getattr(career, "dodges_total", 0)
+            return f"**{progress}/{goal}** esquives en combat", self._ratio(progress, goal)
+
+        if kind == "daily_streak":
+            progress = self.profile.resources.daily_streak
+            return f"**{progress}/{goal}** jours de suite au `/daily`", self._ratio(progress, goal)
+
+        if kind == "weekly_role_trial":
+            holder_id = self.excl.current_holder(title.code)
+            if holder_id is None:
+                return (f"_personne cette semaine — résultats des défis le dimanche à "
+                        f"{RESULTS_HOUR} h (`/defi`)_"), 0.0
+            if holder_id == self.pid:
+                return "_tu le détiens cette semaine !_", 1.0
+            return f"détenu par **{self.holder_name(holder_id)}** cette semaine (`/defi`)", 0.0
+
+        if kind == "kills_record":
+            holder_id = self.excl.current_holder(title.code)
+            if holder_id is None:
+                return f"_personne ne détient encore le record_ · toi : **{self.total_kills}** monstres vaincus", 0.0
+            holder_total = self.kill_repo.get_total_kills(holder_id)
+            if holder_id == self.pid:
+                return f"_tu détiens le record avec_ **{holder_total}** monstres vaincus", 1.0
+            # Il faut dépasser strictement : au moins un de plus que le détenteur.
+            gap = max(0, holder_total - self.total_kills + 1)
+            return (f"détenu par **{self.holder_name(holder_id)}** (**{holder_total}** monstres vaincus) · "
+                    f"toi : **{self.total_kills}**, il t'en manque **{gap}**"), self._ratio(self.total_kills, holder_total + 1)
+
+        if kind == "records_rank":
+            holder_id = self.excl.current_holder(title.code)
+            if holder_id is None:
+                return "_personne ne le détient — les records sont mis à jour chaque nuit (`/records`)_", 0.0
+            if holder_id == self.pid:
+                return "_tu le détiens jusqu'à la prochaine mise à jour, à minuit (`/records`)_", 1.0
+            return f"détenu par **{self.holder_name(holder_id)}** · bats des records pour le prendre (`/records`)", 0.0
+
+        if kind == "world_boss_mvp":
+            holder_id = self.excl.current_holder(title.code)
+            if holder_id is None:
+                return "_personne ne le détient — il va au meilleur contributeur du prochain boss vaincu_", 0.0
+            if holder_id == self.pid:
+                return "_tu le détiens jusqu'au prochain boss vaincu_", 1.0
+            return f"détenu par **{self.holder_name(holder_id)}** · sois le meilleur contributeur du prochain boss vaincu", 0.0
+
+        if kind == "world_boss_kill":
+            return "_participe à une victoire contre ce boss au raid_", 0.0
+
+        if kind == "event":
+            return "_se gagne lors d'un événement_", 0.0
+
+        if kind == "card_album":
+            percent = self.album.percent
+            return f"**{percent} %** de l'album sur **{goal} %** (`/album`)", self._ratio(percent, goal)
+
+        if kind == "card_brillante":
+            album = self.album
+            return (f"**{album.brillantes}/{album.total}** cartes brillantes (`/album`)",
+                    self._ratio(album.brillantes, album.total))
+
+        return "_à découvrir_", 0.0
+
+
+class TitleBookView(PagedBookView):
+    """Les pages de `/titre` (◀ n/N ▶), réservées à celui qui a tapé la commande."""
+
+    command = "/titre"
+
+    async def render(self) -> tuple[discord.Embed, None]:
+        return self.pages[self.index], None
 
 
 class TitleCog(BetaChannelOnlyMixin, commands.Cog):
@@ -151,58 +203,28 @@ class TitleCog(BetaChannelOnlyMixin, commands.Cog):
             unlocked_codes = title_repo.list_codes_for_player(profile.player.id)
             active_code = title_repo.get_active_title_code(profile.player.id)
 
-            all_defs_local = list_definitions()
-            unlocked_defs = [d for d in all_defs_local if d.code in unlocked_codes]
-            locked_defs = [d for d in all_defs_local if d.code not in unlocked_codes]
+            definitions = list_definitions()
+            unlocked = [d for d in definitions if d.code in unlocked_codes]
+            locked = [d for d in definitions if d.code not in unlocked_codes]
 
-            # Progression formatée pour chaque titre encore verrouillé.
-            # On reste DANS le `with session` pour pouvoir requêter kill_repo /
-            # career_repo / exclusive_service au besoin.
-            progress_label_by_code: dict[str, str] = {
-                d.code: _build_progress_label(d, profile=profile, session=session)
-                for d in locked_defs
-            }
+            # On reste DANS la session : la progression lit les victoires, la
+            # carrière, les détenteurs des titres disputés et l'album.
+            progress = TitleProgress(session, profile)
+            labels: dict[str, str] = {}
+            closeness: dict[str, float] = {}
+            for definition in locked:
+                labels[definition.code], closeness[definition.code] = progress.of(definition)
 
-        ratio_unlocked = len(unlocked_defs)
-        ratio_total = len(all_defs_local)
-        embed = discord.Embed(
-            title=f"🏷️ Titres de {target_member.display_name}",
-            description=f"**{ratio_unlocked}** débloqué(s) sur **{ratio_total}** au total.",
-            color=discord.Color.gold(),
+        pages = build_title_pages(
+            target_member.display_name, unlocked, locked, labels,
+            active_code=active_code, total=len(definitions), closeness=closeness,
         )
-
-        if unlocked_defs:
-            lines = []
-            for d in unlocked_defs:
-                marker = " ⭐" if d.code == active_code else ""
-                lines.append(f"{d.icon} **{d.name}** (`{d.code}`){marker}\n  _{d.description}_")
-            embed.add_field(name="✅ Débloqués", value="\n".join(lines)[:1024], inline=False)
-
-        if locked_defs:
-            # On groupe en plusieurs fields pour ne pas dépasser la limite
-            # de 1024 caractères par field (le tableau peut faire 13+ titres
-            # avec les 9 Chasseur Légendaire, 4 nouveaux et les 2 exclusifs).
-            lines = []
-            for d in locked_defs:
-                lines.append(
-                    f"{d.icon} **{d.name}** — {progress_label_by_code.get(d.code, '?')}"
-                )
-
-            # Découpe en chunks <= 1000 chars (laisse de la marge)
-            chunks: list[list[str]] = [[]]
-            current_len = 0
-            for line in lines:
-                if current_len + len(line) + 1 > 1000 and chunks[-1]:
-                    chunks.append([])
-                    current_len = 0
-                chunks[-1].append(line)
-                current_len += len(line) + 1
-
-            for idx, chunk in enumerate(chunks):
-                name = "🔒 À débloquer" if idx == 0 else f"🔒 À débloquer (suite {idx + 1})"
-                embed.add_field(name=name, value="\n".join(chunk), inline=False)
-
-        await interaction.response.send_message(embed=embed)
+        if len(pages) == 1:
+            await interaction.response.send_message(embed=pages[0])
+            return
+        view = TitleBookView(interaction.user.id, pages)
+        view._refresh_buttons()
+        await interaction.response.send_message(embed=pages[0], view=view)
 
     @app_commands.command(
         name="titre_actif",

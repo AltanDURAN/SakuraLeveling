@@ -7,6 +7,7 @@ from app.domain.entities.player_inventory_item import PlayerInventoryItem
 from app.infrastructure.db.models.inventory_model import PlayerInventoryItemModel
 from app.infrastructure.db.repositories._mappers import map_item_definition
 from app.infrastructure.db.unit_of_work import commit as commit_session
+from app.infrastructure.db.unit_of_work import locked_write
 
 
 class InventoryRepository:
@@ -24,6 +25,7 @@ class InventoryRepository:
         models = self.session.execute(stmt).scalars().all()
         return [self._to_domain(model) for model in models]
 
+    @locked_write
     def add_item(self, player_id: int, item_definition_id: int, quantity: int,
                  commit: bool = True) -> None:
         # Garde défensif : quantité <= 0 = no-op (préviens l'usage négatif
@@ -54,6 +56,7 @@ class InventoryRepository:
 
         commit_session(self.session) if commit else self.session.flush()
 
+    @locked_write
     def remove_item(self, player_id: int, item_definition_id: int, quantity: int,
                  commit: bool = True) -> bool:
         # Garde défensif : qty négative ferait un increment via le `-= quantity`.

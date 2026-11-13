@@ -61,11 +61,12 @@ class FusionView(discord.ui.View):
     def _info_rows(self) -> list[tuple[str, str]]:
         p = self._preview
         if p is None:
-            fusable = sum(1 for c in self._candidates if c.copies >= 2 and c.rarity not in ("legendary", "mythic"))
+            fusable = sum(1 for c in self._candidates if _fusable(c))
             return [
                 ("Son métier", "fusionner deux copies identiques en une plus rare"),
                 ("Il lui faut", "2 copies de même rareté, de l'or et des matériaux"),
-                ("Tes pièces", f"{len(self._candidates)} lot(s) · {fusable} fusionnable(s)"),
+                ("Tes pièces", f"{len(self._candidates)} lot(s) · {fusable} fusionnable(s)"
+                               + (" · menu : les 25 premiers, prêts à fusionner d'abord" if len(self._candidates) > 25 else "")),
                 ("Limite", "le légendaire ne se fusionne plus, le mythique ne s'obtient qu'au combat"),
             ]
         rows = [
@@ -109,11 +110,24 @@ class FusionView(discord.ui.View):
         await interaction.response.edit_message(embed=embed, attachments=[file], view=self)
 
 
+def _fusable(candidate) -> bool:
+    return candidate.copies >= 2 and candidate.rarity not in ("legendary", "mythic")
+
+
+def menu_order(candidates: list) -> list:
+    """L'ordre du menu : les lots PRÊTS à fusionner d'abord. Discord limite un
+    menu à 25 options ; triés par catégorie puis par nom, les têtes et les
+    corps prêts à fusionner d'un joueur à plus de 25 lots n'apparaissaient
+    jamais (revue du 13/11/2026). Le tri est stable : l'ordre d'origine est
+    gardé à l'intérieur de chaque groupe."""
+    return sorted(candidates, key=lambda c: not _fusable(c))
+
+
 class _PieceSelect(discord.ui.Select):
     def __init__(self, view: FusionView) -> None:
         options = []
-        for c in view._candidates[:25]:
-            fusable = c.copies >= 2 and c.rarity not in ("legendary", "mythic")
+        for c in menu_order(view._candidates)[:25]:
+            fusable = _fusable(c)
             options.append(discord.SelectOption(
                 label=f"{c.item_name} — {_rarity(c.rarity)} ×{c.copies}"[:100],
                 value=f"{c.item_code}|{c.rarity}",

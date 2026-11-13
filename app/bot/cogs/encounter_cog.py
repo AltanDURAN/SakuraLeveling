@@ -205,14 +205,18 @@ class EncounterCog(commands.Cog):
 
     @tasks.loop(hours=12)
     async def generated_cleanup_loop(self) -> None:
-        """Purge périodique des PNG générés à la volée."""
+        """Purge périodique des PNG générés à la volée (dans un thread : des
+        milliers de fichiers à parcourir ne doivent pas figer le bot)."""
         for directory in (
             GENERATED_ENCOUNTERS_DIR,
             GENERATED_PROFILES_DIR,
             GENERATED_EQUIPMENT_DIR,
             GENERATED_LISTS_DIR,
         ):
-            purge_old_files(directory, _GENERATED_FILES_TTL_SECONDS)
+            try:
+                await asyncio.to_thread(purge_old_files, directory, _GENERATED_FILES_TTL_SECONDS)
+            except Exception:  # noqa: BLE001 — la boucle doit survivre
+                _logger.exception("purge de %s impossible", directory)
 
     @generated_cleanup_loop.before_loop
     async def before_generated_cleanup_loop(self) -> None:

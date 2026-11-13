@@ -49,7 +49,6 @@ def player_facts(ds: Dataset) -> list[rules.PlayerFacts]:
         gold_events[e.player_id].append(e)
     end_level = content_end_level(ds)
     for r in rows:
-        info = ds.players[r.pid]
         times = [t for t in ds.activity_times(r.pid) if t >= week]
         sessions = [s for s in ds.sessions(r.pid) if s.end >= week]
         level_ups = [e for e in ds.by_player.get(r.pid, ())
