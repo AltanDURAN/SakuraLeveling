@@ -115,6 +115,8 @@ RULES: tuple[Rule, ...] = (
          "Beaucoup de points à placer : le joueur ne sait peut-être pas qu'il en a."),
     Rule("errors", "Erreurs de commandes", TECH, SERIOUS,
          "Des commandes plantent : le journal du bot dit pourquoi."),
+    Rule("backup", "Sauvegarde en retard", TECH, CRITICAL,
+         "La base n'est plus sauvegardée : si le serveur tombe, tout ce qui a été joué depuis est perdu."),
 )
 RULES_BY_CODE = {r.code: r for r in RULES}
 
@@ -176,6 +178,8 @@ THRESHOLDS: tuple[ThresholdSpec, ...] = (
                   "churn_risk"),
     ThresholdSpec("unspent_points", "Points à placer", 10, "", "Points de stats ou d'arbre.", "unspent_points"),
     ThresholdSpec("errors_24h", "Erreurs en 24 h", 5, "", "", "errors"),
+    ThresholdSpec("backup_hours", "Âge maximum d'une sauvegarde", 36, "h",
+                  "Sauvegarde de la nuit sur le serveur, et sa copie hors serveur.", "backup"),
 )
 THRESHOLD_SPECS = {t.key: t for t in THRESHOLDS}
 
@@ -252,6 +256,10 @@ class ServerFacts:
     admin_gold_7d: int = 0
     errors_24h: int = 0
     error_commands: tuple[str, ...] = ()
+    #: Âge en heures de la dernière sauvegarde sur le serveur et de sa copie
+    #: hors serveur (None : non surveillé sur cette machine, `BACKUP_DIR` vide).
+    backup_age_hours: float | None = None
+    offsite_age_hours: float | None = None
     market: list[tuple[int, str, str, int, int]] = field(default_factory=list)  # pid, nom, objet, prix, médiane
 
 
@@ -415,6 +423,15 @@ def evaluate(players: list[PlayerFacts], mobs: list[MobFacts], server: ServerFac
     if s.errors_24h >= t["errors_24h"]:
         add("errors", "24h", f"{s.errors_24h} erreurs de commandes en 24 h",
             "Commandes concernées : " + ", ".join(f"/{c}" for c in s.error_commands[:6]) + ".")
+    late = [(label, age) for label, age in (("sur le serveur", s.backup_age_hours),
+                                            ("hors serveur", s.offsite_age_hours))
+            if age is not None and age > t["backup_hours"]]
+    if late:
+        def how_old(age: float) -> str:
+            return "aucune" if age == float("inf") else f"il y a {age:.0f} h"
+        detail = " ; ".join(f"dernière sauvegarde {label} : {how_old(age)}" for label, age in late)
+        add("backup", "base", "La base n'est plus sauvegardée",
+            detail[0].upper() + detail[1:] + ". Les journaux sont dans le dossier des sauvegardes du serveur : backup.log et backup_offsite.log.")
 
     order = {sev: i for i, sev in enumerate(SEVERITY_ORDER)}
     return sorted(out, key=lambda a: (order.get(a.severity, 9), a.title))

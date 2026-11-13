@@ -110,6 +110,32 @@ def mob_facts(ds: Dataset) -> list[rules.MobFacts]:
             for m in analysis.mob_table(ds)]
 
 
+def backup_ages(directory: str | None = None, now: float | None = None) -> tuple[float | None, float | None]:
+    """Âge en heures de la sauvegarde de la nuit (`lita_v2_latest.db`) et de sa
+    copie hors serveur (témoin `offsite_ok`, écrit par backup_db_offsite.sh
+    quand l'envoi a réussi). None = non surveillé ; l'infini = jamais faite.
+    Le témoin hors serveur n'est jugé qu'une fois qu'il existe."""
+    import time
+    from pathlib import Path
+
+    from app.infrastructure.config.settings import settings
+
+    directory = settings.backup_dir if directory is None else directory
+    if not directory:
+        return None, None
+    base = Path(directory).expanduser()
+    now = time.time() if now is None else now
+
+    def age(path: Path) -> float | None:
+        try:
+            return max(0.0, (now - path.stat().st_mtime) / 3600)
+        except OSError:
+            return None
+
+    local = age(base / "lita_v2_latest.db")
+    return (float("inf") if local is None else local), age(base / "offsite_ok")
+
+
 def server_facts(ds: Dataset) -> rules.ServerFacts:
     now_local = to_local(ds.now)
     rows = build_rows(ds)
@@ -154,6 +180,7 @@ def server_facts(ds: Dataset) -> rules.ServerFacts:
         facts.content_end_days, facts.content_end_level = ahead[0].days_to_content_end, end
         facts.content_end_player = ahead[0].name
     facts.admin_gold_7d = sum(e.gold for e in ds.of_kind(kinds.GOLD, days=7) if e.ref == "admin" and e.gold > 0)
+    facts.backup_age_hours, facts.offsite_age_hours = backup_ages()
     errors = ds.of_kind(kinds.ERROR, days=1)
     facts.errors_24h = len(errors)
     facts.error_commands = tuple(c for c, _ in Counter(e.ref or "?" for e in errors).most_common())

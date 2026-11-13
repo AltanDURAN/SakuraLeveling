@@ -179,3 +179,33 @@ def test_chaque_seuil_appartient_a_une_regle():
     codes = {r.code for r in alerts.RULES}
     assert all(t.rule in codes for t in alerts.THRESHOLDS)
     assert len({t.key for t in alerts.THRESHOLDS}) == len(alerts.THRESHOLDS)
+
+
+def test_une_sauvegarde_en_retard_alerte_les_admins(tmp_path):
+    """L'ancien serveur est mort avec ses données : une sauvegarde qui s'arrête
+    en silence est le pire des scénarios. Passé 36 h, alerte critique."""
+    import os
+
+    from app.application.monitoring.alerting import backup_ages
+
+    fresh = alerts.ServerFacts(now=T0, backup_age_hours=5, offsite_age_hours=5)
+    assert "backup" not in _codes(alerts.evaluate([], [], fresh))
+    unknown = alerts.ServerFacts(now=T0)                       # poste de dev : non surveillé
+    assert "backup" not in _codes(alerts.evaluate([], [], unknown))
+
+    late = alerts.ServerFacts(now=T0, backup_age_hours=5, offsite_age_hours=50)
+    found = [a for a in alerts.evaluate([], [], late) if a.code == "backup"]
+    assert len(found) == 1 and found[0].severity == alerts.CRITICAL
+    assert found[0].message.startswith("Dernière sauvegarde hors serveur : il y a 50 h.")   # la seule en retard
+    never = alerts.ServerFacts(now=T0, backup_age_hours=float("inf"))
+    assert "aucune" in next(a for a in alerts.evaluate([], [], never) if a.code == "backup").message
+
+    # Les âges sont lus sur les fichiers du dossier des sauvegardes.
+    assert backup_ages("") == (None, None)
+    assert backup_ages(str(tmp_path)) == (float("inf"), None)          # dossier surveillé, rien dedans
+    latest, marker = tmp_path / "lita_v2_latest.db", tmp_path / "offsite_ok"
+    latest.write_bytes(b"x"), marker.write_text("ok")
+    now = 2_000_000_000.0
+    os.utime(latest, (now - 3 * 3600, now - 3 * 3600))
+    os.utime(marker, (now - 40 * 3600, now - 40 * 3600))
+    assert backup_ages(str(tmp_path), now=now) == (3.0, 40.0)

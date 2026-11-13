@@ -81,6 +81,9 @@ class Settings(BaseSettings):
     # URL publique du webapp skill tree (utilisée par le bouton 'Vue détaillée'
     # de /skill). Sans valeur, on retombe sur l'URL locale http://localhost:8000.
     webapp_base_url: str = "http://localhost:8000"
+    # Dossier des sauvegardes de la nuit (scripts/backup_db.sh), surveillé par
+    # l'alerte « Sauvegarde en retard ». Vide = non surveillé (poste de dev).
+    backup_dir: str = ""
     admin_discord_ids: str = ""
 
     # Discord OAuth2 — utilisé par la webapp admin pour authentifier les
