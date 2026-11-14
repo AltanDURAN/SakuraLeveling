@@ -193,7 +193,12 @@ def test_le_record_de_l_album(session):
 
     a, b = _player(session, 1), _player(session, 2)
     for code in ("slime", "gobelin", "zombie"):
-        _give(session, a, code)
-    _give(session, b, "slime", 5)
+        cards.admin_give_card(session, a, code)            # obtenues par lui (ici : données par l'admin)
+    cards.admin_give_card(session, b, "slime", quantity=5)
+    # Décision de l'auteur (14/11/2026) : une carte REÇUE d'un autre joueur
+    # (échange, brocante) ne compte pas — un groupe se prêtait ses cartes
+    # avant minuit pour prendre le record.
+    for code in ("gobelin", "zombie", "squelette"):
+        _give(session, b, code)                            # arrivées dans son inventaire sans booster ni fabrication
     entries = {e.player_id: e.value for e in RecordsRepository(session).album_entries()}
     assert entries == {a: 3, b: 1}

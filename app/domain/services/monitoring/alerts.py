@@ -75,6 +75,9 @@ RULES: tuple[Rule, ...] = (
     Rule("gold_hub", "Or reçu de nombreux joueurs", CHEAT, SERIOUS,
          "Recevoir de l'or de beaucoup de comptes différents est le signe classique des "
          "multi-comptes qui alimentent un compte principal."),
+    Rule("single_feeder", "Alimenté par un seul joueur", CHEAT, WARNING,
+         "Beaucoup d'or ou d'objets reçus d'UN même joueur, pour son niveau : compte secondaire "
+         "qui nourrit un compte principal, ou simple cadeau entre amis — à juger au cas par cas."),
     Rule("market_price", "Prix de brocante anormal", CHEAT, WARNING,
          "Une vente très loin du prix habituel de l'objet : transfert d'or déguisé ou erreur."),
     Rule("mob_too_easy", "Monstre trop facile", BALANCE, INFO,
@@ -142,6 +145,10 @@ THRESHOLDS: tuple[ThresholdSpec, ...] = (
                   "Écart robuste de puissance avec les joueurs de ±3 niveaux.", "power_outlier"),
     ThresholdSpec("gold_hub_senders", "Donateurs distincts", 3, "joueurs",
                   "Joueurs différents qui lui ont donné de l'or en 14 jours (virement, échange).", "gold_hub"),
+    ThresholdSpec("feeder_gold_per_level", "Or reçu d'un même joueur", 500, "or × niveau",
+                  "En 14 jours, virements et échanges. Au niveau 20 : 10 000 or.", "single_feeder"),
+    ThresholdSpec("feeder_items", "Objets reçus d'un même joueur", 30, "objets",
+                  "En 14 jours, par échange (pièces, cartes, matériaux, potions).", "single_feeder"),
     ThresholdSpec("market_price_ratio", "Écart au prix habituel", 5, "×",
                   "Vente au moins N fois plus chère ou moins chère que la médiane de l'objet.", "market_price"),
     ThresholdSpec("mob_easy_win_pct", "Victoires minimum", 99, "%", "", "mob_too_easy"),
@@ -206,6 +213,10 @@ class PlayerFacts:
     max_burst: int = 0
     gold_senders: int = 0                # 14 derniers jours
     gold_received: int = 0
+    #: Le joueur qui lui a le plus donné en 14 jours : nom, or, objets.
+    feeder_name: str = ""
+    feeder_gold: int = 0
+    feeder_items: int = 0
     unexplained_gold: int = 0
     days_since_active: float | None = None
     investment_pct: float = 0.0         # centile d'investissement (0-100)
@@ -344,6 +355,11 @@ def evaluate(players: list[PlayerFacts], mobs: list[MobFacts], server: ServerFac
         if p.gold_senders >= t["gold_hub_senders"]:
             add("gold_hub", str(p.player_id), f"{p.name} reçoit de l'or de {p.gold_senders} joueurs",
                 f"{format_int(p.gold_received)} or reçu en 14 jours (virements et échanges).", p.player_id)
+        if p.feeder_name and (p.feeder_gold >= t["feeder_gold_per_level"] * max(1, p.level)
+                              or p.feeder_items >= t["feeder_items"]):
+            add("single_feeder", str(p.player_id), f"{p.name} est alimenté par {p.feeder_name}",
+                f"En 14 jours : {format_int(p.feeder_gold)} or et {p.feeder_items} objet(s) reçus de ce seul joueur "
+                f"(niveau {p.level}).", p.player_id)
         if p.investment_pct >= 75 and p.days_since_active is not None and p.days_since_active >= t["churn_days"]:
             add("churn_risk", str(p.player_id), f"{p.name} ne joue plus depuis {int(p.days_since_active)} jours",
                 f"Il fait partie des joueurs les plus investis (centile {p.investment_pct:.0f}).", p.player_id)

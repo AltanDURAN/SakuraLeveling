@@ -91,14 +91,10 @@ class RecordsRepository:
         réunies (`player_card_states.album_at`, sinon tout derrière)."""
         from app.infrastructure.db.repositories.card_repository import CardRepository
 
-        repo = CardRepository(self.session)
-        states = repo.states()
-        out = []
-        for player_id, count in repo.album_sizes().items():
-            state = states.get(player_id)
-            at = state.album_at if state is not None and state.album_at and state.album_count == count else None
-            out.append(Entry(player_id, count, _naive(at) if at else datetime(2100, 1, 1)))
-        return out
+        # Seulement les cartes obtenues SOI-MÊME (`album_count`, cf. le modèle) :
+        # celles qu'on reçoit d'un autre joueur ne comptent pas pour le record.
+        return [Entry(player_id, state.album_count, _naive(state.album_at) if state.album_at else datetime(2100, 1, 1))
+                for player_id, state in CardRepository(self.session).states().items() if state.album_count > 0]
 
     def boss_entries(self) -> list[Entry]:
         """Le plus de dégâts de chaque joueur sur un même boss (une semaine)."""

@@ -8,7 +8,7 @@ compteur de la pitié, le booster offert et le moment où son album a grandi
 
 from datetime import UTC, datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer
+from sqlalchemy import Text, Boolean, DateTime, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.db.base import Base
@@ -26,4 +26,10 @@ class PlayerCardStateModel(Base):
     #: Cartes différentes au dernier agrandissement de l'album, et quand.
     album_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     album_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    #: Codes des cartes OBTENUES SOI-MÊME (boosters, fabrication), séparés par
+    #: des virgules : c'est ce que compte le record d'album (`album_count`).
+    #: Une carte reçue par échange ou achetée à la brocante n'y entre pas —
+    #: un groupe se prêtait ses cartes avant minuit pour prendre le record
+    #: (décision de l'auteur, 14/11/2026).
+    own_cards: Mapped[str] = mapped_column(Text, default="", server_default="")
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))

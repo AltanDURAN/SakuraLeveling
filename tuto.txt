@@ -991,7 +991,9 @@ WORLD BOSS — /boss moi, /boss historique, /bestiaire boss
       • plus haut étage de la tour solo ;
       • le plus de dégâts sur un world boss en une semaine ;
       • la chasse : le plus de monstres tués dans chaque famille ;
-      • la collection : l'album de cartes le plus complet.
+      • la collection : l'album de cartes le plus complet. Seules les
+        cartes que tu as ouvertes ou fabriquées toi-même comptent (pas
+        celles reçues par échange ou achetées à la brocante).
     Chaque nuit à minuit (heure de Paris), le tableau est mis à jour : pour
     battre un record il faut faire STRICTEMENT mieux (à égalité, le premier
     arrivé le garde). Un message annonce les records tombés et mentionne les

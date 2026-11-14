@@ -212,6 +212,14 @@ class AcceptTradeUseCase:
         if trade.target_gold_offered > 0:
             record_event(session, kinds.TRANSFER, player_id=target_profile.player.id, ref="echange",
                          gold=trade.target_gold_offered, data={"to": initiator_profile.player.id})
+        # Les objets aussi (qty = unités données) : la Surveillance repère un
+        # joueur nourri par un seul autre (alerte « Alimenté par un seul joueur »).
+        for side, giver, receiver in ((TradeSide.INITIATOR, initiator_profile, target_profile),
+                                      (TradeSide.TARGET, target_profile, initiator_profile)):
+            units = sum(max(1, offer.quantity) for offer in trade.items_offered_by(side))
+            if units:
+                record_event(session, kinds.TRANSFER, player_id=giver.player.id, ref="objets", qty=units,
+                             data={"to": receiver.player.id})
         if trade.initiator_gold_offered > 0:
             self.player_repository.add_gold(
                 initiator_profile.player.id, -trade.initiator_gold_offered, source="echange"

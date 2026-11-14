@@ -209,3 +209,18 @@ def test_une_sauvegarde_en_retard_alerte_les_admins(tmp_path):
     os.utime(latest, (now - 3 * 3600, now - 3 * 3600))
     os.utime(marker, (now - 40 * 3600, now - 40 * 3600))
     assert backup_ages(str(tmp_path), now=now) == (3.0, 40.0)
+
+
+def test_un_joueur_nourri_par_un_seul_autre_est_signale():
+    """Un compte secondaire qui verse tout au principal ne passait sous aucune
+    règle (il fallait 3 donateurs). Décision de l'auteur, 14/11/2026 : une
+    alerte, à juger au cas par cas."""
+    quiet = alerts.PlayerFacts(player_id=1, name="Ami", level=20, feeder_name="Bob", feeder_gold=2_000, feeder_items=3)
+    assert "single_feeder" not in _codes(alerts.evaluate([quiet], [], alerts.ServerFacts(now=T0)))
+
+    rich = alerts.PlayerFacts(player_id=2, name="Principal", level=20, feeder_name="Secondaire", feeder_gold=10_000)
+    found = [a for a in alerts.evaluate([rich], [], alerts.ServerFacts(now=T0)) if a.code == "single_feeder"]
+    assert len(found) == 1 and "Secondaire" in found[0].title and "10 000 or" in found[0].message
+
+    stuffed = alerts.PlayerFacts(player_id=3, name="Principal", level=80, feeder_name="Secondaire", feeder_items=30)
+    assert "single_feeder" in _codes(alerts.evaluate([stuffed], [], alerts.ServerFacts(now=T0)))

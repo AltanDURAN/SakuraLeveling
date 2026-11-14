@@ -129,9 +129,19 @@ def _check_titles(session: Session, player_id: int, album: cs.Album) -> list[str
     return [f"{e.title.icon} {e.title.name}" for e in events]
 
 
-def _album_grew(state, before: cs.Album, after: cs.Album, now: datetime) -> None:
-    if after.owned > before.owned:
-        state.album_count = after.owned
+def own_codes(state) -> set[str]:
+    return {c for c in (getattr(state, "own_cards", "") or "").split(",") if c}
+
+
+def _album_grew(state, obtained, now: datetime) -> None:
+    """Note les cartes que le joueur vient d'obtenir LUI-MÊME (booster,
+    fabrication). `album_count` — ce que compte le record d'album — ne monte
+    qu'avec elles : une carte reçue d'un autre joueur ne compte pas."""
+    mine = own_codes(state)
+    grown = mine | set(obtained)
+    if len(grown) > len(mine):
+        state.own_cards = ",".join(sorted(grown))
+        state.album_count = len(grown)
         state.album_at = now.replace(tzinfo=None)
 
 
@@ -238,7 +248,7 @@ def open_boosters(session: Session, player_id: int, count: int = 1, *,
         state.boosters_opened += count
         state.free_booster_used = True
         state.updated_at = now.replace(tzinfo=None)
-        _album_grew(state, before, after, now)
+        _album_grew(state, [c.card.code for booster in opened for c in booster], now)
         titles = _check_titles(session, player_id, after)
         result = BoosterResult(True, boosters=opened, gold_spent=price, free=free, gold_left=gold - price,
                                album_before=before, album_after=after, since_top=state.since_top, titles=titles,
@@ -326,7 +336,7 @@ def craft_card(session: Session, player_id: int, code: str, now: datetime | None
         InventoryRepository(session).add_item(player_id, item_id, 1, commit=False)
         normal[code] = 1
         after = cs.album(cards, normal, brillante)
-        _album_grew(state, before, after, now)
+        _album_grew(state, [code], now)
         titles = _check_titles(session, player_id, after)
         record_event(session, kinds.CARD_CRAFT, player_id=player_id, ref=code, data={"petals": cost})
         return CraftResult(True, f"🌸 {card.name} rejoint ton album ({cost:,} pétales).".replace(",", " "),
@@ -365,7 +375,7 @@ def admin_give_card(session: Session, player_id: int, code: str, brillante: bool
         target = shiny if brillante else normal
         target[code] = target.get(code, 0) + max(1, int(quantity))
         after = cs.album(cards, normal, shiny)
-        _album_grew(repo.state(player_id), before, after, now)
+        _album_grew(repo.state(player_id), [code], now)      # donnée par un admin : elle compte
         return _check_titles(session, player_id, after)
 
 

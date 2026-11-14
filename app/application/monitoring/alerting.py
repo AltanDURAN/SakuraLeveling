@@ -39,11 +39,27 @@ def player_facts(ds: Dataset) -> list[rules.PlayerFacts]:
     powers = [(r.level, r.power) for r in rows if r.power > 0 and not r.is_admin]
     senders: dict[int, set[int]] = defaultdict(set)
     received: Counter = Counter()
+    # Par couple (receveur, donneur) : l'or et les objets reçus d'UN même joueur.
+    pair_gold: dict[int, Counter] = defaultdict(Counter)
+    pair_items: dict[int, Counter] = defaultdict(Counter)
     for e in ds.of_kind(kinds.TRANSFER, days=14):
         to = e.data.get("to")
         if to is not None and e.player_id is not None:
+            if e.ref == "objets":
+                pair_items[int(to)][e.player_id] += e.qty
+                continue
             senders[int(to)].add(e.player_id)
             received[int(to)] += e.gold
+            pair_gold[int(to)][e.player_id] += e.gold
+    names = {r.pid: r.name for r in rows}
+
+    def feeder(pid: int) -> tuple[str, int, int]:
+        """(nom, or, objets) du joueur qui a le plus donné à `pid`."""
+        gold_from, items_from = pair_gold.get(pid, Counter()), pair_items.get(pid, Counter())
+        if not gold_from and not items_from:
+            return "", 0, 0
+        best = max(set(gold_from) | set(items_from), key=lambda s: (gold_from.get(s, 0), items_from.get(s, 0)))
+        return names.get(best, f"joueur {best}"), gold_from.get(best, 0), items_from.get(best, 0)
     gold_events: dict[int, list] = defaultdict(list)
     for e in ds.of_kind(kinds.GOLD, days=ds.days + 1):
         gold_events[e.player_id].append(e)
@@ -74,6 +90,7 @@ def player_facts(ds: Dataset) -> list[rules.PlayerFacts]:
             max_burst=activity.max_burst([e.at for e in ds.by_player.get(r.pid, ())
                                           if e.kind == kinds.INTERACTION and e.at >= week]),
             gold_senders=len(senders.get(r.pid, ())), gold_received=received.get(r.pid, 0),
+            feeder_name=feeder(r.pid)[0], feeder_gold=feeder(r.pid)[1], feeder_items=feeder(r.pid)[2],
             unexplained_gold=unexplained,
             days_since_active=r.days_since_active,
             investment_pct=r.investment, unspent_points=r.unspent, stuck_days=stuck,
