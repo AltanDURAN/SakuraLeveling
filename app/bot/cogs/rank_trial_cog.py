@@ -143,7 +143,10 @@ class RankTrialCog(BetaChannelOnlyMixin, commands.Cog):
         description="Affronte le gardien du rang suivant pour être promu",
     )
     async def epreuve(self, interaction: discord.Interaction) -> None:
-        await interaction.response.defer()
+        # En privé (décision de l'auteur, 14/11/2026) : l'échec et la puissance
+        # manquante ne regardent que le joueur ; la promotion, elle, est
+        # annoncée dans le général.
+        await interaction.response.defer(ephemeral=True)
         elig, player_id, stats = await asyncio.to_thread(
             self._load_state, interaction,
         )

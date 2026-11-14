@@ -642,6 +642,14 @@ Demande de l'auteur : homogénéiser toutes les pages (61 pages passées en revu
 - **Dégâts critiques** : un bonus plat s'écrit « +5 points de dégâts critiques » (100 = neutre).
 - **Le secret de Noël** vaut aussi pour la section admin de `tuto.txt` (le fichier est dans le dépôt).
 
+## Parcours joueur — décisions du 14/11/2026
+
+- **Privé** : `/stats`, `/epreuve`, `/cd`, `/or`, `/equiper` (réponse visible du joueur seul) ; `/defi`, `/profil`, `/tour` restent publics. ⚠️ Après un `defer()` public, un `followup.send(ephemeral=True)` est PUBLIC quand même : une commande dont un refus doit rester privé fait `defer(ephemeral=True)`, ou supprime la réponse d'origine avant le refus (`/brocante acheter`).
+- **Prochaine étape** ([`next_step.py`](app/application/services/next_step.py)) : une ligne sous la bannière de SON `/profil` — points de stats, points d'arbre, pièce non portée, solde du jour, booster offert, dans cet ordre.
+- **Appel à l'aide** d'un monstre : réservé aux inscrits au combat (`EncounterView._is_registered`).
+- **Tutoriel** : l'étape `stats` vient APRÈS `tour` (au niveau 1 il n'y a aucun point à placer) ; l'étape `ville` cite le booster offert.
+- **La suite après un gain** : une pièce tombée renvoie à `/equiper`, une promotion nomme la zone ouverte avec son salon (`_opened_zones_line`), un niveau gagné par une quête rappelle `/stats` et `/arbre`.
+
 ## Limites de Discord — 13/11/2026
 
 Un embed refusé (400 Bad Request), c'est tout le message qui disparaît. Le 11/11/2026, `/titre` a planté en production (« Embed size exceeds maximum size of 6000 ») : avec les 83 titres du jeu, la liste à débloquer dépassait la limite pour presque tous les joueurs (de 2 à 13 titres débloqués).

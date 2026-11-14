@@ -49,15 +49,6 @@ STEPS: tuple[TutorialStep, ...] = (
         check="daily", hint="Je ne vois pas encore ta solde du jour : tape `/daily` puis reviens ici.",
     ),
     TutorialStep(
-        "stats", "💪", "Forger son corps",
-        "Ta force ne vient que de toi. À chaque niveau, tu gagnes **un point de stats** à placer : "
-        "**+2 attaque**, **+2 défense** ou **+50 PV**. L'équipement et l'arbre ajoutent ensuite un "
-        "POURCENTAGE de ce socle : plus il est solide, plus tout le reste compte.",
-        ("Ouvre ta feuille de personnage : **`/stats`**, et place un point.",
-         "Pas de point à placer ? Tu en gagneras un au prochain niveau : passe à la suite."),
-        check="stats", hint="Tu as encore un point à placer : `/stats`, puis un des trois boutons.",
-    ),
-    TutorialStep(
         "tour", "🗼", "Le premier sang",
         "Assez parlé ! Avant les terres sauvages, fais-toi la main à la **Tour** : cent étages à "
         "gravir seul, à PV pleins, quand tu veux. Le premier est à ta portée, et il rapporte de "
@@ -66,6 +57,16 @@ STEPS: tuple[TutorialStep, ...] = (
          "Une victoire garde ton ticket : tu peux enchaîner. Une défaite ne coûte qu'un ticket, "
          "jamais un étage."),
         check="tour", hint="Je ne t'ai pas encore vu à la Tour : `/tour`, puis **Tenter l'étage 1**.",
+    ),
+    TutorialStep(
+        "stats", "💪", "Forger son corps",
+        "Ta force ne vient que de toi. À chaque niveau, tu gagnes **un point de stats** à placer : "
+        "**+2 attaque**, **+2 défense** ou **+50 PV**. L'équipement et l'arbre ajoutent ensuite un "
+        "POURCENTAGE de ce socle : plus il est solide, plus tout le reste compte.",
+        ("Ta victoire à la Tour t'a fait gagner de l'XP. Ouvre ta feuille de personnage : "
+         "**`/stats`**, et place ton point si tu en as un.",
+         "Pas encore de point ? Tu en gagneras un au prochain niveau : passe à la suite."),
+        check="stats", hint="Tu as encore un point à placer : `/stats`, puis un des trois boutons.",
     ),
     TutorialStep(
         "combat", "⚔️", "La chasse en groupe",
@@ -128,7 +129,9 @@ STEPS: tuple[TutorialStep, ...] = (
         "aventuriers, on s'échange et on vend à la brocante. Et quand tout le serveur remplit "
         "l'**offrande**, une divinité nous bénit tous pour la journée.",
         ("**`/alchimiste`** · **`/marchand`** · **`/apparence`** (tes cosmétiques).",
-         "**`/echange`** · **`/brocante`** · **`/payer`** · **`/offrande`**."),
+         "**`/echange`** · **`/brocante`** · **`/payer`** · **`/offrande`**.",
+         "Sorn t'offre ton premier **booster de cartes** : **`/booster`**, à son comptoir du salon des cartes. "
+         "Ta collection : **`/album`**."),
     ),
     TutorialStep(
         "rangs", "👑", "Rangs, raid et ciel",

@@ -174,13 +174,13 @@ class StatsCog(BetaChannelOnlyMixin, commands.Cog):
         description="Ta feuille de personnage — place tes points de stats",
     )
     async def stats(self, interaction: discord.Interaction) -> None:
-        await interaction.response.defer()
+        await interaction.response.defer(ephemeral=True)
         data = await asyncio.to_thread(
             _load, interaction.user.id, interaction.user.name,
             interaction.user.display_name,
         )
         view = StatsView(data, owner_id=interaction.user.id)
-        await interaction.followup.send(embed=_build_embed(data), view=view)
+        await interaction.followup.send(embed=_build_embed(data), view=view, ephemeral=True)
 
 
     @app_commands.command(

@@ -293,7 +293,12 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
             image_embed = discord.Embed(color=discord.Color.from_rgb(*_rank_color(rank_label)))
             image_embed.set_image(url=f"attachment://{banner_filename}")
             file = discord.File(str(banner_path), filename=banner_filename)
-            await interaction.followup.send(embed=image_embed, file=file)
+            hint = None
+            if target is None or target.id == interaction.user.id:
+                from app.application.services.next_step import next_step_for
+
+                hint = await asyncio.to_thread(next_step_for, interaction.user.id)
+            await interaction.followup.send(content=hint, embed=image_embed, file=file)
             return
         except Exception as _e:
             import logging
@@ -485,7 +490,7 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
             embed.description = (
                 "✅ Rien ne recharge : tout est disponible !\n\n" + ticket_line
             )
-            await interaction.response.send_message(embed=embed)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
         # Sort by next_available (le plus proche en premier)
@@ -497,7 +502,7 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
             lines.append(f"{label} — <t:{ts}:R> (<t:{ts}:f>)")
         embed.description = "\n".join(lines) + "\n\n" + ticket_line
         embed.set_footer(text=f"{len(active)} temps de recharge en cours")
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(
         name="or",
@@ -547,7 +552,7 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
             )
         embed.set_footer(text=f"Joueur : {target_member.display_name}")
 
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 async def setup(bot: commands.Bot) -> None:

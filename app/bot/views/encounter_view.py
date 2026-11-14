@@ -18,6 +18,10 @@ class EncounterView(GatedView):
         self.remove_item(self.launch_encounter)
         self.remove_item(self.leave_encounter)
 
+    def _is_registered(self, user_id: int) -> bool:
+        encounter = self.cog.active_encounters.get(self.channel_id)
+        return bool(encounter and user_id in encounter.participants)
+
     def sync(self) -> None:
         """Synchronise l'affichage/état des boutons avec l'état de l'encounter :
         - Lancer et Quitter présents seulement si ≥1 participant.
@@ -122,6 +126,16 @@ class EncounterView(GatedView):
         if self._help_used:
             await interaction.response.send_message(
                 "⚠️ L'appel à l'aide est déjà parti pour ce combat.",
+                ephemeral=True,
+            )
+            return
+        # Réservé aux inscrits (décision de l'auteur, 14/11/2026) : le bouton est
+        # à côté de « Combattre » et mentionne tout le rôle chad — un passant le
+        # pressait par erreur.
+        if not self._is_registered(interaction.user.id):
+            await interaction.response.send_message(
+                "📣 Inscris-toi d'abord au combat (**Combattre**) : l'appel à l'aide est "
+                "réservé à ceux qui se battent.",
                 ephemeral=True,
             )
             return

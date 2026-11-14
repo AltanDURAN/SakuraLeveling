@@ -73,6 +73,7 @@ LA PROGRESSION
         • 1 POINT D'ARBRE   → à investir avec /arbre.
 
 /stats
+    (Réponse privée : toi seul la vois.)
     Ta feuille de personnage. Place tes points de stats avec les boutons :
         +ATK  →  +2 attaque
         +DEF  →  +2 défense
@@ -84,6 +85,9 @@ LA PROGRESSION
     points d'un coup.
 
 /profil [joueur]
+    (Sur ton propre profil, une ligne « Prochaine étape » te dit quoi
+    faire : points à placer, pièce non portée, solde du jour, booster
+    offert.)
     Ton personnage en une image : titre actif, niveau, barres PV / mana / XP,
     or, points de stats et d'arbre à dépenser, série du /daily, rang et
     puissance, stats de combat, statistiques de carrière et affinités
@@ -96,6 +100,7 @@ LA PROGRESSION
     soutien (sort de soin, aura) compte dans la puissance.
 
 /epreuve
+    (Réponse privée : toi seul la vois.)
     Fait apparaître le GARDIEN du rang au-dessus du tien. Réussis son
     épreuve et tu es promu : ton rôle Discord change, une nouvelle zone de
     farm s'ouvre, et ta promotion est annoncée dans le salon général.
