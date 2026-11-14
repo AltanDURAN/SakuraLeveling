@@ -62,10 +62,6 @@ def get_weights(mob_code: str | None) -> dict[str, int]:
     return out
 
 
-def all_weights() -> dict:
-    return dict(_load())
-
-
 def reload_cache() -> None:
     global _cache, _cache_mtime
     _cache = None

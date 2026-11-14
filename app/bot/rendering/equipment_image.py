@@ -29,9 +29,6 @@ from app.bot.rendering.pillow_utils import (
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
 from app.domain.services.gear_service import RARITY_COLORS, RARITY_EMOJIS, RARITY_LABELS, gear_stats
 from app.domain.services.set_bonus_service import SetBonuses, format_panoplie_value, panoplie_type
-from app.shared.emoji_mappings import (
-    format_stat_bonuses_short,
-)
 from app.shared.enums import (
     SLOT_ORDER,
     SLOT_ICONS,
@@ -205,13 +202,6 @@ def _draw_placeholder(
             text, font=font, fill=(120, 130, 150, 255),
         )
     base.alpha_composite(img, origin)
-
-
-def _format_stat_bonuses_short(stat_bonuses: dict | None) -> str:
-    """Bonus compact `+N {emoji}` — l'emoji est plus rapide à scanner que
-    "Atk" / "Def" / "Crit" et ne déborde pas de la card. Délègue au
-    helper centralisé."""
-    return format_stat_bonuses_short(stat_bonuses)
 
 
 def _name_lines(draw, name: str, max_width: int) -> tuple[list[str], object]:

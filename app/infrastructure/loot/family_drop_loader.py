@@ -43,20 +43,6 @@ def get_family_drops() -> dict[str, dict]:
     return _cache
 
 
-def get_mob_family_drop(family: str | None, mob_code: str | None) -> tuple[str, int, int] | None:
-    """(item_code, min, max) du drop de famille pour ce monstre, ou None si la
-    famille n'a pas de ressource définie."""
-    if not family or not mob_code:
-        return None
-    cfg = get_family_drops().get(family)
-    if not isinstance(cfg, dict) or not cfg.get("item_code"):
-        return None
-    entry = (cfg.get("mobs") or {}).get(mob_code) or {}
-    lo = max(0, int(entry.get("min", 1)))
-    hi = max(lo, int(entry.get("max", lo if lo else 1)))
-    return (cfg["item_code"], lo, hi) if hi > 0 else None
-
-
 def clear_cache() -> None:
     global _cache, _cache_mtime
     _cache = None

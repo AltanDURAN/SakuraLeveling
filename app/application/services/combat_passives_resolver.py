@@ -20,11 +20,6 @@ from app.infrastructure.db.repositories.player_skill_allocation_repository impor
 from app.infrastructure.skill_tree.skill_tree_loader import get_definition
 
 
-def resolve_combat_passives(session: Session, player_id: int) -> CombatPassives:
-    allocations = PlayerSkillAllocationRepository(session).list_by_player(player_id)
-    return SkillTreeService(get_definition()).combat_passives(allocations)
-
-
 def with_gear_passives(passives: CombatPassives, equipped_items) -> CombatPassives:
     """Ajoute les passifs d'ÉQUIPEMENT (pièces épiques et plus) à ceux de l'arbre.
 

@@ -78,12 +78,6 @@ def parse_reward(raw: dict) -> Reward:
     return Reward(kind, amount=int(raw.get("amount", 0) or 0))
 
 
-def reward_to_dict(reward: Reward) -> dict:
-    if reward.kind == ITEM:
-        return {"kind": ITEM, "item": reward.item, "qty": reward.qty}
-    return {"kind": reward.kind, "amount": reward.amount}
-
-
 def _reward_problems(raw, where: str, item_codes: set[str] | None) -> list[str]:
     problems = []
     if not isinstance(raw, dict):

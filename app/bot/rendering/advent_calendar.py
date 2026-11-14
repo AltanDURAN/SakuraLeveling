@@ -65,13 +65,6 @@ def item_emoji(code: str, category: str = "") -> str:
     return "🎁"
 
 
-def reward_emoji(rewards) -> str:
-    if not rewards:
-        return "🎁"
-    r = rewards[0]
-    return "💰" if r.kind != ss.ITEM else item_emoji(r.item)
-
-
 def item_picture_path(code: str):
     """Le fichier image d'un objet, ou None."""
     path = ITEM_PICTURES.get(code) or ITEMS_ASSETS_DIR / f"{code}.png"

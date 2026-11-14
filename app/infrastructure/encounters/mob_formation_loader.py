@@ -74,10 +74,6 @@ def is_custom(key: str | None, n: int) -> bool:
     return len(_clean((_load().get(key or "") or {}).get(str(n)))) == n
 
 
-def all_formations() -> dict:
-    return dict(_load())
-
-
 def reload_cache() -> None:
     global _cache
     _cache = None

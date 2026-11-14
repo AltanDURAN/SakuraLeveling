@@ -8,10 +8,8 @@ récap final) est ajouté en tête.
 
 from __future__ import annotations
 
-import discord
 
 from app.domain.value_objects.party_battle_turn_log import PartyBattleTurnLog
-from app.shared.formatters import format_int
 
 
 # Limite Discord pour le champ description (4096 chars). On coupe les
@@ -64,75 +62,3 @@ def _trim_to_budget(lines: list[str]) -> list[str]:
     return kept
 
 
-def build_combat_log_embed(
-    mob_name: str,
-    actions: list[str],
-    mob_current_hp: int,
-    mob_max_hp: int,
-    players_state: list[dict] | None,
-    finished: bool = False,
-    redirect_url: str | None = None,
-    enemies_state: list[dict] | None = None,
-) -> discord.Embed:
-    """`enemies_state` (meute) : une ligne de PV par monstre au lieu d'une seule."""
-    color = discord.Color.dark_green() if finished else discord.Color.orange()
-    title = (
-        f"✅ Combat terminé — {mob_name}"
-        if finished
-        else f"⚔️ Combat en cours — {mob_name}"
-    )
-
-    description_lines: list[str] = []
-    if finished and redirect_url:
-        description_lines.append(
-            f"🏁 **Combat terminé !** "
-            f"Voir les récompenses et le détail : [aller au récap]({redirect_url})"
-        )
-        description_lines.append("")
-
-    description_lines.extend(_trim_to_budget(actions))
-
-    embed = discord.Embed(
-        title=title,
-        description="\n".join(description_lines) or "_Le combat va commencer…_",
-        color=color,
-    )
-
-    # PV du mob — toujours utile pendant le combat
-    if enemies_state:
-        embed.add_field(
-            name="🐺 Meute",
-            value="\n".join(
-                f"{'💀' if int(e.get('current_hp', 0) or 0) <= 0 else '❤️'} **{e.get('name', '?')}** — "
-                f"{format_int(max(0, int(e.get('current_hp', 0) or 0)))} / {format_int(int(e.get('max_hp', 0) or 0))}"
-                for e in enemies_state
-            ),
-            inline=False,
-        )
-    else:
-        embed.add_field(
-            name=f"👹 {mob_name}",
-            value=f"❤️ **{format_int(max(0, mob_current_hp))} / {format_int(mob_max_hp)}** PV",
-            inline=False,
-        )
-
-    # PV des joueurs — uniquement pendant le combat (au récap on a la page Détails)
-    if not finished and players_state:
-        lines = []
-        for ps in players_state:
-            name = ps.get("name", "?")
-            chp = max(0, int(ps.get("current_hp", 0) or 0))
-            mhp = int(ps.get("max_hp", 1) or 1)
-            status = "💀" if chp <= 0 else "❤️"
-            line = f"{status} **{name}** — {format_int(chp)} / {format_int(mhp)}"
-            mana_max = int(ps.get("mana_max", 0) or 0)
-            if mana_max > 0:
-                line += f" · 💧 {format_int(max(0, int(ps.get('current_mana', 0) or 0)))} / {format_int(mana_max)}"
-            lines.append(line)
-        embed.add_field(
-            name="👥 Équipe",
-            value="\n".join(lines) or "_aucun_",
-            inline=False,
-        )
-
-    return embed

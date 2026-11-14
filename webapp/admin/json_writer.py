@@ -71,35 +71,6 @@ def append_to_list(filename: str, entry: dict) -> None:
     atomic_write_json(filename, data)
 
 
-def upsert_to_dict(filename: str, key: str, entry: Any) -> None:
-    """Pour les JSON dict (farm_zones.json par ex)."""
-    data = load_json(filename, default={})
-    if not isinstance(data, dict):
-        raise ValueError(f"{filename} n'est pas un dict JSON")
-    data[key] = entry
-    atomic_write_json(filename, data)
-
-
-def add_skill_node(code: str, node: dict) -> None:
-    """skill_tree.json a un shape spécifique : {root, skills: {code: node}}."""
-    data = load_json("skill_tree.json", default={"root": "aventurier", "skills": {}})
-    if "skills" not in data:
-        data["skills"] = {}
-    if code in data["skills"]:
-        raise ValueError(f"Skill `{code}` existe déjà")
-    data["skills"][code] = node
-    atomic_write_json("skill_tree.json", data)
-
-
-def update_skill_node(code: str, node: dict) -> None:
-    """Remplace un nœud existant. Code et node doivent matcher."""
-    data = load_json("skill_tree.json", default={"skills": {}})
-    if code not in (data.get("skills") or {}):
-        raise ValueError(f"Skill `{code}` introuvable")
-    data["skills"][code] = node
-    atomic_write_json("skill_tree.json", data)
-
-
 def find_in_list_by_key(filename: str, value: str, key: str = "code") -> dict | None:
     """Trouve une entrée dans une liste JSON par clé."""
     data = load_json(filename, default=[]) or []

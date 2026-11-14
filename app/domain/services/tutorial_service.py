@@ -145,5 +145,3 @@ STEPS: tuple[TutorialStep, ...] = (
 )
 
 
-def step_index(code: str) -> int:
-    return next((i for i, s in enumerate(STEPS) if s.code == code), 0)

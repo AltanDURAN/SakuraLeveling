@@ -43,10 +43,6 @@ def _load() -> dict:
     return _cache
 
 
-def all_placements() -> dict:
-    return dict(_load())
-
-
 def get_mob_elements(mob_code: str | None) -> dict:
     """Toutes les entrées de placement par élément d'un monstre :
     {element: {scale, offset_x, offset_y, shadow}}."""

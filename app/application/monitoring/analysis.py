@@ -15,7 +15,7 @@ from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from app.application.monitoring.dataset import Dataset, Event, to_local
-from app.application.monitoring.players import PlayerRow, build_rows, content_end_level
+from app.application.monitoring.players import build_rows, content_end_level
 from app.domain.services.gear_service import RARITY_LABELS
 from app.domain.services.monitoring import activity, kinds, progression as prog
 from app.domain.services.monitoring.stats import gini, median, percentile, percentile_rank, share
@@ -55,17 +55,6 @@ def design_days(level: int = prog.LEVEL_CAP, minutes_per_day: int = 60) -> int |
 # ================================================================== outils
 def _day(e: Event) -> date:
     return e.local.date()
-
-
-def daily_series(ds: Dataset, events: list[Event], value=lambda e: 1, days: int | None = None) -> list[float]:
-    days_ = ds.day_list(days)
-    index = {d: i for i, d in enumerate(days_)}
-    out = [0.0] * len(days_)
-    for e in events:
-        i = index.get(_day(e))
-        if i is not None:
-            out[i] += value(e)
-    return out
 
 
 def encounters(ds: Dataset, days: float | None = None) -> dict[str, list[Event]]:
@@ -802,5 +791,3 @@ def describe(ds: Dataset, e: Event) -> tuple[str, str]:
     return "•", e.kind
 
 
-def row_by_pid(ds: Dataset) -> dict[int, PlayerRow]:
-    return {r.pid: r for r in build_rows(ds)}

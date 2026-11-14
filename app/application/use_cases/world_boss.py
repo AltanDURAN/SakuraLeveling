@@ -34,7 +34,6 @@ from app.domain.services.quest_reward_service import scale_reward
 from app.domain.services.reward_distribution_service import contribution_scores
 from app.domain.services.stats_service import StatsService
 from app.domain.services.world_boss_scaling_service import WorldBossScalingService
-from app.domain.value_objects.battle_result import BattleResult
 from app.infrastructure.db.repositories.cooldown_repository import CooldownRepository
 from app.infrastructure.db.repositories.equipment_repository import EquipmentRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
@@ -420,17 +419,6 @@ class VoteForFightWorldBossUseCase:
 
 
 # ---------- 3. Fight ----------
-
-
-@dataclass
-class FightBossResult:
-    success: bool
-    message: str
-    battle_result: BattleResult | None = None
-    boss_remaining_hp: int = 0
-    boss_max_hp: int = 0
-    team_bonus_pct: int = 0
-    boss_defeated: bool = False
 
 
 # ---------- 3bis. Combat collectif (système de vote) ----------

@@ -126,5 +126,3 @@ def get_mob_ability_summary(mob_code: str | None) -> str | None:
     return summary
 
 
-def has_special(mob_code: str | None) -> bool:
-    return bool(MOB_ABILITIES.get(mob_code or ""))

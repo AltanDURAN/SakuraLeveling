@@ -48,12 +48,6 @@ def format_stat_value(stat_key: str, value) -> str:
     return f"{sign}{value}{' %' if stat_key in PERCENT_STAT_KEYS else ''}"
 
 
-def bonus_emoji(bonus_type: str) -> str:
-    """Récupère l'emoji d'un type de bonus ; renvoie la clé brute si
-    absente."""
-    return BONUS_EMOJIS.get(bonus_type, bonus_type)
-
-
 def item_display_emoji(item) -> str:
     """Emoji représentatif d'un item pour les listes (panoplie, etc).
 

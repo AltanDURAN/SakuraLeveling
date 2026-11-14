@@ -7,7 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
-from app.application.monitoring.dataset import Dataset, to_local
+from app.application.monitoring.dataset import Dataset
 from app.domain.services.monitoring import kinds, progression as prog
 from app.domain.services.monitoring.stats import percentile_rank
 
@@ -149,5 +149,3 @@ def build_rows(ds: Dataset) -> list[PlayerRow]:
     return rows
 
 
-def local_str(t: datetime | None) -> str:
-    return to_local(t).strftime("%d/%m %Hh%M") if t else "—"
