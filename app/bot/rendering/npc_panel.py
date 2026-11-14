@@ -24,6 +24,7 @@ from app.bot.rendering.pillow_utils import (
 )
 from app.shared.emoji_mappings import format_stat_value, is_known_stat, stat_emoji
 from app.shared.paths import GENERATED_NPCS_DIR, ITEMS_ASSETS_DIR, NPCS_ASSETS_DIR
+from app.shared.formatters import format_int
 
 WIDTH = 1024
 HEIGHT = 520
@@ -400,7 +401,7 @@ def compose_npc_panel(
     gold = selection.get("gold_cost", 0)
     afford = selection.get("can_afford", True)
     draw_text_with_emojis(
-        bg, (ix, by), f"💰 {gold} or", f_title,
+        bg, (ix, by), f"💰 {format_int(gold)} or", f_title,
         fill=_GOLD if afford else _BAD, emoji_size=20,
     )
     if selection.get("kind") == "purchase":

@@ -192,3 +192,6 @@ def test_aucun_texte_ne_trahit_le_secret_de_la_petite_fille(content, monkeypatch
     tuto = Path("tuto.txt").read_text(encoding="utf-8")
     section = tuto[tuto.index("/evenement"):tuto.index("/evenement") + 2500]
     assert "petite fille" not in section.lower() and "% d'aide" not in tuto
+    # Dans TOUT le guide, section admin comprise (le fichier est dans le dépôt) :
+    # une ligne y disait « le cadeau et ce qu'il devient selon la gentillesse ».
+    assert "gentillesse" not in tuto.lower() and "sage" not in tuto.lower().split("/evenement")[1][:2500]

@@ -1098,7 +1098,7 @@
     },
     "passif_14": {
       "name": "AOE",
-      "description": "Les attaques infligent aussi des dégats aux ennemis adjacents la cible, 25% de dégats de l'attaque.",
+      "description": "Les attaques infligent aussi des dégâts aux ennemis voisins de la cible : 25 % des dégâts de l'attaque.",
       "icon": "🔮",
       "shape": "carre_passif",
       "node_type": "type_1",
@@ -1254,7 +1254,7 @@
     },
     "passif_11": {
       "name": "Résistant",
-      "description": "Réduit de 10% les dégats reçus.",
+      "description": "Réduit de 10 % les dégâts reçus.",
       "icon": "🫧",
       "shape": "carre_passif",
       "node_type": "type_2",
@@ -1278,8 +1278,8 @@
       }
     },
     "type_1_3": {
-      "name": "Egide",
-      "description": "Au début du combat donne un bouclier de 10% de ses points de vie max à lui et tous ses alliés.",
+      "name": "Égide",
+      "description": "Au début du combat donne un bouclier de 10 % de ses points de vie max à lui et tous ses alliés.",
       "icon": "🗿",
       "shape": "hexagone_classe",
       "node_type": "classe",
@@ -1410,7 +1410,7 @@
     },
     "passif_12": {
       "name": "Tenace",
-      "description": "Lors d'un combat, la première attaque devant le tuer le laisse à 1 pv à la place.",
+      "description": "Une fois par combat, l'attaque qui devait te tuer te laisse à 1 PV.",
       "icon": "💀",
       "shape": "carre_passif",
       "node_type": "type_3",
@@ -1435,7 +1435,7 @@
     },
     "type_1_11": {
       "name": "Titan",
-      "description": "Inflige 5% de dégats supplémentaires et réduit de 5% les dégats reçus.",
+      "description": "Inflige 5 % de dégâts supplémentaires et réduit de 5 % les dégâts reçus.",
       "icon": "🦾",
       "shape": "hexagone_classe",
       "node_type": "classe",
@@ -2010,7 +2010,7 @@
     },
     "passif_28": {
       "name": "Vaillant",
-      "description": "Durant le combat à 50% de chance d'appliquer provocation sur l'ennemi, la prochaine attaque de l'ennemi devra cibler en priorité le lanceur de provocation, si plusieurs joueurs on lancé provocation, seul le dernier lanceur sera ciblé.",
+      "description": "Durant le combat, 50 % de chances d'appliquer une provocation à l'ennemi : sa prochaine attaque vise en priorité le lanceur. Si plusieurs joueurs ont lancé une provocation, seul le dernier est visé.",
       "icon": "🫀",
       "shape": "carre_passif",
       "node_type": "stat",
@@ -2035,7 +2035,7 @@
     },
     "passif_29": {
       "name": "Buff",
-      "description": "Les soins accordent également un bonus pour le combat de 10% d'attaque et 10% de défense sur la cible du soin et sur soit même, non cumulable.",
+      "description": "Les soins accordent également un bonus pour le combat de 10 % d'attaque et 10 % de défense sur la cible du soin et sur toi-même, non cumulable.",
       "icon": "💊",
       "shape": "carre_passif",
       "node_type": "passif",
@@ -2060,7 +2060,7 @@
     },
     "actif_4": {
       "name": "Léthal",
-      "description": "Ignore 10% de la défense ennemie.",
+      "description": "Ignore 10 % de la défense ennemie.",
       "icon": "🗡️",
       "shape": "carre_passif",
       "node_type": "actif",

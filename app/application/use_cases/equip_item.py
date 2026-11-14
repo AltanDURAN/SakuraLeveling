@@ -127,7 +127,7 @@ class EquipItemUseCase:
         if gear is None:
             return EquipResult(
                 success=False,
-                message=f"❌ Tu ne possèdes pas cette pièce (`{item_code or gear_id}`).",
+                message="❌ Tu ne possèdes pas (ou plus) cette pièce.",
             )
         item_def = gear.item_definition
         if not item_def.is_equipable:

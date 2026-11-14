@@ -112,7 +112,7 @@ def _render_page(
     cards = [_build_card(it, equipped_ids, accent) for it in chunk]
     label, emoji = next(
         ((lbl, em) for cat, lbl, em in PAGES if cat == category),
-        ("Items", "📦"),
+        ("Objets", "📦"),
     )
     title = f"🎒  Équipement de {display_name}"
     page_suffix = f" — page {page_index + 1}/{total_pages}" if total_pages > 1 else ""
@@ -269,7 +269,7 @@ class EquipmentListView(discord.ui.View):
     def _category_meta(self, key: str) -> tuple[str, str, int]:
         label, emoji = next(
             ((lbl, em) for cat, lbl, em in PAGES if cat == key),
-            ("Items", "📦"),
+            ("Objets", "📦"),
         )
         count = sum(
             1 for i in self.items if i.item_definition.category == key

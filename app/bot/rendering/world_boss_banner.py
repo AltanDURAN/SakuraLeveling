@@ -357,7 +357,7 @@ def compose_raid_banner(output_path: str, data: RaidBannerData) -> str:
             insc = (f"🛡️ {_plural(data.registered, 'inscrit')} "
                     f"pour le prochain assaut   ·   +{bonus}% de stats en équipe")
         else:
-            insc = "🛡️ Personne d'inscrit — cliquez sur Rejoindre pour le prochain assaut"
+            insc = "🛡️ Personne d'inscrit — clique sur Rejoindre pour le prochain assaut"
         draw_text_with_emojis(bg, (rx1 + 26, 352), insc, f_small, fill=C_GOLD,
                               emoji_size=f_small.size)
         rank_top = 404

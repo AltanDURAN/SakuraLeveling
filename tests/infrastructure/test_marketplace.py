@@ -237,7 +237,7 @@ def test_buy_refused_if_insufficient_gold(session):
     )
 
     assert buy_result.success is False
-    assert "fonds" in buy_result.message.lower() or "insuffisant" in buy_result.message.lower()
+    assert "pas assez d'or" in buy_result.message.lower()
     # Aucun mouvement
     assert PlayerRepository(session).get_profile_by_player_id(buyer_id).resources.gold == 10
     assert _inv_quantity(session, buyer_id, item_id) == 0

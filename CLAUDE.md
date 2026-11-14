@@ -632,6 +632,15 @@ Demande de l'auteur : homogénéiser toutes les pages (61 pages passées en revu
 - ⚠️ **JSON dans un attribut** `x-data="…"` / `x-show="…"` entre guillemets doubles : `|tojson|forceescape` (sinon le premier `"` du JSON referme l'attribut — l'éditeur de formation et le filtre des Rôles étaient cassés).
 - Changer `?v=` d'`admin.css` / `admin.js` dans `base.html` (et de `monitoring.css`) à chaque modification.
 
+## Textes côté joueur — règles (revue du 13/11/2026)
+
+- **On tutoie le joueur** dès que le bot parle à UNE personne (réponse privée, refus, description lue seul). Le « vous » ne reste que pour une annonce adressée à tout le salon (« Rassemblez-vous ! », message du Nouvel An).
+- **Mots du jeu, pas d'anglais ni de code** : temps de recharge (pas cooldown), butin (pas drop), échange (pas trade), objet (pas item), emplacement (pas slot), tenue (pas loadout), bonus / malus (pas buff / debuff), Attaque / Défense / Vitesse en toutes lettres ; jamais un code d'objet ni un nom de champ (`crit_damage`, « additif », « multiplicatif ») dans un texte montré.
+- **Paramètres des commandes en français sans accent** (`@app_commands.rename` : `joueur`, `montant`, `consommable`, `emplacement`, `categorie`, `titre`, `objet`, `prix_unitaire`, `quantite`, `duree`, `annonce`, `commande`) — le nom Python du paramètre ne change pas.
+- **Nombres** : tout montant passe par `format_int` ; « N % » avec une espace ; pluriels calculés (« 1 pièce »).
+- **Dégâts critiques** : un bonus plat s'écrit « +5 points de dégâts critiques » (100 = neutre).
+- **Le secret de Noël** vaut aussi pour la section admin de `tuto.txt` (le fichier est dans le dépôt).
+
 ## Limites de Discord — 13/11/2026
 
 Un embed refusé (400 Bad Request), c'est tout le message qui disparaît. Le 11/11/2026, `/titre` a planté en production (« Embed size exceeds maximum size of 6000 ») : avec les 83 titres du jeu, la liste à débloquer dépassait la limite pour presque tous les joueurs (de 2 à 13 titres débloqués).

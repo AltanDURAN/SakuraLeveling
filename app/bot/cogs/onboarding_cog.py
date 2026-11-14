@@ -89,7 +89,7 @@ def build_welcome_embed(display_name: str | None = None) -> discord.Embed:
         value=(
             "Chaque monstre a un élément. Ton attaque prend toute seule "
             "l'élément qui le frappe le plus fort, et ta **maîtrise** de cet "
-            "élément décide du bonus (jusqu'à **+30 %**). Monte tes affinités en "
+            "élément décide du bonus (**+30 %** par tranche de 100 points d'affinité). Monte tes affinités en "
             "farmant des essences (`/affinites`, `/bestiaire monstres`)."
         ),
         inline=False,

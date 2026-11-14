@@ -264,8 +264,8 @@ LA PROGRESSION
                      provocateur l'emporte)
         Buff         tes soins donnent +10 % d'attaque et de défense pour le
                      combat, à la cible et à toi (une seule fois)
-        AOE          25 % des dégâts aux ennemis adjacents (combats à
-                     plusieurs monstres, à venir)
+        AOE          25 % des dégâts aux ennemis voisins de la cible
+                     (meutes, tour, gardes du world boss)
         Les réductions de dégâts de plusieurs cases s'additionnent.
 
     LES CLASSES DE BASE
@@ -311,7 +311,7 @@ LES CASES « CONFORT » (montées au maximum)
     • Message privé quand un de tes temps de recharge est terminé (/daily,
       world boss, épreuve, reset de l'arbre).
     • Message privé, avec le lien, quand un événement apparaît.
-    • +1 ticket par jour pour la tour solo (à venir). Les tickets ne
+    • +1 ticket par jour pour la tour solo (/tour). Les tickets ne
       s'accumulent pas : 1 de base, 2 avec la case, renouvelés à minuit UTC.
       Ils s'affichent dans /cd.
 
@@ -335,7 +335,7 @@ D'OÙ VIENNENT LES PIÈCES
         ⚪ Commun 6 % · 🟢 Peu commun 2,5 % · 🔵 Rare 0,8 %
         🟣 Épique 0,2 % · 🟠 Légendaire 0,03 % · 🔴 Mythique 0,004 %
     Le butin d'équipement est personnel : chaque survivant fait son tirage.
-    Tes bonus de chance de drop (cases de l'arbre, titres de Chasseur)
+    Tes bonus de chance de butin (cases de l'arbre, titres de Chasseur)
     augmentent aussi ces chances, jusqu'à ×1,5, du commun à l'épique ; le
     légendaire et le mythique n'en profitent pas.
     Le passif Trouvaille ajoute +10 % aux raretés INFÉRIEURES à celle de sa
@@ -378,7 +378,8 @@ toute l'aventure.
 FUSION (rareté suivante)
     Deux copies de la MÊME pièce, de la MÊME rareté, + de l'or + des
     matériaux de la famille du monstre = une copie de la rareté suivante.
-    Chez Borak (armes, boucliers, tête, corps) ou Elna (accessoires).
+    Chez Borak (/forgeron), pour toutes les pièces : armes, boucliers,
+    tête, corps et accessoires.
         vers Peu commun : 200 or + 5 matériaux
         vers Rare       : 1 000 or + 15 matériaux
         vers Épique     : 6 000 or + 40 matériaux
@@ -445,7 +446,8 @@ COMBATS DE GROUPE (automatiques)
     deux minutes après la fin du combat (le rythme est réglé par les admins,
     les nuits peuvent être calmes). Clique « Combattre » : le compte à
     rebours sous le monstre dit quand le combat part, avec l'heure (« dans
-    2 minutes (à 21:05) » ; 2 minutes par défaut, 5 pour une élite). Le groupe est prêt ? Un combattant clique « Lancer »
+    2 minutes (à 21:05) » ; 2 minutes par défaut, 5 pour une élite). Le
+    groupe est prêt ? Un combattant clique « Lancer »
     et le combat part tout de suite (après 30 secondes, pour laisser aux
     autres le temps de venir). Au lancement, le bot MENTIONNE tous les
     combattants : tu peux venir regarder le combat en direct.
@@ -573,7 +575,7 @@ LE MANA DES COMPÉTENCES 💧
     déjà pleins, la potion n'est pas consommée.
 
 /defi [role]
-    Les DÉFIS DE RÔLE du jour (ils remplacent les duels entre joueurs).
+    Les DÉFIS DE RÔLE du jour.
     Trois épreuves, une par rôle, contre le même adversaire pour tout le
     monde (celui d'un joueur de niveau 50) :
         ⚔️ DPS      le Mannequin ne riposte pas : un maximum de dégâts en
@@ -790,11 +792,22 @@ WORLD BOSS — /boss moi, /boss historique, /bestiaire boss
         Élixir de force             +10 % ATK, 1 h          3 cœurs corrompus    10 × niv.
         Élixir de garde             +10 % DEF, 1 h          2 cœurs + 2 fragm.   10 × niv.
         Élixir de vitalité          +10 % PV max, 1 h       2 cœurs + 2 dents    10 × niv.
+        Grande potion de soin       +60 % PV                3 crocs primordiaux  6 × niv.
+        Grande potion de mana       +100 % mana             3 sangs lunaires     5 × niv.
+        Élixir de récupération      régén PV et mana ×5,    3 sangs lunaires +   9 × niv.
+        supérieur                   1 h, hors combat        2 crocs primordiaux
+        Élixir de force supérieur   +20 % ATK, 1 h          3 écailles de dragon 15 × niv.
+        Élixir de garde supérieur   +20 % DEF, 1 h          2 écailles + 2 sangs 15 × niv.
+        Élixir de vitalité          +20 % PV max, 1 h       2 écailles + 2 crocs 15 × niv.
+        supérieur
 
     Chaque zone a sa spécialité : les soins viennent de la Clairière (gelée
     des slimes, dents de gobelin), le mana du Cimetière (fragments d'âme),
-    les élixirs de combat du Berceau (cœurs corrompus). Les potions
-    s'échangent et se vendent à la brocante ; Elna n'en rachète pas.
+    les élixirs de combat du Berceau (cœurs corrompus). Les versions
+    supérieures demandent les matériaux des zones suivantes : crocs
+    primordiaux (Sanctuaire), sang lunaire (Éclipse), écailles de dragon
+    (Cimes). Les potions s'échangent et se vendent à la brocante ; Elna
+    n'en rachète pas.
 
     LES ÉLIXIRS
         • Un MÊME élixir ne se cumule jamais : le reboire remet sa durée à
@@ -1016,8 +1029,8 @@ INTERFACE WEB D'ADMINISTRATION
     FÊTES (Monde › Fêtes, sans redémarrage) : tout se règle en VOYANT le
     résultat. Le calendrier de l'Avent s'affiche tel que les joueurs le
     verront : clique une case pour choisir ce qu'elle contient, et regarde
-    l'image exacte du bot pour n'importe quel jour. Noël : le cadeau et ce
-    qu'il devient selon la gentillesse (secret pour les joueurs). Objets et
+    l'image exacte du bot pour n'importe quel jour. Noël : le cadeau et ses
+    réglages. Objets et
     BOUTIQUES D'ÉVÉNEMENT (on en crée autant qu'on veut) avec ce qu'un
     joueur peut s'offrir. Nouvel An. Chaque message Discord est montré en
     aperçu avant d'enregistrer (Ctrl+S) ; tout est vérifié avant d'écrire.
@@ -1107,7 +1120,7 @@ INTERFACE WEB D'ADMINISTRATION
     Remet le joueur à zéro en gardant son identité Discord : niveau, XP,
     points d'arbre et de stats (placés compris), or, inventaire, équipement
     (toutes ses pièces), quêtes, temps de recharge, PV/mana, victoires,
-    titres, place au ladder, affinités et essences, maîtrise des artisans.
+    titres, affinités et essences, maîtrise des artisans.
 
 --------------------------------------------------------------------------------
 2.2 — TESTS ET DÉBOGAGE

@@ -1237,7 +1237,7 @@
   {
     "code": "dent_de_gobelin",
     "name": "Dent de gobelin",
-    "description": "",
+    "description": "Une dent jaunie, plus solide qu'elle n'en a l'air.",
     "category": "resource",
     "rarity": "common",
     "stackable": true,
@@ -1254,7 +1254,7 @@
   {
     "code": "fragment_d_me",
     "name": "Fragment d'âme",
-    "description": "",
+    "description": "Un éclat pâle qui murmure quand on l'approche de l'oreille.",
     "category": "resource",
     "rarity": "common",
     "stackable": true,
@@ -1271,7 +1271,7 @@
   {
     "code": "gel_e",
     "name": "Gelée",
-    "description": "",
+    "description": "Une gelée tremblotante, encore fraîche : la base des potions de soin d'Elna.",
     "category": "resource",
     "rarity": "common",
     "stackable": true,
@@ -1288,7 +1288,7 @@
   {
     "code": "c_ur_corrompu",
     "name": "Cœur corrompu",
-    "description": "",
+    "description": "Il bat encore, lentement. Mieux vaut ne pas le garder trop longtemps en poche.",
     "category": "resource",
     "rarity": "common",
     "stackable": true,

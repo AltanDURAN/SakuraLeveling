@@ -70,9 +70,9 @@ def girl_outcome_tag(consequence) -> str:
     if consequence.grant_title:
         return "🛡️ **titre Ma survie avant tout !**"
     if consequence.buff_multiplier > 0:
-        return f"😇 buff +{round((consequence.buff_multiplier - 1) * 100)}% ({consequence.buff_hours}h)"
+        return f"😇 bonus +{round((consequence.buff_multiplier - 1) * 100)} % ({consequence.buff_hours} h)"
     if consequence.debuff_multiplier > 0:
-        return f"💔 debuff ÷{round(1 / consequence.debuff_multiplier) if consequence.debuff_multiplier else 2} ({consequence.debuff_hours}h)"
+        return f"💔 malus ÷{round(1 / consequence.debuff_multiplier) if consequence.debuff_multiplier else 2} ({consequence.debuff_hours} h)"
     if consequence.gold_loss > 0 or consequence.halve_hp:
         return f"😈 −{format_int(consequence.gold_loss)} or & moitié PV"
     return "🚶 rien"

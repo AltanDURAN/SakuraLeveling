@@ -34,6 +34,7 @@ from app.infrastructure.db.unit_of_work import commit
 from app.infrastructure.db.unit_of_work import transactional
 from app.domain.services.monitoring import kinds
 from app.infrastructure.monitoring.telemetry import record as record_event
+from app.shared.formatters import format_int
 
 
 @dataclass(frozen=True)
@@ -78,7 +79,7 @@ class FusionPreview:
             return (f"Il te manque {self.material_needed - self.material_owned} "
                     f"× {self.material_name}.")
         if self.player_gold < self.gold_cost:
-            return f"Il te manque {self.gold_cost - self.player_gold} or."
+            return f"Il te manque {format_int(self.gold_cost - self.player_gold)} or."
         return ""
 
 
@@ -210,7 +211,7 @@ class FuseGearUseCase:
         return FusionResult(
             True,
             f"✨ **{preview.item_name}** devient **{label}** "
-            f"({preview.gold_cost} or, {preview.material_needed} × {preview.material_name})."
+            f"({format_int(preview.gold_cost)} or, {preview.material_needed} × {preview.material_name})."
             + (" Elle reprend sa place sur toi." if slot else ""),
             new_rarity=preview.target_rarity,
         )

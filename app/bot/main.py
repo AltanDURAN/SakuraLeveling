@@ -139,7 +139,7 @@ async def _on_app_command_error(
                      interaction.user.id, interaction.channel_id)
         if not interaction.response.is_done():
             try:
-                await interaction.response.send_message("🚧 Cette commande n'est pas disponible ici.", ephemeral=True)
+                await interaction.response.send_message("🚧 Cette commande n'est pas disponible ici : utilise un salon de commandes.", ephemeral=True)
             except discord.HTTPException:
                 pass
         return
@@ -151,7 +151,7 @@ async def _on_app_command_error(
     # Surveillance : les erreurs de commandes alimentent une alerte.
     telemetry.interactions.push(interaction.user.id, getattr(interaction.command, "qualified_name", "?"),
                                 kind="error")
-    msg = "❌ Une erreur est survenue. L'incident a été journalisé."
+    msg = "❌ Une erreur est survenue, elle a été notée. Réessaie dans un instant."
     try:
         if interaction.response.is_done():
             await interaction.followup.send(msg, ephemeral=True)

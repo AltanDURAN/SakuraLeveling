@@ -19,6 +19,7 @@ from app.shared.enums import ALL_ELEMENTS
 from app.infrastructure.db.unit_of_work import commit, transactional
 from app.domain.services.monitoring import kinds
 from app.infrastructure.monitoring.telemetry import record as record_event
+from app.shared.formatters import format_int
 
 
 @dataclass(frozen=True)
@@ -76,7 +77,7 @@ class RevealElementTalentUseCase:
         price = status.next_price
         if status.gold < price:
             return RevealResult(
-                False, f"Il te manque {price - status.gold} or pour cette lecture.", element,
+                False, f"Il te manque {format_int(price - status.gold)} or pour cette lecture.", element,
                 price=price,
             )
         talent = self.affinities.reveal(player_id, element)  # flush

@@ -4,6 +4,7 @@ from app.infrastructure.db.repositories.player_repository import PlayerRepositor
 from app.infrastructure.db.unit_of_work import transactional
 from app.domain.services.monitoring import kinds
 from app.infrastructure.monitoring.telemetry import record as record_event
+from app.shared.formatters import format_int
 
 
 @dataclass
@@ -74,8 +75,8 @@ class TransferGoldUseCase:
                 success=False,
                 message=(
                     f"❌ Fonds insuffisants : il te manque "
-                    f"**{amount - sender_profile.resources.gold}** or "
-                    f"(possédé : {sender_profile.resources.gold}, à envoyer : {amount})."
+                    f"**{format_int(amount - sender_profile.resources.gold)}** or "
+                    f"(tu as {format_int(sender_profile.resources.gold)} or, il en faut {format_int(amount)})."
                 ),
             )
 
@@ -88,7 +89,7 @@ class TransferGoldUseCase:
         return TransferGoldResult(
             success=True,
             message=(
-                f"✅ **{amount}** or envoyé à {receiver_display_name}."
+                f"✅ **{format_int(amount)}** or envoyé à {receiver_display_name}."
             ),
             amount=amount,
             sender_balance_after=sender_profile.resources.gold - amount,

@@ -48,6 +48,7 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
 
     @app_commands.command(name="profil", description="Afficher un profil joueur")
     @app_commands.describe(target="Joueur dont afficher le profil (par défaut : toi)")
+    @app_commands.rename(target="joueur")   # le joueur lit des noms français
     async def profile(
         self,
         interaction: discord.Interaction,
@@ -321,6 +322,7 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
         description="Tes affinités élémentaires et ta progression d'essences",
     )
     @app_commands.describe(target="Joueur dont afficher les affinités (par défaut : toi)")
+    @app_commands.rename(target="joueur")   # le joueur lit des noms français
     async def affinities_cmd(
         self,
         interaction: discord.Interaction,
@@ -406,9 +408,10 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
 
     @app_commands.command(
         name="cd",
-        description="Voir les cooldowns d'un joueur (daily, world boss, etc.)",
+        description="Voir ce qui recharge chez un joueur (daily, world boss, tour…)",
     )
     @app_commands.describe(target="Joueur ciblé (par défaut : toi)")
+    @app_commands.rename(target="joueur")   # le joueur lit des noms français
     async def cd(
         self,
         interaction: discord.Interaction,
@@ -471,7 +474,7 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
         is_self = target_member.id == interaction.user.id
         owner = "Tes" if is_self else "Les"
         suffix = "" if is_self else f" de {target_member.display_name}"
-        title = f"⏳ {owner} cooldowns{suffix}"
+        title = f"⏳ {owner} temps de recharge{suffix}"
 
         embed = discord.Embed(
             title=title,
@@ -480,7 +483,7 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
 
         if not active:
             embed.description = (
-                "✅ Aucun cooldown en cours — tout est disponible !\n\n" + ticket_line
+                "✅ Rien ne recharge : tout est disponible !\n\n" + ticket_line
             )
             await interaction.response.send_message(embed=embed)
             return
@@ -493,7 +496,7 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
             ts = int(next_at.timestamp())
             lines.append(f"{label} — <t:{ts}:R> (<t:{ts}:f>)")
         embed.description = "\n".join(lines) + "\n\n" + ticket_line
-        embed.set_footer(text=f"{len(active)} cooldown(s) actif(s)")
+        embed.set_footer(text=f"{len(active)} temps de recharge en cours")
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(
@@ -501,6 +504,7 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
         description="Ton or (ou celui d'un autre joueur)",
     )
     @app_commands.describe(target="Joueur ciblé (par défaut : toi)")
+    @app_commands.rename(target="joueur")   # le joueur lit des noms français
     async def gold(
         self,
         interaction: discord.Interaction,

@@ -49,6 +49,7 @@ class TradeCog(BetaChannelOnlyMixin, commands.Cog):
         description="Propose un échange à un autre joueur (objets et/ou or)",
     )
     @app_commands.describe(target="Joueur avec qui échanger")
+    @app_commands.rename(target="joueur")   # le joueur lit des noms français
     async def trade(
         self,
         interaction: discord.Interaction,

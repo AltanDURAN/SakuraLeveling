@@ -18,6 +18,7 @@ from app.infrastructure.db.repositories.player_career_stats_repository import (
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
 from app.bot.cogs._mixins import BetaChannelOnlyMixin, PlayerLookupMixin
+from app.shared.formatters import format_int
 
 
 class EconomyCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
@@ -32,6 +33,7 @@ class EconomyCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
         target="Joueur destinataire",
         amount="Montant à envoyer (>= 1)",
     )
+    @app_commands.rename(target="joueur", amount="montant")   # le joueur lit des noms français
     async def pay(
         self,
         interaction: discord.Interaction,
@@ -61,8 +63,8 @@ class EconomyCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
             return
 
         await interaction.response.send_message(
-            f"💸 {interaction.user.mention} a envoyé **{amount}** or à {target.mention}.\n"
-            f"_Votre solde : {result.sender_balance_after} or._"
+            f"💸 {interaction.user.mention} a envoyé **{format_int(amount)}** or à {target.mention}.\n"
+            f"_Ton solde : {format_int(result.sender_balance_after)} or._"
         )
 
     @app_commands.command(name="daily", description="Récupère ta récompense quotidienne")

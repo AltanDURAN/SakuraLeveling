@@ -44,6 +44,7 @@ class LeaderboardCog(commands.Cog):
 
     @app_commands.command(name="classement", description="Affiche un classement")
     @app_commands.describe(category="Type de classement à afficher")
+    @app_commands.rename(category="categorie")   # le joueur lit des noms français
     async def top(self, interaction: discord.Interaction, category: str) -> None:
         await interaction.response.defer()
 

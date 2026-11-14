@@ -7,6 +7,7 @@ from app.infrastructure.db.repositories.shop_repository import ShopRepository
 from app.infrastructure.db.unit_of_work import transactional
 from app.domain.services.monitoring import kinds
 from app.infrastructure.monitoring.telemetry import record as record_event
+from app.shared.formatters import format_int
 
 
 @dataclass
@@ -88,7 +89,7 @@ class BuyFromShopUseCase:
                 success=False,
                 message=(
                     f"Fonds insuffisants : il te manque "
-                    f"**{total_cost - profile.resources.gold}** or "
+                    f"**{format_int(total_cost - profile.resources.gold)}** or "
                     f"(coût total {total_cost})."
                 ),
             )
@@ -106,7 +107,7 @@ class BuyFromShopUseCase:
             success=True,
             message=(
                 f"✅ Tu as acheté **{quantity}× {shop_item.item_definition.name}** "
-                f"pour **{total_cost}** or."
+                f"pour **{format_int(total_cost)}** or."
             ),
             total_cost=total_cost,
             item_name=shop_item.item_definition.name,

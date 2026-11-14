@@ -95,8 +95,8 @@ def build_cards_guide(footer: str) -> discord.Embed:
         f"**Carte {cs.BOOSTER_SIZE}** : {hit}\n"
         f"**Dans un booster** : {odds}"
     ))
-    pity = (f"Un **légendaire** tombe au plus tard au **{params.pity_boosters}e booster** sans légendaire ni "
-            "mythique — et celui-là est brillant." if params.pity_boosters else "")
+    pity = (f"Une carte **légendaire** tombe au plus tard au **{params.pity_boosters}e booster** sans légendaire ni "
+            "mythique — et celle-là est brillante." if params.pity_boosters else "")
     embed.add_field(name="✨ Brillantes" + (" et légendaire garanti" if pity else ""), inline=False, value=(
         f"Chaque carte a **{_pct(params.brillante_pct)}** de chances de sortir **brillante** : une version "
         "**pleine carte holographique**, même effet, pur prestige. La mythique est **toujours** brillante."

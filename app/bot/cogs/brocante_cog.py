@@ -116,8 +116,9 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
         description="Voir le catalogue d'annonces actives",
     )
     @app_commands.describe(
-        item="Filtre optionnel sur un item précis (autocomplete)"
+        item="Ne montrer que cet objet (suggestions pendant la saisie)"
     )
+    @app_commands.rename(item="objet")   # le joueur lit des noms français
     async def list_listings(
         self,
         interaction: discord.Interaction,
@@ -215,11 +216,12 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
         description="Mets un objet en vente sur la brocante",
     )
     @app_commands.describe(
-        item="Item ou pièce d'équipement à vendre (autocomplete)",
+        item="Objet ou pièce d'équipement à vendre (suggestions pendant la saisie)",
         quantity="Quantité à mettre en vente (ignorée pour une pièce d'équipement)",
         price_per_unit="Prix unitaire en or (prix de la pièce pour un équipement)",
         duration_days="Durée de l'annonce en jours (max 5)",
     )
+    @app_commands.rename(item="objet", price_per_unit="prix_unitaire", quantity="quantite", duration_days="duree")   # le joueur lit des noms français
     async def sell(
         self,
         interaction: discord.Interaction,
@@ -285,6 +287,7 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
         description="Acheter une annonce active",
     )
     @app_commands.describe(listing_id="ID de l'annonce à acheter")
+    @app_commands.rename(listing_id="annonce")   # le joueur lit des noms français
     async def buy(
         self,
         interaction: discord.Interaction,
@@ -312,6 +315,7 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
         description="Annule une de tes annonces et récupère les objets",
     )
     @app_commands.describe(listing_id="ID de l'annonce à annuler")
+    @app_commands.rename(listing_id="annonce")   # le joueur lit des noms français
     async def cancel(
         self,
         interaction: discord.Interaction,

@@ -316,7 +316,7 @@ class UseConsumableUseCase:
             if not self._consume(pid, item):
                 return fail(f"❌ Tu n'as pas de **{item.name}** en inventaire.")
             refunded = self.player_repository.reset_stat_points(pid)
-            return UseConsumableResult(True, f"📜 **{item.name}** : {refunded} points de stats repris. "
+            return UseConsumableResult(True, f"📜 **{item.name}** : {refunded} point{'s' if refunded > 1 else ''} de stats repris. "
                                              "Replace-les avec `/stats`.", item.name)
 
         if effect == tools.EFFECT_RESET_TREE:

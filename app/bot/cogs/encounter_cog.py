@@ -503,7 +503,7 @@ class EncounterCog(commands.Cog):
         if encounter.participants:
             count = len(encounter.participants)
             lines.append(f"⚔️ Le combat se lance {when} — {count} combattant{'s' if count > 1 else ''}. "
-                         "Prêts ? Cliquez sur **Lancer**.")
+                         "Prêt ? Clique sur **Lancer**.")
         else:
             lines.append(f"⏳ Sans combattant, le monstre s'enfuit {when}.")
         return "\n".join(lines)

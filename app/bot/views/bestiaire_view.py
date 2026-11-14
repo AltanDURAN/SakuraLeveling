@@ -136,11 +136,11 @@ def build_mob_embed(
         name="📊 Stats",
         value=(
             f"❤️ PV : **{format_int(mob.max_hp)}**\n"
-            f"⚔️ Atk : **{format_int(mob.attack)}**\n"
-            f"🛡️ Def : **{format_int(mob.defense)}**\n"
-            f"💨 Spd : **{mob.speed}**\n"
-            f"🎯 Chance crit : **{mob.crit_chance}%**\n"
-            f"💥 Dégâts crit : **{mob.crit_damage}%**\n"
+            f"⚔️ Attaque : **{format_int(mob.attack)}**\n"
+            f"🛡️ Défense : **{format_int(mob.defense)}**\n"
+            f"💨 Vitesse : **{mob.speed}**\n"
+            f"🎯 Chance de critique : **{mob.crit_chance} %**\n"
+            f"💥 Dégâts critiques : **{mob.crit_damage} %**\n"
             f"🌀 Esquive : **{mob.dodge}%**"
         ),
         inline=True,
@@ -148,8 +148,8 @@ def build_mob_embed(
     embed.add_field(
         name="💰 Récompenses",
         value=(
-            f"✨ XP : **{mob.xp_reward}**\n"
-            f"{GOLD_EMOJI} Or : **{mob.gold_reward}**"
+            f"✨ XP : **{format_int(mob.xp_reward)}**\n"
+            f"{GOLD_EMOJI} Or : **{format_int(mob.gold_reward)}**"
         ),
         inline=True,
     )
@@ -160,7 +160,7 @@ def build_mob_embed(
         names = {code: item.name for code, item in items.items()}
         loot_lines = [_format_loot_line(entry, names) for entry in mob.loot_table]
         embed.add_field(
-            name="🎁 Drops",
+            name="🎁 Butin",
             value="\n".join(loot_lines)[:1024] or "_aucun_",
             inline=False,
         )

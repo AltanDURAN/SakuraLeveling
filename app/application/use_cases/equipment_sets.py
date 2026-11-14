@@ -101,8 +101,8 @@ class CreateEquipmentSetUseCase:
             return CreateSetResult(
                 success=False,
                 message=(
-                    "❌ Aucun équipement à sauvegarder — équipez au moins "
-                    "une pièce avant de créer un set."
+                    "❌ Aucun équipement à sauvegarder : équipe au moins "
+                    "une pièce avant de créer une tenue."
                 ),
             )
 
@@ -313,7 +313,7 @@ class UnequipAllUseCase:
         if not equipped:
             return UnequipAllResult(
                 success=False,
-                message="❌ Aucun équipement à retirer (tous les slots sont déjà vides).",
+                message="❌ Aucun équipement à retirer (tous les emplacements sont déjà vides).",
             )
         cleared: list[str] = []
         for e in equipped:

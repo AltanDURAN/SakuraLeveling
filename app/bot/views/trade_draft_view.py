@@ -354,7 +354,7 @@ class TradeDraftView(discord.ui.View):
 
     # ---------- Boutons ----------
 
-    @discord.ui.button(label="+ Mon item", style=discord.ButtonStyle.primary, row=0)
+    @discord.ui.button(label="+ Mon objet", style=discord.ButtonStyle.primary, row=0)
     async def add_offered_item(
         self,
         interaction: discord.Interaction,
@@ -395,7 +395,7 @@ class TradeDraftView(discord.ui.View):
             side="offered",
         )
 
-    @discord.ui.button(label="+ Item demandé", style=discord.ButtonStyle.primary, row=0)
+    @discord.ui.button(label="+ Objet demandé", style=discord.ButtonStyle.primary, row=0)
     async def add_requested_item(
         self,
         interaction: discord.Interaction,
@@ -548,7 +548,7 @@ class TradeDraftView(discord.ui.View):
     ) -> None:
         if self.draft.is_empty():
             await interaction.response.send_message(
-                "❌ Brouillon vide : ajoutez au moins un item ou de l'or.",
+                "❌ Brouillon vide : ajoute au moins un objet ou de l'or.",
                 ephemeral=True,
             )
             return
@@ -585,7 +585,7 @@ class TradeDraftView(discord.ui.View):
         for child in self.children:
             child.disabled = True
         await interaction.response.edit_message(
-            content="✅ Trade soumis ! Voir le message public.",
+            content="✅ Échange proposé ! Il est affiché dans le salon.",
             embed=self._build_embed(),
             view=self,
         )

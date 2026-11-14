@@ -12,6 +12,7 @@ from app.infrastructure.db.repositories.trade_repository import TradeRepository
 from app.infrastructure.db.unit_of_work import transactional
 from app.domain.services.monitoring import kinds
 from app.infrastructure.monitoring.telemetry import record as record_event
+from app.shared.formatters import format_int
 
 
 @dataclass
@@ -147,13 +148,13 @@ class AcceptTradeUseCase:
             return (
                 False,
                 f"❌ {trade.initiator_display_name} n'a plus assez d'or "
-                f"({initiator_profile.resources.gold} < {trade.initiator_gold_offered}).",
+                f"({format_int(initiator_profile.resources.gold)} sur {format_int(trade.initiator_gold_offered)}).",
             )
         if target_profile.resources.gold < trade.target_gold_offered:
             return (
                 False,
                 f"❌ {trade.target_display_name} n'a plus assez d'or "
-                f"({target_profile.resources.gold} < {trade.target_gold_offered}).",
+                f"({format_int(target_profile.resources.gold)} sur {format_int(trade.target_gold_offered)}).",
             )
 
         # Items côté initiator

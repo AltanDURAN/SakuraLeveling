@@ -242,7 +242,7 @@ class WorldBossView(GatedView):
                 await cog.refresh_boss_message(boss_id)
 
     @discord.ui.button(
-        label="Combat auto à 21h",
+        label="Combat auto",          # l'heure réglée sur le site est posée dans __init__ (cf. plus bas)
         style=discord.ButtonStyle.primary,
         emoji="⏰",
         custom_id="world_boss:vote",
@@ -724,7 +724,7 @@ class WorldBossCog(commands.Cog):
         rules.add_field(
             name="🤝 Comment participer",
             value=(
-                f"**Rejoindre** pour vous inscrire, avant **{pacing_service.close_label(get_pacing().raid)}**. "
+                f"**Rejoindre** pour t'inscrire, avant **{pacing_service.close_label(get_pacing().raid)}**. "
                 f"Chaque jour à **{pacing_service.fight_label(get_pacing().raid)}**, tous les inscrits "
                 "lancent l'assaut ensemble."
             ),

@@ -23,6 +23,7 @@ from app.infrastructure.db.unit_of_work import commit
 from app.infrastructure.db.unit_of_work import transactional
 from app.domain.services.monitoring import kinds
 from app.infrastructure.monitoring.telemetry import record as record_event
+from app.shared.formatters import format_int
 
 #: Lot maximal en une fois (garde-fou de l'interface).
 MAX_BATCH = 50
@@ -127,7 +128,7 @@ class BrewPotionUseCase:
             return BrewResult(False, "❌ Il te manque " + ", ".join(missing) + ".", line.item_name)
         fee = alchemy.brew_fee(recipe, status.level, quantity, status.tier.gold_discount_pct)
         if status.gold < fee:
-            return BrewResult(False, f"❌ Il te manque {fee - status.gold} or pour la confection.",
+            return BrewResult(False, f"❌ Il te manque {format_int(fee - status.gold)} or pour la confection.",
                               line.item_name)
 
         # Atomique : rien n'est validé avant la fin ; un ingrédient manquant
@@ -150,7 +151,7 @@ class BrewPotionUseCase:
         record_event(self.session, kinds.BREW, player_id=player_id, ref=item_code, qty=quantity + bonus, gold=-fee)
         commit(self.session)
 
-        message = f"🧪 {quantity} × **{line.item_name}** préparée(s) pour {fee} or."
+        message = f"🧪 {quantity} × **{line.item_name}** préparée{'s' if quantity > 1 else ''} pour {format_int(fee)} or."
         if bonus:
             message += f" Elna t'en glisse {bonus} de plus 🎁."
         return BrewResult(True, message, line.item_name, quantity, bonus, fee)

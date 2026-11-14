@@ -36,6 +36,7 @@ class SkillCog(BetaChannelOnlyMixin, commands.Cog):
     @app_commands.describe(
         target="Joueur dont afficher l'arbre (par défaut : toi)",
     )
+    @app_commands.rename(target="joueur")   # le joueur lit des noms français
     async def skill(
         self,
         interaction: discord.Interaction,

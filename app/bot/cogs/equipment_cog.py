@@ -36,6 +36,7 @@ class EquipmentCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
 
     @app_commands.command(name="inventaire", description="Afficher un inventaire")
     @app_commands.describe(target="Joueur dont afficher l'inventaire (par défaut : toi)")
+    @app_commands.rename(target="joueur")   # le joueur lit des noms français
     async def inventory(
         self,
         interaction: discord.Interaction,
@@ -58,6 +59,7 @@ class EquipmentCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
         description="Afficher l'équipement en image (2 pages : emplacements / résumé)",
     )
     @app_commands.describe(target="Joueur dont afficher l'équipement (par défaut : toi)")
+    @app_commands.rename(target="joueur")   # le joueur lit des noms français
     async def equipment(
         self,
         interaction: discord.Interaction,
@@ -107,6 +109,7 @@ class EquipmentCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
         description="Liste les équipements possédés par catégorie (équipés ou non)",
     )
     @app_commands.describe(target="Joueur ciblé (par défaut : toi)")
+    @app_commands.rename(target="joueur")   # le joueur lit des noms français
     async def equipement_list(
         self,
         interaction: discord.Interaction,
@@ -287,9 +290,10 @@ class EquipmentCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
 
     @app_commands.command(
         name="desequiper",
-        description="Déséquiper un emplacement (ou tout, avec slot=all)",
+        description="Retirer la pièce d'un emplacement (ou tout retirer)",
     )
-    @app_commands.describe(slot="`all` pour tout retirer, sinon le slot ciblé (autocomplete)")
+    @app_commands.describe(slot="L'emplacement à vider, ou « all » pour tout retirer")
+    @app_commands.rename(slot="emplacement")   # le joueur lit des noms français
     async def unequip(
         self,
         interaction: discord.Interaction,
@@ -374,7 +378,7 @@ class EquipmentCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
 
     @app_commands.command(
         name="creer_set",
-        description="Sauvegarde l'équipement actuel sous un nom (loadout réutilisable)",
+        description="Sauvegarde l'équipement actuel sous un nom (tenue réutilisable)",
     )
     @app_commands.describe(nom="Nom du set (max 50 caractères, libre)")
     async def create_set(
@@ -407,7 +411,7 @@ class EquipmentCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
         name="supprimer_set",
         description="Supprime un set d'équipement sauvegardé",
     )
-    @app_commands.describe(nom="Nom du set à supprimer (autocomplete)")
+    @app_commands.describe(nom="La tenue à supprimer")
     async def delete_set(
         self, interaction: discord.Interaction, nom: str,
     ) -> None:
@@ -437,7 +441,7 @@ class EquipmentCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
         name="equiper_set",
         description="Applique un set d'équipement sauvegardé",
     )
-    @app_commands.describe(nom="Nom du set à équiper (autocomplete)")
+    @app_commands.describe(nom="La tenue à équiper")
     async def equip_set(
         self, interaction: discord.Interaction, nom: str,
     ) -> None:
@@ -492,7 +496,7 @@ class EquipmentCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
         for s in sets:
             if current_lower and current_lower not in s.name.lower():
                 continue
-            label = f"{s.name} ({len(s.items)} pièces)"[:100]
+            label = f"{s.name} ({len(s.items)} pièce{'s' if len(s.items) > 1 else ''})"[:100]
             choices.append(app_commands.Choice(name=label, value=s.name))
             if len(choices) >= 25:
                 break
@@ -503,6 +507,7 @@ class EquipmentCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
         description="Utilise un consommable de ton inventaire (potion, outil…)",
     )
     @app_commands.describe(item_code="Le consommable (tes objets s'affichent en tapant)")
+    @app_commands.rename(item_code="consommable")   # le joueur lit des noms français
     async def use(self, interaction: discord.Interaction, item_code: str) -> None:
         await interaction.response.defer(ephemeral=True)
         from app.application.use_cases.use_consumable import UseContext

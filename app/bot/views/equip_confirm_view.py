@@ -66,7 +66,7 @@ def build_equip_confirm_embed(
         color=discord.Color.orange(),
     )
     embed.add_field(
-        name="Diff de statistiques",
+        name="Avant → après",
         value="\n".join(d.render() for d in diffs),
         inline=False,
     )

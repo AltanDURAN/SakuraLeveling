@@ -2,7 +2,7 @@
   {
     "code": "slime_slayer",
     "name": "Slime Slayer",
-    "description": "Tueur de slimes confirmé. +10% dégâts infligés et -10% dégâts subis face aux slimes.",
+    "description": "100 victoires contre les slimes. +10 % de dégâts infligés et −10 % de dégâts subis face à cette famille.",
     "icon": "🟢",
     "condition_type": "kills_family",
     "condition_target": "slime",
@@ -23,7 +23,7 @@
   {
     "code": "gobelin_slayer",
     "name": "Gobelin Slayer",
-    "description": "Bourreau des gobelins. +10% dégâts infligés et -10% dégâts subis face aux gobelins.",
+    "description": "100 victoires contre les gobelins. +10 % de dégâts infligés et −10 % de dégâts subis face à cette famille.",
     "icon": "👹",
     "condition_type": "kills_family",
     "condition_target": "gobelin",
@@ -89,7 +89,7 @@
   {
     "code": "champion_semaine",
     "name": "Champion de la semaine",
-    "description": "Meilleur classement général de la semaine aux défis (/defi). +1 % sur toutes vos stats (multiplicatif sur PV/atk/def, additif sur crit/esquive, +1 flat sur vitesse/régen). Remis en jeu chaque dimanche à 20 h.",
+    "description": "Meilleur classement général de la semaine aux défis (/defi). +1 % sur toutes tes stats. Remis en jeu chaque dimanche à 20 h.",
     "icon": "👑",
     "condition_type": "weekly_role_trial",
     "condition_target": "general",
@@ -104,7 +104,7 @@
   {
     "code": "farmer_fou",
     "name": "Le Farmer Fou",
-    "description": "Détenteur du record absolu de monstres tués. +1% sur l'or et l'XP gagnés à la fin d'un combat (uniquement pour le détenteur). Perdu dès qu'un autre joueur dépasse votre record.",
+    "description": "Détenteur du record absolu de monstres tués. +1 % sur l'or et l'XP gagnés à la fin d'un combat (pour le détenteur seulement). Perdu dès qu'un autre joueur dépasse ton record.",
     "icon": "🌾",
     "condition_type": "kills_record",
     "exclusive": true,
@@ -118,7 +118,7 @@
   {
     "code": "bourreau",
     "name": "Le Bourreau",
-    "description": "Tueur impitoyable de 500 monstres au total. +5% sur les dégâts critiques (additif sur crit_damage).",
+    "description": "500 monstres vaincus au total. +5 points de dégâts critiques.",
     "icon": "🩸",
     "condition_type": "kills_total",
     "condition_value": 500,
@@ -132,7 +132,7 @@
   {
     "code": "intouchable",
     "name": "L'Intouchable",
-    "description": "Esquiveur aguerri (100 esquives encaissées en combat de groupe). +1% d'esquive permanent.",
+    "description": "100 esquives en combat. +1 % d'esquive.",
     "icon": "🌪️",
     "condition_type": "dodges_total",
     "condition_value": 100,
@@ -160,7 +160,7 @@
   {
     "code": "taverne_addict",
     "name": "Taverne Addict",
-    "description": "Série /daily de 30 jours. +3 % de dégâts critiques.",
+    "description": "Série /daily de 30 jours. +3 points de dégâts critiques.",
     "icon": "🍺",
     "condition_type": "daily_streak",
     "condition_value": 30,
@@ -188,7 +188,7 @@
   {
     "code": "slime_chasseur_legendaire",
     "name": "Chasseur Légendaire — Slime",
-    "description": "50 slimes tués. +5% drop rate sur les slimes (multiplicatif, préserve la rareté).",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "slime",
@@ -204,7 +204,7 @@
   {
     "code": "gobelin_chasseur_legendaire",
     "name": "Chasseur Légendaire — Gobelin",
-    "description": "50 gobelins tués. +5% drop rate sur les gobelins.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "gobelin",
@@ -220,7 +220,7 @@
   {
     "code": "gobelin_combattant_chasseur_legendaire",
     "name": "Chasseur Légendaire — Gobelin Combattant",
-    "description": "50 gobelins combattants tués. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "gobelin_combattant",
@@ -236,7 +236,7 @@
   {
     "code": "gobelin_chaman_chasseur_legendaire",
     "name": "Chasseur Légendaire — Gobelin Chaman",
-    "description": "50 gobelins chamans tués. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "gobelin_chaman",
@@ -252,7 +252,7 @@
   {
     "code": "gobelin_geant_chasseur_legendaire",
     "name": "Chasseur Légendaire — Gobelin Géant",
-    "description": "50 gobelins géants tués. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "gobelin_geant",
@@ -268,7 +268,7 @@
   {
     "code": "gobelin_runique_chasseur_legendaire",
     "name": "Chasseur Légendaire — Gobelin Runique",
-    "description": "50 gobelins runiques tués. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "gobelin_runique",
@@ -284,7 +284,7 @@
   {
     "code": "gobelin_ballon_chasseur_legendaire",
     "name": "Chasseur Légendaire — Gobelin Ballon",
-    "description": "50 gobelins ballons tués. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "gobelin_ballon",
@@ -300,7 +300,7 @@
   {
     "code": "gobelin_assassin_chasseur_legendaire",
     "name": "Chasseur Légendaire — Gobelin Assassin",
-    "description": "50 gobelins assassins tués. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "gobelin_assassin",
@@ -316,7 +316,7 @@
   {
     "code": "gobelin_superieur_chasseur_legendaire",
     "name": "Chasseur Légendaire — Gobelin Supérieur",
-    "description": "25 gobelins supérieurs vaincus. +5% drop rate sur cette espèce. (élite de groupe : 25 suffisent)",
+    "description": "25 victoires contre cette élite de groupe. +5 % de chances de butin contre elle.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "gobelin_superieur",
@@ -332,7 +332,7 @@
   {
     "code": "mort_vivant_slayer",
     "name": "Pourfendeur de morts-vivants",
-    "description": "100 morts-vivants vaincus. +10% dégâts infligés et -10% dégâts subis face aux morts-vivants.",
+    "description": "100 victoires contre les morts-vivants. +10 % de dégâts infligés et −10 % de dégâts subis face à cette famille.",
     "icon": "💀",
     "condition_type": "kills_family",
     "condition_target": "mort-vivant",
@@ -353,7 +353,7 @@
   {
     "code": "demoniaque_slayer",
     "name": "Pourfendeur de démons",
-    "description": "100 démons vaincus. +10% dégâts infligés et -10% dégâts subis face aux démons.",
+    "description": "100 victoires contre les démons. +10 % de dégâts infligés et −10 % de dégâts subis face à cette famille.",
     "icon": "😈",
     "condition_type": "kills_family",
     "condition_target": "demoniaque",
@@ -374,7 +374,7 @@
   {
     "code": "primordial_slayer",
     "name": "Pourfendeur de bêtes primordiales",
-    "description": "100 bêtes primordiales vaincus. +10% dégâts infligés et -10% dégâts subis face aux bêtes primordiales.",
+    "description": "100 victoires contre les bêtes primordiales. +10 % de dégâts infligés et −10 % de dégâts subis face à cette famille.",
     "icon": "🐺",
     "condition_type": "kills_family",
     "condition_target": "primordial",
@@ -395,7 +395,7 @@
   {
     "code": "nocturne_slayer",
     "name": "Pourfendeur des ténèbres",
-    "description": "100 créatures nocturnes vaincus. +10% dégâts infligés et -10% dégâts subis face aux créatures nocturnes.",
+    "description": "100 victoires contre les créatures nocturnes. +10 % de dégâts infligés et −10 % de dégâts subis face à cette famille.",
     "icon": "🦇",
     "condition_type": "kills_family",
     "condition_target": "nocturne",
@@ -416,7 +416,7 @@
   {
     "code": "draconique_slayer",
     "name": "Pourfendeur de dragons",
-    "description": "100 dragons vaincus. +10% dégâts infligés et -10% dégâts subis face aux dragons.",
+    "description": "100 victoires contre les dragons. +10 % de dégâts infligés et −10 % de dégâts subis face à cette famille.",
     "icon": "🐉",
     "condition_type": "kills_family",
     "condition_target": "draconique",
@@ -437,7 +437,7 @@
   {
     "code": "abyssal_slayer",
     "name": "Pourfendeur du Néant",
-    "description": "100 créatures du Néant vaincus. +10% dégâts infligés et -10% dégâts subis face aux créatures du Néant.",
+    "description": "100 victoires contre les créatures du Néant. +10 % de dégâts infligés et −10 % de dégâts subis face à cette famille.",
     "icon": "🌌",
     "condition_type": "kills_family",
     "condition_target": "abyssal",
@@ -458,7 +458,7 @@
   {
     "code": "squelette_chasseur_legendaire",
     "name": "Chasseur Légendaire — Squelette",
-    "description": "50 × Squelette vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "squelette",
@@ -474,7 +474,7 @@
   {
     "code": "zombie_chasseur_legendaire",
     "name": "Chasseur Légendaire — Zombie",
-    "description": "50 × Zombie vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "zombie",
@@ -490,7 +490,7 @@
   {
     "code": "momie_chasseur_legendaire",
     "name": "Chasseur Légendaire — Momie",
-    "description": "50 × Momie vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "momie",
@@ -506,7 +506,7 @@
   {
     "code": "fantome_chasseur_legendaire",
     "name": "Chasseur Légendaire — Fantôme",
-    "description": "50 × Fantôme vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "fantome",
@@ -522,7 +522,7 @@
   {
     "code": "gargouille_chasseur_legendaire",
     "name": "Chasseur Légendaire — Gargouille",
-    "description": "50 × Gargouille vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "gargouille",
@@ -538,7 +538,7 @@
   {
     "code": "diablotin_chasseur_legendaire",
     "name": "Chasseur Légendaire — Diablotin",
-    "description": "50 × Diablotin vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "diablotin",
@@ -554,7 +554,7 @@
   {
     "code": "banshee_chasseur_legendaire",
     "name": "Chasseur Légendaire — Banshee",
-    "description": "50 × Banshee vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "banshee",
@@ -570,7 +570,7 @@
   {
     "code": "loup_sacre_chasseur_legendaire",
     "name": "Chasseur Légendaire — Loup sacré",
-    "description": "50 × Loup sacré vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "loup_sacre",
@@ -586,7 +586,7 @@
   {
     "code": "cerf_esprit_chasseur_legendaire",
     "name": "Chasseur Légendaire — Cerf-esprit",
-    "description": "50 × Cerf-esprit vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "cerf_esprit",
@@ -602,7 +602,7 @@
   {
     "code": "serpent_des_racines_chasseur_legendaire",
     "name": "Chasseur Légendaire — Serpent des racines",
-    "description": "50 × Serpent des racines vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "serpent_des_racines",
@@ -618,7 +618,7 @@
   {
     "code": "demon_cornu_chasseur_legendaire",
     "name": "Chasseur Légendaire — Démon cornu",
-    "description": "50 × Démon cornu vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "demon_cornu",
@@ -634,7 +634,7 @@
   {
     "code": "ours_colosse_chasseur_legendaire",
     "name": "Chasseur Légendaire — Ours colosse",
-    "description": "50 × Ours colosse vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "ours_colosse",
@@ -650,7 +650,7 @@
   {
     "code": "liche_maudite_chasseur_legendaire",
     "name": "Chasseur Légendaire — Liche maudite",
-    "description": "25 × Liche maudite vaincus. +5% drop rate sur cette espèce. (élite de groupe : 25 suffisent)",
+    "description": "25 victoires contre cette élite de groupe. +5 % de chances de butin contre elle.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "liche_maudite",
@@ -666,7 +666,7 @@
   {
     "code": "golem_de_mousse_chasseur_legendaire",
     "name": "Chasseur Légendaire — Golem de mousse",
-    "description": "50 × Golem de mousse vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "golem_de_mousse",
@@ -682,7 +682,7 @@
   {
     "code": "aigle_tempete_chasseur_legendaire",
     "name": "Chasseur Légendaire — Aigle-tempête",
-    "description": "25 × Aigle-tempête vaincus. +5% drop rate sur cette espèce. (élite de groupe : 25 suffisent)",
+    "description": "25 victoires contre cette élite de groupe. +5 % de chances de butin contre elle.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "aigle_tempete",
@@ -698,7 +698,7 @@
   {
     "code": "chauve_souris_geante_chasseur_legendaire",
     "name": "Chasseur Légendaire — Chauve-souris géante",
-    "description": "50 × Chauve-souris géante vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "chauve_souris_geante",
@@ -714,7 +714,7 @@
   {
     "code": "goule_chasseur_legendaire",
     "name": "Chasseur Légendaire — Goule",
-    "description": "50 × Goule vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "goule",
@@ -730,7 +730,7 @@
   {
     "code": "loup_garou_chasseur_legendaire",
     "name": "Chasseur Légendaire — Loup-garou",
-    "description": "50 × Loup-garou vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "loup_garou",
@@ -746,7 +746,7 @@
   {
     "code": "ogre_demoniaque_chasseur_legendaire",
     "name": "Chasseur Légendaire — Ogre démoniaque",
-    "description": "50 × Ogre démoniaque vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "ogre_demoniaque",
@@ -762,7 +762,7 @@
   {
     "code": "sorciere_de_sang_chasseur_legendaire",
     "name": "Chasseur Légendaire — Sorcière de sang",
-    "description": "50 × Sorcière de sang vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "sorciere_de_sang",
@@ -778,7 +778,7 @@
   {
     "code": "chevalier_de_l_eclipse_chasseur_legendaire",
     "name": "Chasseur Légendaire — Chevalier de l'éclipse",
-    "description": "50 × Chevalier de l'éclipse vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "chevalier_de_l_eclipse",
@@ -794,7 +794,7 @@
   {
     "code": "vampire_noble_chasseur_legendaire",
     "name": "Chasseur Légendaire — Vampire noble",
-    "description": "50 × Vampire noble vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "vampire_noble",
@@ -810,7 +810,7 @@
   {
     "code": "comtesse_ecarlate_chasseur_legendaire",
     "name": "Chasseur Légendaire — Comtesse écarlate",
-    "description": "25 × Comtesse écarlate vaincus. +5% drop rate sur cette espèce. (élite de groupe : 25 suffisent)",
+    "description": "25 victoires contre cette élite de groupe. +5 % de chances de butin contre elle.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "comtesse_ecarlate",
@@ -826,7 +826,7 @@
   {
     "code": "kobold_chasseur_legendaire",
     "name": "Chasseur Légendaire — Kobold",
-    "description": "50 × Kobold vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "kobold",
@@ -842,7 +842,7 @@
   {
     "code": "cerbere_chasseur_legendaire",
     "name": "Chasseur Légendaire — Cerbère",
-    "description": "50 × Cerbère vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "cerbere",
@@ -858,7 +858,7 @@
   {
     "code": "dragonnet_chasseur_legendaire",
     "name": "Chasseur Légendaire — Dragonnet",
-    "description": "50 × Dragonnet vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "dragonnet",
@@ -874,7 +874,7 @@
   {
     "code": "drake_de_braise_chasseur_legendaire",
     "name": "Chasseur Légendaire — Drake de braise",
-    "description": "50 × Drake de braise vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "drake_de_braise",
@@ -890,7 +890,7 @@
   {
     "code": "wyverne_chasseur_legendaire",
     "name": "Chasseur Légendaire — Wyverne",
-    "description": "50 × Wyverne vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "wyverne",
@@ -906,7 +906,7 @@
   {
     "code": "dragon_de_givre_chasseur_legendaire",
     "name": "Chasseur Légendaire — Dragon de givre",
-    "description": "50 × Dragon de givre vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "dragon_de_givre",
@@ -922,7 +922,7 @@
   {
     "code": "succube_chasseur_legendaire",
     "name": "Chasseur Légendaire — Succube",
-    "description": "50 × Succube vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "succube",
@@ -938,7 +938,7 @@
   {
     "code": "gardien_draconique_chasseur_legendaire",
     "name": "Chasseur Légendaire — Gardien draconique",
-    "description": "50 × Gardien draconique vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "gardien_draconique",
@@ -954,7 +954,7 @@
   {
     "code": "dragon_ancien_chasseur_legendaire",
     "name": "Chasseur Légendaire — Dragon ancien",
-    "description": "25 × Dragon ancien vaincus. +5% drop rate sur cette espèce. (élite de groupe : 25 suffisent)",
+    "description": "25 victoires contre cette élite de groupe. +5 % de chances de butin contre elle.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "dragon_ancien",
@@ -970,7 +970,7 @@
   {
     "code": "rejeton_du_neant_chasseur_legendaire",
     "name": "Chasseur Légendaire — Rejeton du néant",
-    "description": "50 × Rejeton du néant vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "rejeton_du_neant",
@@ -986,7 +986,7 @@
   {
     "code": "oeil_errant_chasseur_legendaire",
     "name": "Chasseur Légendaire — Œil errant",
-    "description": "50 × Œil errant vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "oeil_errant",
@@ -1002,7 +1002,7 @@
   {
     "code": "ange_dechu_chasseur_legendaire",
     "name": "Chasseur Légendaire — Ange déchu",
-    "description": "50 × Ange déchu vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "ange_dechu",
@@ -1018,7 +1018,7 @@
   {
     "code": "devoreur_chasseur_legendaire",
     "name": "Chasseur Légendaire — Dévoreur",
-    "description": "50 × Dévoreur vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "devoreur",
@@ -1034,7 +1034,7 @@
   {
     "code": "heraut_du_vide_chasseur_legendaire",
     "name": "Chasseur Légendaire — Héraut du vide",
-    "description": "50 × Héraut du vide vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "heraut_du_vide",
@@ -1050,7 +1050,7 @@
   {
     "code": "kraken_astral_chasseur_legendaire",
     "name": "Chasseur Légendaire — Kraken astral",
-    "description": "50 × Kraken astral vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "kraken_astral",
@@ -1066,7 +1066,7 @@
   {
     "code": "seraphin_brise_chasseur_legendaire",
     "name": "Chasseur Légendaire — Séraphin brisé",
-    "description": "50 × Séraphin brisé vaincus. +5% drop rate sur cette espèce.",
+    "description": "50 victoires contre ce monstre. +5 % de chances de butin contre lui.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "seraphin_brise",
@@ -1082,7 +1082,7 @@
   {
     "code": "archidemon_chasseur_legendaire",
     "name": "Chasseur Légendaire — Archidémon",
-    "description": "25 × Archidémon vaincus. +5% drop rate sur cette espèce. (élite de groupe : 25 suffisent)",
+    "description": "25 victoires contre cette élite de groupe. +5 % de chances de butin contre elle.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "archidemon",
@@ -1098,7 +1098,7 @@
   {
     "code": "avatar_du_neant_chasseur_legendaire",
     "name": "Chasseur Légendaire — Avatar du Néant",
-    "description": "25 × Avatar du Néant vaincus. +5% drop rate sur cette espèce. (élite de groupe : 25 suffisent)",
+    "description": "25 victoires contre cette élite de groupe. +5 % de chances de butin contre elle.",
     "icon": "🏹",
     "condition_type": "kills_mob",
     "condition_target": "avatar_du_neant",
@@ -1115,7 +1115,7 @@
     "code": "mvp_world_boss",
     "name": "MVP des World Boss",
     "icon": "🏆",
-    "description": "Meilleur contributeur du dernier world boss vaincu. +2% sur toutes vos stats. Transmis au MVP du prochain boss.",
+    "description": "Meilleur contributeur du dernier world boss vaincu. +2 % sur toutes tes stats. Transmis au MVP du prochain boss.",
     "condition_type": "world_boss_mvp",
     "condition_target": "",
     "condition_value": 1,
@@ -1131,7 +1131,7 @@
     "code": "tueur_slime_titan",
     "name": "Tueur du Titan Visqueux",
     "icon": "⚔️",
-    "description": "A participé à la victoire contre Titan Visqueux. +3 dégâts critiques.",
+    "description": "A participé à la victoire contre Titan Visqueux. +3 points de dégâts critiques.",
     "condition_type": "world_boss_kill",
     "condition_target": "slime_titan",
     "condition_value": 1,
@@ -1146,7 +1146,7 @@
     "code": "tueur_gobelin_warlord",
     "name": "Tueur du Seigneur de Guerre Gobelin",
     "icon": "⚔️",
-    "description": "A participé à la victoire contre Seigneur de Guerre Gobelin. +3 dégâts critiques.",
+    "description": "A participé à la victoire contre Seigneur de Guerre Gobelin. +3 points de dégâts critiques.",
     "condition_type": "world_boss_kill",
     "condition_target": "gobelin_warlord",
     "condition_value": 1,
@@ -1161,7 +1161,7 @@
     "code": "tueur_stone_colossus",
     "name": "Tueur de la Guerrière Fantôme",
     "icon": "⚔️",
-    "description": "A participé à la victoire contre la Guerrière Fantôme. +3 dégâts critiques.",
+    "description": "A participé à la victoire contre la Guerrière Fantôme. +3 points de dégâts critiques.",
     "condition_type": "world_boss_kill",
     "condition_target": "stone_colossus",
     "condition_value": 1,
@@ -1176,7 +1176,7 @@
     "code": "tueur_shadow_wraith",
     "name": "Tueur du Démon Zombie",
     "icon": "⚔️",
-    "description": "A participé à la victoire contre le Démon Zombie. +3 dégâts critiques.",
+    "description": "A participé à la victoire contre le Démon Zombie. +3 points de dégâts critiques.",
     "condition_type": "world_boss_kill",
     "condition_target": "shadow_wraith",
     "condition_value": 1,
@@ -1191,7 +1191,7 @@
     "code": "tueur_ancient_dragon",
     "name": "Tueur du Dragon Ancestral",
     "icon": "⚔️",
-    "description": "A participé à la victoire contre Dragon Ancestral. +3 dégâts critiques.",
+    "description": "A participé à la victoire contre Dragon Ancestral. +3 points de dégâts critiques.",
     "condition_type": "world_boss_kill",
     "condition_target": "ancient_dragon",
     "condition_value": 1,
@@ -1206,7 +1206,7 @@
     "code": "ma_survie_avant_tout",
     "name": "Ma survie avant tout",
     "icon": "🛡️",
-    "description": "A ignoré une « petite fille » qui s'est révélée être un monstre déguisé — l'instinct de survie récompensé. Esquive +1%, Vitesse +1, Défense +10, PV max +200.",
+    "description": "A ignoré une « petite fille » qui s'est révélée être un monstre déguisé — l'instinct de survie récompensé. Esquive +1 %, Vitesse +1, Défense +10, PV max +200.",
     "condition_type": "event",
     "effects": [
       {

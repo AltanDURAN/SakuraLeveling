@@ -185,6 +185,7 @@ class TitleCog(BetaChannelOnlyMixin, commands.Cog):
         name="titre", description="Afficher les titres débloqués d'un joueur"
     )
     @app_commands.describe(target="Joueur ciblé (par défaut : toi)")
+    @app_commands.rename(target="joueur")   # le joueur lit des noms français
     async def title(
         self,
         interaction: discord.Interaction,
@@ -231,8 +232,9 @@ class TitleCog(BetaChannelOnlyMixin, commands.Cog):
         description="Choisis le titre affiché sur ton profil",
     )
     @app_commands.describe(
-        title="Code du titre à afficher (laisser vide pour désactiver)"
+        title="Le titre à afficher (laisse vide pour n'en afficher aucun)"
     )
+    @app_commands.rename(title="titre")   # le joueur lit des noms français
     async def title_set(
         self,
         interaction: discord.Interaction,

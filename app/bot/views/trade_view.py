@@ -39,7 +39,7 @@ class TradeResponseView(GatedView):
     ) -> None:
         if interaction.user.id != self.target_discord_id:
             await interaction.response.send_message(
-                "❌ Seul le destinataire du trade peut l'accepter.",
+                "❌ Seul le destinataire de l'échange peut l'accepter.",
                 ephemeral=True,
             )
             return
@@ -86,7 +86,7 @@ class TradeResponseView(GatedView):
     ) -> None:
         if interaction.user.id != self.target_discord_id:
             await interaction.response.send_message(
-                "❌ Seul le destinataire du trade peut le refuser.",
+                "❌ Seul le destinataire de l'échange peut le refuser.",
                 ephemeral=True,
             )
             return
@@ -113,7 +113,7 @@ class TradeResponseView(GatedView):
     ) -> None:
         if interaction.user.id != self.initiator_discord_id:
             await interaction.response.send_message(
-                "❌ Seul l'initiateur peut annuler son trade.",
+                "❌ Seul celui qui a proposé l'échange peut l'annuler.",
                 ephemeral=True,
             )
             return

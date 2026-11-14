@@ -40,7 +40,7 @@ CATEGORIES: list[tuple[str, str, str, set[str]]] = [
      "Affronte les monstres, les world bosses et les défis de rôle du jour — et les fêtes du moment.",
      {"defi", "tour", "offrande", "lune", "evenement", "utiliser", "boss", "bestiaire"}),
     ("🎒", "Équipement & inventaire",
-     "Gère ton stuff, tes panoplies et tes loadouts perso.",
+     "Gère ton équipement, ta panoplie et tes tenues.",
      {"inventaire", "equipement", "equipement_liste", "equiper", "desequiper",
       "panoplie", "creer_set", "equiper_set", "supprimer_set"}),
     ("🛠️", "Artisans",
@@ -62,7 +62,7 @@ _OTHERS = ("📂", "Autres", "Commandes diverses.", set())
 def _build_intro_embed(total_cmds: int, n_pages: int) -> discord.Embed:
     """Page d'accueil du tutoriel : pitch + boucle de jeu + premiers pas."""
     embed = discord.Embed(
-        title="🌸 Bienvenue dans SakuraLeveling",
+        title="🌸 Bienvenue dans Sakura Leveling",
         description=(
             "Un **RPG Discord** où tu fais grandir ton personnage : combats les "
             "monstres qui apparaissent dans les salons, équipe-toi de ce qu'ils "
@@ -134,8 +134,9 @@ class HelpCog(commands.Cog):
         description="Liste les commandes du bot ou détaille une commande spécifique",
     )
     @app_commands.describe(
-        command="Nom d'une commande (autocomplete) — laisse vide pour le catalogue paginé",
+        command="Une commande précise — laisse vide pour tout le catalogue",
     )
+    @app_commands.rename(command="commande")   # le joueur lit des noms français
     async def help_command(
         self,
         interaction: discord.Interaction,

@@ -81,9 +81,9 @@ def build_boss_dashboard_embed(
     embed.add_field(
         name="📊 Stats",
         value=(
-            f"⚔️ Atk : **{format_int(boss.attack)}**\n"
-            f"🛡️ Def : **{format_int(boss.defense)}**\n"
-            f"💨 Spd : **{boss.speed}**"
+            f"⚔️ Attaque : **{format_int(boss.attack)}**\n"
+            f"🛡️ Défense : **{format_int(boss.defense)}**\n"
+            f"💨 Vitesse : **{boss.speed}**"
         ),
         inline=True,
     )

@@ -8,6 +8,7 @@ from app.infrastructure.db.repositories.inventory_repository import InventoryRep
 from app.infrastructure.db.repositories.item_repository import ItemRepository
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.repositories.trade_repository import TradeRepository
+from app.shared.formatters import format_int
 
 
 @dataclass
@@ -143,7 +144,7 @@ class CreateTradeUseCase:
             return CreateTradeResult(
                 success=False,
                 message=(
-                    "❌ Un échange est déjà en attente entre vous deux. "
+                    "❌ Un échange est déjà en attente entre toi et ce joueur. "
                     "Annule-le ou attends son expiration."
                 ),
             )
@@ -174,8 +175,8 @@ class CreateTradeUseCase:
             return CreateTradeResult(
                 success=False,
                 message=(
-                    f"❌ Tu n'as que **{initiator_profile.resources.gold}** or, "
-                    f"impossible d'en proposer **{initiator_offer.gold}**."
+                    f"❌ Tu n'as que **{format_int(initiator_profile.resources.gold)}** or, "
+                    f"impossible d'en proposer **{format_int(initiator_offer.gold)}**."
                 ),
             )
 

@@ -54,6 +54,7 @@ from app.infrastructure.db.repositories.player_repository import PlayerRepositor
 from app.infrastructure.db.unit_of_work import transactional
 from app.domain.services.monitoring import kinds
 from app.infrastructure.monitoring.telemetry import record as record_event
+from app.shared.formatters import format_int
 
 
 MARKETPLACE_COMMISSION_PCT = 5  # 5% prélevé sur les ventes
@@ -162,7 +163,7 @@ class ListItemForSaleUseCase:
             success=True,
             message=(
                 f"✅ Annonce créée : **{quantity}× {item.name}** à "
-                f"**{price_per_unit}** or/u ({listing.total_price} or total). "
+                f"**{format_int(price_per_unit)}** or pièce ({format_int(listing.total_price)} or en tout). "
                 f"Expire <t:{int(expires_at.timestamp())}:R>."
             ),
             listing=listing,
@@ -192,7 +193,7 @@ class ListItemForSaleUseCase:
         return ListResult(
             success=True,
             message=(
-                f"✅ Annonce créée : **{label}** à **{price}** or. "
+                f"✅ Annonce créée : **{label}** à **{format_int(price)}** or. "
                 f"Expire <t:{int(expires_at.timestamp())}:R>. "
                 "D'ici là, la pièce ne peut être ni portée ni fusionnée."
             ),
@@ -271,8 +272,8 @@ class BuyMarketplaceListingUseCase:
         if buyer_profile.resources.gold < total_price:
             return BuyResult(
                 False,
-                f"❌ Fonds insuffisants : {total_price} or requis "
-                f"(possédé : {buyer_profile.resources.gold}).",
+                f"❌ Pas assez d'or : il en faut {format_int(total_price)} "
+                f"(tu en as {format_int(buyer_profile.resources.gold)}).",
             )
 
         # Étape critique anti-race :
@@ -307,7 +308,7 @@ class BuyMarketplaceListingUseCase:
         return BuyResult(
             success=True,
             message=(
-                f"🛒 Achat conclu pour **{total_price}** or "
+                f"🛒 Achat conclu pour **{format_int(total_price)}** or "
                 f"(commission shop : {commission})."
             ),
             listing=sold_listing,
