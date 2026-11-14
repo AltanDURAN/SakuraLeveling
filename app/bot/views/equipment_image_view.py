@@ -13,6 +13,8 @@ import asyncio
 
 import discord
 
+from app.bot.views._base import ExpiringView
+
 from app.bot.rendering.equipment_image import (
     compose_equipment_grid_page,
     compose_equipment_summary_page,
@@ -53,7 +55,7 @@ def _render_page(
     return str(out)
 
 
-class EquipmentImageView(discord.ui.View):
+class EquipmentImageView(ExpiringView):
     PAGE_LABELS = ["Équipement", "Résumé"]
 
     def __init__(

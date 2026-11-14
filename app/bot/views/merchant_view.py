@@ -15,6 +15,8 @@ import asyncio
 
 import discord
 
+from app.bot.views._base import ExpiringView
+
 from app.bot.rendering.npc_panel import compose_npc_panel, panel_path
 from app.domain.entities.artisan import MerchantDefinition
 from app.domain.services.shop_pricing_service import ShopPricingService
@@ -24,7 +26,7 @@ from app.shared.formatters import format_int
 _QUANTITY_STEPS = (1, 5, 10)
 
 
-class MerchantView(discord.ui.View):
+class MerchantView(ExpiringView):
     def __init__(
         self,
         *,

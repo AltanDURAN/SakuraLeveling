@@ -14,6 +14,8 @@ import asyncio
 
 import discord
 
+from app.bot.views._base import ExpiringView
+
 from app.bot.rendering.item_card_grid import (
     CardSpec,
     compose_card_grid_page,
@@ -207,7 +209,7 @@ class _NextPageButton(discord.ui.Button):
         await view._send_update(interaction)
 
 
-class EquipmentListView(discord.ui.View):
+class EquipmentListView(ExpiringView):
     def __init__(
         self,
         player_id: int,

@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import discord
 
+from app.bot.views._base import ExpiringView
+
 from app.bot.rules_gate import GatedView
 from app.shared.formatters import format_int
 
@@ -58,7 +60,7 @@ class SeasonalPanelView(GatedView):
         await (cog.show_shop(interaction) if cog else _unavailable(interaction))
 
 
-class _OwnedView(discord.ui.View):
+class _OwnedView(ExpiringView):
     """Écran privé : seul celui qui l'a ouvert s'en sert."""
 
     def __init__(self, cog, user_id: int, timeout: float = 300) -> None:

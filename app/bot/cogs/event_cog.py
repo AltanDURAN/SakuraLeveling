@@ -20,6 +20,8 @@ import random
 from datetime import datetime, timedelta, UTC
 
 import discord
+
+from app.bot.views._base import ExpiringView
 from discord import app_commands
 from discord.ext import commands, tasks
 
@@ -196,7 +198,7 @@ class ForgeSelect(discord.ui.Select):
         await self.cog.handle_forge_pick(interaction, self.event_id, int(self.values[0]))  # gear_id
 
 
-class ForgeSelectView(discord.ui.View):
+class ForgeSelectView(ExpiringView):
     """Vue éphémère (non persistante) : sélection de l'équipement à forger."""
 
     def __init__(self, cog: "EventCog", event_id: int, options: list[discord.SelectOption]):

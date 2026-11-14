@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import discord
 
+from app.bot.views._base import ExpiringView
+
 from app.bot.embeds.inventory_embeds import (
     PAGES,
     _filter_items_for_page,
@@ -17,7 +19,7 @@ from app.bot.embeds.inventory_embeds import (
 from app.domain.entities.player_inventory_item import PlayerInventoryItem
 
 
-class InventoryView(discord.ui.View):
+class InventoryView(ExpiringView):
     def __init__(
         self,
         display_name: str,

@@ -5,6 +5,8 @@ import io
 
 import discord
 
+from app.bot.views._base import ExpiringView
+
 from app.application.use_cases.get_skill_tree_state import (
     GetSkillTreeStateUseCase,
     SkillTreeState,
@@ -32,7 +34,7 @@ def render_attachment(
     return discord.File(io.BytesIO(png_bytes), filename="skill_tree.png")
 
 
-class SkillTreeView(discord.ui.View):
+class SkillTreeView(ExpiringView):
     """Vue principale de /skill : embed + 3 boutons.
 
     `owner_discord_id` est le seul autorisé à modifier l'arbre. Les autres
@@ -275,7 +277,7 @@ class SkillInvestSelect(discord.ui.Select):
         await self.parent_view._refresh_embed(interaction)
 
 
-class SkillResetConfirmView(discord.ui.View):
+class SkillResetConfirmView(ExpiringView):
     def __init__(
         self,
         owner_discord_id: int,

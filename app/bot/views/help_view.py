@@ -8,8 +8,10 @@ from __future__ import annotations
 
 import discord
 
+from app.bot.views._base import ExpiringView
 
-class HelpView(discord.ui.View):
+
+class HelpView(ExpiringView):
     def __init__(
         self,
         author_id: int,

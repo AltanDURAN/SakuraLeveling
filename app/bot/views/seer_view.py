@@ -12,6 +12,8 @@ import asyncio
 
 import discord
 
+from app.bot.views._base import ExpiringView
+
 from app.application.use_cases.reveal_element_talent import (
     RevealElementTalentUseCase,
     RevealResult,
@@ -80,7 +82,7 @@ async def open_seer(interaction: discord.Interaction, session_factory, player_id
     await interaction.followup.send(embeds=embeds, file=file, view=view, ephemeral=True)
 
 
-class SeerView(discord.ui.View):
+class SeerView(ExpiringView):
     def __init__(self, session_factory, player_id: int, timeout: float = 300.0):
         super().__init__(timeout=timeout)
         self.definition = artisan_loader.get_seer()

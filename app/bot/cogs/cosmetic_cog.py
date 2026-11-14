@@ -11,6 +11,8 @@ from __future__ import annotations
 import asyncio
 
 import discord
+
+from app.bot.views._base import ExpiringView
 from discord import app_commands
 from discord.ext import commands
 
@@ -32,7 +34,7 @@ _DEFAULT = "__defaut__"
 _RARITY = {"common": "commun", "rare": "rare", "epic": "épique", "legendary": "légendaire"}
 
 
-class AppearanceView(discord.ui.View):
+class AppearanceView(ExpiringView):
     def __init__(self, player_id: int, user: discord.abc.User, title: str | None,
                  rank_label: str, timeout: float = 300.0) -> None:
         super().__init__(timeout=timeout)

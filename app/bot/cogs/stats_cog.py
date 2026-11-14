@@ -13,6 +13,8 @@ from __future__ import annotations
 import asyncio
 
 import discord
+
+from app.bot.views._base import ExpiringView
 from discord import app_commands
 from discord.ext import commands
 
@@ -142,7 +144,7 @@ class _AllocateButton(discord.ui.Button):
         await parent.refresh(interaction)
 
 
-class StatsView(discord.ui.View):
+class StatsView(ExpiringView):
     def __init__(self, data: dict, owner_id: int, timeout: float = 180.0) -> None:
         super().__init__(timeout=timeout)
         self.data = data

@@ -1,10 +1,12 @@
 import discord
 
+from app.bot.views._base import ExpiringView
+
 from app.bot.embeds.battle_summary_embeds import PAGES
 from app.domain.value_objects.battle_summary import BattleSummary
 
 
-class BattleSummaryView(discord.ui.View):
+class BattleSummaryView(ExpiringView):
     """Vue paginée d'un résumé de combat (récompenses, détails, journal)."""
 
     def __init__(self, summary: BattleSummary, timeout: float = 600.0) -> None:

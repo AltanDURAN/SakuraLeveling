@@ -13,6 +13,8 @@ import asyncio
 
 import discord
 
+from app.bot.views._base import ExpiringView
+
 from app.application.use_cases.fuse_gear import FuseGearUseCase
 from app.bot.rendering.npc_panel import compose_npc_panel, panel_path
 from app.domain.entities.artisan import ArtisanDefinition
@@ -25,7 +27,7 @@ def _rarity(r: str | None) -> str:
     return RARITY_LABELS.get(r or "", r or "").lower()
 
 
-class FusionView(discord.ui.View):
+class FusionView(ExpiringView):
     def __init__(self, *, definition: ArtisanDefinition, player_id: int,
                  session_factory, artisan_service, timeout: float = 300.0) -> None:
         super().__init__(timeout=timeout)

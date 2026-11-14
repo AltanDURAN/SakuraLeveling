@@ -15,6 +15,8 @@ import io
 
 import discord
 
+from app.bot.views._base import ExpiringView
+
 from app.bot.rendering.silhouette import FILENAME as SILHOUETTE_FILE
 from app.bot.rendering.silhouette import silhouette_png
 from app.domain.entities.mob_definition import MobDefinition
@@ -172,7 +174,7 @@ def build_mob_embed(
     return embed
 
 
-class PagedBookView(discord.ui.View):
+class PagedBookView(ExpiringView):
     """Un livre à pages (◀ n/N ▶), réservé à celui qui l'a ouvert : socle du
     bestiaire des monstres et de celui des boss. Les sous-classes rendent la
     page courante (`render`)."""

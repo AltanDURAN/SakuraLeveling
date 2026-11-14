@@ -11,6 +11,8 @@ sinon → propose de l'ajouter. Le rôle est la source de vérité unique
 import logging
 
 import discord
+
+from app.bot.views._base import ExpiringView
 from discord import app_commands
 from discord.ext import commands
 
@@ -20,7 +22,7 @@ from app.bot.cogs._mixins import BetaChannelOnlyMixin
 _logger = logging.getLogger(__name__)
 
 
-class _ChadConfirmView(discord.ui.View):
+class _ChadConfirmView(ExpiringView):
     """View éphémère avec boutons Oui / Annuler."""
 
     def __init__(

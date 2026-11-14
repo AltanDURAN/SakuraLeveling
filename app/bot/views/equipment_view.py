@@ -1,10 +1,12 @@
 import discord
 
+from app.bot.views._base import ExpiringView
+
 from app.bot.embeds.equipment_embeds import PAGES
 from app.domain.entities.player_equipment_item import PlayerEquipmentItem
 
 
-class EquipmentView(discord.ui.View):
+class EquipmentView(ExpiringView):
     """Vue paginée 2 pages : équipement principal ↔ équipement secondaire."""
 
     def __init__(

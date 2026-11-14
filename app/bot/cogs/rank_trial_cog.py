@@ -18,6 +18,8 @@ import random
 from datetime import datetime, timedelta, UTC
 
 import discord
+
+from app.bot.views._base import ExpiringView
 from discord import app_commands
 from discord.ext import commands
 
@@ -220,7 +222,7 @@ class RankTrialCog(BetaChannelOnlyMixin, commands.Cog):
             session.commit()
 
 
-class _TrialView(discord.ui.View):
+class _TrialView(ExpiringView):
     """Un bouton par rôle proposé à ce rang."""
 
     def __init__(self, cog: RankTrialCog, elig, player_id, stats, user) -> None:

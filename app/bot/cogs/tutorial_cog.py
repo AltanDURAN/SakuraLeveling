@@ -17,6 +17,8 @@ import asyncio
 import logging
 
 import discord
+
+from app.bot.views._base import ExpiringView
 from discord import app_commands
 from discord.ext import commands
 
@@ -135,7 +137,7 @@ async def _edit(interaction: discord.Interaction, embed: discord.Embed, view: di
                                             attachments=[file] if file is not None else [])
 
 
-class TutorialView(discord.ui.View):
+class TutorialView(ExpiringView):
     """Le tutoriel d'UN joueur (message éphémère)."""
 
     def __init__(self, player_id: int, step: int | None = None) -> None:

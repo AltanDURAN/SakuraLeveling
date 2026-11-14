@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import discord
 
+from app.bot.views._base import ExpiringView
+
 from app.bot import season_launch
 from app.shared.formatters import format_int
 
@@ -114,7 +116,7 @@ class SeasonConfirmModal(discord.ui.Modal):
         await interaction.followup.send(embed=build_result_embed(result), ephemeral=True)
 
 
-class SeasonLaunchView(discord.ui.View):
+class SeasonLaunchView(ExpiringView):
     def __init__(self, origin: discord.Interaction, season: int, ping: str) -> None:
         super().__init__(timeout=300)
         self.origin = origin

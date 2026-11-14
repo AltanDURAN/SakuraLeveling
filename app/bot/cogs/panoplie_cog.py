@@ -9,6 +9,8 @@ choisir le type de bonus (un seul, tous les paliers s'y additionnent).
 from __future__ import annotations
 
 import discord
+
+from app.bot.views._base import ExpiringView
 from discord import app_commands
 from discord.ext import commands
 
@@ -65,7 +67,7 @@ def build_panoplie_embed(set_bonuses) -> discord.Embed:
     return embed
 
 
-class PanoplieTypeView(discord.ui.View):
+class PanoplieTypeView(ExpiringView):
     def __init__(self, owner_discord_id: int, current: str) -> None:
         super().__init__(timeout=300)
         self.add_item(_TypeSelect(owner_discord_id, current))

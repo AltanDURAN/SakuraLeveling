@@ -10,6 +10,8 @@ from dataclasses import dataclass
 
 import discord
 
+from app.bot.views._base import ExpiringView
+
 from app.shared.enums import SLOT_LABELS
 
 from app.application.use_cases.equip_item import EquipItemUseCase
@@ -73,7 +75,7 @@ def build_equip_confirm_embed(
     return embed
 
 
-class EquipConfirmView(discord.ui.View):
+class EquipConfirmView(ExpiringView):
     def __init__(
         self,
         author_id: int,

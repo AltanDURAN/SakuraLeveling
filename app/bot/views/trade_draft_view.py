@@ -33,6 +33,8 @@ from dataclasses import dataclass, field
 
 import discord
 
+from app.bot.views._base import ExpiringView
+
 from app.application.use_cases.create_trade import CreateTradeUseCase, TradeOffer
 from app.bot.embeds.trade_embeds import build_trade_embed
 from app.bot.views.trade_view import TradeResponseView
@@ -235,7 +237,7 @@ class _QuantityModal(discord.ui.Modal):
 # ---------- Select Menu intermédiaire ----------
 
 
-class _ItemSelectView(discord.ui.View):
+class _ItemSelectView(ExpiringView):
     """View temporaire pour choisir un item parmi 25 (Select Menu Discord)."""
 
     def __init__(
@@ -323,7 +325,7 @@ def _gear_choices(gear) -> list[tuple[str, str, int | None]]:
 # ---------- Vue principale du brouillon ----------
 
 
-class TradeDraftView(discord.ui.View):
+class TradeDraftView(ExpiringView):
     """Brouillon interactif de trade. Maintient l'état dans ses attributs et
     rafraîchit l'embed à chaque action utilisateur."""
 

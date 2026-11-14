@@ -10,6 +10,8 @@ import io
 
 import discord
 
+from app.bot.views._base import ExpiringView
+
 from app.bot.rules_gate import GatedView
 from app.domain.services import card_service as cs
 from app.infrastructure.cards import card_loader
@@ -62,7 +64,7 @@ class BoosterButtons(GatedView):
         await _cog(interaction).show_album(interaction, interaction.user, ephemeral=True)
 
 
-class AlbumView(discord.ui.View):
+class AlbumView(ExpiringView):
     """L'album : une page par chapitre, réservé à celui qui l'a ouvert. Le
     propriétaire peut recycler ses doublons et fabriquer une carte."""
 
@@ -169,7 +171,7 @@ class AlbumView(discord.ui.View):
                 pass
 
 
-class ConfirmRecycle(discord.ui.View):
+class ConfirmRecycle(ExpiringView):
     def __init__(self, album: AlbumView) -> None:
         super().__init__(timeout=120)
         self.album = album
@@ -187,7 +189,7 @@ class ConfirmRecycle(discord.ui.View):
         await interaction.response.edit_message(content="Rien n'a été recyclé.", view=None)
 
 
-class CraftView(discord.ui.View):
+class CraftView(ExpiringView):
     """« Fabriquer » sous la fiche d'une carte qui manque."""
 
     def __init__(self, album: AlbumView, card: cs.CardDef) -> None:

@@ -10,6 +10,8 @@ import asyncio
 
 import discord
 
+from app.bot.views._base import ExpiringView
+
 from app.application.use_cases.brew_potion import AlchemyStatus, BrewPotionUseCase
 from app.bot.rendering.npc_panel import compose_npc_panel, panel_path
 from app.domain.services.artisan_service import ArtisanService
@@ -24,7 +26,7 @@ def _ingredients_text(recipe, count: int = 1) -> str:
     )
 
 
-class AlchemyView(discord.ui.View):
+class AlchemyView(ExpiringView):
     def __init__(self, player_id: int, session_factory, timeout: float = 300.0) -> None:
         super().__init__(timeout=timeout)
         self.definition = artisan_loader.get_alchemist()

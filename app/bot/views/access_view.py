@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import discord
 
+from app.bot.views._base import ExpiringView
+
 from app.bot import access
 from app.bot import access_plan as ap
 
@@ -54,7 +56,7 @@ def build_result_embed(done: int, failed: list[str]) -> discord.Embed:
     return embed
 
 
-class AccessView(discord.ui.View):
+class AccessView(ExpiringView):
     def __init__(self, author_id: int, guild: discord.Guild) -> None:
         super().__init__(timeout=600)
         self.author_id = author_id

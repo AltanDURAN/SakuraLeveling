@@ -648,6 +648,7 @@ Demande de l'auteur : homogénéiser toutes les pages (61 pages passées en revu
 - **Prochaine étape** ([`next_step.py`](app/application/services/next_step.py)) : une ligne sous la bannière de SON `/profil` — points de stats, points d'arbre, pièce non portée, solde du jour, booster offert, dans cet ordre.
 - **Appel à l'aide** d'un monstre : réservé aux inscrits au combat (`EncounterView._is_registered`).
 - **Tutoriel** : l'étape `stats` vient APRÈS `tour` (au niveau 1 il n'y a aucun point à placer) ; l'étape `ville` cite le booster offert.
+- **Vues qui s'éteignent** ([`views/_base.py`](app/bot/views/_base.py)) : toute vue du jeu hérite d'`ExpiringView` (ou de `GatedView`, qui en hérite) — à l'expiration, ses boutons sont grisés sur le message du DERNIER clic (jeton de 15 min), ou sur `view.message` si l'écran le pose ; une vue jamais touchée et sans message connu ne modifie rien. Avant, 48 vues sur 51 laissaient des boutons morts (« Échec de l'interaction »). Garde-fou : `test_les_vues_du_jeu_s_eteignent_toutes`.
 - **La suite après un gain** : une pièce tombée renvoie à `/equiper`, une promotion nomme la zone ouverte avec son salon (`_opened_zones_line`), un niveau gagné par une quête rappelle `/stats` et `/arbre`.
 
 ## Limites de Discord — 13/11/2026

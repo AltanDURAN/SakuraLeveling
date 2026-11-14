@@ -20,6 +20,8 @@ import logging
 import uuid
 
 import discord
+
+from app.bot.views._base import ExpiringView
 from discord import app_commands
 from discord.ext import commands
 
@@ -128,7 +130,7 @@ async def _reply(interaction: discord.Interaction, text: str) -> None:
         await interaction.response.send_message(text, ephemeral=True)
 
 
-class TowerView(discord.ui.View):
+class TowerView(ExpiringView):
     """Le panneau de `/tour`, réservé à celui qui l'a ouvert."""
 
     def __init__(self, cog: TowerCog, owner_id: int, state: tower.TowerStatus) -> None:

@@ -23,6 +23,8 @@ from datetime import UTC, datetime
 
 import discord
 
+from app.bot.views._base import ExpiringView
+
 from app.application.use_cases import rules as rules_uc
 from app.bot import access
 from app.bot.embeds.rules_embeds import build_rules_embed
@@ -166,7 +168,7 @@ async def accept(interaction: discord.Interaction) -> None:
     await interaction.response.send_message(welcome_text(), ephemeral=True, **({"view": view} if view else {}))
 
 
-class RulesAcceptView(discord.ui.View):
+class RulesAcceptView(ExpiringView):
     """Le bouton d'acceptation : panneau du salon (persistant) et réponses privées."""
 
     def __init__(self) -> None:
@@ -178,7 +180,7 @@ class RulesAcceptView(discord.ui.View):
         await accept(interaction)
 
 
-class GatedView(discord.ui.View):
+class GatedView(ExpiringView):
     """Vue publique du jeu : qui n'a pas accepté le règlement se le voit proposer."""
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:

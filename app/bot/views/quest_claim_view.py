@@ -6,8 +6,10 @@ from typing import Callable, Awaitable
 
 import discord
 
+from app.bot.views._base import ExpiringView
 
-class QuestClaimView(discord.ui.View):
+
+class QuestClaimView(ExpiringView):
     """Single-button view qui exécute un callable de claim au click.
 
     Le label du bouton est calculé selon le nombre de récompenses dispo :
