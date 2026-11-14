@@ -144,7 +144,7 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
             color=discord.Color.dark_orange(),
         )
         if not listings:
-            embed.description = "_Aucune annonce active pour l'instant._"
+            embed.description = "_Aucune annonce pour l'instant._ Sois le premier à vendre : `/brocante vendre`."
         else:
             lines = [
                 _format_listing_line(

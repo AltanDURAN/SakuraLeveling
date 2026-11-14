@@ -74,9 +74,10 @@ def _build_embed(data: dict) -> discord.Embed:
     embed = discord.Embed(
         title=f"📊 Feuille de {data['display_name']}",
         description=(
-            f"**{points} point(s) de stats** à placer."
+            f"**{points} point{'s' if points > 1 else ''} de stats** à placer.\n"
+            "_Un point placé est définitif : seul le parchemin d'oubli de Sorn (`/marchand`) les rend._"
             if points
-            else "Aucun point à placer — monte d'un niveau pour en gagner."
+            else "Aucun point à placer : tu en gagnes un à chaque niveau (combats, quêtes, `/tour`)."
         ),
         color=discord.Color.blurple() if points else discord.Color.dark_grey(),
     )

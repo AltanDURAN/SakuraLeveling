@@ -59,7 +59,7 @@ def build_weekly_embed(
     )
 
     if not state.quests:
-        embed.add_field(name="—", value="Aucune quête assignée.", inline=False)
+        embed.add_field(name="—", value="Pas de quête pour l'instant : elles arrivent à ton premier combat de la semaine, ou en retapant `/quetes_hebdo`.", inline=False)
         return embed
 
     names = item_names({code for q in state.quests for code, _ in q.reward_items})

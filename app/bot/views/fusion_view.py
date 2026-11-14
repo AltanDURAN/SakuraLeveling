@@ -67,7 +67,9 @@ class FusionView(ExpiringView):
             return [
                 ("Son métier", "fusionner deux copies identiques en une plus rare"),
                 ("Il lui faut", "2 copies de même rareté, de l'or et des matériaux"),
-                ("Tes pièces", f"{len(self._candidates)} lot(s) · {fusable} fusionnable(s)"
+                ("Tes pièces", ("aucune pour l'instant : chaque monstre peut lâcher la pièce qu'il porte"
+                                if not self._candidates else
+                                f"{len(self._candidates)} lot(s) · {fusable} fusionnable(s)")
                                + (" · menu : les 25 premiers, prêts à fusionner d'abord" if len(self._candidates) > 25 else "")),
                 ("Limite", "le légendaire ne se fusionne plus, le mythique ne s'obtient qu'au combat"),
             ]

@@ -169,7 +169,8 @@ def build_rewards_page_embed(summary: BattleSummary) -> discord.Embed:
             lines.append("_K.O. pendant le combat : ni or ni butin._")
             lines.extend(_growth_lines(reward))
         else:
-            lines.append("_Aucune récompense (défaite)._")
+            lines.append("_Défaite : aucune récompense._ Tes PV remontent seuls hors combat (`/profil`) ; "
+                         "pour revenir plus fort : `/stats`, `/arbre`, `/equiper`, ou la `/tour`.")
 
         fields.append((f"{survived_emoji} {escape_markdown(reward.name)}", "\n".join(lines)))
 

@@ -54,7 +54,7 @@ def build_daily_embed(display_name: str, state: DailyQuestState) -> discord.Embe
         color=discord.Color.teal(),
     )
     if not state.quests:
-        embed.add_field(name="—", value="Aucune quête assignée.", inline=False)
+        embed.add_field(name="—", value="Pas de quête pour l'instant : elles arrivent à ton premier combat de la journée, ou en retapant `/quetes`.", inline=False)
         return embed
 
     names = item_names({code for q in state.quests for code, _ in q.reward_items})

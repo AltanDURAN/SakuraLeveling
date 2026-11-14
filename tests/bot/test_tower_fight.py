@@ -72,7 +72,7 @@ def test_le_recapitulatif_d_une_defaite_dit_ce_qu_il_restait():
     rewards, details, _ = _pages(build_tower_summary(outcome))
     assert rewards.title.endswith(": défaite")
     assert "Ticket perdu — 0 restant" in rewards.description
-    assert "Aucune récompense" in rewards.fields[0].value
+    assert "aucune récompense" in rewards.fields[0].value
     assert "❤️ **Ogre démoniaque** —" in details.fields[-1].value and "PV" in details.fields[-1].value
 
 

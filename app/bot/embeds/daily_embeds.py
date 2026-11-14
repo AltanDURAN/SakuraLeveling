@@ -47,7 +47,7 @@ def build_daily_success_embed(
         for name, qty in bonus_items:
             lines.append(f"• **{name}** ×{qty}")
     lines.append("")
-    lines.append("Reviens aussi demain !")
+    lines.append("Ta routine du jour : `/quetes` · `/tour` · `/defi`. Et reviens demain !")
 
     embed = discord.Embed(
         title=f"Série de {streak} jour{'s' if streak > 1 else ''} 🔥 !",

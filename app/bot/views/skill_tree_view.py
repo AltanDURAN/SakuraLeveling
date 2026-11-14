@@ -141,7 +141,8 @@ class SkillTreeView(ExpiringView):
         locked_note = ("\n" + "\n".join(ruled[:6])) if ruled else ""
         if not candidates:
             await interaction.response.send_message(
-                "Aucune compétence à débloquer pour le moment." + locked_note,
+                ("Aucune case à débloquer pour le moment : il te faut un point d'arbre (un par niveau) "
+                 "et une case reliée à celles que tu as déjà." + locked_note),
                 ephemeral=True,
             )
             return
