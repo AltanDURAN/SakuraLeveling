@@ -44,6 +44,7 @@ from app.domain.entities.marketplace_listing import (
     MarketplaceListing,
 )
 from app.domain.services.gear_service import gear_label, parse_gear_ref
+from app.domain.services.merchant_items import is_tradeable
 from app.infrastructure.db.repositories.gear_repository import GearRepository
 from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
 from app.infrastructure.db.repositories.item_repository import ItemRepository
@@ -104,6 +105,9 @@ class ListItemForSaleUseCase:
     ) -> ListResult:
         if quantity <= 0:
             return ListResult(False, "❌ La quantité doit être ≥ 1.")
+        if not is_tradeable(item_code):
+            return ListResult(False, "❌ Le parchemin d'oubli et le jeton d'arbre ne se vendent pas : "
+                                     "chacun achète le sien chez Sorn (`/marchand`).")
         if price_per_unit <= 0:
             return ListResult(False, "❌ Le prix unitaire doit être ≥ 1.")
         if duration_days <= 0 or duration_days > MAX_LISTING_DAYS:

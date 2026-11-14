@@ -123,6 +123,41 @@ def count_now(session_factory: Callable, kind: str, *, zone=None, amount: int = 
         _logger.warning("Journal de surveillance : compteur %s non enregistré", kind, exc_info=True)
 
 
+#: Jours de DÉTAIL gardés pour les clics (décision de l'auteur, 14/11/2026 :
+#: 90 jours, la plus longue période des pages de Surveillance, plus une marge).
+DETAIL_DAYS = 92
+#: `ref` d'une ligne de résumé (une par joueur et par jour, `qty` = clics).
+SUMMARY_REF = "résumé du jour"
+
+
+def compact_interactions(session: Session, keep_days: int = DETAIL_DAYS, now: datetime | None = None) -> int:
+    """Au-delà de `keep_days`, les clics d'un joueur dans une journée deviennent
+    UNE ligne (midi, `qty` = leur nombre) : la journée reste comptée comme
+    active, la base ne grossit plus de ~56 % par les seuls clics. Renvoie le
+    nombre de lignes de détail remplacées. Ne valide pas la transaction."""
+    from datetime import timedelta
+
+    from sqlalchemy import delete, func
+
+    if not _ready(session):
+        return 0
+    cutoff = ((now or utcnow()) - timedelta(days=keep_days)).replace(hour=0, minute=0, second=0, microsecond=0)
+    old = (GameEventModel.kind == "interaction", GameEventModel.at < cutoff,
+           GameEventModel.ref != SUMMARY_REF)
+    day = func.date(GameEventModel.at)
+    groups = session.execute(
+        select(GameEventModel.player_id, GameEventModel.discord_id, day, func.count())
+        .where(*old).group_by(GameEventModel.player_id, GameEventModel.discord_id, day)).all()
+    if not groups:
+        return 0
+    session.execute(delete(GameEventModel).where(*old).execution_options(synchronize_session=False))
+    session.add_all(
+        GameEventModel(at=datetime.fromisoformat(str(d)).replace(hour=12), kind="interaction", player_id=pid,
+                       discord_id=did, ref=SUMMARY_REF, qty=int(n))
+        for pid, did, d, n in groups)
+    return sum(int(n) for *_, n in groups)
+
+
 class InteractionBuffer:
     """Tampon des interactions Discord, vidé par lots."""
 

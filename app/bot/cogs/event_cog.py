@@ -727,6 +727,14 @@ class EventCog(commands.Cog):
                     "Tu as déjà forgé une pièce pour cet événement.", ephemeral=True
                 )
                 return
+            # Une même pièce ne se forge qu'UNE fois par événement, quel que soit
+            # celui qui la tient (décision de l'auteur, 14/11/2026 : prêtée de
+            # main en main, elle gagnait +1 par joueur).
+            if any(part.choice == str(gear_id) for part in repo.list_participations(event_id)):
+                await interaction.followup.send(
+                    "Cette pièce a déjà été forgée pendant cet événement.", ephemeral=True
+                )
+                return
             # La pièce doit toujours être à lui (ni vendue, ni échangée, ni en vente).
             gear_repo = GearRepository(session)
             gear = gear_repo.get(gear_id)

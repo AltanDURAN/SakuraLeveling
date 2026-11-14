@@ -58,3 +58,14 @@ def missed_after_guard(missed: int, has_guard: bool) -> tuple[int, bool]:
     if missed > 0 and has_guard:
         return missed - 1, True
     return missed, False
+
+
+#: Objets qui ne s'échangent ni ne se vendent entre joueurs (décision de
+#: l'auteur, 14/11/2026). Leur prix chez Sorn suit le NIVEAU de l'acheteur :
+#: un compte de niveau 1 les achetait 150 or pour les donner à un compte de
+#: niveau 80, qui les aurait payés 12 000.
+UNTRADEABLE: frozenset[str] = frozenset({"parchemin_oubli", "jeton_arbre"})
+
+
+def is_tradeable(item_code: str) -> bool:
+    return item_code not in UNTRADEABLE

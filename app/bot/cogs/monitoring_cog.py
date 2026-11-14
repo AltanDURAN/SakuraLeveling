@@ -123,7 +123,14 @@ class MonitoringCog(commands.Cog):
         from app.application.monitoring.snapshots import take_snapshots
 
         with get_db_session() as session:
-            return take_snapshots(session, ranks)
+            count = take_snapshots(session, ranks)
+            try:      # les vieux clics deviennent un total par joueur et par jour
+                if telemetry.compact_interactions(session):
+                    session.commit()
+            except Exception:  # noqa: BLE001 — le ménage ne casse jamais les photos
+                session.rollback()
+                _logger.exception("résumé des anciens clics impossible")
+            return count
 
     async def take_snapshots_now(self) -> int:
         """Une photo de chaque joueur, tout de suite (aussi au lancement d'une

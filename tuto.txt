@@ -390,6 +390,8 @@ FORGE SACRÉE (+0 → +10)
     Un événement : pendant quelques minutes, chacun peut renforcer UNE de
     ses pièces d'un niveau. Chaque niveau ajoute +1 % aux stats de cette
     copie. Une fusion garde le niveau de forge le plus haut des deux copies.
+    Une même pièce ne se forge qu'une fois par événement, même si elle
+    change de mains entre-temps.
 
 /equiper <pièce>
     Équipe une de tes pièces (autocomplétée, avec sa rareté). Si un
@@ -953,6 +955,8 @@ WORLD BOSS — /boss moi, /boss historique, /bestiaire boss
         • Un seul échange en attente par paire de joueurs.
         • Au plus 25 lots (objets ou pièces différents) de chaque côté :
           au-delà, fais un second échange.
+        • Le parchemin d'oubli et le jeton d'arbre ne s'échangent pas et ne
+          se vendent pas à la brocante : chacun achète le sien chez Sorn.
         • Une pièce d'équipement s'échange en tant que COPIE précise (sa
           rareté, sa forge). Tu ne proposes que des pièces libres ; tu peux
           demander une pièce que l'autre porte (elle lui est retirée).

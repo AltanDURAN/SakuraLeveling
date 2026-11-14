@@ -167,3 +167,30 @@ def test_le_compteur_ne_casse_jamais_le_jeu():
         raise RuntimeError("base en panne")
 
     count_now(broken, "flee", zone=1)          # ne lève pas
+
+
+def test_les_vieux_clics_deviennent_un_total_par_joueur_et_par_jour(session):
+    """Décision de l'auteur (14/11/2026) : 90 jours de détail. Au-delà, une
+    ligne par joueur et par jour — la journée reste active, la base reste petite."""
+    from datetime import UTC, datetime, timedelta
+
+    from app.infrastructure.monitoring.telemetry import DETAIL_DAYS, SUMMARY_REF, compact_interactions
+
+    pid = _new(session)
+    now = datetime.now(UTC).replace(tzinfo=None)
+    old_day = (now - timedelta(days=DETAIL_DAYS + 5)).replace(hour=9, minute=0)
+    for minutes in range(40):
+        record(session, "interaction", player_id=pid, discord_id=7, ref="profil", at=old_day + timedelta(minutes=minutes))
+    record(session, "interaction", player_id=pid, discord_id=7, ref="profil", at=old_day + timedelta(days=1))
+    record(session, "combat", player_id=pid, at=old_day)                      # un combat n'est jamais résumé
+    record(session, "interaction", player_id=pid, discord_id=7, ref="tour", at=now - timedelta(days=3))   # récent
+    session.commit()
+
+    assert compact_interactions(session) == 41
+    session.commit()
+    rows = _events(session, "interaction")
+    summaries = [e for e in rows if e.ref == SUMMARY_REF]
+    assert sorted(e.qty for e in summaries) == [1, 40] and all(e.at.hour == 12 for e in summaries)
+    assert [e.ref for e in rows if e.ref != SUMMARY_REF] == ["tour"]
+    assert len(_events(session, "combat")) == 1
+    assert compact_interactions(session) == 0                                  # rien à refaire

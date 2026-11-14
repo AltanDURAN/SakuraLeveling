@@ -34,6 +34,9 @@ class CreateTradeResult:
 MAX_LOTS_PER_SIDE = 25
 
 
+from app.domain.services.merchant_items import is_tradeable  # noqa: E402
+
+
 class CreateTradeUseCase:
     """Crée un trade en pending, après validation que :
     - les deux joueurs existent
@@ -94,6 +97,12 @@ class CreateTradeUseCase:
                             f"({len(side_offer.items)} dans {side_label}). Fais-en deux.",
                 )
             for item_code, quantity in side_offer.items:
+                if not is_tradeable(item_code):
+                    return CreateTradeResult(
+                        success=False,
+                        message="❌ Le parchemin d'oubli et le jeton d'arbre ne s'échangent pas : "
+                                "chacun achète le sien chez Sorn (`/marchand`).",
+                    )
                 if quantity <= 0:
                     return CreateTradeResult(
                         success=False,
