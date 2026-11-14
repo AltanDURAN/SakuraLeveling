@@ -104,6 +104,19 @@ app = FastAPI(title="SakuraLeveling — Skill Tree Viewer", lifespan=_lifespan,
 from webapp.admin.csrf import csrf_origin_middleware
 app.middleware("http")(csrf_origin_middleware)
 
+
+@app.middleware("http")
+async def security_headers(request, call_next):
+    """En-têtes de protection du navigateur (revue du 14/11/2026) : une page
+    d'admin ne s'affiche pas dans le cadre d'un autre site (détournement de
+    clic), le navigateur ne devine pas le type d'un fichier envoyé, et
+    l'adresse d'une page d'admin ne part pas vers les sites extérieurs."""
+    response = await call_next(request)
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("Referrer-Policy", "same-origin")
+    return response
+
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 # Sert les assets du jeu (images de mobs, décors) pour les aperçus admin.
 from app.shared.paths import ASSETS_DIR as _ASSETS_DIR  # noqa: E402

@@ -144,7 +144,7 @@ class DailyQuestCog(BetaChannelOnlyMixin, commands.Cog):
                 )
                 lines.append(f"  • **{r.name}** : {format_int(r.gold)} or, {format_int(r.xp)} XP{items_label}")
             if result.leveled_up and result.new_level is not None:
-                lines.append(f"🎉 Niveau **{result.new_level}** atteint !")
+                lines.append(f"🆙 **Niveau {result.new_level} !** Tu as des points à placer : `/stats` et `/arbre`.")
 
             # Re-fetch et mise à jour du message principal pour cacher le bouton
             new_state = self._fetch_state(claim_interaction)

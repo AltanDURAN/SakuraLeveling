@@ -306,7 +306,12 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
                 buyer_display_name=interaction.user.display_name,
                 listing_id=listing_id,
             )
-        await interaction.followup.send(result.message)
+        if result.success:
+            await interaction.followup.send(result.message)
+        else:
+            # Un refus (pas assez d'or, annonce disparue) ne regarde que l'acheteur.
+            await interaction.delete_original_response()
+            await interaction.followup.send(result.message, ephemeral=True)
 
     # ---------- cancel ----------
 

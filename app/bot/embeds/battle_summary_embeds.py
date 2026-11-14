@@ -160,6 +160,7 @@ def build_rewards_page_embed(summary: BattleSummary) -> discord.Embed:
                     f"{RARITY_EMOJIS.get(rarity, '⚔️')} **{gear_name}** "
                     f"({RARITY_LABELS.get(rarity, rarity).lower()})"
                     + (" — **MYTHIQUE !**" if rarity == "mythic" else "")
+                    + " → `/equiper`"       # sans ça, un débutant ne sait pas qu'elle se porte
                 )
             lines.extend(_essence_lines(reward))
             lines.extend(_growth_lines(reward))

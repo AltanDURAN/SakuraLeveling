@@ -155,8 +155,10 @@ class EquipmentCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
         from app.infrastructure.db.repositories.gear_repository import GearRepository
 
         # defer() AVANT le travail lourd (jusqu'à 2 calculs de stats complets) :
-        # évite "Unknown interaction" si la DB est chargée.
-        await interaction.response.defer()
+        # évite "Unknown interaction" si la DB est chargée. En PRIVÉ : après un
+        # accusé de réception public, le refus et l'écran de confirmation (avec
+        # tes stats) s'affichaient à tout le salon, malgré `ephemeral=True`.
+        await interaction.response.defer(ephemeral=True)
 
         with get_db_session() as session:
             profile = PlayerRepository(session).get_or_create_by_discord_id(

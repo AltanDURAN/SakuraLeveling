@@ -46,3 +46,20 @@ def test_pas_de_documentation_publique_de_l_api():
     c = TestClient(app)
     for path in ("/docs", "/redoc", "/openapi.json"):
         assert c.get(path).status_code == 404
+
+
+def test_les_en_tetes_de_protection_sont_poses():
+    """Pas d'affichage dans le cadre d'un autre site, pas de type deviné."""
+    import os
+
+    os.environ.setdefault("ADMIN_SESSION_SECRET", "test-secret-for-pytest-only-32chars-min-aaaaa")
+    from fastapi.testclient import TestClient
+
+    from webapp.main import app
+
+    with TestClient(app) as client:
+        for path in ("/admin/login", "/admin/items", "/static/admin/admin.css"):
+            headers = client.get(path, follow_redirects=False).headers
+            assert headers["x-frame-options"] == "SAMEORIGIN", path
+            assert headers["x-content-type-options"] == "nosniff", path
+            assert headers["referrer-policy"] == "same-origin", path

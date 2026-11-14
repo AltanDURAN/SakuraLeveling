@@ -231,6 +231,18 @@ class _TrialView(discord.ui.View):
             self.add_item(_RoleButton(self, role))
 
 
+def _opened_zones_line(rank: str) -> str:
+    """La zone que ce rang vient d'ouvrir, avec un lien vers son salon : le
+    joueur ne doit pas la chercher dans la liste des salons."""
+    from app.infrastructure.encounters.farm_zone_loader import list_zones
+
+    zones = [z for z in list_zones() if z.get("rank") == rank and z.get("channel_id")]
+    if not zones:
+        return " De nouvelles zones s'ouvriront à toi."
+    names = " et ".join(f"**{z['name']}** (<#{z['channel_id']}>)" for z in zones)
+    return f"\n🗺️ Une nouvelle zone s'ouvre à toi : {names}."
+
+
 class _RoleButton(discord.ui.Button):
     def __init__(self, view: _TrialView, role: str) -> None:
         super().__init__(label=rts.ROLE_LABELS[role], style=discord.ButtonStyle.danger)
@@ -287,8 +299,8 @@ class _RoleButton(discord.ui.Button):
                 description=(
                     f"{score_line}\n**{trial.guardian.name}** s'incline.\n\n"
                     + (
-                        f"Tu portes désormais le rang **{trial.rank}** — "
-                        f"de nouvelles zones s'ouvrent à toi."
+                        f"Tu portes désormais le rang **{trial.rank}**."
+                        + _opened_zones_line(trial.rank)
                         if promoted
                         else "⚠️ Le rôle Discord n'a pas pu être attribué : "
                              "préviens un admin."
