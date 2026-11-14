@@ -271,10 +271,43 @@ class TowerCog(BetaChannelOnlyMixin, commands.Cog):
                 await interaction.followup.send(error, ephemeral=True)
                 return
             await self._play(interaction, outcome, names, panel)
+            await self._announce_first_boss(user, outcome)
         finally:
             self.climbing.discard(user.id)
             if panel is not None:
                 await panel.refresh(user)
+
+    async def _announce_first_boss(self, user, outcome: tower.TowerAttempt) -> None:
+        """Le premier boss de la tour (étage 10) vaincu : annoncé dans le salon
+        général, sans mention (décision de l'auteur, 14/11/2026)."""
+        if not (outcome.victory and outcome.floor == 10):
+            return
+        from app.application.services import milestones
+        from app.infrastructure.config.settings import settings
+        from app.infrastructure.db.repositories.player_repository import PlayerRepository
+        from app.infrastructure.db.session import get_db_session
+
+        def first() -> bool:
+            try:
+                with get_db_session() as session:
+                    profile = PlayerRepository(session).get_by_discord_id(user.id)
+                    done = profile is not None and milestones.claim(session, profile.player.id, milestones.TOWER_10)
+                    session.commit()
+                    return done
+            except Exception:  # noqa: BLE001 — une annonce ne casse jamais la tour
+                return False
+
+        if not await asyncio.to_thread(first):
+            return
+        channel = self.bot.get_channel(settings.rank_announce_channel_id)
+        if channel is None:
+            return
+        try:
+            await channel.send(f"🗼 **{discord.utils.escape_markdown(user.display_name)}** a vaincu le "
+                               "**premier boss de la tour** (étage 10) !",
+                               allowed_mentions=discord.AllowedMentions.none())
+        except discord.HTTPException:
+            _logger.warning("annonce du premier boss de la tour impossible", exc_info=True)
 
     async def _play(self, interaction: discord.Interaction, outcome: tower.TowerAttempt, names: dict,
                     panel: TowerView | None) -> None:

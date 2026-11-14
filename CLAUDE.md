@@ -649,6 +649,9 @@ Demande de l'auteur : homogénéiser toutes les pages (61 pages passées en revu
 - **Appel à l'aide** d'un monstre : réservé aux inscrits au combat (`EncounterView._is_registered`).
 - **Tutoriel** : l'étape `stats` vient APRÈS `tour` (au niveau 1 il n'y a aucun point à placer) ; l'étape `ville` cite le booster offert.
 - **Vues qui s'éteignent** ([`views/_base.py`](app/bot/views/_base.py)) : toute vue du jeu hérite d'`ExpiringView` (ou de `GatedView`, qui en hérite) — à l'expiration, ses boutons sont grisés sur le message du DERNIER clic (jeton de 15 min), ou sur `view.message` si l'écran le pose ; une vue jamais touchée et sans message connu ne modifie rien. Avant, 48 vues sur 51 laissaient des boutons morts (« Échec de l'interaction »). Garde-fou : `test_les_vues_du_jeu_s_eteignent_toutes`.
+- **Premières fois** ([`milestones.py`](app/application/services/milestones.py), décision de l'auteur, 14/11/2026) : première pièce épique ou mieux, première élite vaincue (`EncounterCog._announce_firsts`), premier boss de la tour à l'étage 10 (`TowerCog._announce_first_boss`) — annoncées dans le salon général sans mention, une fois par saison (retenues dans le journal, kind `milestone`).
+- **Raid** : le bouton `world_boss:vote` s'appelle « Horaires » (gris) : il informe ; plus de marque « prêt ».
+- **Rythme** (14/11/2026) : l'auteur garde ses réglages du 13/11 (5 min pour rejoindre, Lancer après 150 s, fuite 4 min, 15 % de meutes) en sachant que le niveau 100 tombe à J356 avec Lancer et pas dans l'année sinon : ne pas le « corriger ».
 - **La suite après un gain** : une pièce tombée renvoie à `/equiper`, une promotion nomme la zone ouverte avec son salon (`_opened_zones_line`), un niveau gagné par une quête rappelle `/stats` et `/arbre`.
 
 ## Limites de Discord — 13/11/2026

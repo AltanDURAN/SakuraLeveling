@@ -40,6 +40,7 @@ SEASON_START = "season"       # qty = numéro de la saison (reset de saison : le
 BOOSTER = "booster"           # qty = boosters ouverts, gold = −prix, data.best/new/brillantes/free
 CARD_RECYCLE = "card_recycle" # qty = cartes recyclées, data.petals
 CARD_CRAFT = "card_craft"     # ref = carte fabriquée, data.petals
+MILESTONE = "milestone"       # ref = premiere_epique | premiere_elite | tour_10 (première fois, annoncée)
 SEASONAL = "seasonal"         # ref = advent:<case> | christmas | shop:<boutique>:<objet>
 
 #: Ce qui compte comme « le joueur joue » (temps de jeu, heures actives).

@@ -116,7 +116,7 @@ class WorldBossView(GatedView):
     def __init__(self, cog: "WorldBossCog | None" = None) -> None:
         super().__init__(timeout=None)
         self.cog = cog
-        self.vote_button.label = f"Combat auto à {pacing_service.fight_label(get_pacing().raid)}"
+        self.vote_button.label = f"Horaires (assaut à {pacing_service.fight_label(get_pacing().raid)})"
 
     def _resolve_cog(self, interaction: discord.Interaction) -> "WorldBossCog | None":
         """Si la view a été restaurée sans cog (pas de référence au reboot),
@@ -194,8 +194,6 @@ class WorldBossView(GatedView):
                 profile = player_repo.get_profile_by_player_id(part.player_id)
                 name = profile.player.display_name if profile else f"#{part.player_id}"
                 marks = []
-                if getattr(part, "voted_to_start", False):
-                    marks.append("🗳️ prêt")
                 fought = metrics.get(part.player_id)
                 if fought is not None and fought.fights_count > 0:
                     marks.append(f"⚔️ {format_int(fought.damage_dealt)} dégâts")
@@ -242,8 +240,8 @@ class WorldBossView(GatedView):
                 await cog.refresh_boss_message(boss_id)
 
     @discord.ui.button(
-        label="Combat auto",          # l'heure réglée sur le site est posée dans __init__ (cf. plus bas)
-        style=discord.ButtonStyle.primary,
+        label="Horaires",             # il informe : gris, pas un bouton d'action (décision de l'auteur, 14/11/2026)
+        style=discord.ButtonStyle.secondary,
         emoji="⏰",
         custom_id="world_boss:vote",
     )
