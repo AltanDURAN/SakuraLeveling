@@ -76,12 +76,13 @@ class BattleSummaryView(ExpiringView):
         """Ouvre SA feuille de stats, en privé (chacun la sienne)."""
         import asyncio
 
-        from app.bot.cogs.stats_cog import StatsView, _build_embed, _load
+        from app.bot.cogs.stats_cog import StatsView, _load, _render
 
         await interaction.response.defer(ephemeral=True)
         data = await asyncio.to_thread(_load, interaction.user.id, interaction.user.name,
                                        interaction.user.display_name)
-        await interaction.followup.send(embed=_build_embed(data), view=StatsView(data, owner_id=interaction.user.id),
+        embed, files = await asyncio.to_thread(_render, data)
+        await interaction.followup.send(embed=embed, files=files, view=StatsView(data, owner_id=interaction.user.id),
                                         ephemeral=True)
 
     @discord.ui.button(emoji="➡️", style=discord.ButtonStyle.secondary)

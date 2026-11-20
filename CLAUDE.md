@@ -146,7 +146,7 @@ Noms FRANÇAIS (sans accents) — c'est ce que le joueur tape. Liste tirée du c
 | `/demarrer`, `/help [commande]`, `/ping` | `onboarding_cog`, `help_cog`, `profile_cog` | Guide débutant (crée le profil + rôle Rang F), aide paginée par catégorie (`CATEGORIES` dans `help_cog`), ping |
 | `/tuto` | `tutorial_cog` | Tutoriel RP de Hana (salon tutoriel + salons de commandes) : suivre ou passer, actions vérifiées, 3 potions 100 % PV à la fin |
 | `/profil [joueur]`, `/or [joueur]`, `/cd [joueur]`, `/affinites [joueur]` | `profile_cog` | Consultatives — `joueur` optionnel (défaut : soi). `/profil` = bannière PNG |
-| `/stats` | `stats_cog` | **Saison 1** — feuille de perso, placer les points de stats (+2 ATK / +2 DEF / +50 PV) |
+| `/stats` | `stats_cog` | **Saison 1** — feuille de perso en IMAGE ([`stats_sheet.py`](app/bot/rendering/stats_sheet.py), DA de `/affinites`, 20/11/2026 ; embed texte en repli), placer les points de stats (+2 ATK / +2 DEF / +50 PV) |
 | `/arbre [joueur]` | `skill_cog` | Arbre de compétences (image + Investir / Vue web / Reset 7 j) |
 | `/epreuve` | `rank_trial_cog` | Épreuve du rang suivant (seuil de puissance puis épreuve de SON rôle face au gardien, annonce dans le général) |
 | `/daily`, `/quetes`, `/quetes_hebdo` | `economy_cog`, `daily_quest_cog`, `weekly_quest_cog` | Récompense quotidienne, 3 quêtes/jour, 3 quêtes/semaine |

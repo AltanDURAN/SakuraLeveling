@@ -74,7 +74,9 @@ LA PROGRESSION
 
 /stats
     (Réponse privée : toi seul la vois.)
-    Ta feuille de personnage. Place tes points de stats avec les boutons :
+    Ta feuille de personnage, en image : tes trois stats de base (socle
+    et bonus), tes stats secondaires et tes points à placer. Place-les
+    avec les boutons :
         +ATK  →  +2 attaque
         +DEF  →  +2 défense
         +PV   →  +50 PV max

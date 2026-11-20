@@ -66,7 +66,31 @@ def _load(discord_id: int, username: str, display_name: str) -> dict:
                 "defense": final.defense,
                 "max_hp": final.max_hp,
             },
+            "secondary": {
+                "speed": final.speed, "crit_chance": final.crit_chance, "crit_damage": final.crit_damage,
+                "dodge": final.dodge, "hp_regeneration": final.hp_regeneration, "mana_max": final.mana_max,
+            },
         }
+
+
+def _render(data: dict) -> tuple[discord.Embed, list[discord.File]]:
+    """La feuille en image (DA du bot), l'embed texte en repli si le rendu
+    échoue. À appeler dans un thread : Pillow bloquerait le bot."""
+    try:
+        from app.bot.rendering.stats_sheet import compose_stats_sheet
+        from app.shared.paths import GENERATED_PROFILES_DIR
+
+        GENERATED_PROFILES_DIR.mkdir(parents=True, exist_ok=True)
+        filename = f"stats_{data['player_id']}.png"
+        path = GENERATED_PROFILES_DIR / filename
+        compose_stats_sheet(str(path), data, gains=dict(STAT_POINT_GAIN), seed=data["player_id"])
+        embed = discord.Embed(color=discord.Color.gold() if data["stat_points"] else discord.Color.blurple())
+        embed.set_image(url=f"attachment://{filename}")
+        return embed, [discord.File(str(path), filename=filename)]
+    except Exception:  # noqa: BLE001
+        import logging
+        logging.getLogger(__name__).exception("Rendu de /stats en échec, repli sur l'embed texte")
+        return _build_embed(data), []
 
 
 def _build_embed(data: dict) -> discord.Embed:
@@ -163,9 +187,9 @@ class StatsView(ExpiringView):
             interaction.user.display_name,
         )
         self._build()
-        await interaction.response.edit_message(
-            embed=_build_embed(self.data), view=self,
-        )
+        await interaction.response.defer()
+        embed, files = await asyncio.to_thread(_render, self.data)
+        await interaction.edit_original_response(embed=embed, attachments=files, view=self)
 
 
 class StatsCog(BetaChannelOnlyMixin, commands.Cog):
@@ -183,7 +207,8 @@ class StatsCog(BetaChannelOnlyMixin, commands.Cog):
             interaction.user.display_name,
         )
         view = StatsView(data, owner_id=interaction.user.id)
-        await interaction.followup.send(embed=_build_embed(data), view=view, ephemeral=True)
+        embed, files = await asyncio.to_thread(_render, data)
+        await interaction.followup.send(embed=embed, files=files, view=view, ephemeral=True)
 
 
     @app_commands.command(
