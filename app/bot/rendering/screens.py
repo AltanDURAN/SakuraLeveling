@@ -484,11 +484,19 @@ def compose_gold(output_path: str, *, name: str, gold: int, career: int, is_self
 def compose_leaderboard(output_path: str, *, title: str, entries: list[tuple[str, str]], viewer_rank: int | None,
                         viewer: tuple[str, str] | None, total: int, seed: int = 0) -> None:
     """`entries` : (nom, valeur affichée) du 1er au 10e ; `viewer` : la ligne
-    du joueur s'il est classé plus bas."""
+    du joueur s'il est classé plus bas.
+
+    Un VRAI podium, compact (demande de l'auteur, 21/11/2026 : « plus petit,
+    pour avoir l'ensemble plus gros et lisible ») : le nom et la valeur en
+    grand au-dessus de trois marches basses numérotées ; puis des lignes
+    hautes, au texte large."""
     podium = entries[:3]
     rest = entries[3:]
     extra = 1 if viewer and viewer_rank and viewer_rank > len(entries) else 0
-    height = ui.PAD + 88 + (250 if podium else 120) + ui.GAP + (len(rest) + extra) * 66 + ui.GAP + 56 + ui.PAD
+    name_zone, step_max = 128, 64
+    row_h = 78
+    height = (ui.PAD + 88 + (name_zone + step_max if podium else 120) + ui.GAP
+              + (len(rest) + extra) * (row_h + 10) + ui.GAP + 56 + ui.PAD)
     img = ui.canvas(height, seed)
     draw = ImageDraw.Draw(img)
     place = "" if viewer_rank is None else (" · ta place : 1ʳᵉ" if viewer_rank == 1 else f" · ta place : {viewer_rank}ᵉ")
@@ -498,52 +506,67 @@ def compose_leaderboard(output_path: str, *, title: str, entries: list[tuple[str
     if not entries:
         ui.panel(img, (ui.PAD, top), (w, 120), radius=16, fill=(28, 24, 40, 205), outline=(*ui.LILAC, 90))
         ui.shadow_text(draw, (ui.PAD + 24, top + 46), "Personne n'est encore classé : à toi de prendre la tête !",
-                       try_font(18), fill=ui.MUTED)
+                       try_font(22, bold=True), fill=ui.MUTED)
         y = top + 120 + ui.GAP
     else:
-        medals = (("🥇", (240, 196, 92), 250), ("🥈", (200, 206, 220), 220), ("🥉", (214, 140, 90), 200))
-        order = [1, 0, 2]                       # 2e, 1er, 3e : le premier au centre, plus haut
-        cw = (w - 2 * ui.GAP) // 3
-        for slot, idx in enumerate(order):
+        # (médaille, couleur, hauteur de marche) — 2e, 1er, 3e de gauche à droite.
+        medals = (("🥇", (240, 196, 92), 64), ("🥈", (205, 212, 228), 46), ("🥉", (214, 140, 90), 34))
+        cw = (w - 2 * 10) // 3
+        base = top + name_zone + step_max                # le sol du podium
+        for slot, idx in enumerate((1, 0, 2)):
             if idx >= len(podium):
                 continue
-            medal, color, h = medals[idx]
-            x = ui.PAD + slot * (cw + ui.GAP)
-            cy = top + (250 - h)
-            ui.tinted_card(img, (x, cy), (cw, h), color)
-            if viewer_rank == idx + 1:                  # c'est toi
-                ui.panel(img, (x, cy), (cw, h), radius=16, fill=(0, 0, 0, 0), outline=(*ui.GOLD, 255), width=3)
-            draw_text_with_emojis(img, (x + cw // 2 - 20, cy + 16), medal, try_font(30), fill=ui.TEXT, emoji_size=40)
+            medal, color, step = medals[idx]
+            x = ui.PAD + slot * (cw + 10)
             name, value = podium[idx]
-            # Le nom en GRAND (demande de l'auteur, 21/11/2026 : on le voyait mal).
-            f_n = ui.fit(draw, name, 36 if idx == 0 else 32, cw - 24, floor=16)
-            nw = draw.textlength(name, font=f_n)
-            ui.shadow_text(draw, (x + (cw - nw) / 2, cy + 70), name, f_n)
-            f_v = ui.fit(draw, value, 26, cw - 30)
+            me = viewer_rank == idx + 1
+            # La marche : basse, colorée, son numéro dedans.
+            layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+            ImageDraw.Draw(layer).rounded_rectangle([(x, base - step), (x + cw, base + 10)], radius=12,
+                                                    fill=(*color, 215), outline=(*ui.GOLD, 255) if me else None,
+                                                    width=3)
+            img.alpha_composite(layer)
+            num = str(idx + 1)
+            f_num = try_font(min(40, step - 6), bold=True)
+            nw = draw.textlength(num, font=f_num)
+            draw.text((x + (cw - nw) / 2, base - step + (step - f_num.size) / 2 - 2), num, font=f_num,
+                      fill=(30, 24, 36, 255))
+            # Au-dessus : médaille + nom en grand, puis la valeur.
+            ny = base - step - name_zone + (64 - step)
+            f_n = ui.fit(draw, name, 40 if idx == 0 else 36, cw - 70, floor=18)
+            label_w = 44 + draw.textlength(name, font=f_n)
+            lx = x + (cw - label_w) / 2
+            draw_text_with_emojis(img, (int(lx), ny + 18 + (f_n.size - 34) // 2), medal, try_font(30), fill=ui.TEXT,
+                                  emoji_size=34)
+            ui.shadow_text(draw, (lx + 44, ny + 16), name, f_n, fill=(*ui.GOLD, 255) if me else ui.TEXT)
+            f_v = ui.fit(draw, value, 30, cw - 20)
             vw = draw.textlength(value, font=f_v)
-            ui.shadow_text(draw, (x + (cw - vw) / 2, cy + 70 + f_n.size + 14), value, f_v, fill=(*color, 255))
-        y = top + 250 + ui.GAP
+            ui.shadow_text(draw, (x + (cw - vw) / 2, ny + 24 + f_n.size), value, f_v,
+                           fill=(*ui.lighten(color, 0.1), 255))
+        y = base + 10 + ui.GAP
         rows = [(i + 4, n, v, i + 4 == viewer_rank) for i, (n, v) in enumerate(rest)]
         if extra:
             rows.append((viewer_rank, viewer[0], viewer[1], True))
         ladder = (ui.ATK, ui.REGEN, ui.TIME, ui.DEF, ui.ITEM, ui.PINK, ui.EARTH)   # jamais l'or : c'est ta ligne
         for rank, name, value, me in rows:
             color = ui.GOLD if me else ladder[(rank - 4) % len(ladder)]
-            ui.panel(img, (ui.PAD, y), (w, 56), radius=14,
-                     fill=(92, 70, 20, 200) if me else (*[int(c * 0.14) + 18 for c in color], 225),
-                     outline=(*color, 200 if me else 130))
-            ui.panel(img, (ui.PAD + 8, y + 12), (5, 32), radius=3, fill=(*color, 255))
-            ui.shadow_text(draw, (ui.PAD + 22, y + 14), f"#{rank}", try_font(22, bold=True),
+            ui.panel(img, (ui.PAD, y), (w, row_h), radius=16,
+                     fill=(92, 70, 20, 205) if me else (*[int(c * 0.14) + 18 for c in color], 225),
+                     outline=(*color, 210 if me else 140), width=2 if me else 1)
+            ui.panel(img, (ui.PAD + 10, y + 14), (6, row_h - 28), radius=3, fill=(*color, 255))
+            f_rank = try_font(32, bold=True)
+            ui.shadow_text(draw, (ui.PAD + 28, y + (row_h - 32) // 2 - 2), f"#{rank}", f_rank,
                            fill=(*ui.lighten(color, 0.2), 255))
-            f_v = try_font(22, bold=True)
+            f_v = try_font(30, bold=True)
             vw = draw.textlength(value, font=f_v)
-            f_name = ui.fit(draw, name, 26, w - 150 - vw, floor=18)
-            ui.shadow_text(draw, (ui.PAD + 90, y + 13 + (26 - f_name.size) // 2),
-                           ui.clip(draw, name, f_name, w - 150 - vw), f_name,
+            f_name = ui.fit(draw, name, 36, w - 160 - vw, floor=20)
+            ui.shadow_text(draw, (ui.PAD + 120, y + (row_h - f_name.size) // 2 - 3),
+                           ui.clip(draw, name, f_name, w - 160 - vw), f_name,
                            fill=(*ui.GOLD, 255) if me else ui.TEXT)
-            ui.shadow_text(draw, (ui.PAD + w - 20 - vw, y + 14), value, f_v, fill=(*ui.lighten(color, 0.3), 255))
-            y += 66
-        y += ui.GAP - 8
+            ui.shadow_text(draw, (ui.PAD + w - 22 - vw, y + (row_h - 30) // 2 - 3), value, f_v,
+                           fill=(*ui.lighten(color, 0.3), 255))
+            y += row_h + 10
+        y += ui.GAP - 10
     ui.footer(img, y, "📊 /classement pour choisir une autre catégorie : niveau, puissance, or, tour, défis, chasse…",
               color=ui.GOLD)
     ui.save(img, output_path)
