@@ -26,10 +26,30 @@ GAP = 16
 TEXT = (245, 242, 250, 255)
 MUTED = (176, 170, 194, 255)
 DIM = (128, 122, 144, 255)
-GOLD = (240, 196, 92)
-GREEN = (120, 220, 140)
 SHADOW = (0, 0, 0, 170)
-LILAC = (150, 120, 210)
+
+# ---------------------------------------------------------------- palette --
+# UNE couleur par SENS, la même sur tous les écrans (demande de l'auteur,
+# 21/11/2026 : des écrans colorés, et cohérents). Les stats reprennent les
+# couleurs des cartes de la bannière `/profil`.
+GOLD = (240, 196, 92)        # or, récompenses, ce qui est à toi
+XP = (110, 190, 255)         # expérience, niveau
+HP = (235, 80, 90)           # PV, soins
+ATK = (255, 140, 50)         # attaque, DPS
+DEF = (90, 160, 230)         # défense, tank
+MANA = (90, 150, 255)
+SPEED = (120, 220, 200)
+CRIT = (255, 215, 100)
+CRIT_DMG = (220, 100, 220)
+DODGE = (180, 200, 255)
+REGEN = (120, 220, 130)      # régénération, soutien
+GREEN = (120, 220, 140)      # réussi, disponible
+TIME = (90, 210, 230)        # temps, attentes
+ITEM = (190, 140, 255)       # objets, butin
+FIRE = (255, 130, 60)        # série, flamme
+PINK = (255, 150, 200)       # cartes, cosmétiques, sakura
+EARTH = (205, 150, 95)       # matériaux
+LILAC = (150, 120, 210)      # neutre (cadres)
 
 
 def canvas(height: int, seed: int = 0) -> Image.Image:
@@ -124,26 +144,47 @@ def gold_chip(img, x, y, text, font) -> int:
     return chip(img, x, y, text, font, fill=(92, 70, 20, 235), outline=(*GOLD, 220), ink=(*GOLD, 255))
 
 
-def header(img, title: str, subtitle: str = "") -> int:
-    """Titre et sous-titre ; renvoie l'ordonnée sous l'en-tête."""
+def header(img, title: str, subtitle: str = "", accent=None) -> int:
+    """Titre et sous-titre ; renvoie l'ordonnée sous l'en-tête. `accent` : la
+    couleur de l'écran, en filet lumineux sous le titre."""
     draw = ImageDraw.Draw(img)
     f_title = try_font(32, bold=True)
-    draw_text_with_emojis(img, (PAD, PAD), clip(draw, title, f_title, WIDTH - 2 * PAD - 40), f_title,
-                          fill=TEXT, emoji_size=32)
+    title = clip(draw, title, f_title, WIDTH - 2 * PAD - 40)
+    draw_text_with_emojis(img, (PAD, PAD), title, f_title, fill=TEXT, emoji_size=32)
+    if accent is not None:
+        tw = min(measure_text_with_emojis(title, f_title, 32), WIDTH - 2 * PAD)
+        bar(img, (PAD, PAD + 41), (int(tw), 4), 1.0, accent, track=(0, 0, 0, 0), glow=True)
+    shift = 8 if accent is not None else 0         # de la place pour le filet
     if subtitle:
         f_sub = try_font(17)
-        draw_text_with_emojis(img, (PAD, PAD + 46), clip(draw, subtitle, f_sub, WIDTH - 2 * PAD), f_sub,
+        draw_text_with_emojis(img, (PAD, PAD + 46 + shift), clip(draw, subtitle, f_sub, WIDTH - 2 * PAD), f_sub,
                               fill=MUTED, emoji_size=17)
-        return PAD + 78
-    return PAD + 50
+        return PAD + 78 + shift
+    return PAD + 50 + shift
 
 
-def footer(img, y: int, text: str, h: int = 56) -> None:
-    panel(img, (PAD, y), (WIDTH - 2 * PAD, h), radius=16, fill=(36, 28, 54, 215), outline=(*LILAC, 110))
+def footer(img, y: int, text: str, h: int = 56, color=LILAC) -> None:
+    panel(img, (PAD, y), (WIDTH - 2 * PAD, h), radius=16, fill=(36, 28, 54, 215), outline=(*color[:3], 140))
+    panel(img, (PAD, y + 12), (4, h - 24), radius=2, fill=(*color[:3], 255))
     f = try_font(16)
     draw = ImageDraw.Draw(img)
     draw_text_with_emojis(img, (PAD + 20, y + (h - 17) // 2), clip(draw, text, f, WIDTH - 2 * PAD - 40), f,
                           fill=MUTED, emoji_size=17)
+
+
+def segments(img, xy, parts, font, emoji: int = 16, gap: int = 18, max_w: float | None = None) -> int:
+    """Une ligne en plusieurs couleurs : `parts` = [(texte, couleur), …].
+    S'arrête avant de dépasser `max_w`. Renvoie la largeur dessinée."""
+    x, y = xy
+    start = x
+    for text, color in parts:
+        w = measure_text_with_emojis(text, font, emoji)
+        if max_w is not None and x - start + w > max_w:
+            break
+        ink = color if len(color) == 4 else (*color, 255)
+        draw_text_with_emojis(img, (int(x), y), text, font, fill=ink, emoji_size=emoji)
+        x += w + gap
+    return int(x - start - gap)
 
 
 def shadow_text(draw, xy, text, font, fill=TEXT) -> None:

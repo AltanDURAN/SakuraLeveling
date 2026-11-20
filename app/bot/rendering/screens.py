@@ -18,7 +18,7 @@ from app.bot.rendering.pillow_utils import try_font
 from app.shared.formatters import format_int
 from app.shared.paths import ITEMS_ASSETS_DIR
 
-TIER_COLORS = {"easy": (120, 220, 140), "medium": (240, 196, 92), "hard": (235, 90, 100)}
+TIER_COLORS = {"easy": ui.GREEN, "medium": ui.GOLD, "hard": ui.HP}
 TIER_LABELS = {"easy": "FACILE", "medium": "MOYENNE", "hard": "DIFFICILE"}
 
 
@@ -42,13 +42,14 @@ def compose_quests(output_path: str, *, title: str, subtitle: str, quests: list[
     card_h = 150
     n = max(1, len(quests))
     to_claim = sum(1 for q in quests if q.completed and not q.claimed)
-    height = ui.PAD + 120 + n * card_h + (n - 1) * ui.GAP + ui.GAP + 56 + ui.PAD
+    height = ui.PAD + 128 + n * card_h + (n - 1) * ui.GAP + ui.GAP + 56 + ui.PAD
     img = ui.canvas(height, seed)
     draw = ImageDraw.Draw(img)
-    top = ui.header(img, title, subtitle)
+    top = ui.header(img, title, subtitle, accent=ui.GREEN)
     done = sum(1 for q in quests if q.claimed)
     f_chip = try_font(16, bold=True)
-    x = ui.PAD + ui.chip(img, ui.PAD, top, f"📋 {done}/{len(quests)} réclamée{'s' if done > 1 else ''}", f_chip) + 10
+    x = ui.PAD + ui.chip(img, ui.PAD, top, f"📋 {done}/{len(quests)} réclamée{'s' if done > 1 else ''}", f_chip,
+                         fill=(30, 52, 40, 225), outline=(*ui.GREEN, 170), ink=(*ui.GREEN, 255)) + 10
     if to_claim:
         ui.gold_chip(img, x, top, f"🎁 {to_claim} à réclamer", f_chip)
 
@@ -88,18 +89,20 @@ def compose_quests(output_path: str, *, title: str, subtitle: str, quests: list[
         cw = draw.textlength(count, font=f_count)
         ui.bar(img, (ui.PAD + 20, y + 86), (int(w - 60 - cw), 12), ratio, color, glow=not q.claimed)
         ui.shadow_text(draw, (ui.PAD + w - 20 - cw, y + 81), count, f_count,
-                       fill=ui.TEXT if not q.claimed else ui.DIM)
-        # Récompenses
-        rewards = f"💰 {format_int(q.gold)} or   ✨ {format_int(q.xp)} XP" + (f"   🎁 {q.items}" if q.items else "")
+                       fill=(*ui.lighten(color, 0.2), 255) if not q.claimed else ui.DIM)
+        # Récompenses : chaque chose à sa couleur (or, XP, objets).
         f_rew = try_font(15, bold=True)
-        rewards = ui.clip(draw, rewards, f_rew, w - 40)
-        draw_text_with_emojis(img, (ui.PAD + 20, y + 112), rewards, f_rew, fill=ui.DIM if q.claimed else ui.MUTED,
-                              emoji_size=16)
+        parts = [(f"💰 {format_int(q.gold)} or", ui.GOLD), (f"✨ {format_int(q.xp)} XP", ui.XP)]
+        if q.items:
+            parts.append((f"🎁 {q.items}", ui.ITEM))
+        if q.claimed:
+            parts = [(text, ui.DIM) for text, _ in parts]
+        ui.segments(img, (ui.PAD + 20, y + 112), parts, f_rew, max_w=w - 40)
         y += card_h + ui.GAP
 
     note = ("🎁 Clique sur « Réclamer » sous l'image pour toucher tes récompenses."
             if to_claim else "⏳ Les quêtes avancent toutes seules en jouant : combats, tour, défis.")
-    ui.footer(img, y, note)
+    ui.footer(img, y, note, color=ui.GOLD if to_claim else ui.GREEN)
     ui.save(img, output_path)
 
 
@@ -111,20 +114,20 @@ def compose_daily(output_path: str, *, name: str, streak: int, gold: int, bonus_
                   days_missed: int = 0, streak_before: int = 0, guard_used: bool = False,
                   titles: list[str] | None = None, bonus_items: list[tuple[str, int]] | None = None,
                   seed: int = 0) -> None:
-    notes: list[str] = []
+    notes: list[tuple[str, tuple]] = []
     if guard_used:
-        notes.append("⏳ Ton sablier de fidélité s'est brisé : un jour manqué t'est pardonné.")
+        notes.append(("⏳ Ton sablier de fidélité s'est brisé : un jour manqué t'est pardonné.", ui.TIME))
     if days_missed:
-        notes.append(f"💔 {days_missed} jour{'s' if days_missed > 1 else ''} manqué{'s' if days_missed > 1 else ''} : "
-                     f"ta série de {streak_before} a été divisée par deux par jour d'absence.")
+        notes.append((f"💔 {days_missed} jour{'s' if days_missed > 1 else ''} manqué{'s' if days_missed > 1 else ''} : "
+                      f"ta série de {streak_before} a été divisée par deux par jour d'absence.", ui.HP))
     for title in titles or []:
-        notes.append(f"🏷️ Nouveau titre : {title}")
+        notes.append((f"🏷️ Nouveau titre : {title}", ui.CRIT_DMG))
     for item, qty in bonus_items or []:
-        notes.append(f"🎁 Bonus de titre : {qty}× {item}")
-    height = ui.PAD + 80 + 200 + ui.GAP + 120 + len(notes) * 30 + ui.GAP + 56 + ui.PAD
+        notes.append((f"🎁 Bonus de titre : {qty}× {item}", ui.ITEM))
+    height = ui.PAD + 88 + 200 + ui.GAP + 120 + len(notes) * 30 + ui.GAP + 56 + ui.PAD
     img = ui.canvas(height, seed)
     draw = ImageDraw.Draw(img)
-    top = ui.header(img, "🌅 Solde du jour", f"La guilde paie {name}")
+    top = ui.header(img, "🌅 Solde du jour", f"La guilde paie {name}", accent=ui.GOLD)
 
     # Montant et série, côte à côte.
     w = (ui.WIDTH - 2 * ui.PAD - ui.GAP) // 2
@@ -140,7 +143,7 @@ def compose_daily(output_path: str, *, name: str, streak: int, gold: int, bonus_
         ui.gold_chip(img, ui.PAD + 22, top + 146, f"🔥 dont +{bonus_pct} % de série", try_font(15, bold=True))
 
     x2 = ui.PAD + w + ui.GAP
-    flame = (255, 130, 60)
+    flame = ui.FIRE
     ui.tinted_card(img, (x2, top), (w, 200), flame)
     ui.shadow_text(draw, (x2 + 22, top + 24), "SÉRIE", try_font(16, bold=True), fill=(*flame, 255))
     days = f"{streak}"
@@ -155,10 +158,10 @@ def compose_daily(output_path: str, *, name: str, streak: int, gold: int, bonus_
 
     # Paliers de la série (titres).
     y = top + 200 + ui.GAP
-    ui.panel(img, (ui.PAD, y), (ui.WIDTH - 2 * ui.PAD, 120), radius=16, fill=(28, 24, 40, 205),
-             outline=(*ui.LILAC, 90))
+    ui.panel(img, (ui.PAD, y), (ui.WIDTH - 2 * ui.PAD, 120), radius=16, fill=(40, 26, 30, 215),
+             outline=(*flame, 140))
     ui.shadow_text(draw, (ui.PAD + 20, y + 14), "PALIERS DE LA SÉRIE · un titre à chacun", try_font(13, bold=True),
-                   fill=ui.DIM)
+                   fill=(*ui.lighten(flame, 0.2), 255))
     track_x, track_w, track_y = ui.PAD + 30, ui.WIDTH - 2 * ui.PAD - 60, y + 58
     ui.bar(img, (track_x, track_y), (track_w, 10), min(1.0, streak / 100), flame, glow=True)
     for step, label in STREAK_STEPS:
@@ -172,18 +175,19 @@ def compose_daily(output_path: str, *, name: str, streak: int, gold: int, bonus_
         draw_text_with_emojis(img, (int(min(max(ui.PAD + 20, mx - tw / 2), ui.WIDTH - ui.PAD - 20 - tw)), track_y + 24),
                               text, f_step, fill=ui.TEXT if reached else ui.DIM, emoji_size=14)
     y += 120 + ui.GAP
-    for note in notes:
-        draw_text_with_emojis(img, (ui.PAD + 4, y), ui.clip(draw, note, try_font(16), ui.WIDTH - 2 * ui.PAD),
-                              try_font(16), fill=ui.MUTED, emoji_size=17)
+    for note, color in notes:
+        draw_text_with_emojis(img, (ui.PAD + 4, y), ui.clip(draw, note, try_font(16, bold=True), ui.WIDTH - 2 * ui.PAD),
+                              try_font(16, bold=True), fill=(*ui.lighten(color, 0.15), 255), emoji_size=17)
         y += 30
     if notes:
         y += 4
-    ui.footer(img, y, "📋 Ta routine du jour : /quetes · /tour · /defi. Un jour manqué divise la série par deux.")
+    ui.footer(img, y, "📋 Ta routine du jour : /quetes · /tour · /defi. Un jour manqué divise la série par deux.",
+              color=ui.FIRE)
     ui.save(img, output_path)
 
 
 # --------------------------------------------------------------------- défis --
-ROLE_COLORS = {"dps": (255, 120, 80), "tank": (90, 160, 230), "soutien": (120, 220, 140)}
+ROLE_COLORS = {"dps": ui.ATK, "tank": ui.DEF, "soutien": ui.REGEN}
 
 
 @dataclass(frozen=True)
@@ -198,10 +202,10 @@ class TrialCard:
 def compose_trials(output_path: str, *, title: str, subtitle: str, cards: list[TrialCard], week: str = "",
                    banner: str = "", seed: int = 0) -> None:
     card_h = 250
-    height = ui.PAD + 120 + card_h + ui.GAP + (64 if week else 0) + 56 + ui.PAD
+    height = ui.PAD + 128 + card_h + ui.GAP + (64 if week else 0) + 56 + ui.PAD
     img = ui.canvas(height, seed)
     draw = ImageDraw.Draw(img)
-    top = ui.header(img, title, subtitle)
+    top = ui.header(img, title, subtitle, accent=ui.CRIT)
     if banner:
         ui.gold_chip(img, ui.PAD, top, banner, try_font(15, bold=True))
     y = top + 42
@@ -227,13 +231,14 @@ def compose_trials(output_path: str, *, title: str, subtitle: str, cards: list[T
             ui.shadow_text(draw, (x + 18, y + card_h - 40), "Pas encore tenté aujourd'hui", try_font(14), fill=ui.DIM)
     y += card_h + ui.GAP
     if week:
-        ui.panel(img, (ui.PAD, y), (ui.WIDTH - 2 * ui.PAD, 48), radius=14, fill=(28, 24, 40, 205),
-                 outline=(*ui.LILAC, 90))
-        draw_text_with_emojis(img, (ui.PAD + 20, y + 14), ui.clip(draw, f"📅 Ta semaine : {week}", try_font(16),
+        ui.panel(img, (ui.PAD, y), (ui.WIDTH - 2 * ui.PAD, 48), radius=14, fill=(24, 40, 46, 215),
+                 outline=(*ui.TIME, 150))
+        draw_text_with_emojis(img, (ui.PAD + 20, y + 14), ui.clip(draw, f"📅 Ta semaine : {week}", try_font(16, bold=True),
                                                                   ui.WIDTH - 2 * ui.PAD - 40),
-                              try_font(16), fill=ui.MUTED, emoji_size=17)
+                              try_font(16, bold=True), fill=(*ui.lighten(ui.TIME, 0.2), 255), emoji_size=17)
         y += 48 + ui.GAP
-    ui.footer(img, y, "🎯 /defi role: pour tenter · même build = même score · potions et élixirs interdits")
+    ui.footer(img, y, "🎯 /defi role: pour tenter · même build = même score · potions et élixirs interdits",
+              color=ui.CRIT)
     ui.save(img, output_path)
 
 
@@ -242,17 +247,18 @@ def compose_trials(output_path: str, *, title: str, subtitle: str, cards: list[T
 class Timer:
     label: str              # « 🌅 Récompense quotidienne »
     ready: str              # « prêt à 21:05 · dans 3 h 12 »
-    ratio: float = 0.0      # part déjà écoulée (0 → 1), pour la barre
+    ratio: float | None = None  # part déjà écoulée (0 → 1) ; None = pas de barre
+    color: tuple = (90, 210, 230)
 
 
 def compose_cooldowns(output_path: str, *, name: str, timers: list[Timer], tickets: str, extras: list[str],
                       seed: int = 0) -> None:
     row_h = 70
     rows = max(1, len(timers))
-    height = ui.PAD + 90 + rows * (row_h + 10) + ui.GAP + len(extras) * 30 + 56 + 56 + ui.PAD
+    height = ui.PAD + 98 + rows * (row_h + 10) + ui.GAP + len(extras) * 30 + 56 + 56 + ui.PAD
     img = ui.canvas(height, seed)
     draw = ImageDraw.Draw(img)
-    y = ui.header(img, f"⏳ Temps de recharge de {name}", "Ce qui attend, et quand ce sera prêt") + 6
+    y = ui.header(img, f"⏳ Temps de recharge de {name}", "Ce qui attend, et quand ce sera prêt", accent=ui.TIME) + 6
     w = ui.WIDTH - 2 * ui.PAD
     if not timers:
         ui.panel(img, (ui.PAD, y), (w, row_h), radius=14, fill=(30, 46, 38, 215), outline=(*ui.GREEN, 140))
@@ -260,26 +266,32 @@ def compose_cooldowns(output_path: str, *, name: str, timers: list[Timer], ticke
                               try_font(19, bold=True), fill=(*ui.GREEN, 255), emoji_size=20)
         y += row_h + 10
     for timer in timers:
-        ui.panel(img, (ui.PAD, y), (w, row_h), radius=14, fill=(28, 24, 40, 210), outline=(*ui.LILAC, 90))
+        color = timer.color
+        ui.panel(img, (ui.PAD, y), (w, row_h), radius=14, fill=(*[int(c * 0.16) + 18 for c in color], 225),
+                 outline=(*color, 150))
+        ui.panel(img, (ui.PAD + 8, y + 12), (5, row_h - 24), radius=3, fill=(*color, 255))
         f_label = try_font(18, bold=True)
-        draw_text_with_emojis(img, (ui.PAD + 20, y + 12), ui.clip(draw, timer.label, f_label, w / 2), f_label,
-                              fill=ui.TEXT, emoji_size=18)
+        draw_text_with_emojis(img, (ui.PAD + 26, y + 12), ui.clip(draw, timer.label, f_label, w / 2), f_label,
+                              fill=(*ui.lighten(color, 0.3), 255), emoji_size=18)
         f_ready = try_font(16, bold=True)
         rw = measure_text_with_emojis(timer.ready, f_ready, 16)
         draw_text_with_emojis(img, (int(ui.PAD + w - 20 - rw), y + 13), timer.ready, f_ready,
-                              fill=(*ui.GOLD, 255), emoji_size=16)
-        ui.bar(img, (ui.PAD + 20, y + 46), (w - 40, 8), timer.ratio, (110, 190, 255), glow=True)
+                              fill=ui.TEXT, emoji_size=16)
+        ui.bar(img, (ui.PAD + 26, y + 46), (w - 46, 8), timer.ratio if timer.ratio is not None else 1.0, color,
+               glow=True)
         y += row_h + 10
     y += ui.GAP - 10
-    ui.panel(img, (ui.PAD, y), (w, 48), radius=14, fill=(28, 24, 40, 205), outline=(*ui.LILAC, 90))
-    draw_text_with_emojis(img, (ui.PAD + 20, y + 14), ui.clip(draw, tickets, try_font(16), w - 40), try_font(16),
-                          fill=ui.MUTED, emoji_size=17)
+    tower = (150, 140, 230)
+    ui.panel(img, (ui.PAD, y), (w, 48), radius=14, fill=(34, 30, 56, 220), outline=(*tower, 160))
+    draw_text_with_emojis(img, (ui.PAD + 20, y + 14), ui.clip(draw, tickets, try_font(16, bold=True), w - 40),
+                          try_font(16, bold=True), fill=(*ui.lighten(tower, 0.3), 255), emoji_size=17)
     y += 48 + 8
     for extra in extras:
-        draw_text_with_emojis(img, (ui.PAD + 4, y), ui.clip(draw, extra, try_font(16), w), try_font(16),
-                              fill=ui.MUTED, emoji_size=17)
+        draw_text_with_emojis(img, (ui.PAD + 4, y), ui.clip(draw, extra, try_font(16, bold=True), w),
+                              try_font(16, bold=True), fill=(*ui.lighten(ui.ITEM, 0.2), 255), emoji_size=17)
         y += 30
-    ui.footer(img, y + 4, "🔔 La case Confort « notifications » de l'arbre te prévient quand c'est prêt.")
+    ui.footer(img, y + 4, "🔔 La case Confort « notifications » de l'arbre te prévient quand c'est prêt.",
+              color=ui.TIME)
     ui.save(img, output_path)
 
 
@@ -289,6 +301,30 @@ class Slot:
     code: str
     name: str
     quantity: int
+    category: str = ""
+
+
+def item_color(code: str, category: str = "") -> tuple:
+    """La couleur d'un objet, d'après ce qu'il fait (même logique partout)."""
+    if "mana" in code:
+        return ui.MANA
+    if "soin" in code:
+        return ui.HP
+    if code.startswith("elixir_recuperation"):
+        return ui.REGEN
+    if code.startswith("elixir_force"):
+        return ui.ATK
+    if code.startswith("elixir_garde"):
+        return ui.DEF
+    if code.startswith("elixir"):
+        return ui.CRIT_DMG
+    if category == "cosmetic" or code.startswith(("booster", "carte")):
+        return ui.PINK
+    if code.startswith(("cor_", "sceau_", "parchemin", "jeton", "sablier")):
+        return ui.GOLD
+    if category == "resource":
+        return ui.EARTH
+    return ui.ITEM
 
 
 def _icon(code: str, size: int) -> Image.Image | None:
@@ -313,13 +349,13 @@ def compose_inventory(output_path: str, *, name: str, page_label: str, slots: li
     cols, tile_h = 4, 128
     shown = slots[:MAX_SLOTS]
     rows = max(1, -(-len(shown) // cols))
-    height = ui.PAD + 120 + rows * (tile_h + 12) + ui.GAP + 56 + ui.PAD
+    height = ui.PAD + 128 + rows * (tile_h + 12) + ui.GAP + 56 + ui.PAD
     img = ui.canvas(height, seed)
     draw = ImageDraw.Draw(img)
     total = sum(s.quantity for s in slots)
-    top = ui.header(img, f"🎒 Inventaire de {name}", page_label)
+    top = ui.header(img, f"🎒 Inventaire de {name}", page_label, accent=ui.ITEM)
     ui.chip(img, ui.PAD, top, f"{len(slots)} objet{'s' if len(slots) > 1 else ''} · {format_int(total)} en tout",
-            try_font(15, bold=True))
+            try_font(15, bold=True), fill=(44, 32, 64, 225), outline=(*ui.ITEM, 170), ink=(*ui.lighten(ui.ITEM, 0.3), 255))
     y = top + 44
     w = ui.WIDTH - 2 * ui.PAD
     if not slots:
@@ -330,7 +366,10 @@ def compose_inventory(output_path: str, *, name: str, page_label: str, slots: li
     for i, slot in enumerate(shown):
         r, c = divmod(i, cols)
         x, ty = ui.PAD + c * (tile_w + 12), y + r * (tile_h + 12)
-        ui.panel(img, (x, ty), (tile_w, tile_h), radius=14, fill=(28, 24, 40, 215), outline=(*ui.LILAC, 80))
+        color = item_color(slot.code, slot.category)
+        ui.panel(img, (x, ty), (tile_w, tile_h), radius=14, fill=(*[int(c * 0.14) + 18 for c in color], 225),
+                 outline=(*color, 150))
+        ui.panel(img, (x + 14, ty), (tile_w - 28, 4), radius=2, fill=(*color, 255))
         icon = _icon(slot.code, 72)
         if icon is not None:
             img.alpha_composite(icon, (x + 14 + (72 - icon.width) // 2, ty + 14 + (72 - icon.height) // 2))
@@ -339,14 +378,14 @@ def compose_inventory(output_path: str, *, name: str, page_label: str, slots: li
             draw_text_with_emojis(img, (x + 34, ty + 34), "📦", try_font(28), fill=ui.TEXT, emoji_size=32)
         qty = f"×{format_int(slot.quantity)}"
         f_qty = ui.fit(draw, qty, 26, tile_w - 104)
-        ui.shadow_text(draw, (x + 96, ty + 34), qty, f_qty, fill=(*ui.GOLD, 255))
+        ui.shadow_text(draw, (x + 96, ty + 34), qty, f_qty, fill=(*ui.lighten(color, 0.2), 255))
         for j, line in enumerate(ui.wrap(draw, slot.name, try_font(14, bold=True), tile_w - 24, 2)):
             ui.shadow_text(draw, (x + 12, ty + 92 + j * 17), line, try_font(14, bold=True))
     y += rows * (tile_h + 12) - 12 + ui.GAP
     more = len(slots) - len(shown)
     note = (f"… et {more} autre{'s' if more > 1 else ''} objet{'s' if more > 1 else ''}."
             if more else "🧪 Les potions se boivent avec /utiliser · ⚔️ l'équipement est dans /equipement_liste.")
-    ui.footer(img, y, note)
+    ui.footer(img, y, note, color=ui.ITEM)
     ui.save(img, output_path)
 
 
@@ -369,21 +408,21 @@ class Section:
 
 
 def compose_list(output_path: str, *, title: str, subtitle: str, sections: list[Section], footer: str = "",
-                 chips: list[str] | None = None, seed: int = 0) -> None:
+                 chips: list[str] | None = None, accent=ui.GOLD, seed: int = 0) -> None:
     """Un écran de listes (titres, records…) : sections teintées, une ligne par
     élément, sa valeur à droite, un détail et une barre facultatifs."""
     def row_h(r: Row) -> int:
         return 34 + (22 if r.sub else 0) + (14 if r.ratio is not None else 0)
 
     body = sum(56 + sum(row_h(r) for r in s.rows) + 10 for s in sections) + max(0, len(sections) - 1) * ui.GAP
-    height = ui.PAD + 120 + body + ui.GAP + (56 + ui.GAP if footer else 0) + ui.PAD
+    height = ui.PAD + 128 + body + ui.GAP + (56 + ui.GAP if footer else 0) + ui.PAD
     img = ui.canvas(height, seed)
     draw = ImageDraw.Draw(img)
-    top = ui.header(img, title, subtitle)
+    top = ui.header(img, title, subtitle, accent=accent)
     x = ui.PAD
     f_chip = try_font(15, bold=True)
     for text in chips or []:
-        x += ui.chip(img, x, top, text, f_chip) + 10
+        x += ui.gold_chip(img, x, top, text, f_chip) + 10
     y = top + (44 if chips else 4)
     w = ui.WIDTH - 2 * ui.PAD
     f_head, f_name, f_right, f_sub = try_font(15, bold=True), try_font(17, bold=True), try_font(16, bold=True), try_font(14)
@@ -401,7 +440,8 @@ def compose_list(output_path: str, *, title: str, subtitle: str, sections: list[
             ui.shadow_text(draw, (ui.PAD + 50, ry + 4), name, f_name, fill=ink)
             if r.right:
                 draw_text_with_emojis(img, (int(ui.PAD + w - 20 - right_w), ry + 5), r.right, f_right,
-                                      fill=(*ui.GOLD, 255) if r.tone == "gold" else ui.MUTED, emoji_size=16)
+                                      fill=(*ui.GOLD, 255) if r.tone == "gold" else (*ui.lighten(section.color, 0.25), 255),
+                                      emoji_size=16)
             ny = ry + 30
             if r.sub:
                 sub = ui.clip(draw, r.sub, f_sub, w - 90)
@@ -413,20 +453,20 @@ def compose_list(output_path: str, *, title: str, subtitle: str, sections: list[
             ry += row_h(r)
         y += h + ui.GAP
     if footer:
-        ui.footer(img, y, footer)
+        ui.footer(img, y, footer, color=accent)
     ui.save(img, output_path)
 
 
 # --------------------------------------------------------------------- bourse --
 def compose_gold(output_path: str, *, name: str, gold: int, career: int, is_self: bool, seed: int = 0) -> None:
-    height = ui.PAD + 80 + 190 + ui.GAP + 56 + ui.PAD
+    height = ui.PAD + 88 + 190 + ui.GAP + 56 + ui.PAD
     img = ui.canvas(height, seed)
     draw = ImageDraw.Draw(img)
     top = ui.header(img, "💰 Ta bourse" if is_self else f"💰 Bourse de {name}",
-                    "L'or se gagne en combat, en quêtes, aux défis et à la solde du jour")
+                    "L'or se gagne en combat, en quêtes, aux défis et à la solde du jour", accent=ui.GOLD)
     w = (ui.WIDTH - 2 * ui.PAD - ui.GAP) // 2
     for i, (label, value, color) in enumerate((("OR ACTUEL", gold, ui.GOLD),
-                                              ("OR AMASSÉ DEPUIS LE DÉBUT", career, (150, 200, 120)))):
+                                              ("OR AMASSÉ DEPUIS LE DÉBUT", career, ui.REGEN))):
         x = ui.PAD + i * (w + ui.GAP)
         ui.tinted_card(img, (x, top), (w, 190), color)
         ui.shadow_text(draw, (x + 22, top + 24), label, try_font(16, bold=True), fill=(*color, 255))
@@ -435,7 +475,8 @@ def compose_gold(output_path: str, *, name: str, gold: int, career: int, is_self
         ui.shadow_text(draw, (x + 22, top + 60), text, font)
         tw = draw.textlength(text, font=font)
         draw_text_with_emojis(img, (int(x + 32 + tw), top + 80), "💰", try_font(24), fill=ui.TEXT, emoji_size=30)
-    ui.footer(img, top + 190 + ui.GAP, "🛒 Sorn (/marchand), Borak (/forgeron), Elna (/alchimiste) et la /brocante attendent ton or.")
+    ui.footer(img, top + 190 + ui.GAP, "🛒 Sorn (/marchand), Borak (/forgeron), Elna (/alchimiste) et la /brocante attendent ton or.",
+              color=ui.GOLD)
     ui.save(img, output_path)
 
 
@@ -447,11 +488,12 @@ def compose_leaderboard(output_path: str, *, title: str, entries: list[tuple[str
     podium = entries[:3]
     rest = entries[3:]
     extra = 1 if viewer and viewer_rank and viewer_rank > len(entries) else 0
-    height = ui.PAD + 80 + (250 if podium else 120) + ui.GAP + (len(rest) + extra) * 66 + ui.GAP + 56 + ui.PAD
+    height = ui.PAD + 88 + (250 if podium else 120) + ui.GAP + (len(rest) + extra) * 66 + ui.GAP + 56 + ui.PAD
     img = ui.canvas(height, seed)
     draw = ImageDraw.Draw(img)
     place = "" if viewer_rank is None else (" · ta place : 1ʳᵉ" if viewer_rank == 1 else f" · ta place : {viewer_rank}ᵉ")
-    top = ui.header(img, f"🏆 {title}", f"{total} joueur{'s' if total > 1 else ''} classé{'s' if total > 1 else ''}{place}")
+    top = ui.header(img, f"🏆 {title}", f"{total} joueur{'s' if total > 1 else ''} classé{'s' if total > 1 else ''}{place}",
+                    accent=ui.GOLD)
     w = ui.WIDTH - 2 * ui.PAD
     if not entries:
         ui.panel(img, (ui.PAD, top), (w, 120), radius=16, fill=(28, 24, 40, 205), outline=(*ui.LILAC, 90))
@@ -484,21 +526,26 @@ def compose_leaderboard(output_path: str, *, title: str, entries: list[tuple[str
         rows = [(i + 4, n, v, i + 4 == viewer_rank) for i, (n, v) in enumerate(rest)]
         if extra:
             rows.append((viewer_rank, viewer[0], viewer[1], True))
+        ladder = (ui.ATK, ui.REGEN, ui.TIME, ui.DEF, ui.ITEM, ui.PINK, ui.EARTH)   # jamais l'or : c'est ta ligne
         for rank, name, value, me in rows:
+            color = ui.GOLD if me else ladder[(rank - 4) % len(ladder)]
             ui.panel(img, (ui.PAD, y), (w, 56), radius=14,
-                     fill=(92, 70, 20, 200) if me else (28, 24, 40, 205),
-                     outline=(*ui.GOLD, 200) if me else (*ui.LILAC, 70))
-            ui.shadow_text(draw, (ui.PAD + 20, y + 14), f"#{rank}", try_font(22, bold=True), fill=ui.DIM)
+                     fill=(92, 70, 20, 200) if me else (*[int(c * 0.14) + 18 for c in color], 225),
+                     outline=(*color, 200 if me else 130))
+            ui.panel(img, (ui.PAD + 8, y + 12), (5, 32), radius=3, fill=(*color, 255))
+            ui.shadow_text(draw, (ui.PAD + 22, y + 14), f"#{rank}", try_font(22, bold=True),
+                           fill=(*ui.lighten(color, 0.2), 255))
             f_v = try_font(22, bold=True)
             vw = draw.textlength(value, font=f_v)
             f_name = ui.fit(draw, name, 26, w - 150 - vw, floor=18)
             ui.shadow_text(draw, (ui.PAD + 90, y + 13 + (26 - f_name.size) // 2),
                            ui.clip(draw, name, f_name, w - 150 - vw), f_name,
                            fill=(*ui.GOLD, 255) if me else ui.TEXT)
-            ui.shadow_text(draw, (ui.PAD + w - 20 - vw, y + 14), value, f_v, fill=ui.MUTED)
+            ui.shadow_text(draw, (ui.PAD + w - 20 - vw, y + 14), value, f_v, fill=(*ui.lighten(color, 0.3), 255))
             y += 66
         y += ui.GAP - 8
-    ui.footer(img, y, "📊 /classement pour choisir une autre catégorie : niveau, puissance, or, tour, défis, chasse…")
+    ui.footer(img, y, "📊 /classement pour choisir une autre catégorie : niveau, puissance, or, tour, défis, chasse…",
+              color=ui.GOLD)
     ui.save(img, output_path)
 
 
@@ -506,10 +553,10 @@ def compose_leaderboard(output_path: str, *, title: str, entries: list[tuple[str
 def compose_attempt(output_path: str, *, role: str, label: str, variant: str, score: str, unit: str,
                     detail: str, improved: bool, best: str, place: str, gold: str = "", seed: int = 0) -> None:
     color = ROLE_COLORS.get(role, ui.LILAC)
-    height = ui.PAD + 80 + 230 + ui.GAP + 56 + ui.PAD
+    height = ui.PAD + 88 + 230 + ui.GAP + 56 + ui.PAD
     img = ui.canvas(height, seed)
     draw = ImageDraw.Draw(img)
-    top = ui.header(img, f"{label} — {variant}", "Défi du jour")
+    top = ui.header(img, f"{label} — {variant}", "Défi du jour", accent=color)
     w = ui.WIDTH - 2 * ui.PAD
     ui.tinted_card(img, (ui.PAD, top), (w, 230), ui.GOLD if improved else color)
     ui.shadow_text(draw, (ui.PAD + 24, top + 24), "TON SCORE", try_font(16, bold=True), fill=(*ui.lighten(color, 0.2), 255))
@@ -524,10 +571,12 @@ def compose_attempt(output_path: str, *, role: str, label: str, variant: str, sc
         x += ui.gold_chip(img, x, top + 178, "✨ Nouveau record du jour !", f_chip) + 10
     else:
         x += ui.chip(img, x, top + 178, f"Ton record du jour : {best}", f_chip) + 10
-    x += ui.chip(img, x, top + 178, place, f_chip) + 10
+    x += ui.chip(img, x, top + 178, place, f_chip, fill=(24, 40, 46, 225), outline=(*ui.TIME, 170),
+                 ink=(*ui.lighten(ui.TIME, 0.2), 255)) + 10
     if gold:
         ui.gold_chip(img, x, top + 178, gold, f_chip)
-    ui.footer(img, top + 230 + ui.GAP, "🔁 Même build, même score : change d'équipement, d'arbre, de points ou de /tactique.")
+    ui.footer(img, top + 230 + ui.GAP, "🔁 Même build, même score : change d'équipement, d'arbre, de points ou de /tactique.",
+              color=color)
     ui.save(img, output_path)
 
 

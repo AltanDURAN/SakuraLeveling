@@ -127,9 +127,9 @@ def build_title_pages(
 
 #: Lignes par page de l'image de `/titre`.
 ROWS_PER_PAGE = 12
-SECTION_COLORS = {"Progression": (110, 190, 255), "Chasse par famille": (255, 140, 80),
-                  "Titres disputés": (240, 196, 92), "World boss": (235, 90, 100), "Cartes": (230, 120, 200),
-                  "Chasseurs légendaires": (120, 220, 140)}
+SECTION_COLORS = {"Progression": (110, 190, 255), "Chasse par famille": (255, 140, 50),
+                  "Titres disputés": (240, 196, 92), "World boss": (235, 80, 90), "Cartes": (255, 150, 200),
+                  "Chasseurs légendaires": (120, 220, 130)}     # = ui_kit : XP, ATK, GOLD, HP, PINK, REGEN
 
 
 def title_image_pages(unlocked, locked, labels: dict, *, active_code=None, closeness: dict | None = None):

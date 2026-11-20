@@ -62,7 +62,8 @@ class InventoryView(ExpiringView):
         label, emoji = next(((lab, emo) for key, lab, emo in PAGES if key == self.current_page), ("Inventaire", "🎒"))
         page = sorted(_filter_items_for_page(self.items, self.current_page),
                       key=lambda i: (-i.quantity, i.item_definition.name))
-        slots = [screens.Slot(i.item_definition.code, i.item_definition.name, i.quantity) for i in page]
+        slots = [screens.Slot(i.item_definition.code, i.item_definition.name, i.quantity, i.item_definition.category)
+                 for i in page]
         empty = ("Rien dans cette catégorie pour l'instant."
                  if any(_is_inventory_item(i) for i in self.items)
                  else "Inventaire vide : les monstres lâchent des matériaux, Elna prépare des potions (/alchimiste).")

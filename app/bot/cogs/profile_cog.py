@@ -491,14 +491,19 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
         # En image (DA du bot, 21/11/2026), le texte en repli.
         from app.bot.embeds.screen_embed import image_embed
         from app.bot.rendering import screens
+        from app.bot.rendering import ui_kit as ui
 
+        # Chaque attente à sa couleur, la même que sur les autres écrans.
+        TIMER_COLORS = {"daily": ui.GOLD, "world_boss_fight": ui.HP, "skill_tree_reset": ui.REGEN,
+                        "rank_trial": ui.CRIT_DMG}
         paris = ZoneInfo("Europe/Paris")
         timers = []
         for action_key, next_at in sorted(active, key=lambda x: x[1]):
             left = int((next_at - now).total_seconds() // 60)
             delay = f"{left // 60} h {left % 60:02d}" if left >= 60 else f"{max(1, left)} min"
             label = ACTION_LABELS.get(action_key, action_key).split(" (")[0]
-            timers.append(screens.Timer(label, f"prêt à {next_at.astimezone(paris):%H:%M} · dans {delay}"))
+            timers.append(screens.Timer(label, f"prêt à {next_at.astimezone(paris):%H:%M} · dans {delay}",
+                                        color=TIMER_COLORS.get(action_key, ui.TIME)))
         tickets_text = (f"🎟️ Tour solo : {tickets.available}/{tickets.allowance} ticket(s) aujourd'hui"
                         + (" (bonus compris)" if tickets.has_bonus else "") + " — renouvelés à minuit")
         extras = [f"🧪 Élixirs actifs : {active_elixirs_text(elixirs)} — zones et world boss"] if elixirs else []

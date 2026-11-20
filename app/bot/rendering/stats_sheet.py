@@ -184,7 +184,7 @@ def compose_stats_sheet(output_path: str, data: dict, *, gains: dict[str, int], 
     # --------------------------------------------------------- stats secondaires
     sy = top + card_h + _GAP
     _panel(img, (_PAD, sy), (WIDTH - 2 * _PAD, sec_h), radius=16, fill=(28, 24, 40, 205),
-           outline=(150, 120, 210, 90))
+           outline=(120, 220, 200, 120))
     draw_text_with_shadow(draw, (_PAD + 20, sy + 14), "STATS SECONDAIRES · arbre, équipement, titres",
                           try_font(13, bold=True), fill=_DIM, shadow=_SHADOW)
     secondary = data.get("secondary") or {}
@@ -202,8 +202,9 @@ def compose_stats_sheet(output_path: str, data: dict, *, gains: dict[str, int], 
 
     # ---------------------------------------------------------------------- pied
     fy = sy + sec_h + _GAP
-    _panel(img, (_PAD, fy), (WIDTH - 2 * _PAD, foot_h), radius=16, fill=(36, 28, 54, 215),
-           outline=(150, 120, 210, 110))
+    foot = _GOLD if points else (110, 190, 255)
+    _panel(img, (_PAD, fy), (WIDTH - 2 * _PAD, foot_h), radius=16, fill=(36, 28, 54, 215), outline=(*foot, 150))
+    _panel(img, (_PAD, fy + 14), (4, foot_h - 28), radius=2, fill=(*foot, 255))
     note = ("📜 Un point placé est définitif : seul le parchemin d'oubli de Sorn les rend."
             if points else "📈 Combats, quêtes et tour font monter de niveau : un point de stats à chaque fois.")
     draw_text_with_emojis(img, (_PAD + 20, fy + 21), note, try_font(16), fill=_MUTED, emoji_size=17)

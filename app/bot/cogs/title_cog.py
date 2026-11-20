@@ -189,13 +189,15 @@ class TitleBookView(PagedBookView):
     def draw(self, index: int):
         from app.bot.embeds.screen_embed import image_embed
         from app.bot.rendering import screens
+        from app.bot.rendering import ui_kit as ui
 
         title, subtitle, chips = self.header
         pages = len(self.image_pages)
         return image_embed(screens.compose_list, f"titres_{self.author_id}_{index}", discord.Color.gold(),
                            title=title, subtitle=subtitle + (f" · page {index + 1}/{pages}" if pages > 1 else ""),
                            sections=self.image_pages[index], chips=chips if index == 0 else None,
-                           footer="🏷️ /titre_actif choisit celui qui s'affiche sur ton profil.", seed=self.author_id)
+                           footer="🏷️ /titre_actif choisit celui qui s'affiche sur ton profil.",
+                           accent=ui.CRIT_DMG, seed=self.author_id)
 
 
 class TitleCog(BetaChannelOnlyMixin, commands.Cog):

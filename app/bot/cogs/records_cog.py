@@ -59,8 +59,10 @@ def _records_screen(view, player_id: int, seed: int):
         return screens.Row(record.emoji, record.label, value, sub,
                            ratio=min(1.0, mine_value / entry.value) if entry.value else None)
 
-    colors = {"exploits": (255, 120, 80), "defis": (120, 200, 160), "tour": (150, 140, 230),
-              "boss": (240, 196, 92), "chasse": (200, 140, 90), "collection": (230, 120, 200)}
+    from app.bot.rendering import ui_kit as ui
+
+    colors = {"exploits": ui.ATK, "defis": ui.CRIT, "tour": (150, 140, 230),
+              "boss": ui.HP, "chasse": ui.EARTH, "collection": ui.PINK}
     sections = [screens.Section(heading, [row(r) for r in view.records if r.category == category],
                                 colors.get(category, (150, 120, 210)))
                 for category, heading in rs.CATEGORIES]
