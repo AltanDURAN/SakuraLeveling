@@ -505,7 +505,8 @@ class EncounterCog(commands.Cog):
             lines.append(f"⚔️ Le combat se lance {when} — {count} combattant{'s' if count > 1 else ''}. "
                          "Prêt ? Clique sur **Lancer**.")
         else:
-            lines.append(f"⏳ Sans combattant, le monstre s'enfuit {when}.")
+            # Court (demande de l'auteur, 21/11/2026) : l'heure suffit.
+            lines.append(f"⏳ S'enfuit à <t:{int(encounter.ends_at.timestamp())}:t>")
         return "\n".join(lines)
 
     def _forced_pending(self, channel_id: int) -> bool:

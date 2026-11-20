@@ -17,6 +17,8 @@ import logging
 from datetime import UTC, datetime, time, timedelta
 
 import discord
+
+from app.shared.formatters import format_int
 from discord import app_commands
 from discord.ext import commands, tasks
 
@@ -43,6 +45,40 @@ _ROLE_CHOICES = [
     app_commands.Choice(name="💚 Soutien — PV soignés", value="soutien"),
 ]
 
+
+
+def _trials_screen(day, mine, week, first_gold, closed, seed: int):
+    """Les défis du jour en image (DA du bot, 21/11/2026) ; None = embed texte."""
+    from app.bot.embeds.role_trial_embeds import _day_label, _place
+    from app.bot.embeds.screen_embed import image_embed
+    from app.bot.rendering import screens
+
+    cards = []
+    for role in rts.ROLES:
+        variant = rts.variant_of_day(day, role)
+        entry = (mine or {}).get(role)
+        best = ""
+        if entry:
+            score, attempts, place, total = entry
+            best = f"{format_int(score)} · {attempts} essai{'s' if attempts > 1 else ''} · {_place(place)} sur {total}"
+        cards.append(screens.TrialCard(role, rts.ROLE_LABELS[role], variant.name, variant.description, best))
+    week_text = ""
+    if week is not None:
+        parts = []
+        for key, label in [*rts.ROLE_LABELS.items(), (rts.GENERAL, rts.GENERAL_LABEL)]:
+            entry = week.get(key)
+            parts.append(f"{label} " + ("—" if entry is None else f"{_place(entry[0])} ({format_int(round(entry[1]))})"))
+        week_text = " · ".join(parts)
+    if closed:
+        banner = "🏁 Résultats de la semaine tombés : nouveaux défis à minuit"
+    elif mine:
+        banner = "✅ Récompense du premier défi prise : à demain !"
+    else:
+        banner = f"🎁 Ton premier défi du jour te rapporte {format_int(first_gold or 0)} or"
+    return image_embed(screens.compose_trials, f"defi_{seed}", discord.Color.teal(),
+                       title=f"🎯 Défis du {_day_label(day)}",
+                       subtitle="Trois épreuves, une par rôle — même adversaire pour tout le serveur",
+                       cards=cards, week=week_text, banner=banner, seed=seed)
 
 class RoleTrialCog(BetaChannelOnlyMixin, commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
@@ -94,6 +130,10 @@ class RoleTrialCog(BetaChannelOnlyMixin, commands.Cog):
         await interaction.response.defer()
         if role is None:
             day, mine, week, first_gold, closed = await asyncio.to_thread(self._overview, interaction.user)
+            screen = await asyncio.to_thread(_trials_screen, day, mine, week, first_gold, closed, interaction.user.id)
+            if screen is not None:
+                await interaction.followup.send(embed=screen[0], file=screen[1])
+                return
             embed = build_day_embed(day, mine, week, first_gold)
             if closed:
                 embed.description = ("🏁 Les résultats de la semaine sont tombés : "

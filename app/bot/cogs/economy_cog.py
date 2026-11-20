@@ -4,6 +4,8 @@
 Découpé de `player_cog.py` le 26/10/2026 (roadmap N6).
 """
 
+import asyncio
+
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -87,6 +89,19 @@ class EconomyCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
             )
 
         if result.success:
+            await interaction.response.defer()
+            from app.bot.embeds.screen_embed import image_embed
+            from app.bot.rendering import screens
+
+            screen = await asyncio.to_thread(
+                image_embed, screens.compose_daily, f"daily_{interaction.user.id}", discord.Color.gold(),
+                name=interaction.user.display_name, streak=result.streak, gold=result.gold_gained,
+                bonus_pct=result.streak_bonus_pct, days_missed=result.days_missed,
+                streak_before=result.streak_before_absence, guard_used=result.guard_used,
+                titles=result.titles_unlocked, bonus_items=result.bonus_items, seed=interaction.user.id)
+            if screen is not None:
+                await interaction.followup.send(embed=screen[0], file=screen[1])
+                return
             embed = build_daily_success_embed(
                 streak=result.streak,
                 gold_gained=result.gold_gained,
@@ -97,7 +112,7 @@ class EconomyCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
                 titles_unlocked=result.titles_unlocked,
                 guard_used=result.guard_used,
             )
-            await interaction.response.send_message(embed=embed)
+            await interaction.followup.send(embed=embed)
         else:
             embed = build_daily_cooldown_embed(
                 streak=result.streak,

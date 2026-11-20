@@ -8,6 +8,8 @@ défaut = soi (profil créé au besoin), sinon lecture seule
 
 import asyncio
 import logging
+from zoneinfo import ZoneInfo
+
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -486,11 +488,34 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
             color=discord.Color.blurple(),
         )
 
+        # En image (DA du bot, 21/11/2026), le texte en repli.
+        from app.bot.embeds.screen_embed import image_embed
+        from app.bot.rendering import screens
+
+        paris = ZoneInfo("Europe/Paris")
+        timers = []
+        for action_key, next_at in sorted(active, key=lambda x: x[1]):
+            left = int((next_at - now).total_seconds() // 60)
+            delay = f"{left // 60} h {left % 60:02d}" if left >= 60 else f"{max(1, left)} min"
+            label = ACTION_LABELS.get(action_key, action_key).split(" (")[0]
+            timers.append(screens.Timer(label, f"prêt à {next_at.astimezone(paris):%H:%M} · dans {delay}"))
+        tickets_text = (f"🎟️ Tour solo : {tickets.available}/{tickets.allowance} ticket(s) aujourd'hui"
+                        + (" (bonus compris)" if tickets.has_bonus else "") + " — renouvelés à minuit")
+        extras = [f"🧪 Élixirs actifs : {active_elixirs_text(elixirs)} — zones et world boss"] if elixirs else []
+        await interaction.response.defer(ephemeral=True)
+        screen = await asyncio.to_thread(
+            image_embed, screens.compose_cooldowns, f"cd_{target_member.id}", discord.Color.blurple(),
+            name=target_member.display_name, timers=timers, tickets=tickets_text, extras=extras,
+            seed=target_member.id)
+        if screen is not None:
+            await interaction.followup.send(embed=screen[0], file=screen[1], ephemeral=True)
+            return
+
         if not active:
             embed.description = (
                 "✅ Rien ne recharge : tout est disponible !\n\n" + ticket_line
             )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.followup.send(embed=embed, ephemeral=True)
             return
 
         # Sort by next_available (le plus proche en premier)
@@ -502,7 +527,7 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
             lines.append(f"{label} — <t:{ts}:R> (<t:{ts}:f>)")
         embed.description = "\n".join(lines) + "\n\n" + ticket_line
         embed.set_footer(text=f"{len(active)} temps de recharge en cours")
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     @app_commands.command(
         name="or",

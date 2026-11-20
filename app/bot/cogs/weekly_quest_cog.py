@@ -4,6 +4,8 @@
 récompense(s)' affiché si au moins une quête est complétée non-claim.
 """
 
+import asyncio
+
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -88,6 +90,23 @@ def build_weekly_embed(
     return embed
 
 
+
+def _quests_screen(display_name: str, state, player_id: int):
+    """Les quêtes en image (DA du bot, 21/11/2026) ; None = garder l'embed."""
+    from app.bot.embeds.screen_embed import image_embed
+    from app.bot.rendering import screens
+
+    names = item_names({code for q in state.quests for code, _ in q.reward_items})
+    cards = [screens.QuestCard(
+        name=q.name, description=q.description, tier=q.tier, progress=q.progress, total=q.objective_quantity,
+        gold=q.reward_gold, xp=q.reward_xp, items=", ".join(f"{qty}× {names.get(c, c)}" for c, qty in q.reward_items),
+        completed=q.completed, claimed=q.claimed) for q in state.quests]
+    subtitle = f"{display_name} · nouvelles quêtes chaque lundi à minuit (heure de Paris)"
+    return image_embed(screens.compose_quests, f"quests_weekly_{player_id}", discord.Color.purple(),
+                       title="🗓️ Quêtes de la semaine", subtitle=subtitle, quests=cards,
+                       empty_text="Pas de quête pour l'instant : elles arrivent à ton premier combat, ou en retapant `/quetes_hebdo`.",
+                       seed=player_id)
+
 class WeeklyQuestCog(BetaChannelOnlyMixin, commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
@@ -97,10 +116,15 @@ class WeeklyQuestCog(BetaChannelOnlyMixin, commands.Cog):
         description="Tes 3 quêtes de la semaine : voir et réclamer",
     )
     async def weekly_quest(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer(ephemeral=True)
         state = self._fetch_state(interaction)
-        embed = build_weekly_embed(interaction.user.display_name, state)
         view = self._build_view(interaction, state)
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+        screen = await asyncio.to_thread(_quests_screen, interaction.user.display_name, state, interaction.user.id)
+        if screen is None:
+            await interaction.followup.send(embed=build_weekly_embed(interaction.user.display_name, state), view=view,
+                                            ephemeral=True)
+        else:
+            await interaction.followup.send(embed=screen[0], file=screen[1], view=view, ephemeral=True)
 
     def _fetch_state(self, interaction: discord.Interaction) -> WeeklyQuestState:
         with get_db_session() as session:
@@ -152,13 +176,14 @@ class WeeklyQuestCog(BetaChannelOnlyMixin, commands.Cog):
                 lines.append(f"🆙 **Niveau {result.new_level} !** Tu as des points à placer : `/stats` et `/arbre`.")
 
             new_state = self._fetch_state(claim_interaction)
-            new_embed = build_weekly_embed(
-                claim_interaction.user.display_name, new_state,
-            )
             new_view = self._build_view(claim_interaction, new_state)
-            await claim_interaction.edit_original_response(
-                embed=new_embed, view=new_view,
-            )
+            screen = await asyncio.to_thread(_quests_screen, claim_interaction.user.display_name, new_state,
+                                             claim_interaction.user.id)
+            if screen is None:
+                await claim_interaction.edit_original_response(
+                    embed=build_weekly_embed(claim_interaction.user.display_name, new_state), attachments=[], view=new_view)
+            else:
+                await claim_interaction.edit_original_response(embed=screen[0], attachments=[screen[1]], view=new_view)
             await claim_interaction.followup.send(
                 "\n".join(lines), ephemeral=True,
             )

@@ -655,6 +655,16 @@ Demande de l'auteur : homogénéiser toutes les pages (61 pages passées en revu
 - **Retours de la pré-bêta (20/11/2026, demandes de l'auteur)** : personne n'avait ouvert `/stats` ni tenté `/epreuve` → bouton « Placer mes points » sous le récapitulatif quand un niveau est gagné (`BattleSummaryView.place_points`, ouvre la feuille de stats en privé) et ligne « Prochaine étape » qui rappelle l'épreuve dès que la puissance requise est atteinte (`next_step._trial_ready`, rang lu dans `players.earned_rank`). Bouton **Lancer** grisé tant qu'il ne peut pas lancer (`EncounterView.sync`), réactivé à l'heure par `EncounterCog._unlock_launch_later`. Annonce de minuit des défis COURTE (`build_day_announcement`, ~210 caractères au lieu de ~830) ; le programme complet reste dans `/defi`.
 - **La suite après un gain** : une pièce tombée renvoie à `/equiper`, une promotion nomme la zone ouverte avec son salon (`_opened_zones_line`), un niveau gagné par une quête rappelle `/stats` et `/arbre`.
 
+## Écrans en image — 20-21/11/2026
+
+Demande de l'auteur : les écrans encore en texte brut prennent la DA du bot (celle de `/affinites`, de la bannière et des PNJ).
+
+- **Briques communes** : [`rendering/ui_kit.py`](app/bot/rendering/ui_kit.py) — fond de nuit à pétales (`canvas`), panneaux, cartes teintées, barres lumineuses, pastilles, en-tête, pied ; `fit` / `clip` / `wrap` pour que rien ne déborde (pseudos de 32 caractères, montants à 7 chiffres testés).
+- **Écrans** : `/stats` ([`stats_sheet.py`](app/bot/rendering/stats_sheet.py)) ; `/quetes` et `/quetes_hebdo` (aussi après « Réclamer »), `/daily`, `/defi` (programme et scores), `/cd`, `/inventaire` (tuiles avec l'image de l'objet, 32 par page au plus) — [`screens.py`](app/bot/rendering/screens.py).
+- **Règles** : le rendu se fait TOUJOURS dans un thread ; [`screen_embed.image_embed`](app/bot/embeds/screen_embed.py) renvoie `None` si Pillow échoue et la commande garde alors son embed texte d'avant (jamais d'écran vide). Les heures de `/cd` sont celles de Paris (une image ne peut pas porter de compte à rebours Discord).
+- **Pas encore en image** : `/or`, `/titre`, `/records`, `/classement`, `/tour` (déjà une image d'étage), récapitulatif d'un essai de défi.
+- Tests : [`test_screens.py`](tests/bot/test_screens.py), [`test_stats_sheet.py`](tests/bot/test_stats_sheet.py).
+
 ## Limites de Discord — 13/11/2026
 
 Un embed refusé (400 Bad Request), c'est tout le message qui disparaît. Le 11/11/2026, `/titre` a planté en production (« Embed size exceeds maximum size of 6000 ») : avec les 83 titres du jeu, la liste à débloquer dépassait la limite pour presque tous les joueurs (de 2 à 13 titres débloqués).

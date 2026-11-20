@@ -51,8 +51,10 @@ class EquipmentCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
             inventory_repository = InventoryRepository(session)
             items = inventory_repository.list_by_player_id(profile.player.id)
 
-        view = InventoryView(target_member.display_name, items)
-        await interaction.response.send_message(embed=view._build_embed(), view=view)
+        view = InventoryView(target_member.display_name, items, seed=target_member.id)
+        await interaction.response.defer()
+        embed, files = await asyncio.to_thread(view.render, target_member.id)
+        await interaction.followup.send(embed=embed, files=files, view=view)
 
     @app_commands.command(
         name="equipement",
