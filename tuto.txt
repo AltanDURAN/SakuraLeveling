@@ -86,8 +86,8 @@ LA PROGRESSION
 
 /profil [joueur]
     (Sur ton propre profil, une ligne « Prochaine étape » te dit quoi
-    faire : points à placer, pièce non portée, solde du jour, booster
-    offert.)
+    faire : points à placer, épreuve de rang possible, pièce non portée,
+    solde du jour, booster offert.)
     Ton personnage en une image : titre actif, niveau, barres PV / mana / XP,
     or, points de stats et d'arbre à dépenser, série du /daily, rang et
     puissance, stats de combat, statistiques de carrière et affinités
@@ -454,9 +454,9 @@ COMBATS DE GROUPE (automatiques)
     les nuits peuvent être calmes). Clique « Combattre » : le compte à
     rebours sous le monstre dit quand le combat part, avec l'heure (« dans
     2 minutes (à 21:05) » ; 2 minutes par défaut, 5 pour une élite). Le
-    groupe est prêt ? Un combattant clique « Lancer »
-    et le combat part tout de suite (après 30 secondes, pour laisser aux
-    autres le temps de venir). Au lancement, le bot MENTIONNE tous les
+    groupe est prêt ? Un combattant clique « Lancer » et le combat part
+    tout de suite. Le bouton reste grisé quelques instants pour laisser
+    aux autres le temps de venir (réglable par l'admin), puis s'allume. Au lancement, le bot MENTIONNE tous les
     combattants : tu peux venir regarder le combat en direct.
     Tes PV sont relus au lancement : la potion bue pendant l'attente et la
     régénération comptent. On ne s'inscrit qu'à un combat à la fois.

@@ -24,6 +24,7 @@ from app.application.use_cases import role_trials
 from app.bot.cogs._mixins import BetaChannelOnlyMixin
 from app.bot.embeds.role_trial_embeds import (
     build_attempt_embed,
+    build_day_announcement,
     build_day_embed,
     build_results_embed,
 )
@@ -127,7 +128,7 @@ class RoleTrialCog(BetaChannelOnlyMixin, commands.Cog):
         try:
             channel = await self._channel()
             if channel is not None:
-                await channel.send(embed=build_day_embed(rts.trial_day(datetime.now(UTC))))
+                await channel.send(embed=build_day_announcement(rts.trial_day(datetime.now(UTC))))
         except Exception:
             _logger.exception("annonce des défis du jour échouée")
 

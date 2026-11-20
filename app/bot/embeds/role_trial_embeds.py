@@ -82,6 +82,19 @@ def build_day_embed(day: date, mine: dict | None = None, week: dict | None = Non
     return embed
 
 
+def build_day_announcement(day: date) -> discord.Embed:
+    """L'annonce de minuit dans le salon général : COURTE (demande de l'auteur,
+    20/11/2026 — le programme complet, écrit chaque jour, prenait trop de
+    place). Les variantes en une ligne ; le détail est dans `/defi`."""
+    variants = " · ".join(f"{rts.ROLE_LABELS[role]} : **{rts.variant_of_day(day, role).name}**"
+                          for role in rts.ROLES)
+    return discord.Embed(
+        title=f"🎯 Défis du {_day_label(day)}",
+        description=f"{variants}\nTente ta chance avec `/defi` : le premier défi du jour rapporte un peu d'or.",
+        color=discord.Color.teal(),
+    )
+
+
 def build_attempt_embed(outcome) -> discord.Embed:
     role, variant = outcome.role, outcome.variant
     if role == "dps":

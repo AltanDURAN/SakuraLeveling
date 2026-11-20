@@ -16,6 +16,12 @@ class BattleSummaryView(ExpiringView):
         #: Le message qui porte cette vue : ses boutons en partent à la fin.
         self.message: discord.Message | None = None
         self._refresh_buttons()
+        # Un niveau gagné avec des points à placer : le bouton y mène tout de
+        # suite (revue du 20/11/2026 : en bêta, personne n'avait ouvert /stats
+        # malgré le rappel écrit dans le récapitulatif).
+        if not any(getattr(r, "levels_gained", 0) > 0 and getattr(r, "stat_points", 0) > 0
+                   for r in getattr(summary, "rewards", None) or []):
+            self.remove_item(self.place_points)
 
     async def on_timeout(self) -> None:
         """Après le délai, les boutons ne répondent plus : autant les retirer."""
@@ -60,6 +66,23 @@ class BattleSummaryView(ExpiringView):
     ) -> None:
         # Bouton inactif servant d'indicateur de page.
         await interaction.response.defer()
+
+    @discord.ui.button(label="Placer mes points", emoji="💪", style=discord.ButtonStyle.success, row=1)
+    async def place_points(
+        self,
+        interaction: discord.Interaction,
+        button: discord.ui.Button,
+    ) -> None:
+        """Ouvre SA feuille de stats, en privé (chacun la sienne)."""
+        import asyncio
+
+        from app.bot.cogs.stats_cog import StatsView, _build_embed, _load
+
+        await interaction.response.defer(ephemeral=True)
+        data = await asyncio.to_thread(_load, interaction.user.id, interaction.user.name,
+                                       interaction.user.display_name)
+        await interaction.followup.send(embed=_build_embed(data), view=StatsView(data, owner_id=interaction.user.id),
+                                        ephemeral=True)
 
     @discord.ui.button(emoji="➡️", style=discord.ButtonStyle.secondary)
     async def next_button(

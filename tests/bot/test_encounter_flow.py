@@ -256,6 +256,28 @@ def test_lancer_et_quitter_n_apparaissent_qu_avec_des_combattants(cog):
     asyncio.run(scenario())
 
 
+def test_lancer_est_grise_tant_qu_il_ne_peut_pas_lancer(cog):
+    """Demande de l'auteur (20/11/2026) : Lancer n'est cliquable que lorsqu'il
+    lance vraiment le combat ; le cog le réactive à l'heure dite."""
+    class Message:
+        edits = []
+
+        async def edit(self, **kwargs):
+            Message.edits.append(kwargs)
+
+    async def scenario():
+        encounter = _encounter([1])
+        cog.active_encounters[CHANNEL] = encounter
+        view = EncounterView(cog, CHANNEL, timeout=None)
+        encounter.launch_after = datetime.now(UTC) + timedelta(seconds=0.3)
+        view.sync()
+        assert view.launch_encounter.disabled
+        await cog._unlock_launch_later(CHANNEL, encounter, view, Message())
+        assert not view.launch_encounter.disabled and Message.edits == [{"view": view}]
+
+    asyncio.run(scenario())
+
+
 def test_une_seule_video_a_la_fois():
     async def scenario():
         order = []

@@ -26,3 +26,15 @@ def test_le_programme_dit_si_la_recompense_du_jour_reste_a_prendre():
     assert f"**250** {GOLD_EMOJI}" in build_day_embed(DAY, {}, {}, 250).description
     done = build_day_embed(DAY, {"dps": (1200, 1, 1, 3)}, {}, 250).description
     assert "prise" in done and GOLD_EMOJI not in done
+
+
+def test_l_annonce_de_minuit_est_courte():
+    """Demande de l'auteur (20/11/2026) : le programme complet, posté chaque
+    jour dans le général, prenait trop de place."""
+    from app.bot.embeds.role_trial_embeds import build_day_announcement
+
+    embed = build_day_announcement(DAY)
+    assert not embed.fields and embed.footer.text is None
+    assert len(embed) < 300 and "/defi" in embed.description
+    for role in ("DPS", "Tank", "Soutien"):
+        assert role in embed.description

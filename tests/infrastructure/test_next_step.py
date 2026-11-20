@@ -26,3 +26,18 @@ def test_les_points_a_placer_passent_avant_tout(session):
     assert "/daily" in next_step(session, pid)                 # rien à placer : la solde du jour
 
     assert next_step(session, 999_999) is None                  # joueur inconnu : rien, jamais d'erreur
+
+
+def test_l_epreuve_est_rappelee_des_que_la_puissance_est_la(session, monkeypatch):
+    """En bêta (20/11/2026), personne n'avait tenté /epreuve : la ligne le
+    rappelle dès que la puissance requise est atteinte."""
+    from app.application.services import next_step as ns
+
+    pid = PlayerRepository(session).get_or_create_by_discord_id(1, "u", "U").player.id
+    monkeypatch.setattr("app.application.services.combat_passives_resolver.resolve_player_power",
+                        lambda *a, **k: 10 ** 6)
+    assert "rang E" in next_step(session, pid) and "/epreuve" in next_step(session, pid)
+
+    monkeypatch.setattr("app.application.services.combat_passives_resolver.resolve_player_power",
+                        lambda *a, **k: 1)
+    assert "/epreuve" not in (next_step(session, pid) or "")            # pas encore la puissance

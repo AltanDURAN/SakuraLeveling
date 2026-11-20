@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 import discord
 
 from app.bot.rules_gate import GatedView
@@ -34,6 +36,11 @@ class EncounterView(GatedView):
         if has_participants:
             self.add_item(self.launch_encounter)
             self.add_item(self.leave_encounter)
+            # Lancer n'est cliquable que lorsqu'il lance vraiment le combat
+            # (demande de l'auteur, 20/11/2026) : avant le délai minimum, il
+            # est grisé, puis le cog le réactive à l'heure dite.
+            launch_after = getattr(encounter, "launch_after", None)
+            self.launch_encounter.disabled = launch_after is not None and datetime.now(UTC) < launch_after
         self.add_item(self.request_help)
 
         if self._help_used:

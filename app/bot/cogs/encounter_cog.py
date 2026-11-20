@@ -725,6 +725,23 @@ class EncounterCog(commands.Cog):
             if self.active_encounters.get(channel_id) is encounter:
                 self._reschedule(channel_id)
 
+    async def _unlock_launch_later(self, channel_id: int, encounter, view, message) -> None:
+        """À l'heure où Lancer devient possible, le bouton s'active sur le
+        message (il restait cliquable mais refusait avant)."""
+        if encounter.launch_after is None:
+            return
+        try:
+            await asyncio.sleep(max(0.0, (encounter.launch_after - datetime.now(UTC)).total_seconds()) + 0.5)
+            if self.active_encounters.get(channel_id) is not encounter or encounter.resolved:
+                return
+            if encounter.participants:
+                view.sync()
+                await message.edit(view=view)
+        except asyncio.CancelledError:
+            raise
+        except discord.HTTPException:
+            _logger.debug("bouton Lancer non réactivé (message disparu)", exc_info=True)
+
     async def _play_encounter(self, channel, channel_id: int, encounter, view, message,
                               background_path, window_s: int) -> None:
         """Du monstre posé au récapitulatif : attente, fuite ou combat, vidéo.
@@ -733,12 +750,14 @@ class EncounterCog(commands.Cog):
         # Lancer et au signal d'/admin start_encounter (early resolve).
         event = asyncio.Event()
         self._zone_early_resolve[channel_id] = event
+        unlock = asyncio.create_task(self._unlock_launch_later(channel_id, encounter, view, message))
         try:
             await asyncio.wait_for(event.wait(), timeout=window_s)
         except asyncio.TimeoutError:
             pass
         finally:
             self._zone_early_resolve.pop(channel_id, None)
+            unlock.cancel()
 
         for child in view.children:
             child.disabled = True

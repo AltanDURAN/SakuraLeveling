@@ -140,3 +140,23 @@ def test_le_menu_de_fusion_montre_d_abord_ce_qui_est_pret():
     menu = menu_order(waiting + ready + capped)[:25]
     assert menu[:2] == ready
     assert capped[0] not in menu[:2]
+
+
+def test_le_bouton_placer_mes_points_n_apparait_qu_avec_un_niveau_gagne():
+    import asyncio
+
+    from app.bot.views.battle_summary_view import BattleSummaryView
+    from app.domain.value_objects.battle_summary import BattleSummary
+    from app.domain.value_objects.player_reward import PlayerReward
+
+    def summary(levels: int, points: int):
+        reward = PlayerReward(player_id=1, user_id=1, name="J", avatar_url="", gold=0, xp=0,
+                              level_before=3, level_after=3 + levels, stat_points=points)
+        return BattleSummary(outcome="victory", mob_name="Slime", mob_image_name="", mob_family="slime",
+                             turns=5, rewards=[reward])
+
+    async def labels(s):
+        return [c.label for c in BattleSummaryView(s).children]
+
+    assert "Placer mes points" in asyncio.run(labels(summary(1, 1)))
+    assert "Placer mes points" not in asyncio.run(labels(summary(0, 3)))
