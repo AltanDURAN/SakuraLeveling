@@ -56,3 +56,37 @@ def test_un_rendu_rate_rend_la_main_au_texte():
         raise RuntimeError("Pillow en panne")
 
     assert image_embed(boom, "x", None) is None
+
+
+def test_listes_classement_bourse_et_essai(tmp_path):
+    rows = [screens.Row("🏹", "Un nom de titre très long " * 4, "⭐ affiché", "détail " * 60, ratio=0.4)] * 12
+    out = tmp_path / "l.png"
+    screens.compose_list(str(out), title="🏷️ " + LONG, subtitle=LONG, sections=[screens.Section("🔒 Chasse", rows)],
+                         chips=["🏷️ 2 sur 83"], footer="x " * 200)
+    _check(out)
+    out = tmp_path / "lb.png"
+    entries = [(LONG, "9 999 999 999 or")] * 10
+    screens.compose_leaderboard(str(out), title="Or", entries=entries, viewer_rank=42, viewer=(LONG, "1 or"), total=300)
+    _check(out)
+    screens.compose_leaderboard(str(out), title="Or", entries=[], viewer_rank=None, viewer=None, total=0)
+    _check(out)
+    out = tmp_path / "g.png"
+    screens.compose_gold(str(out), name=LONG, gold=10 ** 12, career=10 ** 12, is_self=False)
+    _check(out)
+    out = tmp_path / "a.png"
+    screens.compose_attempt(str(out), role="soutien", label="💚 Soutien", variant="x" * 60, score="9 999 999",
+                            unit="PV soignés", detail="y" * 200, improved=False, best="9 999 999",
+                            place="300e sur 300 · essai n°999", gold="🎁 +9 999 or")
+    _check(out)
+
+
+def test_les_titres_tiennent_en_pages_d_image():
+    from app.bot.embeds.title_embeds import ROWS_PER_PAGE, title_image_pages
+    from app.infrastructure.titles.title_loader import list_definitions
+
+    defs = list_definitions()
+    pages = title_image_pages(defs[:5], defs[5:], {d.code: "**1/50** victoires" for d in defs})
+    assert all(sum(len(s.rows) for s in page) <= ROWS_PER_PAGE for page in pages)
+    shown = [r.text for page in pages for s in page for r in s.rows]
+    assert sorted(shown) == sorted(d.name for d in defs)                  # chaque titre, une fois
+    assert all("*" not in r.sub for page in pages for s in page for r in s.rows)

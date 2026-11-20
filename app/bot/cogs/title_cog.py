@@ -9,6 +9,8 @@ Les effets d'un titre sont actifs DÈS QU'IL EST DÉBLOQUÉ : `/titre_actif` ne
 choisit que l'affichage.
 """
 
+import asyncio
+
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -29,7 +31,7 @@ from app.infrastructure.titles.title_loader import (
 )
 
 from app.bot.cogs._mixins import BetaChannelOnlyMixin
-from app.bot.embeds.title_embeds import build_title_pages
+from app.bot.embeds.title_embeds import build_title_pages, title_image_pages
 from app.bot.views.bestiaire_view import PagedBookView
 from app.domain.services.quest_generation_service import FAMILY_LABELS
 from app.domain.services.role_trial_service import RESULTS_HOUR
@@ -173,8 +175,27 @@ class TitleBookView(PagedBookView):
 
     command = "/titre"
 
-    async def render(self) -> tuple[discord.Embed, None]:
+    #: Pages en image (listes de sections) ; vide = les embeds texte.
+    image_pages: list = []
+    header: tuple[str, str, list] = ("", "", [])
+
+    async def render(self) -> tuple[discord.Embed, discord.File | None]:
+        if self.image_pages:
+            screen = await asyncio.to_thread(self.draw, self.index)
+            if screen is not None:
+                return screen
         return self.pages[self.index], None
+
+    def draw(self, index: int):
+        from app.bot.embeds.screen_embed import image_embed
+        from app.bot.rendering import screens
+
+        title, subtitle, chips = self.header
+        pages = len(self.image_pages)
+        return image_embed(screens.compose_list, f"titres_{self.author_id}_{index}", discord.Color.gold(),
+                           title=title, subtitle=subtitle + (f" · page {index + 1}/{pages}" if pages > 1 else ""),
+                           sections=self.image_pages[index], chips=chips if index == 0 else None,
+                           footer="🏷️ /titre_actif choisit celui qui s'affiche sur ton profil.", seed=self.author_id)
 
 
 class TitleCog(BetaChannelOnlyMixin, commands.Cog):
@@ -220,12 +241,22 @@ class TitleCog(BetaChannelOnlyMixin, commands.Cog):
             target_member.display_name, unlocked, locked, labels,
             active_code=active_code, total=len(definitions), closeness=closeness,
         )
-        if len(pages) == 1:
-            await interaction.response.send_message(embed=pages[0])
-            return
-        view = TitleBookView(interaction.user.id, pages)
+        await interaction.response.defer()
+        images = title_image_pages(unlocked, locked, labels, active_code=active_code, closeness=closeness)
+        view = TitleBookView(interaction.user.id, images or pages)
+        view.pages = pages if not images else [pages[0]] * len(images)
+        view.image_pages = images
+        view.header = (f"🏷️ Titres de {target_member.display_name}",
+                       "Tous les titres débloqués agissent en permanence",
+                       [f"🏷️ {len(unlocked)} débloqué{'s' if len(unlocked) > 1 else ''} sur {len(definitions)}"])
         view._refresh_buttons()
-        await interaction.response.send_message(embed=pages[0], view=view)
+        embed, file = await view.render()
+        kwargs = {"embed": embed}
+        if file is not None:
+            kwargs["file"] = file
+        if len(view.pages) > 1:
+            kwargs["view"] = view
+        await interaction.followup.send(**kwargs)
 
     @app_commands.command(
         name="titre_actif",

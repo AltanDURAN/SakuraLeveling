@@ -662,7 +662,7 @@ Demande de l'auteur : les écrans encore en texte brut prennent la DA du bot (ce
 - **Briques communes** : [`rendering/ui_kit.py`](app/bot/rendering/ui_kit.py) — fond de nuit à pétales (`canvas`), panneaux, cartes teintées, barres lumineuses, pastilles, en-tête, pied ; `fit` / `clip` / `wrap` pour que rien ne déborde (pseudos de 32 caractères, montants à 7 chiffres testés).
 - **Écrans** : `/stats` ([`stats_sheet.py`](app/bot/rendering/stats_sheet.py)) ; `/quetes` et `/quetes_hebdo` (aussi après « Réclamer »), `/daily`, `/defi` (programme et scores), `/cd`, `/inventaire` (tuiles avec l'image de l'objet, 32 par page au plus) — [`screens.py`](app/bot/rendering/screens.py).
 - **Règles** : le rendu se fait TOUJOURS dans un thread ; [`screen_embed.image_embed`](app/bot/embeds/screen_embed.py) renvoie `None` si Pillow échoue et la commande garde alors son embed texte d'avant (jamais d'écran vide). Les heures de `/cd` sont celles de Paris (une image ne peut pas porter de compte à rebours Discord).
-- **Pas encore en image** : `/or`, `/titre`, `/records`, `/classement`, `/tour` (déjà une image d'étage), récapitulatif d'un essai de défi.
+- **Aussi en image (21/11/2026)** : `/or` (`compose_gold`), `/classement` (podium + top 10, ta ligne surlignée — `compose_leaderboard`), résultat d'un essai de défi (`compose_attempt`), `/records` et `/titre` (écran de listes à sections `compose_list` ; `/titre` : 12 lignes par page, `title_image_pages`). Le texte reste en repli partout.
 - Tests : [`test_screens.py`](tests/bot/test_screens.py), [`test_stats_sheet.py`](tests/bot/test_stats_sheet.py).
 
 ## Limites de Discord — 13/11/2026

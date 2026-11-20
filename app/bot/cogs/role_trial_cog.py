@@ -80,6 +80,27 @@ def _trials_screen(day, mine, week, first_gold, closed, seed: int):
                        subtitle="Trois épreuves, une par rôle — même adversaire pour tout le serveur",
                        cards=cards, week=week_text, banner=banner, seed=seed)
 
+
+def _attempt_screen(outcome, seed: int):
+    """Le résultat d'un essai en image (DA du bot, 21/11/2026)."""
+    from app.bot.embeds.role_trial_embeds import _UNITS, _place
+    from app.bot.embeds.screen_embed import image_embed
+    from app.bot.rendering import screens
+
+    role = outcome.role
+    if role == "dps":
+        detail = f"En {rts.DPS_TICKS // 10} secondes face à {outcome.variant.name}."
+    elif role == "tank":
+        detail = f"En {outcome.actions} action{'s' if outcome.actions > 1 else ''} avant de tomber."
+    else:
+        detail = "Avant la chute de la recrue." if not outcome.survived else "La recrue tient encore debout !"
+    return image_embed(
+        screens.compose_attempt, f"essai_{seed}", discord.Color.gold() if outcome.improved else discord.Color.teal(),
+        role=role, label=rts.ROLE_LABELS[role], variant=outcome.variant.name, score=format_int(outcome.score),
+        unit=_UNITS[role], detail=detail, improved=outcome.improved, best=format_int(outcome.best),
+        place=f"{_place(outcome.day_rank)} sur {outcome.day_count} · essai n°{outcome.attempts}",
+        gold=f"🎁 +{format_int(outcome.gold)} or (premier défi du jour)" if outcome.gold else "", seed=seed)
+
 class RoleTrialCog(BetaChannelOnlyMixin, commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
@@ -146,6 +167,10 @@ class RoleTrialCog(BetaChannelOnlyMixin, commands.Cog):
                 "nouveaux défis à minuit.")
             return
         outcome = await asyncio.to_thread(self._attempt, interaction.user, role.value)
+        screen = await asyncio.to_thread(_attempt_screen, outcome, interaction.user.id)
+        if screen is not None:
+            await interaction.followup.send(embed=screen[0], file=screen[1])
+            return
         await interaction.followup.send(embed=build_attempt_embed(outcome))
 
     # ------------------------------------------------------------ boucles --

@@ -348,3 +348,190 @@ def compose_inventory(output_path: str, *, name: str, page_label: str, slots: li
             if more else "🧪 Les potions se boivent avec /utiliser · ⚔️ l'équipement est dans /equipement_liste.")
     ui.footer(img, y, note)
     ui.save(img, output_path)
+
+
+# ---------------------------------------------------------- listes à sections --
+@dataclass(frozen=True)
+class Row:
+    icon: str
+    text: str                       # le nom (gras)
+    right: str = ""                 # la valeur, à droite
+    sub: str = ""                   # une ligne de détail, en dessous
+    ratio: float | None = None      # une barre de progression (0 → 1)
+    tone: str = ""                  # "gold" (à toi), "dim" (grisé), "" (normal)
+
+
+@dataclass(frozen=True)
+class Section:
+    heading: str
+    rows: list[Row] = field(default_factory=list)
+    color: tuple[int, int, int] = (150, 120, 210)
+
+
+def compose_list(output_path: str, *, title: str, subtitle: str, sections: list[Section], footer: str = "",
+                 chips: list[str] | None = None, seed: int = 0) -> None:
+    """Un écran de listes (titres, records…) : sections teintées, une ligne par
+    élément, sa valeur à droite, un détail et une barre facultatifs."""
+    def row_h(r: Row) -> int:
+        return 34 + (22 if r.sub else 0) + (14 if r.ratio is not None else 0)
+
+    body = sum(56 + sum(row_h(r) for r in s.rows) + 10 for s in sections) + max(0, len(sections) - 1) * ui.GAP
+    height = ui.PAD + 120 + body + ui.GAP + (56 + ui.GAP if footer else 0) + ui.PAD
+    img = ui.canvas(height, seed)
+    draw = ImageDraw.Draw(img)
+    top = ui.header(img, title, subtitle)
+    x = ui.PAD
+    f_chip = try_font(15, bold=True)
+    for text in chips or []:
+        x += ui.chip(img, x, top, text, f_chip) + 10
+    y = top + (44 if chips else 4)
+    w = ui.WIDTH - 2 * ui.PAD
+    f_head, f_name, f_right, f_sub = try_font(15, bold=True), try_font(17, bold=True), try_font(16, bold=True), try_font(14)
+    for section in sections:
+        h = 56 + sum(row_h(r) for r in section.rows) + 10
+        ui.tinted_card(img, (ui.PAD, y), (w, h), section.color)
+        draw_text_with_emojis(img, (ui.PAD + 20, y + 20), section.heading.upper(), f_head,
+                              fill=(*ui.lighten(section.color, 0.25), 255), emoji_size=16)
+        ry = y + 52
+        for r in section.rows:
+            ink = (*ui.GOLD, 255) if r.tone == "gold" else ui.DIM if r.tone == "dim" else ui.TEXT
+            right_w = measure_text_with_emojis(r.right, f_right, 16) if r.right else 0
+            draw_text_with_emojis(img, (ui.PAD + 20, ry + 4), r.icon, f_name, fill=ink, emoji_size=19)
+            name = ui.clip(draw, r.text, f_name, w - 90 - right_w - 20)
+            ui.shadow_text(draw, (ui.PAD + 50, ry + 4), name, f_name, fill=ink)
+            if r.right:
+                draw_text_with_emojis(img, (int(ui.PAD + w - 20 - right_w), ry + 5), r.right, f_right,
+                                      fill=(*ui.GOLD, 255) if r.tone == "gold" else ui.MUTED, emoji_size=16)
+            ny = ry + 30
+            if r.sub:
+                sub = ui.clip(draw, r.sub, f_sub, w - 90)
+                draw_text_with_emojis(img, (ui.PAD + 50, ny), sub, f_sub, fill=ui.MUTED if r.tone != "dim" else ui.DIM,
+                                      emoji_size=14)
+                ny += 22
+            if r.ratio is not None:
+                ui.bar(img, (ui.PAD + 50, ny + 2), (w - 90, 6), r.ratio, section.color)
+            ry += row_h(r)
+        y += h + ui.GAP
+    if footer:
+        ui.footer(img, y, footer)
+    ui.save(img, output_path)
+
+
+# --------------------------------------------------------------------- bourse --
+def compose_gold(output_path: str, *, name: str, gold: int, career: int, is_self: bool, seed: int = 0) -> None:
+    height = ui.PAD + 80 + 190 + ui.GAP + 56 + ui.PAD
+    img = ui.canvas(height, seed)
+    draw = ImageDraw.Draw(img)
+    top = ui.header(img, "💰 Ta bourse" if is_self else f"💰 Bourse de {name}",
+                    "L'or se gagne en combat, en quêtes, aux défis et à la solde du jour")
+    w = (ui.WIDTH - 2 * ui.PAD - ui.GAP) // 2
+    for i, (label, value, color) in enumerate((("OR ACTUEL", gold, ui.GOLD),
+                                              ("OR AMASSÉ DEPUIS LE DÉBUT", career, (150, 200, 120)))):
+        x = ui.PAD + i * (w + ui.GAP)
+        ui.tinted_card(img, (x, top), (w, 190), color)
+        ui.shadow_text(draw, (x + 22, top + 24), label, try_font(16, bold=True), fill=(*color, 255))
+        text = format_int(value)
+        font = ui.fit(draw, text, 60, w - 130)
+        ui.shadow_text(draw, (x + 22, top + 60), text, font)
+        tw = draw.textlength(text, font=font)
+        draw_text_with_emojis(img, (int(x + 32 + tw), top + 80), "💰", try_font(24), fill=ui.TEXT, emoji_size=30)
+    ui.footer(img, top + 190 + ui.GAP, "🛒 Sorn (/marchand), Borak (/forgeron), Elna (/alchimiste) et la /brocante attendent ton or.")
+    ui.save(img, output_path)
+
+
+# ------------------------------------------------------------------ classement --
+def compose_leaderboard(output_path: str, *, title: str, entries: list[tuple[str, str]], viewer_rank: int | None,
+                        viewer: tuple[str, str] | None, total: int, seed: int = 0) -> None:
+    """`entries` : (nom, valeur affichée) du 1er au 10e ; `viewer` : la ligne
+    du joueur s'il est classé plus bas."""
+    podium = entries[:3]
+    rest = entries[3:]
+    extra = 1 if viewer and viewer_rank and viewer_rank > len(entries) else 0
+    height = ui.PAD + 80 + (210 if podium else 120) + ui.GAP + (len(rest) + extra) * 52 + ui.GAP + 56 + ui.PAD
+    img = ui.canvas(height, seed)
+    draw = ImageDraw.Draw(img)
+    place = "" if viewer_rank is None else (" · ta place : 1ʳᵉ" if viewer_rank == 1 else f" · ta place : {viewer_rank}ᵉ")
+    top = ui.header(img, f"🏆 {title}", f"{total} joueur{'s' if total > 1 else ''} classé{'s' if total > 1 else ''}{place}")
+    w = ui.WIDTH - 2 * ui.PAD
+    if not entries:
+        ui.panel(img, (ui.PAD, top), (w, 120), radius=16, fill=(28, 24, 40, 205), outline=(*ui.LILAC, 90))
+        ui.shadow_text(draw, (ui.PAD + 24, top + 46), "Personne n'est encore classé : à toi de prendre la tête !",
+                       try_font(18), fill=ui.MUTED)
+        y = top + 120 + ui.GAP
+    else:
+        medals = (("🥇", (240, 196, 92), 210), ("🥈", (200, 206, 220), 180), ("🥉", (214, 140, 90), 160))
+        order = [1, 0, 2]                       # 2e, 1er, 3e : le premier au centre, plus haut
+        cw = (w - 2 * ui.GAP) // 3
+        for slot, idx in enumerate(order):
+            if idx >= len(podium):
+                continue
+            medal, color, h = medals[idx]
+            x = ui.PAD + slot * (cw + ui.GAP)
+            cy = top + (210 - h)
+            ui.tinted_card(img, (x, cy), (cw, h), color)
+            if viewer_rank == idx + 1:                  # c'est toi
+                ui.panel(img, (x, cy), (cw, h), radius=16, fill=(0, 0, 0, 0), outline=(*ui.GOLD, 255), width=3)
+            draw_text_with_emojis(img, (x + cw // 2 - 20, cy + 16), medal, try_font(30), fill=ui.TEXT, emoji_size=40)
+            name, value = podium[idx]
+            f_n = ui.fit(draw, name, 20, cw - 30)
+            nw = draw.textlength(name, font=f_n)
+            ui.shadow_text(draw, (x + (cw - nw) / 2, cy + 68), name, f_n)
+            f_v = ui.fit(draw, value, 22, cw - 30)
+            vw = draw.textlength(value, font=f_v)
+            ui.shadow_text(draw, (x + (cw - vw) / 2, cy + 98), value, f_v, fill=(*color, 255))
+        y = top + 210 + ui.GAP
+        rows = [(i + 4, n, v, i + 4 == viewer_rank) for i, (n, v) in enumerate(rest)]
+        if extra:
+            rows.append((viewer_rank, viewer[0], viewer[1], True))
+        for rank, name, value, me in rows:
+            ui.panel(img, (ui.PAD, y), (w, 44), radius=12,
+                     fill=(92, 70, 20, 200) if me else (28, 24, 40, 205),
+                     outline=(*ui.GOLD, 200) if me else (*ui.LILAC, 70))
+            ui.shadow_text(draw, (ui.PAD + 20, y + 11), f"#{rank}", try_font(17, bold=True), fill=ui.DIM)
+            f_v = try_font(17, bold=True)
+            vw = draw.textlength(value, font=f_v)
+            ui.shadow_text(draw, (ui.PAD + 80, y + 11), ui.clip(draw, name, try_font(17, bold=True), w - 140 - vw),
+                           try_font(17, bold=True), fill=(*ui.GOLD, 255) if me else ui.TEXT)
+            ui.shadow_text(draw, (ui.PAD + w - 20 - vw, y + 11), value, f_v, fill=ui.MUTED)
+            y += 52
+        y += ui.GAP - 8
+    ui.footer(img, y, "📊 /classement pour choisir une autre catégorie : niveau, puissance, or, tour, défis, chasse…")
+    ui.save(img, output_path)
+
+
+# --------------------------------------------------------------- essai de défi --
+def compose_attempt(output_path: str, *, role: str, label: str, variant: str, score: str, unit: str,
+                    detail: str, improved: bool, best: str, place: str, gold: str = "", seed: int = 0) -> None:
+    color = ROLE_COLORS.get(role, ui.LILAC)
+    height = ui.PAD + 80 + 230 + ui.GAP + 56 + ui.PAD
+    img = ui.canvas(height, seed)
+    draw = ImageDraw.Draw(img)
+    top = ui.header(img, f"{label} — {variant}", "Défi du jour")
+    w = ui.WIDTH - 2 * ui.PAD
+    ui.tinted_card(img, (ui.PAD, top), (w, 230), ui.GOLD if improved else color)
+    ui.shadow_text(draw, (ui.PAD + 24, top + 24), "TON SCORE", try_font(16, bold=True), fill=(*ui.lighten(color, 0.2), 255))
+    f_score = ui.fit(draw, score, 72, w / 2)
+    ui.shadow_text(draw, (ui.PAD + 24, top + 54), score, f_score)
+    sw = draw.textlength(score, font=f_score)
+    ui.shadow_text(draw, (ui.PAD + 40 + sw, top + 84), unit, try_font(22, bold=True), fill=(*ui.lighten(color, 0.2), 255))
+    ui.shadow_text(draw, (ui.PAD + 24, top + 140), ui.clip(draw, detail, try_font(17), w - 48), try_font(17), fill=ui.MUTED)
+    x = ui.PAD + 24
+    f_chip = try_font(15, bold=True)
+    if improved:
+        x += ui.gold_chip(img, x, top + 178, "✨ Nouveau record du jour !", f_chip) + 10
+    else:
+        x += ui.chip(img, x, top + 178, f"Ton record du jour : {best}", f_chip) + 10
+    x += ui.chip(img, x, top + 178, place, f_chip) + 10
+    if gold:
+        ui.gold_chip(img, x, top + 178, gold, f_chip)
+    ui.footer(img, top + 230 + ui.GAP, "🔁 Même build, même score : change d'équipement, d'arbre, de points ou de /tactique.")
+    ui.save(img, output_path)
+
+
+def plain(text: str) -> str:
+    """Le texte Discord sans sa mise en forme (gras, italique, code) : l'image
+    l'écrit tel quel."""
+    import re
+
+    text = re.sub(r"<[@#][!&]?\d+>", "", text or "")
+    return re.sub(r"[*_`]", "", text).replace("  ", " ").strip()

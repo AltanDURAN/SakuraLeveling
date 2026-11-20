@@ -1,3 +1,5 @@
+import asyncio
+
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -72,6 +74,19 @@ class LeaderboardCog(commands.Cog):
             )
             return
 
+        from app.bot.embeds.screen_embed import image_embed
+        from app.bot.rendering import screens
+
+        you = leaderboard.viewer_entry
+        screen = await asyncio.to_thread(
+            image_embed, screens.compose_leaderboard, f"top_{interaction.user.id}", discord.Color.gold(),
+            title=leaderboard.category_label,
+            entries=[(e.display_name, e.formatted_value) for e in leaderboard.entries],
+            viewer_rank=leaderboard.viewer_rank, viewer=(you.display_name, you.formatted_value) if you else None,
+            total=leaderboard.total, seed=interaction.user.id)
+        if screen is not None:
+            await interaction.followup.send(embed=screen[0], file=screen[1])
+            return
         await interaction.followup.send(embed=build_leaderboard_embed(leaderboard))
 
     @top.autocomplete("category")

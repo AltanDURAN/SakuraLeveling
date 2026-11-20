@@ -123,3 +123,45 @@ def build_title_pages(
             embed.add_field(name=field_name, value=value, inline=False)
         embeds.append(embed)
     return embeds
+
+
+#: Lignes par page de l'image de `/titre`.
+ROWS_PER_PAGE = 12
+SECTION_COLORS = {"Progression": (110, 190, 255), "Chasse par famille": (255, 140, 80),
+                  "Titres disputés": (240, 196, 92), "World boss": (235, 90, 100), "Cartes": (230, 120, 200),
+                  "Chasseurs légendaires": (120, 220, 140)}
+
+
+def title_image_pages(unlocked, locked, labels: dict, *, active_code=None, closeness: dict | None = None):
+    """Les pages de `/titre` en IMAGE (21/11/2026) : des listes de sections
+    (`screens.Section`), au plus `ROWS_PER_PAGE` lignes par page."""
+    from app.bot.rendering import screens
+
+    closeness = closeness or {}
+    sections: list[tuple[str, tuple, list]] = []
+    if unlocked:
+        sections.append((f"✅ Débloqués ({len(unlocked)})", (240, 196, 92), [
+            screens.Row(t.icon, t.name, "⭐ affiché" if t.code == active_code else "", screens.plain(t.description),
+                        tone="gold" if t.code == active_code else "") for t in unlocked]))
+    by_type: dict[str, list] = {}
+    for t in locked:
+        by_type.setdefault(t.condition_type, []).append(t)
+    for name, types in LOCKED_SECTIONS:
+        titles = sorted((t for kind in types for t in by_type.get(kind, [])), key=lambda t: -closeness.get(t.code, 0.0))
+        if titles:
+            sections.append((f"🔒 {name}", SECTION_COLORS.get(name, (150, 120, 210)), [
+                screens.Row(t.icon, t.name, "", screens.plain(labels.get(t.code, "")),
+                            ratio=closeness.get(t.code) if closeness.get(t.code) else None) for t in titles]))
+    pages: list[list] = [[]]
+    used = 0
+    for heading, color, rows in sections:
+        start = 0
+        while start < len(rows):
+            room = ROWS_PER_PAGE - used
+            if room <= 1 and pages[-1]:
+                pages.append([]); used = 0; room = ROWS_PER_PAGE
+            chunk = rows[start:start + room]
+            title = heading if start == 0 else f"{heading} (suite)"
+            pages[-1].append(screens.Section(title, chunk, color))
+            used += len(chunk); start += len(chunk)
+    return [p for p in pages if p]

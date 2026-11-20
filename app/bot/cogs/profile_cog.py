@@ -557,6 +557,18 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
                 career_gold = 0
 
         is_self = target_member.id == interaction.user.id
+        # En image (DA du bot, 21/11/2026), le texte en repli.
+        from app.bot.embeds.screen_embed import image_embed
+        from app.bot.rendering import screens
+
+        await interaction.response.defer(ephemeral=True)
+        screen = await asyncio.to_thread(
+            image_embed, screens.compose_gold, f"gold_{target_member.id}", discord.Color.gold(),
+            name=target_member.display_name, gold=gold_amount, career=career_gold, is_self=is_self,
+            seed=target_member.id)
+        if screen is not None:
+            await interaction.followup.send(embed=screen[0], file=screen[1], ephemeral=True)
+            return
         title = "💰 Ta bourse" if is_self else f"💰 Bourse de {target_member.display_name}"
 
         embed = discord.Embed(
@@ -577,7 +589,7 @@ class ProfileCog(PlayerLookupMixin, BetaChannelOnlyMixin, commands.Cog):
             )
         embed.set_footer(text=f"Joueur : {target_member.display_name}")
 
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
 
 async def setup(bot: commands.Bot) -> None:
