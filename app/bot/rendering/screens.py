@@ -493,7 +493,7 @@ def compose_leaderboard(output_path: str, *, title: str, entries: list[tuple[str
     podium = entries[:3]
     rest = entries[3:]
     extra = 1 if viewer and viewer_rank and viewer_rank > len(entries) else 0
-    name_zone, step_max = 128, 64
+    name_zone, step_max = 0, 192
     row_h = 78
     height = (ui.PAD + 88 + (name_zone + step_max if podium else 120) + ui.GAP
               + (len(rest) + extra) * (row_h + 10) + ui.GAP + 56 + ui.PAD)
@@ -510,7 +510,9 @@ def compose_leaderboard(output_path: str, *, title: str, entries: list[tuple[str
         y = top + 120 + ui.GAP
     else:
         # (médaille, couleur, hauteur de marche) — 2e, 1er, 3e de gauche à droite.
-        medals = (("🥇", (240, 196, 92), 64), ("🥈", (205, 212, 228), 46), ("🥉", (214, 140, 90), 34))
+        # Le pseudo et la valeur sont DANS la marche (demande de l'auteur,
+        # 21/11/2026) ; les marches restent basses pour garder le reste grand.
+        medals = (("🥇", (240, 196, 92), 192), ("🥈", (205, 212, 228), 168), ("🥉", (214, 140, 90), 150))
         cw = (w - 2 * 10) // 3
         base = top + name_zone + step_max                # le sol du podium
         for slot, idx in enumerate((1, 0, 2)):
@@ -520,30 +522,22 @@ def compose_leaderboard(output_path: str, *, title: str, entries: list[tuple[str
             x = ui.PAD + slot * (cw + 10)
             name, value = podium[idx]
             me = viewer_rank == idx + 1
-            # La marche : basse, colorée, son numéro dedans.
+            sy = base - step
             layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
-            ImageDraw.Draw(layer).rounded_rectangle([(x, base - step), (x + cw, base + 10)], radius=12,
-                                                    fill=(*color, 215), outline=(*ui.GOLD, 255) if me else None,
-                                                    width=3)
+            d = ImageDraw.Draw(layer)
+            d.rounded_rectangle([(x, sy), (x + cw, base)], radius=16, fill=(*[int(c * 0.22) + 16 for c in color], 235),
+                                outline=(*ui.GOLD, 255) if me else (*color, 200), width=3 if me else 2)
+            d.rounded_rectangle([(x + 12, sy), (x + cw - 12, sy + 6)], radius=3, fill=(*color, 255))
             img.alpha_composite(layer)
-            num = str(idx + 1)
-            f_num = try_font(min(40, step - 6), bold=True)
-            nw = draw.textlength(num, font=f_num)
-            draw.text((x + (cw - nw) / 2, base - step + (step - f_num.size) / 2 - 2), num, font=f_num,
-                      fill=(30, 24, 36, 255))
-            # Au-dessus : médaille + nom en grand, puis la valeur.
-            ny = base - step - name_zone + (64 - step)
-            f_n = ui.fit(draw, name, 40 if idx == 0 else 36, cw - 70, floor=18)
-            label_w = 44 + draw.textlength(name, font=f_n)
-            lx = x + (cw - label_w) / 2
-            draw_text_with_emojis(img, (int(lx), ny + 18 + (f_n.size - 34) // 2), medal, try_font(30), fill=ui.TEXT,
-                                  emoji_size=34)
-            ui.shadow_text(draw, (lx + 44, ny + 16), name, f_n, fill=(*ui.GOLD, 255) if me else ui.TEXT)
-            f_v = ui.fit(draw, value, 30, cw - 20)
+            draw_text_with_emojis(img, (int(x + cw / 2 - 20), sy + 16), medal, try_font(30), fill=ui.TEXT, emoji_size=40)
+            f_n = ui.fit(draw, name, 40 if idx == 0 else 36, cw - 24, floor=18)
+            nw = draw.textlength(ui.clip(draw, name, f_n, cw - 24), font=f_n)
+            ui.shadow_text(draw, (x + (cw - nw) / 2, sy + 66), ui.clip(draw, name, f_n, cw - 24), f_n,
+                           fill=(*ui.GOLD, 255) if me else ui.TEXT)
+            f_v = ui.fit(draw, value, 30, cw - 24)
             vw = draw.textlength(value, font=f_v)
-            ui.shadow_text(draw, (x + (cw - vw) / 2, ny + 24 + f_n.size), value, f_v,
-                           fill=(*ui.lighten(color, 0.1), 255))
-        y = base + 10 + ui.GAP
+            ui.shadow_text(draw, (x + (cw - vw) / 2, sy + 76 + f_n.size), value, f_v, fill=(*ui.lighten(color, 0.1), 255))
+        y = base + ui.GAP
         rows = [(i + 4, n, v, i + 4 == viewer_rank) for i, (n, v) in enumerate(rest)]
         if extra:
             rows.append((viewer_rank, viewer[0], viewer[1], True))
