@@ -60,21 +60,6 @@ class CardRepository:
         ).all()
         return {code: item_id for code, item_id in rows}
 
-    def album_sizes(self) -> dict[int, int]:
-        """Joueur → cartes DIFFÉRENTES possédées (normale ou brillante)."""
-        rows = self.session.execute(
-            select(PlayerInventoryItemModel.player_id, ItemDefinitionModel.code)
-            .join(ItemDefinitionModel, ItemDefinitionModel.id == PlayerInventoryItemModel.item_definition_id)
-            .where(ItemDefinitionModel.category == ItemCategory.CARD.value,
-                   PlayerInventoryItemModel.quantity > 0)
-        ).all()
-        cards: dict[int, set[str]] = {}
-        for player_id, code in rows:
-            parsed = parse_item_code(code)
-            if parsed is not None:
-                cards.setdefault(player_id, set()).add(parsed[0])
-        return {player_id: len(codes) for player_id, codes in cards.items()}
-
     def states(self) -> dict[int, PlayerCardStateModel]:
         return {row.player_id: row for row in self.session.execute(select(PlayerCardStateModel)).scalars()}
 

@@ -89,37 +89,3 @@ class ProfessionRepository:
         model.updated_at = datetime.now(UTC)
         commit(self.session)
         
-    def list_player_professions_with_definitions(
-        self,
-        player_id: int,
-    ) -> list[tuple[str, PlayerProfession]]:
-        stmt = select(PlayerProfessionModel).where(
-            PlayerProfessionModel.player_id == player_id
-        )
-        player_profession_models = self.session.execute(stmt).scalars().all()
-
-        results: list[tuple[str, PlayerProfession]] = []
-
-        for model in player_profession_models:
-            profession_definition = self.session.get(
-                ProfessionDefinitionModel,
-                model.profession_definition_id,
-            )
-            if profession_definition is None:
-                continue
-
-            results.append(
-                (
-                    profession_definition.code,
-                    PlayerProfession(
-                        player_id=model.player_id,
-                        profession_definition_id=model.profession_definition_id,
-                        level=model.level,
-                        xp=model.xp,
-                        created_at=model.created_at,
-                        updated_at=model.updated_at,
-                    ),
-                )
-            )
-
-        return results

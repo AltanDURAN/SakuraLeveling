@@ -57,41 +57,6 @@ class QuestRepository:
 
         return self._to_definition_domain(model)
 
-    def get_or_create_player_quest_state(
-        self,
-        player_id: int,
-        quest_definition_id: int,
-    ) -> PlayerQuestState:
-        stmt = select(PlayerQuestStateModel).where(
-            PlayerQuestStateModel.player_id == player_id,
-            PlayerQuestStateModel.quest_definition_id == quest_definition_id,
-        )
-        model = self.session.execute(stmt).scalar_one_or_none()
-
-        if model is None:
-            now = datetime.now(UTC)
-            model = PlayerQuestStateModel(
-                player_id=player_id,
-                quest_definition_id=quest_definition_id,
-                progress_quantity=0,
-                is_completed=False,
-                is_claimed=False,
-                created_at=now,
-                updated_at=now,
-            )
-            self.session.add(model)
-            commit(self.session)
-            self.session.refresh(model)
-
-        return self._to_state_domain(model)
-
-    def list_player_quest_states(self, player_id: int) -> list[PlayerQuestState]:
-        stmt = select(PlayerQuestStateModel).where(
-            PlayerQuestStateModel.player_id == player_id
-        )
-        models = self.session.execute(stmt).scalars().all()
-        return [self._to_state_domain(model) for model in models]
-
     def update_progress(
         self,
         player_id: int,

@@ -130,14 +130,6 @@ class WorldBossRepository:
         model.channel_message_id = message_id
         commit(self.session)
 
-    def set_element(self, boss_id: int, element: str) -> None:
-        """Change l'élément du boss (admin, à chaud)."""
-        model = self.session.get(WorldBossModel, boss_id)
-        if model is None:
-            return
-        model.element = element or ""
-        commit(self.session)
-
     def set_current_hp(self, boss_id: int, current_hp: int) -> int:
         """Définit les PV courants du boss (admin). Borné [0, max_hp]."""
         model = self.session.get(WorldBossModel, boss_id)
@@ -274,18 +266,6 @@ class WorldBossRepository:
             WorldBossParticipationModel.voted_to_start.is_(True),
         )
         return len(self.session.execute(stmt).scalars().all())
-
-    def list_voters(self, boss_id: int) -> list[WorldBossParticipation]:
-        """Liste les participants encore `joined` ET qui ont `voted_to_start`."""
-        stmt = select(WorldBossParticipationModel).where(
-            WorldBossParticipationModel.boss_id == boss_id,
-            WorldBossParticipationModel.joined.is_(True),
-            WorldBossParticipationModel.voted_to_start.is_(True),
-        )
-        return [
-            self._participation_to_domain(m)
-            for m in self.session.execute(stmt).scalars().all()
-        ]
 
     def reset_votes_for_voters(self, boss_id: int) -> None:
         """Réinitialise `voted_to_start=False` pour tous les participants

@@ -141,12 +141,6 @@ class ElementAffinityRepository:
             row.updated_at = now
         commit(self.session)
 
-    def add_affinity(self, player_id: int, element: str, delta: int) -> int:
-        """Incrémente (item d'affinité / admin). Renvoie la nouvelle valeur."""
-        current = self.get_affinities(player_id).get(element, 0)
-        self.set_affinity(player_id, element, max(0, current + delta))
-        return self.get_affinities(player_id).get(element, 0)
-
     def reset_for_player(self, player_id: int) -> None:
         self.session.execute(
             delete(PlayerElementAffinityModel).where(

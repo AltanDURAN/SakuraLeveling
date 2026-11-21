@@ -173,17 +173,6 @@ class PlayerRepository:
             record_event(self.session, "gold", player_id=player_id, ref=source, gold=resources.gold - before)
         commit_session(self.session)
 
-    def increment_daily_streak(self, player_id: int) -> int:
-        """Incrémente la série /daily du joueur de 1 et renvoie la nouvelle valeur."""
-        resources = self.session.get(PlayerResourceModel, player_id)
-        if resources is None:
-            return 0
-
-        resources.daily_streak += 1
-        resources.updated_at = datetime.now(UTC)
-        commit_session(self.session)
-        return resources.daily_streak
-
     def set_daily_streak(self, player_id: int, streak: int) -> None:
         resources = self.session.get(PlayerResourceModel, player_id)
         if resources is None:

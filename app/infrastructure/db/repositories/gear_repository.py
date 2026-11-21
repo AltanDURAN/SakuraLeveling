@@ -43,12 +43,6 @@ class GearRepository:
             key=lambda g: (-rarity_index(g.rarity), -g.forge_level, g.item_definition.name, g.id),
         )
 
-    def list_copies(self, player_id: int, item_definition_id: int, rarity: str | None = None) -> list[PlayerGear]:
-        return [
-            g for g in self.list_owned(player_id)
-            if g.item_definition.id == item_definition_id and (rarity is None or g.rarity == rarity)
-        ]
-
     # ------------------------------------------------------------ écriture --
     def add(self, player_id: int, item_definition_id: int, rarity: str = Rarity.COMMON,
             forge_level: int = 0, source: str = "drop", commit: bool = True) -> PlayerGear:

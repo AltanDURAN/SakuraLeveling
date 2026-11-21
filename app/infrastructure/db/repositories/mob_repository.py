@@ -1,4 +1,3 @@
-import random
 
 from sqlalchemy import select
 from datetime import datetime, UTC
@@ -19,18 +18,6 @@ class MobRepository:
 
         if model is None:
             return None
-
-        return self._to_domain(model)
-
-    def get_random(self) -> MobDefinition | None:
-        stmt = select(MobDefinitionModel)
-        models = self.session.execute(stmt).scalars().all()
-
-        if not models:
-            return None
-
-        weights = [model.spawn_weight for model in models]
-        model = random.choices(models, weights=weights, k=1)[0]
 
         return self._to_domain(model)
 
@@ -99,22 +86,8 @@ class MobRepository:
         model.current_hp = max(0, min(current_hp, model.max_hp))
         commit(self.session)
 
-    def reset_current_hp(self, code: str) -> None:
-        stmt = select(MobDefinitionModel).where(MobDefinitionModel.code == code)
-        model = self.session.execute(stmt).scalar_one_or_none()
-
-        if model is None:
-            return
-
-        model.current_hp = model.max_hp
-        commit(self.session)
-
     def list_distinct_families(self) -> list[str]:
         stmt = select(MobDefinitionModel.family).distinct().order_by(MobDefinitionModel.family)
-        return [row[0] for row in self.session.execute(stmt).all()]
-
-    def list_codes_by_family(self, family: str) -> list[str]:
-        stmt = select(MobDefinitionModel.code).where(MobDefinitionModel.family == family)
         return [row[0] for row in self.session.execute(stmt).all()]
 
     def list_all(self) -> list[MobDefinition]:
