@@ -18,6 +18,7 @@ import re
 import unicodedata
 from pathlib import Path
 
+from webapp.admin.uploads import read_limited
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
@@ -392,7 +393,7 @@ async def _upload(request: Request, code: str, kind: str) -> str:
         return "Choisis une image."
     target = _art_target(code, kind)
     try:
-        _store_image(await upload.read(), upload.filename, target)
+        _store_image(await read_limited(upload), upload.filename, target)
     except uploads.UploadError as exc:
         return str(exc)
     await run_in_threadpool(git_sync.push_content, [_repo_path(target)], f"admin: {ART_KINDS[kind]} de {code or 'la série'}")

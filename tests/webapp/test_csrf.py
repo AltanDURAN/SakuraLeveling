@@ -63,3 +63,13 @@ def test_les_en_tetes_de_protection_sont_poses():
             assert headers["x-frame-options"] == "SAMEORIGIN", path
             assert headers["x-content-type-options"] == "nosniff", path
             assert headers["referrer-policy"] == "same-origin", path
+
+
+def test_les_images_generees_des_joueurs_ne_sont_pas_servies():
+    """Audit du 21/11/2026 : les noms se devinent (encounter_1002_current.png)."""
+    from fastapi.testclient import TestClient
+    from webapp.main import app
+    c = TestClient(app)
+    for path in ("/assets/generated_encounters/encounter_1_current.png",
+                 "/assets/generated_profiles/x.png"):
+        assert c.get(path).status_code == 404

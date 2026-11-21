@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 import logging
 
+from webapp.admin.uploads import read_limited
 from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi import HTTPException
@@ -148,7 +150,7 @@ async def _save_mob_image(form, code: str, fallback: str) -> tuple[str, str | No
     upload = form.get("image_file")
     if upload is None or not getattr(upload, "filename", ""):
         return fallback, None, None
-    data = await upload.read()
+    data = await read_limited(upload)
     try:
         saved = uploads.save_asset_bytes(
             data, upload.filename, MOBS_ASSETS_DIR, preferred_stem=code, max_side=MOB_MAX_SIDE,
@@ -376,7 +378,7 @@ async def mobs_create(
             spawn_weight=_parse_int(form_data.get("spawn_weight"), 1),
         )
         description = form_data.get("description", "").strip()
-        image_name = form_data.get("image_name", "").strip()
+        image_name = Path(form_data.get("image_name", "").strip()).name   # pas de ../ (audit du 21/11)
         family = form_data.get("family", "").strip() or "unknown"
         element = form_data.get("element", "").strip()
         gear_item_code = form_data.get("gear_item_code", "").strip()
@@ -455,7 +457,7 @@ async def mobs_update(
         )
         name = form_data.get("name", existing.name)
         description = form_data.get("description", existing.description)
-        image_name = form_data.get("image_name", existing.image_name).strip() or existing.image_name
+        image_name = Path(form_data.get("image_name", existing.image_name).strip()).name or existing.image_name
         family = form_data.get("family", existing.family or "").strip() or existing.family
         element = form_data.get("element", existing.element or "").strip()
         gear_item_code = form_data.get(

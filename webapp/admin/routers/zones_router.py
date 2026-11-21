@@ -9,6 +9,7 @@ cache module-level)."""
 from __future__ import annotations
 
 import io
+from pathlib import Path
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -105,7 +106,7 @@ def _read_zone_form(form_data: dict) -> tuple[dict, dict]:
         name=name,
         channel_id=channel_id,
         families=form_data.get("families", ""),
-        background=form_data.get("background", "").strip(),
+        background=Path(form_data.get("background", "").strip()).name,   # pas de ../ (audit du 21/11)
         essences_min=essences_min,
         essences_max=essences_max,
     )

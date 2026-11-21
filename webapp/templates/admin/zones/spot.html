@@ -29,7 +29,7 @@
   }"
   x-on:mousemove.window="onMove($event)" x-on:mouseup.window="dragging=false">
 
-  {{ page_head("Décor " ~ label, emoji, sub="Le décor quand un monstre de « " ~ zone.name ~ " » sort sous l'élément <strong>" ~ label ~ "</strong>. Cadre les pixels utiles, pose la ligne de sol, choisis la fenêtre horaire.") }}
+  {{ page_head("Décor " ~ label, emoji, sub="Le décor quand un monstre de « " ~ (zone.name|e) ~ " » sort sous l'élément <strong>" ~ label ~ "</strong>. Cadre les pixels utiles, pose la ligne de sol, choisis la fenêtre horaire.") }}
   {% if saved %}<div class="notice is-ok">✅ Décor enregistré.</div>{% endif %}
 
   <div style="display:flex; gap:1.6rem; flex-wrap:wrap; align-items:flex-start;">

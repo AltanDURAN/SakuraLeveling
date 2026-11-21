@@ -21,6 +21,7 @@ import math
 import tempfile
 from pathlib import Path
 
+from webapp.admin.uploads import read_limited
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
@@ -313,7 +314,7 @@ def _store(code: str | None, slot: str, data: bytes) -> list[str]:
 async def _upload(request: Request, code: str | None, slot: str):
     form = await request.form()
     upload = form.get("image")
-    data = await upload.read() if upload is not None and hasattr(upload, "read") else b""
+    data = await read_limited(upload) if upload is not None and hasattr(upload, "read") else b""
     try:
         notes = await run_in_threadpool(_store, code, slot, data)
     except ValueError as exc:

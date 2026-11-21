@@ -23,6 +23,7 @@ import logging
 from collections import Counter
 from datetime import UTC, datetime, timedelta
 
+from webapp.admin.uploads import read_limited
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
@@ -373,7 +374,7 @@ async def events_image(event_type: str, request: Request, user: AdminUser = Depe
     if upload is None or not getattr(upload, "filename", ""):
         return JSONResponse({"error": "Aucune image reçue."}, status_code=400)
     try:
-        saved = uploads.save_asset_bytes(await upload.read(), upload.filename, EVENTS_ASSETS_DIR,
+        saved = uploads.save_asset_bytes(await read_limited(upload), upload.filename, EVENTS_ASSETS_DIR,
                                          preferred_stem=event_type, max_side=1600)
     except uploads.UploadError as exc:
         return JSONResponse({"error": str(exc)}, status_code=400)
@@ -436,7 +437,7 @@ async def events_update(event_type: str, request: Request, user: AdminUser = Dep
     upload = form.get("image_file")
     if upload is not None and getattr(upload, "filename", ""):
         try:
-            content = await upload.read()
+            content = await read_limited(upload)
             if content:
                 saved = uploads.save_asset_bytes(content, upload.filename, EVENTS_ASSETS_DIR, preferred_stem=event_type)
                 config["image"] = saved

@@ -95,3 +95,10 @@ def save_asset_bytes(
     tmp_path.replace(dest_path)
     _logger.info("Asset uploadé : %s (%d Ko)", dest_path, len(data) // 1024)
     return filename
+
+
+async def read_limited(upload) -> bytes:
+    """Lit au plus MAX_UPLOAD_BYTES + 1 octets : un fichier énorme est refusé
+    par la vérification de taille sans avoir été chargé en entier en mémoire
+    (audit du 21/11/2026)."""
+    return await upload.read(MAX_UPLOAD_BYTES + 1)

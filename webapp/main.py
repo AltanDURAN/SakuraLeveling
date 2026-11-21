@@ -122,6 +122,16 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 from app.shared.paths import ASSETS_DIR as _ASSETS_DIR  # noqa: E402
 _ASSETS_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/assets", StaticFiles(directory=str(_ASSETS_DIR)), name="assets")
+
+
+@app.middleware("http")
+async def _hide_generated_assets(request, call_next):
+    """Les images générées pour les joueurs (profils, combats…) ne sont pas
+    servies : leurs noms se devinent (audit du 21/11/2026)."""
+    if request.url.path.startswith("/assets/generated_"):
+        from fastapi.responses import Response
+        return Response(status_code=404)
+    return await call_next(request)
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # Le menu du site admin : une seule source pour le menu, le fil d'Ariane et l'accueil.
 from webapp.admin import nav as _admin_nav  # noqa: E402

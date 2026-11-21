@@ -6,6 +6,7 @@ import io
 import logging
 import re
 
+from webapp.admin.uploads import read_limited
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from PIL import Image
@@ -71,7 +72,7 @@ async def _save_item_image(form, code: str) -> tuple[str | None, str | None]:
     upload = form.get("image_file")
     if upload is None or not getattr(upload, "filename", ""):
         return None, None
-    data = await upload.read()
+    data = await read_limited(upload)
     if not data:
         return None, None
     err = _store_item_image(code, data)
@@ -293,7 +294,7 @@ async def items_image_upload(code: str, request: Request, user: AdminUser = Depe
         if ItemRepository(session).get_by_code(code) is None:
             return JSONResponse({"ok": False, "error": f"Objet `{code}` introuvable."}, status_code=404)
     upload = (await request.form()).get("image")
-    data = await upload.read() if upload is not None and hasattr(upload, "read") else b""
+    data = await read_limited(upload) if upload is not None and hasattr(upload, "read") else b""
     if not data:
         return JSONResponse({"ok": False, "error": "Aucune image reçue."}, status_code=400)
     err = await run_in_threadpool(_store_item_image, code, data)
