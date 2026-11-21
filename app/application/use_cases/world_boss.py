@@ -630,7 +630,7 @@ class LaunchPartyFightWorldBossUseCase:
             self.world_boss_repository.reset_votes_for_voters(boss_id)
             return PartyFightBossResult(
                 False,
-                "❌ Tous les voteurs ont déjà combattu aujourd'hui — votes annulés.",
+                "❌ Tous les inscrits ont déjà combattu aujourd'hui : l'assaut est annulé.",
                 skipped_cooldown=skipped,
             )
 
@@ -763,7 +763,7 @@ class LaunchPartyFightWorldBossUseCase:
             f"📊 PV restants du boss : **{format_int(boss_after.current_hp)} / {format_int(boss.max_hp)}**"
         )
         if skipped > 0:
-            msg += f"\n_({skipped} voteur(s) ignoré(s) — déjà combattu(s) aujourd'hui.)_"
+            msg += f"\n_({skipped} inscrit(s) déjà passé(s) aujourd'hui : pas de second assaut.)_"
         if defeated:
             msg += f"\n🏆 **{boss.name}** est vaincu !"
 

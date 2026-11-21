@@ -527,7 +527,7 @@ class TradeDraftView(ExpiringView):
         self.draft.reset()
         await self._refresh_self(interaction)
 
-    @discord.ui.button(label="🛑 Annuler", style=discord.ButtonStyle.secondary, row=2)
+    @discord.ui.button(label="Annuler", emoji="🛑", style=discord.ButtonStyle.secondary, row=2)
     async def cancel_button(
         self,
         interaction: discord.Interaction,

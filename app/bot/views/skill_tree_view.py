@@ -249,7 +249,7 @@ class SkillInvestSelect(discord.ui.Select):
             )
 
         super().__init__(
-            placeholder="Choisis une compétence à investir...",
+            placeholder="Choisis une compétence où investir…",
             min_values=1,
             max_values=1,
             options=options,

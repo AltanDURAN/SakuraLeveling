@@ -47,7 +47,7 @@ class BattleSummaryView(ExpiringView):
         self.next_button.disabled = self.page_index >= len(PAGES) - 1
         self.indicator.label = f"{self.page_index + 1} / {len(PAGES)}"
 
-    @discord.ui.button(emoji="⬅️", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(emoji="◀", style=discord.ButtonStyle.secondary)
     async def previous_button(
         self,
         interaction: discord.Interaction,
@@ -85,7 +85,7 @@ class BattleSummaryView(ExpiringView):
         await interaction.followup.send(embed=embed, files=files, view=StatsView(data, owner_id=interaction.user.id),
                                         ephemeral=True)
 
-    @discord.ui.button(emoji="➡️", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(emoji="▶", style=discord.ButtonStyle.secondary)
     async def next_button(
         self,
         interaction: discord.Interaction,

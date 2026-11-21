@@ -12,7 +12,7 @@ import asyncio
 
 import discord
 
-from app.bot.views._base import ExpiringView
+from app.bot.views._base import ExpiringView, LeaveButton
 
 from app.application.use_cases.reveal_element_talent import (
     RevealElementTalentUseCase,
@@ -115,7 +115,7 @@ class SeerView(ExpiringView):
         if self.status and self.status.unrevealed:
             self.add_item(_ElementSelect(self))
             self.add_item(_ReadButton(self))
-        self.add_item(_CloseButton(self))
+        self.add_item(LeaveButton(self, row=1))
 
     def _greeting(self) -> str:
         if self.last_reading is not None and self.last_reading.talent is not None:
@@ -254,16 +254,6 @@ class _ReadButton(discord.ui.Button):
         await view.refresh(interaction)
 
 
-class _CloseButton(discord.ui.Button):
-    def __init__(self, view: SeerView) -> None:
-        super().__init__(label="Partir", style=discord.ButtonStyle.secondary, row=1)
-        self._owner = view
-
-    async def callback(self, interaction: discord.Interaction) -> None:
-        for child in self._owner.children:
-            child.disabled = True
-        await interaction.response.edit_message(view=self._owner)
-        self._owner.stop()
 
 
 class SeerButton(discord.ui.Button):

@@ -10,7 +10,7 @@ import asyncio
 
 import discord
 
-from app.bot.views._base import ExpiringView
+from app.bot.views._base import ExpiringView, LeaveButton
 
 from app.application.use_cases.brew_potion import AlchemyStatus, BrewPotionUseCase
 from app.bot.rendering.npc_panel import compose_npc_panel, panel_path
@@ -58,7 +58,7 @@ class AlchemyView(ExpiringView):
             counts = sorted({n for n in (1, 5) if n <= recipe.max_count} | {recipe.max_count})
         for n in counts or [1]:
             self.add_item(_BrewButton(self, n, enabled=bool(counts)))
-        self.add_item(_CloseButton(self))
+        self.add_item(LeaveButton(self, row=1))
 
     # -------------------------------------------------------------- rendu --
     def _info_rows(self) -> list[tuple[str, str]]:
@@ -166,13 +166,3 @@ class _BrewButton(discord.ui.Button):
         await view.refresh(interaction)
 
 
-class _CloseButton(discord.ui.Button):
-    def __init__(self, view: AlchemyView) -> None:
-        super().__init__(label="Partir", style=discord.ButtonStyle.secondary, row=1)
-        self._owner = view
-
-    async def callback(self, interaction: discord.Interaction) -> None:
-        for child in self._owner.children:
-            child.disabled = True
-        await interaction.response.edit_message(view=self._owner)
-        self._owner.stop()

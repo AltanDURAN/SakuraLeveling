@@ -830,7 +830,7 @@ class WorldBossCog(commands.Cog):
             )
 
     async def launch_party_fight(self, boss_id: int) -> None:
-        """Lance le combat collectif quand tous les voteurs sont prêts."""
+        """Lance le combat collectif des inscrits du jour."""
         try:
             with get_db_session() as session:
                 use_case = LaunchPartyFightWorldBossUseCase(

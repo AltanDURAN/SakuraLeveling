@@ -107,7 +107,7 @@ class EquipmentImageView(ExpiringView):
             embed=embed, attachments=[file], view=self,
         )
 
-    @discord.ui.button(emoji="⬅️", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(emoji="◀", style=discord.ButtonStyle.secondary)
     async def previous_button(
         self, interaction: discord.Interaction, button: discord.ui.Button,
     ) -> None:
@@ -122,7 +122,7 @@ class EquipmentImageView(ExpiringView):
     ) -> None:
         await interaction.response.defer()
 
-    @discord.ui.button(emoji="➡️", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(emoji="▶", style=discord.ButtonStyle.secondary)
     async def next_button(
         self, interaction: discord.Interaction, button: discord.ui.Button,
     ) -> None:

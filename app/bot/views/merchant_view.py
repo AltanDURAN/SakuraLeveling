@@ -15,7 +15,7 @@ import asyncio
 
 import discord
 
-from app.bot.views._base import ExpiringView
+from app.bot.views._base import ExpiringView, LeaveButton
 
 from app.bot.rendering.npc_panel import compose_npc_panel, panel_path
 from app.domain.entities.artisan import MerchantDefinition
@@ -174,7 +174,7 @@ class MerchantView(ExpiringView):
                 if not limit or step <= limit:
                     self.add_item(_QuantityButton(self, step))
         self.add_item(_BuyButton(self, enabled=self.can_buy))
-        self.add_item(_CloseButton(self))
+        self.add_item(LeaveButton(self, row=3))
 
 
     def _selection_payload(self) -> dict | None:
@@ -395,13 +395,3 @@ class _BuyButton(discord.ui.Button):
         )
 
 
-class _CloseButton(discord.ui.Button):
-    def __init__(self, view: MerchantView) -> None:
-        super().__init__(label="Fermer", style=discord.ButtonStyle.secondary, row=3)
-        self._owner = view
-
-    async def callback(self, interaction: discord.Interaction) -> None:
-        for child in self._owner.children:
-            child.disabled = True
-        await interaction.response.edit_message(view=self._owner)
-        self._owner.stop()

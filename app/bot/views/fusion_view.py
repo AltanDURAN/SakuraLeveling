@@ -13,7 +13,7 @@ import asyncio
 
 import discord
 
-from app.bot.views._base import ExpiringView
+from app.bot.views._base import ExpiringView, LeaveButton
 
 from app.application.use_cases.fuse_gear import FuseGearUseCase
 from app.bot.rendering.npc_panel import compose_npc_panel, panel_path
@@ -57,7 +57,7 @@ class FusionView(ExpiringView):
         if self._candidates:
             self.add_item(_PieceSelect(self))
         self.add_item(_FuseButton(self))
-        self.add_item(_CloseButton(self))
+        self.add_item(LeaveButton(self, row=1))
 
     # -------------------------------------------------------------- rendu --
     def _info_rows(self) -> list[tuple[str, str]]:
@@ -182,13 +182,3 @@ class _FuseButton(discord.ui.Button):
         await view.refresh(interaction)
 
 
-class _CloseButton(discord.ui.Button):
-    def __init__(self, view: FusionView) -> None:
-        super().__init__(label="Partir", style=discord.ButtonStyle.secondary, row=1)
-        self._owner = view
-
-    async def callback(self, interaction: discord.Interaction) -> None:
-        for child in self._owner.children:
-            child.disabled = True
-        await interaction.response.edit_message(view=self._owner)
-        self._owner.stop()

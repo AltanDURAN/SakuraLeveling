@@ -67,3 +67,18 @@ class ExpiringView(discord.ui.View):
                 await self._touched.edit_original_response(view=self)
         except discord.HTTPException:
             pass          # message supprimé, jeton expiré : rien à éteindre
+
+
+class LeaveButton(discord.ui.Button):
+    """« 🚪 Partir » : la sortie commune des PNJ (Elna, le forgeron, la
+    voyante, Sorn). Grise toute la vue et l'arrête."""
+
+    def __init__(self, view: discord.ui.View, row: int | None = None) -> None:
+        super().__init__(label="Partir", emoji="🚪", style=discord.ButtonStyle.secondary, row=row)
+        self._owner = view
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        for child in self._owner.children:
+            child.disabled = True
+        await interaction.response.edit_message(view=self._owner)
+        self._owner.stop()

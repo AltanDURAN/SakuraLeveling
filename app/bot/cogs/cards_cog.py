@@ -103,7 +103,7 @@ class CardsCog(commands.Cog):
                 result = await asyncio.to_thread(self._open_db, interaction.user, count)
             except Exception:  # noqa: BLE001
                 _logger.exception("ouverture de booster impossible")
-                await interaction.edit_original_response(content="❌ Le booster n'a pas pu être ouvert. Réessaie.")
+                await interaction.edit_original_response(content="❌ Le booster n'a pas pu être ouvert : il est toujours dans ton sac. Réessaie dans un instant.")
                 return
             if not result.ok:
                 await interaction.edit_original_response(content=result.message)

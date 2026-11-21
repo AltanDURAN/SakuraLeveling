@@ -191,6 +191,8 @@ LA PROGRESSION
             +1 % d'or et d'XP en fin de combat.
         🏆 MVP des World Boss (exclusif : meilleur contributeur du dernier
             raid gagné) : +2 % sur toutes les stats.
+        ⚔️ Tueur de <boss> (avoir participé à la victoire contre ce world
+            boss, un titre par boss) : +3 de dégâts critiques.
         🩸 Le Bourreau (500 victoires) : +5 de dégâts critiques.
         🌪️ L'Intouchable (100 esquives en combat de groupe) : +1 d'esquive.
         🍻 Habitué de la taverne (série de 7 au /daily) : +1 % d'or et d'XP.

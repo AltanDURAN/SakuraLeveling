@@ -473,3 +473,16 @@ def test_les_boutons_du_recapitulatif_partent_a_la_fin():
         return view.message.edits
 
     assert asyncio.run(scenario()) == [{"view": None}]
+
+
+@pytest.mark.parametrize("players", [20, 26, 100])
+def test_details_d_une_meute_de_4_tiennent_dans_les_limites(players):
+    """Revue de novembre : avec 4 ennemis aux noms longs, la page Détails
+    (ajoutée APRÈS les joueurs) dépassait 6 000 caractères."""
+    enemies = [{"name": "Gardien draconique des cimes éternelles " * 2, "remaining_hp": 123456,
+                "max_hp": 999999} for _ in range(4)]
+    summary = BattleSummary(outcome="victory", mob_name="Meute", mob_image_name="", mob_family="", turns=9,
+                            rewards=[_reward(i, level_up=True) for i in range(players)], enemies=enemies)
+    embed = build_details_page_embed(summary)
+    _within_discord_limits(embed)
+    assert embed.fields[-1].name == "👹 Ennemis"

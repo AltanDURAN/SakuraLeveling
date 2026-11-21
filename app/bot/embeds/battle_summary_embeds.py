@@ -15,10 +15,11 @@ FIELD_LIMIT = 1024
 
 
 def _add_player_fields(embed: discord.Embed, fields: list[tuple[str, str]],
-                       rest_line, rest_title: str) -> None:
+                       rest_line, rest_title: str, reserve: int = 0) -> None:
     """Un champ par joueur tant que l'embed peut en porter ; `rest_line(i)` :
-    la ligne qui résume le joueur `i` de ceux qui n'y tiennent pas."""
-    used = len(embed)
+    la ligne qui résume le joueur `i` de ceux qui n'y tiennent pas.
+    `reserve` : la place gardée pour ce qui sera ajouté APRÈS (ennemis, pied)."""
+    used = len(embed) + reserve
     shown = 0
     for name, value in fields:
         if shown >= MAX_PLAYER_FIELDS or used + len(name) + len(value) > EMBED_BUDGET - FIELD_LIMIT:
@@ -317,10 +318,13 @@ def build_details_page_embed(summary: BattleSummary) -> discord.Embed:
         return (f"{escape_markdown(detailed[index].name)} : ⚔️ {_format_int(c.damage_dealt)} · "
                 f"🛡️ {_format_int(c.damage_tanked)} · 💚 {_format_int(c.hp_healed)}")
 
-    _add_player_fields(embed, fields, rest_line, "Et aussi")
+    # Les ennemis (jusqu'à 4 en meute) et le pied passent APRÈS les joueurs :
+    # leur place est réservée, sinon un gros groupe dépassait les 6 000.
+    enemies = _enemy_lines(summary.enemies) if summary.enemies else ""
+    _add_player_fields(embed, fields, rest_line, "Et aussi", reserve=len(enemies) + 200)
 
-    if summary.enemies:
-        embed.add_field(name="👹 Ennemis", value=_enemy_lines(summary.enemies), inline=False)
+    if enemies:
+        embed.add_field(name="👹 Ennemis", value=enemies, inline=False)
 
     if solo:
         embed.set_footer(text=f"Combat en {actions_label(summary.turns)} • {TOWER_CONDITIONS}")

@@ -31,7 +31,7 @@ class EquipmentView(ExpiringView):
         self.next_button.disabled = self.page_index >= len(PAGES) - 1
         self.indicator.label = f"{self.page_index + 1} / {len(PAGES)}"
 
-    @discord.ui.button(emoji="⬅️", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(emoji="◀", style=discord.ButtonStyle.secondary)
     async def previous_button(
         self,
         interaction: discord.Interaction,
@@ -50,7 +50,7 @@ class EquipmentView(ExpiringView):
     ) -> None:
         await interaction.response.defer()
 
-    @discord.ui.button(emoji="➡️", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(emoji="▶", style=discord.ButtonStyle.secondary)
     async def next_button(
         self,
         interaction: discord.Interaction,
