@@ -17,6 +17,9 @@ from app.infrastructure.db.unit_of_work import commit as commit_session
 from app.infrastructure.db.unit_of_work import locked_write
 from app.infrastructure.monitoring.telemetry import record as record_event
 
+#: Ce que tout nouveau personnage trouve dans son sac.
+STARTING_ITEMS = (("potion_soin", 1),)
+
 
 class PlayerRepository:
     def __init__(self, session: Session):
@@ -85,9 +88,21 @@ class PlayerRepository:
         self.session.refresh(player_model)
 
         self._ensure_elemental_setup(player_model.id)
+        self._give_starting_items(player_model.id)
         self.session.refresh(player_model)
 
         return self._to_domain(player_model)
+
+    def _give_starting_items(self, player_id: int) -> None:
+        """Le sac de départ : une potion pour tous, tutoriel suivi ou non
+        (décision de l'auteur, 21/11/2026)."""
+        from app.infrastructure.db.repositories.inventory_repository import InventoryRepository
+        from app.infrastructure.db.repositories.item_repository import ItemRepository
+
+        for code, quantity in STARTING_ITEMS:
+            item = ItemRepository(self.session).get_by_code(code)
+            if item is not None:
+                InventoryRepository(self.session).add_item(player_id, item.id, quantity)
 
     def _ensure_elemental_setup(self, player_id: int) -> None:
         """Garantit que le joueur a ses 8 affinités élémentaires (la montée

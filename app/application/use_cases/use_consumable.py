@@ -124,7 +124,7 @@ class UseConsumableUseCase:
         item = self.item_repository.get_by_code(item_code)
         if item is None:
             return UseConsumableResult(
-                success=False, message=f"❌ Objet `{item_code}` introuvable."
+                success=False, message="❌ Objet introuvable : choisis-le dans la liste qui s'affiche en tapant."
             )
         if item.category != CONSUMABLE_CATEGORY:
             return UseConsumableResult(
@@ -158,7 +158,7 @@ class UseConsumableUseCase:
         if owned < 1:
             return UseConsumableResult(
                 success=False,
-                message=f"❌ Tu n'as pas de **{item.name}** en inventaire.",
+                message=_missing(item),
                 item_name=item.name,
             )
 
@@ -216,7 +216,7 @@ class UseConsumableUseCase:
         if not removed:
             return UseConsumableResult(
                 success=False,
-                message=f"❌ Tu n'as pas de **{item.name}** en inventaire.",
+                message=_missing(item),
                 item_name=item.name,
             )
 
@@ -259,7 +259,7 @@ class UseConsumableUseCase:
                          f"**{item.name}** n'a pas été utilisée."),
             )
         if not self.inventory_repository.remove_item(player_id, item.id, 1):
-            return UseConsumableResult(False, f"❌ Tu n'as pas de **{item.name}** en inventaire.", item.name)
+            return UseConsumableResult(False, _missing(item), item.name)
         after = min(stats.mana_max, before + round(stats.mana_max * int((item.stat_bonuses or {}).get("value", 0)) / 100))
         mana_repo.update_current_mana(player_id, after)
         return UseConsumableResult(
@@ -277,7 +277,7 @@ class UseConsumableUseCase:
                 False, f"🧪 Un élixir plus fort de ce type est déjà actif : **{item.name}** n'a pas été bu.",
                 item.name)
         if not self.inventory_repository.remove_item(player_id, item.id, 1, commit=False):
-            return UseConsumableResult(False, f"❌ Tu n'as pas de **{item.name}** en inventaire.", item.name)
+            return UseConsumableResult(False, _missing(item), item.name)
         _, renewed = repo.apply_elixir(player_id, item.code, elixir.status_kind, elixir.multiplier,
                                        elixir.minutes * 60)
         commit(session)
@@ -409,3 +409,13 @@ def zone_elite(session, rank: str) -> tuple[str, str, int] | None:
         return None
     elite = max(elites, key=lambda m: m.xp_reward or 0)
     return elite.code, elite.name, int(zone["channel_id"])
+
+
+def _missing(item) -> str:
+    """Refus « pas en inventaire » : dire OÙ en trouver (revue de novembre)."""
+    code = item.code
+    if code.startswith(("potion", "elixir")):
+        where = "Elna en prépare avec des ingrédients de monstres : `/alchimiste`."
+    else:
+        where = "Sorn en vend à sa boutique : `/marchand`."
+    return f"❌ Tu n'as pas de **{item.name}** en inventaire. {where}"

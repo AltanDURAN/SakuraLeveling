@@ -185,7 +185,9 @@ class CardsCog(commands.Cog):
         await interaction.response.defer(ephemeral=ephemeral)
         player_id, coll, titles = await asyncio.to_thread(self._album_data, user, own)
         if coll is None:
-            await interaction.followup.send(f"❌ {user.display_name} n'a pas encore de profil.", ephemeral=True)
+            from app.bot.private_reply import send_private
+
+            await send_private(interaction, f"❌ {user.display_name} n'a pas encore de profil.")
             return
         view = AlbumView(self, viewer_id=interaction.user.id, player_id=player_id,
                          owner=user.display_name, own=own, coll=coll, chapter=self._first_chapter(coll))

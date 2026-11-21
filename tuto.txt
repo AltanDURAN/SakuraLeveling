@@ -582,6 +582,7 @@ LE MANA DES COMPÉTENCES 💧
     Utilise un consommable de ton inventaire (potions et élixirs d'Elna,
     cf. /alchimiste ; outils de Sorn, cf. /marchand). Si tes PV (ou ton mana, pour une potion de mana) sont
     déjà pleins, la potion n'est pas consommée.
+    Chaque nouveau personnage commence avec une Potion de soin dans son sac.
 
 /defi [role]
     Les DÉFIS DE RÔLE du jour.

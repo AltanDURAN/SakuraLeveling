@@ -121,3 +121,20 @@ def test_remove_item_with_zero_quantity_returns_false(session):
 
     assert success is False
     assert _quantity(session, pid, "iron") == 5
+
+
+# --- Sac de départ (décision de l'auteur, 21/11/2026) -----------------------
+
+def test_new_player_starts_with_one_potion(session):
+    from app.infrastructure.db.repositories.player_repository import PlayerRepository
+
+    _create_item(session, "potion_soin")
+    profile = PlayerRepository(session).create_player(discord_id=42, username="bob", display_name="Bob")
+    assert _quantity(session, profile.player.id, "potion_soin") == 1
+
+
+def test_new_player_without_potion_definition_is_still_created(session):
+    from app.infrastructure.db.repositories.player_repository import PlayerRepository
+
+    profile = PlayerRepository(session).create_player(discord_id=43, username="eve", display_name="Eve")
+    assert profile.player.id

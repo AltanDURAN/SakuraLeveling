@@ -68,10 +68,9 @@ class LeaderboardCog(commands.Cog):
                                            viewer_player_id=viewer.player.id if viewer else None)
 
         if leaderboard is None:
-            await interaction.followup.send(
-                "Catégorie de classement inconnue.",
-                ephemeral=True,
-            )
+            from app.bot.private_reply import send_private
+
+            await send_private(interaction, "❌ Catégorie de classement inconnue : choisis-la dans la liste.")
             return
 
         from app.bot.embeds.screen_embed import image_embed

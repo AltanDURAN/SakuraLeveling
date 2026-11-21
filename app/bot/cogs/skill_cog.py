@@ -65,10 +65,9 @@ class SkillCog(BetaChannelOnlyMixin, commands.Cog):
                 state = use_case.execute(target_member.id)
 
         if state is None:
-            await interaction.followup.send(
-                f"❌ {target_member.display_name} n'a pas encore de profil.",
-                ephemeral=True,
-            )
+            from app.bot.private_reply import send_private
+
+            await send_private(interaction, f"❌ {target_member.display_name} n'a pas encore de profil.")
             return
 
         web_url = f"{WEB_BASE_URL}/skill/{state.discord_id}"

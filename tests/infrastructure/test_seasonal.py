@@ -188,3 +188,9 @@ def test_le_reset_d_un_joueur_efface_ses_prises_et_achats(session):
     session.commit()
     repo = SeasonalRepository(session)
     assert repo.claim_keys(pid, seasonal.ADVENT) == set() and repo.purchases(pid, "lutins") == {}
+
+
+@pytest.fixture(autouse=True)
+def _sac_vide(monkeypatch):
+    """Ces tests comptent les objets reçus : sans la potion de départ."""
+    monkeypatch.setattr("app.infrastructure.db.repositories.player_repository.STARTING_ITEMS", ())

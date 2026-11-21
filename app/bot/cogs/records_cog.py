@@ -151,7 +151,7 @@ class RecordsCog(commands.Cog):
         await interaction.response.defer(ephemeral=True)
         player_id, view = await asyncio.to_thread(self._personal, interaction.user.id)
         if view is None:
-            await interaction.followup.send("Tu n'as pas encore de personnage : commence par `/demarrer`.",
+            await interaction.followup.send("Tu n'as pas encore de personnage : commence par `/tuto`, Hana t'attend.",
                                             ephemeral=True)
             return
         screen = await asyncio.to_thread(_records_screen, view, player_id, interaction.user.id)

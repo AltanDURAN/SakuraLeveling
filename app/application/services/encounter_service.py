@@ -87,6 +87,24 @@ class EncounterService:
             return self._regenerated_hp(session, player_id, max_hp, hp_regeneration)
 
     @staticmethod
+    def _ko_message(player_id: int, hp_regeneration: int) -> str:
+        """K.O. : dire QUAND le joueur pourra se battre (les PV remontent
+        chaque minute pleine hors combat), plutôt que « bois une potion »."""
+        if hp_regeneration > 0:
+            with get_db_session() as session:
+                state = PlayerHealthRepository(session).get_by_player_id(player_id)
+            if state is not None:
+                since = state.updated_at
+                if since.tzinfo is None:
+                    since = since.replace(tzinfo=UTC)
+                elapsed = max(0.0, (datetime.now(UTC) - since).total_seconds())
+                ready_at = since.timestamp() + (int(elapsed // 60) + 1) * 60
+                return (f"💀 Tu es K.O. : tu pourras combattre à <t:{int(ready_at)}:T> "
+                        "(<t:%d:R>), tes PV remontent seuls hors combat." % int(ready_at))
+        return ("💀 Tu es K.O. : tes PV ne remontent pas tout seuls. "
+                "Une potion (`/utiliser`) te remet debout.")
+
+    @staticmethod
     def _regenerated_hp(session, player_id: int, max_hp: int, hp_regeneration: int) -> int:
         """PV du joueur à cet instant, régénération hors combat comprise."""
         player_health_repository = PlayerHealthRepository(session)
@@ -136,7 +154,7 @@ class EncounterService:
 
             profile = player_repository.get_by_discord_id(user_id)
             if profile is None:
-                return False, "Ton profil n'existe pas encore : commence par /demarrer."
+                return False, "Ton profil n'existe pas encore : commence par /tuto."
 
             equipped_items = equipment_repository.list_by_player_id(profile.player.id)
             allocations = skill_allocation_repository.list_by_player(profile.player.id)
@@ -177,11 +195,7 @@ class EncounterService:
         # à terre rejoignait, mourait au premier coup et touchait quand même
         # l'XP pleine (les morts la reçoivent) sans avoir combattu.
         if regenerated_current_hp <= 0:
-            return False, (
-                "💀 Tu es K.O. (0 PV) : impossible de combattre. Tes PV remontent "
-                "tout seuls hors combat — vérifie-les avec /profil — ou bois une "
-                "potion avec /utiliser."
-            )
+            return False, self._ko_message(profile.player.id, stats.hp_regeneration)
 
         participant = EncounterParticipant(
             user_id=user_id,

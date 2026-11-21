@@ -37,10 +37,9 @@ class BetaChannelOnlyMixin:
         if allowed:
             listed = " · ".join(f"<#{cid}>" for cid in allowed[:5])
             message += f"\nTape-la dans : {listed}"
-        if interaction.response.is_done():
-            await interaction.followup.send(message, ephemeral=True)
-        else:
-            await interaction.response.send_message(message, ephemeral=True)
+        from app.bot.private_reply import send_private
+
+        await send_private(interaction, message)
         return False
 
 

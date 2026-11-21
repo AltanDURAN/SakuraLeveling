@@ -273,3 +273,9 @@ def test_use_refused_if_not_consumable(session):
     )
     assert result.success is False
     assert "consommable" in result.message
+
+
+@pytest.fixture(autouse=True)
+def _sac_vide(monkeypatch):
+    """Ces tests comptent les objets reçus : sans la potion de départ."""
+    monkeypatch.setattr("app.infrastructure.db.repositories.player_repository.STARTING_ITEMS", ())
