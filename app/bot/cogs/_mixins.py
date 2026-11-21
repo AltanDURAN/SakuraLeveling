@@ -13,6 +13,20 @@ from app.domain.entities.player_profile import PlayerProfile
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 
 
+def _visible_channels(interaction: discord.Interaction, channel_ids) -> list[int]:
+    """Les salons de commandes que CE joueur voit : inutile de lui citer un
+    salon fermé à son rang (revue de novembre 2026)."""
+    member = interaction.user
+    if not isinstance(member, discord.Member):
+        return list(channel_ids)
+    visible = []
+    for cid in channel_ids:
+        channel = interaction.client.get_channel(cid)
+        if channel is not None and channel.permissions_for(member).view_channel:
+            visible.append(cid)
+    return visible
+
+
 class BetaChannelOnlyMixin:
     """Restreint les slash commands d'un cog au canal beta configuré.
 
@@ -33,7 +47,7 @@ class BetaChannelOnlyMixin:
             return True
 
         message = "🚧 Cette commande n'est pas autorisée ici."
-        allowed = settings.command_channel_ids
+        allowed = _visible_channels(interaction, settings.command_channel_ids)
         if allowed:
             listed = " · ".join(f"<#{cid}>" for cid in allowed[:5])
             message += f"\nTape-la dans : {listed}"

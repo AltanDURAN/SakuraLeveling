@@ -111,7 +111,7 @@ class RankTrialCog(BetaChannelOnlyMixin, commands.Cog):
             description=(
                 f"**{g.name}**\n*{g.lore}*\n\n"
                 f"Choisis ton rôle et prouve ta maîtrise : réussis et le rang "
-                f"**{trial.rank}** est à toi."
+                f"**{trial.rank}** est à toi.{_zone_opened(trial.rank)}"
             ),
             color=discord.Color.dark_red() if not elig.can_attempt
             else discord.Color.green(),
@@ -127,7 +127,7 @@ class RankTrialCog(BetaChannelOnlyMixin, commands.Cog):
             value=(
                 f"{format_int(elig.power)} / {format_int(trial.required_power)}\n"
                 + ("✅ seuil atteint" if elig.power >= trial.required_power
-                   else f"il t'en manque {format_int(elig.missing_power)}")
+                   else f"il t'en manque {format_int(elig.missing_power)}\n-# {rts_raise()}")
             ),
             inline=True,
         )
@@ -333,3 +333,20 @@ class _RoleButton(discord.ui.Button):
 
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(RankTrialCog(bot))
+
+
+def rts_raise() -> str:
+    from app.domain.services.rank_trial_service import RAISE_POWER
+
+    return RAISE_POWER
+
+
+def _zone_opened(rank: str) -> str:
+    """La zone que ce rang ouvre : la récompense concrète de l'épreuve."""
+    from app.infrastructure.encounters.farm_zone_loader import list_zones
+
+    for zone in list_zones():
+        if zone.get("rank") == rank:
+            channel = f" (<#{zone['channel_id']}>)" if zone.get("channel_id") else ""
+            return f"\n🗺️ Il ouvre la zone **{zone['name']}**{channel}."
+    return ""

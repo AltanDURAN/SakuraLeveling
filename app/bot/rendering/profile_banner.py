@@ -612,6 +612,10 @@ def _draw_rank_badge(
 
     # ---- Score sous le rang : format [XXX] doré ----
     score_text = f"[{power_score}]"
+    # La puissance s'écrit en entier jusqu'à 99 999 : on réduit la police
+    # plutôt que de déborder du cœur sombre de la fleur.
+    while cd.textlength(score_text, font=pwr_font) > size * 0.44 and pwr_font.size > 14:
+        pwr_font = pwr_font.font_variant(size=pwr_font.size - 1)
     score_w = cd.textlength(score_text, font=pwr_font)
     score_x = cx - score_w // 2
     # Espace clair sous la lettre du rang : 12% du badge size, peu importe

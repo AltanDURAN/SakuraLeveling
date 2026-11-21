@@ -123,6 +123,8 @@ LA PROGRESSION
     retenter (ou tu utilises un SCEAU DU SECOND SOUFFLE de ce rang, chez
     Sorn). On passe les rangs un par un. Potions et élixirs sont interdits :
     tout le monde part à PV et mana pleins.
+    Chaque rang ouvre sa zone de farm (E, D, C, B, A) : /epreuve la nomme.
+    La puissance s'affiche en entier (12 345) jusqu'à 99 999, puis en K et M.
 
     Rangs et zones (V1) : F Clairière sinistre · E Cimetière abandonné ·
     D Berceau cataclysmique · C Sanctuaire primordial · B Éclipse éternelle ·

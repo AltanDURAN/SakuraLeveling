@@ -96,13 +96,16 @@ class PowerScoreService:
         return sum(self.calculate_from_stats(stats) for stats in players_stats)
 
     def format_score(self, score: int) -> str:
-        if score < 1_000:
-            return str(score)
+        """LE format de la puissance, partout (bannière, combats, épreuves) :
+        exact jusqu'à 99 999 — « 1K » cachait jusqu'à 999 points alors que les
+        seuils des épreuves de rang se lisent à l'unité (revue de novembre)."""
+        from app.shared.formatters import format_int
 
+        if score < 100_000:
+            return format_int(score)
         if score < 1_000_000:
-            return f"{score // 1_000}K"
-
-        return f"{score // 1_000_000}M"
+            return f"{score // 1_000} K"
+        return f"{score / 1_000_000:.1f} M".replace(".", ",")
 
     def calculate_and_format_from_stats(self, stats: Stats) -> str:
         return self.format_score(self.calculate_from_stats(stats))

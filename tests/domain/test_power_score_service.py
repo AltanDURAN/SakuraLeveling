@@ -75,18 +75,18 @@ def test_format_score_under_thousand():
 def test_format_score_thousands():
     service = PowerScoreService()
 
-    assert service.format_score(1_000) == "1K"
-    assert service.format_score(1_200) == "1K"
-    assert service.format_score(12_999) == "12K"
-    assert service.format_score(999_999) == "999K"
+    assert service.format_score(1_000) == "1 000"
+    assert service.format_score(1_200) == "1 200"
+    assert service.format_score(12_999) == "12 999"
+    assert service.format_score(999_999) == "999 K"
 
 
 def test_format_score_millions():
     service = PowerScoreService()
 
-    assert service.format_score(1_000_000) == "1M"
-    assert service.format_score(1_200_000) == "1M"
-    assert service.format_score(42_000_000) == "42M"
+    assert service.format_score(1_000_000) == "1,0 M"
+    assert service.format_score(1_200_000) == "1,2 M"
+    assert service.format_score(42_000_000) == "42,0 M"
 
 
 def test_calculate_from_stats_returns_positive_integer():

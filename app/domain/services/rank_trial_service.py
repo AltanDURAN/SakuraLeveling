@@ -23,6 +23,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from app.shared.formatters import format_int
+
+#: Comment monter sa puissance : dit à chaque refus pour puissance trop basse.
+RAISE_POWER = ("Elle monte avec tes points de stats (`/stats`), ton équipement "
+               "(`/equipement`, forge de Sorn) et ton arbre (`/arbre`).")
+
 
 #: Ce que chaque rôle doit faire face au gardien (texte joueur).
 ROLE_GOALS: dict[str, str] = {
@@ -124,8 +130,8 @@ class RankTrialService:
             return TrialEligibility(
                 trial=trial, current_rank=current_rank, power=power,
                 blocked_reason=(
-                    f"Puissance insuffisante : {power} / "
-                    f"{trial.required_power}."
+                    f"Puissance insuffisante : {format_int(power)} / "
+                    f"{format_int(trial.required_power)}. {RAISE_POWER}"
                 ),
                 missing_power=missing,
             )

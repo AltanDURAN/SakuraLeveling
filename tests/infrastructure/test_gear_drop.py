@@ -98,3 +98,15 @@ def test_les_bonus_de_drop_comptent_mais_brides(session):
         == [("Surin_Dentele", "common")]
     # Au-delà du plafond ×1,5 : 14,3 % ne tombe toujours pas.
     assert EncounterService._roll_gear_drop(session, pid, mob, _Rng(0.1430), drop_bonus=3.0) == []
+
+
+def test_le_recap_signale_la_deuxieme_copie(session):
+    """Deux copies (même pièce, même rareté) : le récap renvoie au forgeron."""
+    _item(session, "surin_dentele")
+    pid = PlayerRepository(session).get_or_create_by_discord_id(1, "u", "U").player.id
+    mob = SimpleNamespace(gear_item_code="surin_dentele")
+    first = EncounterService._roll_gear_drop(session, pid, mob, _Rng(0.0))
+    assert EncounterService._fusable(session, pid, first) == []
+    second = EncounterService._roll_gear_drop(session, pid, mob, _Rng(0.0))
+    assert EncounterService._fusable(session, pid, second) == ["Surin_Dentele"]
+    assert EncounterService._fusable(session, pid, []) == []

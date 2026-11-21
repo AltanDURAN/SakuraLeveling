@@ -465,6 +465,18 @@ class EncounterService:
         record_event(session, kinds.GEAR_DROP, player_id=player_id, ref=code, data={"rarity": rarity.value})
         return [(item.name, rarity.value)]
 
+    @staticmethod
+    def _fusable(session, player_id: int, gear_drop: list[tuple[str, str]]) -> list[str]:
+        """Les pièces reçues dont le joueur a maintenant 2 copies (même pièce,
+        même rareté) : le récap renvoie vers le forgeron (revue de novembre)."""
+        if not gear_drop:
+            return []
+        from app.infrastructure.db.repositories.gear_repository import GearRepository
+
+        owned = GearRepository(session).list_owned(player_id)
+        return [name for name, rarity in dict.fromkeys(gear_drop)
+                if sum(1 for g in owned if g.item_definition.name == name and g.rarity == rarity) >= 2]
+
     def apply_rewards(self, encounter, result) -> BattleSummary | None:
         """Récompenses d'un combat de zone — un monstre ou une MEUTE (cf.
         pack_service : XP et or de la meute entière, une victoire par monstre,
@@ -850,6 +862,7 @@ class EncounterService:
                         ),
                         essence_gains=essence_gains,
                         gear=gear_drop,
+                        fusable_gear=self._fusable(session, participant.player_id, gear_drop),
                         titles=[event.title.name for event in unlocked],
                         **growth,
                     )

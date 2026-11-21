@@ -32,6 +32,8 @@ class PlayerReward:
     essence_gains: list[EssenceGain] = field(default_factory=list)
     # Pièce d'équipement lâchée par le monstre : (nom, rareté). Au plus une.
     gear: list[tuple[str, str]] = field(default_factory=list)
+    #: Noms des pièces reçues dont le joueur a désormais 2 copies (fusion).
+    fusable_gear: list[str] = field(default_factory=list)
     #: Nom affiché des objets de `items` (code → nom), pour le récap.
     item_names: dict[str, str] = field(default_factory=dict)
     #: Niveau avant et après le combat (0 = inconnu : combat perdu, sans XP).
