@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import logging
 
+from webapp.admin.colors import RARITY_HEX, hex_color
 from webapp.admin.uploads import read_limited
 from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -36,18 +37,8 @@ _logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin/mobs", tags=["admin-mobs"])
 
-_RARITY_COLORS = {
-    "common": "#9aa0aa", "uncommon": "#3fb950", "rare": "#4a9eff",
-    "epic": "#a371f7", "legendary": "#e3b341",
-}
 
 
-def _hex(rgb) -> str:
-    try:
-        r, g, b = rgb
-        return f"#{int(r):02x}{int(g):02x}{int(b):02x}"
-    except (TypeError, ValueError):
-        return "#96969b"
 
 
 def _mob_zone_ctx(mob) -> dict:
@@ -65,7 +56,7 @@ def _mob_zone_ctx(mob) -> dict:
         elements.append({
             "code": el, "label": ELEMENT_LABELS.get(el, el),
             "emoji": ELEMENT_EMOJIS.get(el, ""),
-            "color": _hex(ELEMENT_COLORS.get(el)),
+            "color": hex_color(ELEMENT_COLORS.get(el)),
             "time": s.get("time", "always"),
             "weight": weights.get(el, 0),
         })
@@ -296,7 +287,7 @@ async def mobs_list(
             "all_families": sorted({m.family for m in mobs if m.family}),
             "items_catalog": items_catalog,
             "item_categories": item_categories,
-            "rarity_colors": _RARITY_COLORS,
+            "rarity_colors": RARITY_HEX,
             "rarities": ["common", "uncommon", "rare", "epic", "legendary"],
             "category_labels": ITEM_CATEGORY_LABELS,
             "category_emojis": ITEM_CATEGORY_EMOJIS,

@@ -125,11 +125,12 @@ def build_title_pages(
     return embeds
 
 
+from app.bot.rendering import ui_kit as _ui  # noqa: E402
+
 #: Lignes par page de l'image de `/titre`.
 ROWS_PER_PAGE = 12
-SECTION_COLORS = {"Progression": (110, 190, 255), "Chasse par famille": (255, 140, 50),
-                  "Titres disputés": (240, 196, 92), "World boss": (235, 80, 90), "Cartes": (255, 150, 200),
-                  "Chasseurs légendaires": (120, 220, 130)}     # = ui_kit : XP, ATK, GOLD, HP, PINK, REGEN
+SECTION_COLORS = {"Progression": _ui.XP, "Chasse par famille": _ui.ATK, "Titres disputés": _ui.GOLD,
+                  "World boss": _ui.HP, "Cartes": _ui.PINK, "Chasseurs légendaires": _ui.REGEN}
 
 
 def title_image_pages(unlocked, locked, labels: dict, *, active_code=None, closeness: dict | None = None):

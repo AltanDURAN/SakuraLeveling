@@ -160,7 +160,7 @@ ITEM_CATEGORY_EMOJIS: dict[str, str] = {
 }
 ITEM_RARITY_LABELS: dict[str, str] = {
     "common": "Commun", "uncommon": "Peu commun", "rare": "Rare",
-    "epic": "Épique", "legendary": "Légendaire",
+    "epic": "Épique", "legendary": "Légendaire", "mythic": "Mythique",
 }
 
 EQUIPMENT_SLOT_LABELS: dict[str, str] = {

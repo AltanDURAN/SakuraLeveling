@@ -29,9 +29,9 @@ from app.infrastructure.db.repositories.player_cosmetic_repository import (
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
 from app.shared.paths import GENERATED_PROFILES_DIR
+from app.domain.services.gear_service import RARITY_LABELS
 
 _DEFAULT = "__defaut__"
-_RARITY = {"common": "commun", "rare": "rare", "epic": "épique", "legendary": "légendaire"}
 
 
 class AppearanceView(ExpiringView):
@@ -92,7 +92,7 @@ class _SlotSelect(discord.ui.Select):
         for item in view.owned.get(slot, [])[:24]:
             options.append(discord.SelectOption(
                 label=item.name[:100], value=item.code,
-                description=_RARITY.get(item.rarity, item.rarity)[:100],
+                description=RARITY_LABELS.get(item.rarity, item.rarity).lower()[:100],
                 default=item.code == current,
             ))
         super().__init__(placeholder=SLOT_LABELS[slot], options=options, row=row,

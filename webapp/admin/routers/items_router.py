@@ -6,6 +6,7 @@ import io
 import logging
 import re
 
+from webapp.admin.colors import RARITY_HEX
 from webapp.admin.uploads import read_limited
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -40,10 +41,6 @@ _logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin/items", tags=["admin-items"])
 
-_RARITY_COLORS = {
-    "common": "#9aa0aa", "uncommon": "#3fb950", "rare": "#4a9eff",
-    "epic": "#a371f7", "legendary": "#e3b341",
-}
 
 
 MAX_IMAGE_BYTES = 8 * 1024 * 1024
@@ -133,7 +130,7 @@ def _labels_ctx() -> dict:
         "category_labels": ITEM_CATEGORY_LABELS,
         "category_emojis": ITEM_CATEGORY_EMOJIS,
         "rarity_labels": ITEM_RARITY_LABELS,
-        "rarity_colors": _RARITY_COLORS,
+        "rarity_colors": RARITY_HEX,
         "slot_labels": EQUIPMENT_SLOT_LABELS,
         "stat_labels": STAT_LABELS,
         "stat_emojis": STAT_EMOJIS,

@@ -20,13 +20,12 @@ from app.bot.views._base import ExpiringView
 from app.bot.rendering.silhouette import FILENAME as SILHOUETTE_FILE
 from app.bot.rendering.silhouette import silhouette_png
 from app.domain.entities.mob_definition import MobDefinition
-from app.domain.services import element_service
 from app.domain.services.gear_passives import get_passive
 from app.domain.services.gear_service import DROP_RATES_PCT, RARITY_LABELS, PASSIVE_MIN_RARITY
 from app.domain.services.mob_ability_service import is_group_elite
 from app.domain.services.power_score_service import PowerScoreService
 from app.shared.emoji_mappings import format_stat_bonuses_short
-from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS, GOLD_EMOJI
+from app.shared.enums import GOLD_EMOJI
 from app.infrastructure.encounters.farm_zone_loader import get_spawn_channel_for_family
 from app.shared.paths import MOBS_ASSETS_DIR
 from app.shared.formatters import format_int
@@ -42,16 +41,9 @@ def family_label(family: str) -> str:
 
 def _element_line(element: str) -> str:
     """Ligne 'Élément' pour la fiche : emoji + nom + faiblesses (qui le battent)."""
-    if not element:
-        return "Élément : **neutre**"
-    emoji = ELEMENT_EMOJIS.get(element, "")
-    label = ELEMENT_LABELS.get(element, element)
-    weaknesses = element_service.weaknesses_of(element)
-    weak_str = ", ".join(
-        f"{ELEMENT_EMOJIS.get(e.value, '')} {ELEMENT_LABELS.get(e.value, e.value)}"
-        for e in weaknesses
-    ) or "—"
-    return f"Élément : {emoji} **{label}**\nFaible à : {weak_str}"
+    from app.bot.embeds.element_text import element_with_weaknesses
+
+    return f"Élément : {element_with_weaknesses(element)}"
 
 
 def _format_loot_line(loot_entry: dict, item_names: dict[str, str] | None = None) -> str:

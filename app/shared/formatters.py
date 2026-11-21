@@ -25,3 +25,12 @@ def format_date_fr(day) -> str:
     """Une date en toutes lettres : 7 novembre 2026 (1er pour le premier du mois)."""
     first = "1er" if day.day == 1 else str(day.day)
     return f"{first} {_MONTHS_FR[day.month - 1]} {day.year}"
+
+
+def text_bar(value: int, total: int, width: int = 10) -> str:
+    """Barre de progression en texte « ▰▰▰▱▱ » (quêtes, offrande) ; « — »
+    sans objectif."""
+    if total <= 0:
+        return "—"
+    filled = int(round(width * min(1.0, max(0.0, value / total))))
+    return "▰" * filled + "▱" * (width - filled)

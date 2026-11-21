@@ -5,10 +5,9 @@ import discord
 from discord.utils import escape_markdown
 
 from app.application.use_cases.world_boss import BossRewardEntry
+from app.bot.embeds.element_text import element_with_weaknesses
 from app.bot.embeds.limits import add_lines
 from app.domain.entities.world_boss import WorldBoss
-from app.domain.services import element_service
-from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
 from app.shared.formatters import format_int
 
 
@@ -17,16 +16,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 
 def _element_field_value(element: str) -> str:
     """Élément du boss + faiblesses (éléments qui le battent) pour l'embed."""
-    if not element:
-        return "**neutre**"
-    emoji = ELEMENT_EMOJIS.get(element, "")
-    label = ELEMENT_LABELS.get(element, element)
-    weak = element_service.weaknesses_of(element)
-    weak_str = ", ".join(
-        f"{ELEMENT_EMOJIS.get(e.value, '')}{ELEMENT_LABELS.get(e.value, e.value)}"
-        for e in weak
-    ) or "—"
-    return f"{emoji} **{label}**\nFaible à : {weak_str}"
+    return element_with_weaknesses(element)
 
 
 def _hp_bar(current: int, maximum: int) -> str:

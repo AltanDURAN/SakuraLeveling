@@ -7,6 +7,8 @@ récompense(s)' affiché si au moins une quête est complétée non-claim.
 import asyncio
 
 import discord
+
+from app.shared.formatters import text_bar
 from discord import app_commands
 from discord.ext import commands
 
@@ -35,11 +37,7 @@ def _player_rank(user) -> str | None:
 
 
 def _build_progress_bar(progress: int, total: int, width: int = 10) -> str:
-    if total <= 0:
-        return "—"
-    ratio = min(1.0, max(0.0, progress / total))
-    filled = int(round(ratio * width))
-    return "▰" * filled + "▱" * (width - filled)
+    return text_bar(progress, total, width)
 
 
 def _tier_emoji(tier: str) -> str:

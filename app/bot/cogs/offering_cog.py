@@ -12,6 +12,8 @@ import logging
 from zoneinfo import ZoneInfo
 
 import discord
+
+from app.shared.formatters import text_bar
 from discord import app_commands
 from discord.ext import commands, tasks
 
@@ -32,8 +34,7 @@ _AMOUNTS = (1_000, 10_000, 100_000)
 
 
 def _bar(value: int, target: int, width: int = 16) -> str:
-    filled = round(width * min(1.0, value / max(1, target)))
-    return "▰" * filled + "▱" * (width - filled)
+    return text_bar(value, max(1, target), width)
 
 
 def _new_year_until():
