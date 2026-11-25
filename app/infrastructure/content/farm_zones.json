@@ -25,7 +25,7 @@
             "y": 0.12,
             "w": 0.78
           },
-          "ground_y": 0.86
+          "ground_y": 0.83
         },
         {
           "element": "eau",
@@ -36,7 +36,7 @@
             "y": 0.0,
             "w": 1.0
           },
-          "ground_y": 0.88
+          "ground_y": 0.84
         },
         {
           "element": "terre",
@@ -47,7 +47,7 @@
             "y": 0.0,
             "w": 1.0
           },
-          "ground_y": 0.78
+          "ground_y": 0.82
         },
         {
           "element": "tenebre",
@@ -58,7 +58,7 @@
             "y": 0.12,
             "w": 0.78
           },
-          "ground_y": 0.86
+          "ground_y": 0.84
         },
         {
           "element": "lumiere",
@@ -69,7 +69,7 @@
             "y": 0.12,
             "w": 0.78
           },
-          "ground_y": 0.86
+          "ground_y": 0.82
         }
       ],
       "rank": "F"
@@ -93,7 +93,7 @@
             "y": 0.0,
             "w": 1.0
           },
-          "ground_y": 0.875
+          "ground_y": 0.86
         },
         {
           "element": "tenebre",
@@ -104,7 +104,7 @@
             "y": 0.0,
             "w": 1.0
           },
-          "ground_y": 0.875
+          "ground_y": 0.86
         },
         {
           "element": "glace",
@@ -115,7 +115,7 @@
             "y": 0.0,
             "w": 1.0
           },
-          "ground_y": 0.875
+          "ground_y": 0.86
         },
         {
           "element": "vent",
@@ -126,7 +126,7 @@
             "y": 0.0,
             "w": 1.0
           },
-          "ground_y": 0.875
+          "ground_y": 0.86
         }
       ],
       "rank": "E"

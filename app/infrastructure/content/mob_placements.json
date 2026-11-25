@@ -3,33 +3,33 @@
   "placements": {
     "gobelin": {
       "plante": {
-        "scale": 0.48,
+        "scale": 0.46,
         "offset_x": 0.02,
-        "offset_y": -0.03,
+        "offset_y": 0.0,
         "shadow": true
       },
       "eau": {
-        "scale": 0.444,
-        "offset_x": 0.01,
-        "offset_y": -0.06,
+        "scale": 0.46,
+        "offset_x": 0.02,
+        "offset_y": 0.0,
         "shadow": true
       },
       "terre": {
-        "scale": 0.42,
-        "offset_x": 0.04,
-        "offset_y": -0.03,
+        "scale": 0.46,
+        "offset_x": 0.02,
+        "offset_y": 0.0,
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.42,
+        "scale": 0.46,
         "offset_x": 0.02,
-        "offset_y": -0.06,
+        "offset_y": 0.0,
         "shadow": true
       },
       "lumiere": {
-        "scale": 0.42,
-        "offset_x": -0.02,
-        "offset_y": -0.06,
+        "scale": 0.46,
+        "offset_x": 0.02,
+        "offset_y": 0.0,
         "shadow": true
       }
     },
@@ -37,57 +37,57 @@
       "glace": {
         "scale": 0.6,
         "offset_x": -0.06,
-        "offset_y": -0.05,
+        "offset_y": -0.03,
         "shadow": true
       },
       "vent": {
         "scale": 0.6,
         "offset_x": -0.06,
-        "offset_y": -0.05,
+        "offset_y": -0.03,
         "shadow": true
       },
       "tenebre": {
         "scale": 0.6,
         "offset_x": -0.06,
-        "offset_y": -0.05,
+        "offset_y": -0.03,
         "shadow": true
       },
       "lumiere": {
         "scale": 0.6,
         "offset_x": -0.06,
-        "offset_y": -0.05,
+        "offset_y": -0.03,
         "shadow": true
       }
     },
     "gobelin_assassin": {
       "plante": {
-        "scale": 0.48,
+        "scale": 0.46,
         "offset_x": -0.05,
-        "offset_y": -0.02,
+        "offset_y": 0.0,
         "shadow": true
       },
       "eau": {
-        "scale": 0.432,
-        "offset_x": -0.04,
-        "offset_y": -0.08,
+        "scale": 0.46,
+        "offset_x": -0.05,
+        "offset_y": 0.0,
         "shadow": true
       },
       "terre": {
-        "scale": 0.408,
-        "offset_x": -0.04,
-        "offset_y": -0.04,
+        "scale": 0.46,
+        "offset_x": -0.05,
+        "offset_y": 0.0,
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.408,
-        "offset_x": -0.13,
-        "offset_y": -0.14,
+        "scale": 0.46,
+        "offset_x": -0.05,
+        "offset_y": 0.0,
         "shadow": true
       },
       "lumiere": {
-        "scale": 0.42,
-        "offset_x": -0.11,
-        "offset_y": -0.06,
+        "scale": 0.46,
+        "offset_x": -0.05,
+        "offset_y": 0.0,
         "shadow": true
       }
     },
@@ -95,95 +95,95 @@
       "plante": {
         "scale": 0.5,
         "offset_x": -0.02,
-        "offset_y": -0.156,
+        "offset_y": -0.18,
         "shadow": true
       },
       "eau": {
         "scale": 0.5,
         "offset_x": -0.02,
-        "offset_y": -0.176,
+        "offset_y": -0.18,
         "shadow": true
       },
       "terre": {
         "scale": 0.5,
         "offset_x": -0.02,
-        "offset_y": -0.076,
+        "offset_y": -0.18,
         "shadow": true
       },
       "tenebre": {
         "scale": 0.5,
         "offset_x": -0.02,
-        "offset_y": -0.156,
+        "offset_y": -0.18,
         "shadow": true
       },
       "lumiere": {
         "scale": 0.5,
         "offset_x": -0.02,
-        "offset_y": -0.156,
+        "offset_y": -0.18,
         "shadow": true
       }
     },
     "gobelin_chaman": {
       "plante": {
-        "scale": 0.576,
-        "offset_x": 0.01,
-        "offset_y": -0.01,
+        "scale": 0.5,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
         "shadow": true
       },
       "eau": {
-        "scale": 0.48,
+        "scale": 0.5,
         "offset_x": 0.0,
-        "offset_y": -0.09,
+        "offset_y": 0.0,
         "shadow": true
       },
       "terre": {
-        "scale": 0.516,
-        "offset_x": 0.03,
-        "offset_y": -0.01,
+        "scale": 0.5,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.528,
-        "offset_x": -0.04,
-        "offset_y": -0.06,
+        "scale": 0.5,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
         "shadow": true
       },
       "lumiere": {
-        "scale": 0.516,
-        "offset_x": -0.06,
-        "offset_y": -0.05,
+        "scale": 0.5,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
         "shadow": true
       }
     },
     "gobelin_combattant": {
       "plante": {
-        "scale": 0.564,
+        "scale": 0.5,
         "offset_x": -0.02,
-        "offset_y": 0.07,
+        "offset_y": 0.0,
         "shadow": true
       },
       "eau": {
-        "scale": 0.564,
+        "scale": 0.5,
         "offset_x": -0.02,
-        "offset_y": 0.05,
+        "offset_y": 0.0,
         "shadow": true
       },
       "terre": {
-        "scale": 0.564,
+        "scale": 0.5,
         "offset_x": -0.02,
-        "offset_y": 0.15,
+        "offset_y": 0.0,
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.564,
+        "scale": 0.5,
         "offset_x": -0.02,
-        "offset_y": 0.07,
+        "offset_y": 0.0,
         "shadow": true
       },
       "lumiere": {
-        "scale": 0.564,
+        "scale": 0.5,
         "offset_x": -0.02,
-        "offset_y": 0.07,
+        "offset_y": 0.0,
         "shadow": true
       }
     },
@@ -191,121 +191,121 @@
       "plante": {
         "scale": 0.64,
         "offset_x": -0.05,
-        "offset_y": 0.01,
+        "offset_y": 0.0,
         "shadow": true
       },
       "eau": {
-        "scale": 0.612,
+        "scale": 0.64,
         "offset_x": -0.05,
-        "offset_y": -0.07,
+        "offset_y": 0.0,
         "shadow": true
       },
       "terre": {
         "scale": 0.64,
-        "offset_x": -0.04,
-        "offset_y": 0.03,
+        "offset_x": -0.05,
+        "offset_y": 0.0,
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.54,
-        "offset_x": -0.1,
-        "offset_y": -0.14,
+        "scale": 0.64,
+        "offset_x": -0.05,
+        "offset_y": 0.0,
         "shadow": true
       },
       "lumiere": {
         "scale": 0.64,
-        "offset_x": -0.1,
-        "offset_y": -0.06,
+        "offset_x": -0.05,
+        "offset_y": 0.0,
         "shadow": true
       }
     },
     "gobelin_runique": {
       "plante": {
-        "scale": 0.6,
+        "scale": 0.54,
         "offset_x": -0.02,
-        "offset_y": 0.02,
-        "shadow": true
-      },
-      "eau": {
-        "scale": 0.6,
-        "offset_x": -0.02,
-        "offset_y": 0.0,
-        "shadow": true
-      },
-      "terre": {
-        "scale": 0.6,
-        "offset_x": -0.02,
-        "offset_y": 0.1,
-        "shadow": true
-      },
-      "tenebre": {
-        "scale": 0.6,
-        "offset_x": -0.02,
-        "offset_y": 0.02,
-        "shadow": true
-      },
-      "lumiere": {
-        "scale": 0.6,
-        "offset_x": -0.02,
-        "offset_y": 0.02,
-        "shadow": true
-      }
-    },
-    "gobelin_superieur": {
-      "plante": {
-        "scale": 0.576,
-        "offset_x": 0.05,
         "offset_y": 0.0,
         "shadow": true
       },
       "eau": {
         "scale": 0.54,
-        "offset_x": 0.06,
-        "offset_y": -0.06,
+        "offset_x": -0.02,
+        "offset_y": 0.0,
         "shadow": true
       },
       "terre": {
-        "scale": 0.576,
-        "offset_x": 0.05,
-        "offset_y": -0.01,
+        "scale": 0.54,
+        "offset_x": -0.02,
+        "offset_y": 0.0,
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.504,
-        "offset_x": -0.08,
-        "offset_y": -0.1,
+        "scale": 0.54,
+        "offset_x": -0.02,
+        "offset_y": 0.0,
         "shadow": true
       },
       "lumiere": {
-        "scale": 0.552,
-        "offset_x": -0.03,
-        "offset_y": -0.04,
+        "scale": 0.54,
+        "offset_x": -0.02,
+        "offset_y": 0.0,
+        "shadow": true
+      }
+    },
+    "gobelin_superieur": {
+      "plante": {
+        "scale": 0.56,
+        "offset_x": 0.05,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "eau": {
+        "scale": 0.56,
+        "offset_x": 0.05,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "terre": {
+        "scale": 0.56,
+        "offset_x": 0.05,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.56,
+        "offset_x": 0.05,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "lumiere": {
+        "scale": 0.56,
+        "offset_x": 0.05,
+        "offset_y": 0.0,
         "shadow": true
       }
     },
     "fantome": {
       "lumiere": {
-        "scale": 0.528,
+        "scale": 0.55,
         "offset_x": -0.07,
-        "offset_y": -0.1,
+        "offset_y": -0.06,
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.528,
+        "scale": 0.55,
         "offset_x": -0.07,
-        "offset_y": -0.1,
+        "offset_y": -0.06,
         "shadow": true
       },
       "glace": {
-        "scale": 0.528,
+        "scale": 0.55,
         "offset_x": -0.07,
-        "offset_y": -0.1,
+        "offset_y": -0.06,
         "shadow": true
       },
       "vent": {
-        "scale": 0.528,
+        "scale": 0.55,
         "offset_x": -0.07,
-        "offset_y": -0.1,
+        "offset_y": -0.06,
         "shadow": true
       }
     },
@@ -313,101 +313,101 @@
       "lumiere": {
         "scale": 0.48,
         "offset_x": -0.06,
-        "offset_y": -0.267,
-        "shadow": false
+        "offset_y": -0.25,
+        "shadow": true
       },
       "tenebre": {
         "scale": 0.48,
         "offset_x": -0.06,
-        "offset_y": -0.267,
+        "offset_y": -0.25,
         "shadow": true
       },
       "glace": {
         "scale": 0.48,
         "offset_x": -0.06,
-        "offset_y": -0.267,
+        "offset_y": -0.25,
         "shadow": true
       },
       "vent": {
         "scale": 0.48,
         "offset_x": -0.06,
-        "offset_y": -0.267,
+        "offset_y": -0.25,
         "shadow": true
       }
     },
     "liche_maudite": {
       "lumiere": {
-        "scale": 0.612,
+        "scale": 0.64,
         "offset_x": -0.02,
-        "offset_y": 0.01,
+        "offset_y": 0.0,
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.612,
+        "scale": 0.64,
         "offset_x": -0.02,
-        "offset_y": 0.01,
+        "offset_y": 0.0,
         "shadow": true
       },
       "glace": {
-        "scale": 0.612,
+        "scale": 0.64,
         "offset_x": -0.02,
-        "offset_y": 0.01,
+        "offset_y": 0.0,
         "shadow": true
       },
       "vent": {
-        "scale": 0.612,
+        "scale": 0.64,
         "offset_x": -0.02,
-        "offset_y": 0.01,
+        "offset_y": 0.0,
         "shadow": true
       }
     },
     "momie": {
       "lumiere": {
-        "scale": 0.516,
+        "scale": 0.56,
         "offset_x": -0.07,
-        "offset_y": -0.05,
+        "offset_y": 0.0,
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.516,
+        "scale": 0.56,
         "offset_x": -0.07,
-        "offset_y": -0.05,
+        "offset_y": 0.0,
         "shadow": true
       },
       "glace": {
-        "scale": 0.516,
+        "scale": 0.56,
         "offset_x": -0.07,
-        "offset_y": -0.05,
+        "offset_y": 0.0,
         "shadow": true
       },
       "vent": {
-        "scale": 0.516,
+        "scale": 0.56,
         "offset_x": -0.07,
-        "offset_y": -0.05,
+        "offset_y": 0.0,
         "shadow": true
       }
     },
     "squelette": {
       "lumiere": {
-        "scale": 0.54,
+        "scale": 0.56,
         "offset_x": -0.07,
         "offset_y": 0.0,
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.54,
+        "scale": 0.56,
         "offset_x": -0.07,
         "offset_y": 0.0,
         "shadow": true
       },
       "glace": {
-        "scale": 0.54,
+        "scale": 0.56,
         "offset_x": -0.07,
         "offset_y": 0.0,
         "shadow": true
       },
       "vent": {
-        "scale": 0.54,
+        "scale": 0.56,
         "offset_x": -0.07,
         "offset_y": 0.0,
         "shadow": true
@@ -415,25 +415,25 @@
     },
     "zombie": {
       "lumiere": {
-        "scale": 0.528,
+        "scale": 0.55,
         "offset_x": -0.03,
         "offset_y": 0.0,
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.528,
+        "scale": 0.55,
         "offset_x": -0.03,
         "offset_y": 0.0,
         "shadow": true
       },
       "glace": {
-        "scale": 0.528,
+        "scale": 0.55,
         "offset_x": -0.03,
         "offset_y": 0.0,
         "shadow": true
       },
       "vent": {
-        "scale": 0.528,
+        "scale": 0.55,
         "offset_x": -0.03,
         "offset_y": 0.0,
         "shadow": true
@@ -441,33 +441,33 @@
     },
     "slime": {
       "plante": {
-        "scale": 0.264,
+        "scale": 0.26,
         "offset_x": -0.02,
-        "offset_y": 0.02,
+        "offset_y": 0.0,
         "shadow": true
       },
       "eau": {
-        "scale": 0.252,
+        "scale": 0.26,
         "offset_x": -0.02,
-        "offset_y": -0.07,
+        "offset_y": 0.0,
         "shadow": true
       },
       "terre": {
-        "scale": 0.264,
+        "scale": 0.26,
         "offset_x": -0.02,
-        "offset_y": -0.01,
+        "offset_y": 0.0,
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.24,
-        "offset_x": -0.15,
-        "offset_y": -0.11,
+        "scale": 0.26,
+        "offset_x": -0.02,
+        "offset_y": 0.0,
         "shadow": true
       },
       "lumiere": {
-        "scale": 0.24,
-        "offset_x": -0.1,
-        "offset_y": -0.04,
+        "scale": 0.26,
+        "offset_x": -0.02,
+        "offset_y": 0.0,
         "shadow": true
       }
     },
@@ -593,25 +593,25 @@
     },
     "serpent_des_racines": {
       "plante": {
-        "scale": 0.48,
+        "scale": 0.44,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
       },
       "terre": {
-        "scale": 0.48,
+        "scale": 0.44,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
       },
       "eau": {
-        "scale": 0.48,
+        "scale": 0.44,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
       },
       "vent": {
-        "scale": 0.48,
+        "scale": 0.44,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
@@ -619,25 +619,25 @@
     },
     "loup_sacre": {
       "plante": {
-        "scale": 0.552,
+        "scale": 0.54,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
       },
       "terre": {
-        "scale": 0.552,
+        "scale": 0.54,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
       },
       "eau": {
-        "scale": 0.552,
+        "scale": 0.54,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
       },
       "vent": {
-        "scale": 0.552,
+        "scale": 0.54,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
@@ -645,25 +645,25 @@
     },
     "cerf_esprit": {
       "plante": {
-        "scale": 0.624,
+        "scale": 0.56,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
       },
       "terre": {
-        "scale": 0.624,
+        "scale": 0.56,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
       },
       "eau": {
-        "scale": 0.624,
+        "scale": 0.56,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
       },
       "vent": {
-        "scale": 0.624,
+        "scale": 0.56,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
@@ -671,51 +671,51 @@
     },
     "aigle_tempete": {
       "plante": {
-        "scale": 0.55,
+        "scale": 0.56,
         "offset_x": 0.0,
-        "offset_y": 0.0,
+        "offset_y": -0.05,
         "shadow": true
       },
       "terre": {
-        "scale": 0.55,
+        "scale": 0.56,
         "offset_x": 0.0,
-        "offset_y": 0.0,
+        "offset_y": -0.05,
         "shadow": true
       },
       "eau": {
-        "scale": 0.55,
+        "scale": 0.56,
         "offset_x": 0.0,
-        "offset_y": 0.0,
+        "offset_y": -0.05,
         "shadow": true
       },
       "vent": {
-        "scale": 0.55,
+        "scale": 0.56,
         "offset_x": 0.0,
-        "offset_y": 0.0,
+        "offset_y": -0.05,
         "shadow": true
       }
     },
     "ours_colosse": {
       "plante": {
-        "scale": 0.672,
+        "scale": 0.62,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
       },
       "terre": {
-        "scale": 0.672,
+        "scale": 0.62,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
       },
       "eau": {
-        "scale": 0.672,
+        "scale": 0.62,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
       },
       "vent": {
-        "scale": 0.672,
+        "scale": 0.62,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
@@ -723,25 +723,25 @@
     },
     "golem_de_mousse": {
       "plante": {
-        "scale": 0.672,
+        "scale": 0.62,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
       },
       "terre": {
-        "scale": 0.672,
+        "scale": 0.62,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
       },
       "eau": {
-        "scale": 0.672,
+        "scale": 0.62,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
       },
       "vent": {
-        "scale": 0.672,
+        "scale": 0.62,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
