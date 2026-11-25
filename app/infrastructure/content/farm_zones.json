@@ -183,7 +183,7 @@
       "families": [
         "primordial"
       ],
-      "background": "generated_image_november_25_2026_-_11_26pm.png",
+      "background": "sanctuaire_primordial_plante.png",
       "essences_min": 2,
       "essences_max": 3,
       "elements": [
@@ -196,46 +196,46 @@
         {
           "element": "plante",
           "time": "always",
-          "background": "generated_image_november_25_2026_-_11_26pm.png",
+          "background": "sanctuaire_primordial_plante.png",
           "crop": {
-            "x": 0.1,
+            "x": 0.0,
             "y": 0.0,
-            "w": 0.8
+            "w": 1.0
           },
-          "ground_y": 0.88
+          "ground_y": 0.8
         },
         {
           "element": "terre",
           "time": "always",
-          "background": "generated_image_november_25_2026_-_11_26pm_1.png",
+          "background": "sanctuaire_primordial_terre.png",
           "crop": {
             "x": 0.0,
             "y": 0.0,
-            "w": 0.8
+            "w": 1.0
           },
-          "ground_y": 0.88
+          "ground_y": 0.8
         },
         {
           "element": "eau",
           "time": "always",
-          "background": "generated_image_november_25_2026_-_11_26pm_2.png",
+          "background": "sanctuaire_primordial_eau.png",
           "crop": {
-            "x": 0.1,
+            "x": 0.0,
             "y": 0.0,
-            "w": 0.8
+            "w": 1.0
           },
-          "ground_y": 0.88
+          "ground_y": 0.8
         },
         {
           "element": "vent",
           "time": "always",
-          "background": "generated_image_november_25_2026_-_11_26pm_3.png",
+          "background": "sanctuaire_primordial_vent.png",
           "crop": {
-            "x": 0.1,
+            "x": 0.0,
             "y": 0.0,
-            "w": 0.8
+            "w": 1.0
           },
-          "ground_y": 0.88
+          "ground_y": 0.8
         }
       ],
       "rank": "C"

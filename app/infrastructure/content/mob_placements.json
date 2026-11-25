@@ -578,6 +578,162 @@
         "offset_y": -0.06,
         "shadow": true
       }
+    },
+    "serpent_des_racines": {
+      "plante": {
+        "scale": 0.4,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "terre": {
+        "scale": 0.4,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "eau": {
+        "scale": 0.4,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "vent": {
+        "scale": 0.4,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      }
+    },
+    "loup_sacre": {
+      "plante": {
+        "scale": 0.46,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "terre": {
+        "scale": 0.46,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "eau": {
+        "scale": 0.46,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "vent": {
+        "scale": 0.46,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      }
+    },
+    "cerf_esprit": {
+      "plante": {
+        "scale": 0.52,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "terre": {
+        "scale": 0.52,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "eau": {
+        "scale": 0.52,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "vent": {
+        "scale": 0.52,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      }
+    },
+    "aigle_tempete": {
+      "plante": {
+        "scale": 0.5,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "terre": {
+        "scale": 0.5,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "eau": {
+        "scale": 0.5,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "vent": {
+        "scale": 0.5,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      }
+    },
+    "ours_colosse": {
+      "plante": {
+        "scale": 0.56,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "terre": {
+        "scale": 0.56,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "eau": {
+        "scale": 0.56,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "vent": {
+        "scale": 0.56,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      }
+    },
+    "golem_de_mousse": {
+      "plante": {
+        "scale": 0.56,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "terre": {
+        "scale": 0.56,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "eau": {
+        "scale": 0.56,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "vent": {
+        "scale": 0.56,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      }
     }
   }
 }
