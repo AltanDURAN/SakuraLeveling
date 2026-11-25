@@ -59,9 +59,53 @@ def _tint_stops(element: str) -> tuple[tuple, tuple, tuple]:
     return dark, mid, light
 
 
+#: Répartition de référence des tons d'un monstre AVANT la teinte (25/11/2026,
+#: demande de l'auteur : les monstres d'un même élément n'avaient pas la même
+#: couleur). Chaque image est recalée sur ces repères : 10 % de ses pixels
+#: (les traits) sous `30`, la moitié sous `128` (l'aplat prend la couleur de
+#: l'élément), 90 % sous `178`, et son blanc pur ramené à `TONE_WHITE`. Sans
+#: ça, un dessin très blanc (Banshee) virait au pastel — la Banshee de vent
+#: ressemblait à celle de glace — quand un dessin plus sombre (Gargouille)
+#: restait d'un turquoise franc.
+TONE_TARGET: tuple[tuple[float, int], ...] = ((0.10, 30), (0.50, 128), (0.90, 178))
+TONE_WHITE = 205
+
+
+def _tone_lut(luminance: Image.Image, mask: Image.Image) -> list[int]:
+    """Courbe qui amène la répartition des tons de l'image sur `TONE_TARGET`
+    (linéaire par morceaux, croissante)."""
+    hist = luminance.histogram(mask=mask)
+    total = sum(hist)
+    if not total:
+        return list(range(256))
+    marks: dict[float, int] = {}
+    cum = 0
+    for value, count in enumerate(hist):
+        cum += count
+        for q, _ in TONE_TARGET:
+            if q not in marks and cum >= q * total:
+                marks[q] = value
+    points = [(0, 0)] + [(marks[q], y) for q, y in TONE_TARGET] + [(255, TONE_WHITE)]
+    clean: list[tuple[int, int]] = []
+    for x, y in points:
+        if clean and x <= clean[-1][0]:
+            x = clean[-1][0] + 1
+        clean.append((min(x, 255), y))
+    lut = []
+    for v in range(256):
+        for (x0, y0), (x1, y1) in zip(clean, clean[1:]):
+            if x0 <= v <= x1:
+                lut.append(round(y0 + (y1 - y0) * (v - x0) / max(1, x1 - x0)))
+                break
+        else:
+            lut.append(clean[-1][1])
+    return lut
+
+
 def tint_by_element(image: Image.Image, element: str) -> Image.Image:
-    """Décline une image de monstre selon `element` : désaturation puis
-    colorisation duotone avec la couleur de l'élément. Préserve la transparence.
+    """Décline une image de monstre selon `element` : tons recalés sur une
+    répartition commune (`TONE_TARGET`), puis colorisation duotone avec la
+    couleur de l'élément. Préserve la transparence.
     Élément inconnu / neutre ("") → image inchangée (RGBA)."""
     code = (element or "").strip().lower()
     rgba = image.convert("RGBA")
@@ -69,6 +113,7 @@ def tint_by_element(image: Image.Image, element: str) -> Image.Image:
         return rgba
     alpha = rgba.getchannel("A")
     luminance = rgba.convert("L")
+    luminance = luminance.point(_tone_lut(luminance, alpha.point(lambda v: 255 if v > 128 else 0)))
     dark, mid, light = _tint_stops(code)
     colored = ImageOps.colorize(luminance, black=dark, white=light, mid=mid).convert("RGBA")
     colored.putalpha(alpha)

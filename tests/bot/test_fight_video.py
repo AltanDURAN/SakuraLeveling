@@ -59,3 +59,26 @@ def test_le_recapitulatif_a_trois_pages_dont_le_journal():
     summary = BattleSummary(outcome="victory", mob_name="Gobelin", mob_image_name="", mob_family="",
                             turns=2, journal=["`T1` ⚔️ A inflige 10 dégâts", "`T2` 💥 A inflige 20 dégâts (CRIT)"])
     assert "(CRIT)" in build_journal_page_embed(summary).description
+
+
+def test_deux_monstres_du_meme_element_ont_la_meme_teinte():
+    """25/11/2026 (demande de l'auteur) : un dessin très blanc et un dessin
+    plus sombre prennent la MÊME couleur d'élément (tons recalés avant la
+    teinte) ; la Banshee de vent ne ressemble plus à celle de glace."""
+    from PIL import Image, ImageStat
+
+    from app.bot.rendering.element_visuals import tint_by_element
+
+    def drawing(fill: int) -> Image.Image:
+        im = Image.new("RGBA", (60, 60), (0, 0, 0, 0))
+        im.paste(Image.new("RGBA", (40, 40), (fill, fill, fill, 255)), (10, 10))
+        im.paste(Image.new("RGBA", (40, 4), (0, 0, 0, 255)), (10, 10))
+        return im
+
+    def mean_rgb(im):
+        return ImageStat.Stat(im.convert("RGB"), mask=im.getchannel("A")).mean
+
+    pale, dark = (mean_rgb(tint_by_element(drawing(f), "vent")) for f in (245, 150))
+    assert max(abs(a - b) for a, b in zip(pale, dark)) < 12
+    glace = mean_rgb(tint_by_element(drawing(245), "glace"))
+    assert max(abs(a - b) for a, b in zip(pale, glace)) > 25

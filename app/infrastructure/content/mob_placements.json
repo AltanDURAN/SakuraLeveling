@@ -3,31 +3,31 @@
   "placements": {
     "gobelin": {
       "plante": {
-        "scale": 0.46,
+        "scale": 0.42,
         "offset_x": 0.02,
         "offset_y": 0.0,
         "shadow": true
       },
       "eau": {
-        "scale": 0.46,
+        "scale": 0.42,
         "offset_x": 0.02,
         "offset_y": 0.0,
         "shadow": true
       },
       "terre": {
-        "scale": 0.46,
+        "scale": 0.42,
         "offset_x": 0.02,
         "offset_y": 0.0,
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.46,
+        "scale": 0.42,
         "offset_x": 0.02,
         "offset_y": 0.0,
         "shadow": true
       },
       "lumiere": {
-        "scale": 0.46,
+        "scale": 0.42,
         "offset_x": 0.02,
         "offset_y": 0.0,
         "shadow": true
