@@ -55,7 +55,7 @@ def build_moon_embed(now: datetime | None = None) -> discord.Embed:
         title=f"{lunar_service.phase_emoji(fraction)} Le ciel de Paris",
         description=(f"**{lunar_service.phase_name(fraction)}**, éclairée à "
                      f"{round(astronomy.illumination(now) * 100)} %.\n"
-                     "La lune change les monstres des zones : plus forts, mais bien plus riches."),
+                     "La lune change les monstres des zones : plus puissants, mais bien plus riches."),
         color=discord.Color.from_rgb(*color),
     )
     if active is not None:

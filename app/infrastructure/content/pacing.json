@@ -22,7 +22,7 @@
   "lunar": {
     "pleine_lune": {
       "enabled": true,
-      "strength": 2,
+      "strength": 3,
       "rewards": 3,
       "essences": 1,
       "spawn_rate": 1,
@@ -32,7 +32,7 @@
     },
     "lune_de_sang": {
       "enabled": true,
-      "strength": 3,
+      "strength": 6,
       "rewards": 5,
       "essences": 1,
       "spawn_rate": 2,
@@ -52,7 +52,7 @@
     },
     "eclipse_lunaire": {
       "enabled": true,
-      "strength": 4,
+      "strength": 10,
       "rewards": 6,
       "essences": 5,
       "spawn_rate": 2,
@@ -62,7 +62,7 @@
     },
     "eclipse_solaire": {
       "enabled": true,
-      "strength": 5,
+      "strength": 15,
       "rewards": 10,
       "essences": 10,
       "spawn_rate": 3,

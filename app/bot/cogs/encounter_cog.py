@@ -697,11 +697,29 @@ class EncounterCog(commands.Cog):
 
         # Meute : PV et ATK de chacun × le facteur de sa taille (pack_service) ;
         # événement lunaire : × sa force, et sa DÉFENSE × son propre réglage.
+        # La force lunaire est une PUISSANCE : le score affiché du monstre (après
+        # la réduction de meute) est multiplié exactement par elle (`stat_factor`).
         members = [mob, *(companions or [])]
-        factor = pack_service.scale(len(members)) * (lunar.rule.strength if lunar is not None else 1.0)
+        pack_factor = pack_service.scale(len(members))
+        power = lunar.rule.strength if lunar is not None else 1.0
         defense_factor = lunar.rule.defense if lunar is not None else 1.0
 
+        def _lunar_factor(m) -> float:
+            if power <= 1:
+                return lunar_service.stat_factor(m.max_hp * pack_factor, m.defense, power, defense_factor)
+
+            def score_at(f: float) -> int:
+                k, d = (pack_factor * f, defense_factor) if f != 1.0 else (pack_factor, 1.0)
+                return self.power_score_service.calculate_from_stats(Stats(
+                    max_hp=max(1, round(m.max_hp * k)), attack=max(1, round(m.attack * k)),
+                    defense=round(m.defense * d), crit_chance=m.crit_chance,
+                    crit_damage=m.crit_damage, dodge=m.dodge, speed=m.speed))
+
+            guess = lunar_service.stat_factor(m.max_hp * pack_factor, m.defense, power, defense_factor)
+            return lunar_service.fit_power(score_at, power, guess)
+
         def _state(m) -> EncounterMobState:
+            factor = pack_factor * _lunar_factor(m)
             hp = max(1, round(m.max_hp * factor))
             return EncounterMobState(
                 code=m.code,

@@ -99,10 +99,10 @@
 
   <form method="post" action="/admin/pacing/lunar" class="form-section">
     <h2 class="form-section-title">🌙 Événements lunaires</h2>
-    <p class="form-section-help" style="margin:0 0 .6rem;">Calculés sur le vrai ciel de Paris (pleines lunes, nouvelles lunes, coucher et lever du soleil, éclipses visibles). Ils ne touchent que les monstres des ZONES : force = PV et attaque, défense à part (au-delà de 75 % de l'attaque d'un joueur, elle lui renvoie la différence en contrecoup à chaque coup : à manier avec prudence), élément favorisé = ce type de monstre apparaît plus souvent, gains = XP, or et chances de butin et de pièce, apparitions = délai divisé. Une pleine lune sur 3 est une lune de sang. Pendant un événement, les heures calmes ne s'appliquent pas.</p>
+    <p class="form-section-help" style="margin:0 0 .6rem;">Calculés sur le vrai ciel de Paris (pleines lunes, nouvelles lunes, coucher et lever du soleil, éclipses visibles). Ils ne touchent que les monstres des ZONES : puissance = le score affiché sur le monstre, multiplié exactement (le bot monte ses PV et son attaque d'autant qu'il faut), défense à part (au-delà de 75 % de l'attaque d'un joueur, elle lui renvoie la différence en contrecoup à chaque coup : à manier avec prudence), élément favorisé = ce type de monstre apparaît plus souvent, gains = XP, or et chances de butin et de pièce, apparitions = délai divisé. Une pleine lune sur 3 est une lune de sang. Pendant un événement, les heures calmes ne s'appliquent pas.</p>
     <div class="table-wrapper">
       <table class="data-table">
-        <thead><tr><th>Événement</th><th>Actif</th><th>Force ×<br><small>PV, ATK</small></th><th>Défense ×</th><th>Gains ×</th><th>Essences ×</th><th>Apparitions ×</th><th>Élément favorisé</th><th>Cet élément ×</th></tr></thead>
+        <thead><tr><th>Événement</th><th>Actif</th><th>Puissance ×<br><small>score affiché</small></th><th>Défense ×</th><th>Gains ×</th><th>Essences ×</th><th>Apparitions ×</th><th>Élément favorisé</th><th>Cet élément ×</th></tr></thead>
         <tbody>
         {% for kind in lunar_kinds %}{% set rule = pacing.lunar[kind.code] %}
           <tr><td><strong>{{ kind.emoji }} {{ kind.name }}</strong><div style="color:var(--muted); font-size:.85rem;">{{ kind.story }}</div></td>
