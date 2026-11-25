@@ -282,6 +282,25 @@ async def apply(guild, channels, changes: list[ap.Change]) -> tuple[int, list[st
     return done, failed
 
 
+async def fetch_channels(guild) -> list:
+    """Les salons du serveur, sans ceux d'un type que discord.py ne connaît pas.
+
+    `guild.fetch_channels` lève sur le premier type inconnu (25/11/2026 : un
+    salon de type 20 sur le serveur bloquait /admin acces) ; ce salon-là n'a
+    rien à voir avec le parcours, on le saute."""
+    from discord.channel import _guild_channel_factory
+
+    data = await guild._state.http.get_all_guild_channels(guild.id)
+    out = []
+    for d in data:
+        factory, _kind = _guild_channel_factory(d["type"])
+        if factory is None:
+            _logger.info("parcours : salon %s de type %s ignoré", d.get("id"), d["type"])
+            continue
+        out.append(factory(guild=guild, state=guild._state, data=d))
+    return out
+
+
 async def settle(guild, fetch_channels, *, passes: int = 3) -> tuple[int, list[str]]:
     """Applique le plan, puis le recalcule sur les salons RELUS jusqu'à ce
     qu'il ne reste rien. ⚠️ Modifier une catégorie recopie ses permissions

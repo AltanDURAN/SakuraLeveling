@@ -46,7 +46,7 @@ async def main(confirm: bool, create_role: bool) -> int:
         if guild.get_role(settings.adventurer_role_id) is None:
             print(f"Le rôle Aventurier {settings.adventurer_role_id} n'existe pas sur le serveur.")
             return 1
-        channels = await guild.fetch_channels()
+        channels = await access.fetch_channels(guild)
         plan = access.plan(guild.id, channels)
         print(f"{guild.name} : {len(channels)} salons, {len(plan.changes)} à régler.\n")
         for change in plan.changes:
@@ -59,7 +59,7 @@ async def main(confirm: bool, create_role: bool) -> int:
         if not confirm:
             print("\nAperçu seulement : relance avec --confirm pour appliquer.")
             return 0
-        done, failed = await access.settle(guild, guild.fetch_channels)
+        done, failed = await access.settle(guild, lambda: access.fetch_channels(guild))
         print(f"\n{done} salon(s) réglé(s), {len(failed)} échec(s).")
         for line in failed:
             print("  ❌ " + line)

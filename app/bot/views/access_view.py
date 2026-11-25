@@ -73,7 +73,7 @@ class AccessView(ExpiringView):
         self.stop()
         await interaction.response.edit_message(content="⏳ Réglage des salons…", view=None)
         # Plan relu (le serveur a pu changer) et recalculé après chaque passe.
-        done, failed = await access.settle(self.guild, self.guild.fetch_channels)
+        done, failed = await access.settle(self.guild, lambda: access.fetch_channels(self.guild))
         await interaction.edit_original_response(content=None, embed=build_result_embed(done, failed))
 
     @discord.ui.button(label="Annuler", style=discord.ButtonStyle.secondary)

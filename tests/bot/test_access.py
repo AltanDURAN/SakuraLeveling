@@ -360,3 +360,17 @@ def test_une_categorie_recopiee_dans_ses_salons_est_rattrapee(states, monkeypatc
     assert access.plan(GUILD, channels).changes == []
     assert ADV not in welcome._overwrites and ADV not in tutorial._overwrites
     assert tutorial._overwrites[GUILD] == (0, ap.VIEW_CHANNEL | ap.WRITE)   # lu, pas écrit
+
+
+def test_un_salon_d_un_type_inconnu_ne_bloque_pas_la_lecture_des_salons():
+    # 25/11/2026 : un salon de type 20 faisait lever guild.fetch_channels (/admin acces cassé).
+    from types import SimpleNamespace
+
+    async def get_all_guild_channels(guild_id):
+        return [{"id": 1, "type": 0, "name": "général", "position": 0, "permission_overwrites": []},
+                {"id": 2, "type": 20, "name": "?", "position": 1}]
+
+    state = SimpleNamespace(http=SimpleNamespace(get_all_guild_channels=get_all_guild_channels))
+    guild = SimpleNamespace(id=GUILD, _state=state)
+    channels = asyncio.run(access.fetch_channels(guild))
+    assert [c.id for c in channels] == [1]
