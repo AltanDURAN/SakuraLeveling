@@ -320,21 +320,15 @@
         "scale": 0.4,
         "offset_x": -0.06,
         "offset_y": -0.3,
-        "shadow": false
+        "shadow": true
       },
       "glace": {
         "scale": 0.4,
         "offset_x": -0.06,
         "offset_y": -0.3,
-        "shadow": false
+        "shadow": true
       },
       "vent": {
-        "scale": 0.4,
-        "offset_x": -0.06,
-        "offset_y": -0.3,
-        "shadow": false
-      },
-      "terre": {
         "scale": 0.4,
         "offset_x": -0.06,
         "offset_y": -0.3,
@@ -387,12 +381,6 @@
         "shadow": true
       },
       "vent": {
-        "scale": 0.43,
-        "offset_x": -0.07,
-        "offset_y": -0.05,
-        "shadow": true
-      },
-      "terre": {
         "scale": 0.43,
         "offset_x": -0.07,
         "offset_y": -0.05,

@@ -97,6 +97,15 @@
       "tenebre": 15,
       "glace": 10,
       "vent": 10
+    },
+    "momie": {
+      "tenebre": 20,
+      "vent": 15
+    },
+    "gargouille": {
+      "vent": 20,
+      "tenebre": 15,
+      "glace": 10
     }
   }
 }
