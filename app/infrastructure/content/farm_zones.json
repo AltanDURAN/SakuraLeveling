@@ -183,7 +183,7 @@
       "families": [
         "primordial"
       ],
-      "background": "",
+      "background": "sanctuaire_primordial_plante.png",
       "essences_min": 2,
       "essences_max": 3,
       "elements": [
@@ -192,7 +192,52 @@
         "eau",
         "vent"
       ],
-      "spots": [],
+      "spots": [
+        {
+          "element": "plante",
+          "time": "always",
+          "background": "sanctuaire_primordial_plante.png",
+          "crop": {
+            "x": 0.1,
+            "y": 0.0,
+            "w": 0.8
+          },
+          "ground_y": 0.88
+        },
+        {
+          "element": "terre",
+          "time": "always",
+          "background": "sanctuaire_primordial_terre.png",
+          "crop": {
+            "x": 0.1,
+            "y": 0.0,
+            "w": 0.8
+          },
+          "ground_y": 0.88
+        },
+        {
+          "element": "eau",
+          "time": "always",
+          "background": "sanctuaire_primordial_eau.png",
+          "crop": {
+            "x": 0.1,
+            "y": 0.0,
+            "w": 0.8
+          },
+          "ground_y": 0.88
+        },
+        {
+          "element": "vent",
+          "time": "always",
+          "background": "sanctuaire_primordial_vent.png",
+          "crop": {
+            "x": 0.1,
+            "y": 0.0,
+            "w": 0.8
+          },
+          "ground_y": 0.88
+        }
+      ],
       "rank": "C"
     },
     {
