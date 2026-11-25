@@ -12,7 +12,7 @@ Tu disposes du modèle le plus puissant et de l'effort maximal : je veux en prof
   - Ne refais pas ce qui est fait : pars des audits précédents et de ce qu'ils ont laissé ouvert.
 - **Le calendrier** :
   - bêta avec 5 testeurs le 21/11/2026 ;
-  - lancement de la saison 1 le lundi 01/12/2026 à 20 h (`/admin lancer_saison`), puis les fêtes de décembre ;
+  - lancement de la saison 1 le mardi 01/12/2026 à 20 h (`/admin lancer_saison`), puis les fêtes de décembre ;
   - une saison dure un an.
   - Regarde la date du jour et adapte-toi (règle 1).
 - **Moi** :

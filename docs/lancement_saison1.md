@@ -2,7 +2,7 @@
 
 À dérouler dans l'ordre. Chaque étape dit comment la vérifier. Le lancement se fait depuis Discord : c'est `/admin lancer_saison`, et personne d'autre que toi ne doit le lancer.
 
-**Date retenue : lundi 1er décembre 2026 à 20 h** (décision de l'auteur, 10-11/11/2026), le jour où s'ouvre le calendrier de l'Avent.
+**Date retenue : mardi 1er décembre 2026 à 20 h** (décision de l'auteur, 10-11/11/2026), le jour où s'ouvre le calendrier de l'Avent.
 
 Déjà fait le 11/11/2026 : SSH sans mot de passe + pare-feu + fail2ban (`scripts/harden_vps.sh`), bot renommé « Sakura Leveling », salons bêta supprimés, invitation permanente `https://discord.gg/jxEwV9x5pR` (`DISCORD_INVITE_URL`, page d'accueil du site), ébauches de 11 monstres des zones C/B/A (Cloudflare Flux, à remplacer par les tiennes quand tu veux ; les 9 autres monstres, les décors des zones C/B/A, 3 boss, l'arène, Hana et 4 objets de Noël attendent le quota gratuit de Cloudflare, ~38 images par jour), répétition du reset sur une copie de la vraie base (8 joueurs remis au niveau 1, 0 or, inventaires vides, panneau des fêtes conservé).
 
