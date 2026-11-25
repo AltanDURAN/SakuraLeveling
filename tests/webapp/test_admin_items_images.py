@@ -103,3 +103,36 @@ def test_rien_a_pousser(client, assets, monkeypatch):
     monkeypatch.setattr("webapp.admin.git_sync.push_content",
                         lambda *a: pytest.fail("aucun commit sans image"))
     assert client.post("/admin/items/images/push", json={"codes": []}).json()["count"] == 0
+
+
+def test_les_images_de_monstres_ont_toutes_la_meme_luminosite():
+    """25/11/2026 (demande de l'auteur) : teintes homogènes. Le jeu teinte les
+    monstres d'après leur luminosité ; toutes sont ramenées à MOB_LUMINANCE, et
+    chaque dépôt de monstre ou de boss passe par `normalize_luminance`."""
+    import json
+    from pathlib import Path
+
+    from PIL import Image, ImageStat
+
+    from app.shared.image_tools import MOB_LUMINANCE, normalize_luminance
+
+    def lum(im):
+        a = im.getchannel("A").point(lambda v: 255 if v > 128 else 0)
+        return ImageStat.Stat(im.convert("L"), mask=a).mean[0]
+
+    for color in ((250, 250, 250), (20, 20, 20)):
+        im = Image.new("RGBA", (40, 40), (0, 0, 0, 0))
+        im.paste(Image.new("RGBA", (20, 20), (*color, 255)), (10, 10))
+        im.paste(Image.new("RGBA", (5, 20), (0, 0, 0, 255)), (10, 10))
+        assert abs(lum(normalize_luminance(im)) - MOB_LUMINANCE) < 4
+        assert normalize_luminance(im).getchannel("A").getextrema()[0] == 0
+
+    mobs = json.loads(Path("app/infrastructure/content/mobs.json").read_text(encoding="utf-8"))
+    bosses = json.loads(Path("app/infrastructure/content/boss_definitions.json").read_text(encoding="utf-8"))
+    bosses = bosses if isinstance(bosses, list) else bosses.get("bosses", list(bosses.values()))
+    names = {m["image_name"] for m in mobs if m.get("image_name")}
+    names |= {b["image_name"] for b in bosses if b.get("image_name")}
+    for name in names:
+        path = Path("assets/mobs") / name
+        if path.exists():
+            assert abs(lum(Image.open(path).convert("RGBA")) - MOB_LUMINANCE) < 5, name

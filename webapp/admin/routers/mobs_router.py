@@ -144,7 +144,7 @@ async def _save_mob_image(form, code: str, fallback: str) -> tuple[str, str | No
     data = await read_limited(upload)
     try:
         saved = uploads.save_asset_bytes(
-            data, upload.filename, MOBS_ASSETS_DIR, preferred_stem=code, max_side=MOB_MAX_SIDE,
+            data, upload.filename, MOBS_ASSETS_DIR, preferred_stem=code, max_side=MOB_MAX_SIDE, normalize=True,
         )
     except uploads.UploadError as exc:
         return fallback, None, str(exc)

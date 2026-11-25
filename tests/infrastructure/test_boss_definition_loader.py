@@ -100,7 +100,10 @@ def test_le_fichier_est_relu_quand_il_change(tmp_path, monkeypatch):
     from app.infrastructure.world_boss import boss_definition_loader as loader
 
     copy = tmp_path / "boss_definitions.json"
-    copy.write_text(loader.CONTENT_PATH.read_text(encoding="utf-8"), encoding="utf-8")
+    data = json.loads(loader.CONTENT_PATH.read_text(encoding="utf-8"))
+    # Le Titan d'avant son image propre (déposée par l'auteur le 25/11/2026).
+    next(b for b in data if b["code"] == "slime_titan")["image_name"] = "slime.png"
+    copy.write_text(json.dumps(data), encoding="utf-8")
     monkeypatch.setattr(loader, "CONTENT_PATH", copy)
     clear_cache()
     assert get_definition("slime_titan").image_name != "boss_slime_titan.png"

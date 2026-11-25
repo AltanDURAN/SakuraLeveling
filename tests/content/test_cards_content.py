@@ -100,8 +100,16 @@ def test_un_boss_prete_son_image_propre_a_sa_carte(tmp_path, monkeypatch):
     """L'image déposée sur le site (boss_<code>.png) passe avant l'ébauche ;
     celle qu'il emprunte à un monstre en attendant, seulement en dernier
     recours (un boss renommé, sans ébauche, ne montre pas de « ? »)."""
+    import json
+
     card = card_loader.get_card("slime_titan")
     assert card is not None and card.category == "boss"
+    # Le Titan d'avant son image propre (déposée par l'auteur le 25/11/2026).
+    data = json.loads(card_loader.BOSSES_PATH.read_text(encoding="utf-8"))
+    next(b for b in data if b["code"] == "slime_titan")["image_name"] = "slime.png"
+    copy = tmp_path / "boss_definitions.json"
+    copy.write_text(json.dumps(data), encoding="utf-8")
+    monkeypatch.setattr(card_loader, "BOSSES_PATH", copy)
     assets = tmp_path / "assets"
     (assets / "mobs").mkdir(parents=True)
     (assets / "cards" / "ebauches").mkdir(parents=True)

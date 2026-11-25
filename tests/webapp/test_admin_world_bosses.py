@@ -48,7 +48,22 @@ def assets(tmp_path, monkeypatch):
     return mobs, landscapes, synced
 
 
+def _borrow_slime_image(content):
+    """Le Titan d'avant le 25/11/2026 (l'auteur a déposé le sien) : il porte
+    encore l'image du slime, cas d'un boss sans image propre."""
+    path = content / "boss_definitions.json"
+    bosses = json.loads(path.read_text(encoding="utf-8"))
+    for boss in bosses:
+        if boss["code"] == "slime_titan":
+            boss["image_name"] = "slime.png"
+    path.write_text(json.dumps(bosses, ensure_ascii=False, indent=2), encoding="utf-8")
+    from app.infrastructure.world_boss import boss_definition_loader
+    if hasattr(boss_definition_loader, "clear_cache"):
+        boss_definition_loader.clear_cache()
+
+
 def test_la_galerie_montre_chaque_boss_et_d_ou_vient_son_image(client, content):
+    _borrow_slime_image(content)
     r = client.get("/admin/world-bosses")
     assert r.status_code == 200
     data = json.loads(r.text.split('id="wb-data">')[1].split("</script>")[0])
@@ -62,7 +77,8 @@ def test_la_galerie_montre_chaque_boss_et_d_ou_vient_son_image(client, content):
     # Son élément est tiré à chaque apparition : on choisit la teinte de l'aperçu.
     assert titan["element"] == "" and "hasard" in titan["element_label"]
     assert titan["preview_element"] in {e["code"] for e in data["elements"]} and len(data["elements"]) == 8
-    assert titan["arena_origin"] == "zone" and set(titan["zone_arenas"]) <= {e["code"] for e in data["elements"]}
+    # Salle commune arene_boss.png en place depuis le 25/11/2026.
+    assert titan["arena_origin"] == "commune" and set(titan["zone_arenas"]) <= {e["code"] for e in data["elements"]}
     assert [b["level"] for b in data["bosses"]] == sorted(b["level"] for b in data["bosses"])
 
 
