@@ -12,7 +12,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from app.shared.image_tools import normalize_luminance, shrink
+from app.shared.image_tools import shrink
 
 _logger = logging.getLogger(__name__)
 
@@ -34,21 +34,16 @@ def _slug(value: str) -> str:
     return value or "asset"
 
 
-def _shrunk(data: bytes, ext: str, max_side: int, normalize: bool = False) -> bytes:
+def _shrunk(data: bytes, ext: str, max_side: int) -> bytes:
     """`data` réduite à `max_side` px, dans le même format (une image déjà
-    petite ou un GIF animé ne changent pas). `normalize` : luminosité ramenée
-    à celle de tous les monstres (`normalize_luminance`)."""
+    petite ou un GIF animé ne changent pas)."""
     if ext == ".gif":
         return data
     try:
         with Image.open(io.BytesIO(data)) as image:
-            if max(image.size) <= max_side and not normalize:
+            if max(image.size) <= max_side:
                 return data
-            out = shrink(image.convert("RGBA"), max_side)
-            if normalize:
-                out = normalize_luminance(out)
-            if ext in (".jpg", ".jpeg"):
-                out = out.convert("RGB")
+            out = shrink(image.convert("RGB" if ext in (".jpg", ".jpeg") else "RGBA"), max_side)
             buffer = io.BytesIO()
             out.save(buffer, {".jpg": "JPEG", ".jpeg": "JPEG", ".webp": "WEBP"}.get(ext, "PNG"))
             return buffer.getvalue()
@@ -62,7 +57,6 @@ def save_asset_bytes(
     dest_dir: Path,
     preferred_stem: str | None = None,
     max_side: int | None = None,
-    normalize: bool = False,
 ) -> str:
     """Écrit `data` dans `dest_dir` sous un nom sûr et renvoie ce nom de fichier
     (à stocker comme `image_name` / `background`). Lève UploadError si invalide.
@@ -71,7 +65,6 @@ def save_asset_bytes(
     - Le radical vient de `preferred_stem` (ex: le code du mob) sinon du nom
       d'origine, slugifié.
     - `max_side` : l'image est réduite à ce côté (cf. `image_tools`).
-    - `normalize` : image de monstre, luminosité homogène (`normalize_luminance`).
     """
     if not data:
         raise UploadError("Fichier vide.")
@@ -89,7 +82,7 @@ def save_asset_bytes(
         )
 
     if max_side is not None:
-        data = _shrunk(data, ext, max_side, normalize=normalize)
+        data = _shrunk(data, ext, max_side)
 
     stem = _slug(preferred_stem or Path(original_filename or "asset").stem)
     filename = f"{stem}{ext}"

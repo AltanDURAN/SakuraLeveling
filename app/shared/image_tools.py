@@ -29,12 +29,6 @@ ITEM_MAX_SIDE = 512
 #: Côté maximal d'une image de monstre (le cadre de combat fait 1 080 px de large).
 MOB_MAX_SIDE = 1024
 
-#: Luminosité moyenne (pixels opaques) de TOUTES les images de monstres et de
-#: boss (25/11/2026, demande de l'auteur : des teintes homogènes). Le jeu les
-#: teinte en duotone d'après leur luminosité (`element_visuals.tint_by_element`) :
-#: un dessin très blanc ressortait délavé, une image très sombre presque noire.
-MOB_LUMINANCE = 110
-
 _MARK = 128
 
 
@@ -130,37 +124,3 @@ def prepare_item_image(image: Image.Image) -> Image.Image:
     small = shrink(image.convert("RGBA"), ITEM_MAX_SIDE)
     return cut_out_white(small) if has_white_background(small) else small
 
-
-def normalize_luminance(image: Image.Image, target: float = MOB_LUMINANCE) -> Image.Image:
-    """Ramène la luminosité moyenne des pixels opaques à `target` : trop claire,
-    on abaisse le point blanc (les traits noirs restent noirs) ; trop sombre,
-    on relève les tons moyens (gamma : le noir et le blanc ne bougent pas).
-    La transparence est conservée."""
-    rgba = image.convert("RGBA")
-    alpha = rgba.getchannel("A")
-    rgb = rgba.convert("RGB")
-    mask = alpha.point(lambda v: 255 if v > 128 else 0)
-    if mask.getbbox() is None:
-        return rgba
-
-    def mean(img: Image.Image) -> float:
-        return ImageStat.Stat(img.convert("L"), mask=mask).mean[0]
-
-    lum = mean(rgb)
-    if abs(lum - target) < 2:
-        return rgba
-    if lum > target:
-        k = target / lum
-        rgb = rgb.point(lambda v: int(v * k))
-    else:
-        lo, hi = 0.1, 1.0
-        best = rgb
-        for _ in range(25):
-            g = (lo + hi) / 2
-            best = rgb.point(lambda v, g=g: int(255 * (v / 255) ** g))
-            if mean(best) < target:
-                hi = g
-            else:
-                lo = g
-        rgb = best
-    return Image.merge("RGBA", (*rgb.split(), alpha))

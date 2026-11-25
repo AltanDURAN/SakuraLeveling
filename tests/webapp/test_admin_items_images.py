@@ -105,34 +105,25 @@ def test_rien_a_pousser(client, assets, monkeypatch):
     assert client.post("/admin/items/images/push", json={"codes": []}).json()["count"] == 0
 
 
-def test_les_images_de_monstres_ont_toutes_la_meme_luminosite():
-    """25/11/2026 (demande de l'auteur) : teintes homogènes. Le jeu teinte les
-    monstres d'après leur luminosité ; toutes sont ramenées à MOB_LUMINANCE, et
-    chaque dépôt de monstre ou de boss passe par `normalize_luminance`."""
-    import json
-    from pathlib import Path
 
+def test_les_dessins_des_cartes_ont_la_meme_plage_de_noir_et_blanc():
+    """26/11/2026 (demande de l'auteur) : sur les cartes, un dessin très blanc
+    et un dessin très sombre ont le même rendu (tons recalés sur
+    CARD_TONE_TARGET) ; les fichiers d'origine ne sont jamais modifiés."""
     from PIL import Image, ImageStat
 
-    from app.shared.image_tools import MOB_LUMINANCE, normalize_luminance
+    from app.bot.rendering.card_render import CARD_TONE_TARGET, CARD_TONE_WHITE
+    from app.bot.rendering.element_visuals import match_tones
+
+    def drawing(fill: int) -> Image.Image:
+        im = Image.new("RGBA", (60, 60), (0, 0, 0, 0))
+        im.paste(Image.new("RGBA", (40, 40), (fill, fill, fill, 255)), (10, 10))
+        im.paste(Image.new("RGBA", (40, 6), (0, 0, 0, 255)), (10, 10))
+        return im
 
     def lum(im):
-        a = im.getchannel("A").point(lambda v: 255 if v > 128 else 0)
-        return ImageStat.Stat(im.convert("L"), mask=a).mean[0]
+        return ImageStat.Stat(im.convert("L"), mask=im.getchannel("A")).mean[0]
 
-    for color in ((250, 250, 250), (20, 20, 20)):
-        im = Image.new("RGBA", (40, 40), (0, 0, 0, 0))
-        im.paste(Image.new("RGBA", (20, 20), (*color, 255)), (10, 10))
-        im.paste(Image.new("RGBA", (5, 20), (0, 0, 0, 255)), (10, 10))
-        assert abs(lum(normalize_luminance(im)) - MOB_LUMINANCE) < 4
-        assert normalize_luminance(im).getchannel("A").getextrema()[0] == 0
-
-    mobs = json.loads(Path("app/infrastructure/content/mobs.json").read_text(encoding="utf-8"))
-    bosses = json.loads(Path("app/infrastructure/content/boss_definitions.json").read_text(encoding="utf-8"))
-    bosses = bosses if isinstance(bosses, list) else bosses.get("bosses", list(bosses.values()))
-    names = {m["image_name"] for m in mobs if m.get("image_name")}
-    names |= {b["image_name"] for b in bosses if b.get("image_name")}
-    for name in names:
-        path = Path("assets/mobs") / name
-        if path.exists():
-            assert abs(lum(Image.open(path).convert("RGBA")) - MOB_LUMINANCE) < 5, name
+    pale, dark = (match_tones(drawing(f), CARD_TONE_TARGET, CARD_TONE_WHITE) for f in (250, 60))
+    assert abs(lum(pale) - lum(dark)) < 8
+    assert pale.getchannel("A").getextrema()[0] == 0

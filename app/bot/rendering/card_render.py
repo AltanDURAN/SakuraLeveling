@@ -142,6 +142,28 @@ def _open(data: bytes) -> Image.Image:
     return Image.open(io.BytesIO(data)).convert("RGBA")
 
 
+#: Plage de noir et blanc commune des dessins de MONSTRES et de BOSS sur les
+#: cartes (26/11/2026, demande de l'auteur) : les images de jeu (assets/mobs)
+#: vont du dessin très blanc au dessin très sombre ; recalées sur ces repères
+#: (traits bien noirs, aplats clairs, papier blanc), elles ont toutes le même
+#: rendu. L'image propre d'une carte (assets/cards) n'est jamais retouchée.
+CARD_TONE_TARGET: tuple[tuple[float, int], ...] = ((0.10, 25), (0.50, 175), (0.90, 225))
+CARD_TONE_WHITE = 250
+
+
+def _art_image(path) -> Image.Image:
+    """L'image d'une carte ; celle d'un monstre ou d'un boss, tons recalés."""
+    from pathlib import Path
+
+    from app.bot.rendering.element_visuals import match_tones
+
+    with Image.open(path) as source:
+        image = source.convert("RGBA")
+    if Path(path).resolve().parent == (card_loader.ASSETS / "mobs").resolve():
+        image = match_tones(image, CARD_TONE_TARGET, CARD_TONE_WHITE)
+    return image
+
+
 # ---------------------------------------------------------------- la face --
 def _art_window(card: cs.CardDef, size: tuple[int, int]) -> Image.Image:
     color = _color(card.rarity)
@@ -159,8 +181,7 @@ def _art_window(card: cs.CardDef, size: tuple[int, int]) -> Image.Image:
         font = _bangers(130)
         draw.text((size[0] / 2, size[1] / 2), "?", font=font, anchor="mm", fill=(*_shade(color, 1.2), 150))
         return window
-    with Image.open(art) as source:
-        image = source.convert("RGBA")
+    image = _art_image(art)
     alpha_min = image.getchannel("A").getextrema()[0]
     if alpha_min >= 250:                       # portrait opaque : il remplit le cadre
         return _cover(image, size)
@@ -402,8 +423,7 @@ def _full_art(card: cs.CardDef) -> tuple[Image.Image, Image.Image | None]:
         draw = ImageDraw.Draw(canvas)
         draw.text((W / 2, H / 2 - 40), "?", font=_bangers(200), anchor="mm", fill=(255, 255, 255, 120))
         return canvas.convert("RGB"), None
-    with Image.open(path) as source:
-        art = source.convert("RGBA")
+    art = _art_image(path)
     if not _is_sprite(art):                      # illustration : elle couvre tout
         canvas.alpha_composite(_shifted_cover(art, size))
         return canvas.convert("RGB"), None
