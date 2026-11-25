@@ -22,6 +22,7 @@ import discord
 
 from app.application.use_cases import member_access
 from app.bot import access_plan as ap
+from app.bot import entry_gate
 from app.bot.rank_roles import ensure_start_rank_role, has_any_rank_role
 from app.infrastructure.config.settings import settings
 from app.infrastructure.db.session import get_db_session
@@ -94,6 +95,8 @@ async def restore(member) -> member_access.MemberAccess:
     l'aventure. Renvoie où il en est."""
     generation = _generation
     state = await asyncio.to_thread(_state, member.id)
+    if not entry_gate.gives_roles() and not entry_gate.is_admin(member.id):
+        return state                               # porte fermée avant le lancement
     if state.accepted and not getattr(member, "bot", False) and generation == _generation:
         await ensure_start_rank_role(member)
         if state.adventurer and generation == _generation:
@@ -143,7 +146,7 @@ async def restore_soon(interaction, wait: float = ROLE_WAIT) -> None:
 async def reconcile(guild) -> tuple[int, int]:
     """Chaque membre reçoit les rôles de son parcours qui lui manquent.
     Renvoie (rangs donnés, rôles Aventurier donnés)."""
-    if not settings.rank_roles:
+    if not settings.rank_roles or not entry_gate.gives_roles():
         return 0, 0
     generation = _generation
     states = await asyncio.to_thread(_states)

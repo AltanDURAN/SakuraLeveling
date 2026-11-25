@@ -17,7 +17,12 @@ Déjà fait le 11/11/2026 : SSH sans mot de passe + pare-feu + fail2ban (`script
 - [ ] Images : les ébauches sont en place ; remplace celles que tu veux (site › Mobs, Zones, World Bosses).
 - [ ] Fêtes de décembre (site › Monde › Fêtes) : si tu as avancé des dates pour tester pendant la bêta, **remets-les** (Avent le 01/12, sucres d'orge du 18 au 24/12, cadeau et atelier du 25 au 31/12, Nouvel An le 01/01/2027). La frise en haut de la page doit montrer décembre.
 
+Porte d'entrée (25/11/2026, décision de l'auteur : pas d'avant-première) — dès l'annonce de la date :
+`/admin porte etat:testeurs ouverture:01/12/2026 20:00` (les nouveaux venus ne peuvent plus accepter le règlement, les testeurs continuent).
+
 ## J-1 : déploiement et sauvegardes
+
+- [ ] Le 30/11 au soir : `/admin porte etat:fermee` — les testeurs aussi attendent l'ouverture (rangs et Aventurier retirés, admins exceptés). Le lancement rouvre la porte.
 
 Sur la machine de dev :
 

@@ -31,6 +31,7 @@ from sqlalchemy.orm import Session
 from app.application.use_cases.reset_player import ResetPlayerUseCase
 from app.domain.services.monitoring import kinds
 from app.infrastructure.db.models.adventurer_model import AdventurerModel
+from app.infrastructure.db.models.entry_gate_model import EntryGateModel
 from app.infrastructure.db.models.event_model import (
     ActiveEventModel,
     EventParticipationModel,
@@ -83,6 +84,8 @@ GLOBAL_TABLES = (
     # règlement et le tutoriel.
     RulesAcceptanceModel,
     AdventurerModel,
+    # Porte d'entrée : la saison lancée, elle rouvre.
+    EntryGateModel,
     # Surveillance : les lignes sans joueur (fuites, arrivées, alertes du
     # serveur, rapports envoyés) — celles d'un joueur partent avec lui.
     GameEventModel,

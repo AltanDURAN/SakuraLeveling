@@ -559,6 +559,54 @@ class AdminCog(commands.Cog):
         kwargs = {"view": AccessView(interaction.user.id, guild)} if plan.changes else {}
         await interaction.followup.send(embed=build_access_embed(plan), ephemeral=True, **kwargs)
 
+    @admin.command(
+        name="porte",
+        description="Porte d'entrée avant le lancement : ouverte, testeurs seulement, ou fermée",
+    )
+    @app_commands.describe(
+        etat="Nouvel état (vide : affiche l'état actuel)",
+        ouverture="Ouverture annoncée aux joueurs, heure de Paris : JJ/MM/AAAA HH:MM",
+    )
+    @app_commands.choices(etat=[
+        app_commands.Choice(name="Ouverte — tout le monde peut entrer", value="ouverte"),
+        app_commands.Choice(name="Testeurs — les nouveaux ne peuvent plus entrer", value="testeurs"),
+        app_commands.Choice(name="Fermée — tout le monde attend l'ouverture (rôles retirés)", value="fermee"),
+    ])
+    @admin_only
+    async def porte(
+        self,
+        interaction: discord.Interaction,
+        etat: app_commands.Choice[str] | None = None,
+        ouverture: str | None = None,
+    ) -> None:
+        """Pas d'avant-première avant une saison (cf. `app/bot/entry_gate.py`).
+        Le lancement de la saison rouvre la porte tout seul."""
+        from datetime import datetime
+
+        from app.bot import entry_gate
+        from app.domain.services.pacing_service import PARIS
+
+        await interaction.response.defer(ephemeral=True)
+        gate = entry_gate.current()
+        opens_at = gate.opens_at
+        if ouverture:
+            try:
+                opens_at = datetime.strptime(ouverture.strip(), "%d/%m/%Y %H:%M").replace(tzinfo=PARIS)
+            except ValueError:
+                await interaction.followup.send(
+                    "❌ Date d'ouverture illisible : écris-la `JJ/MM/AAAA HH:MM` (ex. `01/12/2026 20:00`).",
+                    ephemeral=True)
+                return
+        if etat is None and not ouverture:
+            await interaction.followup.send(
+                f"Porte : {entry_gate.MODE_LABELS[gate.mode]}.\nCe que voit un joueur refusé :\n> "
+                + entry_gate.waiting_text(gate), ephemeral=True)
+            return
+        guild = self.bot.get_guild(settings.discord_guild_id) if settings.discord_guild_id else interaction.guild
+        report = await entry_gate.set_mode(guild, etat.value if etat else gate.mode, opens_at)
+        await interaction.followup.send(
+            f"✅ {report}\nCe que voit un joueur refusé :\n> {entry_gate.waiting_text()}", ephemeral=True)
+
     # -------------------------- Kill counter --------------------------
 
     @admin.command(

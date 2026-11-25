@@ -26,7 +26,7 @@ import discord
 from app.bot.views._base import ExpiringView
 
 from app.application.use_cases import rules as rules_uc
-from app.bot import access
+from app.bot import access, entry_gate
 from app.bot.embeds.rules_embeds import build_rules_embed
 from app.domain.services.rules_service import Rules, needs_acceptance
 from app.infrastructure.config.settings import settings
@@ -54,6 +54,7 @@ def forget_all() -> None:
     """Lancement de saison : les acceptations gardées en mémoire sont oubliées
     (la base vient d'être vidée) — chacun réaccepte le règlement."""
     _accepted.clear()
+    entry_gate.forget()
 
 
 def timestamp(moment: datetime) -> str:
@@ -98,6 +99,10 @@ async def allow(interaction: discord.Interaction) -> bool:
     if (interaction.type is discord.InteractionType.application_command
             and _command_root(interaction) in OPEN_COMMANDS):
         return True
+    if entry_gate.blocks(interaction.user.id):
+        # Porte fermée avant le lancement : personne ne joue (admins exceptés).
+        await entry_gate.refuse(interaction)
+        return False
     rules = get_rules()
     try:
         version = await accepted_version(interaction.user.id)
@@ -143,8 +148,25 @@ def welcome_view(guild_id: int | None) -> discord.ui.View | None:
     return view
 
 
+async def _refuse_entry(interaction: discord.Interaction) -> None:
+    """Porte d'entrée fermée : on n'accepte pas le règlement (pas d'avant-première)."""
+    message = interaction.message
+    if message is not None and message.flags.ephemeral:
+        await interaction.response.edit_message(content=entry_gate.waiting_text(), embed=None, view=None)
+    else:
+        await interaction.response.send_message(entry_gate.waiting_text(), ephemeral=True)
+
+
 async def accept(interaction: discord.Interaction) -> None:
     rules = get_rules()
+    if not entry_gate.current().is_open and not entry_gate.is_admin(interaction.user.id):
+        try:
+            already = await accepted_version(interaction.user.id) is not None
+        except Exception:  # noqa: BLE001
+            already = False
+        if not entry_gate.can_accept(interaction.user.id, accepted=already):
+            await _refuse_entry(interaction)
+            return
     try:
         newly, found = await asyncio.to_thread(_write, interaction.user.id, rules.version)
     except Exception:  # noqa: BLE001

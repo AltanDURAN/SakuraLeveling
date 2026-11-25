@@ -1118,6 +1118,18 @@ MP « Rang C atteint » (admins)
     prêt à la sortie de la V1) est signalé en MP aux admins : son niveau, la
     zone suivante (Éclipse éternelle) et combien de joueurs y sont déjà.
 
+/admin porte [etat] [ouverture]
+    La porte d'entrée avant le lancement d'une saison (pas d'avant-première) :
+      • ouverte  : le parcours normal ;
+      • testeurs : un nouveau venu ne peut plus accepter le règlement (ni
+        Rang F, ni tutoriel) ; ceux qui l'ont déjà accepté continuent ;
+      • fermée   : plus personne ne joue, admins exceptés ; les rangs et
+        Aventurier sont retirés (on ne voit plus que l'accueil et le
+        règlement) et ne reviennent pas tant que la porte reste fermée.
+    ouverture = JJ/MM/AAAA HH:MM (heure de Paris), montrée à qui est refusé.
+    Sans état : affiche l'état actuel. Rouvrir rend les rôles aussitôt ;
+    /admin lancer_saison rouvre la porte tout seul.
+
 /admin acces
     Les permissions des salons selon le parcours d'arrivée : l'aperçu d'abord
     (pour chaque salon, qui le voit avant → après), puis un bouton

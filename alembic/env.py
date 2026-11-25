@@ -47,6 +47,7 @@ from app.infrastructure.db.models.offering_model import OfferingContributionMode
 from app.infrastructure.db.models.tutorial_model import PlayerTutorialModel  # noqa: F401
 from app.infrastructure.db.models.rules_model import RulesAcceptanceModel  # noqa: F401
 from app.infrastructure.db.models.adventurer_model import AdventurerModel  # noqa: F401
+from app.infrastructure.db.models.entry_gate_model import EntryGateModel  # noqa: F401
 from app.infrastructure.db.models.card_model import PlayerCardStateModel  # noqa: F401
 from app.infrastructure.db.models.seasonal_model import (  # noqa: F401
     EventShopPurchaseModel, SeasonalAnnouncementModel, SeasonalClaimModel,
