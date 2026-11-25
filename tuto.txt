@@ -1113,6 +1113,11 @@ INTERFACE WEB D'ADMINISTRATION
 /admin set_rank <joueur> <rang>
     Pose un rôle de rang (et retire les autres).
 
+MP « Rang C atteint » (admins)
+    Chaque joueur promu au Rang C (Sanctuaire primordial, dernier palier
+    prêt à la sortie de la V1) est signalé en MP aux admins : son niveau, la
+    zone suivante (Éclipse éternelle) et combien de joueurs y sont déjà.
+
 /admin acces
     Les permissions des salons selon le parcours d'arrivée : l'aperçu d'abord
     (pour chaque salon, qui le voit avant → après), puis un bouton

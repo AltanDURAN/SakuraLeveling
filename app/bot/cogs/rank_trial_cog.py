@@ -215,11 +215,57 @@ class RankTrialCog(BetaChannelOnlyMixin, commands.Cog):
 
 
     @staticmethod
-    def _journal_promotion(player_id: int, rank: str) -> None:
+    def _journal_promotion(player_id: int, rank: str) -> int:
+        """Note la promotion dans le journal ; renvoie le niveau du joueur."""
         with get_db_session() as session:
             level = session.get(PlayerProgressionModel, player_id)
             record(session, kinds.RANK_UP, player_id=player_id, ref=rank, qty=level.level if level else 0)
             session.commit()
+            return level.level if level else 0
+
+    async def warn_admins(self, member: discord.abc.User, rank: str, level: int) -> None:
+        """MP aux admins quand un joueur atteint le dernier palier prêt
+        (`WATCH_RANK`) : la zone suivante attend encore ses monstres."""
+        if rank != WATCH_RANK or member.id in settings.admin_ids:
+            return
+        from app.bot.notifications import send_dm
+
+        def count() -> int:
+            from sqlalchemy import func, select
+
+            from app.infrastructure.db.models.player_model import PlayerModel
+
+            ranks = RANK_ORDER[RANK_ORDER.index(WATCH_RANK):]
+            with get_db_session() as session:
+                return session.scalar(select(func.count()).select_from(PlayerModel)
+                                      .where(PlayerModel.earned_rank.in_(ranks))) or 0
+
+        try:
+            content = watch_rank_message(member.display_name, level, await asyncio.to_thread(count))
+            for admin_id in settings.admin_ids:
+                await send_dm(self.bot, admin_id, content)
+        except Exception:  # noqa: BLE001 — un MP ne casse jamais une promotion
+            _logger.warning("MP du palier %s impossible", rank, exc_info=True)
+
+
+#: Dernier palier PRÊT à la sortie de la V1 (25/11/2026, demande de l'auteur) :
+#: le Sanctuaire primordial. Éclipse éternelle (B) et Cimes des Wyrms (A)
+#: attendent encore leurs monstres ; chaque joueur promu à ce rang est
+#: signalé en MP aux admins.
+WATCH_RANK = "C"
+
+
+def watch_rank_message(name: str, level: int, reached: int) -> str:
+    from app.infrastructure.encounters.farm_zone_loader import list_zones
+
+    zones = {z.get("rank"): z.get("name", "") for z in list_zones()}
+    here = zones.get(WATCH_RANK) or f"Rang {WATCH_RANK}"
+    nxt_rank = RANK_ORDER[RANK_ORDER.index(WATCH_RANK) + 1]
+    nxt = zones.get(nxt_rank) or f"la zone du Rang {nxt_rank}"
+    others = f"{reached} joueur{'s' if reached > 1 else ''} au Rang {WATCH_RANK} ou plus."
+    return (f"🔔 **{discord.utils.escape_markdown(name)}** vient d'atteindre le **Rang {WATCH_RANK}** "
+            f"({here}) au niveau **{level}**.\n"
+            f"Prochain palier : **{nxt}** (Rang {nxt_rank}) — prépare ses monstres.\n{others}")
 
 
 class _TrialView(ExpiringView):
@@ -314,8 +360,9 @@ class _RoleButton(discord.ui.Button):
                 color=discord.Color.gold(),
             )
             if promoted:
-                await asyncio.to_thread(view.cog._journal_promotion, view.player_id, trial.rank)
+                level = await asyncio.to_thread(view.cog._journal_promotion, view.player_id, trial.rank)
                 await view.cog.announce_promotion(interaction.user, trial, self._role)
+                await view.cog.warn_admins(interaction.user, trial.rank, level)
         else:
             hours = rank_trial_loader.retry_cooldown_hours()
             embed = discord.Embed(

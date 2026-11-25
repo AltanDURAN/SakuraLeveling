@@ -271,6 +271,7 @@ Refonte d'octobre 2026 (idée de l'auteur) : plus de familles d'objets, plus de 
 - **Annonce** : une promotion est annoncée dans le salon général (`settings.rank_announce_channel_id`, `RankTrialCog.announce_promotion`, mention du joueur).
 - **Progression séquentielle** : un joueur rang F très puissant n'obtient pas D d'un coup, il doit passer E d'abord.
 - **État relu au clic** (13/11/2026) : l'attente n'était lue qu'à l'ouverture du panneau — cinq panneaux `/epreuve` ouverts avant le premier essai donnaient cinq tirages. Le bouton de rôle relit l'éligibilité (`_load_state`) et un seul essai se joue à la fois par joueur (`RankTrialCog.running`).
+- **Dernier palier prêt de la V1** (25/11/2026, demande de l'auteur) : Éclipse éternelle (B) et Cimes des Wyrms (A) attendront leurs monstres après la sortie ; chaque joueur promu au Rang C (`WATCH_RANK`, Sanctuaire primordial) est signalé en MP aux admins (`RankTrialCog.warn_admins`, `watch_rank_message` : niveau, zone suivante, nombre de joueurs au Rang C ou plus ; comptes admin exclus). Test : [`test_watch_rank.py`](tests/bot/test_watch_rank.py).
 - **Échec** ⇒ cooldown (`retry_cooldown_hours`, 6 h par défaut, action_key `rank_trial`) — effaçable avec un sceau du second souffle (Sorn). Potions et élixirs interdits (`NO_POTIONS`), PV et mana pleins ; les PV réels ne sont jamais touchés.
 
 ## Système de PNJ : forgeron, alchimiste, marchand, voyante
