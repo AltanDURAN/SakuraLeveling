@@ -12,7 +12,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from app.shared.image_tools import shrink
+from app.shared.image_tools import prepare_mob_art, shrink
 
 _logger = logging.getLogger(__name__)
 
@@ -34,16 +34,21 @@ def _slug(value: str) -> str:
     return value or "asset"
 
 
-def _shrunk(data: bytes, ext: str, max_side: int) -> bytes:
+def _shrunk(data: bytes, ext: str, max_side: int, mob_art: bool = False) -> bytes:
     """`data` réduite à `max_side` px, dans le même format (une image déjà
-    petite ou un GIF animé ne changent pas)."""
+    petite ou un GIF animé ne changent pas). `mob_art` : dessin de monstre,
+    mis en noir et blanc recalé (`prepare_mob_art`)."""
     if ext == ".gif":
         return data
     try:
         with Image.open(io.BytesIO(data)) as image:
-            if max(image.size) <= max_side:
+            if max(image.size) <= max_side and not mob_art:
                 return data
-            out = shrink(image.convert("RGB" if ext in (".jpg", ".jpeg") else "RGBA"), max_side)
+            out = shrink(image.convert("RGBA"), max_side)
+            if mob_art:
+                out = prepare_mob_art(out)
+            if ext in (".jpg", ".jpeg"):
+                out = out.convert("RGB")
             buffer = io.BytesIO()
             out.save(buffer, {".jpg": "JPEG", ".jpeg": "JPEG", ".webp": "WEBP"}.get(ext, "PNG"))
             return buffer.getvalue()
@@ -57,6 +62,7 @@ def save_asset_bytes(
     dest_dir: Path,
     preferred_stem: str | None = None,
     max_side: int | None = None,
+    mob_art: bool = False,
 ) -> str:
     """Écrit `data` dans `dest_dir` sous un nom sûr et renvoie ce nom de fichier
     (à stocker comme `image_name` / `background`). Lève UploadError si invalide.
@@ -82,7 +88,7 @@ def save_asset_bytes(
         )
 
     if max_side is not None:
-        data = _shrunk(data, ext, max_side)
+        data = _shrunk(data, ext, max_side, mob_art=mob_art)
 
     stem = _slug(preferred_stem or Path(original_filename or "asset").stem)
     filename = f"{stem}{ext}"

@@ -142,25 +142,19 @@ def _open(data: bytes) -> Image.Image:
     return Image.open(io.BytesIO(data)).convert("RGBA")
 
 
-#: Plage de noir et blanc commune des dessins de MONSTRES et de BOSS sur les
-#: cartes (26/11/2026, demande de l'auteur) : les images de jeu (assets/mobs)
-#: vont du dessin très blanc au dessin très sombre ; recalées sur ces repères
-#: (traits bien noirs, aplats clairs, papier blanc), elles ont toutes le même
-#: rendu. L'image propre d'une carte (assets/cards) n'est jamais retouchée.
-CARD_TONE_TARGET: tuple[tuple[float, int], ...] = ((0.10, 25), (0.50, 175), (0.90, 225))
-CARD_TONE_WHITE = 250
-
-
 def _art_image(path) -> Image.Image:
-    """L'image d'une carte ; celle d'un monstre ou d'un boss, tons recalés."""
+    """L'image d'une carte ; celle d'un monstre ou d'un boss, tons recalés
+    (l'image propre d'une carte, dans assets/cards, n'est jamais retouchée)."""
     from pathlib import Path
 
-    from app.bot.rendering.element_visuals import match_tones
+    from app.shared.image_tools import MOB_TONE_TARGET, MOB_TONE_WHITE, match_tones
 
     with Image.open(path) as source:
         image = source.convert("RGBA")
+    # Rangés en noir et blanc recalé (`prepare_mob_art`) ; recalés encore ici
+    # pour une image arrivée par un autre chemin (sans effet sur les autres).
     if Path(path).resolve().parent == (card_loader.ASSETS / "mobs").resolve():
-        image = match_tones(image, CARD_TONE_TARGET, CARD_TONE_WHITE)
+        image = match_tones(image, MOB_TONE_TARGET, MOB_TONE_WHITE)
     return image
 
 

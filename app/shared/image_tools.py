@@ -124,3 +124,64 @@ def prepare_item_image(image: Image.Image) -> Image.Image:
     small = shrink(image.convert("RGBA"), ITEM_MAX_SIDE)
     return cut_out_white(small) if has_white_background(small) else small
 
+
+
+#: Plage de noir et blanc commune de TOUS les dessins de monstres et de boss
+#: (26/11/2026, demande de l'auteur : un rendu en noir et blanc similaire,
+#: sur le principe de l'homogénéisation des zones) : 10 % des pixels (les
+#: traits) sous 25, la moitié sous 175, 90 % sous 225, le blanc pur à 250.
+MOB_TONE_TARGET: tuple[tuple[float, int], ...] = ((0.10, 25), (0.50, 175), (0.90, 225))
+MOB_TONE_WHITE = 250
+
+
+def tone_lut(channel: Image.Image, mask: Image.Image,
+             target: tuple[tuple[float, int], ...], white: int) -> list[int]:
+    """Courbe (linéaire par morceaux, croissante) qui amène la répartition des
+    tons de `channel` (pixels de `mask`) sur `target`, le blanc pur sur `white`."""
+    hist = channel.histogram(mask=mask)
+    total = sum(hist)
+    if not total:
+        return list(range(256))
+    marks: dict[float, int] = {}
+    cum = 0
+    for value, count in enumerate(hist):
+        cum += count
+        for q, _ in target:
+            if q not in marks and cum >= q * total:
+                marks[q] = value
+    points = [(0, 0)] + [(marks[q], y) for q, y in target] + [(255, white)]
+    clean: list[tuple[int, int]] = []
+    for x, y in points:
+        if clean and x <= clean[-1][0]:
+            x = clean[-1][0] + 1
+        clean.append((min(x, 255), y))
+    lut = []
+    for v in range(256):
+        for (x0, y0), (x1, y1) in zip(clean, clean[1:]):
+            if x0 <= v <= x1:
+                lut.append(round(y0 + (y1 - y0) * (v - x0) / max(1, x1 - x0)))
+                break
+        else:
+            lut.append(clean[-1][1])
+    return lut
+
+
+def match_tones(image: Image.Image, target: tuple[tuple[float, int], ...], white: int) -> Image.Image:
+    """L'image avec ses tons recalés sur `target`, teinte et saturation
+    conservées (courbe sur la valeur HSV). Transparence conservée."""
+    rgba = image.convert("RGBA")
+    alpha = rgba.getchannel("A")
+    hue, sat, value = rgba.convert("RGB").convert("HSV").split()
+    value = value.point(tone_lut(value, alpha.point(lambda v: 255 if v > 128 else 0), target, white))
+    out = Image.merge("HSV", (hue, sat, value)).convert("RGBA")
+    out.putalpha(alpha)
+    return out
+
+
+def prepare_mob_art(image: Image.Image) -> Image.Image:
+    """Le dessin d'un monstre ou d'un boss tel qu'on le range : en noir et
+    blanc, tons recalés sur `MOB_TONE_TARGET` (le jeu le teinte ensuite par
+    élément). Transparence conservée."""
+    rgba = image.convert("RGBA")
+    gray = rgba.convert("LA").convert("RGBA")
+    return match_tones(gray, MOB_TONE_TARGET, MOB_TONE_WHITE)

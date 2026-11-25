@@ -15,6 +15,7 @@ from PIL import Image, ImageDraw, ImageOps
 
 from app.bot.rendering.emoji_text import draw_text_with_emojis, measure_text_with_emojis
 from app.bot.rendering.pillow_utils import try_font
+from app.shared.image_tools import tone_lut
 from app.shared.enums import ELEMENT_EMOJIS, ELEMENT_LABELS
 
 # ---------------------------------------------------------------------------
@@ -71,49 +72,8 @@ TONE_TARGET: tuple[tuple[float, int], ...] = ((0.10, 30), (0.50, 128), (0.90, 17
 TONE_WHITE = 205
 
 
-def _tone_lut(luminance: Image.Image, mask: Image.Image,
-              target: tuple[tuple[float, int], ...] = TONE_TARGET, white: int = TONE_WHITE) -> list[int]:
-    """Courbe qui amène la répartition des tons de l'image sur `target`
-    (linéaire par morceaux, croissante ; le blanc pur va sur `white`)."""
-    hist = luminance.histogram(mask=mask)
-    total = sum(hist)
-    if not total:
-        return list(range(256))
-    marks: dict[float, int] = {}
-    cum = 0
-    for value, count in enumerate(hist):
-        cum += count
-        for q, _ in target:
-            if q not in marks and cum >= q * total:
-                marks[q] = value
-    points = [(0, 0)] + [(marks[q], y) for q, y in target] + [(255, white)]
-    clean: list[tuple[int, int]] = []
-    for x, y in points:
-        if clean and x <= clean[-1][0]:
-            x = clean[-1][0] + 1
-        clean.append((min(x, 255), y))
-    lut = []
-    for v in range(256):
-        for (x0, y0), (x1, y1) in zip(clean, clean[1:]):
-            if x0 <= v <= x1:
-                lut.append(round(y0 + (y1 - y0) * (v - x0) / max(1, x1 - x0)))
-                break
-        else:
-            lut.append(clean[-1][1])
-    return lut
-
-
-def match_tones(image: Image.Image, target: tuple[tuple[float, int], ...], white: int) -> Image.Image:
-    """L'image avec ses tons recalés sur `target` (cf. `TONE_TARGET`), teinte
-    et saturation conservées (courbe appliquée à la valeur HSV ; un dessin en
-    noir et blanc reste en noir et blanc). Transparence conservée."""
-    rgba = image.convert("RGBA")
-    alpha = rgba.getchannel("A")
-    hue, sat, value = rgba.convert("RGB").convert("HSV").split()
-    value = value.point(_tone_lut(value, alpha.point(lambda v: 255 if v > 128 else 0), target, white))
-    out = Image.merge("HSV", (hue, sat, value)).convert("RGBA")
-    out.putalpha(alpha)
-    return out
+def _tone_lut(luminance: Image.Image, mask: Image.Image) -> list[int]:
+    return tone_lut(luminance, mask, TONE_TARGET, TONE_WHITE)
 
 
 def tint_by_element(image: Image.Image, element: str) -> Image.Image:

@@ -106,24 +106,45 @@ def test_rien_a_pousser(client, assets, monkeypatch):
 
 
 
-def test_les_dessins_des_cartes_ont_la_meme_plage_de_noir_et_blanc():
-    """26/11/2026 (demande de l'auteur) : sur les cartes, un dessin très blanc
-    et un dessin très sombre ont le même rendu (tons recalés sur
-    CARD_TONE_TARGET) ; les fichiers d'origine ne sont jamais modifiés."""
+
+def test_tous_les_monstres_ont_le_meme_noir_et_blanc():
+    """26/11/2026 (demande de l'auteur) : tous les dessins de monstres et de
+    boss sont rangés en noir et blanc avec la même plage de tons
+    (`prepare_mob_art`, appliqué à chaque dépôt sur le site)."""
+    import json
+    from pathlib import Path
+
     from PIL import Image, ImageStat
 
-    from app.bot.rendering.card_render import CARD_TONE_TARGET, CARD_TONE_WHITE
-    from app.bot.rendering.element_visuals import match_tones
+    from app.shared.image_tools import prepare_mob_art
 
-    def drawing(fill: int) -> Image.Image:
+    def drawing(fill) -> Image.Image:
         im = Image.new("RGBA", (60, 60), (0, 0, 0, 0))
-        im.paste(Image.new("RGBA", (40, 40), (fill, fill, fill, 255)), (10, 10))
+        im.paste(Image.new("RGBA", (40, 40), (*fill, 255)), (10, 10))
         im.paste(Image.new("RGBA", (40, 6), (0, 0, 0, 255)), (10, 10))
         return im
 
     def lum(im):
         return ImageStat.Stat(im.convert("L"), mask=im.getchannel("A")).mean[0]
 
-    pale, dark = (match_tones(drawing(f), CARD_TONE_TARGET, CARD_TONE_WHITE) for f in (250, 60))
+    pale, dark, green = (prepare_mob_art(drawing(c)) for c in ((250, 250, 250), (60, 60, 60), (40, 220, 60)))
     assert abs(lum(pale) - lum(dark)) < 8
+    assert ImageStat.Stat(green.convert("HSV").getchannel("S"), mask=green.getchannel("A")).mean[0] < 3
     assert pale.getchannel("A").getextrema()[0] == 0
+
+    mobs = json.loads(Path("app/infrastructure/content/mobs.json").read_text(encoding="utf-8"))
+    bosses = json.loads(Path("app/infrastructure/content/boss_definitions.json").read_text(encoding="utf-8"))
+    names = {m["image_name"] for m in mobs if m.get("image_name")} | {b["image_name"] for b in bosses if b.get("image_name")}
+    for name in names:
+        path = Path("assets/mobs") / name
+        if path.exists():
+            im = Image.open(path).convert("RGBA")
+            a = im.getchannel("A").point(lambda v: 255 if v > 128 else 0)
+            assert ImageStat.Stat(im.convert("HSV").getchannel("S"), mask=a).mean[0] < 3, name
+            hist = im.convert("L").histogram(mask=a)
+            half, cum, median = sum(hist) / 2, 0, 0
+            for median, count in enumerate(hist):
+                cum += count
+                if cum >= half:
+                    break
+            assert abs(median - 175) <= 10, (name, median)

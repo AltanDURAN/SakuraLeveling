@@ -33,7 +33,7 @@ from app.bot.rendering import fight_scene
 from app.infrastructure.db.models.world_boss_model import WorldBossModel
 from app.infrastructure.db.session import get_db_session
 from app.shared.enums import ALL_ELEMENTS, ELEMENT_EMOJIS, ELEMENT_LABELS
-from app.shared.image_tools import MOB_MAX_SIDE, cut_out_white, has_white_background, shrink
+from app.shared.image_tools import MOB_MAX_SIDE, cut_out_white, has_white_background, prepare_mob_art, shrink
 from webapp.admin import git_sync, scene_helpers
 from webapp.admin._shared import get_templates
 from webapp.admin.auth import AdminUser, require_admin
@@ -224,7 +224,8 @@ def _open(data: bytes) -> Image.Image:
 
 def prepare_boss_image(image: Image.Image) -> tuple[Image.Image, list[str]]:
     """L'image d'un boss telle qu'on la range : détourée si elle est sur fond
-    blanc, recadrée sur le personnage, au plus `MOB_MAX_SIDE` px."""
+    blanc, recadrée sur le personnage, au plus `MOB_MAX_SIDE` px, en noir et
+    blanc recalé comme tous les monstres (`prepare_mob_art`)."""
     notes: list[str] = []
     image = shrink(image.convert("RGBA"), 2 * MOB_MAX_SIDE)
     if has_white_background(image):
@@ -233,7 +234,7 @@ def prepare_boss_image(image: Image.Image) -> tuple[Image.Image, list[str]]:
     box = image.getchannel("A").getbbox()
     if box and box != (0, 0, *image.size):
         image = image.crop(box)
-    image = shrink(image, MOB_MAX_SIDE)
+    image = prepare_mob_art(shrink(image, MOB_MAX_SIDE))
     if image.getchannel("A").getextrema()[0] == 255:
         notes.append("⚠️ Pas de fond transparent : le boss apparaîtra dans un rectangle. "
                      "Dépose de préférence un PNG détouré.")
