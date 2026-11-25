@@ -1078,6 +1078,9 @@ INTERFACE WEB D'ADMINISTRATION
     calmes la nuit, part des meutes ; une zone peut être
     mise en pause ou avoir son propre délai ; jour et heure du boss de la
     semaine, heure de l'assaut quotidien et fermeture des inscriptions.
+    VEILLE : une zone dont personne n'a encore le rang ne fait apparaître
+    aucun monstre ; elle se réveille dans la minute qui suit la première
+    promotion (le cor de chasse et /admin spawn_encounter passent quand même).
 
 --------------------------------------------------------------------------------
 2.1 — GESTION DES JOUEURS

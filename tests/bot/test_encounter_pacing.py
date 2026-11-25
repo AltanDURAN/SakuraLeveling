@@ -2,6 +2,7 @@
 fuite, pause d'une zone, heures calmes (un monstre attendu passe quand même)."""
 
 import asyncio
+from types import SimpleNamespace
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -19,6 +20,8 @@ def cog(monkeypatch):
     c.active_encounters, c._zone_next_spawn = {}, {}
     c._zone_forced_mob, c._zone_forced_element, c._zone_forced_pack = {}, {}, {}
     c._zone_visitors = {}
+    c._awake_cache = {}
+    c.bot = SimpleNamespace(get_channel=lambda channel_id: None)   # serveur inconnu : éveillée
     spawned = []
 
     async def run(channel_id, mob, **kw):
@@ -86,3 +89,50 @@ def test_le_compte_a_rebours_reste_affiche_et_dit_quand_le_combat_part():
     enc.participants = {1: object(), 2: object()}
     text = EncounterCog._spawn_description(enc)
     assert f"Le combat se lance <t:{ts}:R> (à <t:{ts}:t>) — 2 combattants" in text
+
+
+
+# --- Veille des zones que personne n'a débloquées (25/11/2026) ---------------
+
+ROLES = {"F": 1, "E": 2, "D": 3, "C": 4, "B": 5, "A": 6, "S": 7, "SS": 8, "SSS": 9}
+
+
+def _guild(*members, chunked=True):
+    return SimpleNamespace(guild=SimpleNamespace(chunked=chunked, members=list(members)))
+
+
+def _member(*role_ids, bot=False):
+    return SimpleNamespace(bot=bot, roles=[SimpleNamespace(id=r) for r in role_ids])
+
+
+def test_une_zone_dort_tant_que_personne_n_a_son_rang():
+    channel = _guild(_member(1), _member(2), _member(9, bot=True))      # F, E, et un bot SSS
+    assert encounter_cog.zone_has_players(channel, "F", ROLES)
+    assert encounter_cog.zone_has_players(channel, "E", ROLES)
+    assert not encounter_cog.zone_has_players(channel, "D", ROLES)       # un bot ne compte pas
+    # Un rang au-dessus suffit : la zone D se réveille pour un joueur de rang C.
+    assert encounter_cog.zone_has_players(_guild(_member(4)), "D", ROLES)
+
+
+def test_dans_le_doute_la_zone_reste_eveillee():
+    assert encounter_cog.zone_has_players(None, "D", ROLES)                       # salon inconnu
+    assert encounter_cog.zone_has_players(_guild(chunked=False), "D", ROLES)      # membres pas chargés
+    assert encounter_cog.zone_has_players(_guild(), "", ROLES)                    # zone sans rang
+    assert encounter_cog.zone_has_players(_guild(), "D", {})                      # rôles non réglés
+
+
+def test_une_zone_en_veille_ne_fait_rien_apparaitre_sauf_un_monstre_force(cog, monkeypatch):
+    use(monkeypatch, Pacing())
+    monkeypatch.setattr(encounter_cog, "_zone_rank", lambda channel_id: "D")
+    monkeypatch.setattr(encounter_cog.settings.__class__, "rank_roles", property(lambda self: ROLES))
+    members = [_member(1)]
+    cog.bot = SimpleNamespace(get_channel=lambda channel_id: _guild(*members))
+    asyncio.run(cog._zone_tick(CHANNEL))
+    assert cog.spawned == []
+    cog._zone_forced_mob[CHANNEL] = "cor"                  # cor de chasse, test admin
+    asyncio.run(cog._zone_tick(CHANNEL))
+    assert cog.spawned == ["cor"]
+    members.append(_member(3))                             # une promotion au rang D
+    cog._awake_cache.clear()                               # (sinon : relu dans la minute)
+    asyncio.run(cog._zone_tick(CHANNEL))
+    assert cog.spawned == ["cor", "slime"]

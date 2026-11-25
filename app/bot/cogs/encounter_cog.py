@@ -72,6 +72,34 @@ BEGINNER_MEMORY = timedelta(minutes=15)
 
 _logger = logging.getLogger(__name__)
 
+#: Durée pendant laquelle l'état « veille / éveillée » d'une zone est gardé.
+_AWAKE_TTL = 60
+
+
+def _zone_rank(channel_id: int) -> str:
+    from app.infrastructure.encounters.farm_zone_loader import list_zones
+
+    for zone in list_zones():
+        if zone.get("channel_id") == channel_id:
+            return zone.get("rank") or ""
+    return ""
+
+
+def zone_has_players(channel, zone_rank: str, rank_roles: dict[str, int]) -> bool:
+    """Un membre (hors bots) porte-t-il le rang de la zone ou un rang
+    au-dessus ? Dans le doute (salon, serveur ou rôles inconnus, liste des
+    membres incomplète), la zone reste éveillée : la veille ne doit jamais
+    priver de monstres une zone ouverte."""
+    from app.bot.rank_roles import RANK_ORDER
+
+    guild = getattr(channel, "guild", None)
+    if guild is None or zone_rank not in RANK_ORDER or not getattr(guild, "chunked", True):
+        return True
+    wanted = {rank_roles[r] for r in RANK_ORDER[RANK_ORDER.index(zone_rank):] if rank_roles.get(r)}
+    if not wanted:
+        return True
+    return any(not m.bot and any(role.id in wanted for role in m.roles) for m in guild.members)
+
 from app.bot.rendering.fight_animation import MAX_UPLOAD_BYTES as _VIDEO_MAX_BYTES  # noqa: E402
 from app.domain.services.monitoring import kinds
 from app.infrastructure.monitoring.telemetry import count_now
@@ -107,6 +135,8 @@ class EncounterCog(commands.Cog):
         self._zone_forced_element: dict[int, str] = {}
         # Taille de meute forcée au prochain spawn (/admin spawn_encounter meute:).
         self._zone_forced_pack: dict[int, int] = {}
+        #: Veille des zones que personne n'a débloquées : (éveillée, lue à).
+        self._awake_cache: dict[int, tuple[bool, datetime]] = {}
         # Event de résolution anticipée (/admin start_encounter) par zone.
         self._zone_early_resolve: dict[int, asyncio.Event] = {}
         # Tâche asyncio de chaque zone.
@@ -513,8 +543,27 @@ class EncounterCog(commands.Cog):
         """Un monstre est attendu (cor de chasse, spawn forcé par l'admin)."""
         return channel_id in self._zone_forced_mob or channel_id in self._zone_forced_pack
 
+    def _zone_awake(self, channel_id: int) -> bool:
+        """Veille (25/11/2026, demande de l'auteur) : tant que PERSONNE n'a le
+        rang qui ouvre la zone, aucun monstre n'y apparaît — ni image, ni
+        message, ni fuite à compter. La zone se réveille au tick suivant la
+        première promotion. Résultat gardé `_AWAKE_TTL` secondes."""
+        now = datetime.now(UTC)
+        cached = self._awake_cache.get(channel_id)
+        if cached is not None and (now - cached[1]).total_seconds() < _AWAKE_TTL:
+            return cached[0]
+        awake = zone_has_players(self.bot.get_channel(channel_id), _zone_rank(channel_id), settings.rank_roles)
+        if cached is not None and cached[0] != awake:
+            _logger.info("Zone %s %s", channel_id, "réveillée" if awake else "en veille")
+        elif cached is None and not awake:
+            _logger.info("Zone %s en veille : personne n'a encore son rang", channel_id)
+        self._awake_cache[channel_id] = (awake, now)
+        return awake
+
     async def _zone_tick(self, channel_id: int) -> None:
         if channel_id in self.active_encounters:
+            return
+        if not self._forced_pending(channel_id) and not self._zone_awake(channel_id):
             return
 
         now = datetime.now(UTC)
