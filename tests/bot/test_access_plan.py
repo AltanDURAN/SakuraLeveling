@@ -39,7 +39,8 @@ def _ranks_from(rank: str) -> dict:
 
 def test_chaque_salon_a_son_public():
     assert AUDIENCES[WELCOME] == ap.PUBLIC and AUDIENCES[RULES] == ap.PUBLIC_NO_REACTIONS
-    assert AUDIENCES[TUTO] == AUDIENCES[TOWER] == AUDIENCES[ZONE_F] == ap.rank_audience("F")
+    assert AUDIENCES[TOWER] == AUDIENCES[ZONE_F] == ap.rank_audience("F")
+    assert AUDIENCES[TUTO] == ap.rank_audience("F", read_only=True)
     assert AUDIENCES[ZONE_E].label == "Rang E et plus" and AUDIENCES[ZONE_D].min_rank == "D"
     assert GENERAL not in AUDIENCES                     # tout le reste : aux aventuriers
     assert ROLES.allowed(ap.rank_audience("F")) == set(RANKS.values())
@@ -67,7 +68,19 @@ def test_tutoriel_tour_et_premiere_zone_au_rang_f():
     assert (tower.before, tower.after) == ("Rang F", "Rang F et plus")
     zone = _plan(ZONE_F, {GUILD: (0, VIEW), **_ranks_from("E")})       # le Rang F ne voyait pas sa zone
     assert (zone.before, zone.after) == ("Rang E et plus", "Rang F et plus")
-    assert _plan(TUTO, {}).after == "Rang F et plus"
+    assert _plan(TUTO, {}).after == "Rang F et plus, lecture seule"
+
+
+def test_le_tutoriel_se_lit_mais_ne_s_ecrit_pas():
+    # 25/11/2026 : le salon ne garde que le panneau de Hana ; chaque étape mène au bon salon.
+    current = {RANKS["E"]: (VIEW | ap.SEND_MESSAGES, 0)}
+    after = _applied(_plan(TUTO, current), current)
+    assert after[GUILD] == (0, VIEW | ap.WRITE)
+    assert all(after[RANKS[r]] == (VIEW, 0) for r in ap.RANK_ORDER)   # personne ne rouvre l'écriture
+    assert _plan(TUTO, after) is None
+    assert _plan(TOWER, {})                                           # la tour, elle, s'écrit
+    tower = _applied(_plan(TOWER, {}), {})
+    assert not tower[GUILD][1] & ap.SEND_MESSAGES
 
 
 def test_une_zone_deja_bonne_ne_bouge_pas():

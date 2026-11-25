@@ -29,6 +29,7 @@ from app.infrastructure.config.settings import settings
 from app.infrastructure.db.repositories.player_repository import PlayerRepository
 from app.infrastructure.db.session import get_db_session
 from app.shared.paths import NPCS_ASSETS_DIR
+from app.bot.private_interaction import run_command
 from app.bot.rules_gate import GatedView
 
 _logger = logging.getLogger("sakura.tutorial")
@@ -59,8 +60,10 @@ def step_embed(index: int, warning: str = "") -> discord.Embed:
     step = tsvc.STEPS[index]
     zone = _first_zone()
     embed = _embed(f"{step.emoji} {step.title}", step.story.format(zone=zone))
-    embed.add_field(name="🎯 À toi", value="\n".join(f"• {a.format(zone=zone)}" for a in step.actions),
-                    inline=False)
+    actions = [f"• {a.format(zone=zone)}" for a in step.actions]
+    if step.button:
+        actions.append(f"-# {tsvc.LATER}")
+    embed.add_field(name="🎯 À toi", value="\n".join(actions), inline=False)
     if step.check:
         embed.add_field(name="✅ Vérification",
                         value="Quand c'est fait, clique **C'est fait** : je vérifie. "
@@ -98,6 +101,18 @@ def adventure_embed(potions: int, skipped: bool) -> discord.Embed:
         lines.append(f"Si tu changes d'avis, **`/tuto`** reprend le tutoriel — et ses "
                      f"{tsvc.REWARD_QUANTITY} potions t'attendent à la fin.")
     return _embed("🚀 L'aventure commence", "\n\n".join(lines))
+
+
+def step_place(step: tsvc.TutorialStep, guild_id: int | None) -> tuple[str, str, str] | None:
+    """(libellé, emoji, lien) du salon où l'étape se joue, ou None."""
+    if not guild_id or not step.go:
+        return None
+    if step.go == "tour" and settings.tower_channel_id:
+        return "Aller à la Tour", "🗼", access.channel_url(guild_id, settings.tower_channel_id)
+    zone = access.first_zone() if step.go == "zone" else None
+    if zone:
+        return f"Aller dans : {zone['name']}", "⚔️", access.channel_url(guild_id, zone["channel_id"])
+    return None
 
 
 def adventure_view(guild_id: int | None) -> discord.ui.View | None:
@@ -140,10 +155,11 @@ async def _edit(interaction: discord.Interaction, embed: discord.Embed, view: di
 class TutorialView(ExpiringView):
     """Le tutoriel d'UN joueur (message éphémère)."""
 
-    def __init__(self, player_id: int, step: int | None = None) -> None:
+    def __init__(self, player_id: int, step: int | None = None, guild_id: int | None = None) -> None:
         super().__init__(timeout=1800)
         self.player_id = player_id
         self.step = step
+        self.guild_id = guild_id or settings.discord_guild_id
         self._build()
 
     def _button(self, label: str, style, callback, emoji: str | None = None, disabled: bool = False):
@@ -158,6 +174,15 @@ class TutorialView(ExpiringView):
             self._button("Passer et commencer l'aventure", discord.ButtonStyle.secondary, self._skip_all, "🚀")
             return
         step = tsvc.STEPS[self.step]
+        # Le salon du tutoriel est en lecture seule (25/11/2026) : l'action se lance
+        # d'ici, en privé, ou un lien mène au salon où elle se joue.
+        if step.button:
+            command, label, emoji = step.button
+            self._button(label, discord.ButtonStyle.primary, self._make_runner(command), emoji)
+        place = step_place(step, self.guild_id)
+        if place:
+            self.add_item(discord.ui.Button(label=place[0], emoji=place[1], url=place[2],
+                                            style=discord.ButtonStyle.link))
         self._button("Précédent", discord.ButtonStyle.secondary, self._previous, "◀️", disabled=self.step == 0)
         last = self.step == len(tsvc.STEPS) - 1
         if step.check:
@@ -167,6 +192,12 @@ class TutorialView(ExpiringView):
             self._button("Suivant", discord.ButtonStyle.primary, self._next, "▶️")
         if last:
             self._button("Commencer l'aventure", discord.ButtonStyle.success, self._finish, "🚀")
+
+    def _make_runner(self, command: str):
+        async def run(interaction: discord.Interaction) -> None:
+            if not await run_command(interaction, command):
+                await interaction.response.send_message(f"Tape **`/{command}`**.", ephemeral=True)
+        return run
 
     async def _show(self, interaction: discord.Interaction, step: int, warning: str = "") -> None:
         self.step = step
@@ -230,9 +261,9 @@ class TutorialView(ExpiringView):
 class ResumeView(TutorialView):
     """Retour au tutoriel : reprendre, recommencer, ou passer."""
 
-    def __init__(self, player_id: int, resume_at: int) -> None:
+    def __init__(self, player_id: int, resume_at: int, guild_id: int | None = None) -> None:
         self.resume_at = resume_at
-        super().__init__(player_id, None)
+        super().__init__(player_id, None, guild_id)
 
     def _build(self) -> None:
         if self.step is not None:
@@ -259,13 +290,14 @@ async def open_tutorial(interaction: discord.Interaction) -> None:
 
     player_id, current = await asyncio.to_thread(load)
     name = interaction.user.display_name
+    guild_id = getattr(interaction, "guild_id", None)
     if current.status == "termine":
-        view = ResumeView(player_id, 0)
+        view = ResumeView(player_id, 0, guild_id)
         await _send(interaction, intro_embed(name, done=True), view)
     elif current.step > 0:
-        await _send(interaction, intro_embed(name, resume_at=current.step), ResumeView(player_id, current.step))
+        await _send(interaction, intro_embed(name, resume_at=current.step), ResumeView(player_id, current.step, guild_id))
     else:
-        await _send(interaction, intro_embed(name), TutorialView(player_id))
+        await _send(interaction, intro_embed(name), TutorialView(player_id, guild_id=guild_id))
 
 
 class TutorialPanelView(GatedView):
@@ -287,7 +319,7 @@ def panel_embed() -> discord.Embed:
                      "jeu en quelques minutes : combats, butin, arbre, éléments, ville, rangs…\n\n"
                      f"Va jusqu'au bout et elle t'offre **{tsvc.REWARD_QUANTITY} potions du Grand Cerisier** "
                      "(100 % des PV). Pressé ? Tu peux passer le tutoriel et commencer l'aventure tout de suite.\n\n"
-                     "Clique ci-dessous, ou tape **`/tuto`**."),
+                     "Clique ci-dessous : tout se passe en privé, et chaque étape te mène au bon salon."),
         color=_COLOR)
 
 
@@ -315,10 +347,13 @@ class TutorialCog(commands.Cog):
         if channel is None:
             return
         try:
+            panel = panel_embed()
             async for message in channel.history(limit=30):
                 if message.author.id == self.bot.user.id and any(e.title == PANEL_TITLE for e in message.embeds):
+                    if message.embeds[0].description != panel.description:     # texte changé : réécrit
+                        await message.edit(embed=panel, view=TutorialPanelView())
                     return
-            await channel.send(embed=panel_embed(), view=TutorialPanelView())
+            await channel.send(embed=panel, view=TutorialPanelView())
         except discord.HTTPException:
             _logger.warning("panneau du tutoriel impossible dans %s", settings.tutorial_channel_id, exc_info=True)
 

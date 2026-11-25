@@ -28,6 +28,15 @@ class TutorialStep:
     actions: tuple[str, ...]    # ce que le joueur fait ({zone} = salon de la 1re zone)
     check: str = ""             # vérification (cf. use_cases/tutorial.CHECKS), "" = lecture
     hint: str = ""              # si la vérification échoue
+    #: Bouton qui lance la commande ICI, en privé : (commande, libellé, emoji).
+    #: Le salon du tutoriel est en lecture seule (25/11/2026) : on n'y tape rien.
+    button: tuple[str, str, str] | None = None
+    #: Salon où l'étape se joue (bouton-lien) : "tour" ou "zone" ; "" = ici.
+    go: str = ""
+
+
+#: Ce qu'on dit d'une commande qu'on lance d'un bouton : où la taper plus tard.
+LATER = "Plus tard, tu la taperas toi-même dans le salon général."
 
 
 STEPS: tuple[TutorialStep, ...] = (
@@ -37,26 +46,30 @@ STEPS: tuple[TutorialStep, ...] = (
         "gardienne du Grand Cerisier. Autour de nous, des monstres sortent des terres sauvages : "
         "il nous faut des aventuriers. Ton nom est désormais inscrit dans le **registre** de la "
         "guilde, au **Rang F**, le premier. Chaque rang t'ouvrira une nouvelle région.",
-        ("Regarde ta fiche d'aventurier : **`/profil`** (niveau, rang, puissance, stats).",
+        ("Regarde ta fiche d'aventurier : clique **🪪 Mon profil** ci-dessous (la commande **`/profil`**).",
          "Ta puissance (PWR) résume ta force : c'est elle qui ouvrira les épreuves de rang."),
+        button=("profil", "Mon profil", "🪪"),
     ),
     TutorialStep(
         "daily", "📜", "La bourse du voyageur",
         "Un aventurier sans le sou ne va pas loin. Chaque jour, la guilde verse une **solde** à "
         "ceux qui passent la voir. Reviens tous les jours : ta **série** grossit la récompense… "
         "mais chaque jour manqué la coupe en deux !",
-        ("Réclame ta solde : **`/daily`**.",),
-        check="daily", hint="Je ne vois pas encore ta solde du jour : tape `/daily` puis reviens ici.",
+        ("Réclame ta solde : clique **📜 Réclamer ma solde** ci-dessous (la commande **`/daily`**).",),
+        check="daily", hint="Je ne vois pas encore ta solde du jour : clique **📜 Réclamer ma solde**.",
+        button=("daily", "Réclamer ma solde", "📜"),
     ),
     TutorialStep(
         "tour", "🗼", "Le premier sang",
         "Assez parlé ! Avant les terres sauvages, fais-toi la main à la **Tour** : cent étages à "
         "gravir seul, à PV pleins, quand tu veux. Le premier est à ta portée, et il rapporte de "
         "l'or et de l'XP dès ta première victoire.",
-        ("Tape **`/tour`**, puis clique **Tenter l'étage 1**.",
+        ("Va dans le salon de la **Tour** (bouton ci-dessous), tape **`/tour`**, puis clique "
+         "**Tenter l'étage 1**. Reviens ici ensuite.",
          "Une victoire garde ton ticket : tu peux enchaîner. Une défaite ne coûte qu'un ticket, "
          "jamais un étage."),
-        check="tour", hint="Je ne t'ai pas encore vu à la Tour : `/tour`, puis **Tenter l'étage 1**.",
+        check="tour", hint="Je ne t'ai pas encore vu à la Tour : dans son salon, `/tour`, puis **Tenter l'étage 1**.",
+        go="tour",
     ),
     TutorialStep(
         "stats", "💪", "Forger son corps",
@@ -64,9 +77,10 @@ STEPS: tuple[TutorialStep, ...] = (
         "**+2 attaque**, **+2 défense** ou **+50 PV**. L'équipement et l'arbre ajoutent ensuite un "
         "POURCENTAGE de ce socle : plus il est solide, plus tout le reste compte.",
         ("Ta victoire à la Tour t'a fait gagner de l'XP. Ouvre ta feuille de personnage : "
-         "**`/stats`**, et place ton point si tu en as un.",
+         "**💪 Ma feuille** ci-dessous (la commande **`/stats`**), et place ton point si tu en as un.",
          "Pas encore de point ? Tu en gagneras un au prochain niveau : passe à la suite."),
-        check="stats", hint="Tu as encore un point à placer : `/stats`, puis un des trois boutons.",
+        check="stats", hint="Tu as encore un point à placer : **💪 Ma feuille**, puis un des trois boutons.",
+        button=("stats", "Ma feuille", "💪"),
     ),
     TutorialStep(
         "combat", "⚔️", "La chasse en groupe",
@@ -74,7 +88,8 @@ STEPS: tuple[TutorialStep, ...] = (
         "**⚔️ Combattre** pour rejoindre le groupe, puis sur **🚀 Lancer** quand tout le monde est "
         "prêt (sinon le combat part tout seul à la fin du compte à rebours). Je te mentionnerai "
         "pour que tu le regardes en direct : il se joue en vidéo, ta préparation fait tout.",
-        ("Va dans {zone} et clique **⚔️ Combattre** sur le monstre.",
+        ("Va dans {zone} (bouton ci-dessous) et clique **⚔️ Combattre** sur le monstre. "
+         "Reviens ici une fois le combat joué.",
          "Si je te préviens qu'il est **très dangereux**, clique **Quitter** et attends le "
          "suivant : les slimes sont à ta portée, les gobelins plus tard.",
          "Jusqu'au niveau 10, ton XP de combat est **doublée**. À plusieurs, chacun touche toute "
@@ -82,6 +97,7 @@ STEPS: tuple[TutorialStep, ...] = (
          "Tes PV ne remontent qu'ENTRE les combats (régénération), pas pendant. À 0 PV, on ne "
          "peut pas rejoindre : attends ou bois une potion (`/utiliser`)."),
         check="combat", hint="Je n'ai pas encore vu ton premier combat de zone. Le monstre t'attend dans {zone} !",
+        go="zone",
     ),
     TutorialStep(
         "butin", "🎒", "Le butin du chasseur",
@@ -89,9 +105,10 @@ STEPS: tuple[TutorialStep, ...] = (
         "de **commun** à **mythique**. Il lâche aussi les **matériaux** de sa famille. "
         "Avec deux copies de la même pièce et de la même rareté, **Borak le forgeron** les fusionne "
         "en une rareté supérieure. Dès l'épique, chaque pièce réveille son **passif**.",
-        ("Ton sac : **`/inventaire`** · tes pièces : **`/equipement_liste`**.",
+        ("Ton sac : **🎒 Mon sac** ci-dessous (**`/inventaire`**) · tes pièces : **`/equipement_liste`**.",
          "Équipe une pièce : **`/equiper`** (elle se place toute seule) · ta tenue : **`/equipement`**.",
          "Fusion chez **`/forgeron`** · bonus de panoplie : **`/panoplie`**."),
+        button=("inventaire", "Mon sac", "🎒"),
     ),
     TutorialStep(
         "arbre", "🌳", "L'arbre des voies",
@@ -99,9 +116,10 @@ STEPS: tuple[TutorialStep, ...] = (
         "**Guerrier** (dégâts), **Gardien** (encaisser, protéger) et **Clerc** (soigner). Plus "
         "loin, chacun choisit **une** spécialisation : Assassin, Rempart ou Soigneur. "
         "Un groupe équilibré — un qui frappe, un qui encaisse, un qui soigne — vient à bout de tout.",
-        ("Ouvre ton arbre : **`/arbre`** (Investir, ou la vue web pour tout voir).",
+        ("Ouvre ton arbre : **🌳 Mon arbre** ci-dessous (**`/arbre`** : Investir, ou la vue web pour tout voir).",
          "Choisis comment ton soigneur vise : **`/tactique`**.",
          "Un reset gratuit par semaine : ne crains pas d'essayer."),
+        button=("arbre", "Mon arbre", "🌳"),
     ),
     TutorialStep(
         "elements", "✨", "Les huit éléments",
@@ -110,8 +128,10 @@ STEPS: tuple[TutorialStep, ...] = (
         "**essences**, qui montent ton affinité. Mais chacun naît avec des **talents** cachés… "
         "Ma vieille amie **Ysaline** sait les lire. La première lecture est offerte !",
         ("Tes affinités : **`/affinites`**.",
-         "Va voir la voyante : **`/voyante`**, et fais lire un talent (le premier est gratuit)."),
-        check="voyante", hint="Ysaline n'a encore rien lu pour toi : `/voyante`, choisis un élément.",
+         "Va voir la voyante : **🔮 Ysaline** ci-dessous (**`/voyante`**), et fais lire un talent "
+         "(le premier est gratuit)."),
+        check="voyante", hint="Ysaline n'a encore rien lu pour toi : **🔮 Ysaline**, choisis un élément.",
+        button=("voyante", "Ysaline", "🔮"),
     ),
     TutorialStep(
         "quetes", "📋", "Contrats et défis",
@@ -119,8 +139,9 @@ STEPS: tuple[TutorialStep, ...] = (
         "semaine. Il y a aussi les **défis** de rôle — DPS, Tank, Soutien — où tout le serveur se "
         "mesure (ton premier défi de la journée rapporte un peu d'or), et ton record à la **Tour** "
         "rapporte une récompense chaque jour.",
-        ("Tes quêtes : **`/quetes`** et **`/quetes_hebdo`**.",
+        ("Tes quêtes : **📋 Mes quêtes** ci-dessous (**`/quetes`**) et **`/quetes_hebdo`**.",
          "Les défis du jour : **`/defi`** · la tour : **`/tour`** · les classements : **`/classement`**."),
+        button=("quetes", "Mes quêtes", "📋"),
     ),
     TutorialStep(
         "ville", "🏘️", "Les gens de la ville",

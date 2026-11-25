@@ -47,6 +47,7 @@ class Audience:
     kind: str                 # "public" (lecture seule), "rank" ou "adventurer"
     min_rank: str = "F"       # "rank" : ce rang et les suivants
     reactions: bool = True    # "public" : réactions permises
+    read_only: bool = False   # "rank" : on y lit, on n'y écrit pas (le tutoriel)
 
     @property
     def label(self) -> str:
@@ -54,7 +55,7 @@ class Audience:
             return "tout le monde, lecture seule"
         if self.kind == "adventurer":
             return "aventuriers"
-        return f"Rang {self.min_rank} et plus"
+        return f"Rang {self.min_rank} et plus" + (", lecture seule" if self.read_only else "")
 
 
 PUBLIC = Audience("public")
@@ -62,8 +63,8 @@ PUBLIC_NO_REACTIONS = Audience("public", reactions=False)
 ADVENTURERS = Audience("adventurer")
 
 
-def rank_audience(rank: str) -> Audience:
-    return Audience("rank", min_rank=rank if rank in RANK_ORDER else "F")
+def rank_audience(rank: str, *, read_only: bool = False) -> Audience:
+    return Audience("rank", min_rank=rank if rank in RANK_ORDER else "F", read_only=read_only)
 
 
 @dataclass(frozen=True)
@@ -98,9 +99,10 @@ def channel_audiences(*, welcome: int, rules: int, tutorial: int, tower: int,
     for channel_id, rank in zones:
         if channel_id:
             out[channel_id] = rank_audience(rank)
-    for channel_id in (tutorial, tower):            # le tutoriel s'y joue
-        if channel_id:
-            out[channel_id] = rank_audience("F")
+    if tower:
+        out[tower] = rank_audience("F")
+    if tutorial:                                    # le panneau de Hana seul (25/11/2026) :
+        out[tutorial] = rank_audience("F", read_only=True)   # chaque étape mène au bon salon
     if welcome:
         out[welcome] = PUBLIC                       # on y accueille d'une réaction
     if rules:
@@ -127,11 +129,12 @@ def wanted(audience: Audience, roles: Roles, current: dict[int, Overwrite]) -> d
         for role in roles.managed:                  # aucun rôle ne rouvre l'écriture
             out[role] = _set(now(role), clear=VIEW_CHANNEL | WRITE | ADD_REACTIONS)
         return out
-    out[roles.everyone] = _set(now(roles.everyone), deny=VIEW_CHANNEL)
+    write = WRITE if audience.read_only else 0      # lecture seule : aucun rôle ne rouvre l'écriture
+    out[roles.everyone] = _set(now(roles.everyone), deny=VIEW_CHANNEL | write)
     allowed = roles.allowed(audience)
     for role in roles.managed:
-        out[role] = (_set(now(role), allow=VIEW_CHANNEL) if role in allowed
-                     else _set(now(role), clear=VIEW_CHANNEL))
+        out[role] = (_set(now(role), allow=VIEW_CHANNEL, clear=write) if role in allowed
+                     else _set(now(role), clear=VIEW_CHANNEL | write))
     return out
 
 

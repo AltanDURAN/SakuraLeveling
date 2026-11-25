@@ -650,6 +650,11 @@ LE MANA DES COMPÉTENCES 💧
     la voyante…) ; tu reprends où tu t'étais arrêté. Au bout : 3 Potions du Grand Cerisier,
     qui rendent 100 % des PV (une seule fois). Fini OU passé, le tutoriel te
     donne le rôle Aventurier, qui ouvre tout le reste du serveur.
+    Le salon tutoriel se LIT mais ne s'écrit pas : tout se fait en privé.
+    Chaque étape a son bouton (📜 Réclamer ma solde, 💪 Ma feuille, 🔮
+    Ysaline…) qui lance la commande pour toi, ou un lien vers le salon où
+    elle se joue (la Tour, la Clairière). Plus tard, tu taperas ces
+    commandes toi-même dans le salon général.
 
 /lune
     LE CIEL DE PARIS — le vrai : phase de la lune, prochains événements,
@@ -1112,7 +1117,8 @@ INTERFACE WEB D'ADMINISTRATION
     Les permissions des salons selon le parcours d'arrivée : l'aperçu d'abord
     (pour chaque salon, qui le voit avant → après), puis un bouton
     « Appliquer ». Accueil et règlement : tout le monde, en lecture seule ;
-    tutoriel, tour et Clairière : Rang F et plus ; chaque zone : son rang et
+    tutoriel : Rang F et plus, en lecture seule ; tour et Clairière : Rang F
+    et plus ; chaque zone : son rang et
     plus ; tout le reste (catégories comprises) : les aventuriers. Seuls
     @everyone, les rangs et Aventurier sont touchés ; un salon d'équipe (que
     ni @everyone ni ces rôles ne voient) ne l'est jamais. À relancer après

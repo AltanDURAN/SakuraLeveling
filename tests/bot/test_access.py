@@ -319,7 +319,7 @@ def test_le_plan_puis_son_application(states, monkeypatch):
     assert titles == ["📁 Accueil", "#bienvenue", "#tutoriel", "📁 Sakura", "#général", "🔊 vocal"]
     assert plan.private == ["staff"]                                   # jamais touché
     assert [c.after for c in plan.changes][:3] == ["aventuriers", "tout le monde, lecture seule",
-                                                   "Rang F et plus"]
+                                                   "Rang F et plus, lecture seule"]
 
     guild = Guild()
     done, failed = asyncio.run(access.apply(guild, channels, plan.changes))
@@ -359,4 +359,4 @@ def test_une_categorie_recopiee_dans_ses_salons_est_rattrapee(states, monkeypatc
     assert asyncio.run(access.settle(Guild(), fetch_channels)) == (3, [])
     assert access.plan(GUILD, channels).changes == []
     assert ADV not in welcome._overwrites and ADV not in tutorial._overwrites
-    assert tutorial._overwrites[GUILD] == (0, ap.VIEW_CHANNEL)
+    assert tutorial._overwrites[GUILD] == (0, ap.VIEW_CHANNEL | ap.WRITE)   # lu, pas écrit
