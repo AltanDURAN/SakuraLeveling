@@ -3,7 +3,7 @@
     "code": "slime_titan",
     "name": "Titan Visqueux",
     "description": "Un slime ancestral devenu colosse, sa masse étouffante absorbe les coups les plus faibles et se régénère lentement.",
-    "image_name": "slime.png",
+    "image_name": "boss_slime_titan.png",
     "tier": "intro",
     "level": 20,
     "spawn_weight": 100,
