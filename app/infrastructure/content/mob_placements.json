@@ -143,9 +143,9 @@
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.36,
-        "offset_x": -0.08,
-        "offset_y": -0.13,
+        "scale": 0.44,
+        "offset_x": -0.04,
+        "offset_y": -0.06,
         "shadow": true
       },
       "lumiere": {
@@ -333,6 +333,12 @@
         "offset_x": -0.06,
         "offset_y": -0.3,
         "shadow": false
+      },
+      "terre": {
+        "scale": 0.4,
+        "offset_x": -0.06,
+        "offset_y": -0.3,
+        "shadow": true
       }
     },
     "liche_maudite": {
@@ -381,6 +387,12 @@
         "shadow": true
       },
       "vent": {
+        "scale": 0.43,
+        "offset_x": -0.07,
+        "offset_y": -0.05,
+        "shadow": true
+      },
+      "terre": {
         "scale": 0.43,
         "offset_x": -0.07,
         "offset_y": -0.05,
@@ -473,19 +485,19 @@
     },
     "ange_dechu": {
       "terre": {
-        "scale": 0.6,
+        "scale": 0.56,
         "offset_x": 0.01,
         "offset_y": -0.07,
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.6,
+        "scale": 0.56,
         "offset_x": 0.01,
         "offset_y": -0.07,
         "shadow": true
       },
       "feu": {
-        "scale": 0.6,
+        "scale": 0.56,
         "offset_x": 0.01,
         "offset_y": -0.07,
         "shadow": true
@@ -493,19 +505,19 @@
     },
     "archidemon": {
       "terre": {
-        "scale": 0.65,
+        "scale": 0.6,
         "offset_x": 0.0,
         "offset_y": 0.03,
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.65,
+        "scale": 0.6,
         "offset_x": 0.0,
         "offset_y": 0.03,
         "shadow": true
       },
       "feu": {
-        "scale": 0.65,
+        "scale": 0.6,
         "offset_x": 0.0,
         "offset_y": 0.03,
         "shadow": true
@@ -513,7 +525,19 @@
     },
     "cerbere": {
       "terre": {
-        "scale": 0.6,
+        "scale": 0.42,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "feu": {
+        "scale": 0.42,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.42,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
@@ -521,19 +545,19 @@
     },
     "diablotin": {
       "feu": {
-        "scale": 0.56,
+        "scale": 0.44,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.56,
+        "scale": 0.44,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
       },
       "terre": {
-        "scale": 0.56,
+        "scale": 0.44,
         "offset_x": 0.0,
         "offset_y": 0.0,
         "shadow": true
@@ -541,19 +565,19 @@
     },
     "demon_cornu": {
       "feu": {
-        "scale": 0.6,
+        "scale": 0.52,
         "offset_x": -0.04,
         "offset_y": 0.0,
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.6,
+        "scale": 0.52,
         "offset_x": -0.04,
         "offset_y": 0.0,
         "shadow": true
       },
       "terre": {
-        "scale": 0.6,
+        "scale": 0.52,
         "offset_x": -0.04,
         "offset_y": 0.0,
         "shadow": true
@@ -561,19 +585,19 @@
     },
     "succube": {
       "feu": {
-        "scale": 0.56,
+        "scale": 0.46,
         "offset_x": 0.0,
         "offset_y": -0.06,
         "shadow": true
       },
       "tenebre": {
-        "scale": 0.56,
+        "scale": 0.46,
         "offset_x": 0.0,
         "offset_y": -0.06,
         "shadow": true
       },
       "terre": {
-        "scale": 0.56,
+        "scale": 0.46,
         "offset_x": 0.0,
         "offset_y": -0.06,
         "shadow": true
@@ -729,6 +753,26 @@
         "shadow": true
       },
       "vent": {
+        "scale": 0.56,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      }
+    },
+    "ogre_demoniaque": {
+      "feu": {
+        "scale": 0.56,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "tenebre": {
+        "scale": 0.56,
+        "offset_x": 0.0,
+        "offset_y": 0.0,
+        "shadow": true
+      },
+      "terre": {
         "scale": 0.56,
         "offset_x": 0.0,
         "offset_y": 0.0,

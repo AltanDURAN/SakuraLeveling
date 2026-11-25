@@ -40,7 +40,7 @@ ELEMENT_COLORS: dict[str, tuple[int, int, int]] = {
 #   - lumiere : hautes lumières poussées vers le blanc → plus brillant
 #   - terre   : hautes lumières retenues → marron riche, pas beige délavé
 _TINT_OVERRIDES: dict[str, dict] = {
-    "tenebre": {"mid": (48, 45, 58), "dark_f": 0.11, "light_f": 0.42},
+    "tenebre": {"mid": (48, 45, 58), "dark_f": 0.11, "light_f": 0.58},
     "lumiere": {"light_f": 0.90},
     "terre":   {"light_f": 0.60},
 }

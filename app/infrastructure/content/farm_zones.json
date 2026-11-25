@@ -127,6 +127,17 @@
             "w": 1.0
           },
           "ground_y": 0.875
+        },
+        {
+          "element": "terre",
+          "time": "always",
+          "background": "cimetiere_abandonne_vent.png",
+          "crop": {
+            "x": 0.0,
+            "y": 0.0,
+            "w": 1.0
+          },
+          "ground_y": 0.875
         }
       ],
       "rank": "E"
