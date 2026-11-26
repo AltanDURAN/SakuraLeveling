@@ -112,8 +112,8 @@ STEPS: tuple[TutorialStep, ...] = (
     ),
     TutorialStep(
         "arbre", "🌳", "L'arbre des voies",
-        "À chaque niveau, tu gagnes aussi des **points d'arbre**. Trois voies t'attendent : "
-        "**Guerrier** (dégâts), **Gardien** (encaisser, protéger) et **Clerc** (soigner). Plus "
+        "À chaque niveau, tu gagnes aussi **un point d'arbre**. Trois voies t'attendent : "
+        "**Guerrier** (dégâts), **Protecteur** (encaisser, protéger) et **Support** (soigner). Plus "
         "loin, chacun choisit **une** spécialisation : Assassin, Rempart ou Soigneur. "
         "Un groupe équilibré — un qui frappe, un qui encaisse, un qui soigne — vient à bout de tout.",
         ("Ouvre ton arbre : **🌳 Mon arbre** ci-dessous (**`/arbre`** : Investir, ou la vue web pour tout voir).",

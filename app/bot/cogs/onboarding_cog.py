@@ -99,7 +99,7 @@ def build_welcome_embed(display_name: str | None = None) -> discord.Embed:
         value=(
             f"Un boss apparaît chaque semaine. **Inscris-toi** (🤝) avant **{close}**, "
             f"le combat collectif se lance **automatiquement à {fight}**. Récompenses "
-            "selon ta contribution, **butin exclusif** s'il tombe avant de repartir !"
+            "selon ta contribution, et **butin exclusif** si vous l'abattez avant qu'il reparte !"
         ),
         inline=False,
     )

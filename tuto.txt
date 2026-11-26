@@ -200,7 +200,6 @@ LA PROGRESSION
         🏛️ Pilier de la taverne (série de 100) : +2 % d'or et d'XP.
         🏹 Chasseur Légendaire (50 victoires sur un monstre précis) :
             +5 % de chances de butin sur ce monstre.
-        ⚔️ Tueur de boss : avoir participé à la victoire contre un world boss.
 
 --------------------------------------------------------------------------------
 1.3 — L'ARBRE DE COMPÉTENCES
@@ -231,8 +230,8 @@ LA PROGRESSION
           TOUTES les cases reliées au maximum (c'est le cas des classes, aux
           jonctions de deux voies). Certaines cases n'en demandent qu'une.
         • Chaque niveau d'une case a son propre coût en points : 3 points
-          pour une case de combat, 2 pour une classe, 1 pour l'entrée d'une
-          voie. L'arbre de combat coûte environ 200 points et tu en gagnes 99
+          pour une case de combat ou une classe de base, 2 pour une classe de
+          jonction ou une spécialisation, 1 pour l'entrée d'une voie. L'arbre de combat coûte environ 200 points et tu en gagnes 99
           jusqu'au niveau 100 : tu n'en auras que la MOITIÉ, il faut choisir.
 
     TROIS NIVEAUX DE CLASSES
@@ -455,15 +454,14 @@ PANOPLIES
 --------------------------------------------------------------------------------
 
 COMBATS DE GROUPE (automatiques)
-    Un monstre apparaît dans chaque salon de zone ; le suivant revient une à
-    deux minutes après la fin du combat (le rythme est réglé par les admins,
-    les nuits peuvent être calmes). Clique « Combattre » : le compte à
-    rebours sous le monstre dit quand le combat part, avec l'heure (« dans
-    2 minutes (à 21:05) » ; 2 minutes par défaut, 5 pour une élite). Le
+    Un monstre apparaît dans chaque salon de zone ; le suivant revient
+    quelques minutes après la fin du combat (le rythme est réglé par les
+    admins). Clique « Combattre » : le compte à rebours sous le monstre dit
+    quand le combat part, avec l'heure (« dans 5 minutes (à 21:05) »). Le
     groupe est prêt ? Un combattant clique « Lancer » et le combat part
-    tout de suite. Le bouton reste grisé quelques instants pour laisser
-    aux autres le temps de venir (réglable par l'admin), puis s'allume. Au lancement, le bot MENTIONNE tous les
-    combattants : tu peux venir regarder le combat en direct.
+    tout de suite. Le bouton reste grisé un moment pour laisser aux autres
+    le temps de venir, puis s'allume. Au lancement, le bot MENTIONNE tous
+    les combattants : tu peux venir regarder le combat en direct.
     Tes PV sont relus au lancement : la potion bue pendant l'attente et la
     régénération comptent. On ne s'inscrit qu'à un combat à la fois.
     Sans combattant, le monstre s'enfuit : son message le dit (« … a pris la
@@ -526,7 +524,7 @@ QUI LE MONSTRE VISE
     niveau. Le bot te prévient quand tu en rejoins une.
 
 MEUTES 🐺
-    De temps en temps (environ 1 apparition sur 10), ce n'est pas un monstre
+    De temps en temps (environ 1 apparition sur 7), ce n'est pas un monstre
     mais une MEUTE de 2 ou 3 monstres de la zone qui surgit. Chacun est un
     peu moins solide qu'un monstre seul (PV et attaque ×0,87 à deux, ×0,73 à
     trois), mais ils frappent tous. Tu frappes toujours le plus abîmé ; les
@@ -736,10 +734,10 @@ WORLD BOSS — /boss moi, /boss historique, /bestiaire boss
     de la tour dans le salon de la tour solo.)
     Un boss apparaît chaque semaine, choisi selon le niveau des joueurs
     actifs (le premier arrive quand quatre d'entre eux ont atteint le niveau
-    15). Inscris-toi avec 🤝 avant la fermeture des inscriptions : le combat
-    collectif se lance automatiquement chaque jour à l'heure de l'assaut (21 h
-    et 20 h 50 par défaut, heure de Paris — les heures exactes sont sur le
-    message du boss). Les récompenses suivent ta part de l'effort (paliers de
+    15). Inscris-toi avec 🤝 Rejoindre : le combat collectif se lance tout
+    seul chaque soir, à l'heure de l'assaut (21 h par défaut, heure de
+    Paris ; les inscriptions ferment 10 minutes avant — les heures exactes
+    sont sur le message du boss). Les récompenses suivent ta part de l'effort (paliers de
     contribution), avec du butin exclusif et le titre de MVP. Après le
     dernier assaut de la semaine, un boss encore debout repart : chacun
     touche sa part selon les PV qu'on lui a retirés, sans butin ni titre.
@@ -1074,13 +1072,19 @@ INTERFACE WEB D'ADMINISTRATION
     WORLD BOSS (Monde › World Bosses, sans redémarrage) : chaque boss tel
     que les joueurs le voient — une image de la vidéo de l'assaut et la
     bannière du raid, dessinées par le bot. On y GLISSE son image (fond
-    blanc retiré tout seul ; elle sert aussi au bestiaire et à sa carte) et
+    blanc retiré tout seul, mise en noir et blanc comme tous les monstres ;
+    elle sert aussi au bestiaire et à sa carte) et
     son ARÈNE (le décor de la vidéo, en portrait 4:5), ou la salle commune
     des boss qui n'ont pas la leur. Plusieurs images d'un coup : elles se
     rangent d'après leur nom (« slime_titan.png », « arene_slime_titan.png »).
     L'élément d'un boss change à chaque apparition : « Aperçu en 💧🔥… »
-    montre sa teinte dans chacun (une image en noir et blanc se teinte le
-    mieux).
+    montre sa teinte dans chacun.
+    IMAGES DES MONSTRES ET DES BOSS : toute image déposée est rangée en noir
+    et blanc, avec la même plage de tons pour tous (traits noirs, aplats
+    clairs) ; le jeu la teinte ensuite selon l'élément, avec la même palette
+    pour tous les monstres d'un élément. Les originaux restent dans
+    l'historique git. Une image propre de CARTE (Objets › Cartes) n'est
+    jamais retouchée.
     RYTHME (Monde › Rythme, sans redémarrage) : délai entre deux monstres
     (fixe ou tiré dans une plage), délai après une fuite, temps pour
     rejoindre (et pour une élite), délai avant le bouton Lancer, heures
