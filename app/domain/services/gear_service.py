@@ -69,7 +69,7 @@ DROP_RATES_PCT: dict[str, float] = {
     "epic": 0.2, "legendary": 0.03, "mythic": 0.004,
 }
 
-#: Les bonus de chance de drop (arbre « Chance Drop », titres Chasseur
+#: Les bonus de chance de drop (arbre « Chance de butin », titres Chasseur
 #: légendaire) comptent pour l'équipement, mais BRIDÉS : plafonnés à ×1,5 et
 #: seulement jusqu'à l'épique. Légendaire et mythique gardent leurs taux (seul
 #: le passif Trouvaille les touche) — simulé : un joueur qui investit gagne ~30 %

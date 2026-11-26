@@ -272,9 +272,9 @@ LA PROGRESSION
         Vaillant     50 % de chances, à chaque attaque, de provoquer
                      l'ennemi : sa prochaine attaque te vise (le dernier
                      provocateur l'emporte)
-        Buff         tes soins donnent +10 % d'attaque et de défense pour le
+        Bénédiction  tes soins donnent +10 % d'attaque et de défense pour le
                      combat, à la cible et à toi (une seule fois)
-        AOE          25 % des dégâts aux ennemis voisins de la cible
+        Frappe large 25 % des dégâts aux ennemis voisins de la cible
                      (meutes, tour, gardes du world boss)
         Les réductions de dégâts de plusieurs cases s'additionnent.
 
@@ -528,7 +528,7 @@ MEUTES 🐺
     mais une MEUTE de 2 ou 3 monstres de la zone qui surgit. Chacun est un
     peu moins solide qu'un monstre seul (PV et attaque ×0,87 à deux, ×0,73 à
     trois), mais ils frappent tous. Tu frappes toujours le plus abîmé ; les
-    dégâts de zone (case AOE de l'arbre) touchent les voisins de ta cible.
+    dégâts de zone (case Frappe large de l'arbre) touchent les voisins de ta cible.
     Une meute rapporte l'XP et l'or de tous ses monstres (réduits comme
     leurs stats, +25 %), chaque monstre compte comme une victoire (quêtes,
     titres), et le butin de chacun tombe avec la même chance réduite.
@@ -636,7 +636,7 @@ LE MANA DES COMPÉTENCES 💧
     • Récompense du jour (bouton 🎁) : 10 or par étage de ton record et des
       matériaux de fusion — elle grandit avec ton record, pas avec ton
       niveau.
-    • Les dégâts de zone (case AOE de l'arbre) touchent les voisins de ta
+    • Les dégâts de zone (case Frappe large de l'arbre) touchent les voisins de ta
       cible ; tu frappes toujours l'ennemi le plus abîmé.
     Classement : /classement tour.
 

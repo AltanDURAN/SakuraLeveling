@@ -339,7 +339,7 @@
       }
     },
     "axe_drop": {
-      "name": "Chance Drop",
+      "name": "Chance de butin",
       "description": "",
       "icon": "🍀",
       "shape": "carre_passif",
@@ -1097,7 +1097,7 @@
       }
     },
     "passif_14": {
-      "name": "AOE",
+      "name": "Frappe large",
       "description": "Les attaques infligent aussi des dégâts aux ennemis voisins de la cible : 25 % des dégâts de l'attaque.",
       "icon": "🔮",
       "shape": "carre_passif",
@@ -2034,7 +2034,7 @@
       }
     },
     "passif_29": {
-      "name": "Buff",
+      "name": "Bénédiction",
       "description": "Les soins accordent également un bonus pour le combat de 10 % d'attaque et 10 % de défense sur la cible du soin et sur toi-même, non cumulable.",
       "icon": "💊",
       "shape": "carre_passif",
@@ -2113,7 +2113,7 @@
       }
     },
     "axe_drop_1": {
-      "name": "Chance Drop",
+      "name": "Chance de butin",
       "description": "",
       "icon": "🍀",
       "shape": "carre_passif",
@@ -2225,7 +2225,7 @@
       }
     },
     "axe_drop_2": {
-      "name": "Chance Drop",
+      "name": "Chance de butin",
       "description": "",
       "icon": "🍀",
       "shape": "carre_passif",
