@@ -129,9 +129,9 @@ def prepare_item_image(image: Image.Image) -> Image.Image:
 #: Plage de noir et blanc commune de TOUS les dessins de monstres et de boss
 #: (26/11/2026, demande de l'auteur : un rendu en noir et blanc similaire,
 #: sur le principe de l'homogénéisation des zones) : 10 % des pixels (les
-#: traits) sous 25, la moitié sous 175, 90 % sous 225, le blanc pur à 250.
-MOB_TONE_TARGET: tuple[tuple[float, int], ...] = ((0.10, 25), (0.50, 175), (0.90, 225))
-MOB_TONE_WHITE = 250
+#: traits) sous 22, la moitié sous 160, 90 % sous 215, le blanc pur à 245 (un poil plus sombre le 26/11, demande de l'auteur).
+MOB_TONE_TARGET: tuple[tuple[float, int], ...] = ((0.10, 22), (0.50, 160), (0.90, 215))
+MOB_TONE_WHITE = 245
 
 
 def tone_lut(channel: Image.Image, mask: Image.Image,

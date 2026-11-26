@@ -116,7 +116,7 @@ def test_tous_les_monstres_ont_le_meme_noir_et_blanc():
 
     from PIL import Image, ImageStat
 
-    from app.shared.image_tools import prepare_mob_art
+    from app.shared.image_tools import MOB_TONE_TARGET, prepare_mob_art
 
     def drawing(fill) -> Image.Image:
         im = Image.new("RGBA", (60, 60), (0, 0, 0, 0))
@@ -147,4 +147,4 @@ def test_tous_les_monstres_ont_le_meme_noir_et_blanc():
                 cum += count
                 if cum >= half:
                     break
-            assert abs(median - 175) <= 10, (name, median)
+            assert abs(median - dict(MOB_TONE_TARGET)[0.5]) <= 10, (name, median)
