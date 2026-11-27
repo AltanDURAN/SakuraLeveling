@@ -951,6 +951,11 @@ WORLD BOSS — /boss moi, /boss historique, /bestiaire boss
     et tes pétales. « Voir une carte » ouvre sa fiche (effet, histoire,
     bouton Fabriquer) ; « Recycler » transforme tes doublons en pétales.
     Avec [joueur] : l'album d'un autre (sans les boutons).
+    PAS DE SPOIL : la carte d'un monstre que tu n'as jamais vaincu en zone
+    (ou d'un boss que tu n'as pas abattu au raid) reste CACHÉE, même si tu
+    l'as tirée : « ??? », sa silhouette et sa rareté. Elle se dévoile à ta
+    première victoire, et son effet compte déjà en attendant. Dans l'album
+    d'un autre, ce sont TES victoires qui comptent.
     TITRES : Collectionneur (25 % de l'album), Archiviste (50 %),
     Conservateur (75 %), Maître de l'album (100 %), et Prisme du Grand
     Cerisier pour l'album TOUT BRILLANT. Le salon des records affiche aussi

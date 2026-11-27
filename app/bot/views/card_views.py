@@ -114,7 +114,7 @@ class AlbumView(ExpiringView):
         self.add_item(chapters)
         cards = discord.ui.Select(placeholder="Voir une carte…", row=2, options=[
             discord.SelectOption(
-                label=f"#{c.number:02d} {c.name}"[:100], value=c.code,
+                label=f"#{c.number:02d} {'???' if self.coll.is_hidden(c.code) else c.name}"[:100], value=c.code,
                 emoji=cs.CARD_RARITY_EMOJIS.get(c.rarity),
                 description=(cs.RARITY_LABELS.get(c.rarity, "") + (" · à toi" if self.coll.owns(c.code) else ""))[:100])
             for c in self.chapter_cards()][:25])

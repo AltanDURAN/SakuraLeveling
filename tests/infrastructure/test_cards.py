@@ -202,3 +202,23 @@ def test_le_record_de_l_album(session):
         _give(session, b, code)                            # arrivées dans son inventaire sans booster ni fabrication
     entries = {e.player_id: e.value for e in RecordsRepository(session).album_entries()}
     assert entries == {a: 3, b: 1}
+
+
+def test_une_carte_de_monstre_reste_cachee_tant_qu_il_n_est_pas_vaincu(session):
+    """28/11/2026, demande de l'auteur : pas de spoil. Comme le bestiaire, une
+    carte de monstre ou de boss ne se dévoile qu'après une victoire."""
+    from app.infrastructure.db.repositories.player_kill_repository import PlayerKillRepository
+
+    player = _player(session, gold=100_000)
+    hidden = cards.collection(session, player).hidden
+    assert "slime" in hidden and "slime_titan" in hidden          # monstre, boss
+    assert "borak" not in hidden and "aurelia" not in hidden      # personnages, divinités
+    PlayerKillRepository(session).increment(player, "slime")
+    session.commit()
+    assert "slime" not in cards.collection(session, player).hidden
+    assert cards.hidden_codes(session, None) >= {"slime", "slime_titan"}       # sans profil : tout caché
+
+    result = cards.open_boosters(session, player, 10, rng=random.Random(4))
+    assert result.ok
+    for opened in result.cards:
+        assert opened.hidden == (opened.card.code in hidden - {"slime"})

@@ -356,6 +356,27 @@ def petals_for(rarity: str, brillante: bool = False, params: CardParams = DEFAUL
     return int(params.petals.get(rarity, 0)) * (params.brillante_petal_mult if brillante else 1)
 
 
+#: Cartes CACHÉES tant que le joueur n'a pas vaincu ce qu'elles représentent
+#: (28/11/2026, demande de l'auteur : pas de spoil). Même règle que le
+#: bestiaire : un monstre est connu après une victoire en combat de zone, un
+#: boss après l'avoir abattu en ayant mené au moins un assaut.
+SECRET_CATEGORIES = ("monstre", "boss")
+
+
+def hidden_codes(cards: list[CardDef], mob_kills: dict[str, int] | None,
+                 boss_wins: dict[str, int] | None) -> frozenset[str]:
+    """Codes des cartes de monstre et de boss que ce joueur ne connaît pas
+    encore (`None` : pas de profil, tout est caché)."""
+    hidden = set()
+    for card in cards:
+        if card.category not in SECRET_CATEGORIES:
+            continue
+        known = mob_kills if card.category == "monstre" else boss_wins
+        if not (known or {}).get(card.source or card.code, 0):
+            hidden.add(card.code)
+    return frozenset(hidden)
+
+
 def craftable(card: CardDef) -> bool:
     """Jamais une brillante : la mythique, toujours brillante, ne se fabrique pas."""
     return not card.always_brillante

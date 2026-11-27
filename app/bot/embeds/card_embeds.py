@@ -126,9 +126,15 @@ def build_cards_guide(footer: str) -> discord.Embed:
 
 
 # --------------------------------------------------------- une ouverture --
+def secret_name(card) -> str:
+    """Le nom d'une carte cachée (monstre ou boss pas encore vaincu)."""
+    return "**???** *(monstre à découvrir)*" if card.category == "monstre" else "**???** *(boss à découvrir)*"
+
+
 def _card_line(opened) -> str:
     card = opened.card
-    line = f"{cs.CARD_RARITY_EMOJIS.get(card.rarity, '')} **{escape_markdown(card.name)}**"
+    name = secret_name(card) if getattr(opened, "hidden", False) else f"**{escape_markdown(card.name)}**"
+    line = f"{cs.CARD_RARITY_EMOJIS.get(card.rarity, '')} {name}"
     if opened.brillante:
         line += " ✨"
     if opened.new:
@@ -228,13 +234,24 @@ def build_album_embed(owner: str, coll, chapter: str, page: int, pages: int, *, 
 
 def build_card_embed(card, coll, *, own: bool) -> discord.Embed:
     normal, brillante = coll.normal.get(card.code, 0), coll.brillante.get(card.code, 0)
-    title = f"#{card.number:02d} {card.name}" + (" ✨" if brillante or card.always_brillante else "")
-    description = f"**{cs.effect_text(card)}**\n*{card.flavor}*"
-    if brillante or card.always_brillante:
+    hidden = card.code in getattr(coll, "hidden", ())
+    title = f"#{card.number:02d} " + ("???" if hidden else card.name) + (" ✨" if brillante or card.always_brillante else "")
+    if hidden:
+        from app.bot.rendering.card_render import SECRET_TEXT
+
+        description = (f"**{SECRET_TEXT.get(card.category, '')}**\n"
+                       "*Tant que tu ne l'as pas vaincu, la carte garde son secret : son nom, son image et "
+                       "son effet se dévoilent à ta première victoire.*")
+        if normal or brillante:
+            description += "\n✅ *Elle est déjà dans ton album, et son effet compte déjà.*"
+    else:
+        description = f"**{cs.effect_text(card)}**\n*{card.flavor}*"
+    if (brillante or card.always_brillante) and not hidden:
         description += "\n✨ *Brillante : la version pleine carte holographique.*"
     embed = discord.Embed(title=title, description=description, color=color_of(card.rarity))
     embed.add_field(name="Rareté", value=rarity_line(card.rarity), inline=True)
-    embed.add_field(name=cs.CATEGORIES.get(card.category, card.category), value=card.title or "—", inline=True)
+    embed.add_field(name=cs.CATEGORIES.get(card.category, card.category),
+                    value="à découvrir" if hidden else (card.title or "—"), inline=True)
     if normal or brillante:
         held = []
         if normal:
@@ -250,5 +267,6 @@ def build_card_embed(card, coll, *, own: bool) -> discord.Embed:
         embed.add_field(name="Fabriquer", value=value, inline=True)
     else:
         embed.add_field(name="Fabriquer", value="Jamais : elle se tire ou s'échange.", inline=True)
-    embed.set_image(url="attachment://carte." + ("gif" if (brillante or card.always_brillante) else "png"))
+    animated = (brillante or card.always_brillante) and not hidden
+    embed.set_image(url="attachment://carte." + ("gif" if animated else "png"))
     return embed

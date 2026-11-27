@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from dataclasses import replace
 
 import discord
 from discord import app_commands
@@ -169,7 +170,7 @@ class CardsCog(commands.Cog):
     async def album(self, interaction: discord.Interaction, joueur: discord.Member | None = None) -> None:
         await self.show_album(interaction, joueur or interaction.user, ephemeral=False)
 
-    def _album_data(self, user, own: bool):
+    def _album_data(self, user, own: bool, viewer_id: int):
         with get_db_session() as session:
             players = PlayerRepository(session)
             profile = (players.get_or_create_by_discord_id(discord_id=user.id, username=user.name,
@@ -178,12 +179,17 @@ class CardsCog(commands.Cog):
             if profile is None:
                 return None, None, []
             titles = cards_uc.refresh_titles(session, profile.player.id) if own else []
-            return profile.player.id, cards_uc.collection(session, profile.player.id), titles
+            coll = cards_uc.collection(session, profile.player.id)
+            if not own:
+                # Pas de spoil : on cache ce que CELUI QUI REGARDE n'a pas encore vaincu.
+                viewer = players.get_by_discord_id(viewer_id)
+                coll = replace(coll, hidden=cards_uc.hidden_codes(session, viewer.player.id if viewer else None))
+            return profile.player.id, coll, titles
 
     async def show_album(self, interaction: discord.Interaction, user, *, ephemeral: bool) -> None:
         own = user.id == interaction.user.id
         await interaction.response.defer(ephemeral=ephemeral)
-        player_id, coll, titles = await asyncio.to_thread(self._album_data, user, own)
+        player_id, coll, titles = await asyncio.to_thread(self._album_data, user, own, interaction.user.id)
         if coll is None:
             from app.bot.private_reply import send_private
 
@@ -212,7 +218,7 @@ class CardsCog(commands.Cog):
         shiny = sum(1 for c in cards if coll.brillante.get(c.code))
         subtitle = f"{owned}/{len(cards)} cartes · {shiny} brillante(s)"
         png = await asyncio.to_thread(card_render.compose_album_page, cards, coll.normal, coll.brillante,
-                                      card_loader.get_chapter(chapter).name, subtitle)
+                                      card_loader.get_chapter(chapter).name, subtitle, coll.hidden)
         embed = card_embeds.build_album_embed(view.owner, coll, chapter, view.index + 1, len(view.chapters),
                                               own=view.own)
         return embed, file_from(png, card_embeds.ALBUM_FILE)
@@ -224,11 +230,12 @@ class CardsCog(commands.Cog):
             return
         await interaction.response.defer(ephemeral=True, thinking=True)
         coll = view.coll
-        animated = card.always_brillante or bool(coll.brillante.get(code))
+        hidden = coll.is_hidden(code)
+        animated = (card.always_brillante or bool(coll.brillante.get(code))) and not hidden
         if animated:
             data = await asyncio.to_thread(card_render.card_gif, card)
         else:
-            data = await asyncio.to_thread(card_render.card_png, card, False)
+            data = await asyncio.to_thread(card_render.card_png, card, bool(coll.brillante.get(code)), hidden)
         embed = card_embeds.build_card_embed(card, coll, own=view.own)
         kwargs = {}
         if view.own and not coll.owns(code) and cs.craftable(card):

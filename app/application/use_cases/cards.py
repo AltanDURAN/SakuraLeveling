@@ -45,6 +45,11 @@ class Collection:
     params: cs.CardParams = cs.DEFAULT_PARAMS
     #: Boosters offerts en réserve (objet `booster_offert` : Avent, Noël…).
     gift_boosters: int = 0
+    #: Cartes cachées à celui qui REGARDE (monstre ou boss pas encore vaincu).
+    hidden: frozenset[str] = frozenset()
+
+    def is_hidden(self, code: str) -> bool:
+        return code in self.hidden
 
     def owns(self, code: str) -> bool:
         return self.normal.get(code, 0) > 0 or self.brillante.get(code, 0) > 0
@@ -80,7 +85,20 @@ def collection(session: Session, player_id: int) -> Collection:
         free_booster=params.first_free and not (state and state.free_booster_used),
         params=params,
         gift_boosters=gift_boosters(session, player_id)[1],
+        hidden=hidden_codes(session, player_id, cards),
     )
+
+
+def hidden_codes(session: Session, player_id: int | None,
+                 cards: list[cs.CardDef] | None = None) -> frozenset[str]:
+    """Cartes de monstre et de boss que ce joueur n'a pas encore vaincus."""
+    from app.infrastructure.db.repositories.world_boss_repository import WorldBossRepository
+
+    cards = card_loader.list_cards() if cards is None else cards
+    if player_id is None:
+        return cs.hidden_codes(cards, None, None)
+    return cs.hidden_codes(cards, PlayerKillRepository(session).get_kills_per_mob(player_id),
+                           WorldBossRepository(session).victories_by_code(player_id))
 
 
 #: Objet « booster offert » (calendrier de l'Avent, cadeau de Noël, boutiques
@@ -153,6 +171,8 @@ class OpenedCard:
     new: bool                   # la carte entre dans l'album
     new_brillante: bool         # sa première brillante
     pity: bool = False
+    #: Monstre ou boss pas encore vaincu : la carte reste cachée à l'ouverture.
+    hidden: bool = False
 
 
 @dataclass(frozen=True)
@@ -226,6 +246,7 @@ def open_boosters(session: Session, player_id: int, count: int = 1, *,
         bonus = cs.card_bonuses([c for c in cards if normal.get(c.code) or brillante.get(c.code)])
         pool = card_loader.by_rarity()
         by_code = {c.code: c for c in cards}
+        secret = hidden_codes(session, player_id, cards)
         inventory = InventoryRepository(session)
         opened: list[list[OpenedCard]] = []
         for _ in range(count):
@@ -242,7 +263,8 @@ def open_boosters(session: Session, player_id: int, count: int = 1, *,
                 inventory.add_item(player_id, item_ids[code], 1, commit=False)
                 target = brillante if pull.brillante else normal
                 target[card.code] = target.get(card.code, 0) + 1
-                booster.append(OpenedCard(card, pull.brillante, new, new_shiny, pull.pity))
+                booster.append(OpenedCard(card, pull.brillante, new, new_shiny, pull.pity,
+                                          hidden=card.code in secret))
             opened.append(booster)
         after = cs.album(cards, normal, brillante)
         state.boosters_opened += count

@@ -174,3 +174,25 @@ def test_les_boutons_et_le_guide_suivent_les_reglages(monkeypatch):
     assert "3 500 or" in embed.fields[0].value and "offert" not in embed.fields[0].value
     assert not any("garanti" in f.name for f in embed.fields)
     assert _size(embed) <= 6000 and all(len(f.value) <= 1024 for f in embed.fields)
+
+
+def test_une_carte_cachee_ne_trahit_ni_son_nom_ni_son_image():
+    """Monstre ou boss pas encore vaincu : la rareté reste, le nom, l'image et
+    l'effet attendent la première victoire (pas de spoil)."""
+    slime = card_loader.get_card("slime")
+    hidden = dataclasses.replace(_collection(normal={"slime": 1}), hidden=frozenset({"slime"}))
+    embed = card_embeds.build_card_embed(slime, hidden, own=True)
+    text = embed.title + embed.description + "".join(f.name + f.value for f in embed.fields)
+    assert "???" in embed.title and slime.name not in text and cs.effect_text(slime) not in text
+    assert embed.image.url.endswith(".png")
+
+    line = card_embeds._card_line(OpenedCard(slime, False, True, False, hidden=True))
+    assert slime.name not in line and "???" in line
+
+    secret = card_render.card_face(slime, hidden=True)
+    shown = card_render.card_face(slime)
+    assert secret.size == shown.size
+    assert ImageChops.difference(secret.convert("RGB"), shown.convert("RGB")).getbbox() is not None
+    album = Image.open(io.BytesIO(card_render.compose_album_page([slime], {"slime": 1}, {}, "Clairière", "1/9",
+                                                                 frozenset({"slime"}))))
+    assert album.size[0] > 0

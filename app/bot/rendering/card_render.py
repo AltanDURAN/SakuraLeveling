@@ -553,14 +553,94 @@ def _face_png(card: cs.CardDef, brillante: bool) -> bytes:
     return data
 
 
-def card_face(card: cs.CardDef, brillante: bool = False, size: tuple[int, int] | None = None) -> Image.Image:
-    """La face de la carte (RGBA), à sa taille ou réduite."""
-    image = _open(_face_png(card, brillante or card.always_brillante))
+def card_face(card: cs.CardDef, brillante: bool = False, size: tuple[int, int] | None = None,
+              hidden: bool = False) -> Image.Image:
+    """La face de la carte (RGBA), à sa taille ou réduite. `hidden` : carte
+    d'un monstre ou d'un boss pas encore vaincu (`secret_face`)."""
+    if hidden:
+        image = _open(_secret_png(card, brillante or card.always_brillante))
+    else:
+        image = _open(_face_png(card, brillante or card.always_brillante))
     return image if size is None else image.resize(size, Image.LANCZOS)
 
 
-def card_png(card: cs.CardDef, brillante: bool = False) -> bytes:
+def card_png(card: cs.CardDef, brillante: bool = False, hidden: bool = False) -> bytes:
+    if hidden:
+        return _secret_png(card, brillante or card.always_brillante)
     return _face_png(card, brillante or card.always_brillante)
+
+
+SECRET_TEXT = {"monstre": "Vaincs ce monstre en zone pour révéler sa carte.",
+               "boss": "Abats ce boss au raid pour révéler sa carte."}
+
+
+def secret_face(card: cs.CardDef, brillante: bool = False) -> Image.Image:
+    """Une carte qu'on a (ou qu'on voit) sans connaître ce qu'elle représente
+    (28/11/2026, demande de l'auteur : pas de spoil). Le cadre et la rareté
+    restent — le frisson du tirage —, mais ni nom, ni image, ni effet : la
+    silhouette du bestiaire et « ??? »."""
+    color = _color(card.rarity)
+    face = _gradient((W, H), _shade(color, 0.32), (14, 10, 22)).convert("RGBA")
+    draw = ImageDraw.Draw(face)
+    draw.rounded_rectangle((3, 3, W - 4, H - 4), radius=22, outline=color, width=6)
+    draw.rounded_rectangle((16, 16, W - 17, H - 17), radius=16, outline=_shade(color, 0.6), width=2)
+    draw.text((30, 44), "???", font=_bangers(40), anchor="lm", fill=(255, 255, 255))
+    draw.text((W - 30, 44), f"#{card.number:02d}", font=try_font(20, bold=True), anchor="rm",
+              fill=_shade(color, 1.15))
+    window = (30, 74, W - 30, 334)
+    draw.rounded_rectangle(window, radius=14, fill=(20, 16, 30, 230), outline=_shade(color, 0.7), width=2)
+    shape = _secret_shape(card)
+    if shape is not None:
+        shape.thumbnail((window[2] - window[0] - 24, window[3] - window[1] - 24), Image.LANCZOS)
+        face.alpha_composite(shape, (window[0] + (window[2] - window[0] - shape.width) // 2,
+                                     window[1] + (window[3] - window[1] - shape.height) // 2))
+    else:
+        draw.text(((window[0] + window[2]) / 2, (window[1] + window[3]) / 2), "?", font=_bangers(140),
+                  anchor="mm", fill=(*_shade(color, 0.9), 220))
+    label = cs.RARITY_LABELS.get(card.rarity, "").upper() + ("  ✦ BRILLANTE" if brillante else "")
+    draw.text((W / 2, 362), label, font=try_font(18, bold=True), anchor="mm", fill=GOLD if brillante else color)
+    panel = (30, 386, W - 30, H - 34)
+    draw.rounded_rectangle(panel, radius=12, fill=(28, 22, 40, 235))
+    lines = _wrap(draw, SECRET_TEXT.get(card.category, "Carte encore inconnue."), try_font(17), panel[2] - panel[0] - 28, 3)
+    y = (panel[1] + panel[3]) / 2 - (len(lines) - 1) * 12
+    for line in lines:
+        draw.text((W / 2, y), line, font=try_font(17), anchor="mm", fill=(225, 215, 240))
+        y += 24
+    return face
+
+
+#: Au-delà de cette part de son cadre remplie, la « silhouette » n'est qu'un
+#: rectangle (illustration avec décor) : on montre un « ? » à la place.
+SILHOUETTE_MAX_FILL = 0.8
+
+
+def _secret_shape(card: cs.CardDef) -> Image.Image | None:
+    """La silhouette du bestiaire, ou None si l'image n'a pas de forme lisible."""
+    art = card_loader.art_path(card)
+    if art is None:
+        return None
+    from app.bot.rendering.silhouette import silhouette_png
+
+    shape = _open(silhouette_png(art))
+    alpha = shape.getchannel("A").point(lambda v: 255 if v > 128 else 0)
+    box = alpha.getbbox()
+    if box is None:
+        return None
+    filled = alpha.crop(box).histogram()[255] / max(1, (box[2] - box[0]) * (box[3] - box[1]))
+    return None if filled > SILHOUETTE_MAX_FILL else shape
+
+
+_SECRETS: OrderedDict[tuple, bytes] = OrderedDict()
+
+
+def _secret_png(card: cs.CardDef, brillante: bool) -> bytes:
+    key = ("secret", *_render_key(card, brillante))
+    data = _SECRETS.get(key)
+    if data is None:
+        data = _SECRETS[key] = _png(secret_face(card, brillante))
+        while len(_SECRETS) > FACE_CACHE:
+            _SECRETS.popitem(last=False)
+    return data
 
 
 def holo_frames(card: cs.CardDef, frames: int = HOLO_FRAMES, size: tuple[int, int] | None = None,
@@ -645,32 +725,32 @@ def _badge(draw, xy: tuple[int, int], text: str, fill, color=(255, 255, 255)) ->
     draw.text((x - width / 2, y + 12), text, font=font, anchor="mm", fill=color)
 
 
-def missing_tile(card: cs.CardDef, size: tuple[int, int] = TILE) -> Image.Image:
-    """Une carte qu'on n'a pas : sa silhouette, son nom et sa rareté."""
+def missing_tile(card: cs.CardDef, size: tuple[int, int] = TILE, hidden: bool = False) -> Image.Image:
+    """Une carte qu'on n'a pas : sa silhouette, son nom et sa rareté (« ??? »
+    à la place du nom si elle est cachée)."""
     color = _color(card.rarity)
     tile = Image.new("RGBA", size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(tile)
     draw.rounded_rectangle((0, 0, size[0] - 1, size[1] - 1), radius=14, fill=(30, 26, 42, 255),
                            outline=_shade(color, 0.75), width=2)
-    art = card_loader.art_path(card)
-    if art is not None:
-        from app.bot.rendering.silhouette import silhouette_png
-
-        shape = _open(silhouette_png(art))
+    shape = _secret_shape(card)
+    if shape is not None:
         shape.thumbnail((size[0] - 40, size[1] - 110), Image.LANCZOS)
         tile.alpha_composite(shape, ((size[0] - shape.width) // 2, 44))
     else:
         draw.text((size[0] / 2, size[1] / 2 - 10), "?", font=_bangers(96), anchor="mm", fill=(*_shade(color, 0.8), 200))
     draw.text((12, 18), f"#{card.number:02d}", font=try_font(15, bold=True), anchor="lm", fill=_shade(color, 1.1))
-    name_font = _fit(draw, card.name, size[0] - 20, 22, 13)
-    draw.text((size[0] / 2, size[1] - 46), card.name, font=name_font, anchor="mm", fill=(150, 140, 170))
+    name = "???" if hidden else card.name
+    name_font = _fit(draw, name, size[0] - 20, 22, 13)
+    draw.text((size[0] / 2, size[1] - 46), name, font=name_font, anchor="mm", fill=(150, 140, 170))
     draw.text((size[0] / 2, size[1] - 22), cs.RARITY_LABELS.get(card.rarity, ""), font=try_font(13, bold=True),
               anchor="mm", fill=_shade(color, 0.95))
     return tile
 
 
-def owned_tile(card: cs.CardDef, normal: int, brillante: int, size: tuple[int, int] = TILE) -> Image.Image:
-    tile = card_face(card, brillante > 0, size)
+def owned_tile(card: cs.CardDef, normal: int, brillante: int, size: tuple[int, int] = TILE,
+               hidden: bool = False) -> Image.Image:
+    tile = card_face(card, brillante > 0, size, hidden=hidden)
     draw = ImageDraw.Draw(tile)
     total = normal + brillante
     if total > 1:
@@ -681,7 +761,7 @@ def owned_tile(card: cs.CardDef, normal: int, brillante: int, size: tuple[int, i
 
 
 def compose_album_page(cards: list[cs.CardDef], normal: dict[str, int], brillante: dict[str, int],
-                       title: str, subtitle: str) -> bytes:
+                       title: str, subtitle: str, hidden: frozenset[str] = frozenset()) -> bytes:
     columns = 3
     rows = max(1, math.ceil(len(cards) / columns))
     gap, margin, header = 14, 20, 74
@@ -696,7 +776,8 @@ def compose_album_page(cards: list[cs.CardDef], normal: dict[str, int], brillant
         x = margin + (index % columns) * (TILE[0] + gap)
         y = header + (index // columns) * (TILE[1] + gap)
         n, b = normal.get(card.code, 0), brillante.get(card.code, 0)
-        tile = owned_tile(card, n, b) if (n or b) else missing_tile(card)
+        secret = card.code in hidden
+        tile = owned_tile(card, n, b, hidden=secret) if (n or b) else missing_tile(card, hidden=secret)
         page.alpha_composite(tile, (x, y))
     return _png(page.convert("RGB"))
 
@@ -740,7 +821,7 @@ def compose_booster_result(opened) -> bytes:
     size, positions = _layout(len(opened))
     image = _stage(size)
     for (x, y), card in zip(positions, opened):
-        image.alpha_composite(card_face(card.card, card.brillante, SMALL), (x, y))
+        image.alpha_composite(card_face(card.card, card.brillante, SMALL, hidden=getattr(card, "hidden", False)), (x, y))
     _labels(image, opened, positions)
     return _png(image.convert("RGB"))
 
@@ -767,7 +848,7 @@ def compose_many(opened, limit: int = 15) -> bytes:
     for index, card in enumerate(ordered):
         x = margin + (index % columns) * (tile[0] + gap)
         y = top + (index // columns) * (tile[1] + 40)
-        image.alpha_composite(card_face(card.card, card.brillante, tile), (x, y))
+        image.alpha_composite(card_face(card.card, card.brillante, tile, hidden=getattr(card, "hidden", False)), (x, y))
         count = counts[(card.card.code, card.brillante)]
         if count > 1:
             _badge(draw, (x + tile[0] - 6, y + tile[1] - 30), f"×{count}", (20, 16, 30, 230))
@@ -851,7 +932,7 @@ def animate_booster(opened) -> bytes | None:
     size, positions = _layout(len(opened))
     stage = _stage(size)
     back = card_back(SMALL)
-    faces = [card_face(c.card, c.brillante, SMALL) for c in opened]
+    faces = [card_face(c.card, c.brillante, SMALL, hidden=getattr(c, "hidden", False)) for c in opened]
     final = stage.copy()
     for (x, y), face in zip(positions, faces):
         final.alpha_composite(face, (x, y))
@@ -932,7 +1013,7 @@ def animate_booster(opened) -> bytes | None:
                     def petals(image, k=k):
                         draw_sakura_petals(image, seed=40 + k, count=18, size_range=(22, 44))
                     gif.push(frame(over=petals), 110)
-        if card.brillante:
+        if card.brillante and not getattr(card, "hidden", False):
             # Le foil prend la lumière : le prisme glisse, le reflet passe.
             shimmer = holo_frames(card.card, SHIMMER_FRAMES * 2, SMALL, count=SHIMMER_FRAMES)
             for still in shimmer:
@@ -954,6 +1035,6 @@ def animation_seconds(opened) -> float:
         total += pulses * (0.15 if i == len(opened) - 1 else 0.09) + 0.18 + 0.12
         if card.card.rarity in cs.TOP_RARITIES:
             total += 0.36 + (0.44 if card.card.rarity == "mythic" else 0)
-        if card.brillante:
+        if card.brillante and not getattr(card, "hidden", False):
             total += SHIMMER_FRAMES * SHIMMER_MS / 1000
     return total + 1.5
