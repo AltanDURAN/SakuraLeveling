@@ -44,4 +44,15 @@ async def video_slot(timeout: float = ZONE_WAIT_S) -> AsyncIterator[bool]:
     try:
         yield True
     finally:
+        _note_memory()
         slot.release()
+
+
+def _note_memory() -> None:
+    """Relevé de mémoire à la fin d'une vidéo, le moment le plus gourmand
+    (alerte « Mémoire du serveur basse »)."""
+    try:
+        from app.application.monitoring.alerting import note_memory
+        note_memory()
+    except Exception:  # noqa: BLE001 — un relevé ne fait jamais échouer un combat
+        pass

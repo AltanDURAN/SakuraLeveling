@@ -5,6 +5,7 @@ chaque ouverture."""
 
 from __future__ import annotations
 
+import os
 import statistics
 from collections import Counter, defaultdict
 from dataclasses import dataclass
@@ -153,6 +154,46 @@ def backup_ages(directory: str | None = None, now: float | None = None) -> tuple
     return (float("inf") if local is None else local), age(base / "offsite_ok")
 
 
+#: Plus bas relevé de mémoire disponible (Mo) depuis la dernière lecture.
+_memory_low: float | None = None
+#: Fichier du noyau Linux qui donne la mémoire disponible.
+_MEMINFO = os.path.join(os.sep, "proc", "meminfo")
+
+
+def _meminfo() -> tuple[float, float] | None:
+    """(disponible, total) en Mo, lus dans le fichier meminfo du noyau ; None ailleurs que sous Linux."""
+    try:
+        with open(_MEMINFO, encoding="ascii") as f:
+            info = {line.split(":")[0]: int(line.split()[1]) for line in f if ":" in line}
+        return info["MemAvailable"] / 1024, info["MemTotal"] / 1024
+    except (OSError, KeyError, ValueError, IndexError):
+        return None
+
+
+def note_memory() -> None:
+    """Relevé de la mémoire disponible (boucle de 30 s du bot, fin d'une vidéo) :
+    l'alerte horaire juge le PLUS BAS relevé, pas l'instant où elle tourne."""
+    global _memory_low
+    current = _meminfo()
+    if current is not None:
+        _memory_low = current[0] if _memory_low is None else min(_memory_low, current[0])
+
+
+def memory_state() -> tuple[float | None, float | None]:
+    """(plus bas relevé depuis la dernière lecture, total) en Mo, puis on repart
+    de zéro. Seulement sur le serveur surveillé (`BACKUP_DIR` réglé, comme
+    l'alerte de sauvegarde) : la mémoire d'un poste de dev ne dit rien du jeu."""
+    global _memory_low
+    from app.infrastructure.config.settings import settings
+
+    if not settings.backup_dir:
+        return None, None
+    note_memory()
+    current = _meminfo()
+    low, _memory_low = _memory_low, None
+    return low, (current[1] if current else None)
+
+
 def server_facts(ds: Dataset) -> rules.ServerFacts:
     now_local = to_local(ds.now)
     rows = build_rows(ds)
@@ -198,6 +239,7 @@ def server_facts(ds: Dataset) -> rules.ServerFacts:
         facts.content_end_player = ahead[0].name
     facts.admin_gold_7d = sum(e.gold for e in ds.of_kind(kinds.GOLD, days=7) if e.ref == "admin" and e.gold > 0)
     facts.backup_age_hours, facts.offsite_age_hours = backup_ages()
+    facts.memory_low_mb, facts.memory_total_mb = memory_state()
     errors = ds.of_kind(kinds.ERROR, days=1)
     facts.errors_24h = len(errors)
     facts.error_commands = tuple(c for c, _ in Counter(e.ref or "?" for e in errors).most_common())

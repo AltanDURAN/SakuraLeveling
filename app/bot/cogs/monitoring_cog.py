@@ -93,6 +93,8 @@ class MonitoringCog(commands.Cog):
     @tasks.loop(seconds=30)
     async def flush_loop(self) -> None:
         try:
+            from app.application.monitoring.alerting import note_memory
+            note_memory()
             if len(telemetry.interactions):
                 await asyncio.to_thread(self._flush)
         except Exception:  # noqa: BLE001 — la boucle ne doit jamais mourir

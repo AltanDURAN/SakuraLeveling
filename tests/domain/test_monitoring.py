@@ -211,6 +211,33 @@ def test_une_sauvegarde_en_retard_alerte_les_admins(tmp_path):
     assert backup_ages(str(tmp_path), now=now) == (3.0, 40.0)
 
 
+def test_la_memoire_basse_du_serveur_est_signalee(monkeypatch):
+    """Le serveur de 2 Go héberge aussi d'autres sites : on prévient quand la
+    mémoire libre descend sous le seuil (le plus bas relevé dans l'heure)."""
+    from app.application.monitoring import alerting
+    from app.infrastructure.config.settings import settings
+
+    ok = alerts.ServerFacts(now=T0, memory_low_mb=900, memory_total_mb=1855)
+    assert "memory" not in _codes(alerts.evaluate([], [], ok))
+    assert "memory" not in _codes(alerts.evaluate([], [], alerts.ServerFacts(now=T0)))   # non surveillé
+    low = alerts.ServerFacts(now=T0, memory_low_mb=180, memory_total_mb=1855)
+    found = [a for a in alerts.evaluate([], [], low) if a.code == "memory"]
+    assert len(found) == 1 and found[0].severity == alerts.SERIOUS
+    assert "180 Mo" in found[0].title and "1 855 Mo" in found[0].message
+
+    # Le relevé garde le plus bas jusqu'à la lecture, puis repart de zéro.
+    readings = iter([(500.0, 1855.0), (150.0, 1855.0), (700.0, 1855.0), (700.0, 1855.0),
+                     (800.0, 1855.0), (800.0, 1855.0)])
+    monkeypatch.setattr(alerting, "_meminfo", lambda: next(readings))
+    monkeypatch.setattr(alerting, "_memory_low", None)
+    monkeypatch.setattr(settings, "backup_dir", "/srv/sauvegardes")
+    alerting.note_memory(), alerting.note_memory()
+    assert alerting.memory_state() == (150.0, 1855.0)
+    assert alerting.memory_state() == (800.0, 1855.0)
+    monkeypatch.setattr(settings, "backup_dir", "")
+    assert alerting.memory_state() == (None, None)                   # poste de dev
+
+
 def test_un_joueur_nourri_par_un_seul_autre_est_signale():
     """Un compte secondaire qui verse tout au principal ne passait sous aucune
     règle (il fallait 3 donateurs). Décision de l'auteur, 14/11/2026 : une

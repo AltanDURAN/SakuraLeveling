@@ -120,6 +120,9 @@ RULES: tuple[Rule, ...] = (
          "Des commandes plantent : le journal du bot dit pourquoi."),
     Rule("backup", "Sauvegarde en retard", TECH, CRITICAL,
          "La base n'est plus sauvegardée : si le serveur tombe, tout ce qui a été joué depuis est perdu."),
+    Rule("memory", "Mémoire du serveur basse", TECH, SERIOUS,
+         "Le serveur a manqué de mémoire libre : au-delà, les vidéos de combat ralentissent puis le "
+         "bot peut être arrêté par le système. Il est temps de passer à une offre avec plus de mémoire."),
 )
 RULES_BY_CODE = {r.code: r for r in RULES}
 
@@ -187,6 +190,8 @@ THRESHOLDS: tuple[ThresholdSpec, ...] = (
     ThresholdSpec("errors_24h", "Erreurs en 24 h", 5, "", "", "errors"),
     ThresholdSpec("backup_hours", "Âge maximum d'une sauvegarde", 36, "h",
                   "Sauvegarde de la nuit sur le serveur, et sa copie hors serveur.", "backup"),
+    ThresholdSpec("memory_min_mb", "Mémoire libre minimum", 300, "Mo",
+                  "Le plus bas relevé depuis la vérification précédente (toutes les 30 s).", "memory"),
 )
 THRESHOLD_SPECS = {t.key: t for t in THRESHOLDS}
 
@@ -271,6 +276,10 @@ class ServerFacts:
     #: hors serveur (None : non surveillé sur cette machine, `BACKUP_DIR` vide).
     backup_age_hours: float | None = None
     offsite_age_hours: float | None = None
+    #: Mémoire disponible du serveur, en Mo : le plus bas relevé depuis la
+    #: vérification précédente, et le total (None : non surveillé sur cette machine).
+    memory_low_mb: float | None = None
+    memory_total_mb: float | None = None
     market: list[tuple[int, str, str, int, int]] = field(default_factory=list)  # pid, nom, objet, prix, médiane
 
 
@@ -448,6 +457,11 @@ def evaluate(players: list[PlayerFacts], mobs: list[MobFacts], server: ServerFac
         detail = " ; ".join(f"dernière sauvegarde {label} : {how_old(age)}" for label, age in late)
         add("backup", "base", "La base n'est plus sauvegardée",
             detail[0].upper() + detail[1:] + ". Les journaux sont dans le dossier des sauvegardes du serveur : backup.log et backup_offsite.log.")
+    if s.memory_low_mb is not None and s.memory_low_mb < t["memory_min_mb"]:
+        total = f" sur {format_int(round(s.memory_total_mb))} Mo" if s.memory_total_mb else ""
+        add("memory", "ram", f"Mémoire du serveur basse : {format_int(round(s.memory_low_mb))} Mo libres",
+            f"Le plus bas relevé dans l'heure{total}. Les processus les plus gourmands : "
+            "`ps -eo rss,args --sort=-rss | head` sur le serveur.")
 
     order = {sev: i for i, sev in enumerate(SEVERITY_ORDER)}
     return sorted(out, key=lambda a: (order.get(a.severity, 9), a.title))
