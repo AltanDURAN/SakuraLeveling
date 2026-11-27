@@ -83,7 +83,7 @@ def test_un_monstre_vaincu_montre_sa_fiche_et_les_victoires():
 
 
 def test_sans_image_ni_victoire_pas_de_vignette():
-    embed, file = asyncio.run(BestiaireView(1, [_mob("dragon", "draconique")], kills={}).render())
+    embed, file = asyncio.run(BestiaireView(1, [_mob("slime_sans_image", "slime")], kills={}).render())
     assert file is None and embed.thumbnail.url is None and embed.title == "❔ ???"
 
 

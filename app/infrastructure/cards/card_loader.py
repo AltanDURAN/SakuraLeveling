@@ -167,7 +167,25 @@ def variants(card: CardDef) -> list[bool]:
 
 
 def item_name(card: CardDef, brillante: bool = False) -> str:
+    """Nom de l'OBJET carte (brocante, échanges, journal). Une carte de monstre
+    ou de boss n'y donne que son numéro et sa rareté (28/11/2026, demande de
+    l'auteur : pas de spoil) — l'album dit qui c'est à qui l'a déjà vaincu."""
+    from app.domain.services.card_service import RARITY_LABELS, SECRET_CATEGORIES
+
+    if card.category in SECRET_CATEGORIES:
+        label = RARITY_LABELS.get(card.rarity, "").lower()
+        return f"Carte #{card.number:02d} ({label})" + (" ✨" if brillante else "")
     return f"Carte {card.name}" + (" ✨" if brillante else "")
+
+
+def item_description(card: CardDef) -> str:
+    """Description de l'objet carte : son effet, sauf pour un monstre ou un boss."""
+    from app.domain.services.card_service import SECRET_CATEGORIES, effect_text
+
+    if card.category in SECRET_CATEGORIES:
+        kind = "monstre" if card.category == "monstre" else "boss"
+        return f"Carte de {kind} : vaincs ce {kind} pour découvrir son nom et son effet dans ton album."
+    return effect_text(card)[:255]
 
 
 # --------------------------------------------------------------- images --
@@ -180,6 +198,27 @@ def _mob_images() -> dict[str, str]:
         mobs = data if isinstance(data, list) else data.get("mobs", [])
         return {m.get("code", ""): m.get("image_name", "") or "" for m in mobs}
     return _cached(MOBS_PATH, "mob_images", build)
+
+
+def _mob_families() -> dict[str, str]:
+    def build():
+        try:
+            data = json.loads(MOBS_PATH.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return {}
+        mobs = data if isinstance(data, list) else data.get("mobs", [])
+        return {m.get("code", ""): m.get("family", "") or "" for m in mobs}
+    return _cached(MOBS_PATH, "mob_families", build)
+
+
+def unready(card: CardDef) -> bool:
+    """Carte d'un monstre dont la zone n'est pas encore mise en place
+    (`farm_zone_loader.unready_families`) : cachée, elle montre un « ? »."""
+    if card.category != "monstre":
+        return False
+    from app.infrastructure.encounters.farm_zone_loader import unready_families
+
+    return _mob_families().get(card.source or card.code, "") in unready_families()
 
 
 def _boss_images() -> dict[str, str]:

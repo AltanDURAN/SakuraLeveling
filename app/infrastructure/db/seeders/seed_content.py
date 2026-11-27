@@ -66,8 +66,7 @@ def seed_cards() -> None:
 
 def seed_card_items(session) -> None:
     """Crée ou met à jour les objets des cartes dans `session`."""
-    from app.domain.services.card_service import effect_text
-    from app.infrastructure.cards.card_loader import item_code, item_name, list_cards, variants
+    from app.infrastructure.cards.card_loader import item_code, item_description, item_name, list_cards, variants
     from app.shared.enums import ItemCategory
 
     item_repository = ItemRepository(session)
@@ -76,7 +75,7 @@ def seed_card_items(session) -> None:
             payload = dict(
                 code=item_code(card.code, brillante),
                 name=item_name(card, brillante),
-                description=effect_text(card)[:255],
+                description=item_description(card),
                 category=ItemCategory.CARD.value,
                 rarity=card.rarity,
                 stackable=True,

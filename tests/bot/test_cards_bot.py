@@ -196,3 +196,29 @@ def test_une_carte_cachee_ne_trahit_ni_son_nom_ni_son_image():
     album = Image.open(io.BytesIO(card_render.compose_album_page([slime], {"slime": 1}, {}, "Clairière", "1/9",
                                                                  frozenset({"slime"}))))
     assert album.size[0] > 0
+
+
+def test_les_cartes_et_le_bestiaire_des_zones_pas_encore_en_place_montrent_un_point_d_interrogation():
+    """Éclipse éternelle et Cimes des Wyrms n'ont pas de décor : leurs monstres
+    n'ont que des ébauches, une silhouette ne serait pas la vraie."""
+    from app.bot.rendering.silhouette import FILENAME, question_png
+    from app.bot.views.bestiaire_view import picture
+    from app.infrastructure.encounters.farm_zone_loader import unready_families
+
+    assert {"nocturne", "draconique"} <= unready_families()
+    assert not {"slime", "gobelin", "primordial"} & unready_families()
+    assert card_loader.unready(card_loader.get_card("dragonnet"))
+    assert not card_loader.unready(card_loader.get_card("slime"))
+    assert card_render._secret_shape(card_loader.get_card("dragonnet")) is None
+    assert card_render._secret_shape(card_loader.get_card("slime")) is not None
+
+    file = asyncio.run(picture("dragonnet.png", known=False, unready=True))
+    assert file.filename == FILENAME and file.fp.read() == question_png()
+
+
+def test_a_la_brocante_une_carte_de_monstre_ne_donne_que_son_numero():
+    dragon, borak = card_loader.get_card("dragon_ancien"), card_loader.get_card("borak")
+    assert card_loader.item_name(dragon) == "Carte #43 (épique)"
+    assert card_loader.item_name(dragon, True) == "Carte #43 (épique) ✨"
+    assert dragon.name not in card_loader.item_description(dragon)
+    assert card_loader.item_name(borak) == "Carte Borak"

@@ -163,6 +163,22 @@ def unreleased_families() -> set[str]:
     }
 
 
+def unready_families() -> set[str]:
+    """Familles d'une zone pas encore MISE EN PLACE (28/11/2026, demande de
+    l'auteur) : zone prévue, ou zone ouverte sans décor (`background` vide —
+    Éclipse éternelle et Cimes des Wyrms au lancement). Leurs monstres n'ont
+    que des ébauches : leur silhouette ne serait pas la vraie, la carte cachée
+    et le bestiaire montrent un « ? ». Se lève tout seul quand l'auteur pose
+    le décor de la zone (site › Zones)."""
+    raw = _load().get("zones")
+    families = set(unreleased_families())
+    if isinstance(raw, list):
+        for entry in raw:
+            if isinstance(entry, dict) and not entry.get("background"):
+                families |= {f for f in (entry.get("families") or []) if f}
+    return families
+
+
 def _zone_for_family(family: str | None) -> dict | None:
     """Zone (normalisée) qui contient la famille, ou None si non mappée."""
     if not family:

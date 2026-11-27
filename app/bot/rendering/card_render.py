@@ -617,7 +617,7 @@ SILHOUETTE_MAX_FILL = 0.8
 def _secret_shape(card: cs.CardDef) -> Image.Image | None:
     """La silhouette du bestiaire, ou None si l'image n'a pas de forme lisible."""
     art = card_loader.art_path(card)
-    if art is None:
+    if art is None or card_loader.unready(card):
         return None
     from app.bot.rendering.silhouette import silhouette_png
 

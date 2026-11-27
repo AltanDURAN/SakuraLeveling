@@ -723,7 +723,8 @@ LE MANA DES COMPÉTENCES 💧
 
 /bestiaire monstres
     Le bestiaire À DÉCOUVRIR : un monstre que tu n'as jamais vaincu en combat
-    de zone n'est qu'une silhouette, avec le salon où le trouver. Bats-le une
+    de zone n'est qu'une silhouette (un grand « ? » pour les zones pas
+    encore prêtes), avec le salon où le trouver. Bats-le une
     fois : sa fiche s'ouvre (stats, élément, récompenses, butin, la pièce
     d'équipement qu'il porte avec son passif) et le bestiaire compte tes
     victoires contre lui. En bas : combien de monstres tu as découverts. Un
@@ -955,7 +956,11 @@ WORLD BOSS — /boss moi, /boss historique, /bestiaire boss
     (ou d'un boss que tu n'as pas abattu au raid) reste CACHÉE, même si tu
     l'as tirée : « ??? », sa silhouette et sa rareté. Elle se dévoile à ta
     première victoire, et son effet compte déjà en attendant. Dans l'album
-    d'un autre, ce sont TES victoires qui comptent.
+    d'un autre, ce sont TES victoires qui comptent. À la brocante et dans
+    les échanges, ces cartes ne montrent que leur numéro et leur rareté
+    (« Carte #43 (épique) ») : retrouve le numéro dans ton album. Les
+    monstres des zones pas encore prêtes (Éclipse éternelle, Cimes des
+    Wyrms) n'ont même pas de silhouette : un grand « ? ».
     TITRES : Collectionneur (25 % de l'album), Archiviste (50 %),
     Conservateur (75 %), Maître de l'album (100 %), et Prisme du Grand
     Cerisier pour l'album TOUT BRILLANT. Le salon des records affiche aussi

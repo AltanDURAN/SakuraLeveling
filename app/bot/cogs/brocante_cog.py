@@ -27,6 +27,7 @@ from app.application.use_cases.marketplace import (
     MAX_LISTING_DAYS,
 )
 from app.domain.services.gear_service import gear_label, gear_ref
+from app.shared.enums import ItemCategory
 from app.infrastructure.db.models.gear_model import PlayerGearModel
 from app.infrastructure.db.models.item_model import ItemDefinitionModel
 from app.infrastructure.db.repositories.gear_repository import GearRepository
@@ -73,6 +74,9 @@ def _listing_names(session, listings) -> dict[int, str]:
         gear = gears.get(l.gear_id)
         names[l.id] = gear_label(name, gear.rarity, gear.forge_level) if gear else name
     return names
+
+
+CARD = ItemCategory.CARD.value
 
 
 class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
@@ -168,10 +172,12 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
         with get_db_session() as session:
             items = ItemRepository(session).list_all()
         current_lower = current.lower()
+        # Une carte se cherche par son nom d'objet seulement (« Carte #37 ») :
+        # son code dirait quel monstre elle montre.
         return [
-            app_commands.Choice(name=f"{i.name} ({i.code})", value=i.code)
+            app_commands.Choice(name=i.name if i.category == CARD else f"{i.name} ({i.code})", value=i.code)
             for i in items
-            if current_lower in i.code.lower() or current_lower in i.name.lower()
+            if current_lower in i.name.lower() or (i.category != CARD and current_lower in i.code.lower())
         ][:25]
 
     # ---------- my listings ----------
@@ -270,7 +276,7 @@ class BrocanteCog(BetaChannelOnlyMixin, commands.Cog):
                 ))
         for inv in inventory:
             i = inv.item_definition
-            if current_lower in i.code.lower() or current_lower in i.name.lower():
+            if current_lower in i.name.lower() or (i.category != CARD and current_lower in i.code.lower()):
                 out.append(
                     app_commands.Choice(
                         name=f"{i.name} (×{inv.quantity})", value=i.code,

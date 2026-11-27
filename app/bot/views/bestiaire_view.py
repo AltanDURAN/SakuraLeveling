@@ -26,7 +26,7 @@ from app.domain.services.mob_ability_service import is_group_elite
 from app.domain.services.power_score_service import PowerScoreService
 from app.shared.emoji_mappings import format_stat_bonuses_short
 from app.shared.enums import GOLD_EMOJI
-from app.infrastructure.encounters.farm_zone_loader import get_spawn_channel_for_family
+from app.infrastructure.encounters.farm_zone_loader import get_spawn_channel_for_family, unready_families
 from app.shared.paths import MOBS_ASSETS_DIR
 from app.shared.formatters import format_int
 
@@ -232,9 +232,14 @@ class PagedBookView(ExpiringView):
         await self._send_page(interaction)
 
 
-async def picture(image_name: str | None, known: bool) -> discord.File | None:
+async def picture(image_name: str | None, known: bool, unready: bool = False) -> discord.File | None:
     """La vignette d'une page : l'image, ou sa silhouette si l'entrée n'est pas
-    encore découverte ; None sans image."""
+    encore découverte ; None sans image. `unready` : monstre d'une zone pas
+    encore mise en place, un « ? » au lieu d'une silhouette qui ne serait pas
+    la vraie."""
+    if unready and not known:
+        from app.bot.rendering.silhouette import question_png
+        return discord.File(io.BytesIO(question_png()), filename=SILHOUETTE_FILE)
     path = MOBS_ASSETS_DIR / image_name if image_name else None
     if path is None or not path.exists():
         return None
@@ -296,7 +301,7 @@ class BestiaireView(PagedBookView):
         File=None sans image."""
         mob = self.mobs[self.index]
         known = self.discovered(mob)
-        file = await picture(mob.image_name, known)
+        file = await picture(mob.image_name, known, unready=(mob.family or "") in unready_families())
         if not known:
             return build_unknown_embed(mob, self.index, len(self.mobs), self.progress(),
                                        silhouette=file is not None), file

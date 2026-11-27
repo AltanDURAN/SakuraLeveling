@@ -33,6 +33,30 @@ def _render(path: str, mtime: float) -> bytes:  # noqa: ARG001 — mtime : clé 
     image.thumbnail((SIZE - 2 * PADDING, SIZE - 2 * PADDING), Image.LANCZOS)
     mask = Image.new("L", (SIZE, SIZE), 0)
     mask.paste(image.getchannel("A"), ((SIZE - image.width) // 2, (SIZE - image.height) // 2))
+    return _from_mask(mask)
+
+
+@lru_cache(maxsize=1)
+def question_png() -> bytes:
+    """Un grand « ? » au même style qu'une silhouette, pour un monstre d'une
+    zone pas encore mise en place (28/11/2026, demande de l'auteur) : son
+    image n'est qu'une ébauche, sa silhouette ne serait pas la vraie."""
+    from PIL import ImageDraw
+
+    from app.bot.rendering.pillow_utils import try_font
+    from app.shared.paths import ASSETS_DIR
+
+    try:
+        from PIL import ImageFont
+        font = ImageFont.truetype(str(ASSETS_DIR / "fonts" / "Bangers-Regular.ttf"), 230)
+    except OSError:
+        font = try_font(200, bold=True)
+    mask = Image.new("L", (SIZE, SIZE), 0)
+    ImageDraw.Draw(mask).text((SIZE / 2, SIZE / 2 + 6), "?", font=font, anchor="mm", fill=255)
+    return _from_mask(mask)
+
+
+def _from_mask(mask: Image.Image) -> bytes:
 
     halo = mask.filter(ImageFilter.MaxFilter(7)).filter(ImageFilter.GaussianBlur(5))
     out = Image.new("RGBA", (SIZE, SIZE), GLOW + (0,))
