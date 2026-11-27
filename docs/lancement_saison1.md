@@ -6,6 +6,8 @@
 
 Déjà fait le 11/11/2026 : SSH sans mot de passe + pare-feu + fail2ban (`scripts/harden_vps.sh`), bot renommé « Sakura Leveling », salons bêta supprimés, invitation permanente `https://discord.gg/jxEwV9x5pR` (`DISCORD_INVITE_URL`, page d'accueil du site), ébauches de 11 monstres des zones C/B/A (Cloudflare Flux, à remplacer par les tiennes quand tu veux ; le 25/11 : décors de la zone C, arène commune des boss, Hana et les 4 objets de Noël ; les monstres et décors des zones B/A attendront après la V1), répétition du reset sur une copie de la vraie base (8 joueurs remis au niveau 1, 0 or, inventaires vides, panneau des fêtes conservé).
 
+Site en HTTPS depuis le 28/11/2026 : https://sakura.87.106.125.165.sslip.io (adresse gratuite ; `scripts/enable_https.sh <domaine>` pour passer à un vrai domaine).
+
 ## J-7 : la bêta est terminée
 
 - [ ] `.venv/bin/python -m pytest` : tout passe.
