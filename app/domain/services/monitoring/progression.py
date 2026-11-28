@@ -19,7 +19,7 @@ from app.domain.services.progression_service import (
     newcomer_xp_multiplier,
 )
 
-#: Tranche de niveaux de chaque zone (joueur de référence, cf. CLAUDE.md
+#: Tranche de niveaux de chaque zone (joueur de référence, cf. docs/systemes/zones.md
 #: « Zones de farm ») — S n'est pas encore ouverte.
 ZONE_LEVELS: dict[str, tuple[int, int]] = {
     "F": (1, 20), "E": (21, 33), "D": (34, 45), "C": (46, 56),
