@@ -353,7 +353,6 @@ def craft_card(session: Session, player_id: int, code: str, now: datetime | None
         if item_id is None:
             return CraftResult(False, NOT_INSTALLED)
         cards = card_loader.list_cards()
-        before = cs.album(cards, normal, brillante)
         state.petals -= cost
         InventoryRepository(session).add_item(player_id, item_id, 1, commit=False)
         normal[code] = 1
@@ -392,7 +391,6 @@ def admin_give_card(session: Session, player_id: int, code: str, brillante: bool
             raise ValueError(NOT_INSTALLED)
         normal, shiny = repo.owned(player_id)
         cards = card_loader.list_cards()
-        before = cs.album(cards, normal, shiny)
         InventoryRepository(session).add_item(player_id, item_id, max(1, int(quantity)), commit=False)
         target = shiny if brillante else normal
         target[code] = target.get(code, 0) + max(1, int(quantity))

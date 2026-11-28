@@ -141,3 +141,18 @@ def test_le_menu_est_la_seule_source_des_pages():
     assert item.label == "Images en lot"                         # le plus long préfixe
     assert locate("/admin/world-bosses/slime_titan/edit")[1].href == "/admin/world-bosses"
     assert locate("/admin/nulle-part") == (None, None)
+
+
+def test_les_pages_portent_les_en_tetes_de_protection(client, monkeypatch):
+    """Audit du 28/11/2026 : CSP (rien d'extérieur que les avatars Discord),
+    Permissions-Policy, et HSTS dès que le site est en HTTPS."""
+    from app.infrastructure.config.settings import settings
+
+    headers = client.get("/").headers
+    csp = headers["content-security-policy"]
+    assert "object-src 'none'" in csp and "frame-ancestors 'self'" in csp
+    assert "https://cdn.discordapp.com" in csp
+    assert "camera=()" in headers["permissions-policy"]
+    assert "strict-transport-security" not in headers
+    monkeypatch.setattr(settings, "admin_cookie_secure", True)
+    assert client.get("/").headers["strict-transport-security"].startswith("max-age=")

@@ -84,7 +84,13 @@ class SakuraBot(commands.Bot):
         # Intent privilégié SERVER MEMBERS (activé dans le Dev Portal) : requis
         # pour l'event on_member_join (accueil des nouveaux joueurs).
         intents.members = True
-        super().__init__(command_prefix="!", intents=intents, tree_cls=SakuraTree)
+        # Le bot n'a QUE des commandes slash : pas de préfixe « ! » (il aurait
+        # besoin de l'intent du contenu des messages, d'où un avertissement à
+        # chaque démarrage), et pas de voix (PyNaCl / davey non installés,
+        # voulu) — on ne le répète plus dans le journal (audit du 28/11/2026).
+        discord.VoiceClient.warn_nacl = False
+        discord.VoiceClient.warn_dave = False
+        super().__init__(command_prefix=commands.when_mentioned, intents=intents, tree_cls=SakuraTree)
 
     async def setup_hook(self) -> None:
         # Tolérance par cog : si l'un plante au load, on logge et on continue

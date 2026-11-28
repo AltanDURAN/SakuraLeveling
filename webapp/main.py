@@ -107,6 +107,24 @@ from webapp.admin.csrf import csrf_origin_middleware
 app.middleware("http")(csrf_origin_middleware)
 
 
+#: Alpine.js lit ses expressions avec `new Function` ('unsafe-eval') et les
+#: gabarits ont des scripts et des styles en ligne : la politique ferme surtout
+#: les sources EXTÉRIEURES (scripts, cadres, formulaires, objets).
+CONTENT_SECURITY_POLICY = "; ".join((
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https://cdn.discordapp.com https://media.discordapp.net",
+    "font-src 'self' data:",
+    "connect-src 'self'",
+    "media-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "frame-ancestors 'self'",
+    "form-action 'self' https://discord.com",
+))
+
+
 @app.middleware("http")
 async def security_headers(request, call_next):
     """En-têtes de protection du navigateur (revue du 14/11/2026) : une page
@@ -117,6 +135,13 @@ async def security_headers(request, call_next):
     response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("Referrer-Policy", "same-origin")
+    # 28/11/2026 (audit) : le site ne charge rien d'ailleurs que de lui-même,
+    # sauf les avatars Discord ; ni caméra, ni micro, ni position.
+    response.headers.setdefault("Content-Security-Policy", CONTENT_SECURITY_POLICY)
+    response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()")
+    if settings.admin_cookie_secure:
+        # Le navigateur ne repasse plus jamais en HTTP sur ce site (1 an).
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000")
     return response
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")

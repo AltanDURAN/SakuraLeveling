@@ -28,6 +28,9 @@ pythonpath = ["."]
 testpaths = ["tests"]
 # tests/sandbox = scripts de rendu manuels (pas de test_*), exclus de la collecte.
 addopts = "--ignore=tests/sandbox"
+# discord.py sous Python 3.14 (poste de dev) : avertissement de la bibliothèque,
+# pas de notre code (absent en 3.12 sur le VPS).
+filterwarnings = ["ignore:'count' is passed as positional argument:DeprecationWarning:discord"]
 
 [tool.alembic]
 script_location = "alembic"
