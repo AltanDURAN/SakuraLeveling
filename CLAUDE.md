@@ -44,6 +44,7 @@ sqlite3 lita_v2.db "SELECT * FROM alembic_version;"
 | **infrastructure** | DB (models, repositories, seeders), config, content JSON | `app/infrastructure/` |
 
 Moteur de combat (découpé le 28/11/2026, comportement inchangé) : `party_combat_service.py` (préparation, boucle, résultat) + `party_combat_rules` / `_foes` / `_party` / `_strike` / `_log` (mixins) ; l'état du combat en cours vit sur l'instance (une par combat).
+Autres découpages du même jour (déplacements sans réécriture, anciens chemins d'import conservés) : `encounter_rewards` (mixin d'`EncounterService` : `apply_rewards`), `encounter_video` / `encounter_announce` (mixins d'`EncounterCog`), `admin_group` (le groupe `/admin`, partagé) + `admin_players` / `admin_shop` / `admin_items` (mixins d'`AdminCog` ; ⚠️ AUCUNE commande dans `admin_cog.py` : discord.py réexécute le fichier d'une extension à chaque chargement, une commande s'y réinscrirait dans le groupe partagé), `world_boss_fight` / `world_boss_rewards` (cas d'usage du raid), `views/world_boss_view`, `card_foil` (dorure des cartes), `profile_banner_parts`. ⚠️ Un test qui remplace un nom (`monkeypatch.setattr(module, …)`) doit viser le module où le code qui l'utilise vit désormais.
 
 Ordre de lecture conseillé avant patch : `pyproject.toml` → `alembic.ini` → dernière migration → `app/infrastructure/config/settings.py` → couche concernée → tests existants → tâche.
 

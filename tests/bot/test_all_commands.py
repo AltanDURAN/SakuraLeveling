@@ -124,3 +124,14 @@ def test_un_nouveau_venu_peut_tout_lancer(bot):
     bot.loop_.run_until_complete(run())
     assert problems == [], "\n".join(problems)
     assert _journal_lines(bot) == []
+
+
+def test_les_cogs_se_chargent_deux_fois_dans_le_meme_processus(bot):
+    """discord.py exécute le fichier d'une extension à chaque chargement : une
+    commande `/admin` restée dans `admin_cog.py` se réinscrirait dans le groupe
+    partagé (`admin_group`) et ferait échouer le second chargement (constaté
+    pendant le découpage du 28/11/2026)."""
+    second = h.make_bot()
+    assert bot.loop_.run_until_complete(h.load_cogs(second)) == []
+    names = {c.qualified_name for c in second.tree.walk_commands()}
+    assert len([n for n in names if n.startswith("admin ")]) == 23
