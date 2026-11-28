@@ -278,7 +278,8 @@ def test_lancer_est_grise_tant_qu_il_ne_peut_pas_lancer(cog):
     asyncio.run(scenario())
 
 
-def test_une_seule_video_a_la_fois():
+def test_une_seule_video_a_la_fois_quand_la_memoire_manque(monkeypatch):
+    monkeypatch.setattr(render_queue, "_available_mb", lambda: 400)
     async def scenario():
         order = []
 
@@ -295,13 +296,55 @@ def test_une_seule_video_a_la_fois():
     assert asyncio.run(scenario()) == ["a début", "a fin", "b début", "b fin"]
 
 
-def test_une_file_trop_longue_saute_la_video():
+def test_une_file_trop_longue_saute_la_video(monkeypatch):
+    monkeypatch.setattr(render_queue, "_available_mb", lambda: 400)
     async def scenario():
         async with render_queue.video_slot():
             async with render_queue.video_slot(timeout=0.01) as granted:
                 return granted
 
     assert asyncio.run(scenario()) is False
+
+
+def test_deux_videos_a_la_fois_quand_la_memoire_le_permet_jamais_trois(monkeypatch):
+    """Mesuré sur le VPS le 28/11/2026 : deux rendus en même temps = ×1,7 de
+    débit, trois frôlent l'alerte de mémoire basse."""
+    monkeypatch.setattr(render_queue, "_available_mb", lambda: 900)
+
+    async def scenario():
+        running, peak, order = 0, 0, []
+
+        async def render(name):
+            nonlocal running, peak
+            async with render_queue.video_slot() as granted:
+                assert granted
+                running += 1
+                peak = max(peak, running)
+                order.append(name)
+                await asyncio.sleep(0.02)
+                running -= 1
+
+        await asyncio.gather(*(render(n) for n in "abc"))
+        return peak, order
+
+    peak, order = asyncio.run(scenario())
+    assert peak == 2 and sorted(order) == ["a", "b", "c"]
+
+
+def test_la_seconde_place_s_ouvre_quand_la_memoire_revient(monkeypatch):
+    memory = {"mb": 400}
+    monkeypatch.setattr(render_queue, "_available_mb", lambda: memory["mb"])
+
+    async def scenario():
+        async with render_queue.video_slot():
+            async def free_memory():
+                await asyncio.sleep(0.05)
+                memory["mb"] = 900
+            asyncio.get_running_loop().create_task(free_memory())
+            async with render_queue.video_slot(timeout=3) as granted:
+                return granted
+
+    assert asyncio.run(scenario()) is True
 
 
 def test_un_palier_de_niveau_est_annonce_sans_mentionner(cog):
