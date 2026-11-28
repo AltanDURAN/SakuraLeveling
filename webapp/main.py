@@ -50,6 +50,7 @@ from app.infrastructure.skill_tree.skill_tree_loader import (
     get_definition as get_skill_tree_definition,
 )
 from webapp.admin.routers.actions_router import router as admin_actions_router
+from webapp.admin.routers.npcs_router import router as admin_npcs_router
 from webapp.admin.routers.auth_router import router as admin_auth_router
 from webapp.admin.routers.titles_router import router as admin_titles_router
 from webapp.admin.routers.quests_router import router as admin_quests_router
@@ -158,6 +159,7 @@ app.include_router(admin_skill_builder_router)
 app.include_router(admin_titles_router)
 app.include_router(admin_quests_router)
 app.include_router(admin_world_bosses_router)
+app.include_router(admin_npcs_router)
 app.include_router(admin_offering_router)
 app.include_router(admin_cards_router)
 app.include_router(admin_seasonal_router)

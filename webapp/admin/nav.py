@@ -53,6 +53,7 @@ NAV: tuple[NavGroup, ...] = (
         NavItem("/admin/pacing", "Rythme", "⏱️", "Délai entre deux monstres, meutes, horaires du raid, lune."),
         NavItem("/admin/scenes", "Scènes", "🎬", "Placement des monstres sur leurs décors, formations des meutes."),
         NavItem("/admin/familles", "Familles", "🧬", "Familles de monstres et le matériau commun qu'elles lâchent.", "families"),
+        NavItem("/admin/npcs", "Personnages", "🧑‍🎨", "Portraits de Hana, Borak, Elna, Sorn et Ysaline."),
         NavItem("/admin/world-bosses", "World Bosses", "🐉", "Le boss de la semaine : images, arène, stats.", "bosses"),
         NavItem("/admin/events", "Événements", "🎲", "Coffre, petite fille, forge sacrée : aperçus, réglages, historique.", "events"),
         NavItem("/admin/seasonal", "Fêtes", "🎉", "Avent, Noël, sucres d'orge, boutiques d'événement, Nouvel An."),

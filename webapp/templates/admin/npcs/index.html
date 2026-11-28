@@ -1,0 +1,41 @@
+{% extends "admin/base.html" %}
+{% from "admin/_ui.html" import page_head %}
+{% block title %}Personnages — Sakura Admin{% endblock %}
+{% block content %}
+<style>
+  .npc-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:1rem; }
+  .npc-card { border:1px solid var(--border); border-radius:16px; background:var(--card); padding:1rem;
+              display:flex; flex-direction:column; gap:.6rem; scroll-margin-top:90px; }
+  .npc-card.is-saved { border-color:var(--accent, #c56cf0); box-shadow:0 0 0 2px var(--accent, #c56cf0) inset; }
+  .npc-card h2 { margin:0; font-size:1.15rem; }
+  .npc-portrait { width:100%; aspect-ratio:1; object-fit:cover; border-radius:14px; background:var(--bg-soft); }
+  .npc-empty { width:100%; aspect-ratio:1; border-radius:14px; background:var(--bg-soft); display:grid;
+               place-items:center; font-size:3rem; color:var(--muted); }
+  .npc-card form { display:flex; flex-direction:column; gap:.5rem; }
+</style>
+<section class="list-page">
+  {% call page_head("Personnages", "🧑‍🎨", count=npcs|length,
+                    sub="Les portraits de Hana, Borak, Elna, Sorn et Ysaline. Dépose une image (PNG, JPG ou WebP, carrée de préférence, visage dans le tiers du haut) : elle remplace le portrait tout de suite, sans redémarrer le bot. Le bot la recadre en carré arrondi.") %}
+  {% endcall %}
+  {% if error %}<div class="notice is-danger">❌ {{ error }}</div>{% endif %}
+  {% if saved %}<div class="notice is-ok">✅ Portrait enregistré et envoyé au dépôt.</div>{% endif %}
+
+  <div class="npc-grid">
+    {% for row in npcs %}{% set n = row.npc %}
+    <article class="npc-card{{ ' is-saved' if saved == n.key }}" id="{{ n.key }}">
+      {% if row.exists %}
+        <img class="npc-portrait" src="/assets/npcs/{{ n.file }}?v={{ row.version }}" alt="Portrait de {{ n.name }}">
+      {% else %}
+        <div class="npc-empty" data-no-zoom>?</div>
+      {% endif %}
+      <h2>{{ n.name }} <span class="muted" style="font-size:.85rem; font-weight:400;">· {{ n.role }}</span></h2>
+      <div class="muted" style="font-size:.85rem;">Visible dans : {{ n.shown }}<br>Fichier : <code>{{ n.file }}</code></div>
+      <form method="post" action="/admin/npcs/{{ n.key }}" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/png,image/jpeg,image/webp" required>
+        <button type="submit" class="btn btn-primary btn-small">Remplacer le portrait</button>
+      </form>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
