@@ -43,6 +43,8 @@ sqlite3 lita_v2.db "SELECT * FROM alembic_version;"
 | **domain** | Entities, value objects, services métier purs (combat, stats, regen, classes) | `app/domain/` |
 | **infrastructure** | DB (models, repositories, seeders), config, content JSON | `app/infrastructure/` |
 
+Moteur de combat (découpé le 28/11/2026, comportement inchangé) : `party_combat_service.py` (préparation, boucle, résultat) + `party_combat_rules` / `_foes` / `_party` / `_strike` / `_log` (mixins) ; l'état du combat en cours vit sur l'instance (une par combat).
+
 Ordre de lecture conseillé avant patch : `pyproject.toml` → `alembic.ini` → dernière migration → `app/infrastructure/config/settings.py` → couche concernée → tests existants → tâche.
 
 ## Invariants métier (non négociables)
