@@ -3,74 +3,44 @@
 {% block title %}Divinités — Sakura Admin{% endblock %}
 {% block content %}
 <style>
-  .deity-list { display:flex; flex-direction:column; gap:1rem; }
-  .deity { border:1px solid var(--border); border-radius:16px; background:var(--card); padding:1rem;
-           display:grid; grid-template-columns:auto 1fr; gap:1rem 1.4rem; scroll-margin-top:90px; }
-  .deity.is-saved { box-shadow:0 0 0 2px var(--accent, #c56cf0) inset; }
-  .deity-cards { display:flex; gap:.6rem; align-items:flex-start; }
-  .deity-cards figure { margin:0; text-align:center; }
-  .deity-cards img { width:170px; height:auto; border-radius:10px; display:block; }
-  .deity-cards figcaption { font-size:.8rem; color:var(--muted); margin-top:.25rem; }
-  .deity h2 { margin:0 0 .2rem; font-size:1.25rem; }
-  .deity dl { display:grid; grid-template-columns:max-content 1fr; gap:.3rem .8rem; margin:.6rem 0; font-size:.92rem; }
-  .deity dt { color:var(--muted); }
-  .deity dd { margin:0; }
-  .deity-forms { display:flex; flex-wrap:wrap; gap:.8rem; margin-top:.4rem; }
-  .deity-forms form { border:1px dashed var(--border); border-radius:12px; padding:.6rem .7rem;
-                      display:flex; flex-direction:column; gap:.4rem; min-width:240px; }
+  .deity-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:1rem; }
+  .deity-card { border:1px solid var(--border); border-radius:16px; background:var(--card); padding:1rem;
+                display:flex; flex-direction:column; gap:.6rem; scroll-margin-top:90px; }
+  .deity-card.is-saved { border-color:var(--accent, #c56cf0); box-shadow:0 0 0 2px var(--accent, #c56cf0) inset; }
+  .deity-card h2 { margin:0; font-size:1.15rem; }
+  .deity-portrait { width:100%; aspect-ratio:1; object-fit:contain; border-radius:14px; background:var(--bg-soft); }
+  .deity-empty { width:100%; aspect-ratio:1; border-radius:14px; background:var(--bg-soft); display:grid;
+                 place-items:center; font-size:3rem; color:var(--muted); }
+  .deity-card form { display:flex; flex-direction:column; gap:.5rem; margin-top:auto; }
   .tag-mine { color:#3fae6a; font-weight:600; } .tag-draft { color:#d08a2b; font-weight:600; }
-  @media (max-width: 720px) { .deity { grid-template-columns:1fr; } .deity-cards img { width:42vw; } }
 </style>
 <section class="list-page">
   {% call page_head("Divinités", "✨", count=rows|length,
-                    sub="Les sept divinités de l'offrande et le Grand Cerisier, avec leur carte <strong>telle que le bot la dessine</strong>. Dépose ici leur image : <strong>image de la carte</strong> (la normale) et <strong>illustration pleine carte</strong> (la brillante, toute la carte). Le bot suit sans redémarrer. La jauge, la formule et les effets des bénédictions restent sur la page Offrande.") %}
+                    sub="Les sept divinités de l'offrande et le Grand Cerisier. Dépose une image (PNG, JPG ou WebP) : elle remplace celle de la divinité tout de suite, sans redémarrer le bot — c'est aussi l'image de sa carte. La jauge, la formule et les effets des bénédictions restent sur la page Offrande.") %}
     <a href="/admin/offering" class="btn btn-ghost">🙏 Offrande</a>
-    <a href="/admin/cards" class="btn btn-ghost">🎴 Cartes</a>
   {% endcall %}
   {% if error %}<div class="notice is-danger">❌ {{ error }}</div>{% endif %}
   {% if saved %}<div class="notice is-ok">✅ Image enregistrée et envoyée au dépôt.</div>{% endif %}
 
-  <div class="deity-list">
+  <div class="deity-grid">
     {% for r in rows %}
-    <article class="deity{{ ' is-saved' if saved == r.code }}" id="{{ r.code }}">
-      <div class="deity-cards">
-        {% if r.card %}
-          {% if not r.mythic %}
-          <figure><img src="/admin/cards/{{ r.code }}/face.png?w=340&v={{ r.v_normal }}" alt="Carte de {{ r.name }}">
-            <figcaption>Normale</figcaption></figure>
-          {% endif %}
-          <figure><img src="/admin/cards/{{ r.code }}/face.png?brillante=1&w=340&v={{ r.v_shiny }}" alt="Carte brillante de {{ r.name }}">
-            <figcaption>Brillante{{ " (la seule version)" if r.mythic }}</figcaption></figure>
-        {% else %}
-          <p class="muted">Pas de carte pour cette divinité.</p>
-        {% endif %}
+    <article class="deity-card{{ ' is-saved' if saved == r.code }}" id="{{ r.code }}">
+      {% if r.image %}
+        <img class="deity-portrait" src="{{ r.image }}?v={{ r.version }}" alt="{{ r.name }}">
+      {% else %}
+        <div class="deity-empty" data-no-zoom>?</div>
+      {% endif %}
+      <h2>{{ r.emoji }} {{ r.name }} <span class="muted" style="font-size:.85rem; font-weight:400;">· {{ r.title }}</span></h2>
+      <div class="muted" style="font-size:.85rem;">
+        {% if r.blessing %}Bénédiction : {{ r.blessing }}<br>{% endif %}
+        Image : {% if r.mine %}<span class="tag-mine">✅ la tienne</span>{% else %}<span class="tag-draft">🧪 ébauche (à remplacer)</span>{% endif %}
       </div>
-      <div>
-        <h2>{{ r.emoji }} {{ r.name }} <span class="muted" style="font-size:.9rem; font-weight:400;">· {{ r.title }}</span></h2>
-        <dl>
-          {% if r.blessing %}<dt>Bénédiction</dt><dd>{{ r.blessing }} <span class="muted">(24 h, quand l'offrande l'invoque)</span></dd>{% endif %}
-          {% if r.card %}
-          <dt>Effet de la carte</dt><dd>{{ r.effect }}</dd>
-          <dt>Image</dt><dd>{% if r.mine %}<span class="tag-mine">✅ la tienne</span>{% else %}<span class="tag-draft">🧪 ébauche (à remplacer)</span>{% endif %}
-            · pleine carte : {% if r.fullart %}<span class="tag-mine">✅ la tienne</span>{% else %}<span class="muted">aucune (l'image de la carte sert)</span>{% endif %}</dd>
-          {% endif %}
-        </dl>
-        {% if r.card %}
-        <div class="deity-forms">
-          <form method="post" action="/admin/divinites/{{ r.code }}/carte" enctype="multipart/form-data">
-            <strong>🖼️ Image de la carte</strong>
-            <input type="file" name="image" accept="image/png,image/jpeg,image/webp" required>
-            <button type="submit" class="btn btn-primary btn-small">Remplacer</button>
-          </form>
-          <form method="post" action="/admin/divinites/{{ r.code }}/fullart" enctype="multipart/form-data">
-            <strong>✨ Illustration pleine carte</strong>
-            <input type="file" name="image" accept="image/png,image/jpeg,image/webp" required>
-            <button type="submit" class="btn btn-primary btn-small">Remplacer</button>
-          </form>
-          <a class="btn btn-ghost btn-small" href="/admin/cards/{{ r.code }}" style="align-self:flex-end;">Fiche de la carte →</a>
-        </div>
-        {% endif %}
-      </div>
+      {% if r.card %}
+      <form method="post" action="/admin/divinites/{{ r.code }}/carte" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/png,image/jpeg,image/webp" required>
+        <button type="submit" class="btn btn-primary btn-small">Remplacer l'image</button>
+      </form>
+      {% endif %}
     </article>
     {% endfor %}
   </div>

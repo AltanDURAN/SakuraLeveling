@@ -1,18 +1,17 @@
 """Monde › Divinités (28/11/2026, demande de l'auteur) : les sept divinités de
-l'offrande et le Grand Cerisier, chacun avec sa carte telle que le bot la
-dessine (normale et brillante), sa bénédiction, l'effet de sa carte et d'où
-vient son image (la tienne ou une ébauche). On y dépose l'image de la carte
-et l'illustration pleine carte de la brillante — mêmes fichiers que la fiche
-de la carte (`assets/cards/<code>.png`, `<code>_fullart.png`), le bot suit
-sans redémarrer. La formule et les effets de l'offrande restent sur la page
-Offrande."""
+l'offrande et le Grand Cerisier, comme les Personnages — leur IMAGE (pas leur
+carte), leur bénédiction et d'où vient l'image (la tienne ou une ébauche).
+On y dépose l'image de la divinité : c'est celle de sa carte
+(`assets/cards/<code>.png`, même fichier que la fiche de la carte), le bot
+suit sans redémarrer. La formule et les effets de l'offrande restent sur la
+page Offrande."""
 
 from __future__ import annotations
 
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse
 
 from app.domain.services import card_service as cs
 from app.infrastructure.cards import card_loader
@@ -31,8 +30,6 @@ TREE = "grand_cerisier"
 
 
 def _entries() -> list[dict]:
-    from app.bot.rendering import card_render
-
     card_loader.clear_cache()
     offering_loader.clear_cache()
     rows = []
@@ -49,12 +46,11 @@ def _entries() -> list[dict]:
         if card is None:
             continue
         row["effect"] = cs.effect_text(card)
-        row["origin"] = card_loader.art_origin(card)
-        row["mine"] = row["origin"] == "carte"
-        row["fullart"] = card_loader.full_art_path(card) is not None
-        row["mythic"] = card.always_brillante
-        row["v_normal"] = card_render.render_version(card, False)
-        row["v_shiny"] = card_render.render_version(card, True)
+        row["mine"] = card_loader.art_origin(card) == "carte"
+        path = card_loader.art_path(card)
+        if path is not None and path.is_file():
+            row["image"] = f"/admin/divinites/{row['code']}/image"
+            row["version"] = int(path.stat().st_mtime)
     return rows
 
 
@@ -66,10 +62,23 @@ async def deities_page(request: Request, user: AdminUser = Depends(require_admin
     })
 
 
+def _allowed() -> set[str]:
+    return {d.code for d in offering_loader.list_deities()} | {TREE}
+
+
+@router.get("/{code}/image")
+async def deity_image(code: str, user: AdminUser = Depends(require_admin)):
+    """L'image de la divinité (celle de sa carte : la tienne, sinon l'ébauche)."""
+    card = card_loader.get_card(code) if code in _allowed() else None
+    path = card_loader.art_path(card) if card is not None else None
+    if path is None or not path.is_file():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Pas d'image.")
+    return FileResponse(path, headers={"Cache-Control": "no-cache"})
+
+
 @router.post("/{code}/{kind}")
 async def deity_upload(code: str, kind: str, request: Request, user: AdminUser = Depends(require_admin)):
-    allowed = {d.code for d in offering_loader.list_deities()} | {TREE}
-    if code not in allowed or kind not in ("carte", "fullart"):
+    if code not in _allowed() or kind not in ("carte", "fullart"):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Divinité ou image inconnue.")
     error = await cards_router._upload(request, code, kind)
     if error:
