@@ -92,6 +92,9 @@ def patch_get_db_session(monkeypatch, session):
         "get_db_session",
         fake_get_db_session,
     )
+    # Les récompenses vivent dans leur propre module depuis le 28/11/2026.
+    from app.application.services import encounter_rewards as encounter_rewards_module
+    monkeypatch.setattr(encounter_rewards_module, "get_db_session", fake_get_db_session)
 
 
 def _make_stats() -> Stats:
